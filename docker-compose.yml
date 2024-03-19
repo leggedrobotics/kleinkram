@@ -1,0 +1,63 @@
+version: '3.7'
+services:
+  main:
+    container_name: API
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+    env_file:
+      - .env
+    networks:
+      - webnet
+    depends_on:
+      - database
+
+
+  database:
+    image: postgres:13
+    container_name: postgres_db
+    ports:
+      - '5432:5432'
+    networks:
+      - webnet
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER:  ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    command: server --console-address ":9001" /data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    networks:
+      - webnet
+
+  fastapi_app: # This is your new FastAPI service
+    container_name: fastapi_api
+    build: ./bagHandler  # Assuming your FastAPI app is in the same backend directory
+
+    ports:
+      - "8000:8000"  # Expose FastAPI on port 8000
+    env_file:
+      - .env
+    networks:
+      - webnet
+volumes:
+  db_data:
+  minio_data:
+
+networks:
+  webnet:
