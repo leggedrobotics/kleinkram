@@ -2,16 +2,27 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Project from '../project/entities/project.entity';
 import { Like, Repository, Between } from 'typeorm';
+import { Client } from 'minio';
+
 import Run from './entities/run.entity';
 import { CreateRun } from './entities/create-run.dto';
 import { UpdateRun } from './entities/update-run.dto';
 import axios from 'axios';
 import * as FormData from 'form-data';
 import { TopicService } from '../topic/topic.service';
-import Topic from 'src/topic/entities/topic.entity';
+import env from '../env';
 
 @Injectable()
 export class RunService {
+  private minio: Client = new Client({
+    endPoint: 'minio',
+    useSSL: false,
+    port: 9000,
+
+    region: 'GUGUS GEWESEN',
+    accessKey: env.MINIO_ACCESS_KEY,
+    secretKey: env.MINIO_SECRET_KEY,
+  });
   constructor(
     @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectRepository(Project) private projectRepository: Repository<Project>,
@@ -106,12 +117,17 @@ export class RunService {
         }),
       );
       const date = new Date(data['start_time'] * 1000);
-      console.log(topics);
+      await this.minio.putObject(
+        env.MINIO_BAG_BUCKET_NAME,
+        file.originalname,
+        file.buffer,
+      );
       const newRun = this.runRepository.create({
         name: createRun.name,
         date,
         project,
         topics,
+        filename: file.originalname,
       });
       return this.runRepository.save(newRun);
     } catch (error) {
@@ -130,5 +146,18 @@ export class RunService {
     await this.runRepository.save(db_run);
     console.log('Updated run:', db_run);
     return this.runRepository.findOne({ where: { uuid } });
+  }
+
+  async generateDownload(uuid: string) {
+    const run = await this.runRepository.findOneOrFail({
+      where: { uuid },
+    });
+    const fileURL = await this.minio.presignedUrl(
+      'GET',
+      env.MINIO_BAG_BUCKET_NAME,
+      run.filename,
+      24 * 60 * 60,
+    );
+    return fileURL;
   }
 }

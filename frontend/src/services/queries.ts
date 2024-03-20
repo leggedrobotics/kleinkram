@@ -98,3 +98,8 @@ export const allTopics = async () => {
   const response = await axios.get('/topic/all');
   return response.data
 }
+
+export const downloadBag = async (uuid: string) => {
+  const response = await axios.get('run/download/' + uuid, )
+  return response.data
+}

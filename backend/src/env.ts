@@ -111,4 +111,16 @@ export default {
   get PROJECT_NAME(): string {
     return asString(process.env.PROJECT_NAME);
   },
+
+  get MINIO_ACCESS_KEY(): string {
+    return asString(process.env.MINIO_ACCESS_KEY);
+  },
+
+  get MINIO_SECRET_KEY(): string {
+    return asString(process.env.MINIO_SECRET_KEY);
+  },
+
+  get MINIO_BAG_BUCKET_NAME(): string {
+    return asString(process.env.MINIO_BAG_BUCKET_NAME);
+  },
 };

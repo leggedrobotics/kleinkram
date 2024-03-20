@@ -28,4 +28,7 @@ export default class Run extends BaseEntity {
   @ManyToMany(() => Topic, (topic) => topic.runs)
   @JoinTable()
   topics: Topic[];
+
+  @Column()
+  filename: string;
 }

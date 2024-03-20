@@ -47,6 +47,11 @@ export class RunController {
     return this.runService.findOne(uuid);
   }
 
+  @Get('download/:uuid')
+  async download(@Param('uuid') uuid: string) {
+    return this.runService.generateDownload(uuid);
+  }
+
   @Post('create')
   @UseInterceptors(FileInterceptor('file'))
   async create(

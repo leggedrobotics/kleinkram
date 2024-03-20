@@ -11,6 +11,12 @@
             {{formatDate(data?.date, true)}}
           </p>
         </div>
+        <div class="col-1">
+          <q-btn
+            label="Download"
+            icon="cloud_download"
+            @click="_downloadBag"/>
+        </div>
 
       </div>
 
@@ -33,7 +39,7 @@
 <script setup lang="ts">
 
 import { useQuery } from '@tanstack/vue-query';
-import { fetchRun } from 'src/services/queries';
+import { downloadBag, fetchRun } from 'src/services/queries';
 import { Run } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
 import { Ref, ref, watch, watchEffect } from 'vue';
@@ -56,6 +62,18 @@ const columns = [
   { name: 'NrMessages', label: 'NrMessages', field: 'nrMessages', sortable: true },
   {name: 'Frequency', label: 'Frequency', field: 'frequency', sortable: true },
 ]
+
+const downloadURL = ref<string>('');
+async function _downloadBag() {
+  const res = await downloadBag(props.run_uuid)
+  console.log(res)
+  const a = document.createElement('a');
+  a.href = res;
+  a.download = data.value?.name; // Optionally set the file name for the download
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
 const pagination = ref({ sortBy: 'name', descending: false, page: 1, rowsPerPage: 10 });
 

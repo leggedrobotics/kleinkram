@@ -8,7 +8,6 @@ import InspectRun from 'components/InspectRun.vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
-console.log(route.params.uuid)
 </script>
 
 <style scoped>
