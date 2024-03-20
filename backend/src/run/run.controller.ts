@@ -7,6 +7,7 @@ import {
   Get,
   Put,
   Param,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RunService } from './run.service';
@@ -20,6 +21,25 @@ export class RunController {
   @Get('all')
   async allRuns() {
     return await this.runService.findAll();
+  }
+
+  @Get('filtered')
+  async filteredRuns(
+    @Query('runName') runName: string,
+    @Query('projectUUID') projectUUID: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('topics') topics: string,
+    @Query('andOr') andOr: boolean,
+  ) {
+    return await this.runService.findFiltered(
+      runName,
+      projectUUID,
+      startDate,
+      endDate,
+      topics,
+      andOr,
+    );
   }
 
   @Get(':uuid')

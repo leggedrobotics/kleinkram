@@ -97,7 +97,7 @@ import { Ref, ref, watch } from 'vue';
 import { Project, Run } from 'src/types/types';
 import { updateRun } from 'src/services/mutations';
 import { useDialogPluginComponent } from 'quasar'
-import { formatDate } from 'src/services/dateFormating';
+import { formatDate, parseDate } from 'src/services/dateFormating';
 
 const props = defineProps<{
   run_uuid: string;
@@ -140,7 +140,9 @@ const { mutate: updateRunMutation } = useMutation({
 });
 
 function _updateRun() {
-  if (editableRun.value) {
+  const convertedDate = parseDate(dateTime.value);
+  if (editableRun.value && convertedDate && !isNaN(convertedDate.getTime())) {
+    editableRun.value.date = convertedDate
     updateRunMutation(editableRun.value);
     onDialogOK();
   }

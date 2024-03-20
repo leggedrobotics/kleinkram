@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Project from '../project/entities/project.entity';
-import { Repository } from 'typeorm';
+import { Like, Repository, Between } from 'typeorm';
 import Run from './entities/run.entity';
 import { CreateRun } from './entities/create-run.dto';
 import { UpdateRun } from './entities/update-run.dto';
@@ -20,6 +20,56 @@ export class RunService {
 
   async findAll() {
     return this.runRepository.find({ relations: ['project'] });
+  }
+
+  async findFiltered(
+    runName: string,
+    projectUUID: string,
+    startDate: string,
+    endDate: string,
+    topics: string,
+    and_or: boolean,
+  ) {
+    // Start building your query with basic filters
+    const query = this.runRepository
+      .createQueryBuilder('run')
+      .leftJoinAndSelect('run.project', 'project')
+      .leftJoinAndSelect('run.topics', 'topic');
+
+    // Apply filters for runName, projectUUID, and date
+    if (runName) {
+      query.andWhere('run.name LIKE :runName', { runName: `%${runName}%` });
+    }
+    if (projectUUID) {
+      query.andWhere('project.uuid = :projectUUID', { projectUUID });
+    }
+    if (startDate && endDate) {
+      query.andWhere('run.date BETWEEN :startDate AND :endDate', {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      });
+    }
+    const splitTopics = topics.split(',');
+    console.log('and_or:', and_or);
+    if (topics && topics.length > 0) {
+      if (and_or) {
+        splitTopics.forEach((topic, index) => {
+          query.andWhere((qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select('runTopic.runId')
+              .from('run_topics_topic', 'runTopic')
+              .where('runTopic.topicId = :topicId', { topicId: topic })
+              .getQuery();
+            return `run.id IN ${subQuery}`;
+          });
+        });
+      } else {
+        console.log('OR logic');
+        query.andWhere('topic.uuid IN (:...splitTopics)', { splitTopics });
+      }
+    } // Execute the query
+    return query.getMany();
   }
 
   async findOne(uuid: string) {

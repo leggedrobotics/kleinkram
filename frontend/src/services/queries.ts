@@ -1,10 +1,26 @@
 import axios from 'src/api/axios';
 import { Project, Run, Topic } from 'src/types/types';
 
-export const fetchOverview = async (): Promise<Run[]> => {
+export const fetchOverview = async (runName: string,
+                                    projectUUID: string|undefined,
+                                    startDate: Date,
+                                    endDate: Date,
+                                    topics: string[],
+                                    andOr: boolean): Promise<Run[]> => {
   try {
-    const response = await axios.get('/run/all');
-    console.log('In',response.data)
+    const formattedStartDate = startDate.toISOString()
+    const formattedEndDate = endDate.toISOString();
+
+    const queryParams = new URLSearchParams({
+      runName : runName || '',
+      projectUUID: projectUUID || '', // Handle undefined projectUUID
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      topics: topics.join(','),
+      andOr: andOr ? '1': ''
+    }).toString();
+    console.log('fetching with: ', queryParams)
+    const response = await axios.get(`/run/filtered?${queryParams}`);
     const res = response.data.map((run: any) => {
       const project = new Project(
         run.project.uuid,
@@ -24,7 +40,6 @@ export const fetchOverview = async (): Promise<Run[]> => {
         new Date(run.updatedAt),
         new Date(run.deletedAt));
     });
-    console.log('Out',res)
     return res;
   } catch (error) {
     console.error('Error fetching overview:', error);

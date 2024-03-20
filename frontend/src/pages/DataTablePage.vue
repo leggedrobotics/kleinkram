@@ -48,21 +48,9 @@
               </q-popup-proxy>
             </q-icon>
           </template>
-
-          <template v-slot:append>
-            <q-icon name="access_time" class="cursor-pointer">
-              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                <q-time v-model="dateTime" :mask="dateMask" format24h>
-                  <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
-                  </div>
-                </q-time>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
         </q-input>
       </div>
-      <div class="col-1 col-lg-2">
+      <div class="col-2 col-lg-4">
         <q-select
           v-model="selectedTopics"
           label="Select Topics"
@@ -79,7 +67,7 @@
           required
         />
       </div>
-      <div class="col-1 col-lg-2">
+      <div class="col-1 col-lg-1">
         <q-toggle v-model="and_or" :label="and_or ? 'And' : 'Or'"/>
       </div>
     </div>
@@ -94,7 +82,6 @@
       :columns="columns"
       row-key="uuid"
       :loading="loading"
-      :filter="filter"
       binary-state-sort
       selection= 'multiple'
     >
@@ -111,14 +98,14 @@
   </q-card>
 </template>
 <script setup lang="ts">
-import { computed, Ref, ref } from 'vue';
-import { QTable, useQuasar } from 'quasar';
+import { computed, Ref, ref, watch } from 'vue';
+import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
 import { allProjects, allTopics, fetchOverview } from 'src/services/queries';
 import { format } from 'date-fns';
 import { Project, Run, Topic } from 'src/types/types';
 import EditRun from 'components/EditRun.vue';
-import { dateMask, formatDate } from 'src/services/dateFormating';
+import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 
 const $q = useQuasar();
 
@@ -126,10 +113,14 @@ const $q = useQuasar();
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 const filter = ref('');
-const { isLoading, isError, data, error } = useQuery({ queryKey: ['runs'], queryFn: fetchOverview });
+const updateFilter = debounce((newFilter) => {
+  debouncedFilter.value = newFilter;
+}, 500); // Delay of 500ms
+watch(filter, ()=> updateFilter(filter.value))
+const debouncedFilter = ref('');
+const selected_project: Ref<Project | null> = ref(null);
 
 const dd_open = ref(false);
-const selected_project: Ref<Project | null> = ref(null);
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
 
@@ -153,9 +144,24 @@ const dateTimeString = computed({
     dateTime.value = { from, to };
   }
 });
+const startDate = computed(()=> parseDate(dateTime.value.from));
+const endDate = computed(()=> parseDate(dateTime.value.to));
 
 const selected = ref([]);
 const pagination = ref({ sortBy: 'name', descending: false, page: 1, rowsPerPage: 10 });
+
+const { isLoading, isError, data, error } = useQuery({ queryKey: [
+  'runs',
+    debouncedFilter,
+    selected_project,
+    startDate,
+    endDate,
+    selectedTopics,
+    and_or
+  ]
+  , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
+
+
 const columns = [
   {
     name: 'Project',
