@@ -62,35 +62,6 @@
               </q-list>
             </q-btn-dropdown>
           </div>
-          <div class="col-3">
-            <div class="q-pa-md" style="max-width: 300px">
-              <q-input filled v-model="dateTime">
-                <template v-slot:prepend>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="dateTime" :mask="dateMask">
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="Close" color="primary" flat />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-
-                <template v-slot:append>
-                  <q-icon name="access_time" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-time v-model="dateTime" :mask="dateMask" format24h>
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="Close" color="primary" flat />
-                        </div>
-                      </q-time>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </div>
-          </div>
           <div class="col-1">
             <q-file outlined v-model="file">
               <template v-slot:prepend>
@@ -127,7 +98,6 @@ const file = ref<File | null>(null);
 
 
 const { isLoading, isError, data, error } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
-const dateTime: Ref<string> = ref(formatDate(new Date()));
 const submitNewProject = async () => {
   const new_project = await createProject(name.value )
 };
@@ -136,8 +106,7 @@ const submitNewRun = async () => {
   if (!selected_project.value || !file.value) {
     return;
   }
-  const dateTimeConverted = parseDate(dateTime.value);
-  const new_run = await createRun(run_name.value, selected_project.value.uuid, dateTimeConverted, file.value)
+  const new_run = await createRun(run_name.value, selected_project.value.uuid, file.value)
 };
 </script>
 

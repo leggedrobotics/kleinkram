@@ -6,12 +6,10 @@ export const createProject = async (name: string) => {
   return response.data;
 }
 
-export const createRun = async (name: string, projectUUID: string, date: Date, file: File) => {
+export const createRun = async (name: string, projectUUID: string, file: File) => {
   const formData = new FormData();
-  console.log(date)
   formData.append('name', name);
   formData.append('projectUUID', projectUUID);
-  formData.append('date', date.toISOString());
   formData.append('file', file);
 
 

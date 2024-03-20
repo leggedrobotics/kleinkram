@@ -16,7 +16,6 @@ export default class RouterService {
 
   // eslint-disable-next-line require-jsdoc
   constructor(router: Router) {
-    console.log('router', router);
     this.router = router;
     this.route = useRoute();
   }

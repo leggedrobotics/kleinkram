@@ -24,6 +24,11 @@ const ROUTES: Record<string, RouteRecordRaw> = {
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/UploadPage.vue') }],
   },
+  RUN: {
+    path: '/run',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{ path: '', component: () => import('pages/RunInfo.vue') }],
+  },
 };
 
 // Routes that can be accessed without being logged in
@@ -33,6 +38,7 @@ export const PUBLIC_ROUTES: RouteRecordRaw[] = [
   ROUTES.DATATABLE,
   ROUTES.UPLOAD,
   ROUTES.WILDCARD,
+  ROUTES.RUN,
 ];
 
 // Type for constrained route

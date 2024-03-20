@@ -36,6 +36,7 @@ export const fetchOverview = async (runName: string,
         [],
         project,
         new Date(run.date),
+        [],
         new Date(run.createdAt),
         new Date(run.updatedAt),
         new Date(run.deletedAt));
@@ -64,12 +65,25 @@ export const fetchRun = async (uuid: string): Promise<Run> => {
       new Date(run.project.updatedAt),
       new Date(run.project.deletedAt)
     );
+    const topics = response.data.topics.map((topic: any) => {
+      return new Topic(
+        topic.uuid,
+        topic.name,
+        topic.type,
+        topic.nrMessages,
+        topic.frequency,
+        new Date(topic.createdAt),
+        new Date(topic.updatedAt),
+        new Date(topic.deletedAt)
+      );
+    });
     return new Run(
       run.uuid,
       run.name,
       [],
       project,
       new Date(run.date),
+      topics,
       new Date(run.createdAt),
       new Date(run.updatedAt),
       new Date(run.deletedAt));

@@ -55,17 +55,19 @@ export class RunService {
       if (and_or) {
         splitTopics.forEach((topic, index) => {
           query.andWhere((qb) => {
+            const key = `topicUuid${index}`;
             const subQuery = qb
               .subQuery()
-              .select('runTopic.runId')
+              .select('runTopic.runUuid')
               .from('run_topics_topic', 'runTopic')
-              .where('runTopic.topicId = :topicId', { topicId: topic })
+              .where(`runTopic.topicUuid = :topicUuid${index}`, {
+                [key]: topic,
+              })
               .getQuery();
-            return `run.id IN ${subQuery}`;
+            return `run.Uuid IN ${subQuery}`;
           });
         });
       } else {
-        console.log('OR logic');
         query.andWhere('topic.uuid IN (:...splitTopics)', { splitTopics });
       }
     } // Execute the query
@@ -75,7 +77,7 @@ export class RunService {
   async findOne(uuid: string) {
     return this.runRepository.findOne({
       where: { uuid },
-      relations: ['project'],
+      relations: ['project', 'topics'],
     });
   }
 
@@ -90,14 +92,24 @@ export class RunService {
         'http://fastapi_app:8000/newBag',
         formData,
       );
-      const topics: Topic[] = await Promise.all(
-        response.data.map((topic: string) => {
-          return this.topicService.create(topic);
+      const data = response.data;
+      const topics = await Promise.all(
+        Object.keys(data.Topics).map((key) => {
+          const topic = data.Topics[key];
+          const type = data.Types[key];
+          const messageCount = data['Message Count'][key];
+          const frequency = data.Frequency[key];
+
+          // Assuming this.topicService.create exists and is ready to be called
+          // with the topic, type, message count, and frequency
+          return this.topicService.create(topic, type, messageCount, frequency);
         }),
       );
+      const date = new Date(data['start_time'] * 1000);
+      console.log(topics);
       const newRun = this.runRepository.create({
         name: createRun.name,
-        date: createRun.date,
+        date,
         project,
         topics,
       });

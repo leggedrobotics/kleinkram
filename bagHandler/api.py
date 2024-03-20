@@ -17,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.post("/newBag")
 async def upload_bag(file: UploadFile = File(...)) -> Any:
     if not file.filename.endswith('.bag'):
@@ -28,4 +29,7 @@ async def upload_bag(file: UploadFile = File(...)) -> Any:
 
         # Now that you have a file path, you can use bagreader
         b = bagreader(temp_file_path)
-        return list(b.topics)
+        topic_table = b.topic_table.to_dict()
+        topic_table['start_time'] = b.start_time
+        print(b.start_time)
+        return topic_table

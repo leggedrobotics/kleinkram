@@ -92,13 +92,18 @@
             label="Edit"
             @click="()=>openQDialog(props.row)"
           ></q-btn>
+          <q-btn
+            color="primary"
+            label="View"
+            @click="()=>$routerService?.routeTo(ROUTES.RUN, { uuid: props.row.uuid })"
+          ></q-btn>
         </q-td>
       </template>
     </QTable>
   </q-card>
 </template>
 <script setup lang="ts">
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, inject, Ref, ref, watch } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
 import { allProjects, allTopics, fetchOverview } from 'src/services/queries';
@@ -106,6 +111,9 @@ import { format } from 'date-fns';
 import { Project, Run, Topic } from 'src/types/types';
 import EditRun from 'components/EditRun.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
+import ROUTES from 'src/router/routes';
+import RouterService from 'src/services/routerService';
+const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
 
@@ -132,7 +140,7 @@ const and_or = ref(false)
 
 const start = new Date();
 start.setHours(0, 0, 0, 0);
-start.setMonth(start.getMonth() - 1);
+start.setMonth(start.getMonth() - 12);
 
 const end = new Date();
 end.setHours(23, 59, 59, 999);

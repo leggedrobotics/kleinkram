@@ -13,13 +13,25 @@ export class TopicService {
     return this.topicRepository.find();
   }
 
-  async create(topic: string): Promise<Topic> {
-    this.topicRepository.count({ where: { name: topic } }).then((count) => {
-      if (count === 0) {
-        const newTopic = this.topicRepository.create({ name: topic });
-        this.topicRepository.save(newTopic);
-      }
-    });
-    return this.topicRepository.findOne({ where: { name: topic } });
+  async create(
+    name: string,
+    type: string,
+    messageCount: number,
+    frequency: number,
+  ): Promise<Topic> {
+    await this.topicRepository
+      .count({ where: { name: name } })
+      .then(async (count) => {
+        if (count === 0) {
+          const newTopic = this.topicRepository.create({
+            name,
+            type,
+            nrMessages: messageCount,
+            frequency,
+          });
+          await this.topicRepository.save(newTopic);
+        }
+      });
+    return this.topicRepository.findOne({ where: { name: name } });
   }
 }
