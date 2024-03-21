@@ -99,6 +99,11 @@ export class RunService {
     const formData = new FormData();
     formData.append('file', file.buffer, file.originalname);
     try {
+      const res = await axios.post(
+        'http://bag_converter:3000/convert',
+        formData,
+      );
+
       const response = await axios.post(
         'http://fastapi_app:8000/newBag',
         formData,
