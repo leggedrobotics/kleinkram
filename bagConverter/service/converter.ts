@@ -4,15 +4,16 @@ import { Bag } from '@foxglove/rosbag';
 import { parse as parseMessageDefinition } from '@foxglove/rosmsg';
 import { Time } from '@foxglove/rosmsg-serialization';
 import { toNanoSec } from '@foxglove/rostime';
-import Bzip2 from '@foxglove/wasm-bz2';
-import decompressLZ4 from '@foxglove/wasm-lz4';
-import zstd from '@foxglove/wasm-zstd';
+import * as decompressBZ2 from 'bz2';
+import { ZSTDCompress, ZSTDDecompress } from 'simple-zstd';
 import { McapWriter, McapTypes } from '@mcap/core';
 import { FileHandleWritable } from '@mcap/nodejs';
 import { ProtobufDescriptor, protobufToDescriptor } from '@mcap/support';
 import { open } from 'fs/promises';
-import protobufjs from 'protobufjs';
-import descriptor from 'protobufjs/ext/descriptor';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const protobuf = require('protobufjs');
+import * as lz4wasm from 'lz4-wasm-nodejs';
+import descriptor = require('protobufjs/ext/descriptor');
 import MulterFileReader from './MulterFileReader';
 
 const builtinSrc = `
@@ -51,14 +52,13 @@ function rosMsgDefinitionToProto(
   typeName: string,
   msgDef: string,
 ): {
-  rootType: protobufjs.Type;
+  rootType: protobuf.Type;
   descriptorSet: ProtobufDescriptor;
   schemaName: string;
 } {
   const definitionArr = parseMessageDefinition(msgDef);
-  const root = new protobufjs.Root();
-
-  const BuiltinSrcParse = protobufjs.parse(builtinSrc, { keepCase: true });
+  const root = new protobuf.Root();
+  const BuiltinSrcParse = protobuf.parse(builtinSrc, { keepCase: true });
   BuiltinSrcParse.root.nested!['ros']!.filename = 'ros/builtin.proto';
   root.add(BuiltinSrcParse.root);
 
@@ -143,12 +143,12 @@ function rosMsgDefinitionToProto(
       `message ${msgName} {\n  ${fields.join('\n  ')}\n}`,
     ];
 
-    const ProtoSrcParse = protobufjs.parse(outputSections.join('\n'), {
+    const ProtoSrcParse = protobuf.parse(outputSections.join('\n'), {
       keepCase: true,
     });
     // HACK: set the filename on the nested namespace object so that `root.toDescriptor` generates
     // file descriptors with the correct filename.
-    (ProtoSrcParse.root.nested!['ros'] as protobufjs.Namespace).nested![
+    (ProtoSrcParse.root.nested!['ros'] as protobuf.Namespace).nested![
       packageName
     ]!.filename = filename;
     root.add(ProtoSrcParse.root);
@@ -180,7 +180,7 @@ function rosMsgDefinitionToProto(
 
 type TopicDetail = {
   channelId: number;
-  rootType: protobufjs.Type;
+  rootType: protobuf.Type;
 };
 
 // Protobuf fromObject doesn't like being given Float64Arrays
@@ -206,14 +206,9 @@ export async function convert(
   file: Express.Multer.File,
   options: { indexed: boolean },
 ) {
-  await decompressLZ4.isLoaded;
-  await zstd.isLoaded;
-  const bzip2 = await Bzip2.init();
-
   const bag = new Bag(new MulterFileReader(file));
   await bag.open();
-
-  const mcapFilePath = file.filename.replace('.bag', '.mcap');
+  const mcapFilePath = file.originalname.replace('.bag', '.mcap');
   console.debug(`Writing to ${mcapFilePath}`);
 
   const fileHandle = await open(mcapFilePath, 'w');
@@ -226,7 +221,7 @@ export async function convert(
     useChunkIndex: options.indexed,
     compressChunk: (data) => ({
       compression: 'zstd',
-      compressedData: zstd.compress(data, 19),
+      compressedData: ZSTDCompress(data, 19),
     }),
   });
 
@@ -278,9 +273,9 @@ export async function convert(
   await bag.readMessages(
     {
       decompress: {
-        lz4: (buffer: Uint8Array, size: number) => decompressLZ4(buffer, size),
+        lz4: (buffer: Uint8Array, size: number) => lz4wasm.decompress(buffer),
         bz2: (buffer: Uint8Array, size: number) =>
-          bzip2.decompress(buffer, size, { small: false }),
+          decompressBZ2(buffer, size, { small: false }),
       },
     },
     (result) => {

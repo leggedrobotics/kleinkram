@@ -21,18 +21,20 @@
   },
   "dependencies": {
     "@foxglove/rosbag": "^0.4.1",
-    "@foxglove/wasm-bz2": "^0.1.1",
-    "@foxglove/wasm-lz4": "^1.0.2",
-    "@foxglove/wasm-zstd": "^1.0.1",
     "@mcap/core": "^2.1.0",
     "@mcap/nodejs": "^1.0.0",
     "@mcap/support": "^1.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "bz2": "^1.0.1",
     "commander": "^12.0.0",
+    "lz4": "^0.6.5",
+    "lz4-wasm-nodejs": "^0.9.2",
+    "protobufjs": "^7.2.6",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "simple-zstd": "^1.4.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
