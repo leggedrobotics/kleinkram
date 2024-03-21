@@ -33,3 +33,6 @@ async def upload_bag(file: UploadFile = File(...)) -> Any:
         topic_table['start_time'] = b.start_time
         print(b.start_time)
         return topic_table
+
+
+def convert
