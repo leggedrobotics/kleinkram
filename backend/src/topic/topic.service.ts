@@ -16,22 +16,17 @@ export class TopicService {
   async create(
     name: string,
     type: string,
-    messageCount: number,
+    messageCount: bigint,
     frequency: number,
   ): Promise<Topic> {
-    await this.topicRepository
-      .count({ where: { name: name } })
-      .then(async (count) => {
-        if (count === 0) {
-          const newTopic = this.topicRepository.create({
-            name,
-            type,
-            nrMessages: messageCount,
-            frequency,
-          });
-          await this.topicRepository.save(newTopic);
-        }
-      });
+    const newTopic = this.topicRepository.create({
+      name,
+      type,
+      nrMessages: messageCount,
+      frequency,
+    });
+    await this.topicRepository.save(newTopic);
+
     return this.topicRepository.findOne({ where: { name: name } });
   }
 }

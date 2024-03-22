@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Project from '../project/entities/project.entity';
 import { Like, Repository, Between } from 'typeorm';
 import { Client } from 'minio';
+import { loadDecompressHandlers } from '@mcap/support';
+import { BlobReadable } from '@mcap/browser';
+import { McapIndexedReader } from '@mcap/core';
 
 import Run from './entities/run.entity';
 import { CreateRun } from './entities/create-run.dto';
@@ -11,7 +14,8 @@ import axios from 'axios';
 import * as FormData from 'form-data';
 import { TopicService } from '../topic/topic.service';
 import env from '../env';
-
+import { IReadable } from '@mcap/core/dist/cjs/src/types';
+import Topic from '../topic/entities/topic.entity';
 @Injectable()
 export class RunService {
   private minio: Client = new Client({
@@ -92,6 +96,44 @@ export class RunService {
     });
   }
 
+  async processMcapFile(arrayBuffer: ArrayBuffer) {
+    const decompressHandlers = await loadDecompressHandlers();
+
+    const buffer = Buffer.from(arrayBuffer);
+    const readable = new BufferReadable(buffer);
+    const reader = await McapIndexedReader.Initialize({
+      readable,
+      decompressHandlers,
+    });
+
+    const topics: Promise<Topic>[] = [];
+    const stats = reader.statistics;
+    const duration = stats.messageEndTime - stats.messageStartTime;
+    reader.channelsById.forEach((channel) => {
+      const schema = reader.schemasById.get(channel.schemaId);
+      const nr_messages = stats.channelMessageCounts.get(channel.id);
+      const topic = this.topicService.create(
+        channel.topic,
+        schema.name,
+        nr_messages,
+        Number(nr_messages) / (Number(duration / 1000n) / 1000),
+      );
+      topics.push(topic);
+    });
+    const resolved = await Promise.all(topics);
+    // for await (const message of reader.readMessages()) {
+    //   console.log('Message:', message);
+    // }
+
+    // At this point, `topics` contains the list of topics found in the MCAP file
+    // Here you can call your service to create topics, or perform other actions
+    // with the extracted data.
+    return {
+      topics: resolved,
+      date: new Date(Number(stats.messageStartTime / 1000000n)),
+    };
+  }
+
   async create(createRun: CreateRun, file: Express.Multer.File) {
     const project = await this.projectRepository.findOneOrFail({
       where: { uuid: createRun.projectUUID },
@@ -99,33 +141,30 @@ export class RunService {
     const formData = new FormData();
     formData.append('file', file.buffer, file.originalname);
     try {
-      const res = await axios.post(
-        'http://bag_converter:3000/convert',
-        formData,
-      );
-
       const response = await axios.post(
         'http://fastapi_app:8000/newBag',
         formData,
+        { responseType: 'arraybuffer' },
       );
-      const data = response.data;
-      const topics = await Promise.all(
-        Object.keys(data.Topics).map((key) => {
-          const topic = data.Topics[key];
-          const type = data.Types[key];
-          const messageCount = data['Message Count'][key];
-          const frequency = data.Frequency[key];
+      const topics: Topic[] = [];
+      let date = new Date();
 
-          // Assuming this.topicService.create exists and is ready to be called
-          // with the topic, type, message count, and frequency
-          return this.topicService.create(topic, type, messageCount, frequency);
-        }),
-      );
-      const date = new Date(data['start_time'] * 1000);
+      try {
+        const res = await this.processMcapFile(response.data);
+        topics.push(...res.topics);
+        date = res.date;
+      } catch (error) {
+        console.error(error);
+      }
+
+      const filename = file.originalname.replace('.bag', '.mcap');
       await this.minio.putObject(
         env.MINIO_BAG_BUCKET_NAME,
-        file.originalname,
-        file.buffer,
+        filename,
+        response.data,
+        {
+          'Content-Type': 'application/octet-stream',
+        },
       );
       const newRun = this.runRepository.create({
         name: createRun.name,
@@ -164,5 +203,21 @@ export class RunService {
       24 * 60 * 60,
     );
     return fileURL;
+  }
+}
+
+class BufferReadable implements IReadable {
+  constructor(private buffer: Buffer) {}
+
+  async size(): Promise<bigint> {
+    return BigInt(this.buffer.length);
+  }
+
+  async read(offset: bigint, size: bigint): Promise<Uint8Array> {
+    // Convert bigint to number for Buffer operations; ensure this doesn't exceed Number.MAX_SAFE_INTEGER
+    const start = Number(offset);
+    const end = start + Number(size);
+    // Slice the buffer to get the specified portion; convert to Uint8Array as expected by the interface
+    return new Uint8Array(this.buffer.slice(start, end));
   }
 }

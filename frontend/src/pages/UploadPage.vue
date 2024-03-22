@@ -89,7 +89,7 @@ import { allProjects } from 'src/services/queries';
 import { useQuery } from '@tanstack/vue-query'
 import { Project } from 'src/types/types';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-
+import { Notify } from 'quasar'
 const name = ref('');
 const run_name = ref('');
 const dd_open = ref(false);
@@ -106,7 +106,30 @@ const submitNewRun = async () => {
   if (!selected_project.value || !file.value) {
     return;
   }
-  const new_run = await createRun(run_name.value, selected_project.value.uuid, file.value)
+  const noti = Notify.create({
+    message: 'Uploading file...',
+    color: 'primary',
+    spinner: true,
+    position: 'top-right',
+    timeout: 0,
+  })
+  await createRun(run_name.value, selected_project.value.uuid, file.value).then(
+    (new_run) => {
+      noti({
+        message: `File ${new_run.name} uploaded`,
+        color: 'positive',
+        spinner: false,
+        timeout: 2000,
+      })
+    }).catch((e) => {
+      noti({
+        message: `Upload failed: ${e}`,
+        color: 'negative',
+        spinner: false,
+        timeout: 2000,
+      })
+
+  })
 };
 </script>
 

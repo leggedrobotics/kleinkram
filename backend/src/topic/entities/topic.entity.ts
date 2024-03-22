@@ -10,8 +10,8 @@ export default class Topic extends BaseEntity {
   @Column()
   type: string;
 
-  @Column()
-  nrMessages: number;
+  @Column('bigint')
+  nrMessages: bigint;
 
   @Column('float')
   frequency: number;

@@ -6,7 +6,7 @@ export const createProject = async (name: string) => {
   return response.data;
 }
 
-export const createRun = async (name: string, projectUUID: string, file: File) => {
+export const createRun = async (name: string, projectUUID: string, file: File): Promise<Run> => {
   const formData = new FormData();
   formData.append('name', name);
   formData.append('projectUUID', projectUUID);

@@ -56,21 +56,6 @@ services:
     networks:
       - webnet
 
-  bag_converter:
-    container_name: BagConverter
-    build:
-      context: bagConverter
-    volumes:
-      - ./bagConverter:/usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - 127.0.0.1:${BAG_CONVERTER_PORT}:${SERVER_PORT}
-    env_file:
-      - .env
-    networks:
-      - webnet
-    depends_on:
-      - main
 volumes:
   db_data:
   minio_data:
