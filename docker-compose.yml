@@ -59,6 +59,19 @@ services:
     networks:
       - webnet
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: vuejs-frontend:latest
+    container_name: vuejs_frontend
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+    networks:
+      - webnet
+
 volumes:
   db_data:
   minio_data:
