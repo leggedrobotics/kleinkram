@@ -60,10 +60,10 @@ services:
       - webnet
 
   frontend:
+    image: rslethz/grandtour-datasets:frontend-latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: vuejs-frontend:latest
     container_name: vuejs_frontend
     volumes:
       - ./frontend/dist:/usr/share/nginx/html:ro
