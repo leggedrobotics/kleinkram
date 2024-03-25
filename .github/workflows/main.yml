@@ -1,4 +1,4 @@
-name: Docker Image CI (LDAP API)
+name: Docker Image CI (GrandTour Datasets)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build_rsl_ldap_api_image:
+  GrandTourBuild:
 
     runs-on: ubuntu-latest
 
