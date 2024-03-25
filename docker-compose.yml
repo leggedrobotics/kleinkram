@@ -65,10 +65,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: vuejs_frontend
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
     ports:
-      - "80:80"
+      - "8003:80"
     networks:
       - webnet
 
