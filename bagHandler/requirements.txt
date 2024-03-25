@@ -62,3 +62,4 @@ typing_extensions==4.10.0
 tzdata==2024.1
 uvicorn==0.28.1
 wcwidth==0.2.13
+aiofiles==23.2.1

@@ -135,6 +135,7 @@ export class RunService {
   }
 
   async create(createRun: CreateRun, file: Express.Multer.File) {
+    const startTime = new Date();
     const project = await this.projectRepository.findOneOrFail({
       where: { uuid: createRun.projectUUID },
     });
@@ -146,6 +147,7 @@ export class RunService {
         formData,
         { responseType: 'arraybuffer' },
       );
+      const pythonTime = new Date();
       const topics: Topic[] = [];
       let date = new Date();
 
@@ -156,6 +158,7 @@ export class RunService {
       } catch (error) {
         console.error(error);
       }
+      const processed = new Date();
 
       const filename = file.originalname.replace('.bag', '.mcap');
       await this.minio.putObject(
@@ -166,6 +169,7 @@ export class RunService {
           'Content-Type': 'application/octet-stream',
         },
       );
+      const uploaded = new Date();
       const newRun = this.runRepository.create({
         name: createRun.name,
         date,
@@ -173,6 +177,9 @@ export class RunService {
         topics,
         filename: file.originalname,
       });
+      console.log(
+        `python: ${(pythonTime.getTime() - startTime.getTime()) / 1000}s, processing: ${(processed.getTime() - pythonTime.getTime()) / 1000}s, uploading: ${(uploaded.getTime() - processed.getTime()) / 1000}s`,
+      );
       return this.runRepository.save(newRun);
     } catch (error) {
       console.error(error);

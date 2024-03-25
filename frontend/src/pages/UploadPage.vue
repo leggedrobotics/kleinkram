@@ -107,29 +107,33 @@ const submitNewRun = async () => {
     return;
   }
   const noti = Notify.create({
-    message: 'Uploading file...',
+    group: false,
+    message: 'Processing file...',
     color: 'primary',
     spinner: true,
     position: 'top-right',
     timeout: 0,
   })
+  const start = new Date();
   await createRun(run_name.value, selected_project.value.uuid, file.value).then(
     (new_run) => {
+      const end = new Date();
       noti({
-        message: `File ${new_run.name} uploaded`,
+        message: `File ${new_run.name} uploaded & processed in ${(end.getTime() - start.getTime())/ 1000} s`,
         color: 'positive',
         spinner: false,
-        timeout: 2000,
+        timeout: 5000,
       })
     }).catch((e) => {
       noti({
-        message: `Upload failed: ${e}`,
+        message: `Upload of File ${run_name.value }failed: ${e}`,
         color: 'negative',
         spinner: false,
         timeout: 2000,
       })
 
   })
+  console.log('completed')
 };
 </script>
 
