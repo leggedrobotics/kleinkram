@@ -1,6 +1,7 @@
 version: '3.7'
 services:
   main:
+    image: rslethz/grandtour-datasets:api-latest
     container_name: API
     build:
       context: ./backend
@@ -45,12 +46,14 @@ services:
     networks:
       - webnet
 
-  fastapi_app: # This is your new FastAPI service
+  fastapi_app:
+    image: rslethz/grandtour-datasets:python-latest
+
     container_name: fastapi_api
-    build: ./bagHandler  # Assuming your FastAPI app is in the same backend directory
+    build: ./bagHandler
 
     ports:
-      - "8000:8000"  # Expose FastAPI on port 8000
+      - "8000:8000"
     env_file:
       - .env
     networks:
