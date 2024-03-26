@@ -33,10 +33,10 @@ export const fetchOverview = async (runName: string,
       return new Run(
         run.uuid,
         run.name,
-        [],
         project,
         new Date(run.date),
         [],
+        run.size,
         new Date(run.createdAt),
         new Date(run.updatedAt),
         new Date(run.deletedAt));
@@ -80,10 +80,10 @@ export const fetchRun = async (uuid: string): Promise<Run> => {
     return new Run(
       run.uuid,
       run.name,
-      [],
       project,
       new Date(run.date),
       topics,
+      run.size,
       new Date(run.createdAt),
       new Date(run.updatedAt),
       new Date(run.deletedAt));

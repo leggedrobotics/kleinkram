@@ -79,6 +79,11 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-banner class="text-white bg-red fixed-bottom">
+      <div class="flex flex-center">
+        DEVELOPMENT SYSTEM: Data will be reset without notice
+      </div>
+    </q-banner>
   </q-layout>
 </template>
 
@@ -102,3 +107,12 @@ function goUpload(): void {
   void $routerService?.routeTo(ROUTES.UPLOAD);
 }
 </script>
+<style>
+.fixed-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999; /* Ensure it stays on top of other content */
+}
+</style>

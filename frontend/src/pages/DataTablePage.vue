@@ -169,7 +169,17 @@ const { isLoading, isError, data, error } = useQuery({ queryKey: [
   ]
   , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
 
-
+function formatSize(val: number): string {
+  if (val < 1024) {
+    return `${val} B`;
+  } else if (val < 1024 * 1024) {
+    return `${(val / 1024).toFixed(2)} KB`;
+  } else if (val < 1024 * 1024 * 1024) {
+    return `${(val / (1024 * 1024)).toFixed(2)} MB`;
+  } else {
+    return `${(val / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+}
 const columns = [
   {
     name: 'Project',
@@ -196,6 +206,15 @@ const columns = [
     align: 'left',
     field: (row: Run)  => row.date,
     format: (val:string) => format(new Date(val), 'MMMM dd, yyyy'),
+    sortable: true
+  },
+  {
+    name: 'Size',
+    required: true,
+    label: 'Size',
+    align: 'left',
+    field: (row: Run)  => row.size,
+    format: formatSize,
     sortable: true
   },
   {

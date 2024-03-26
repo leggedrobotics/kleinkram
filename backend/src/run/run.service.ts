@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Project from '../project/entities/project.entity';
-import { Like, Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Client } from 'minio';
 import { loadDecompressHandlers } from '@mcap/support';
-import { BlobReadable } from '@mcap/browser';
 import { McapIndexedReader } from '@mcap/core';
 
 import Run from './entities/run.entity';
@@ -16,6 +15,18 @@ import { TopicService } from '../topic/topic.service';
 import env from '../env';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
 import Topic from '../topic/entities/topic.entity';
+import { DriveCreate } from './entities/drive-create.dto';
+import { google } from 'googleapis';
+import * as path from 'path';
+
+const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
+const KEYFILEPATH = 'grandtourdatasets-5295745f7fab.json';
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: KEYFILEPATH,
+  scopes: SCOPES,
+});
+
 @Injectable()
 export class RunService {
   private minio: Client = new Client({
@@ -65,7 +76,6 @@ export class RunService {
       });
     }
     const splitTopics = topics.split(',');
-    console.log('and_or:', and_or);
     if (topics && topics.length > 0) {
       if (and_or) {
         splitTopics.forEach((topic, index) => {
@@ -96,6 +106,13 @@ export class RunService {
     });
   }
 
+  extractFileIdFromUrl(url: string): string | null {
+    const regex =
+      /drive\.google\.com\/(?:file\/d\/|open\?id=|drive\/folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})/;
+
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }
   async processMcapFile(arrayBuffer: ArrayBuffer) {
     const decompressHandlers = await loadDecompressHandlers();
 
@@ -121,69 +138,105 @@ export class RunService {
       topics.push(topic);
     });
     const resolved = await Promise.all(topics);
-    // for await (const message of reader.readMessages()) {
-    //   console.log('Message:', message);
-    // }
-
-    // At this point, `topics` contains the list of topics found in the MCAP file
-    // Here you can call your service to create topics, or perform other actions
-    // with the extracted data.
     return {
       topics: resolved,
       date: new Date(Number(stats.messageStartTime / 1000000n)),
     };
   }
+  async convertFile(buffer: Buffer, filename: string) {
+    const formData = new FormData();
+    formData.append('file', buffer, filename);
+    const topics: Topic[] = [];
+
+    const response = await axios.post(
+      'http://fastapi_app:8000/newBag',
+      formData,
+      { responseType: 'arraybuffer' },
+    );
+    const res = await this.processMcapFile(response.data);
+    topics.push(...res.topics);
+
+    return { topics, response, date: res.date };
+  }
+
+  async uploadToMinio(response: any, originalname: string) {
+    const filename = originalname.replace('.bag', '.mcap');
+    await this.minio.putObject(
+      env.MINIO_BAG_BUCKET_NAME,
+      filename,
+      response.data,
+      {
+        'Content-Type': 'application/octet-stream',
+      },
+    );
+  }
+
+  async createDrive(driveCreate: DriveCreate) {
+    const project = await this.projectRepository.findOneOrFail({
+      where: { uuid: driveCreate.projectUUID },
+    });
+    const drive = google.drive({ version: 'v3', auth });
+    const fileId = this.extractFileIdFromUrl(driveCreate.driveURL);
+    const metadataRes = await drive.files.get({
+      fileId: fileId,
+      fields: 'name',
+    });
+    const name = metadataRes.data.name;
+    const res = await drive.files.get(
+      {
+        fileId,
+        alt: 'media',
+      },
+      { responseType: 'stream' },
+    );
+    const chunks = [];
+    const buffer: Buffer = await new Promise((resolve, reject) => {
+      res.data
+        .on('data', (chunk) => chunks.push(chunk))
+        .on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          resolve(buffer);
+        })
+        .on('error', (err) => {
+          console.error('Error downloading file.');
+          reject(err);
+        });
+    });
+    const { topics, response, date } = await this.convertFile(buffer, name);
+    await this.uploadToMinio(response, name);
+
+    const newRun = this.runRepository.create({
+      name: driveCreate.name,
+      date,
+      project,
+      topics,
+      filename: name,
+      size: buffer.length,
+    });
+
+    return this.runRepository.save(newRun);
+  }
 
   async create(createRun: CreateRun, file: Express.Multer.File) {
-    const startTime = new Date();
     const project = await this.projectRepository.findOneOrFail({
       where: { uuid: createRun.projectUUID },
     });
-    const formData = new FormData();
-    formData.append('file', file.buffer, file.originalname);
-    try {
-      const response = await axios.post(
-        'http://fastapi_app:8000/newBag',
-        formData,
-        { responseType: 'arraybuffer' },
-      );
-      const pythonTime = new Date();
-      const topics: Topic[] = [];
-      let date = new Date();
+    const { topics, response, date } = await this.convertFile(
+      file.buffer,
+      file.originalname,
+    );
+    await this.uploadToMinio(response, file.originalname);
 
-      try {
-        const res = await this.processMcapFile(response.data);
-        topics.push(...res.topics);
-        date = res.date;
-      } catch (error) {
-        console.error(error);
-      }
-      const processed = new Date();
+    const newRun = this.runRepository.create({
+      name: createRun.name,
+      date,
+      project,
+      topics,
+      filename: file.originalname,
+      size: file.buffer.length,
+    });
 
-      const filename = file.originalname.replace('.bag', '.mcap');
-      await this.minio.putObject(
-        env.MINIO_BAG_BUCKET_NAME,
-        filename,
-        response.data,
-        {
-          'Content-Type': 'application/octet-stream',
-        },
-      );
-      const uploaded = new Date();
-      const newRun = this.runRepository.create({
-        name: createRun.name,
-        date,
-        project,
-        topics,
-        filename: file.originalname,
-      });
-      console.log(
-        `python: ${(pythonTime.getTime() - startTime.getTime()) / 1000}s, processing: ${(processed.getTime() - pythonTime.getTime()) / 1000}s, uploading: ${(uploaded.getTime() - processed.getTime()) / 1000}s`,
-      );
-      return this.runRepository.save(newRun);
-    } catch (error) {
-      console.error(error);
-    }
+    return this.runRepository.save(newRun);
   }
 
   async update(uuid: string, run: UpdateRun) {
@@ -195,7 +248,6 @@ export class RunService {
     });
     db_run.project = project;
     await this.runRepository.save(db_run);
-    console.log('Updated run:', db_run);
     return this.runRepository.findOne({ where: { uuid } });
   }
 

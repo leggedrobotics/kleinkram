@@ -21,6 +21,11 @@ export const createRun = async (name: string, projectUUID: string, file: File): 
   return response.data;
 }
 
+export const createDrive = async (name: string, projectUUID: string, driveURL: string) => {
+  const response = await axios.post('/run/createdrive', { name, projectUUID, driveURL });
+  return response.data;
+}
+
 export const updateRun = async(run: Run) => {
   const response = await axios.put(`/run/${run.uuid}`, run);
   return response.data;

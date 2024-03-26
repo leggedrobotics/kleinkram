@@ -24,34 +24,26 @@ export class Project extends BaseEntity{
 
 export class Run extends BaseEntity {
   name: string;
-  sensorData: SensorData[];
   project: Project;
   date: Date;
   topics: Topic[];
+  size: number;
   constructor(uuid: string,
               name: string,
-              sensorData: SensorData[],
               project: Project,
               date: Date,
               topics: Topic[],
+              size: number,
               createdAt: Date | null,
               updatedAt: Date | null,
               deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
-    this.sensorData = sensorData;
+    this.size = size;
     this.project = project;
     this.date = date;
     this.name = name;
     this.topics = topics;
   }
-}
-
-export class SensorData extends BaseEntity {
-    run: Run;
-    constructor(uuid: string, run: Run, createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
-        super(uuid, createdAt, updatedAt, deletedAt);
-        this.run = run;
-    }
 }
 
 export class Topic extends BaseEntity {

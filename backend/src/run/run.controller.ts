@@ -13,6 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { RunService } from './run.service';
 import { UpdateRun } from './entities/update-run.dto';
 import { CreateRun } from './entities/create-run.dto';
+import { DriveCreate } from './entities/drive-create.dto';
 
 @Controller('run')
 export class RunController {
@@ -59,6 +60,11 @@ export class RunController {
     @Body() body: CreateRun, // Use a specific DTO type if available
   ) {
     return this.runService.create(body, file);
+  }
+
+  @Post('createdrive')
+  async createDrive(@Body() body: DriveCreate) {
+    return this.runService.createDrive(body);
   }
 
   @Put(':uuid')

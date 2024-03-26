@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RunModule } from './run/run.module';
-import { SensorDataModule } from './sensorData/sensor-data.module';
 import { ProjectController } from './project/project.controller';
 import { ProjectModule } from './project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -32,7 +31,6 @@ import { TopicModule } from './topic/topic.module';
       inject: [ConfigService],
     }),
     RunModule,
-    SensorDataModule,
     ProjectModule,
     TopicModule,
   ],
