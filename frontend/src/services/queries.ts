@@ -19,7 +19,6 @@ export const fetchOverview = async (runName: string,
       topics: topics.join(','),
       andOr: andOr ? '1': ''
     }).toString();
-    console.log('fetching with: ', queryParams)
     const response = await axios.get(`/run/filtered?${queryParams}`);
     const res = response.data.map((run: any) => {
       const project = new Project(
@@ -102,4 +101,9 @@ export const allTopics = async () => {
 export const downloadBag = async (uuid: string) => {
   const response = await axios.get('run/download/' + uuid, )
   return response.data
+}
+
+export const allTopicsNames = async (): Promise<string[]> => {
+  const response = await axios.get('/topic/names');
+  return response.data;
 }

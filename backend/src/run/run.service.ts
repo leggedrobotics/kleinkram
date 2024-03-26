@@ -78,22 +78,21 @@ export class RunService {
     const splitTopics = topics.split(',');
     if (topics && topics.length > 0) {
       if (and_or) {
-        splitTopics.forEach((topic, index) => {
+        splitTopics.forEach((topicName, index) => {
           query.andWhere((qb) => {
-            const key = `topicUuid${index}`;
+            const key = `topicName${index}`;
             const subQuery = qb
               .subQuery()
               .select('runTopic.runUuid')
-              .from('run_topics_topic', 'runTopic')
-              .where(`runTopic.topicUuid = :topicUuid${index}`, {
-                [key]: topic,
-              })
+              .from('run_topics_topic', 'runTopic') // Reference the join table
+              .leftJoin('topic', 'topic', 'topic.Uuid = runTopic.topicUuid') // Join with the Topic entity
+              .where(`topic.name = :${key}`, { [key]: topicName })
               .getQuery();
-            return `run.Uuid IN ${subQuery}`;
+            return `run.uuid IN ${subQuery}`;
           });
         });
       } else {
-        query.andWhere('topic.uuid IN (:...splitTopics)', { splitTopics });
+        query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
       }
     } // Execute the query
     return query.getMany();

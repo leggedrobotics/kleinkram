@@ -1,14 +1,14 @@
 <template>
   <q-card class="q-pa-md" flat bordered>
-    <div class="row">
-      <div class="col-1 col-lg-2">
+    <div class="row q-gutter-sm">
+      <div class="col-12 col-md-2">
         <q-btn-dropdown
           v-model="dd_open"
           :label="selected_project?.name || 'Filter by Project'"
           outlined
           dense
           clearable
-          required
+          class="full-width"
         >
           <q-list>
             <q-item
@@ -18,25 +18,34 @@
               @click="selected_project = project; dd_open=false"
             >
               <q-item-section>
-                <q-item-label>
-                  {{ project.name }}
-                </q-item-label>
+                <q-item-label>{{ project.name }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
         </q-btn-dropdown>
       </div>
-      <div class="col-3 col-lg-2">
+
+      <div class="col-12 col-md-1">
         <q-input
           v-model="filter"
           outlined
           dense
           clearable
           placeholder="Filter by Run Name"
+          class="full-width"
         />
       </div>
-      <div class="col-3">
-        <q-input filled v-model="dateTimeString">
+
+      <div class="col-12 col-md-3">
+        <q-input
+          filled
+          v-model="dateTimeString"
+          dense
+          outlined
+          clearable
+          class="full-width"
+          placeholder="Select Date Range"
+        >
           <template v-slot:prepend>
             <q-icon name="event" class="cursor-pointer">
               <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -50,7 +59,8 @@
           </template>
         </q-input>
       </div>
-      <div class="col-2 col-lg-4">
+
+      <div class="col-12 col-md-3">
         <q-select
           v-model="selectedTopics"
           label="Select Topics"
@@ -59,18 +69,22 @@
           clearable
           multiple
           use-chips
-          option-value="uuid"
-          option-label="name"
           :options="topics"
           emit-value
           map-options
-          required
+          class="full-width"
         />
       </div>
-      <div class="col-1 col-lg-1">
-        <q-toggle v-model="and_or" :label="and_or ? 'And' : 'Or'"/>
+
+      <div class="col-12 col-md-1 flex flex-center">
+        <div>
+          <q-toggle v-model="and_or" :label="and_or ? 'And' : 'Or'" dense />
+          <q-tooltip >Toggle between AND/OR conditions for the topics. <br>And: Run contains all selected topics, Or: Run contains any of the selected topics</q-tooltip>
+        </div>
       </div>
+
     </div>
+
 
     <q-separator class="q-ma-md"/>
     <QTable
@@ -106,7 +120,7 @@
 import { computed, inject, Ref, ref, watch } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
-import { allProjects, allTopics, fetchOverview } from 'src/services/queries';
+import { allProjects, allTopics, allTopicsNames, fetchOverview } from 'src/services/queries';
 import { format } from 'date-fns';
 import { Project, Run, Topic } from 'src/types/types';
 import EditRun from 'components/EditRun.vue';
@@ -132,7 +146,7 @@ const dd_open = ref(false);
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
 
-const topicsReturn = useQuery<Topic[]>({ queryKey: ['topics'], queryFn: allTopics });
+const topicsReturn = useQuery<string[]>({ queryKey: ['topics'], queryFn: allTopicsNames });
 const topics = topicsReturn.data
 const selectedTopics = ref([]);
 const and_or = ref(false)
