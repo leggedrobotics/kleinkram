@@ -24,6 +24,29 @@
           </q-list>
         </q-btn-dropdown>
       </div>
+      <div class="col-12 col-md-2">
+        <q-btn-dropdown
+          v-model="dd_open_runs"
+          :label="selected_run?.name || 'Filter by Run'"
+          outlined
+          dense
+          clearable
+          class="full-width"
+        >
+          <q-list>
+            <q-item
+              v-for="run in runs"
+              :key="run.uuid"
+              clickable
+              @click="selected_run = run; dd_open_runs=false"
+            >
+              <q-item-section>
+                <q-item-label>{{ run.name }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+      </div>
 
       <div class="col-12 col-md-1">
         <q-input
@@ -61,27 +84,29 @@
       </div>
 
       <div class="col-12 col-md-3">
-        <q-select
-          v-model="selectedTopics"
-          label="Select Topics"
-          outlined
-          dense
-          clearable
-          multiple
-          use-chips
-          :options="topics"
-          emit-value
-          map-options
-          class="full-width"
-        />
-      </div>
-
-      <div class="col-12 col-md-1 flex flex-center">
-        <div>
-          <q-toggle v-model="and_or" :label="and_or ? 'And' : 'Or'" dense />
-          <q-tooltip >Toggle between AND/OR conditions for the topics. <br>And: Run contains all selected topics, Or: Run contains any of the selected topics</q-tooltip>
+        <div class="row ">
+          <div class="col-10">
+            <q-select
+              v-model="selectedTopics"
+              label="Select Topics"
+              outlined
+              dense
+              clearable
+              multiple
+              use-chips
+              :options="topics"
+              emit-value
+              map-options
+              class="full-width"
+            />
+          </div>
+          <div class="col-2 flex justify-center">
+            <q-toggle style="padding-left: 5px" v-model="and_or" :label="and_or ? 'And' : 'Or'" dense />
+            <q-tooltip >Toggle between AND/OR conditions for the topics. <br>And: Run contains all selected topics, Or: Run contains any of the selected topics</q-tooltip>
+          </div>
         </div>
       </div>
+
 
     </div>
 
@@ -117,13 +142,13 @@
   </q-card>
 </template>
 <script setup lang="ts">
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
-import { allProjects, allTopics, allTopicsNames, fetchOverview } from 'src/services/queries';
+import { allProjects, allTopics, allTopicsNames, fetchOverview, runsOfProject } from 'src/services/queries';
 import { format } from 'date-fns';
-import { Project, Run, Topic } from 'src/types/types';
-import EditRun from 'components/EditRun.vue';
+import { FileEntity, Project, Run, Topic } from 'src/types/types';
+import EditRun from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
@@ -145,6 +170,24 @@ const selected_project: Ref<Project | null> = ref(null);
 const dd_open = ref(false);
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
+
+const dd_open_runs = ref(false);
+const selected_run: Ref<Run | null> = ref(null);
+
+const { data: runs, refetch } = useQuery(
+  { queryKey: ['runs', selected_project.value?.uuid],
+    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+    enabled: !!selected_project.value?.uuid,
+  }
+);
+
+watchEffect(() => {
+  if (selected_project.value?.uuid) {
+    refetch();
+  }
+});
+
+
 
 const topicsReturn = useQuery<string[]>({ queryKey: ['topics'], queryFn: allTopicsNames });
 const topics = topicsReturn.data
@@ -176,12 +219,13 @@ const { isLoading, isError, data, error } = useQuery({ queryKey: [
   'runs',
     debouncedFilter,
     selected_project,
+    selected_run,
     startDate,
     endDate,
     selectedTopics,
     and_or
   ]
-  , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
+  , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid,selected_run.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
 
 function formatSize(val: number): string {
   if (val < 1024) {
@@ -200,7 +244,7 @@ const columns = [
     required: true,
     label: 'Project',
     align: 'left',
-    field: (row: Run) => row.project.name,
+    field: (row: FileEntity) => row.run.project.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -209,7 +253,16 @@ const columns = [
     required: true,
     label: 'Run Name',
     align: 'left',
-    field: (row: Run)  => row.name,
+    field: (row: FileEntity) => row.run.name,
+    format: (val:string) => `${val}`,
+    sortable: true
+  },
+  {
+    name: 'File',
+    required: true,
+    label: 'File Name',
+    align: 'left',
+    field: (row: FileEntity)  => row.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -218,7 +271,7 @@ const columns = [
     required: true,
     label: 'Date',
     align: 'left',
-    field: (row: Run)  => row.date,
+    field: (row: FileEntity)  => row.date,
     format: (val:string) => format(new Date(val), 'MMMM dd, yyyy'),
     sortable: true
   },
@@ -227,7 +280,7 @@ const columns = [
     required: true,
     label: 'Size',
     align: 'left',
-    field: (row: Run)  => row.size,
+    field: (row: FileEntity)  => row.size,
     format: formatSize,
     sortable: true
   },

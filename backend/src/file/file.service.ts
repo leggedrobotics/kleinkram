@@ -59,8 +59,9 @@ export class FileService {
     // Start building your query with basic filters
     const query = this.fileRepository
       .createQueryBuilder('file')
-      .leftJoinAndSelect('file.project', 'project')
-      .leftJoinAndSelect('file.topics', 'topic');
+      .leftJoinAndSelect('file.run', 'run')
+      .leftJoinAndSelect('file.topics', 'topic')
+      .leftJoinAndSelect('run.project', 'project');
 
     // Apply filters for fileName, projectUUID, and date
     if (fileName) {
@@ -230,7 +231,7 @@ export class FileService {
     await this.uploadToMinio(response, file.originalname);
 
     const newFile = this.fileRepository.create({
-      name: createFile.name,
+      name: file.originalname,
       date,
       run,
       topics,

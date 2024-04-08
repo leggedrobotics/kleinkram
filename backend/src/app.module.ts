@@ -9,6 +9,7 @@ import configuration from './config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
 import { RunService } from './run/run.service';
+import { RunModule } from './run/run.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,7 +35,7 @@ import { RunService } from './run/run.service';
     FileModule,
     ProjectModule,
     TopicModule,
-    RunService,
+    RunModule,
   ],
   controllers: [ProjectController],
 })

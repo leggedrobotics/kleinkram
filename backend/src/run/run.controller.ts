@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { RunService } from './run.service';
 import { CreateRun } from './entities/create-run.dto';
 
@@ -9,5 +9,10 @@ export class RunController {
   @Post('create')
   async createRun(@Body() createRun: CreateRun) {
     return this.runService.create(createRun);
+  }
+
+  @Get('filtered/:projectUUID')
+  async filteredRuns(@Param('projectUUID') projectUUID: string) {
+    return this.runService.findRunByProject(projectUUID);
   }
 }

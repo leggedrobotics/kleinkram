@@ -5,11 +5,11 @@
         <h4>
           Edit run {{isLoading ? '...' : data?.name}}
         </h4>
-        <q-form v-if="editableRun">
+        <q-form v-if="editableFile">
           <div class="row items-center justify-between q-gutter-md">
             <div class="col-5">
               <q-input
-                v-model="editableRun.name"
+                v-model="editableFile.name"
                 label="Name"
                 outlined
                 dense
@@ -20,7 +20,7 @@
             <div class="col-1">
               <q-btn-dropdown
                 v-model="dd_open"
-                :label="editableRun.project?.name || 'Project'"
+                :label="editableFile.project?.name || 'Project'"
                 outlined
                 dense
                 clearable
@@ -31,7 +31,7 @@
                     v-for="project in projects"
                     :key="project.uuid"
                     clickable
-                    @click="editableRun.project = project; dd_open=false"
+                    @click="editableFile.project = project; dd_open=false"
                   >
                     <q-item-section>
                       <q-item-label>
@@ -92,15 +92,15 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery,useQueryClient } from '@tanstack/vue-query';
-import { allProjects, fetchRun } from 'src/services/queries';
+import { allProjects, fetchFile } from 'src/services/queries';
 import { Ref, ref, watch } from 'vue';
-import { Project, Run } from 'src/types/types';
-import { updateRun } from 'src/services/mutations';
+import { FileEntity, Project, Run } from 'src/types/types';
+import { updateFile } from 'src/services/mutations';
 import { useDialogPluginComponent } from 'quasar'
 import { formatDate, parseDate } from 'src/services/dateFormating';
 
 const props = defineProps<{
-  run_uuid: string;
+  file_uuid: string;
 }>();
 
 defineEmits([
@@ -111,17 +111,17 @@ const queryClient = useQueryClient();
 
 const dd_open = ref(false);
 const { isLoading, isError, data, error } = useQuery({
-  queryKey: ['run', props.run_uuid],
-  queryFn: ()=>fetchRun(props.run_uuid) });
+  queryKey: ['file', props.file_uuid],
+  queryFn: ()=>fetchFile(props.file_uuid) });
 
 const dateTime = ref('');
-const editableRun: Ref<Run | null> = ref(null);
+const editableFile: Ref<FileEntity | null> = ref(null);
 // Watch for changes in data.value and update dateTime accordingly
 watch(() => data.value, (newValue) => {
   if (newValue?.date) {
-    editableRun.value = new Run(newValue.uuid,
+    editableFile.value = new FileEntity(newValue.uuid,
       newValue.name,
-      newValue.project,
+      newValue.run,
       newValue.date,
       [],
       newValue.size,
@@ -136,8 +136,8 @@ watch(() => data.value, (newValue) => {
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
 
-const { mutate: updateRunMutation } = useMutation({
-  mutationFn: (runData: Run) => updateRun(runData),
+const { mutate: updateFileMutation } = useMutation({
+  mutationFn: (fileData: FileEntity) => updateFile(fileData),
   onSuccess(data, variables, context) {
     // queryClient.invalidateQueries([])
   },
@@ -145,9 +145,9 @@ const { mutate: updateRunMutation } = useMutation({
 
 function _updateRun() {
   const convertedDate = parseDate(dateTime.value);
-  if (editableRun.value && convertedDate && !isNaN(convertedDate.getTime())) {
-    editableRun.value.date = convertedDate
-    updateRunMutation(editableRun.value);
+  if (editableFile.value && convertedDate && !isNaN(convertedDate.getTime())) {
+    editableFile.value.date = convertedDate
+    updateFileMutation(editableFile.value);
     onDialogOK();
   }
 }

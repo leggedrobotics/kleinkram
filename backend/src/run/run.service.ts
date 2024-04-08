@@ -23,4 +23,12 @@ export class RunService {
     const newRun = await this.runRepository.save(run);
     return this.runRepository.findOneOrFail({ where: { uuid: newRun.uuid } });
   }
+
+  async findRunByProject(projectUUID: string): Promise<Run[]> {
+    const project = await this.projectRepository.findOneOrFail({
+      where: { uuid: projectUUID },
+      relations: ['runs'],
+    });
+    return project.runs;
+  }
 }
