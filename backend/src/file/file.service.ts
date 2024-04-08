@@ -15,7 +15,7 @@ import env from '../env';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
 import Topic from '../topic/entities/topic.entity';
 import { DriveCreate } from './entities/drive-create.dto';
-import { google } from 'googleapis';
+import { drive_v3, google } from 'googleapis';
 import Run from '../run/entities/run.entity';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
@@ -150,7 +150,7 @@ export class FileService {
     const formData = new FormData();
     formData.append('file', buffer, filename);
     const topics: Topic[] = [];
-
+    console.log('converting file', filename);
     const response = await axios.post(
       'http://fastapi_app:8000/newBag',
       formData,
@@ -173,18 +173,27 @@ export class FileService {
       },
     );
   }
+  async handleDriveFolder(folder_id: string, run: Run, drive: drive_v3.Drive) {
+    const response = await drive.files.list({
+      q: `'${folder_id}' in parents`,
+      fields: 'nextPageToken, files(id, name, mimeType)',
+    });
 
-  async createDrive(driveCreate: DriveCreate) {
-    const run = await this.runRepository.findOneOrFail({
-      where: { uuid: driveCreate.runUUID },
+    const res = response.data.files.map(async (file) => {
+      if (file.mimeType === 'application/vnd.google-apps.folder') {
+        return this.handleDriveFolder(file.id, run, drive);
+      }
+      return this.handleDriveFile(file.id, file.name, run, drive);
     });
-    const drive = google.drive({ version: 'v3', auth });
-    const fileId = this.extractFileIdFromUrl(driveCreate.driveURL);
-    const metadataRes = await drive.files.get({
-      fileId: fileId,
-      fields: 'name',
-    });
-    const name = metadataRes.data.name;
+    const converted = await Promise.all(res);
+    return converted.flat();
+  }
+  async handleDriveFile(
+    fileId: string,
+    name: string,
+    run: Run,
+    drive: drive_v3.Drive,
+  ) {
     const res = await drive.files.get(
       {
         fileId,
@@ -209,7 +218,7 @@ export class FileService {
     await this.uploadToMinio(response, name);
 
     const newFile = this.fileRepository.create({
-      name: driveCreate.name,
+      name,
       date,
       run: run,
       topics,
@@ -218,6 +227,23 @@ export class FileService {
     });
 
     return this.fileRepository.save(newFile);
+  }
+
+  async createDrive(driveCreate: DriveCreate) {
+    const run = await this.runRepository.findOneOrFail({
+      where: { uuid: driveCreate.runUUID },
+    });
+    const drive = google.drive({ version: 'v3', auth });
+    const fileId = this.extractFileIdFromUrl(driveCreate.driveURL);
+    const metadataRes = await drive.files.get({
+      fileId: fileId,
+      fields: 'name,mimeType',
+    });
+    console.log(metadataRes.data);
+    if (metadataRes.data.mimeType !== 'application/vnd.google-apps.folder') {
+      return this.handleDriveFile(fileId, metadataRes.data.name, run, drive);
+    }
+    return this.handleDriveFolder(fileId, run, drive);
   }
 
   async create(createFile: CreateFile, file: Express.Multer.File) {
