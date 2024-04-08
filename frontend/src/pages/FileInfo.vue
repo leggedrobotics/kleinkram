@@ -1,10 +1,10 @@
 <template>
-  <InspectRun :run_uuid="route.query.uuid" />
+  <InspectFile :run_uuid="route.query.uuid" />
 </template>
 
 <script setup lang="ts">
 
-import InspectRun from 'components/InspectRun.vue';
+import InspectFile from 'components/InspectFile.vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()

@@ -3,10 +3,13 @@
     <q-card-section>
       <h3>{{data?.name}}</h3>
       <div class="row">
-        <div class="col-1">
-          {{data?.project.name}}
+        <div class="col-2">
+          {{data?.run.project.name}}
         </div>
-        <div class="col-1">
+        <div class="col-2">
+          {{data?.run.name}}
+        </div>
+        <div class="col-2">
           <p v-if="data?.date">
             {{formatDate(data?.date, true)}}
           </p>

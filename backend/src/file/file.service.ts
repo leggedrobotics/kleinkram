@@ -136,7 +136,7 @@ export class FileService {
         channel.topic,
         schema.name,
         nr_messages,
-        Number(nr_messages) / (Number(duration) / 1000),
+        Number(nr_messages) / (Number(duration / 1000n) / 1000000),
       );
       topics.push(topic);
     });

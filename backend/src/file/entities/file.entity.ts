@@ -14,7 +14,7 @@ export default class File extends BaseEntity {
   @Column()
   date: Date;
 
-  @ManyToMany(() => Topic, (topic) => topic.runs)
+  @ManyToMany(() => Topic, (topic) => topic.runs, { cascade: true })
   @JoinTable()
   topics: Topic[];
 

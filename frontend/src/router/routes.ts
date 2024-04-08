@@ -27,7 +27,7 @@ const ROUTES: Record<string, RouteRecordRaw> = {
   RUN: {
     path: '/file',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/RunInfo.vue') }],
+    children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
   },
 };
 
