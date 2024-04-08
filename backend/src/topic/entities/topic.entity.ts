@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
-import Run from '../../run/entities/run.entity';
+import Run from '../../file/entities/file.entity';
 
 @Entity()
 export default class Topic extends BaseEntity {

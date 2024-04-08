@@ -12,7 +12,7 @@ export class TopicService {
   async findAllNames() {
     const distinctNames = await this.topicRepository
       .createQueryBuilder('entity')
-      .select('DISTINCT entity.name', 'name')
+      .select('DISTINCT entities.name', 'name')
       .orderBy('name') // Optional: Order by name if desired
       .getRawMany();
 

@@ -87,7 +87,7 @@ export default {
 
   /**
    * @returns glob describing where typeorm entities are found
-   * @example dist/entities/*.entity.js
+   * @example dist/entities/*.entities.js
    */
   get ENTITIES(): string {
     return asString(process.env.ENTITIES);

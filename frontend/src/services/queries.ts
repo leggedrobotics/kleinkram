@@ -88,7 +88,7 @@ export const fetchRun = async (uuid: string): Promise<Run> => {
       new Date(run.deletedAt));
   }
   catch (error) {
-    console.error('Error fetching run:', error);
+    console.error('Error fetching file:', error);
     throw error; // Rethrow or handle as appropriate
   }
 }

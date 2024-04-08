@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RunModule } from './run/run.module';
+import { FileModule } from './file/file.module';
 import { ProjectController } from './project/project.controller';
 import { ProjectModule } from './project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -8,6 +8,7 @@ import env from './env';
 import configuration from './config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
+import { RunService } from './run/run.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,9 +31,10 @@ import { TopicModule } from './topic/topic.module';
         }) as PostgresConnectionOptions,
       inject: [ConfigService],
     }),
-    RunModule,
+    FileModule,
     ProjectModule,
     TopicModule,
+    RunService,
   ],
   controllers: [ProjectController],
 })

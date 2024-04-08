@@ -240,7 +240,7 @@ const columns = [
   }
 ]
 /**
- * open a q-dialog with a run editor
+ * open a q-dialog with a file editor
  */
 function openQDialog(run: Run): void {
   $q.dialog({

@@ -1,7 +1,7 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import Project from '../../project/entities/project.entity';
-import Topic from '../../topic/entities/topic.entity';
+import File from '../../file/entities/file.entity';
 
 @Entity()
 export default class Run extends BaseEntity {
@@ -11,16 +11,6 @@ export default class Run extends BaseEntity {
   @ManyToOne(() => Project, (project) => project.runs)
   project: Project;
 
-  @Column()
-  date: Date;
-
-  @ManyToMany(() => Topic, (topic) => topic.runs)
-  @JoinTable()
-  topics: Topic[];
-
-  @Column()
-  filename: string;
-
-  @Column()
-  size: number;
+  @OneToMany(() => File, (file) => file.run)
+  files: File[];
 }
