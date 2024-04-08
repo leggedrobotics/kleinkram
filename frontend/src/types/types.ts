@@ -21,16 +21,27 @@ export class Project extends BaseEntity{
     }
 }
 
-
 export class Run extends BaseEntity {
   name: string;
   project: Project;
+  files: FileEntity[];
+  constructor(uuid: string, name: string, project: Project, files: FileEntity[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+    super(uuid, createdAt, updatedAt, deletedAt);
+    this.name = name;
+    this.project = project;
+    this.files = files;
+  }
+}
+
+export class FileEntity extends BaseEntity {
+  name: string;
+  run: Run;
   date: Date;
   topics: Topic[];
   size: number;
   constructor(uuid: string,
               name: string,
-              project: Project,
+              run: Run,
               date: Date,
               topics: Topic[],
               size: number,
@@ -39,7 +50,7 @@ export class Run extends BaseEntity {
               deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
     this.size = size;
-    this.project = project;
+    this.run = run;
     this.date = date;
     this.name = name;
     this.topics = topics;

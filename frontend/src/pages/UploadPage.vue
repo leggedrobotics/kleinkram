@@ -6,8 +6,8 @@
         <div class="col-5">
           <q-form @submit="submitNewProject">
             <q-input
-              v-model="name"
-              label="Name"
+              v-model="projectName"
+              label="Project Name"
               outlined
               dense
               clearable
@@ -25,21 +25,63 @@
     </q-card-section>
     <q-card-section>
       <h3 class="text-h6">Create new run</h3>
+      <div class="row justify-between q-gutter-md">
+        <div class="col-5">
+          <q-form @submit="submitNewRun">
+            <div class="row items-center justify-between q-gutter-md">
+            <div class="col-5">
+              <q-input
+                v-model="runName"
+                label="Run Name"
+                outlined
+                dense
+                clearable
+                required
+              />
+            </div>
+            <div class="col-4">
+              <q-btn-dropdown
+                v-model="ddr_open"
+                :label="selected_project?.name || 'Project'"
+                outlined
+                dense
+                clearable
+                required
+              >
+                <q-list>
+                  <q-item
+                    v-for="project in data"
+                    :key="project.uuid"
+                    clickable
+                    @click="selected_project = project; ddr_open=false"
+                  >
+                    <q-item-section>
+                      <q-item-label>
+                        {{ project.name }}
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
+            </div>
+          </div>
+          </q-form>
+        </div>
+        <div class="col-2">
+          <q-btn
+            label="Submit"
+            color="primary"
+            @click="submitNewRun"/>
+        </div>
+      </div>
+    </q-card-section>
+    <q-card-section>
+      <h3 class="text-h6">Create new file</h3>
       <q-form @submit.prevent="submitNewProject">
         <div class="row items-center justify-between q-gutter-md">
-          <div class="col-5">
-            <q-input
-              v-model="run_name"
-              label="Name"
-              outlined
-              dense
-              clearable
-              required
-            />
-          </div>
           <div class="col-1">
             <q-btn-dropdown
-              v-model="dd_open"
+              v-model="dropdownNewFileProject"
               :label="selected_project?.name || 'Project'"
               outlined
               dense
@@ -51,7 +93,32 @@
                   v-for="project in data"
                   :key="project.uuid"
                   clickable
-                  @click="selected_project = project; dd_open=false"
+                  @click="selected_project = project; dropdownNewFileProject=false"
+                >
+                  <q-item-section>
+                    <q-item-label>
+                      {{ project.name }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+          </div>
+          <div class="col-1">
+            <q-btn-dropdown
+              v-model="dropdownNewFileRun"
+              :label="selected_project?.name || 'Run'"
+              outlined
+              dense
+              clearable
+              required
+            >
+              <q-list>
+                <q-item
+                  v-for="project in data"
+                  :key="project.uuid"
+                  clickable
+                  @click="selected_project = project; dropdownNewFileProject=false"
                 >
                   <q-item-section>
                     <q-item-label>
@@ -81,7 +148,7 @@
               <q-btn
                 label="Submit"
                 color="primary"
-                @click="submitNewRun"/>
+                @click="submitNewFile"/>
             </div>
         </div>
       </q-form>
@@ -98,19 +165,22 @@ import { useQuery } from '@tanstack/vue-query'
 import { Project } from 'src/types/types';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { Notify } from 'quasar'
-const name = ref('');
-const run_name = ref('');
-const dd_open = ref(false);
+const projectName = ref('');
+const runName = ref('');
+const fileName = ref('');
+const ddr_open = ref(false);
+const dropdownNewFileProject = ref(false);
+const dropdownNewFileRun = ref(false);
 const selected_project: Ref<Project | null> = ref(null);
 const file = ref<File | null>(null);
 const drive_url = ref('');
 
 const { isLoading, isError, data, error } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const submitNewProject = async () => {
-  const new_project = await createProject(name.value )
+  const new_project = await createProject(projectName.value )
 };
 
-const submitNewRun = async () => {
+const submitNewFile = async () => {
   if (!selected_project.value ) {
     return;
   }
@@ -124,7 +194,7 @@ const submitNewRun = async () => {
   })
   const start = new Date();
   if (file.value) {
-    await createRun(run_name.value, selected_project.value.uuid, file.value).then(
+    await createRun(fileName.value, selected_project.value.uuid, file.value).then(
       (new_run) => {
         const end = new Date();
         noti({
@@ -135,7 +205,7 @@ const submitNewRun = async () => {
         })
       }).catch((e) => {
       noti({
-        message: `Upload of File ${run_name.value}failed: ${e}`,
+        message: `Upload of File ${fileName.value}failed: ${e}`,
         color: 'negative',
         spinner: false,
         timeout: 2000,
@@ -145,7 +215,7 @@ const submitNewRun = async () => {
   }
   else if (drive_url.value) {
     console.log('Uploading from URL')
-    await createDrive(run_name.value, selected_project.value.uuid, drive_url.value).then(
+    await createDrive(fileName.value, selected_project.value.uuid, drive_url.value).then(
       (new_run) => {
         const end = new Date();
         noti({
@@ -156,7 +226,7 @@ const submitNewRun = async () => {
         })
       }).catch((e) => {
       noti({
-        message: `Upload of File ${run_name.value}failed: ${e}`,
+        message: `Upload of File ${fileName.value}failed: ${e}`,
         color: 'negative',
         spinner: false,
         timeout: 0,
@@ -174,6 +244,13 @@ const submitNewRun = async () => {
     })
   }
   console.log('completed')
+};
+
+const submitNewRun = async () => {
+  if (!selected_project.value) {
+    return;
+  }
+  // const new_run = await createRun(runName.value, selected_project.value.uuid)
 };
 </script>
 

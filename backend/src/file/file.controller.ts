@@ -28,6 +28,7 @@ export class FileController {
   async filteredFiles(
     @Query('fileName') fileName: string,
     @Query('projectUUID') projectUUID: string,
+    @Query('runUUID') runUUID: string,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Query('topics') topics: string,
@@ -36,6 +37,7 @@ export class FileController {
     return await this.fileService.findFiltered(
       fileName,
       projectUUID,
+      runUUID,
       startDate,
       endDate,
       topics,

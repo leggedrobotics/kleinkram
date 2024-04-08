@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import Project from '../project/entities/project.entity';
 import { Repository } from 'typeorm';
 import { Client } from 'minio';
 import { loadDecompressHandlers } from '@mcap/support';
@@ -17,6 +16,7 @@ import { IReadable } from '@mcap/core/dist/cjs/src/types';
 import Topic from '../topic/entities/topic.entity';
 import { DriveCreate } from './entities/drive-create.dto';
 import { google } from 'googleapis';
+import Run from '../run/entities/run.entity';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 const KEYFILEPATH = 'grandtourdatasets-5295745f7fab.json';
@@ -39,17 +39,18 @@ export class FileService {
   });
   constructor(
     @InjectRepository(File) private fileRepository: Repository<File>,
-    @InjectRepository(Project) private projectRepository: Repository<Project>,
+    @InjectRepository(Run) private runRepository: Repository<Run>,
     private topicService: TopicService,
   ) {}
 
   async findAll() {
-    return this.fileRepository.find({ relations: ['project'] });
+    return this.fileRepository.find({ relations: ['run'] });
   }
 
   async findFiltered(
     fileName: string,
     projectUUID: string,
+    runUUID: string,
     startDate: string,
     endDate: string,
     topics: string,
@@ -67,6 +68,9 @@ export class FileService {
     }
     if (projectUUID) {
       query.andWhere('project.uuid = :projectUUID', { projectUUID });
+    }
+    if (runUUID) {
+      query.andWhere('run.uuid = :runUUID', { runUUID });
     }
     if (startDate && endDate) {
       query.andWhere('file.date BETWEEN :startDate AND :endDate', {
@@ -100,7 +104,7 @@ export class FileService {
   async findOne(uuid: string) {
     return this.fileRepository.findOne({
       where: { uuid },
-      relations: ['project', 'topics'],
+      relations: ['run', 'topics', 'run.project'],
     });
   }
 
@@ -170,8 +174,8 @@ export class FileService {
   }
 
   async createDrive(driveCreate: DriveCreate) {
-    const project = await this.projectRepository.findOneOrFail({
-      where: { uuid: driveCreate.projectUUID },
+    const run = await this.runRepository.findOneOrFail({
+      where: { uuid: driveCreate.runUUID },
     });
     const drive = google.drive({ version: 'v3', auth });
     const fileId = this.extractFileIdFromUrl(driveCreate.driveURL);
@@ -206,7 +210,7 @@ export class FileService {
     const newFile = this.fileRepository.create({
       name: driveCreate.name,
       date,
-      project,
+      run: run,
       topics,
       filename: name,
       size: buffer.length,
@@ -216,8 +220,8 @@ export class FileService {
   }
 
   async create(createFile: CreateFile, file: Express.Multer.File) {
-    const project = await this.projectRepository.findOneOrFail({
-      where: { uuid: createFile.projectUUID },
+    const run = await this.runRepository.findOneOrFail({
+      where: { uuid: createFile.runUUID },
     });
     const { topics, response, date } = await this.convertFile(
       file.buffer,
@@ -228,7 +232,7 @@ export class FileService {
     const newFile = this.fileRepository.create({
       name: createFile.name,
       date,
-      project,
+      run,
       topics,
       filename: file.originalname,
       size: file.buffer.length,
@@ -241,10 +245,11 @@ export class FileService {
     const db_file = await this.fileRepository.findOne({ where: { uuid } });
     db_file.name = file.name;
     db_file.date = file.date;
-    const project = await this.projectRepository.findOne({
-      where: { uuid: file.project.uuid },
-    });
-    db_file.project = project;
+    if (file.run) {
+      db_file.run = await this.runRepository.findOne({
+        where: { uuid: file.run.uuid },
+      });
+    }
     await this.fileRepository.save(db_file);
     return this.fileRepository.findOne({ where: { uuid } });
   }

@@ -1,5 +1,5 @@
 export class DriveCreate {
   name: string;
-  projectUUID: string;
+  runUUID: string;
   driveURL: string;
 }
