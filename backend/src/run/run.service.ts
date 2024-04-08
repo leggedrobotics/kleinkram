@@ -132,7 +132,7 @@ export class RunService {
         channel.topic,
         schema.name,
         nr_messages,
-        Number(nr_messages) / (Number(duration / 1000n) / 1000),
+        Number(nr_messages) / (Number(duration) / 1000),
       );
       topics.push(topic);
     });

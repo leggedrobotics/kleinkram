@@ -91,7 +91,7 @@
   </q-dialog>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery,useQueryClient } from '@tanstack/vue-query';
 import { allProjects, fetchRun } from 'src/services/queries';
 import { Ref, ref, watch } from 'vue';
 import { Project, Run } from 'src/types/types';
@@ -107,7 +107,7 @@ defineEmits([
   ...useDialogPluginComponent.emits
 ])
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
-
+const queryClient = useQueryClient();
 
 const dd_open = ref(false);
 const { isLoading, isError, data, error } = useQuery({
@@ -121,9 +121,10 @@ watch(() => data.value, (newValue) => {
   if (newValue?.date) {
     editableRun.value = new Run(newValue.uuid,
       newValue.name,
-      [],
       newValue.project,
       newValue.date,
+      [],
+      newValue.size,
       newValue.createdAt,
       newValue.updatedAt,
       newValue.deletedAt);
@@ -137,6 +138,9 @@ const projects = projectsReturn.data
 
 const { mutate: updateRunMutation } = useMutation({
   mutationFn: (runData: Run) => updateRun(runData),
+  onSuccess(data, variables, context) {
+    // queryClient.invalidateQueries([])
+  },
 });
 
 function _updateRun() {
