@@ -1,4 +1,4 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import Topic from '../../topic/entities/topic.entity';
 import Run from '../../run/entities/run.entity';
@@ -14,8 +14,7 @@ export default class File extends BaseEntity {
   @Column()
   date: Date;
 
-  @ManyToMany(() => Topic, (topic) => topic.runs, { cascade: true })
-  @JoinTable()
+  @OneToMany(() => Topic, (topic) => topic.run, { cascade: ['remove'] })
   topics: Topic[];
 
   @Column()

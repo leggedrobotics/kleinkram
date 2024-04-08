@@ -27,7 +27,7 @@ export class RunService {
   async findRunByProject(projectUUID: string): Promise<Run[]> {
     const project = await this.projectRepository.findOneOrFail({
       where: { uuid: projectUUID },
-      relations: ['runs'],
+      relations: ['runs', 'runs.project'],
     });
     return project.runs;
   }

@@ -19,6 +19,9 @@ export class Project extends BaseEntity{
       this.name = name;
       this.runs = runs;
     }
+    clone(): Project {
+      return new Project(this.uuid, this.name, this.runs, this.createdAt, this.updatedAt, this.deletedAt);
+    }
 }
 
 export class Run extends BaseEntity {
@@ -30,6 +33,10 @@ export class Run extends BaseEntity {
     this.name = name;
     this.project = project;
     this.files = files;
+  }
+
+  clone(): Run {
+    return new Run(this.uuid, this.name, this.project.clone(), this.files, this.createdAt, this.updatedAt, this.deletedAt);
   }
 }
 

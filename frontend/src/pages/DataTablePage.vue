@@ -216,7 +216,7 @@ const selected = ref([]);
 const pagination = ref({ sortBy: 'name', descending: false, page: 1, rowsPerPage: 10 });
 
 const { isLoading, isError, data, error } = useQuery({ queryKey: [
-  'runs',
+  'Filtered Files',
     debouncedFilter,
     selected_project,
     selected_run,
@@ -295,12 +295,12 @@ const columns = [
 /**
  * open a q-dialog with a file editor
  */
-function openQDialog(run: Run): void {
+function openQDialog(file: FileEntity): void {
   $q.dialog({
     title: 'Profilbild wählen',
     component: EditRun,
     componentProps: {
-      run_uuid: run.uuid
+      file_uuid: file.uuid
     },
   });
 }

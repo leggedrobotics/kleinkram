@@ -27,7 +27,6 @@ export const fetchOverview = async (runName: string,
     const res = response.data.map((file: any) => {
       const project_uuid: string = file.run.project.uuid;
       let project: Project | undefined = projects[project_uuid];
-      console.log(file)
       if(!project) {
         project = new Project(
           file.run.project.uuid,
@@ -147,5 +146,24 @@ export const allTopicsNames = async (): Promise<string[]> => {
 
 export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
   const response = await axios.get(`/run/filtered/${projectUUID}`);
-  return response.data;
+  return response.data.map((run: any)=>{
+    const project = new Project(
+      run.project.uuid,
+      run.project.name,
+      [],
+      new Date(run.project.createdAt),
+      new Date(run.project.updatedAt),
+      new Date(run.project.deletedAt)
+    );
+    const runEntity = new Run(
+      run.uuid,
+      run.name,
+      project,
+      [],
+      new Date(run.createdAt),
+      new Date(run.updatedAt),
+      new Date(run.deletedAt)
+    );
+    return runEntity;
+  })
 }
