@@ -1,19 +1,23 @@
-version: '3.7'
+version: '3.8'
+
 services:
   main:
     image: rslethz/grandtour-datasets:api-server-latest
-    container_name: API
+    container_name: api-server
+
     build:
       context: ./backend
-    volumes:
-      - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
+      dockerfile: Dockerfile
+
     ports:
       - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+
     env_file:
       - .env
+
     networks:
       - webnet
+
     depends_on:
       - database
 
@@ -21,36 +25,47 @@ services:
   database:
     image: postgres:13
     container_name: postgres_db
+
     ports:
       - '5432:5432'
+
     networks:
       - webnet
+
     environment:
       POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER:  ${DB_USER}
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres_db_data:/var/lib/postgresql/data
 
   minio:
     image: minio/minio
+    container_name: minio_file_storage
+
     volumes:
       - minio_data:/data
+
     environment:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+
     command: server --console-address ":9001" /data
+
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:9000:9000" # file storage
+      - "127.0.0.1:9001:9001" # management console
     networks:
       - webnet
 
   fastapi_app:
     image: rslethz/grandtour-datasets:fastapi_api-latest
-
     container_name: fastapi_api
-    build: ./bagHandler
+
+    build:
+      context: ./bagHandler
+      dockerfile: prod.Dockerfile
 
     ports:
       - "8000:8000"
@@ -61,17 +76,20 @@ services:
 
   frontend:
     image: rslethz/grandtour-datasets:vuejs_frontend-latest
+    container_name: vuejs_frontend
+
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: vuejs_frontend
+
     ports:
       - "8003:80"
+
     networks:
       - webnet
 
 volumes:
-  db_data:
+  postgres_db_data:
   minio_data:
 
 networks:
