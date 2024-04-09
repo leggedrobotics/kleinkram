@@ -1,14 +1,14 @@
 <template>
   <q-card class="q-pa-md" flat bordered>
-    <div class="row">
-      <div class="col-1 col-lg-2">
+    <div class="row q-gutter-sm">
+      <div class="col-12 col-md-2">
         <q-btn-dropdown
           v-model="dd_open"
           :label="selected_project?.name || 'Filter by Project'"
           outlined
           dense
           clearable
-          required
+          class="full-width"
         >
           <q-list>
             <q-item
@@ -18,25 +18,57 @@
               @click="selected_project = project; dd_open=false"
             >
               <q-item-section>
-                <q-item-label>
-                  {{ project.name }}
-                </q-item-label>
+                <q-item-label>{{ project.name }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
         </q-btn-dropdown>
       </div>
-      <div class="col-3 col-lg-2">
+      <div class="col-12 col-md-2">
+        <q-btn-dropdown
+          v-model="dd_open_runs"
+          :label="selected_run?.name || 'Filter by Run'"
+          outlined
+          dense
+          clearable
+          class="full-width"
+        >
+          <q-list>
+            <q-item
+              v-for="run in runs"
+              :key="run.uuid"
+              clickable
+              @click="selected_run = run; dd_open_runs=false"
+            >
+              <q-item-section>
+                <q-item-label>{{ run.name }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+      </div>
+
+      <div class="col-12 col-md-1">
         <q-input
           v-model="filter"
           outlined
           dense
           clearable
           placeholder="Filter by Run Name"
+          class="full-width"
         />
       </div>
-      <div class="col-3">
-        <q-input filled v-model="dateTimeString">
+
+      <div class="col-12 col-md-3">
+        <q-input
+          filled
+          v-model="dateTimeString"
+          dense
+          outlined
+          clearable
+          class="full-width"
+          placeholder="Select Date Range"
+        >
           <template v-slot:prepend>
             <q-icon name="event" class="cursor-pointer">
               <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -50,27 +82,34 @@
           </template>
         </q-input>
       </div>
-      <div class="col-2 col-lg-4">
-        <q-select
-          v-model="selectedTopics"
-          label="Select Topics"
-          outlined
-          dense
-          clearable
-          multiple
-          use-chips
-          option-value="uuid"
-          option-label="name"
-          :options="topics"
-          emit-value
-          map-options
-          required
-        />
+
+      <div class="col-12 col-md-3">
+        <div class="row ">
+          <div class="col-10">
+            <q-select
+              v-model="selectedTopics"
+              label="Select Topics"
+              outlined
+              dense
+              clearable
+              multiple
+              use-chips
+              :options="topics"
+              emit-value
+              map-options
+              class="full-width"
+            />
+          </div>
+          <div class="col-2 flex justify-center">
+            <q-toggle style="padding-left: 5px" v-model="and_or" :label="and_or ? 'And' : 'Or'" dense />
+            <q-tooltip >Toggle between AND/OR conditions for the topics. <br>And: Run contains all selected topics, Or: Run contains any of the selected topics</q-tooltip>
+          </div>
+        </div>
       </div>
-      <div class="col-1 col-lg-1">
-        <q-toggle v-model="and_or" :label="and_or ? 'And' : 'Or'"/>
-      </div>
+
+
     </div>
+
 
     <q-separator class="q-ma-md"/>
     <QTable
@@ -103,13 +142,13 @@
   </q-card>
 </template>
 <script setup lang="ts">
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
-import { allProjects, allTopics, fetchOverview } from 'src/services/queries';
+import { allProjects, allTopics, allTopicsNames, fetchOverview, runsOfProject } from 'src/services/queries';
 import { format } from 'date-fns';
-import { Project, Run, Topic } from 'src/types/types';
-import EditRun from 'components/EditRun.vue';
+import { FileEntity, Project, Run, Topic } from 'src/types/types';
+import EditRun from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
@@ -132,7 +171,25 @@ const dd_open = ref(false);
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
 
-const topicsReturn = useQuery<Topic[]>({ queryKey: ['topics'], queryFn: allTopics });
+const dd_open_runs = ref(false);
+const selected_run: Ref<Run | null> = ref(null);
+
+const { data: runs, refetch } = useQuery(
+  { queryKey: ['runs', selected_project.value?.uuid],
+    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+    enabled: !!selected_project.value?.uuid,
+  }
+);
+
+watchEffect(() => {
+  if (selected_project.value?.uuid) {
+    refetch();
+  }
+});
+
+
+
+const topicsReturn = useQuery<string[]>({ queryKey: ['topics'], queryFn: allTopicsNames });
 const topics = topicsReturn.data
 const selectedTopics = ref([]);
 const and_or = ref(false)
@@ -159,24 +216,35 @@ const selected = ref([]);
 const pagination = ref({ sortBy: 'name', descending: false, page: 1, rowsPerPage: 10 });
 
 const { isLoading, isError, data, error } = useQuery({ queryKey: [
-  'runs',
+  'Filtered Files',
     debouncedFilter,
     selected_project,
+    selected_run,
     startDate,
     endDate,
     selectedTopics,
     and_or
   ]
-  , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
+  , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid,selected_run.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
 
-
+function formatSize(val: number): string {
+  if (val < 1024) {
+    return `${val} B`;
+  } else if (val < 1024 * 1024) {
+    return `${(val / 1024).toFixed(2)} KB`;
+  } else if (val < 1024 * 1024 * 1024) {
+    return `${(val / (1024 * 1024)).toFixed(2)} MB`;
+  } else {
+    return `${(val / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+}
 const columns = [
   {
     name: 'Project',
     required: true,
     label: 'Project',
     align: 'left',
-    field: (row: Run) => row.project.name,
+    field: (row: FileEntity) => row.run.project.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -185,7 +253,16 @@ const columns = [
     required: true,
     label: 'Run Name',
     align: 'left',
-    field: (row: Run)  => row.name,
+    field: (row: FileEntity) => row.run.name,
+    format: (val:string) => `${val}`,
+    sortable: true
+  },
+  {
+    name: 'File',
+    required: true,
+    label: 'File Name',
+    align: 'left',
+    field: (row: FileEntity)  => row.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -194,8 +271,17 @@ const columns = [
     required: true,
     label: 'Date',
     align: 'left',
-    field: (row: Run)  => row.date,
+    field: (row: FileEntity)  => row.date,
     format: (val:string) => format(new Date(val), 'MMMM dd, yyyy'),
+    sortable: true
+  },
+  {
+    name: 'Size',
+    required: true,
+    label: 'Size',
+    align: 'left',
+    field: (row: FileEntity)  => row.size,
+    format: formatSize,
     sortable: true
   },
   {
@@ -207,14 +293,14 @@ const columns = [
   }
 ]
 /**
- * open a q-dialog with a run editor
+ * open a q-dialog with a file editor
  */
-function openQDialog(run: Run): void {
+function openQDialog(file: FileEntity): void {
   $q.dialog({
     title: 'Profilbild wählen',
     component: EditRun,
     componentProps: {
-      run_uuid: run.uuid
+      file_uuid: file.uuid
     },
   });
 }

@@ -19,39 +19,49 @@ export class Project extends BaseEntity{
       this.name = name;
       this.runs = runs;
     }
+    clone(): Project {
+      return new Project(this.uuid, this.name, this.runs, this.createdAt, this.updatedAt, this.deletedAt);
+    }
 }
-
 
 export class Run extends BaseEntity {
   name: string;
-  sensorData: SensorData[];
   project: Project;
+  files: FileEntity[];
+  constructor(uuid: string, name: string, project: Project, files: FileEntity[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+    super(uuid, createdAt, updatedAt, deletedAt);
+    this.name = name;
+    this.project = project;
+    this.files = files;
+  }
+
+  clone(): Run {
+    return new Run(this.uuid, this.name, this.project.clone(), this.files, this.createdAt, this.updatedAt, this.deletedAt);
+  }
+}
+
+export class FileEntity extends BaseEntity {
+  name: string;
+  run: Run;
   date: Date;
   topics: Topic[];
+  size: number;
   constructor(uuid: string,
               name: string,
-              sensorData: SensorData[],
-              project: Project,
+              run: Run,
               date: Date,
               topics: Topic[],
+              size: number,
               createdAt: Date | null,
               updatedAt: Date | null,
               deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
-    this.sensorData = sensorData;
-    this.project = project;
+    this.size = size;
+    this.run = run;
     this.date = date;
     this.name = name;
     this.topics = topics;
   }
-}
-
-export class SensorData extends BaseEntity {
-    run: Run;
-    constructor(uuid: string, run: Run, createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
-        super(uuid, createdAt, updatedAt, deletedAt);
-        this.run = run;
-    }
 }
 
 export class Topic extends BaseEntity {

@@ -9,6 +9,16 @@ export class TopicService {
     @InjectRepository(Topic) private topicRepository: Repository<Topic>,
   ) {}
 
+  async findAllNames() {
+    const distinctNames = await this.topicRepository
+      .createQueryBuilder('topic')
+      .select('DISTINCT topic.name', 'name')
+      .orderBy('name') // Optional: Order by name if desired
+      .getRawMany();
+
+    return distinctNames.map((item) => item.name);
+  }
+
   async findAll() {
     return this.topicRepository.find();
   }

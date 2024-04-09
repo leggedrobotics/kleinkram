@@ -1,19 +1,25 @@
 import axios from 'src/api/axios';
-import { Run } from 'src/types/types';
+import { FileEntity } from 'src/types/types';
 
 export const createProject = async (name: string) => {
   const response = await axios.post('/project/create', { name });
   return response.data;
 }
 
-export const createRun = async (name: string, projectUUID: string, file: File): Promise<Run> => {
+export const createRun = async (name: string, projectUUID: string) => {
+  const response = await axios.post('/run/create', { name, projectUUID });
+  return response.data;
+
+}
+
+export const createFile = async (name: string, runUUID: string, file: File): Promise<FileEntity> => {
   const formData = new FormData();
   formData.append('name', name);
-  formData.append('projectUUID', projectUUID);
+  formData.append('runUUID', runUUID);
   formData.append('file', file);
 
 
-  const response = await axios.post('/run/create', formData, {
+  const response = await axios.post('/file/create', formData, {
     headers: {
     },
   });
@@ -21,7 +27,12 @@ export const createRun = async (name: string, projectUUID: string, file: File): 
   return response.data;
 }
 
-export const updateRun = async(run: Run) => {
-  const response = await axios.put(`/run/${run.uuid}`, run);
+export const createDrive = async (name: string, projectUUID: string, driveURL: string) => {
+  const response = await axios.post('/file/createdrive', { name, projectUUID, driveURL });
+  return response.data;
+}
+
+export const updateFile = async(file: FileEntity) => {
+  const response = await axios.put(`/file/${file.uuid}`, file);
   return response.data;
 }

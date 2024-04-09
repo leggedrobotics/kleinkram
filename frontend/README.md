@@ -19,7 +19,7 @@ quasar dev
 ```bash
 yarn lint
 # or
-npm run lint
+npm file lint
 ```
 
 
@@ -27,7 +27,7 @@ npm run lint
 ```bash
 yarn format
 # or
-npm run format
+npm file format
 ```
 
 

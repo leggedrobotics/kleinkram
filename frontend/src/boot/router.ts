@@ -16,11 +16,8 @@ let routerInstance: Router;
 // }
 
 export default boot(({ router }) => {
-  console.log('router2', router);
   routerInstance = router;
-  router.beforeEach(async (to) => {
-    console.log(to)
-  });
+
   // if (loggedIn) {
   //   const user = await fetchMyUser();
   //

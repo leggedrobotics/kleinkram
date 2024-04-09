@@ -9,4 +9,9 @@ export class TopicController {
   async allTopics() {
     return await this.topicService.findAll();
   }
+
+  @Get('names')
+  async allNames() {
+    return await this.topicService.findAllNames();
+  }
 }

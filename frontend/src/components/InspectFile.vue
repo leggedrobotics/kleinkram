@@ -3,10 +3,13 @@
     <q-card-section>
       <h3>{{data?.name}}</h3>
       <div class="row">
-        <div class="col-1">
-          {{data?.project.name}}
+        <div class="col-2">
+          {{data?.run.project.name}}
         </div>
-        <div class="col-1">
+        <div class="col-2">
+          {{data?.run.name}}
+        </div>
+        <div class="col-2">
           <p v-if="data?.date">
             {{formatDate(data?.date, true)}}
           </p>
@@ -39,8 +42,8 @@
 <script setup lang="ts">
 
 import { useQuery } from '@tanstack/vue-query';
-import { downloadBag, fetchRun } from 'src/services/queries';
-import { Run } from 'src/types/types';
+import { downloadBag, fetchFile } from 'src/services/queries';
+import { FileEntity, Run } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { QTable } from 'quasar';
@@ -52,9 +55,9 @@ const props = defineProps<{
 const tableoniRef: Ref<QTable | null> = ref(null);
 
 
-const { isLoading, isError, data, error } = useQuery<Run>({
+const { isLoading, isError, data, error } = useQuery<FileEntity>({
   queryKey: ['run', props.run_uuid],
-  queryFn: ()=>fetchRun(props.run_uuid) });
+  queryFn: ()=>fetchFile(props.run_uuid) });
 
 const columns = [
   { name: 'Topic', label: 'Topic', field: 'name', sortable: true, align: 'left' },

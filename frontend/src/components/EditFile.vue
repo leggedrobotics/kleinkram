@@ -1,15 +1,15 @@
 <template>
-  <q-dialog ref="dialogRef" persistent style="max-width: 1000px">
-    <q-card class="q-pa-sm text-center" style="width: 80%; min-height: 300px; max-width: 1000px">
+  <q-dialog ref="dialogRef" persistent style="max-width: 1500px">
+    <q-card class="q-pa-sm text-center" style="width: 80%; min-height: 300px; max-width: 1500px">
       <q-card-section>
         <h4>
-          Edit run {{isLoading ? '...' : data?.name}}
+          Edit file {{isLoading ? '...' : data?.name}}
         </h4>
-        <q-form v-if="editableRun">
+        <q-form v-if="editableFile">
           <div class="row items-center justify-between q-gutter-md">
             <div class="col-5">
               <q-input
-                v-model="editableRun.name"
+                v-model="editableFile.name"
                 label="Name"
                 outlined
                 dense
@@ -20,7 +20,7 @@
             <div class="col-1">
               <q-btn-dropdown
                 v-model="dd_open"
-                :label="editableRun.project?.name || 'Project'"
+                :label="selected_project?.name || 'Project'"
                 outlined
                 dense
                 clearable
@@ -31,11 +31,36 @@
                     v-for="project in projects"
                     :key="project.uuid"
                     clickable
-                    @click="editableRun.project = project; dd_open=false"
+                    @click="selected_project = project; dd_open=false"
                   >
                     <q-item-section>
                       <q-item-label>
                         {{ project.name }}
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
+            </div>
+            <div class="col-1">
+              <q-btn-dropdown
+                v-model="dd_open_2"
+                :label="editableFile.run.name || 'Run'"
+                outlined
+                dense
+                clearable
+                required
+              >
+                <q-list>
+                  <q-item
+                    v-for="run in runs"
+                    :key="run.uuid"
+                    clickable
+                    @click="editableFile.run = run; dd_open_2=false"
+                  >
+                    <q-item-section>
+                      <q-item-label>
+                        {{ run.name }}
                       </q-item-label>
                     </q-item-section>
                   </q-item>
@@ -91,39 +116,43 @@
   </q-dialog>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery } from '@tanstack/vue-query';
-import { allProjects, fetchRun } from 'src/services/queries';
-import { Ref, ref, watch } from 'vue';
-import { Project, Run } from 'src/types/types';
-import { updateRun } from 'src/services/mutations';
+import { Query, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { allProjects, fetchFile, runsOfProject } from 'src/services/queries';
+import { Ref, ref, watch, watchEffect } from 'vue';
+import { FileEntity, Project, Run } from 'src/types/types';
+import { updateFile } from 'src/services/mutations';
 import { useDialogPluginComponent } from 'quasar'
 import { formatDate, parseDate } from 'src/services/dateFormating';
 
 const props = defineProps<{
-  run_uuid: string;
+  file_uuid: string;
 }>();
 
 defineEmits([
   ...useDialogPluginComponent.emits
 ])
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
-
+const queryClient = useQueryClient();
 
 const dd_open = ref(false);
+const dd_open_2 = ref(false);
+const selected_project = ref<Project | null | undefined>(null);
 const { isLoading, isError, data, error } = useQuery({
-  queryKey: ['run', props.run_uuid],
-  queryFn: ()=>fetchRun(props.run_uuid) });
+  queryKey: ['file', props.file_uuid],
+  queryFn: ()=>fetchFile(props.file_uuid) });
 
 const dateTime = ref('');
-const editableRun: Ref<Run | null> = ref(null);
+const editableFile: Ref<FileEntity | null> = ref(null);
 // Watch for changes in data.value and update dateTime accordingly
 watch(() => data.value, (newValue) => {
+  selected_project.value = newValue?.run.project;
   if (newValue?.date) {
-    editableRun.value = new Run(newValue.uuid,
+    editableFile.value = new FileEntity(newValue.uuid,
       newValue.name,
-      [],
-      newValue.project,
+      newValue.run.clone(),
       newValue.date,
+      [],
+      newValue.size,
       newValue.createdAt,
       newValue.updatedAt,
       newValue.deletedAt);
@@ -135,15 +164,43 @@ watch(() => data.value, (newValue) => {
 const projectsReturn = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 const projects = projectsReturn.data
 
-const { mutate: updateRunMutation } = useMutation({
-  mutationFn: (runData: Run) => updateRun(runData),
+const { data: runs, refetch } = useQuery(
+  { queryKey: ['runs', selected_project.value?.uuid],
+    queryFn: () => runsOfProject(  selected_project.value?.uuid || ''),
+    enabled: !!  selected_project.value?.uuid,
+  }
+);
+
+watch(() => selected_project.value, (newValue) => {
+  if (newValue) {
+    refetch();
+  }
+});
+
+const { mutate: updateFileMutation } = useMutation({
+  mutationFn: (fileData: FileEntity) => updateFile(fileData),
+  onSuccess: function(data, variables, context) {
+    // queryClient.invalidateQueries([''])
+    const cache = queryClient.getQueryCache();
+    const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'Filtered Files');
+    filtered.forEach((query) => {
+      queryClient.invalidateQueries(query.queryKey);
+    });
+  },
+  onError(error, variables, context) {
+    console.log(error)
+  }
 });
 
 function _updateRun() {
   const convertedDate = parseDate(dateTime.value);
-  if (editableRun.value && convertedDate && !isNaN(convertedDate.getTime())) {
-    editableRun.value.date = convertedDate
-    updateRunMutation(editableRun.value);
+  if (editableFile.value && convertedDate && !isNaN(convertedDate.getTime())) {
+    editableFile.value.date = convertedDate
+    const noncircularRun = editableFile.value?.run.clone()
+    noncircularRun.project = undefined
+    noncircularRun.files = undefined
+    editableFile.value.run = noncircularRun
+    updateFileMutation(editableFile.value);
     onDialogOK();
   }
 }

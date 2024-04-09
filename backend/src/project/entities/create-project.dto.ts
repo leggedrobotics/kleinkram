@@ -1,3 +1,3 @@
-export class CreateProject{
-    name: string;
+export class CreateProject {
+  name: string;
 }

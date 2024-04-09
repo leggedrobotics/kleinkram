@@ -1,8 +1,9 @@
 import axios from 'src/api/axios';
-import { Project, Run, Topic } from 'src/types/types';
+import { FileEntity, Project, Run, Topic } from 'src/types/types';
 
 export const fetchOverview = async (runName: string,
                                     projectUUID: string|undefined,
+                                    runUUID: string|undefined,
                                     startDate: Date,
                                     endDate: Date,
                                     topics: string[],
@@ -13,33 +14,55 @@ export const fetchOverview = async (runName: string,
 
     const queryParams = new URLSearchParams({
       runName : runName || '',
-      projectUUID: projectUUID || '', // Handle undefined projectUUID
+      projectUUID: projectUUID || '',
+      runUUID: runUUID || '',
       startDate: formattedStartDate,
       endDate: formattedEndDate,
       topics: topics.join(','),
       andOr: andOr ? '1': ''
     }).toString();
-    console.log('fetching with: ', queryParams)
-    const response = await axios.get(`/run/filtered?${queryParams}`);
-    const res = response.data.map((run: any) => {
-      const project = new Project(
-        run.project.uuid,
-        run.project.name,
-        [],
-        new Date(run.project.createdAt),
-        new Date(run.project.updatedAt),
-        new Date(run.project.deletedAt)
+    const projects: Record<string, Project> = {};
+    const runs: Record<string, Run> = {};
+    const response = await axios.get(`/file/filtered?${queryParams}`);
+    const res = response.data.map((file: any) => {
+      const project_uuid: string = file.run.project.uuid;
+      let project: Project | undefined = projects[project_uuid];
+      if(!project) {
+        project = new Project(
+          file.run.project.uuid,
+          file.run.project.name,
+          [],
+          new Date(file.run.project.createdAt),
+          new Date(file.run.project.updatedAt),
+          new Date(file.run.project.deletedAt)
+        );
+      }
+      const run_uuid: string = file.run.uuid;
+      let run: Run | undefined = runs[run_uuid];
+      if(!run){
+        run = new Run(
+          file.run.uuid,
+          file.run.name,
+          project,
+          [],
+          new Date(file.run.createdAt),
+          new Date(file.run.updatedAt),
+          new Date(file.run.deletedAt));
+      }
+      const newFile = new FileEntity(
+        file.uuid,
+        file.name,
+        run,
+        new Date(file.date),
+        file.topics,
+        file.size,
+        new Date(file.createdAt),
+        new Date(file.updatedAt),
+        new Date(file.deletedAt)
       );
-      return new Run(
-        run.uuid,
-        run.name,
-        [],
-        project,
-        new Date(run.date),
-        [],
-        new Date(run.createdAt),
-        new Date(run.updatedAt),
-        new Date(run.deletedAt));
+      run.files.push(newFile);
+      return newFile;
+
     });
     return res;
   } catch (error) {
@@ -53,19 +76,29 @@ export const allProjects = async () => {
   return response.data;
 }
 
-export const fetchRun = async (uuid: string): Promise<Run> => {
+export const fetchFile = async (uuid: string): Promise<FileEntity> => {
   try {
-    const response = await axios.get(`/run/${uuid}`);
-    const run = response.data;
+    const response = await axios.get(`/file/${uuid}`);
+    const file = response.data;
     const project = new Project(
-      run.project.uuid,
-      run.project.name,
+      file.run.project.uuid,
+      file.run.project.name,
       [],
-      new Date(run.project.createdAt),
-      new Date(run.project.updatedAt),
-      new Date(run.project.deletedAt)
+      new Date(file.run.project.createdAt),
+      new Date(file.run.project.updatedAt),
+      new Date(file.run.project.deletedAt)
     );
-    const topics = response.data.topics.map((topic: any) => {
+    const run = new Run(
+      file.run.uuid,
+      file.run.name,
+      project,
+      [],
+      new Date(file.run.createdAt),
+      new Date(file.run.updatedAt),
+      new Date(file.run.deletedAt)
+    )
+    project.runs.push(run);
+    const topics = file.topics.map((topic: any) => {
       return new Topic(
         topic.uuid,
         topic.name,
@@ -77,19 +110,21 @@ export const fetchRun = async (uuid: string): Promise<Run> => {
         new Date(topic.deletedAt)
       );
     });
-    return new Run(
-      run.uuid,
-      run.name,
-      [],
-      project,
-      new Date(run.date),
+    const newFile = new FileEntity(
+      file.uuid,
+      file.name,
+      run,
+      new Date(file.date),
       topics,
-      new Date(run.createdAt),
-      new Date(run.updatedAt),
-      new Date(run.deletedAt));
+      file.size,
+      new Date(file.createdAt),
+      new Date(file.updatedAt),
+      new Date(file.deletedAt));
+    run.files.push(newFile);
+    return newFile
   }
   catch (error) {
-    console.error('Error fetching run:', error);
+    console.error('Error fetching file:', error);
     throw error; // Rethrow or handle as appropriate
   }
 }
@@ -102,4 +137,33 @@ export const allTopics = async () => {
 export const downloadBag = async (uuid: string) => {
   const response = await axios.get('run/download/' + uuid, )
   return response.data
+}
+
+export const allTopicsNames = async (): Promise<string[]> => {
+  const response = await axios.get('/topic/names');
+  return response.data;
+}
+
+export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
+  const response = await axios.get(`/run/filtered/${projectUUID}`);
+  return response.data.map((run: any)=>{
+    const project = new Project(
+      run.project.uuid,
+      run.project.name,
+      [],
+      new Date(run.project.createdAt),
+      new Date(run.project.updatedAt),
+      new Date(run.project.deletedAt)
+    );
+    const runEntity = new Run(
+      run.uuid,
+      run.name,
+      project,
+      [],
+      new Date(run.createdAt),
+      new Date(run.updatedAt),
+      new Date(run.deletedAt)
+    );
+    return runEntity;
+  })
 }
