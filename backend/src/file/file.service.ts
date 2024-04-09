@@ -152,7 +152,7 @@ export class FileService {
     const topics: Topic[] = [];
     console.log('converting file', filename);
     const response = await axios.post(
-      'http://fastapi_app:8000/newBag',
+      'http://fastapi:8000/newBag',
       formData,
       { responseType: 'arraybuffer' },
     );
