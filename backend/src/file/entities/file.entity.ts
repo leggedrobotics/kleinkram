@@ -8,7 +8,7 @@ export default class File extends BaseEntity {
   @Column()
   name: string;
 
-  @ManyToOne(() => Run, (project) => project.files)
+  @ManyToOne(() => Run, (run) => run.files)
   run: Run;
 
   @Column()

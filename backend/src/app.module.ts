@@ -8,8 +8,8 @@ import env from './env';
 import configuration from './config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
-import { RunService } from './run/run.service';
 import { RunModule } from './run/run.module';
+import { QueueModule } from './queue/queue.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -36,6 +36,7 @@ import { RunModule } from './run/run.module';
     ProjectModule,
     TopicModule,
     RunModule,
+    QueueModule,
   ],
   controllers: [ProjectController],
 })

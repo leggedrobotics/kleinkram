@@ -77,6 +77,26 @@ services:
         - action: sync+restart
           path: ./frontend
           target: /app
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  bullconsumer:
+    image: rslethz/grandtour-datasets:bull-consumer-latest
+    container_name: bullconsumer
+    build:
+      context: ./queueConsumer
+    volumes:
+      - ./queueConsumer:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+    networks:
+      - privatenet
+    depends_on:
+      - database
 volumes:
   db_data:
   minio_data:

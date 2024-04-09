@@ -19,7 +19,7 @@ export const createFile = async (name: string, runUUID: string, file: File): Pro
   formData.append('file', file);
 
 
-  const response = await axios.post('/file/create', formData, {
+  const response = await axios.post('/queue/create', formData, {
     headers: {
     },
   });
@@ -28,7 +28,7 @@ export const createFile = async (name: string, runUUID: string, file: File): Pro
 }
 
 export const createDrive = async ( projectUUID: string, driveURL: string) => {
-  const response = await axios.post('/file/createdrive', { projectUUID, driveURL });
+  const response = await axios.post('/queue/createdrive', { projectUUID, driveURL });
   return response.data;
 }
 

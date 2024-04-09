@@ -13,7 +13,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import { CreateFile } from './entities/create-file.dto';
-import { DriveCreate } from './entities/drive-create.dto';
 
 @Controller('file')
 export class FileController {
@@ -53,20 +52,6 @@ export class FileController {
   @Get('download/:uuid')
   async download(@Param('uuid') uuid: string) {
     return this.fileService.generateDownload(uuid);
-  }
-
-  @Post('create')
-  @UseInterceptors(FileInterceptor('file'))
-  async create(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateFile, // Use a specific DTO type if available
-  ) {
-    return this.fileService.create(body, file);
-  }
-
-  @Post('createdrive')
-  async createDrive(@Body() body: DriveCreate) {
-    return this.fileService.createDrive(body);
   }
 
   @Put(':uuid')

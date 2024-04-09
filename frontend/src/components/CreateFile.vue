@@ -1,6 +1,6 @@
 <template>
   <q-card-section>
-    <h3 class="text-h6">Create new file</h3>
+    <h3 class="text-h6">Create new files</h3>
     <q-form @submit.prevent="submitNewFile">
       <div class="row items-center justify-between q-gutter-md">
         <div class="col-1">
