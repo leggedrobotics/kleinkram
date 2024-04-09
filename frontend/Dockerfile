@@ -1,6 +1,11 @@
 # Build stage
 FROM node:20-alpine as build-stage
 
+ARG QUASAR_ENDPOINT
+ENV QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+RUN echo "QUASAR_ENDPOINT is set to ${QUASAR_ENDPOINT}"
+
+
 WORKDIR /app
 
 COPY ./package.json ./
