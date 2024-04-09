@@ -112,7 +112,7 @@ export class FileService {
   extractFileIdFromUrl(url: string): string | null {
     const regex =
       /drive\.google\.com\/(?:file\/d\/|open\?id=|drive\/folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})/;
-
+    console.log(url);
     const match = url.match(regex);
     return match ? match[1] : null;
   }
@@ -176,14 +176,16 @@ export class FileService {
   async handleDriveFolder(folder_id: string, run: Run, drive: drive_v3.Drive) {
     const response = await drive.files.list({
       q: `'${folder_id}' in parents`,
-      fields: 'nextPageToken, files(id, name, mimeType)',
+      fields: 'nextPageToken, files(id,name,mimeType)',
     });
 
     const res = response.data.files.map(async (file) => {
       if (file.mimeType === 'application/vnd.google-apps.folder') {
         return this.handleDriveFolder(file.id, run, drive);
       }
-      return this.handleDriveFile(file.id, file.name, run, drive);
+      if (file.name.endsWith('.bag')) {
+        return this.handleDriveFile(file.id, file.name, run, drive); //Todo prevent server overloading
+      }
     });
     const converted = await Promise.all(res);
     return converted.flat();
@@ -194,6 +196,7 @@ export class FileService {
     run: Run,
     drive: drive_v3.Drive,
   ) {
+    console.log('downloading file', name);
     const res = await drive.files.get(
       {
         fileId,
@@ -214,9 +217,11 @@ export class FileService {
           reject(err);
         });
     });
+    console.log('file downloaded', name);
     const { topics, response, date } = await this.convertFile(buffer, name);
+    console.log('file converted', name);
     await this.uploadToMinio(response, name);
-
+    console.log('file uploaded', name);
     const newFile = this.fileRepository.create({
       name,
       date,
@@ -225,7 +230,7 @@ export class FileService {
       filename: name,
       size: buffer.length,
     });
-
+    console.log('file created', name);
     return this.fileRepository.save(newFile);
   }
 
@@ -247,6 +252,9 @@ export class FileService {
   }
 
   async create(createFile: CreateFile, file: Express.Multer.File) {
+    if (!file.filename.endsWith('.bag')) {
+      throw new Error('File is not a bag file');
+    }
     const run = await this.runRepository.findOneOrFail({
       where: { uuid: createFile.runUUID },
     });

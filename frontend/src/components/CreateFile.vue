@@ -145,7 +145,7 @@ const submitNewFile = async () => {
   }
   else if (drive_url.value) {
     console.log('Uploading from URL')
-    await createDrive(fileName.value, selected_project.value.uuid, drive_url.value).then(
+    await createDrive(selected_project.value.uuid, drive_url.value).then(
       (new_run) => {
         const end = new Date();
         noti({
