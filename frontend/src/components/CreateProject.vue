@@ -26,11 +26,29 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { createProject } from 'src/services/mutations';
+import { useQueryClient } from '@tanstack/vue-query';
+import { Notify } from 'quasar';
 
 const projectName = ref('');
+const queryClient = useQueryClient();
+
 const submitNewProject = async () => {
-  const new_project = await createProject(projectName.value )
+  await createProject(projectName.value )
+  const cache = queryClient.getQueryCache();
+  const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'projects');
+  filtered.forEach((query) => {
+    queryClient.invalidateQueries(query.queryKey);
+  });
+  Notify.create({
+    message: `Project ${projectName.value} created`,
+    color: 'positive',
+    spinner: false,
+    timeout: 4000,
+    position: 'top-right',
+  })
+  projectName.value = '';
 };
+
 
 </script>
 <style scoped>

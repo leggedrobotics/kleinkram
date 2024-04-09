@@ -56,6 +56,7 @@ function asBoolean(value: string | undefined): boolean {
  * @param valueList - list of possible values
  * @returns environment variable
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function asOneOf<T extends string | number>(value: T, valueList: T[]): T {
   if (!valueList.includes(value)) {
     const message = `The environment variable must be one of the following: ${valueList.join(
@@ -72,7 +73,7 @@ export default {
    * @example http://localhost:3000/graphql
    */
   get ENDPOINT(): string {
-    return asString(import.meta.env.VITE_QUASAR_ENDPOINT);
+    return asString(import.meta.env.VITE_QUASAR_ENDPOINT|| 'http://localhost:3000') ;
   },
 
   /**

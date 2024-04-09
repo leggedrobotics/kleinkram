@@ -1,7 +1,9 @@
 <template>
   <q-card>
     <create-project/>
+    <q-separator/>
     <create-run/>
+    <q-separator/>
     <create-file/>
   </q-card>
 </template>

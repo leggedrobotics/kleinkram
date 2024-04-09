@@ -57,9 +57,11 @@
 <script setup lang="ts">
 import { ref, Ref } from 'vue';
 import { Project } from 'src/types/types';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { allProjects } from 'src/services/queries';
 import { createRun } from 'src/services/mutations';
+import { Notify } from 'quasar';
+const queryClient = useQueryClient();
 
 const selected_project: Ref<Project | null> = ref(null);
 const runName = ref('');
@@ -70,7 +72,20 @@ const submitNewRun = async () => {
   if (!selected_project.value) {
     return;
   }
-  const new_run = await createRun(runName.value, selected_project.value.uuid)
+  await createRun(runName.value, selected_project.value.uuid)
+  const cache = queryClient.getQueryCache();
+  const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'runs' && query.queryKey[1] === selected_project.value?.uuid);
+  filtered.forEach((query) => {
+    queryClient.invalidateQueries(query.queryKey);
+  });
+  Notify.create({
+    message: `Run ${runName.value} created`,
+    color: 'positive',
+    spinner: false,
+    timeout: 4000,
+    position: 'top-right',
+  })
+  runName.value = '';
 };
 </script>
 
