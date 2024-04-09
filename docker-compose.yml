@@ -46,7 +46,7 @@ services:
     networks:
       - webnet
 
-  fastapi_app:
+  fastapi:
     image: rslethz/grandtour-datasets:fastapi_api-latest
 
     container_name: fastapi_api
