@@ -10,4 +10,4 @@ RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%
 
 COPY . .
 
-CMD ["uvicorn", "api:app"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0"]

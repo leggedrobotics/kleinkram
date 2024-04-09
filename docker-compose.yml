@@ -49,7 +49,7 @@ services:
   fastapi:
     image: rslethz/grandtour-datasets:fastapi_api-latest
 
-    container_name: fastapi_api
+    container_name: fastapi
     build: ./bagHandler
 
     ports:
