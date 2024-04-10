@@ -1,17 +1,38 @@
 
-import { promises as fs } from 'fs';
 import { loadDecompressHandlers } from '@mcap/support';
 import { McapIndexedReader } from '@mcap/core';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
 
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import * as fs from 'fs';
 const execPromisify = promisify(exec);
 
-export async function convert(infile:string, outfile:string){
+
+export async function convert(infile: string, outfile: string): Promise<Buffer> {
   // Convert file
   await execPromisify(`mcap convert ${infile} ${outfile}`);
-  return fs.readFile(outfile);
+
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(outfile);
+    const buffers = [];
+
+    readStream.on('data', (chunk) => {
+      buffers.push(chunk);
+    });
+
+    readStream.on('end', () => {
+      // Concatenate all chunks into a single Buffer
+      const fullBuffer = Buffer.concat(buffers);
+      console.log('File reading complete. Buffer size:', fullBuffer.length);
+      resolve(fullBuffer); // Resolve the promise with the full buffer
+    });
+
+    readStream.on('error', (error) => {
+      console.error('Error reading the file:', error);
+      reject(error); // Reject the promise on read error
+    });
+  });
 }
 
 

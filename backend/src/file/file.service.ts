@@ -7,18 +7,10 @@ import { UpdateFile } from './entities/update-file.dto';
 import { TopicService } from '../topic/topic.service';
 import env from '../env';
 import Run from '../run/entities/run.entity';
+import { minio } from '../minioHelper';
 
 @Injectable()
 export class FileService {
-  private minio: Client = new Client({
-    endPoint: 'minio',
-    useSSL: false,
-    port: 9000,
-
-    region: 'GUGUS GEWESEN',
-    accessKey: env.MINIO_ACCESS_KEY,
-    secretKey: env.MINIO_SECRET_KEY,
-  });
   constructor(
     @InjectRepository(File) private fileRepository: Repository<File>,
     @InjectRepository(Run) private runRepository: Repository<Run>,
@@ -108,7 +100,7 @@ export class FileService {
     const file = await this.fileRepository.findOneOrFail({
       where: { uuid },
     });
-    return await this.minio.presignedUrl(
+    return await minio.presignedUrl(
       'GET',
       env.MINIO_BAG_BUCKET_NAME,
       file.filename,

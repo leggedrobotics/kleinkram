@@ -12,6 +12,17 @@ export const createRun = async (name: string, projectUUID: string) => {
 
 }
 
+export const getUploadURL = async (filenames: string[]) => {
+  const response = await axios.post('/queue/createPreSignedURLS', { filenames });
+  return response.data;
+}
+
+export const confirmUpload = async (filename: string) => {
+  const response = await axios.post('/queue/confirmUpload', { filename });
+  return response.data;
+
+}
+
 export const createFile = async (name: string, runUUID: string, file: File): Promise<FileEntity> => {
   const formData = new FormData();
   formData.append('name', name);

@@ -3,6 +3,7 @@ export enum FileState {
   PROCESSING = 'PROCESSING',
   DONE = 'DONE',
   ERROR = 'ERROR',
+  AWAITING_UPLOAD = 'AWAITING_UPLOAD',
 }
 
 export enum FileLocation {

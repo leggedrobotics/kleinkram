@@ -124,6 +124,6 @@ export default {
     return asString(process.env.MINIO_BAG_BUCKET_NAME);
   },
   get MINIO_TEMP_BAG_BUCKET_NAME(): string {
-    return asString('temp_' + process.env.MINIO_BAG_BUCKET_NAME);
+    return asString('temp' + process.env.MINIO_BAG_BUCKET_NAME);
   },
 };

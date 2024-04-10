@@ -8,34 +8,26 @@ import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import env from './env';
 import { convert, mcapMetaInfo } from './helper/converter';
-import { downloadFile, getMetadata, listFiles } from './helper/driveHelper';
-import { uploadFile } from './helper/minioHelper';
+import { downloadDriveFile, getMetadata, listFiles } from './helper/driveHelper';
+import { deleteMinioFile, downloadMinioFile, uploadFile } from './helper/minioHelper';
 import Topic from './entities/topic.entity';
 import { FileLocation, FileState } from './enum';
 
 const fs = require('fs').promises;
 
-async function processFile(fileId: string, fileName: string, jobId: JobId) {
-  console.log(`Job {${jobId}}: Downloading file...`)
-  const buffer = await downloadFile(fileId);
-  console.log(`Job {${jobId}}: Writing file...`)
-
+async function processFile(buffer: Buffer, fileName: string, ) {
   const tempFilePath = `/tmp/tempfile-${Date.now()}.bag`;
   await fs.writeFile(tempFilePath, buffer);
   const mcapPath = tempFilePath.replace('.bag', '.mcap');
-  console.log(`Job {${jobId}}: Converting file...`)
 
   const convertedBuffer = await convert(tempFilePath, mcapPath);
   const newFileName = fileName.replace('.bag', '.mcap');
 
-  console.log(`Job {${jobId}}: Uploading file ${newFileName}...`)
 
   // Read converted file and upload
   await uploadFile(env.MINIO_BAG_BUCKET_NAME, newFileName, convertedBuffer)
-  console.log(`Job {${jobId}}: Metadata reading...`)
 
   const res = await mcapMetaInfo(convertedBuffer);
-  console.log(`Job {${jobId}}: Cleanup...`)
 
   // Optionally, clean up temporary files
   await fs.unlink(tempFilePath);
@@ -70,24 +62,56 @@ export class FileProcessor implements OnModuleInit {
     console.log(`Processing job ${job.id} of type ${job.name}.`);
   }
 
-  @Process('processDriveFile')
-  async handleFileProcessing(job: Job<{queueUuid: string}>) {
+  @Process('processMinioFile')
+  async handleMinioFileProcessing(job: Job<{queueUuid: string}>) {
     console.log(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
-    const queue = await this.queueRepository.findOneOrFail({
-      where: {
-        uuid: job.data.queueUuid
-      },
-      relations: ['run'] })
-    console.log(`Job {${job.id}}, file identifier is ${queue.identifier}`)
-    queue.state = FileState.PROCESSING
-    await this.queueRepository.save(queue);
+    const queue= await this.startProcessing(job.data.queueUuid);
+    try{
+      const buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
+      const { topics, date, size } = await processFile(buffer, queue.identifier);
+
+      await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
+
+      const res = topics.map(async (topic) => {
+        const newTopic = this.topicRepository.create(topic)
+        await this.topicRepository.save(newTopic);
+
+        return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
+      })
+      const createdTopics = await Promise.all(res);
+
+      const newFile = this.fileRepository.create({
+        identifier: queue.identifier,
+        date,
+        topics: createdTopics,
+        run: queue.run,
+        size,
+        filename: queue.identifier
+      })
+      const savedFile = await this.fileRepository.save(newFile);
+      queue.state = FileState.DONE
+      await this.queueRepository.save(queue);
+      return savedFile;
+    }
+    catch (error) {
+      queue.state = FileState.ERROR
+      await this.queueRepository.save(queue);
+      throw error;
+    }
+  }
+  @Process('processDriveFile')
+  async handleDriveFileProcessing(job: Job<{queueUuid: string}>) {
+    console.log(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
+    const queue= await this.startProcessing(job.data.queueUuid);
+
     const metadataRes = await getMetadata(queue.identifier);
     console.log(metadataRes)
     if(metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
       console.log(`Job {${job.id}} is a file, processing...`)
       try {
+        const buffer = await downloadDriveFile(queue.identifier);
 
-        const { topics, date, size } = await processFile(queue.identifier, metadataRes.name, job.id);
+        const { topics, date, size } = await processFile(buffer, metadataRes.name);
 
         const res = topics.map(async (topic) => {
           const newTopic = this.topicRepository.create(topic)
@@ -138,6 +162,17 @@ export class FileProcessor implements OnModuleInit {
       queue.state = FileState.DONE
       await this.queueRepository.save(queue);
     }
+  }
+
+  async startProcessing(queueUuid: string) {
+    const queue = await this.queueRepository.findOneOrFail({
+      where: {
+        uuid: queueUuid
+      },
+      relations: ['run'] })
+    queue.state = FileState.PROCESSING
+    await this.queueRepository.save(queue);
+    return queue;
   }
 }
 

@@ -1,4 +1,5 @@
 <template>
+
   <q-card-section>
     <h3 class="text-h6">Create new files</h3>
     <q-form @submit.prevent="submitNewFile">
@@ -55,12 +56,12 @@
         </div>
         <div class="col-1">
           <div class="row" style="padding-bottom: 8px">
-            <q-file outlined v-model="file" hint="Upload File">
+            <q-file outlined v-model="files" hint="Upload File" multiple>
               <template v-slot:prepend>
                 <q-icon name="attach_file" />
               </template>
               <template v-slot:append>
-                <q-icon name="cancel" @click="file=null"/>
+                <q-icon name="cancel" @click="files=[]"/>
               </template>
             </q-file>
           </div>
@@ -82,15 +83,15 @@
 <script setup lang="ts">
 import { Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
-import { createDrive, createFile, createRun } from 'src/services/mutations';
+import { confirmUpload, createDrive, createFile, createRun, getUploadURL } from 'src/services/mutations';
 import { Project, Run } from 'src/types/types';
 import { useQuery } from '@tanstack/vue-query';
 import { allProjects, runsOfProject } from 'src/services/queries';
+import axios from 'axios';
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileRun = ref(false);
-const file = ref<File | null>(null);
-const fileName = ref('');
+const files = ref<File[]>([]);
 const selected_project: Ref<Project | null> = ref(null);
 const selected_run: Ref<Run | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
@@ -101,7 +102,7 @@ const { data: runs, refetch } = useQuery(
   { queryKey: ['runs', selected_project.value?.uuid],
     queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
-}
+  }
 );
 
 watchEffect(() => {
@@ -123,25 +124,50 @@ const submitNewFile = async () => {
     timeout: 0,
   })
   const start = new Date();
-  if (file.value) {
-    await createFile(fileName.value, selected_run.value.uuid, file.value).then(
-      (new_file) => {
-        const end = new Date();
-        noti({
-          message: `File ${new_file.name} uploaded & processed in ${(end.getTime() - start.getTime()) / 1000} s`,
-          color: 'positive',
-          spinner: false,
-          timeout: 5000,
-        })
-      }).catch((e) => {
-      noti({
-        message: `Upload of File ${fileName.value}failed: ${e}`,
-        color: 'negative',
-        spinner: false,
-        timeout: 2000,
-      })
+  if (files.value) {
+    console.log(files.value)
+    const filesToRecord : Record<string, File>=  files.value.reduce((acc, file) => ({ ...acc, [file.name]: file }), {});
+    const filenames = Object.keys(filesToRecord);
+    const urls = await getUploadURL(filenames)
+    console.log(filesToRecord)
+    console.log(JSON.stringify(urls))
+    await Promise.all(filenames.map((filename)=>{
+      const file = filesToRecord[filename];
+      const uploadURL = urls[filename];
+      console.log(`Uploading ${filename} to ${uploadURL}`)
 
-    })
+      // Use axios to upload the file
+      return axios.put(uploadURL, file, {
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      }).then(async () => {
+        console.log(`${filename} uploaded successfully`);
+        confirmUpload(filename).then(()=>{
+          noti({
+            message: `File ${filename} uploaded`,
+            color: 'positive',
+            spinner: false,
+            timeout: 5000,
+          })
+        }).catch((e)=>{
+          noti({
+            message: `Upload of File ${filename} failed: ${e}`,
+            color: 'negative',
+            spinner: false,
+            timeout: 0,
+          })
+        })
+      }).catch((e)=>{
+        noti({
+          message: `Upload of File ${filename} failed: ${e}`,
+          color: 'negative',
+          spinner: false,
+          timeout: 0,
+        })
+      })
+    }))
+
   }
   else if (drive_url.value) {
     if(!selected_run.value) {
@@ -180,7 +206,6 @@ const submitNewFile = async () => {
 };
 
 </script>
-
 <style scoped>
 
 </style>

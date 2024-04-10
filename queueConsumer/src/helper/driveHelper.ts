@@ -12,7 +12,7 @@ const auth = new google.auth.GoogleAuth({
 const drive = google.drive({ version: 'v3', auth });
 
 
-export async function downloadFile(fileId: string): Promise<Buffer> {
+export async function downloadDriveFile(fileId: string): Promise<Buffer> {
   const res = await drive.files.get(
     {
       fileId,

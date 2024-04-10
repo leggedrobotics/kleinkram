@@ -9,24 +9,13 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { CreateFile } from '../file/entities/create-file.dto';
 import env from '../env';
+import { minio, uploadToMinio } from '../minioHelper';
 
 function extractFileIdFromUrl(url: string): string | null {
   const regex =
     /drive\.google\.com\/(?:file\/d\/|open\?id=|drive\/folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})/;
   const match = url.match(regex);
   return match ? match[1] : null;
-}
-
-async function uploadToMinio(response: any, originalname: string) {
-  const filename = originalname.replace('.bag', '.mcap');
-  await this.minio.putObject(
-    env.MINIO_TEMP_BAG_BUCKET_NAME,
-    filename,
-    response.data,
-    {
-      'Content-Type': 'application/octet-stream',
-    },
-  );
 }
 
 @Injectable()
@@ -60,25 +49,48 @@ export class QueueService {
     console.log('added to queue');
   }
 
-  async create(createFile: CreateFile, file: Express.Multer.File) {
-    if (!file.filename.endsWith('.bag')) {
-      throw new Error('File is not a bag file');
-    }
+  async handleFileUpload(filenames: string[], runUUID: string) {
     const run = await this.runRepository.findOneOrFail({
-      where: { uuid: createFile.runUUID },
+      where: { uuid: runUUID },
+    });
+    const expiry = 2 * 60 * 60;
+    const urlPromises = filenames.map(async (filename) => {
+      const minioURL = await minio.presignedPutObject(
+        env.MINIO_TEMP_BAG_BUCKET_NAME,
+        filename,
+        expiry,
+      );
+      const newQueue = this.queueRepository.create({
+        identifier: filename,
+        state: FileState.AWAITING_UPLOAD,
+        location: FileLocation.MINIO,
+        run,
+      });
+      await this.queueRepository.save(newQueue);
+      return {
+        filename,
+        minioURL,
+      };
     });
 
-    await uploadToMinio(file, file.originalname);
+    const urls = await Promise.all(urlPromises);
 
-    const newQueue = this.queueRepository.create({
-      state: FileState.PENDING,
-      location: FileLocation.MINIO,
-      run,
+    return urls.reduce((acc, { filename, minioURL }) => {
+      acc[filename] = minioURL;
+      return acc;
+    }, {});
+  }
+
+  async confirmUpload(filename: string) {
+    const queue = await this.queueRepository.findOneOrFail({
+      where: { identifier: filename },
     });
-    await this.queueRepository.save(newQueue);
+
+    queue.state = FileState.PENDING;
+    await this.queueRepository.save(queue);
 
     await this.fileProcessingQueue.add('processMinioFile', {
-      queueUuid: newQueue.uuid,
+      queueUuid: queue.uuid,
     });
   }
 }

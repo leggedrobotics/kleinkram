@@ -1,14 +1,6 @@
-import {
-  Body,
-  Controller,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { CreateFile } from '../file/entities/create-file.dto';
 
 @Controller('queue')
 export class QueueController {
@@ -19,12 +11,22 @@ export class QueueController {
     return this.queueService.createDrive(body);
   }
 
-  @Post('create')
-  @UseInterceptors(FileInterceptor('file'))
-  async create(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateFile, // Use a specific DTO type if available
-  ) {
-    return this.queueService.create(body, file);
+  // @Post('create')
+  // @UseInterceptors(FileInterceptor('file'))
+  // async create(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Body() body: CreateFile, // Use a specific DTO type if available
+  // ) {
+  //   return this.queueService.create(body, file);
+  // }
+
+  @Post('createPreSignedURLS')
+  async create(@Body() body: { filenames: string[]; runUUID: string }) {
+    return this.queueService.handleFileUpload(body.filenames, body.runUUID);
+  }
+
+  @Post('confirmUpload')
+  async confirmUpload(@Body() body: { filename: string }) {
+    return this.queueService.confirmUpload(body.filename);
   }
 }
