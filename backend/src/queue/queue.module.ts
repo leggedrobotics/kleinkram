@@ -11,7 +11,7 @@ import Run from '../run/entities/run.entity';
     TypeOrmModule.forFeature([QueueEntity, Run]),
     BullModule.forRoot({
       redis: {
-        host: 'localhost',
+        host: 'redis',
         port: 6379,
       },
     }),

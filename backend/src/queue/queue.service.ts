@@ -73,9 +73,13 @@ export class QueueService {
     });
     await this.queueRepository.save(newQueue);
     console.log('adding to queue');
-    await this.fileProcessingQueue.add('processDriveFile', {
-      queueUuid: newQueue.uuid,
-    });
+    await this.fileProcessingQueue
+      .add('processDriveFile', {
+        queueUuid: newQueue.uuid,
+      })
+      .catch((err) => {
+        console.log(err);
+      });
     console.log('added to queue');
   }
 
