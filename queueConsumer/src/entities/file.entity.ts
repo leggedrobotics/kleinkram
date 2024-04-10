@@ -1,7 +1,8 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import BaseEntity from '../../base-entity.entity';
-import Topic from '../../topic/entities/topic.entity';
-import Run from '../../run/entities/run.entity';
+import { Column, Entity, JoinTable, ManyToOne, OneToMany } from 'typeorm';
+import BaseEntity from '../base-entity.entity';
+import Run from './run.entity';
+import Topic from './topic.entity';
+
 
 @Entity()
 export default class File extends BaseEntity {

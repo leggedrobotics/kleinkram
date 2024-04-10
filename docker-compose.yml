@@ -91,14 +91,15 @@ services:
     build:
       context: ./queueConsumer
     volumes:
-      - ./queueConsumer:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./queueConsumer:/usr/src/queueConsumer
+      - /usr/src/queueConsumer/node_modules
     env_file:
       - .env
     networks:
       - privatenet
     depends_on:
       - database
+
 volumes:
   db_data:
   minio_data:

@@ -34,7 +34,6 @@
     "@types/multer": "^1.4.11",
     "axios": "^1.6.8",
     "bull": "^4.12.2",
-    "class-validator": "0.13.2",
     "form-data": "^4.0.0",
     "googleapis": "^134.0.0",
     "minio": "^7.1.3",

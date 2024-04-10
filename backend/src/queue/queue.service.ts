@@ -58,15 +58,16 @@ export class QueueService {
         return this.handleDriveFolder(file.id, run, drive);
       }
       if (file.name.endsWith('.bag')) {
-        return this.handleDriveFile(file.id, run);
+        return this.handleDriveFile(file.id, run, file.name);
       }
     });
     const converted = await Promise.all(res);
     return converted.flat();
   }
-  async handleDriveFile(fileId: string, run: Run) {
+  async handleDriveFile(fileId: string, run: Run, fileName: string) {
     const newQueue = this.queueRepository.create({
-      name: fileId,
+      identifier: fileId,
+      name: fileName,
       state: FileState.PENDING,
       location: FileLocation.DRIVE,
       run,
@@ -94,7 +95,7 @@ export class QueueService {
       fields: 'name,mimeType',
     });
     if (metadataRes.data.mimeType !== 'application/vnd.google-apps.folder') {
-      return this.handleDriveFile(fileId, run);
+      return this.handleDriveFile(fileId, run, metadataRes.data.name);
     }
     return this.handleDriveFolder(fileId, run, drive);
   }

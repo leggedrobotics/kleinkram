@@ -93,7 +93,7 @@ export class FileService {
 
   async update(uuid: string, file: UpdateFile) {
     const db_file = await this.fileRepository.findOne({ where: { uuid } });
-    db_file.name = file.name;
+    db_file.identifier = file.name;
     db_file.date = file.date;
     if (file.run) {
       db_file.run = await this.runRepository.findOne({

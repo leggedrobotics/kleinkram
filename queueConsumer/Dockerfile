@@ -1,7 +1,7 @@
 FROM node:21-alpine
 
-WORKDIR /usr/src/app
-
+WORKDIR /usr/src/queueConsumer
+RUN ls
 COPY package.json ./
 COPY yarn.lock ./
 
@@ -11,5 +11,5 @@ COPY . .
 
 RUN rm -rf dist
 
-RUN yarn build
+#RUN yarn build
 CMD ["yarn", "start:dev"]

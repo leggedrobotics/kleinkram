@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
-import BaseEntity from '../../base-entity.entity';
-import { FileLocation, FileState } from '../../enum';
-import Run from '../../run/entities/run.entity';
+import BaseEntity from '../base-entity.entity';
+import { FileLocation, FileState } from '../enum';
+import Run from './run.entity';
 
 @Entity()
 export default class QueueEntity extends BaseEntity {
