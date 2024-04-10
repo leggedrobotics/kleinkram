@@ -1,18 +1,6 @@
-import {
-  Controller,
-  Post,
-  UseInterceptors,
-  UploadedFile,
-  Body,
-  Get,
-  Put,
-  Param,
-  Query,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Body, Get, Put, Param, Query } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
-import { CreateFile } from './entities/create-file.dto';
 
 @Controller('file')
 export class FileController {

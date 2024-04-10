@@ -10,6 +10,8 @@ import { FileProcessor } from './provider';
 import QueueEntity from './entities/queue.entity';
 import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
+import Topic from './entities/topic.entity';
+import Project from './entities/project.entity';
 
 
 @Module({
@@ -38,13 +40,13 @@ import FileEntity from './entities/file.entity';
           username: configService.getOrThrow<string>('database.username'),
           password: configService.getOrThrow<string>('database.password'),
           database: configService.getOrThrow<string>('database.database'),
-          entities: [configService.getOrThrow<string>('entities')],
+          entities: [QueueEntity, Run, FileEntity,Project,Topic],
           synchronize: env.DEV,
           logging: ['warn', 'error'],
         }) as PostgresConnectionOptions,
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity]),
+    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic]),
   ],
   providers: [FileProcessor],
 })

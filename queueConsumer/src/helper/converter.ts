@@ -1,13 +1,12 @@
-import util from 'util';
-import { exec } from 'child_process';
+
 import { promises as fs } from 'fs';
 import { loadDecompressHandlers } from '@mcap/support';
 import { McapIndexedReader } from '@mcap/core';
-import Topic from '../entities/topic.entity';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
 
-
-const execPromisify = util.promisify(exec);
+import { promisify } from 'util';
+import { exec } from 'child_process';
+const execPromisify = promisify(exec);
 
 export async function convert(infile:string, outfile:string){
   // Convert file
@@ -33,11 +32,12 @@ export async function mcapMetaInfo(buffer: Buffer){
     const topic = {
         name: channel.topic,
         type: schema.name,
-        messageCount: nr_messages,
+        nrMessages: nr_messages,
         frequency: Number(nr_messages) / (Number(duration / 1000n) / 1000000),
       };
     topics.push(topic);
   });
+
   return {
     topics: topics,
     date: new Date(Number(stats.messageStartTime / 1000000n)),

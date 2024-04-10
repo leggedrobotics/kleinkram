@@ -144,19 +144,22 @@ const submitNewFile = async () => {
     })
   }
   else if (drive_url.value) {
+    if(!selected_run.value) {
+      return
+    }
     console.log('Uploading from URL')
-    await createDrive(selected_project.value.uuid, drive_url.value).then(
-      (new_run) => {
+    await createDrive(selected_run.value.uuid, drive_url.value).then(
+      () => {
         const end = new Date();
         noti({
-          message: `File ${new_run.name} loaded & processed in ${(end.getTime() - start.getTime()) / 1000} s`,
+          message: `Files for Run ${selected_run.value?.name} loaded & processed in ${(end.getTime() - start.getTime()) / 1000} s`,
           color: 'positive',
           spinner: false,
           timeout: 5000,
         })
       }).catch((e) => {
       noti({
-        message: `Upload of File ${fileName.value}failed: ${e}`,
+        message: `Upload of Files for Run ${selected_run.value?.name} failed: ${e}`,
         color: 'negative',
         spinner: false,
         timeout: 0,

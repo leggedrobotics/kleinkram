@@ -8,9 +8,6 @@ export default class QueueEntity extends BaseEntity {
   @Column()
   identifier: string;
 
-  @Column()
-  name: string;
-
   @Column({
     type: 'enum',
     enum: FileState,

@@ -108,12 +108,11 @@ export class FileService {
     const file = await this.fileRepository.findOneOrFail({
       where: { uuid },
     });
-    const fileURL = await this.minio.presignedUrl(
+    return await this.minio.presignedUrl(
       'GET',
       env.MINIO_BAG_BUCKET_NAME,
       file.filename,
       24 * 60 * 60,
     );
-    return fileURL;
   }
 }

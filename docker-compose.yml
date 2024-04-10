@@ -46,18 +46,6 @@ services:
       - "127.0.0.1:9001:9001"
     networks:
       - webnet
-
-  fastapi:
-    image: rslethz/grandtour-datasets:fastapi_api-latest
-
-    container_name: fastapi
-    build: ./bagHandler
-
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    networks:
       - privatenet
 
   frontend:
