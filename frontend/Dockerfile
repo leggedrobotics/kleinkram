@@ -11,18 +11,14 @@ WORKDIR /app
 COPY ./package.json ./
 COPY ./yarn.lock ./
 
-# Extract version from package.json and set it as an environment variable
-RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") && \
-    echo "VITE_QUASAR_VERSION is set to ${VITE_QUASAR_VERSION}" && \
-    echo "VITE_QUASAR_VERSION=${VITE_QUASAR_VERSION}" >> .env
-
-
 
 RUN yarn install --ignore-engines
 
 COPY . .
 
-RUN yarn build
+RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") && \
+    echo "VITE_QUASAR_VERSION is set to ${VITE_QUASAR_VERSION}" && \
+    yarn build
 
 # Production stage
 FROM nginx:alpine as production-stage
