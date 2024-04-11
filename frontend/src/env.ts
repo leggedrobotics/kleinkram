@@ -76,6 +76,10 @@ export default {
     return asString(import.meta.env.VITE_QUASAR_ENDPOINT|| 'http://localhost:3000') ;
   },
 
+  get VERSION(): string {
+    return asString(import.meta.env.VITE_QUASAR_VERSION || '0.0.0');
+  },
+
   /**
    * @returns whether this build is a production build
    */

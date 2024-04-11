@@ -83,6 +83,9 @@
       <div class="flex flex-center">
         DEVELOPMENT SYSTEM: Data will be reset without notice
       </div>
+      <div class="flex flex-center">
+      v {{ENV.VERSION}}
+    </div>
     </q-banner>
   </q-layout>
 </template>
@@ -91,6 +94,7 @@
 import ROUTES from 'src/router/routes';
 import { inject } from 'vue';
 import RouterService from 'src/services/routerService';
+import ENV from 'src/env';
 const $routerService: RouterService | undefined = inject('$routerService');
 function goHome(): void {
   console.log('goHome');

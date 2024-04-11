@@ -69,10 +69,6 @@ module.exports = configure(function (/* ctx */) {
 
       // publicPath: '/',
       // analyze: true,
-      env: {
-        API_URL: process.env.QUASAR_ENDPOINT,
-        VERSION: process.env.VERSION
-      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
