@@ -89,10 +89,8 @@ services:
     image: rslethz/grandtour-datasets:bull-consumer-latest
     container_name: bullconsumer
     build:
-      context: ./queueConsumer
-    volumes:
-      - ./queueConsumer:/usr/src/queueConsumer
-      - /usr/src/queueConsumer/node_modules
+      context: ./backend
+      dockerfile: Dockerfile
     env_file:
       - .env
     networks:
