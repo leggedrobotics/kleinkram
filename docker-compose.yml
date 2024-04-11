@@ -66,6 +66,9 @@ services:
           path: ./frontend
           target: /app
 
+    networks:
+      - webnet
+
   redis:
     image: redis:latest
     ports:

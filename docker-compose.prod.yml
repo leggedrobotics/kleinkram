@@ -17,6 +17,7 @@ services:
 
     networks:
       - webnet
+      - privatenet
 
     depends_on:
       - database
@@ -30,7 +31,7 @@ services:
       - '5432:5432'
 
     networks:
-      - webnet
+      - privatenet
 
     environment:
       POSTGRES_DB: ${DB_DATABASE}
@@ -58,21 +59,8 @@ services:
       - "127.0.0.1:9001:9001" # management console
     networks:
       - webnet
+      - privatenet
 
-  fastapi:
-    image: rslethz/grandtour-datasets:fastapi_api-latest
-    container_name: fastapi_api
-
-    build:
-      context: ./bagHandler
-      dockerfile: prod.Dockerfile
-
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    networks:
-      - webnet
 
   frontend:
     image: rslethz/grandtour-datasets:vuejs_frontend-latest
@@ -90,9 +78,32 @@ services:
     networks:
       - webnet
 
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - privatenet
+
+  bullconsumer:
+    image: rslethz/grandtour-datasets:bull-consumer-latest
+    container_name: bullconsumer
+    build:
+      context: ./queueConsumer
+    volumes:
+      - ./queueConsumer:/usr/src/queueConsumer
+      - /usr/src/queueConsumer/node_modules
+    env_file:
+      - .env
+    networks:
+      - privatenet
+    depends_on:
+      - database
+
 volumes:
   postgres_db_data:
   minio_data:
 
 networks:
   webnet:
+  privatenet:
