@@ -5,16 +5,18 @@ ARG QUASAR_ENDPOINT
 ENV VITE_QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
 RUN echo "QUASAR_ENDPOINT is set to ${QUASAR_ENDPOINT}"
 
+
+WORKDIR /app
+
+COPY ./package.json ./
+COPY ./yarn.lock ./
+
 # Extract version from package.json and set it as an environment variable
 RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") && \
     echo "VITE_QUASAR_VERSION is set to ${VITE_QUASAR_VERSION}" && \
     echo "VITE_QUASAR_VERSION=${VITE_QUASAR_VERSION}" >> .env
 
 
-WORKDIR /app
-
-COPY ./package.json ./
-COPY ./yarn.lock ./
 
 RUN yarn install --ignore-engines
 
