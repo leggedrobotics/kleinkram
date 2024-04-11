@@ -123,7 +123,6 @@ const submitNewFile = async () => {
     position: 'top-right',
     timeout: 0,
   })
-  console.log(files.value)
   if (files.value && files.value.length > 0) {
     const filesToRecord : Record<string, File>=  files.value.reduce((acc, file) => ({ ...acc, [file.name]: file }), {});
     const filenames = Object.keys(filesToRecord);

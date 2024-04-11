@@ -113,17 +113,18 @@ export class FileProcessor implements OnModuleInit {
     const queue= await this.startProcessing(job.data.queueUuid);
 
     const metadataRes = await getMetadata(queue.identifier);
-    console.log(metadataRes)
     if(metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
-      console.log(`Job {${job.id}} is a file, processing...`)
+      console.log(`Job {${job.id}} is a file: ${metadataRes.name}, processing...`)
       try {
         let buffer = await downloadDriveFile(queue.identifier);
-
+        console.log(`Job {${job.id}} downloaded file: ${metadataRes.name}`)
         if(metadataRes.name.endsWith('.mcap')){
           await uploadFile(env.MINIO_BAG_BUCKET_NAME, metadataRes.name, buffer);
+          console.log(`Job {${job.id}} uploaded file: ${metadataRes.name}`)
         }
         else if(metadataRes.name.endsWith('.bag')){
           buffer = await processFile(buffer, metadataRes.name);
+          console.log(`Job {${job.id}} processed file: ${metadataRes.name}`)
         }
         else {
           throw new Error('Invalid file extension');
@@ -137,7 +138,7 @@ export class FileProcessor implements OnModuleInit {
           return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
         })
         const createdTopics = await Promise.all(res);
-
+        console.log(`Job {${job.id}} created topics: ${createdTopics}`)
         const newFile = this.fileRepository.create({
           identifier: queue.identifier,
           date,
@@ -149,6 +150,7 @@ export class FileProcessor implements OnModuleInit {
         const savedFile = await this.fileRepository.save(newFile);
         queue.state = FileState.DONE
         await this.queueRepository.save(queue);
+        console.log(`Job {${job.id}} saved file: ${savedFile}`)
         return savedFile;
       } catch (error) {
         queue.state = FileState.ERROR

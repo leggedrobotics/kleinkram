@@ -1,5 +1,6 @@
 import { Client, CopyConditions } from 'minio';
 import env from '../env';
+import { Readable } from 'stream';
 
 const minio: Client = new Client({
   endPoint: 'minio',
@@ -13,9 +14,27 @@ const minio: Client = new Client({
 
 
 export async function uploadFile(bucketName: string, fileName: string, buffer: Buffer): Promise<void> {
-  console.log('Uploading file to Minio...')
-  await minio.putObject(bucketName, fileName, buffer);
-  console.log('File uploaded to Minio');
+  console.log('Uploading file to Minio in parts...');
+  const n = 100;
+  const partSize = Math.ceil(buffer.length / n);
+  let partIndex = 0;
+
+  const stream = new Readable({
+    read() {
+      if (partIndex < n) {
+        const start = partIndex * partSize;
+        const end = start + partSize;
+        const part = buffer.slice(start, end);
+        this.push(part);
+        partIndex += 1;
+      } else {
+        this.push(null); // No more data to push, signal EOF
+      }
+    }
+  });
+
+  await minio.putObject(bucketName, fileName, stream);
+  console.log('File uploaded to Minio in parts');
 }
 
 export async function downloadMinioFile(bucketName: string, fileName: string): Promise<Buffer> {

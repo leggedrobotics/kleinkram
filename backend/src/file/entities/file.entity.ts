@@ -20,6 +20,6 @@ export default class File extends BaseEntity {
   @Column()
   filename: string;
 
-  @Column()
+  @Column({ type: 'bigint' })
   size: number;
 }
