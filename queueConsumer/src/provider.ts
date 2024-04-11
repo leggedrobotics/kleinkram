@@ -9,7 +9,7 @@ import FileEntity from './entities/file.entity';
 import env from './env';
 import { convert, mcapMetaInfo } from './helper/converter';
 import { downloadDriveFile, getMetadata, listFiles } from './helper/driveHelper';
-import { deleteMinioFile, downloadMinioFile, uploadFile } from './helper/minioHelper';
+import { deleteMinioFile, downloadMinioFile, moveMinioFile, uploadFile } from './helper/minioHelper';
 import Topic from './entities/topic.entity';
 import { FileLocation, FileState } from './enum';
 
@@ -27,12 +27,10 @@ async function processFile(buffer: Buffer, fileName: string, ) {
   // Read converted file and upload
   await uploadFile(env.MINIO_BAG_BUCKET_NAME, newFileName, convertedBuffer)
 
-  const res = await mcapMetaInfo(convertedBuffer);
-
   // Optionally, clean up temporary files
   await fs.unlink(tempFilePath);
   await fs.unlink(mcapPath);
-  return res;
+  return convertedBuffer;
 }
 
 
@@ -67,10 +65,20 @@ export class FileProcessor implements OnModuleInit {
     console.log(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
     const queue= await this.startProcessing(job.data.queueUuid);
     try{
-      const buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
-      const { topics, date, size } = await processFile(buffer, queue.identifier);
+      let buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
 
-      await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
+      if(queue.identifier.endsWith('.mcap')){
+        await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
+      }
+      else if(queue.identifier.endsWith('.bag')){
+        buffer = await processFile(buffer, queue.identifier);
+        await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
+      }
+      else {
+        throw new Error('Invalid file extension');
+      }
+      const { topics, date, size } = await mcapMetaInfo(buffer);
+
 
       const res = topics.map(async (topic) => {
         const newTopic = this.topicRepository.create(topic)
@@ -109,9 +117,18 @@ export class FileProcessor implements OnModuleInit {
     if(metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
       console.log(`Job {${job.id}} is a file, processing...`)
       try {
-        const buffer = await downloadDriveFile(queue.identifier);
+        let buffer = await downloadDriveFile(queue.identifier);
 
-        const { topics, date, size } = await processFile(buffer, metadataRes.name);
+        if(metadataRes.name.endsWith('.mcap')){
+          await uploadFile(env.MINIO_BAG_BUCKET_NAME, metadataRes.name, buffer);
+        }
+        else if(metadataRes.name.endsWith('.bag')){
+          buffer = await processFile(buffer, metadataRes.name);
+        }
+        else {
+          throw new Error('Invalid file extension');
+        }
+        const { topics, date, size } = await mcapMetaInfo(buffer);
 
         const res = topics.map(async (topic) => {
           const newTopic = this.topicRepository.create(topic)

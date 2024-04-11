@@ -56,7 +56,7 @@
         </div>
         <div class="col-1">
           <div class="row" style="padding-bottom: 8px">
-            <q-file outlined v-model="files" hint="Upload File" multiple>
+            <q-file outlined v-model="files" hint="Upload File" multiple accept=".bag, .mcap">
               <template v-slot:prepend>
                 <q-icon name="attach_file" />
               </template>
@@ -123,18 +123,25 @@ const submitNewFile = async () => {
     position: 'top-right',
     timeout: 0,
   })
-  const start = new Date();
-  if (files.value) {
-    console.log(files.value)
+  console.log(files.value)
+  if (files.value && files.value.length > 0) {
     const filesToRecord : Record<string, File>=  files.value.reduce((acc, file) => ({ ...acc, [file.name]: file }), {});
     const filenames = Object.keys(filesToRecord);
     const urls = await getUploadURL(filenames)
-    console.log(filesToRecord)
-    console.log(JSON.stringify(urls))
     await Promise.all(filenames.map((filename)=>{
       const file = filesToRecord[filename];
+      if(!urls[filename]) {
+        Notify.create({
+          group: false,
+          message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type?`,
+          color: 'negative',
+          spinner: false,
+          position: 'top-right',
+          timeout: 0,
+        })
+        return
+      }
       const uploadURL = urls[filename];
-      console.log(`Uploading ${filename} to ${uploadURL}`)
 
       // Use axios to upload the file
       return axios.put(uploadURL, file, {
@@ -142,43 +149,52 @@ const submitNewFile = async () => {
           'Content-Type': file.type || 'application/octet-stream',
         },
       }).then(async () => {
-        console.log(`${filename} uploaded successfully`);
         confirmUpload(filename).then(()=>{
-          noti({
+          Notify.create({
             message: `File ${filename} uploaded`,
             color: 'positive',
             spinner: false,
-            timeout: 5000,
+            position: 'top-right',
+            group: false,
+            timeout: 2000,
           })
         }).catch((e)=>{
-          noti({
+          Notify.create({
             message: `Upload of File ${filename} failed: ${e}`,
             color: 'negative',
             spinner: false,
+            position: 'top-right',
+            group: false,
             timeout: 0,
           })
         })
       }).catch((e)=>{
-        noti({
+        Notify.create({
           message: `Upload of File ${filename} failed: ${e}`,
           color: 'negative',
+          position: 'top-right',
+          group: false,
           spinner: false,
           timeout: 0,
         })
       })
     }))
+    noti({
+      message: `Files for Run ${selected_run.value?.name} uploaded`,
+      color: 'positive',
+      spinner: false,
+      timeout: 5000,
 
+    })
   }
   else if (drive_url.value) {
     if(!selected_run.value) {
       return
     }
-    console.log('Uploading from URL')
     await createDrive(selected_run.value.uuid, drive_url.value).then(
       () => {
-        const end = new Date();
         noti({
-          message: `Files for Run ${selected_run.value?.name} loaded & processed in ${(end.getTime() - start.getTime()) / 1000} s`,
+          message: `Files for Run ${selected_run.value?.name} are now importing...`,
           color: 'positive',
           spinner: false,
           timeout: 5000,
@@ -202,7 +218,6 @@ const submitNewFile = async () => {
       timeout: 2000,
     })
   }
-  console.log('completed')
 };
 
 </script>

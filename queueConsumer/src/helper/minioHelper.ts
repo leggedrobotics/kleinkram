@@ -1,4 +1,4 @@
-import { Client } from 'minio';
+import { Client, CopyConditions } from 'minio';
 import env from '../env';
 
 const minio: Client = new Client({
@@ -39,4 +39,15 @@ export async function downloadMinioFile(bucketName: string, fileName: string): P
 
 export async function deleteMinioFile(bucketName: string, fileName: string): Promise<void> {
   await minio.removeObject(bucketName, fileName);
+}
+
+export async function moveMinioFile(sourceBucket: string, destBucket: string, fileName: string): Promise<void> {
+  const sourceKey = `${sourceBucket}/${fileName}`;
+  return new Promise((resolve, reject) => {
+    minio.copyObject(env.MINIO_BAG_BUCKET_NAME, fileName, sourceKey, new CopyConditions(), async (err, res) => {
+      if (err) reject(err);
+      await minio.removeObject(sourceBucket, fileName);
+      resolve();
+    });
+  })
 }
