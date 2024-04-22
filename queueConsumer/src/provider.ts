@@ -138,7 +138,7 @@ export class FileProcessor implements OnModuleInit {
           return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
         })
         const createdTopics = await Promise.all(res);
-        console.log(`Job {${job.id}} created topics: ${createdTopics}`)
+        console.log(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`)
         const newFile = this.fileRepository.create({
           identifier: queue.identifier,
           date,
@@ -165,6 +165,7 @@ export class FileProcessor implements OnModuleInit {
       await Promise.all(files.map(async (file) => {
         if(file.name.endsWith('.bag')){
           const newQueue = this.queueRepository.create({
+            filename: file.name,
             identifier: file.id,
             state: FileState.PENDING,
             location: FileLocation.DRIVE,

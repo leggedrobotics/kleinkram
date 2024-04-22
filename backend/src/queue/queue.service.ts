@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import QueueEntity from './entities/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Run from '../run/entities/run.entity';
 import { FileLocation, FileState } from '../enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { CreateFile } from '../file/entities/create-file.dto';
 import env from '../env';
-import { minio, uploadToMinio } from '../minioHelper';
+import { minio } from '../minioHelper';
 
 function extractFileIdFromUrl(url: string): string | null {
   const regex =
@@ -33,6 +32,7 @@ export class QueueService {
     });
     const fileId = extractFileIdFromUrl(driveCreate.driveURL);
     const newQueue = this.queueRepository.create({
+      filename: fileId,
       identifier: fileId,
       state: FileState.PENDING,
       location: FileLocation.DRIVE,
@@ -64,6 +64,7 @@ export class QueueService {
         expiry,
       );
       const newQueue = this.queueRepository.create({
+        filename,
         identifier: filename,
         state: FileState.AWAITING_UPLOAD,
         location: FileLocation.MINIO,
@@ -94,6 +95,18 @@ export class QueueService {
 
     await this.fileProcessingQueue.add('processMinioFile', {
       queueUuid: queue.uuid,
+    });
+  }
+
+  async active(startDate: Date) {
+    return await this.queueRepository.find({
+      where: {
+        updatedAt: MoreThan(startDate),
+      },
+      relations: ['run', 'run.project'],
+      order: {
+        createdAt: 'DESC',
+      },
     });
   }
 }

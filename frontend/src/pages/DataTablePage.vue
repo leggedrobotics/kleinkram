@@ -251,7 +251,7 @@ const columns = [
   {
     name: 'Run',
     required: true,
-    label: 'Run Name',
+    label: 'Run',
     align: 'left',
     field: (row: FileEntity) => row.run.name,
     format: (val:string) => `${val}`,
@@ -260,9 +260,9 @@ const columns = [
   {
     name: 'File',
     required: true,
-    label: 'File Name',
+    label: 'File',
     align: 'left',
-    field: (row: FileEntity)  => row.name,
+    field: (row: FileEntity)  => row.filename,
     format: (val:string) => `${val}`,
     sortable: true
   },

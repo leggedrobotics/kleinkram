@@ -1,3 +1,5 @@
+import { FileState } from 'src/enum/QUEUE_ENUM';
+
 class BaseEntity {
     uuid: string;
     createdAt: Date | null;
@@ -41,13 +43,15 @@ export class Run extends BaseEntity {
 }
 
 export class FileEntity extends BaseEntity {
-  name: string;
+  filename: string;
   run: Run;
   date: Date;
   topics: Topic[];
   size: number;
+  identifier: string;
   constructor(uuid: string,
-              name: string,
+              filename: string,
+              identifier: string,
               run: Run,
               date: Date,
               topics: Topic[],
@@ -59,7 +63,8 @@ export class FileEntity extends BaseEntity {
     this.size = size;
     this.run = run;
     this.date = date;
-    this.name = name;
+    this.filename = filename;
+    this.identifier = identifier;
     this.topics = topics;
   }
 }
@@ -75,5 +80,21 @@ export class Topic extends BaseEntity {
     this.type = type;
     this.nrMessages = nrMessages;
     this.frequency = frequency;
+  }
+}
+
+export class Queue extends BaseEntity {
+  identifier: string;
+  filename: string;
+  state: FileState;
+  location: string;
+  run: Run;
+  constructor(uuid: string, identifier: string, filename: string, state: FileState, location: string, run: Run, createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+    super(uuid, createdAt, updatedAt, deletedAt);
+    this.filename = filename;
+    this.identifier = identifier;
+    this.state = state;
+    this.location = location;
+    this.run = run;
   }
 }

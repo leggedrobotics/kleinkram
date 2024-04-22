@@ -2,7 +2,7 @@ import { Client } from 'minio';
 import env from './env';
 
 export const minio: Client = new Client({
-  endPoint: 'localhost',
+  endPoint: 'localhost', // env.MINIO_ENDPOINT,
   useSSL: false,
   port: 9000,
 

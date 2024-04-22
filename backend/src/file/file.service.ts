@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Client } from 'minio';
 import File from './entities/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import { TopicService } from '../topic/topic.service';
@@ -33,13 +32,15 @@ export class FileService {
     // Start building your query with basic filters
     const query = this.fileRepository
       .createQueryBuilder('file')
-      .leftJoinAndSelect('file.run', 'run')
-      .leftJoinAndSelect('file.topics', 'topic')
-      .leftJoinAndSelect('run.project', 'project');
-
+      .select('file.uuid')
+      .leftJoin('file.run', 'run')
+      .leftJoin('file.topics', 'topic')
+      .leftJoin('run.project', 'project');
     // Apply filters for fileName, projectUUID, and date
     if (fileName) {
-      query.andWhere('file.name LIKE :fileName', { fileName: `%${fileName}%` });
+      query.andWhere('file.filename LIKE :fileName', {
+        fileName: `%${fileName}%`,
+      });
     }
     if (projectUUID) {
       query.andWhere('project.uuid = :projectUUID', { projectUUID });
@@ -55,25 +56,26 @@ export class FileService {
     }
     const splitTopics = topics.split(',');
     if (topics && topics.length > 0) {
+      query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
+
       if (and_or) {
-        splitTopics.forEach((topicName, index) => {
-          query.andWhere((qb) => {
-            const key = `topicName${index}`;
-            const subQuery = qb
-              .subQuery()
-              .select('fileTopic.fileUuid')
-              .from('file_topics_topic', 'fileTopic') // Reference the join table
-              .leftJoin('topic', 'topic', 'topic.Uuid = fileTopic.topicUuid') // Join with the Topic entities
-              .where(`topic.name = :${key}`, { [key]: topicName })
-              .getQuery();
-            return `file.uuid IN ${subQuery}`;
-          });
+        query.groupBy('file.uuid').having('COUNT(file.uuid) = :topicCount', {
+          topicCount: splitTopics.length,
         });
-      } else {
-        query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
       }
     } // Execute the query
-    return query.getMany();
+    const fileIds = await query.getMany();
+    if (fileIds.length === 0) {
+      return [];
+    }
+    const fileIdsArray = fileIds.map((file) => file.uuid);
+    return await this.fileRepository
+      .createQueryBuilder('file')
+      .leftJoinAndSelect('file.run', 'run')
+      .leftJoinAndSelect('run.project', 'project')
+      .leftJoinAndSelect('file.topics', 'topic')
+      .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+      .getMany();
   }
 
   async findOne(uuid: string) {

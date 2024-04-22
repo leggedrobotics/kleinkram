@@ -49,9 +49,11 @@ export const fetchOverview = async (runName: string,
           new Date(file.run.updatedAt),
           new Date(file.run.deletedAt));
       }
+      console.log(file)
       const newFile = new FileEntity(
         file.uuid,
-        file.name,
+        file.filename,
+        file.identifier,
         run,
         new Date(file.date),
         file.topics,
@@ -73,6 +75,14 @@ export const fetchOverview = async (runName: string,
 
 export const allProjects = async () => {
   const response = await axios.get('/project');
+  return response.data;
+}
+
+export const currentQueue = async (startDate: Date) => {
+  const params = {
+    startDate: startDate.toISOString()
+  };
+  const response = await axios.get('/queue/active', { params });
   return response.data;
 }
 
@@ -113,6 +123,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
     const newFile = new FileEntity(
       file.uuid,
       file.name,
+      file.filename,
       run,
       new Date(file.date),
       topics,

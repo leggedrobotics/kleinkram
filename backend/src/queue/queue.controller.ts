@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
 
@@ -28,5 +28,16 @@ export class QueueController {
   @Post('confirmUpload')
   async confirmUpload(@Body() body: { filename: string }) {
     return this.queueService.confirmUpload(body.filename);
+  }
+
+  @Get('active')
+  async active(@Query('startDate') startDate: string) {
+    const date = new Date(startDate);
+    // Additional validation to handle invalid dates could be placed here
+    if (isNaN(date.getTime())) {
+      // Check if date is valid
+      throw new Error('Invalid date format');
+    }
+    return this.queueService.active(date);
   }
 }

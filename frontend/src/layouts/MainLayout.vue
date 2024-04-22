@@ -79,13 +79,10 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-banner class="text-white bg-red fixed-bottom">
+    <q-banner class="text-white bg-red fixed-bottom" style="min-height: 10px">
       <div class="flex flex-center">
-        DEVELOPMENT SYSTEM: Data will be reset without notice
+        DEVELOPMENT SYSTEM v{{ENV.VERSION}}: Data will be reset without notice
       </div>
-      <div class="flex flex-center">
-      v {{ENV.VERSION}}
-    </div>
     </q-banner>
   </q-layout>
 </template>
