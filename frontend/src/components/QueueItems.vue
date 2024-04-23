@@ -80,7 +80,7 @@ const columns = [
   {name: 'Run', required: true, label: 'Run', align: 'left', field: (row: Queue)=> row.run.name},
   {name: 'Status', label: 'Status', align: 'left', field: 'state'},
   {name: 'Location', required: true, label: 'Location', align: 'left', field: 'location'},
-  {name: 'Filename', required: true, label: 'Filename', align: 'left', field: 'filename'},
+  {name: 'Filename', required: true, label: 'Filename', align: 'left', field: (row: Queue)=> {if(row.filename == row.identifier) return 'Folder'; return row.filename}},
   {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ]
 
