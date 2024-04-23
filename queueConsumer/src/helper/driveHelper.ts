@@ -1,8 +1,9 @@
 import { google } from 'googleapis';
+import env from '../env';
 
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
-const KEYFILEPATH = 'grandtourdatasets-5295745f7fab.json';
+const KEYFILEPATH = env.GOOGLE_KEY_FILE;
 
 
 const auth = new google.auth.GoogleAuth({
