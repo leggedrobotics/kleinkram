@@ -10,6 +10,7 @@ import { context, trace } from '@opentelemetry/api';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import { TypeormInstrumentation } from 'opentelemetry-instrumentation-typeorm';
 
 // Export the tracing
 const contextManager = new AsyncHooksContextManager().enable();
@@ -51,7 +52,8 @@ const sdk = new NodeSDK({
     new ExpressInstrumentation(),
     new HttpInstrumentation(),
     new FetchInstrumentation(),
-    new WinstonInstrumentation()
+    new WinstonInstrumentation(),
+    new TypeormInstrumentation()
   ]
 });
 
