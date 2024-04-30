@@ -9,6 +9,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '../env';
 import { minio } from '../minioHelper';
+import logger from '../logger';
 
 function extractFileIdFromUrl(url: string): string | null {
   const regex =
@@ -44,9 +45,9 @@ export class QueueService {
         queueUuid: newQueue.uuid,
       })
       .catch((err) => {
-        console.log(err);
+        logger.error(err);
       });
-    console.log('added to queue');
+    logger.debug('added to queue');
   }
 
   async handleFileUpload(filenames: string[], runUUID: string) {
@@ -79,6 +80,8 @@ export class QueueService {
 
     const urls = await Promise.all(urlPromises);
 
+    console.debug('createPreSignedURLS', urls)
+
     return urls.reduce((acc, { filename, minioURL }) => {
       acc[filename] = minioURL;
       return acc;
@@ -86,6 +89,9 @@ export class QueueService {
   }
 
   async confirmUpload(filename: string) {
+
+    console.debug('confirmUpload', filename)
+
     const queue = await this.queueRepository.findOneOrFail({
       where: { identifier: filename },
     });
@@ -93,9 +99,10 @@ export class QueueService {
     queue.state = FileState.PENDING;
     await this.queueRepository.save(queue);
 
+    console.debug('add file to queue', queue.uuid)
     await this.fileProcessingQueue.add('processMinioFile', {
       queueUuid: queue.uuid,
-    });
+    })
   }
 
   async active(startDate: Date) {

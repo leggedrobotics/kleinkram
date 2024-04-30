@@ -3,8 +3,8 @@ import env from './env';
 
 export const minio: Client = new Client({
   endPoint: env.MINIO_ENDPOINT, // env.MINIO_ENDPOINT,
-  useSSL: !env.DEV,
-  port: env.DEV ? 9000 : 443,
+  useSSL: false, // !env.DEV,
+  port: env.DEV ? 9000 : 9000,
 
   region: 'GUGUS GEWESEN',
   accessKey: env.MINIO_ACCESS_KEY,

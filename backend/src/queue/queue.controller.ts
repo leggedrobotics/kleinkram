@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
+import logger from '../logger';
 
 @Controller('queue')
 export class QueueController {
@@ -22,6 +23,7 @@ export class QueueController {
 
   @Post('createPreSignedURLS')
   async create(@Body() body: { filenames: string[]; runUUID: string }) {
+    logger.debug('createPreSignedURLS', body.filenames, body.runUUID);
     return this.queueService.handleFileUpload(body.filenames, body.runUUID);
   }
 

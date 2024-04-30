@@ -1,5 +1,5 @@
-import { BullModule, InjectQueue } from '@nestjs/bull';
-import { Injectable, Module, OnModuleInit } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
@@ -18,17 +18,17 @@ import Project from './entities/project.entity';
   imports: [
     BullModule.forRoot({
       redis: {
-        host: "redis",
-        port: 6379,
-      },
+        host: 'redis',
+        port: 6379
+      }
     }),
     BullModule.registerQueue({
-      name: 'file-queue',
+      name: 'file-queue'
     }),
 
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [configuration],
+      load: [configuration]
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -40,15 +40,16 @@ import Project from './entities/project.entity';
           username: configService.getOrThrow<string>('database.username'),
           password: configService.getOrThrow<string>('database.password'),
           database: configService.getOrThrow<string>('database.database'),
-          entities: [QueueEntity, Run, FileEntity,Project,Topic],
+          entities: [QueueEntity, Run, FileEntity, Project, Topic],
           synchronize: env.DEV,
-          logging: ['warn', 'error'],
+          logging: ['warn', 'error']
         }) as PostgresConnectionOptions,
-      inject: [ConfigService],
+      inject: [ConfigService]
     }),
-    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic]),
+    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic])
   ],
-  providers: [FileProcessor],
+  providers: [FileProcessor]
 })
-export class AppModule {}
+export class AppModule {
+}
 

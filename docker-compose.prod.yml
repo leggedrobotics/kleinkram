@@ -97,10 +97,66 @@ services:
       - privatenet
     depends_on:
       - database
+      - loki
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - logging-prometheus-storage:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - '9090:9090'
+    networks:
+      - privatenet
+
+  tempo:
+    user: "0:0"
+    image: grafana/tempo:latest
+    command: [ '-config.file=/etc/tempo/tempo.yml' ]
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
+      - logging-tempo-data:/tmp/tempo
+    ports:
+      - '3200' # tempo
+      - '4317' # otlp grpc
+      - '4318' # otlp http
+    networks:
+      - privatenet
+
+  loki:
+    image: grafana/loki
+    container_name: loki
+    ports:
+      - '3100:3100'
+    command:
+      - --config.file=/mnt/config/loki-config.yml
+    volumes:
+      - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
+    networks:
+      - privatenet
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - logging-grafana-storage:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+
+    environment:
+      - GF_LOG_LEVEL=debug
+    ports:
+      - '9050:3000' # localhost:9050 for accessing grafana
+    networks:
+      - privatenet
 
 volumes:
   postgres_db_data:
   minio_data:
+  logging-prometheus-storage:
+  logging-grafana-storage:
+  logging-tempo-data:
 
 networks:
   webnet:

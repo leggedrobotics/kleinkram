@@ -3,6 +3,7 @@ import Project from './entities/project.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
+import logger from '../logger';
 
 @Injectable()
 export class ProjectService {
@@ -11,6 +12,7 @@ export class ProjectService {
   ) {}
 
   async findAll(): Promise<Project[]> {
+    logger.debug('Finding all projects');
     return this.projectRepository.find();
   }
 

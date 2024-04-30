@@ -1,4 +1,3 @@
-
 import { loadDecompressHandlers } from '@mcap/support';
 import { McapIndexedReader } from '@mcap/core';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
@@ -6,6 +5,8 @@ import { IReadable } from '@mcap/core/dist/cjs/src/types';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as fs from 'fs';
+import logger from '../logger';
+
 const execPromisify = promisify(exec);
 
 
@@ -24,24 +25,24 @@ export async function convert(infile: string, outfile: string): Promise<Buffer> 
     readStream.on('end', () => {
       // Concatenate all chunks into a single Buffer
       const fullBuffer = Buffer.concat(buffers);
-      console.log('File reading complete. Buffer size:', fullBuffer.length);
+      logger.debug('File reading complete. Buffer size:', fullBuffer.length);
       resolve(fullBuffer); // Resolve the promise with the full buffer
     });
 
     readStream.on('error', (error) => {
-      console.error('Error reading the file:', error);
+      logger.error('Error reading the file:', error);
       reject(error); // Reject the promise on read error
     });
   });
 }
 
 
-export async function mcapMetaInfo(buffer: Buffer){
+export async function mcapMetaInfo(buffer: Buffer) {
   const decompressHandlers = await loadDecompressHandlers();
   const readable = new BufferReadable(buffer);
   const reader = await McapIndexedReader.Initialize({
     readable,
-    decompressHandlers,
+    decompressHandlers
   });
 
   const topics: Record<string, unknown>[] = [];
@@ -51,11 +52,11 @@ export async function mcapMetaInfo(buffer: Buffer){
     const schema = reader.schemasById.get(channel.schemaId);
     const nr_messages = stats.channelMessageCounts.get(channel.id);
     const topic = {
-        name: channel.topic,
-        type: schema.name,
-        nrMessages: nr_messages,
-        frequency: Number(nr_messages) / (Number(duration / 1000n) / 1000000),
-      };
+      name: channel.topic,
+      type: schema.name,
+      nrMessages: nr_messages,
+      frequency: Number(nr_messages) / (Number(duration / 1000n) / 1000000)
+    };
     topics.push(topic);
   });
 
@@ -67,7 +68,8 @@ export async function mcapMetaInfo(buffer: Buffer){
 }
 
 class BufferReadable implements IReadable {
-  constructor(private buffer: Buffer) {}
+  constructor(private buffer: Buffer) {
+  }
 
   async size(): Promise<bigint> {
     return BigInt(this.buffer.length);

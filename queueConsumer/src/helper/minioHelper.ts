@@ -1,6 +1,8 @@
 import { Client, CopyConditions } from 'minio';
 import env from '../env';
 import { Readable } from 'stream';
+import logger from '../logger';
+import { traceWrapper } from '../tracing';
 
 const minio: Client = new Client({
   endPoint: 'minio',
@@ -9,55 +11,67 @@ const minio: Client = new Client({
 
   region: 'GUGUS GEWESEN',
   accessKey: env.MINIO_ACCESS_KEY,
-  secretKey: env.MINIO_SECRET_KEY,
+  secretKey: env.MINIO_SECRET_KEY
 });
 
 
-export async function uploadFile(bucketName: string, fileName: string, buffer: Buffer): Promise<void> {
-  console.log('Uploading file to Minio in parts...');
-  const n = 100;
-  const partSize = Math.ceil(buffer.length / n);
-  let partIndex = 0;
+export async function uploadFile(bucketName: string, fileName: string, buffer: Buffer) {
 
-  const stream = new Readable({
-    read() {
-      if (partIndex < n) {
-        const start = partIndex * partSize;
-        const end = start + partSize;
-        const part = buffer.slice(start, end);
-        this.push(part);
-        partIndex += 1;
-      } else {
-        this.push(null); // No more data to push, signal EOF
+  return await traceWrapper(async (): Promise<void> => {
+
+    logger.debug('Uploading file to Minio in parts...');
+    const n = 100;
+    const partSize = Math.ceil(buffer.length / n);
+    let partIndex = 0;
+
+    const stream = new Readable({
+      read() {
+        if (partIndex < n) {
+          const start = partIndex * partSize;
+          const end = start + partSize;
+          const part = buffer.slice(start, end);
+          this.push(part);
+          partIndex += 1;
+        } else {
+          this.push(null); // No more data to push, signal EOF
+        }
       }
-    }
-  });
+    });
 
-  await minio.putObject(bucketName, fileName, stream);
-  console.log('File uploaded to Minio in parts');
+    await minio.putObject(bucketName, fileName, stream);
+    logger.debug('File uploaded to Minio in parts');
+
+  }, 'uploadFile')();
+
 }
 
-export async function downloadMinioFile(bucketName: string, fileName: string): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    const stream = await minio.getObject(bucketName, fileName);
-    const chunks: Uint8Array[] = [];
+export async function downloadMinioFile(bucketName: string, fileName: string) {
+  return await traceWrapper(async (): Promise<Buffer> =>
 
-    stream.on('data', (chunk) => {
-      chunks.push(chunk);
-    });
+      new Promise(async (resolve, reject) => {
+        const stream = await minio.getObject(bucketName, fileName);
+        const chunks: Uint8Array[] = [];
 
-    stream.on('end', () => {
-      resolve(Buffer.concat(chunks));
-    });
+        stream.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
 
-    stream.on('error', (err) => {
-      reject(err);
-    });
-  });
+        stream.on('end', () => {
+          resolve(Buffer.concat(chunks));
+        });
+
+        stream.on('error', (err) => {
+          reject(err);
+        });
+      })
+    , 'downloadMinioFile')();
 }
 
 export async function deleteMinioFile(bucketName: string, fileName: string): Promise<void> {
-  await minio.removeObject(bucketName, fileName);
+  await traceWrapper(async (): Promise<void> => {
+    await minio.removeObject(bucketName, fileName);
+  }, 'deleteMinioFile')();
+
 }
 
 export async function moveMinioFile(sourceBucket: string, destBucket: string, fileName: string): Promise<void> {
@@ -68,5 +82,5 @@ export async function moveMinioFile(sourceBucket: string, destBucket: string, fi
       await minio.removeObject(sourceBucket, fileName);
       resolve();
     });
-  })
+  });
 }

@@ -1,4 +1,5 @@
 {
+  "extends": ["tslint:recommended"],
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -13,9 +14,13 @@
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
+    "esModuleInterop": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
+  },
+  "rules": {
+    "no-console": [true, "warning"]
   }
 }

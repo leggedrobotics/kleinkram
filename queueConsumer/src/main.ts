@@ -1,7 +1,19 @@
+// this input must be at the top of the file
+import tracer from './tracing';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import logger from './logger';
+
 
 async function bootstrap() {
-  const app = await NestFactory.createApplicationContext(AppModule);
+
+  tracer.start();
+  const app = await NestFactory.create(AppModule);
+  await app.listen(3000);
 }
-bootstrap().catch(console.error);
+
+bootstrap().catch((err) => {
+  logger.error('Failed to start application');
+  logger.error(err);
+});
