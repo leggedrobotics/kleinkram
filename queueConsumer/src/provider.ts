@@ -131,7 +131,28 @@ export class FileProcessor implements OnModuleInit {
       logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
       const queue = await this.startProcessing(job.data.queueUuid);
 
-      const metadataRes = await getMetadata(queue.identifier);
+      let metadataRes = null;
+      try {
+        metadataRes = await getMetadata(queue.identifier);
+      } catch (error) {
+        logger.error(`Error getting metadata for file: ${queue.identifier}`);
+        logger.error(error);
+        logger.error(error.stack);
+        queue.state = FileState.ERROR;
+        await this.queueRepository.save(queue);
+
+        return null;
+      }
+
+      if (!metadataRes) {
+        logger.error(`Error getting metadata for file: ${queue.identifier}`);
+        logger.error('Metadata is null');
+        queue.state = FileState.ERROR;
+        await this.queueRepository.save(queue);
+
+        return null;
+      }
+
       if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
         logger.debug(`Job {${job.id}} is a file: ${metadataRes.name}, processing...`);
         try {
