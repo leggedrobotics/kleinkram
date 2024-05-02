@@ -25,7 +25,7 @@ export async function convert(infile: string, outfile: string): Promise<Buffer> 
     readStream.on('end', () => {
       // Concatenate all chunks into a single Buffer
       const fullBuffer = Buffer.concat(buffers);
-      logger.debug('File reading complete. Buffer size:', fullBuffer.length);
+      logger.debug(`File reading complete. Buffer size: ${fullBuffer.length}`);
       resolve(fullBuffer); // Resolve the promise with the full buffer
     });
 

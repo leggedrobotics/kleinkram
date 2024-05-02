@@ -59,7 +59,7 @@ import { Project, Queue } from 'src/types/types';
 import { currentQueue } from 'src/services/queries';
 import { ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { FileState } from 'src/enum/QUEUE_ENUM';
+import { FileLocation, FileState } from 'src/enum/QUEUE_ENUM';
 
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
@@ -80,8 +80,8 @@ const columns = [
   {name: 'Run', required: true, label: 'Run', align: 'left', field: (row: Queue)=> row.run.name},
   {name: 'Status', label: 'Status', align: 'left', field: 'state'},
   {name: 'Location', required: true, label: 'Location', align: 'left', field: 'location'},
-  {name: 'Filename', required: true, label: 'Filename', align: 'left', field: (row: Queue)=> {if(row.filename == row.identifier) return 'Folder'; return row.filename}},
-  {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
+  {name: 'Filename', required: true, label: 'Filename', align: 'left', field: (row: Queue)=> {if(row.filename == row.identifier && row.location == FileLocation.DRIVE) return 'Folder'; return row.filename}},
+  // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ]
 
 function getColor(state: FileState) {
