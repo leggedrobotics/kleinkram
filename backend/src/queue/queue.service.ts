@@ -90,9 +90,8 @@ export class QueueService {
 
   async confirmUpload(filename: string) {
     console.debug('confirmUpload', filename);
-    const correctedFilename = filename.replace('.bag', '.mcap');
     const queue = await this.queueRepository.findOneOrFail({
-      where: { filename: correctedFilename },
+      where: { filename: filename },
     });
 
     queue.state = FileState.PENDING;

@@ -26,11 +26,10 @@ async function processFile(buffer: Buffer, fileName: string) {
       const mcapPath = tempFilePath.replace('.bag', '.mcap');
 
       const convertedBuffer = await convert(tempFilePath, mcapPath);
-      const newFileName = fileName.replace('.bag', '.mcap');
 
 
       // Read converted file and upload
-      await uploadFile(env.MINIO_BAG_BUCKET_NAME, newFileName, convertedBuffer);
+      await uploadFile(env.MINIO_BAG_BUCKET_NAME, fileName, convertedBuffer);
 
       // Optionally, clean up temporary files
       await fs.unlink(tempFilePath);
@@ -83,11 +82,11 @@ export class FileProcessor implements OnModuleInit {
       try {
         let buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         let filename = queue.identifier;
-        if (queue.identifier.endsWith('.mcap')) {
+        if (filename.endsWith('.mcap')) {
           await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
-        } else if (queue.identifier.endsWith('.bag')) {
+        } else if (filename.endsWith('.bag')) {
           filename = queue.identifier.replace('.bag', '.mcap');
-          buffer = await processFile(buffer, queue.identifier);
+          buffer = await processFile(buffer, filename);
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
           throw new Error('Invalid file extension');
@@ -104,7 +103,7 @@ export class FileProcessor implements OnModuleInit {
         const createdTopics = await Promise.all(res);
 
         const newFile = this.fileRepository.create({
-          identifier: queue.identifier,
+          identifier: filename,
           date,
           topics: createdTopics,
           run: queue.run,
@@ -153,7 +152,7 @@ export class FileProcessor implements OnModuleInit {
 
         return null;
       }
-
+      const filename = metadataRes.name.replace('.bag', '.mcap')
       if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
         logger.debug(`Job {${job.id}} is a file: ${metadataRes.name}, processing...`);
         try {
@@ -163,8 +162,8 @@ export class FileProcessor implements OnModuleInit {
             await uploadFile(env.MINIO_BAG_BUCKET_NAME, metadataRes.name, buffer);
             logger.debug(`Job {${job.id}} uploaded file: ${metadataRes.name}`);
           } else if (metadataRes.name.endsWith('.bag')) {
-            buffer = await processFile(buffer, metadataRes.name);
-            logger.debug(`Job {${job.id}} processed file: ${metadataRes.name}`);
+            buffer = await processFile(buffer, filename);
+            logger.debug(`Job {${job.id}} processed file: ${filename}`);
           } else {
             throw new Error('Invalid file extension');
           }
@@ -184,7 +183,7 @@ export class FileProcessor implements OnModuleInit {
             topics: createdTopics,
             run: queue.run,
             size,
-            filename: metadataRes.name
+            filename: filename
           });
           const savedFile = await this.fileRepository.save(newFile);
           queue.state = FileState.DONE;
