@@ -6,9 +6,10 @@ import File from './entities/file.entity';
 import { TopicService } from '../topic/topic.service';
 import Topic from '../topic/entities/topic.entity';
 import Run from '../run/entities/run.entity';
+import Project from '../project/entities/project.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Run, File, Topic])],
+  imports: [TypeOrmModule.forFeature([Run, File, Topic, Project])],
   providers: [FileService, TopicService],
   controllers: [FileController],
   exports: [FileService],

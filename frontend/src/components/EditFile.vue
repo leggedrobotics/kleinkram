@@ -9,7 +9,7 @@
           <div class="row items-center justify-between q-gutter-md">
             <div class="col-5">
               <q-input
-                v-model="editableFile.name"
+                v-model="editableFile.filename"
                 label="Name"
                 outlined
                 dense
@@ -31,7 +31,7 @@
                     v-for="project in projects"
                     :key="project.uuid"
                     clickable
-                    @click="selected_project = project; dd_open=false"
+                    @click="selected_project = project; dd_open=false; dd_open_2=true"
                   >
                     <q-item-section>
                       <q-item-label>
@@ -107,6 +107,7 @@
             <q-btn
               label="Save"
               color="primary"
+              :disable="!dateTime || !editableFile || !editableFile.run || !editableFile.filename"
               @click="_updateRun"/>
 
           </div>
@@ -121,7 +122,7 @@ import { allProjects, fetchFile, runsOfProject } from 'src/services/queries';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { FileEntity, Project, Run } from 'src/types/types';
 import { updateFile } from 'src/services/mutations';
-import { useDialogPluginComponent } from 'quasar'
+import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 
 const props = defineProps<{
@@ -146,9 +147,10 @@ const editableFile: Ref<FileEntity | null> = ref(null);
 // Watch for changes in data.value and update dateTime accordingly
 watch(() => data.value, (newValue) => {
   selected_project.value = newValue?.run.project;
-  if (newValue?.date) {
+  if (newValue?.date && data.value) {
     editableFile.value = new FileEntity(newValue.uuid,
-      newValue.name,
+      newValue.filename,
+      data.value.identifier,
       newValue.run.clone(),
       newValue.date,
       [],
@@ -173,14 +175,29 @@ const { data: runs, refetch } = useQuery(
 
 watch(() => selected_project.value, (newValue) => {
   if (newValue) {
-    refetch();
+    refetch().then(()=>{
+      if(editableFile.value && runs.value?.length!== undefined && runs.value?.length > 0 && editableFile.value?.run.project.uuid !== selected_project.value?.uuid) {
+        editableFile.value.run = runs.value[0];
+      }
+    })
+
   }
+},{
+  immediate: false
 });
 
 const { mutate: updateFileMutation } = useMutation({
   mutationFn: (fileData: FileEntity) => updateFile(fileData),
   onSuccess: function(data, variables, context) {
     // queryClient.invalidateQueries([''])
+    Notify.create({
+      group: false,
+      message: 'File updated',
+      color: 'positive',
+      spinner: false,
+      position: 'top-right',
+      timeout: 3000,
+    });
     const cache = queryClient.getQueryCache();
     const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'Filtered Files');
     filtered.forEach((query) => {

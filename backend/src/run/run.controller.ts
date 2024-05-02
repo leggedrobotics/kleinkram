@@ -15,4 +15,14 @@ export class RunController {
   async filteredRuns(@Param('projectUUID') projectUUID: string) {
     return this.runService.findRunByProject(projectUUID);
   }
+
+  @Get('all')
+  async allRuns() {
+    return this.runService.findAll();
+  }
+
+  @Get('filteredByProjectName/:projectName')
+  async filteredByProjectName(@Param('projectName') projectName: string) {
+    return this.runService.filteredByProjectName(projectName);
+  }
 }

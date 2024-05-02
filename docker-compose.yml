@@ -103,6 +103,8 @@ services:
       - '9090:9090'
     networks:
       - privatenet
+      - webnet
+
 
   tempo:
     user: "0:0"
@@ -117,6 +119,7 @@ services:
       - '4318' # otlp http
     networks:
       - privatenet
+      - webnet
 
   loki:
     image: grafana/loki
@@ -129,6 +132,7 @@ services:
       - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
     networks:
       - privatenet
+      - webnet
 
   grafana:
     image: grafana/grafana
@@ -142,6 +146,7 @@ services:
       - '9050:3000' # localhost:9050 for accessing grafana
     networks:
       - privatenet
+      - webnet
 
 volumes:
   db_data:

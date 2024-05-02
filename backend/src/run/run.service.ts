@@ -31,4 +31,16 @@ export class RunService {
     });
     return project.runs;
   }
+
+  async filteredByProjectName(projectName: string): Promise<Run[]> {
+    const project = await this.projectRepository.findOneOrFail({
+      where: { name: projectName },
+      relations: ['runs', 'runs.project'],
+    });
+    return project.runs;
+  }
+
+  async findAll(): Promise<Run[]> {
+    return this.runRepository.find({ relations: ['project'] });
+  }
 }

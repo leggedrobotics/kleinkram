@@ -81,6 +81,7 @@ const columns = [
   {name: 'Status', label: 'Status', align: 'left', field: 'state'},
   {name: 'Location', required: true, label: 'Location', align: 'left', field: 'location'},
   {name: 'Filename', required: true, label: 'Filename', align: 'left', field: (row: Queue)=> {if(row.filename == row.identifier && row.location == FileLocation.DRIVE) return 'Folder'; return row.filename}},
+  {name: 'change', required: true, label: 'Last status update', align: 'left', field: (row: Queue)=>row.updatedAt ? formatDate(row.updatedAt, true): 'error'},
   // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ]
 

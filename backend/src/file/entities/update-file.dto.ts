@@ -1,6 +1,7 @@
 export class UpdateFile {
   uuid: string;
-  name: string;
+  filename: string;
   run: { uuid: string };
+  project: { uuid: string };
   date: Date;
 }

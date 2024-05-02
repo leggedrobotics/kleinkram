@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { FileEntity, Project, Run, Topic } from 'src/types/types';
+import { FileEntity, Project, Queue, Run, Topic } from 'src/types/types';
 
 export const fetchOverview = async (runName: string,
                                     projectUUID: string|undefined,
@@ -83,13 +83,16 @@ export const currentQueue = async (startDate: Date) => {
     startDate: startDate.toISOString()
   };
   const response = await axios.get('/queue/active', { params });
-  return response.data;
+  return response.data.map((res: any) => {
+    return new Queue(res.uuid, res.identifier, res.filename, res.state, res.location, res.run, new Date(res.createdAt), new Date(res.updatedAt), new Date(res.deletedAt));
+  })
 }
 
 export const fetchFile = async (uuid: string): Promise<FileEntity> => {
   try {
-    const response = await axios.get(`/file/${uuid}`);
+    const response = await axios.get('/file/one', {params: {uuid}});
     const file = response.data;
+    console.log(file)
     const project = new Project(
       file.run.project.uuid,
       file.run.project.name,
@@ -122,8 +125,8 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
     });
     const newFile = new FileEntity(
       file.uuid,
-      file.name,
       file.filename,
+      file.identifier,
       run,
       new Date(file.date),
       topics,
@@ -145,8 +148,12 @@ export const allTopics = async () => {
   return response.data
 }
 
-export const downloadBag = async (uuid: string) => {
-  const response = await axios.get('file/download/' + uuid, )
+export const downloadBag = async (uuid: string, expires: boolean) => {
+  const response = await axios.get('file/download', {
+    params: {
+      uuid, expires
+    }
+  });
   return response.data
 }
 
