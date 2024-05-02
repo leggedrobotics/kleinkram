@@ -146,7 +146,7 @@ export const allTopics = async () => {
 }
 
 export const downloadBag = async (uuid: string) => {
-  const response = await axios.get('run/download/' + uuid, )
+  const response = await axios.get('file/download/' + uuid, )
   return response.data
 }
 
