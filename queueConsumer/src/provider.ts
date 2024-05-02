@@ -82,10 +82,11 @@ export class FileProcessor implements OnModuleInit {
       const queue = await this.startProcessing(job.data.queueUuid);
       try {
         let buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
-
+        let filename = queue.identifier;
         if (queue.identifier.endsWith('.mcap')) {
           await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
         } else if (queue.identifier.endsWith('.bag')) {
+          filename = queue.identifier.replace('.bag', '.mcap');
           buffer = await processFile(buffer, queue.identifier);
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
@@ -108,7 +109,7 @@ export class FileProcessor implements OnModuleInit {
           topics: createdTopics,
           run: queue.run,
           size,
-          filename: queue.identifier
+          filename
         });
         const savedFile = await this.fileRepository.save(newFile);
         queue.state = FileState.DONE;

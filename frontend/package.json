@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "description": "Data storage of ROS bags",
-  "productName": "Quasar App",
+  "productName": "Grand Tour Datasets",
   "author": "Johann Schwabe <johann@schwabe.dev>",
   "private": true,
   "scripts": {

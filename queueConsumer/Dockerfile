@@ -1,7 +1,6 @@
 FROM node:21-alpine
 
 WORKDIR /usr/src/queueConsumer
-RUN ls
 COPY package.json ./
 COPY yarn.lock ./
 
