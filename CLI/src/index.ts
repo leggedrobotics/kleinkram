@@ -20,7 +20,11 @@ list.command('files')
       let url = `${API_URL}/file/filteredByNames`;
 
 
-      const response = await axios.get(url, options);
+      const response = await axios.get(url, {params:{
+        projectName: options.project,
+        runName: options.run,
+          topics: options.topics,
+        }});
       const runsByProjectUuid: { [uuid: string]: any[] } = {};
       const filesByRunUuid: { [uuid: string]: any[] } = {};
       response.data.forEach((file: any) => {
