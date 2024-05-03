@@ -132,7 +132,7 @@ const submitNewFile = async () => {
       if(!urls[filename]) {
         Notify.create({
           group: false,
-          message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type?`,
+          message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type? Unique filename?`,
           color: 'negative',
           spinner: false,
           position: 'top-right',

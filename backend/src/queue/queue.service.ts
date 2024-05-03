@@ -51,12 +51,20 @@ export class QueueService {
   }
 
   async handleFileUpload(filenames: string[], runUUID: string) {
-    const filteredFilenames = filenames.filter(
+    let filteredFilenames = filenames.filter(
       (filename) => filename.endsWith('.bag') || filename.endsWith('.mcap'),
     );
     const run = await this.runRepository.findOneOrFail({
       where: { uuid: runUUID },
     });
+
+    const unique = await Promise.all(
+      filteredFilenames.map(async (filename) => {
+        const count = await this.queueRepository.count({ where: { filename } });
+        return count <= 0;
+      }),
+    );
+    filteredFilenames = filteredFilenames.filter((_, index) => unique[index]);
     const expiry = 2 * 60 * 60;
     const urlPromises = filteredFilenames.map(async (filename) => {
       const minioURL = await minio.presignedPutObject(

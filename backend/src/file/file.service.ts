@@ -96,15 +96,18 @@ export class FileService {
       });
     }
     const splitTopics = topics.split(',');
-    if (splitTopics && splitTopics.length > 0) {
+    if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
       query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
+    }
+    query.groupBy('file.uuid');
 
-      if (and_or) {
-        query.groupBy('file.uuid').having('COUNT(file.uuid) = :topicCount', {
-          topicCount: splitTopics.length,
-        });
-      }
-    } // Execute the query
+    if (and_or) {
+      query.having('COUNT(file.uuid) = :topicCount', {
+        topicCount: splitTopics.length,
+      });
+    }
+
+    // Execute the query
     const fileIds = await query.getMany();
     if (fileIds.length === 0) {
       return [];

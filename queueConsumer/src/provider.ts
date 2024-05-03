@@ -25,16 +25,23 @@ async function processFile(buffer: Buffer, fileName: string) {
       await fs.writeFile(tempFilePath, buffer);
       const mcapPath = tempFilePath.replace('.bag', '.mcap');
 
-      const convertedBuffer = await convert(tempFilePath, mcapPath);
+      try {
+        const convertedBuffer = await convert(tempFilePath, mcapPath);
+
+        // Read converted file and upload
+        await uploadFile(env.MINIO_BAG_BUCKET_NAME, fileName, convertedBuffer);
+        // Optionally, clean up temporary files
+        await fs.unlink(tempFilePath);
+        await fs.unlink(mcapPath);
+        return convertedBuffer;
+      }
+      catch (error) {
+        logger.error('Error converting file:', error);
+        await fs.unlink(tempFilePath);
+        throw error;
+      }
 
 
-      // Read converted file and upload
-      await uploadFile(env.MINIO_BAG_BUCKET_NAME, fileName, convertedBuffer);
-
-      // Optionally, clean up temporary files
-      await fs.unlink(tempFilePath);
-      await fs.unlink(mcapPath);
-      return convertedBuffer;
     }, 'processFile'
   )();
 
@@ -71,7 +78,7 @@ export class FileProcessor implements OnModuleInit {
     logger.debug(`Processing job ${job.id} of type ${job.name}.`);
   }
 
-  @Process('processMinioFile')
+  @Process({ concurrency: 3, name: 'processMinioFile' })
   async handleMinioFileProcessing(job: Job<{ queueUuid: string }>) {
 
     return await traceWrapper(async () => {
@@ -86,7 +93,9 @@ export class FileProcessor implements OnModuleInit {
           await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
         } else if (filename.endsWith('.bag')) {
           filename = queue.identifier.replace('.bag', '.mcap');
+          console.log("here")
           buffer = await processFile(buffer, filename);
+          console.log("here2")
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
           throw new Error('Invalid file extension');
