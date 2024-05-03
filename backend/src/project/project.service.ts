@@ -20,6 +20,10 @@ export class ProjectService {
     return this.projectRepository.findOne({ where: { uuid } });
   }
 
+  async findOneByName(name: string): Promise<Project> {
+    return this.projectRepository.findOneOrFail({ where: { name } });
+  }
+
   async create(project: CreateProject): Promise<Project> {
     const newProject = this.projectRepository.create(project);
     return this.projectRepository.save(newProject);
