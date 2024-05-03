@@ -126,6 +126,13 @@ export class FileService {
     });
   }
 
+  async findByFilename(filename: string) {
+    return this.fileRepository.findOne({
+      where: { filename },
+      relations: ['run', 'topics', 'run.project'],
+    });
+  }
+
   async update(uuid: string, file: UpdateFile) {
     const db_file = await this.fileRepository.findOne({ where: { uuid } });
     db_file.filename = file.filename;

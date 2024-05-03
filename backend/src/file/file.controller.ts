@@ -59,6 +59,11 @@ export class FileController {
     return this.fileService.findOne(uuid);
   }
 
+  @Get('byName')
+  async getFileByName(@Query('name') name: string) {
+    return this.fileService.findByFilename(name);
+  }
+
   @Put(':uuid')
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
     return this.fileService.update(uuid, dto);

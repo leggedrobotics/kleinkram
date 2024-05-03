@@ -43,4 +43,8 @@ export class RunService {
   async findAll(): Promise<Run[]> {
     return this.runRepository.find({ relations: ['project'] });
   }
+
+  async findOneByName(name: string): Promise<Run> {
+    return this.runRepository.findOneOrFail({ where: { name } });
+  }
 }

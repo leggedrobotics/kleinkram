@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { RunService } from './run.service';
 import { CreateRun } from './entities/create-run.dto';
 
@@ -19,6 +19,11 @@ export class RunController {
   @Get('all')
   async allRuns() {
     return this.runService.findAll();
+  }
+
+  @Get('byName')
+  async getRunByName(@Query('name') name: string) {
+    return this.runService.findOneByName(name);
   }
 
   @Get('filteredByProjectName/:projectName')
