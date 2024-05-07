@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A CLI for the ETH project Grand Tour"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.7"
 dependencies = [
   "typer",
   "httpx",
