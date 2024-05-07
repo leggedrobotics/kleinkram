@@ -8,6 +8,7 @@ from rich import print
 import queue
 
 from .consts import API_URL
+from typing import Dict
 
 
 def list_files_recursive(path, recursive: bool, pattern: str, depth: int = 0):
@@ -53,7 +54,7 @@ def convertFilesStructure(files, currentDir: str = ""):
             res.extend(convertFilesStructure(files[key], currentDir + key + "/"))
     return res
 
-def uploadFiles(files: dict[str, str], paths: dict[str,str], nrThreads: int):
+def uploadFiles(files: Dict[str, str], paths: Dict[str,str], nrThreads: int):
     _queue = queue.Queue()
     for file in files.items():
         _queue.put(file)
@@ -66,7 +67,7 @@ def uploadFiles(files: dict[str, str], paths: dict[str,str], nrThreads: int):
     for thread in threads:
         thread.join()
 
-def uploadFile(_queue: queue.Queue, paths: dict[str, str], pbar: tqdm):
+def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
     while True:
         try:
             filename, url = _queue.get(timeout=3)
