@@ -12,9 +12,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      - name: Change Directory
-        run: cd CLI
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -31,6 +28,7 @@ jobs:
 
       - name: Build package
         run: |
+          cd CLI
           python -m build
 
       - name: Publish to PyPI
