@@ -15,11 +15,13 @@ projects = typer.Typer(name="projects")
 runs = typer.Typer(name="runs")
 files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
+queue = typer.Typer(name="queue")
 
 app.add_typer(projects)
 app.add_typer(runs)
 app.add_typer(topics)
 app.add_typer(files)
+app.add_typer(queue)
 
 @files.command('list')
 def list_files(project: Annotated[str, typer.Option()] = None,
@@ -176,6 +178,13 @@ def upload(path: Annotated[str, typer.Option(prompt=True)],
 
     except httpx.HTTPError as e:
         print(e)
+
+@queue.command('clear')
+def clearQueue():
+    """Clear queue"""
+    response = httpx.delete(f"{API_URL}/queue/clear")
+    response.raise_for_status()
+    print("Cleared")
 
 if __name__ == "__main__":
     app()

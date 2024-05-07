@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
 import logger from '../logger';
@@ -41,5 +41,10 @@ export class QueueController {
       throw new Error('Invalid date format');
     }
     return this.queueService.active(date);
+  }
+
+  @Delete('clear')
+  async clear() {
+    return this.queueService.clear();
   }
 }

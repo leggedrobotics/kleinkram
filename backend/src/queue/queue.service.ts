@@ -122,4 +122,8 @@ export class QueueService {
       },
     });
   }
+
+  async clear() {
+    return await this.queueRepository.clear();
+  }
 }
