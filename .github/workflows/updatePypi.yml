@@ -20,15 +20,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install hatchling twine bumpversion-toml
+          pip install hatchling twine
 
       - name: Generate consts.py
         run: |
           echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/ETH_GTD_cli/consts.py
 
-      - name: Increment version and build package
+      - name: Build package
         run: |
-          bumpversion-toml patch --config-file CLI/pyproject.toml
           python3 -m build          
 
       - name: Publish to PyPI
