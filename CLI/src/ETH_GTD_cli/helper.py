@@ -72,14 +72,14 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
         try:
             filename, url = _queue.get(timeout=3)
             filepath = paths[filename]
+            headers = {
+                'Content-Type': 'application/octet-stream'
+            }
             with open(filepath, "rb") as f:
-                file_data = f.read()
-                headers = {
-                    'Content-Type': 'application/octet-stream'
-                }
+                while (chunk := f.read(4096)):  # Read in chunks of 4KB
+                    resp = httpx.put(url, content=chunk, headers=headers, timeout=60.0)
+                    resp.raise_for_status()
 
-                resp = httpx.put(url, content=file_data, headers=headers)
-                resp.raise_for_status()
                 httpx.post(API_URL + "/queue/confirmUpload", json={"filename": filename})
                 pbar.update(1)
 
