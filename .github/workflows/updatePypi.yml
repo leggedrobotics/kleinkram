@@ -1,0 +1,41 @@
+name: Build and Deploy CLI Tool
+
+on:
+  push:
+    paths:
+      - 'CLI/**'
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'  # Match your project's required Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatchling twine
+
+      - name: Generate consts.py
+        run: |
+          echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/ETH_GTD_cli/consts.py
+
+      - name: Increment version and build package
+        run: |
+          # Install bump2version, if not already installed
+          pip install bump2version
+          # Increment patch version
+          bump2version patch --current-version $(cat CLI/src/ETH_GTD_cli/__init__.py | grep -Po "(?<=__version__ = ')[^']+") CLI/src/ETH_GTD_cli/__init__.py
+          python3 -m build          
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

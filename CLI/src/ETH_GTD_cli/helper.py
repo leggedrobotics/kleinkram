@@ -7,7 +7,7 @@ import tqdm
 from rich import print
 import queue
 
-from consts import API_URL
+from .consts import API_URL
 
 
 def list_files_recursive(path, recursive: bool, pattern: str, depth: int = 0):
@@ -20,10 +20,11 @@ def list_files_recursive(path, recursive: bool, pattern: str, depth: int = 0):
 
     for entry in entries:
         full_path = os.path.join(path, entry)
-        if os.path.isdir(full_path) and recursive:
-            sub_res = list_files_recursive(full_path, pattern, depth + 1)
-            if sub_res:
-                res[full_path.split('/')[-1]] = sub_res
+        if os.path.isdir(full_path):
+            if recursive:
+                sub_res = list_files_recursive(full_path, recursive, pattern, depth + 1)
+                if sub_res:
+                    res[full_path.split('/')[-1]] = sub_res
         elif fnmatch.fnmatch(entry, pattern):
             files.append(entry)
 
@@ -86,6 +87,11 @@ def uploadFile(_queue: queue.Queue, paths: dict[str, str], pbar: tqdm):
 
 
 if __name__ == '__main__':
-    files = list_files_recursive('~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-005', pattern='*.bag')
+    path = '~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-004/dodo_mission_2024_02_08'
+    path = os.path.expanduser(path)
+    files = list_files_recursive(
+        path,
+        True,
+        pattern='*.bag')
     printFiles(files)
     print(convertFilesStructure(files))

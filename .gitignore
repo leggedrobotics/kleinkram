@@ -1,0 +1,4 @@
+.idea/**
+CLI/.idea
+CLI/dist
+**/__pycache__

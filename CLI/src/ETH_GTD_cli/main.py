@@ -7,8 +7,8 @@ from typing_extensions import Annotated
 from rich import print
 from rich.table import Table
 
-from consts import API_URL
-from helper import list_files_recursive, printFiles, convertFilesStructure, uploadFiles
+from .consts import API_URL
+from .helper import list_files_recursive, printFiles, convertFilesStructure, uploadFiles
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -122,15 +122,26 @@ def topics(file: Annotated[str, typer.Option()] = None, full: Annotated[bool, ty
         else:
             table = Table("UUID", "name", "type", "nrMessages", "frequency")
             for topic in data["topics"]:
-                table.add_row(topic["uuid"], topic["name"], topic["type"], topic["nrMessages"], f"{topic["frequency"]}")
+                table.add_row(topic["uuid"], topic["name"], topic["type"], topic["nrMessages"], f"{topic['frequency']}")
             print(table)
 
     except httpx.HTTPError as e:
         print(f"Failed")
 
+@projects.command("create")
+def create_project(name: Annotated[str, typer.Option()]):
+    try:
+        url = API_URL + "/project/create"
+        response = httpx.post(url, json={"name": name})
+        response.raise_for_status()
+        print("Project created")
+
+    except httpx.HTTPError as e:
+        print(f"Failed to create project: {e}")
+
 @files.command("upload")
-def upload(path: Annotated[str, typer],
-           run: Annotated[str, typer.Option()],
+def upload(path: Annotated[str, typer.Option(prompt=True)],
+           run: Annotated[str, typer.Option(prompt=True)],
            pattern: Annotated[str, typer.Option()]="*",
            r: Annotated[bool, typer.Option()]=False):
     path = os.path.expanduser(path)
@@ -152,11 +163,14 @@ def upload(path: Annotated[str, typer],
         response_1.raise_for_status()
         data = response_1.json()
         get_presigned_url = API_URL + "/queue/createPreSignedURLS"
-        print(filenames)
         response_2 = httpx.post(get_presigned_url, json={"filenames": filenames, "runUUID": data["uuid"]})
         response_2.raise_for_status()
         presigned_urls = response_2.json()
-        uploadFiles(presigned_urls, filepaths, 4)
+        for file in filenames:
+            if not file in presigned_urls.keys():
+                print("Could not upload File '" + file + "'. Is the filename unique? ")
+        if len(presigned_urls) > 0:
+            uploadFiles(presigned_urls, filepaths, 4)
 
 
 
