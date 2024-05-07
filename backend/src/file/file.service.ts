@@ -8,6 +8,7 @@ import env from '../env';
 import Run from '../run/entities/run.entity';
 import { minio } from '../minioHelper';
 import Project from '../project/entities/project.entity';
+import Topic from '../topic/entities/topic.entity';
 
 @Injectable()
 export class FileService {
@@ -15,7 +16,7 @@ export class FileService {
     @InjectRepository(File) private fileRepository: Repository<File>,
     @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectRepository(Project) private projectRepository: Repository<Project>,
-    private topicService: TopicService,
+    @InjectRepository(Topic) private topicRepository: Repository<Topic>,
   ) {}
 
   async findAll() {
@@ -165,5 +166,10 @@ export class FileService {
       file.filename,
       expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
     );
+  }
+
+  async clear() {
+    await this.topicRepository.delete({});
+    return await this.fileRepository.delete({});
   }
 }

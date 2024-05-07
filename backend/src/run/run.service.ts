@@ -45,6 +45,6 @@ export class RunService {
   }
 
   async findOneByName(name: string): Promise<Run> {
-    return this.runRepository.findOneOrFail({ where: { name } });
+    return this.runRepository.findOne({ where: { name } });
   }
 }

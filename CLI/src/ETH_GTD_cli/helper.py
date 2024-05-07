@@ -1,6 +1,8 @@
 import fnmatch
+import math
 import os
 import threading
+import glob
 
 import httpx
 import tqdm
@@ -10,56 +12,25 @@ import queue
 from .consts import API_URL
 from typing import Dict
 
+def expand_and_match(path_pattern):
+    expanded_path = os.path.expanduser(path_pattern)
+    expanded_path = os.path.expandvars(expanded_path)
 
-def list_files_recursive(path, recursive: bool, pattern: str, depth: int = 0):
-    files = []
-    res = {}
-    try:
-        entries = os.listdir(path)
-    except PermissionError:
-        return False
+    normalized_path = os.path.normpath(expanded_path)
 
-    for entry in entries:
-        full_path = os.path.join(path, entry)
-        if os.path.isdir(full_path):
-            if recursive:
-                sub_res = list_files_recursive(full_path, recursive, pattern, depth + 1)
-                if sub_res:
-                    res[full_path.split('/')[-1]] = sub_res
-        elif fnmatch.fnmatch(entry, pattern):
-            files.append(entry)
+    if '**' in normalized_path:
+        file_list = glob.glob(normalized_path, recursive=True)
+    else:
+        file_list = glob.glob(normalized_path)
 
-    if len(files) > 0:
-        res[''] = files
-    if len(res.keys()) > 0:
-        return res
-    return None
-
-def printFiles(files, depth: int = 0):
-    for key in files.keys():
-        if key == "":
-            for file in files[key]:
-                print("  " * depth + "- " + file)
-        else:
-            print("  " * depth + "- " + key)
-            printFiles(files[key], depth + 1)
-
-def convertFilesStructure(files, currentDir: str = ""):
-    res = []
-    for key in files.keys():
-        if key == "":
-            for file in files[key]:
-                res.append(currentDir + file)
-        else:
-            res.extend(convertFilesStructure(files[key], currentDir + key + "/"))
-    return res
+    return file_list
 
 def uploadFiles(files: Dict[str, str], paths: Dict[str,str], nrThreads: int):
     _queue = queue.Queue()
     for file in files.items():
         _queue.put(file)
     threads = []
-    pbar = tqdm.tqdm(total=len(files.items()))
+    pbar = tqdm.tqdm(total=len(files.items())*100)
     for i in range(nrThreads):
         thread = threading.Thread(target=uploadFile, args=(_queue, paths, pbar))
         thread.start()
@@ -75,24 +46,23 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
             headers = {
                 'Content-Type': 'application/octet-stream'
             }
+            chunk_size = 4096 * 512
             with open(filepath, "rb") as f:
-                while (chunk := f.read(4096)):  # Read in chunks of 4KB
+                nr_chunks = math.ceil(os.path.getsize(filepath) / chunk_size)
+                update_size = math.floor(1000000 / nr_chunks) / 10000
+
+                print(f"Uploading: {filename}")
+                while chunk := f.read(chunk_size):  # Read in chunks of 4KB
                     resp = httpx.put(url, content=chunk, headers=headers, timeout=60.0)
                     resp.raise_for_status()
+                    pbar.update(update_size)
 
                 httpx.post(API_URL + "/queue/confirmUpload", json={"filename": filename})
-                pbar.update(1)
 
         except queue.Empty:
             break
 
 
 if __name__ == '__main__':
-    path = '~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-004/dodo_mission_2024_02_08'
-    path = os.path.expanduser(path)
-    files = list_files_recursive(
-        path,
-        True,
-        pattern='*.bag')
-    printFiles(files)
-    print(convertFilesStructure(files))
+    res = expand_and_match("~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-003/**.bag")
+    print(res)

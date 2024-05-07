@@ -1,4 +1,12 @@
-import { Controller, Body, Get, Put, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Body,
+  Get,
+  Put,
+  Param,
+  Query,
+  Delete,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -67,5 +75,10 @@ export class FileController {
   @Put(':uuid')
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
     return this.fileService.update(uuid, dto);
+  }
+
+  @Delete('clear')
+  async clear() {
+    return this.fileService.clear();
   }
 }

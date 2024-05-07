@@ -8,7 +8,7 @@ from rich import print
 from rich.table import Table
 
 from .consts import API_URL
-from .helper import list_files_recursive, printFiles, convertFilesStructure, uploadFiles
+from .helper import uploadFiles, expand_and_match
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -141,31 +141,47 @@ def create_project(name: Annotated[str, typer.Option()]):
     except httpx.HTTPError as e:
         print(f"Failed to create project: {e}")
 
-@files.command("upload")
+@app.command("upload")
 def upload(path: Annotated[str, typer.Option(prompt=True)],
-           run: Annotated[str, typer.Option(prompt=True)],
-           pattern: Annotated[str, typer.Option()]="*",
-           r: Annotated[bool, typer.Option()]=False):
-    path = os.path.expanduser(path)
-    if os.path.isdir(path):
-        files = list_files_recursive(path, r, pattern)
-    else:
-        files = {"": [path.split("/")[-1]]}
-        path = "/".join(path.split("/")[:-1])
-    printFiles(files)
-    convertedFiles = convertFilesStructure(files, path + "/")
-    filenames = list(map(lambda x: x.split("/")[-1], convertedFiles))
+           project: Annotated[str, typer.Option(prompt=True)],
+           run: Annotated[str, typer.Option(prompt=True)]):
+    files = expand_and_match(path)
+    filenames = list(map(lambda x: x.split("/")[-1], files))
     filepaths = {}
-    for path in convertedFiles:
-        filepaths[path.split("/")[-1]] = path
+    for path in files:
+        if not os.path.isdir(path):
+            filepaths[path.split("/")[-1]] = path
+            print(f"  - {path}")
     try:
-        get_run_url = API_URL + "/run/byName"
+        get_project_url = API_URL + "/project/byName"
+        project_response = httpx.get(get_project_url, params={"name": project})
+        project_response.raise_for_status()
 
-        response_1 = httpx.get(get_run_url, params={"name": run})
-        response_1.raise_for_status()
-        data = response_1.json()
+        project_json = project_response.json()
+        if not project_json["uuid"]:
+            print(f"Project not found: {project}")
+            return
+
+        get_run_url = API_URL + "/run/byName"
+        run_response = httpx.get(get_run_url, params={"name": run})
+        run_response.raise_for_status()
+        if run_response.content:
+            run_json = run_response.json()
+            if run_json["uuid"]:
+                print(f"Run: {run_json['uuid']} already exists. Delete it or select another name.")
+                return
+            print(f"Something failed, should not happen")
+            return
+
+        create_run_url = API_URL + "/run/create"
+        new_run = httpx.post(create_run_url, json={"name": run, "projectUUID": project_json["uuid"]})
+        new_run.raise_for_status()
+        new_run_data = new_run.json()
+        print(f"Created run: {new_run_data['name']}")
+
+
         get_presigned_url = API_URL + "/queue/createPreSignedURLS"
-        response_2 = httpx.post(get_presigned_url, json={"filenames": filenames, "runUUID": data["uuid"]})
+        response_2 = httpx.post(get_presigned_url, json={"filenames": filenames, "runUUID": new_run_data["uuid"]})
         response_2.raise_for_status()
         presigned_urls = response_2.json()
         for file in filenames:
@@ -188,6 +204,18 @@ def clear_queue():
         response = httpx.delete(f"{API_URL}/queue/clear")
         response.raise_for_status()
         print("Queue cleared.")
+    else:
+        print("Operation cancelled.")
+
+@files.command('clear')
+def clear_queue():
+    """Clear queue"""
+    # Prompt the user for confirmation
+    confirmation = typer.prompt("Are you sure you want to clear the Files? (y/n)")
+    if confirmation.lower() == 'y':
+        response = httpx.delete(f"{API_URL}/file/clear")
+        response.raise_for_status()
+        print("Files cleared.")
     else:
         print("Operation cancelled.")
 
