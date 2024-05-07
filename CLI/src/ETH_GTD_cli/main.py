@@ -57,7 +57,7 @@ def list_files(project: Annotated[str, typer.Option()] = None,
             for run in runs:
                 print(f"  - {files_by_run_uuid[run][0]['run']['name']}")
                 for file in files_by_run_uuid[run]:
-                    print(f"    - {file['filename']}")
+                    print(f"    - '{file['filename']}'")
 
     except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
