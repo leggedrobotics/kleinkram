@@ -185,9 +185,6 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the queue? (y/n)")
     if confirmation.lower() == 'y':
-        import httpx  # Ensure you import httpx
-
-        API_URL = "http://example.com"  # Replace with your actual API URL
         response = httpx.delete(f"{API_URL}/queue/clear")
         response.raise_for_status()
         print("Queue cleared.")
