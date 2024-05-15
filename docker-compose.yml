@@ -83,6 +83,12 @@ services:
     volumes:
       - ./queueConsumer:/usr/src/queueConsumer
       - /usr/src/queueConsumer/node_modules
+      - /usr/src/queueConsumer/dist
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          target: /usr/src/queueConsumer
     env_file:
       - .env
     networks:
@@ -141,7 +147,7 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
 
     environment:
-      - GF_LOG_LEVEL=debug
+      - GF_LOG_LEVEL=error
     ports:
       - '9050:3000' # localhost:9050 for accessing grafana
     networks:
