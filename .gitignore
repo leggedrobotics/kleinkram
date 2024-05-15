@@ -2,3 +2,5 @@
 CLI/.idea
 CLI/dist
 **/__pycache__
+
+**/node_modules/**
