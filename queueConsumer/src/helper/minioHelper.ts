@@ -20,15 +20,15 @@ export async function uploadFile(bucketName: string, fileName: string, buffer: B
   return await traceWrapper(async (): Promise<void> => {
 
     logger.debug('Uploading file to Minio in parts...');
-    const n = 100;
-    const partSize = Math.ceil(buffer.length / n);
+    const chunksize = 1000000;
+    const nrChunks = Math.ceil(buffer.length / chunksize);
     let partIndex = 0;
 
     const stream = new Readable({
       read() {
-        if (partIndex < n) {
-          const start = partIndex * partSize;
-          const end = start + partSize;
+        if (partIndex < nrChunks) {
+          const start = partIndex * chunksize;
+          const end = start + chunksize;
           const part = buffer.slice(start, end);
           this.push(part);
           partIndex += 1;

@@ -26,8 +26,9 @@ async function processFile(buffer: Buffer, fileName: string) {
       const mcapPath = tempFilePath.replace('.bag', '.mcap');
 
       try {
+        logger.debug('Converting file...');
         const convertedBuffer = await convert(tempFilePath, mcapPath);
-
+        logger.debug('File converted successfully')
         // Read converted file and upload
         await uploadFile(env.MINIO_BAG_BUCKET_NAME, fileName, convertedBuffer);
         // Optionally, clean up temporary files
