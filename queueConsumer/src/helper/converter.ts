@@ -6,13 +6,16 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as fs from 'fs';
 import logger from '../logger';
+import { traceWrapper } from '../tracing';
 
 const execPromisify = promisify(exec);
 
 
 export async function convert(infile: string, outfile: string): Promise<Buffer> {
   // Convert file
-  await execPromisify(`mcap convert ${infile} ${outfile}`);
+  await traceWrapper(async (): Promise<void> => {
+    await execPromisify(`mcap convert ${infile} ${outfile}`);
+  }, 'MCAP Conversion')();
 
   return new Promise((resolve, reject) => {
     const readStream = fs.createReadStream(outfile);
