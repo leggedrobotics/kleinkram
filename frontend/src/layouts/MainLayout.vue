@@ -13,13 +13,13 @@
             class="text-weight-bold"
             style="margin: 0"
           >
-            Grand Tour
+            Bagistry
           </h1>
           <h1 v-else class="text-weight-bold" style="font-size: 60px">
-            Grand Tour
+            Bagistry
           </h1>
           <h4 v-if="$q.screen.gt.xs" style="margin: 0">
-            Datasets
+            A structured bag & mcap storage solution
           </h4>
         </div>
         <div class="col-4" >

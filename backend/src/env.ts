@@ -129,4 +129,15 @@ export default {
   get MINIO_ENDPOINT(): string {
     return asString(process.env.MINIO_ENDPOINT);
   },
+
+  get GOOGLE_CLIENT_ID(): string {
+    return asString(process.env.GOOGLE_CLIENT_ID);
+  },
+  get GOOGLE_CLIENT_SECRET(): string {
+    return asString(process.env.GOOGLE_CLIENT_SECRET);
+  },
+
+  get JWT_SECRET(): string {
+    return asString(process.env.JWT_SECRET);
+  },
 };

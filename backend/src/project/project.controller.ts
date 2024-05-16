@@ -1,12 +1,14 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('project')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async allProjects() {
     return this.projectService.findAll();
   }
