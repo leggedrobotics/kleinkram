@@ -91,7 +91,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
   try {
     const response = await axios.get('/file/one', {params: {uuid}});
     const file = response.data;
-    console.log(file)
     const project = new Project(
       file.run.project.uuid,
       file.run.project.name,

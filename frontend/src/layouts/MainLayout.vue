@@ -115,17 +115,14 @@ import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 function goHome(): void {
-  console.log('goHome');
   console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
 function goDatatable(): void {
-  console.log('goDatatable');
   void $routerService?.routeTo(ROUTES.DATATABLE);
 }
 
 function goUpload(): void {
-  console.log('goUpload');
   void $routerService?.routeTo(ROUTES.UPLOAD);
 }
 
