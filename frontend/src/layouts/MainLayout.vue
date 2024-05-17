@@ -73,6 +73,16 @@
           >
             Run analysis
           </q-btn>
+          <q-space/>
+          <q-btn
+            icon="login"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="login"
+          >Login
+          </q-btn>
         </q-toolbar>
       </div>
     </q-header>
@@ -106,6 +116,10 @@ function goDatatable(): void {
 function goUpload(): void {
   console.log('goUpload');
   void $routerService?.routeTo(ROUTES.UPLOAD);
+}
+
+function login(): void {
+  window.location.href = `${ENV.ENDPOINT}/auth/google`;
 }
 </script>
 <style>

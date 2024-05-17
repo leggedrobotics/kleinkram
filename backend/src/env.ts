@@ -140,4 +140,12 @@ export default {
   get JWT_SECRET(): string {
     return asString(process.env.JWT_SECRET);
   },
+
+  get ENDPOINT(): string {
+    return asString(process.env.QUASAR_ENDPOINT);
+  },
+
+  get FRONTEND_URL(): string {
+    return asString(process.env.FRONTEND_URL);
+  },
 };

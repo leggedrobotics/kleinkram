@@ -49,7 +49,6 @@ export const fetchOverview = async (runName: string,
           new Date(file.run.updatedAt),
           new Date(file.run.deletedAt));
       }
-      console.log(file)
       const newFile = new FileEntity(
         file.uuid,
         file.filename,

@@ -11,4 +11,7 @@ export default class User extends BaseEntity {
 
   @Column()
   role: string;
+
+  @Column()
+  googleId: string;
 }

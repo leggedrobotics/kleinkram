@@ -155,7 +155,6 @@ export class FileService {
   }
 
   async generateDownload(uuid: string, expires: boolean) {
-    console.log('generateDownload', uuid);
     const file = await this.fileRepository.findOneOrFail({
       where: { uuid },
     });

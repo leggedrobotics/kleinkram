@@ -48,6 +48,7 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "axios": "^1.6.8",
     "bull": "^4.12.2",
+    "cookie-parser": "^1.4.6",
     "form-data": "^4.0.0",
     "googleapis": "^134.0.0",
     "jsonwebtoken": "^9.0.2",

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '../enum';
 
 @Injectable()
 export class AuthService {
@@ -15,11 +16,7 @@ export class AuthService {
 
     let user = await this.userService.findOneByEmail(email);
     if (!user) {
-      user = await this.userService.create({
-        googleId: id,
-        email,
-        displayName,
-      });
+      user = await this.userService.create(id, email, displayName);
     }
     return user;
   }
