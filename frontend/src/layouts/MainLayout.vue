@@ -22,7 +22,7 @@
             A structured bag & mcap storage solution
           </h4>
         </div>
-        <div class="col-4" >
+        <div class="col-4">
           <div style="max-height: 140px; height: 100%">
             <q-img
               src="/rsl.png"
@@ -70,6 +70,7 @@
             no-wrap
             class="q-ml-xs"
             icon="analytics"
+            @click="goAnalysis"
           >
             Run analysis
           </q-btn>
@@ -96,11 +97,11 @@
       </div>
     </q-header>
     <q-page-container>
-      <router-view />
+      <router-view/>
     </q-page-container>
     <q-banner class="text-white bg-red fixed-bottom" style="min-height: 10px">
       <div class="flex flex-center">
-        DEVELOPMENT SYSTEM v{{ENV.VERSION}}: Data will be reset without notice
+        DEVELOPMENT SYSTEM v{{ ENV.VERSION }}: Data will be reset without notice
       </div>
     </q-banner>
   </q-layout>
@@ -108,16 +109,18 @@
 
 <script setup lang="ts">
 import ROUTES from 'src/router/routes';
-import {inject, onMounted, ref} from 'vue';
+import {inject} from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
 import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
+
 const $routerService: RouterService | undefined = inject('$routerService');
 
 function goHome(): void {
   console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
+
 function goDatatable(): void {
   void $routerService?.routeTo(ROUTES.DATATABLE);
 }
@@ -129,6 +132,10 @@ function goUpload(): void {
 function login(): void {
   window.location.href = `${ENV.ENDPOINT}/auth/google`;
 
+}
+
+function goAnalysis(): void {
+  void $routerService?.routeTo(ROUTES.ANALYSIS);
 }
 
 loggedIn.value = isLoggedIn();

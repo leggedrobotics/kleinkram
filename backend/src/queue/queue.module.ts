@@ -18,6 +18,9 @@ import Run from '../run/entities/run.entity';
     BullModule.registerQueue({
       name: 'file-queue',
     }),
+    BullModule.registerQueue({
+      name: 'analysis-queue',
+    }),
   ],
   providers: [QueueService],
   controllers: [QueueController],

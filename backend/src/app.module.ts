@@ -13,6 +13,8 @@ import { QueueModule } from './queue/queue.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
+import {AnalysisModule} from "./analysis/analysisModule";
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +45,7 @@ import { PassportModule } from '@nestjs/passport';
     UserModule,
     AuthModule,
     PassportModule,
+    AnalysisModule
   ],
   controllers: [ProjectController],
 })

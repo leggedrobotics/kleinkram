@@ -5,12 +5,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import logger from './logger';
 
+import Docker from 'dockerode';
 
 async function bootstrap() {
 
   tracer.start();
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
+
+  logger.info('Application started');
+
 }
 
 bootstrap().catch((err) => {

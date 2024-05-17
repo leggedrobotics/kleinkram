@@ -25,7 +25,14 @@ export class QueueService {
     private queueRepository: Repository<QueueEntity>,
     @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectQueue('file-queue') private fileProcessingQueue: Queue,
+    @InjectQueue('analysis-queue') private analysisQueue: Queue,
   ) {}
+
+  async addAnalysisQueue(run_analysis_id: string) {
+    await this.analysisQueue.add('processAnalysisFile', {
+      run_analysis_id: run_analysis_id,
+    });
+  }
 
   async createDrive(driveCreate: DriveCreate) {
     const run = await this.runRepository.findOneOrFail({

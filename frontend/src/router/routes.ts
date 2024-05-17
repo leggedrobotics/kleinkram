@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from 'vue-router';
+import {RouteRecordRaw} from 'vue-router';
 
 import ROLE from 'src/enum/USER_ROLES';
 
@@ -11,23 +11,28 @@ const ROUTES: Record<string, RouteRecordRaw> = {
   HOME: {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
+    children: [{path: '', component: () => import('pages/IndexPage.vue')}],
   },
 
   DATATABLE: {
     path: '/datatable',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/DataTablePage.vue') }],
+    children: [{path: '', component: () => import('pages/DataTablePage.vue')}],
   },
   UPLOAD: {
     path: '/upload',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/UploadPage.vue') }],
+    children: [{path: '', component: () => import('pages/UploadPage.vue')}],
   },
   RUN: {
     path: '/file',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
+    children: [{path: '', component: () => import('pages/FileInfo.vue')}],
+  },
+  ANALYSIS: {
+    path: '/analysis',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{path: '', component: () => import('pages/AnalysisPage.vue')}],
   },
 
   LANDING: {
@@ -62,8 +67,8 @@ type ConstrainedRoute = {
  */
 
 export const CONSTRAINED_ROUTES: ConstrainedRoute[] = [
-  { path: '/users', allowedRoles: [ROLE.ADMIN] },
-  { path: '/files', allowedRoles: [ROLE.ADMIN, ROLE.USER] },
+  {path: '/users', allowedRoles: [ROLE.ADMIN]},
+  {path: '/files', allowedRoles: [ROLE.ADMIN, ROLE.USER]},
 ];
 
 export default ROUTES;
