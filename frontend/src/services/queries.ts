@@ -13,7 +13,7 @@ export const fetchOverview = async (runName: string,
     const formattedEndDate = endDate.toISOString();
 
     const queryParams = new URLSearchParams({
-      runName: runName || '',
+      fileName: runName || '',
       projectUUID: projectUUID || '',
       runUUID: runUUID || '',
       startDate: formattedStartDate,
