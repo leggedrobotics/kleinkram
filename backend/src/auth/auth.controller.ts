@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import env from '../env';
 import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -13,13 +14,20 @@ export class AuthController {
   ) {}
 
   @Get('google')
+  @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req) {}
 
   @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const user = req.user;
     const token = await this.authService.login(user);
-    res.cookie('token', token.access_token, {
+    res.cookie('authtoken', token.access_token, {
+      httpOnly: false,
+      secure: env.DEV,
+      sameSite: 'strict',
+    });
+    res.cookie('refreshtoken', token.refresh_token, {
       httpOnly: true,
       secure: env.DEV,
       sameSite: 'strict',
