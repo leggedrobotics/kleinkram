@@ -75,6 +75,7 @@
           </q-btn>
           <q-space/>
           <q-btn
+            v-if="!loggedIn"
             icon="login"
             flat
             no-caps
@@ -83,6 +84,14 @@
             @click="login"
           >Login
           </q-btn>
+          <q-btn
+            v-else
+            icon="logout"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="logout()">Logout</q-btn>
         </q-toolbar>
       </div>
     </q-header>
@@ -99,10 +108,12 @@
 
 <script setup lang="ts">
 import ROUTES from 'src/router/routes';
-import { inject } from 'vue';
+import {inject, onMounted, ref} from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
+import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
 const $routerService: RouterService | undefined = inject('$routerService');
+
 function goHome(): void {
   console.log('goHome');
   console.log($routerService);
@@ -120,7 +131,11 @@ function goUpload(): void {
 
 function login(): void {
   window.location.href = `${ENV.ENDPOINT}/auth/google`;
+
 }
+
+loggedIn.value = isLoggedIn();
+
 </script>
 <style>
 .fixed-bottom {

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
-import { UserRole } from '../enum';
 import User from '../user/entities/user.entity';
 import { JwtPayload } from 'jsonwebtoken';
 
@@ -12,7 +11,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUserByGoogle(profile: any): Promise<User> {
+  async validateAndCreateUserByGoogle(profile: any): Promise<User> {
     const { id, emails, displayName } = profile;
     const email = emails[0].value;
     let user = await this.userService.findOneByEmail(email);
@@ -20,6 +19,10 @@ export class AuthService {
       user = await this.userService.create(id, email, displayName);
     }
     return user;
+  }
+
+  async validateUserByGoogle(email: string): Promise<User> {
+    return await this.userService.findOneByEmail(email);
   }
   async login(user: any) {
     const payload: JwtPayload = {
