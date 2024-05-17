@@ -29,6 +29,13 @@ const ROUTES: Record<string, RouteRecordRaw> = {
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
   },
+
+  LANDING: {
+    path: '/landing',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{ path: '', component: () => import('pages/LandingPage.vue') }],
+  },
+
 };
 
 // Routes that can be accessed without being logged in

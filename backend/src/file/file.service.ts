@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import File from './entities/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
-import { TopicService } from '../topic/topic.service';
 import env from '../env';
 import Run from '../run/entities/run.entity';
 import { minio } from '../minioHelper';
@@ -156,7 +155,6 @@ export class FileService {
   }
 
   async generateDownload(uuid: string, expires: boolean) {
-    console.log('generateDownload', uuid);
     const file = await this.fileRepository.findOneOrFail({
       where: { uuid },
     });

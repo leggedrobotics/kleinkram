@@ -49,7 +49,6 @@ export const fetchOverview = async (runName: string,
           new Date(file.run.updatedAt),
           new Date(file.run.deletedAt));
       }
-      console.log(file)
       const newFile = new FileEntity(
         file.uuid,
         file.filename,
@@ -92,7 +91,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
   try {
     const response = await axios.get('/file/one', {params: {uuid}});
     const file = response.data;
-    console.log(file)
     const project = new Project(
       file.run.project.uuid,
       file.run.project.name,
