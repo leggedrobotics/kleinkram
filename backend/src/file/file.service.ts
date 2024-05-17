@@ -106,7 +106,7 @@ export class FileService {
         topicCount: splitTopics.length,
       });
     }
-
+    console.log(query.getQuery());
     // Execute the query
     const fileIds = await query.getMany();
     if (fileIds.length === 0) {
