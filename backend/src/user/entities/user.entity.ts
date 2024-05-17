@@ -1,5 +1,6 @@
 import { Column, Entity } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
+import { UserRole } from '../../enum';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -10,7 +11,7 @@ export default class User extends BaseEntity {
   email: string;
 
   @Column()
-  role: string;
+  role: UserRole;
 
   @Column()
   googleId: string;

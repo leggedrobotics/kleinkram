@@ -13,6 +13,9 @@ export class UserService {
     return this.userRepository.findOne({ where: { email } });
   }
 
+  async findOneById(googleId: string) {
+    return this.userRepository.findOneOrFail({ where: { googleId } });
+  }
   async create(googleId: string, email: string, username: string) {
     const res = this.userRepository.create({
       email: email,
