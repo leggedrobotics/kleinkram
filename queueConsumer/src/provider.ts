@@ -89,13 +89,15 @@ export class FileProcessor implements OnModuleInit {
       const queue = await this.startProcessing(job.data.queueUuid);
       try {
         let buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
-        let filename = queue.identifier;
+        let identifier = queue.identifier;
+        let filename = queue.filename;
         if (filename.endsWith('.mcap')) {
           await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
         } else if (filename.endsWith('.bag')) {
-          filename = queue.identifier.replace('.bag', '.mcap');
+          filename = filename.replace('.bag', '.mcap');
+          identifier = identifier.replace('.bag', '.mcap');
           console.log("here")
-          buffer = await processFile(buffer, filename);
+          buffer = await processFile(buffer, identifier);
           console.log("here2")
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
@@ -111,9 +113,8 @@ export class FileProcessor implements OnModuleInit {
           return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
         });
         const createdTopics = await Promise.all(res);
-
         const newFile = this.fileRepository.create({
-          identifier: filename,
+          identifier,
           date,
           topics: createdTopics,
           run: queue.run,
