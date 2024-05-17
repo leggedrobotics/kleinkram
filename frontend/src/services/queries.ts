@@ -163,6 +163,7 @@ export const allTopicsNames = async (): Promise<string[]> => {
 }
 
 export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
+
   const response = await axios.get(`/run/filtered/${projectUUID}`);
   return response.data.map((run: any)=>{
     const project = new Project(

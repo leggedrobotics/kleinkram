@@ -12,6 +12,7 @@ import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import Topic from './entities/topic.entity';
 import Project from './entities/project.entity';
+import {AnalysisProcessor} from "./analysis_provider";
 
 
 @Module({
@@ -24,6 +25,10 @@ import Project from './entities/project.entity';
     }),
     BullModule.registerQueue({
       name: 'file-queue'
+    }),
+
+    BullModule.registerQueue({
+      name: 'analysis-queue'
     }),
 
     ConfigModule.forRoot({
@@ -48,7 +53,7 @@ import Project from './entities/project.entity';
     }),
     TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic])
   ],
-  providers: [FileProcessor]
+  providers: [FileProcessor, AnalysisProcessor]
 })
 export class AppModule {
 }

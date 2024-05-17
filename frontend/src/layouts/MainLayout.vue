@@ -22,7 +22,7 @@
             Datasets
           </h4>
         </div>
-        <div class="col-4" >
+        <div class="col-4">
           <div style="max-height: 140px; height: 100%">
             <q-img
               src="/rsl.png"
@@ -70,6 +70,7 @@
             no-wrap
             class="q-ml-xs"
             icon="analytics"
+            @click="goAnalysis"
           >
             Run analysis
           </q-btn>
@@ -77,11 +78,11 @@
       </div>
     </q-header>
     <q-page-container>
-      <router-view />
+      <router-view/>
     </q-page-container>
     <q-banner class="text-white bg-red fixed-bottom" style="min-height: 10px">
       <div class="flex flex-center">
-        DEVELOPMENT SYSTEM v{{ENV.VERSION}}: Data will be reset without notice
+        DEVELOPMENT SYSTEM v{{ ENV.VERSION }}: Data will be reset without notice
       </div>
     </q-banner>
   </q-layout>
@@ -89,15 +90,18 @@
 
 <script setup lang="ts">
 import ROUTES from 'src/router/routes';
-import { inject } from 'vue';
+import {inject} from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
+
 const $routerService: RouterService | undefined = inject('$routerService');
+
 function goHome(): void {
   console.log('goHome');
   console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
+
 function goDatatable(): void {
   console.log('goDatatable');
   void $routerService?.routeTo(ROUTES.DATATABLE);
@@ -107,6 +111,12 @@ function goUpload(): void {
   console.log('goUpload');
   void $routerService?.routeTo(ROUTES.UPLOAD);
 }
+
+function goAnalysis(): void {
+  console.log('goAnalysis');
+  void $routerService?.routeTo(ROUTES.ANALYSIS);
+}
+
 </script>
 <style>
 .fixed-bottom {
