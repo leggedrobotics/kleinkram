@@ -10,3 +10,12 @@ export enum FileLocation {
   DRIVE = 'DRIVE',
   MINIO = 'MINIO',
 }
+
+export enum AnalysisRunState {
+
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  DONE = 'DONE',
+  ERROR = 'ERROR',
+
+}

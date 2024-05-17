@@ -1,7 +1,16 @@
 <template>
-  <q-page class="flex flex-center">
+  <q-page class="flex">
     <div class="q-pa-md">
-      <div class="text-h4 text-center">Run Analysis Page</div>
+      <div class="text-h4">Run Analysis</div>
+      <p>
+        <i>Run analysis</i> allows you to perform automated analysis, tests and checks on a project or run level.
+        Run analysis works similar to GitHub Actions or GitLab CI/CD pipelines. The analysis is performed in a docker
+        container, which gets executed on the server. All you have to do is to specify the docker image, which contains
+        the analysis code. The analysis code will be executed in the docker container, the results will be stored, and
+        can be viewed via Webinterface.
+      </p>
+
+      <h3 class="text-h6">Submit new Run Analysis</h3>
 
       <!-- Select a project and run, on which the anylsis will be performed -->
       <q-form @submit.prevent="submitAnalysis">
@@ -56,9 +65,10 @@
               </q-list>
             </q-btn-dropdown>
           </div>
-          <div class="col-1">
+          <div class="col-5">
             <div class="row">
-              <q-input v-model="image_name" outlined dense clearable hint="Docker Image"/>
+              <q-input v-model="image_name" outlined dense clearable label="Docker Image"
+                       hint="e.g., rsleth/run-alys:latest"/>
             </div>
           </div>
           <div class="col-1">
@@ -70,8 +80,16 @@
         </div>
       </q-form>
 
-
+      <template v-if="selected_project && selected_run">
+        <RunAnalysis :project_uuid="selected_project?.uuid" :run_uuid="selected_run?.uuid"></RunAnalysis>
+      </template>
+      <template v-else>
+        <q-card class="q-pa-sm q-ma-lg text-center">
+          <div class="text">Please select a project and a run to...</div>
+        </q-card>
+      </template>
     </div>
+
   </q-page>
 </template>
 
@@ -82,8 +100,9 @@ import {Ref, ref, watchEffect} from 'vue';
 import {Project, Run} from 'src/types/types';
 import {useQuery} from '@tanstack/vue-query';
 import {allProjects, runsOfProject} from 'src/services/queries';
-import {Notify} from "quasar";
-import {createAnalysis} from "src/services/mutations";
+import {Notify} from 'quasar';
+import {createAnalysis} from 'src/services/mutations';
+import RunAnalysis from 'components/RunAnalysis.vue';
 
 
 const image_name = ref('');
@@ -139,7 +158,7 @@ const submitAnalysis = () => {
   // post: the input should be valid now
 
   // send the analysis request to the backend and show a notification
-  createAnalysis(selected_project.value.uuid, selected_run.value.uuid, image_name.value).then(
+  createAnalysis( image_name.value, selected_run.value.uuid,).then(
     () => {
       Notify.create({
         group: false,

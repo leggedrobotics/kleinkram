@@ -28,9 +28,9 @@ export class QueueService {
     @InjectQueue('analysis-queue') private analysisQueue: Queue,
   ) {}
 
-  async addAnalysisQueue(queueUuid: string) {
+  async addAnalysisQueue(run_analysis_id: string) {
     await this.analysisQueue.add('processAnalysisFile', {
-      queueUuid: queueUuid,
+      run_analysis_id: run_analysis_id,
     });
   }
 

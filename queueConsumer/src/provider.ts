@@ -59,7 +59,6 @@ export class FileProcessor implements OnModuleInit {
     @InjectQueue('file-queue') private readonly fileQueue: Queue,
     @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
     @InjectRepository(QueueEntity) private queueRepository: Repository<QueueEntity>,
-    @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectRepository(FileEntity) private fileRepository: Repository<FileEntity>,
     @InjectRepository(Topic) private topicRepository: Repository<Topic>
   ) {

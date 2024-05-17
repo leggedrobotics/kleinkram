@@ -1,6 +1,9 @@
 export class SubmitAnalysisRun {
-  uuid: string;
-  run: { uuid: string };
-  project: { uuid: string };
-  date: Date;
+  runUUID: string;
+  docker_image: string;
+}
+
+export class AnalysisRunQuery {
+  projectUUID: string;
+  run_uuids: string;
 }

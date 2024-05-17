@@ -4,6 +4,9 @@ import {Injectable, OnModuleInit} from "@nestjs/common";
 import {InjectQueue, OnQueueActive, Process, Processor} from "@nestjs/bull";
 import {Job, Queue} from "bull";
 import {traceWrapper} from "./tracing";
+import {InjectRepository} from "@nestjs/typeorm";
+import {Repository} from "typeorm";
+import AnalysisRun from "./entities/analysis.entity";
 
 
 @Processor('analysis-queue')
@@ -12,6 +15,7 @@ export class AnalysisProcessor implements OnModuleInit {
 
     constructor(
         @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
+        @InjectRepository(AnalysisRun) private runAnalysisRepository: Repository<AnalysisRun>,
     ) {
         logger.debug('AnalysisProcessor created');
     }
@@ -35,7 +39,7 @@ export class AnalysisProcessor implements OnModuleInit {
     //  running at the same time by considering the resources available on the machine and the
     //  resources required by the containers (e.g., memory, CPU, disk space)
     @Process({concurrency: 1, name: 'processAnalysisFile'})
-    async handleAnalysisRun(job: Job<{ queueUuid: string }>) {
+    async handleAnalysisRun(job: Job<{ run_analysis_id: string }>) {
 
         console.log('Analysis run started!');
 
@@ -58,7 +62,14 @@ export class AnalysisProcessor implements OnModuleInit {
             // start a test container using dockerode
             // we constrain the disk to 10GB, the memory to 1GB, and the CPU to 1 core
             // TODO: replace with run analysis ID
-            const uuid = Math.floor(Math.random() * 1000000);
+            const uuid = job.data.run_analysis_id;
+
+            // request analysis run from database
+            console.log('Requesting analysis run from database: ' + uuid);
+            const analysis_run = await this.runAnalysisRepository.findOne({
+                where: {uuid: uuid},
+                relations: ['run', 'run.project'],
+            });
 
             const container = await docker.createContainer({
                 Image: 'ubuntu',
@@ -85,12 +96,17 @@ export class AnalysisProcessor implements OnModuleInit {
                     await container.remove();
                     logger.info('Container removed');
 
-                    // TODO: save results in DB
-
                     resolve();
                 }, 10_000);
 
             });
+
+            // save results in database
+            analysis_run.state = 'DONE';
+            await this.runAnalysisRepository.save(analysis_run);
+
+            // mark the job as completed
+            return {success: true}
 
 
         }, 'processMinioFile')();
