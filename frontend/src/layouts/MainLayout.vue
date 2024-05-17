@@ -74,6 +74,25 @@
           >
             Run analysis
           </q-btn>
+          <q-space/>
+          <q-btn
+            v-if="!loggedIn"
+            icon="login"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="login"
+          >Login
+          </q-btn>
+          <q-btn
+            v-else
+            icon="logout"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="logout()">Logout</q-btn>
         </q-toolbar>
       </div>
     </q-header>
@@ -93,6 +112,7 @@ import ROUTES from 'src/router/routes';
 import {inject} from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
+import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -115,7 +135,6 @@ function login(): void {
 }
 
 function goAnalysis(): void {
-  console.log('goAnalysis');
   void $routerService?.routeTo(ROUTES.ANALYSIS);
 }
 
