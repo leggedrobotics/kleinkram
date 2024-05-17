@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Data storage of ROS bags",
   "productName": "Bagistry",
   "author": "Johann Schwabe <johann@schwabe.dev>",
