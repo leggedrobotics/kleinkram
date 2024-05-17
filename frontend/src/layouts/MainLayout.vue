@@ -13,13 +13,13 @@
             class="text-weight-bold"
             style="margin: 0"
           >
-            Grand Tour
+            Bagistry
           </h1>
           <h1 v-else class="text-weight-bold" style="font-size: 60px">
-            Grand Tour
+            Bagistry
           </h1>
           <h4 v-if="$q.screen.gt.xs" style="margin: 0">
-            Datasets
+            A structured bag & mcap storage solution
           </h4>
         </div>
         <div class="col-4">
@@ -97,25 +97,29 @@ import ENV from 'src/env';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 function goHome(): void {
-  console.log('goHome');
   console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
 
 function goDatatable(): void {
-  console.log('goDatatable');
   void $routerService?.routeTo(ROUTES.DATATABLE);
 }
 
 function goUpload(): void {
-  console.log('goUpload');
   void $routerService?.routeTo(ROUTES.UPLOAD);
+}
+
+function login(): void {
+  window.location.href = `${ENV.ENDPOINT}/auth/google`;
+
 }
 
 function goAnalysis(): void {
   console.log('goAnalysis');
   void $routerService?.routeTo(ROUTES.ANALYSIS);
 }
+
+loggedIn.value = isLoggedIn();
 
 </script>
 <style>

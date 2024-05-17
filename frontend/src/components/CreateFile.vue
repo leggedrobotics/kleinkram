@@ -136,7 +136,8 @@ const submitNewFile = async () => {
           color: 'negative',
           spinner: false,
           position: 'top-right',
-          timeout: 0,
+          timeout: 30000,
+          closeBtn: true,
         })
         return
       }

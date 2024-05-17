@@ -10,17 +10,20 @@ import {
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
+import { LoggedIn } from '../auth/roles.decorator';
 
 @Controller('file')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Get('all')
+  @LoggedIn()
   async allFiles() {
     return await this.fileService.findAll();
   }
 
   @Get('filteredByNames')
+  @LoggedIn()
   async filteredByNames(
     @Query('projectName') projectName: string,
     @Query('runName') runName: string,
@@ -34,6 +37,7 @@ export class FileController {
   }
 
   @Get('filtered')
+  @LoggedIn()
   async filteredFiles(
     @Query('fileName') fileName: string,
     @Query('projectUUID') projectUUID: string,
@@ -54,6 +58,7 @@ export class FileController {
     );
   }
   @Get('download')
+  @LoggedIn()
   async download(
     @Query('uuid') uuid: string,
     @Query('expires') expires: boolean,
@@ -63,21 +68,25 @@ export class FileController {
   }
 
   @Get('one')
+  @LoggedIn()
   async getFileById(@Query('uuid') uuid: string) {
     return this.fileService.findOne(uuid);
   }
 
   @Get('byName')
+  @LoggedIn()
   async getFileByName(@Query('name') name: string) {
     return this.fileService.findByFilename(name);
   }
 
   @Put(':uuid')
+  @LoggedIn()
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
     return this.fileService.update(uuid, dto);
   }
 
   @Delete('clear')
+  @LoggedIn()
   async clear() {
     return this.fileService.clear();
   }
