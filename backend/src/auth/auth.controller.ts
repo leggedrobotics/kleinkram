@@ -13,16 +13,14 @@ export class AuthController {
   ) {}
 
   @Get('google')
-  @LoggedIn()
   async googleAuth(@Req() req) {}
 
   @Get('google/callback')
-  @LoggedIn()
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const user = req.user;
     const token = await this.authService.login(user);
     res.cookie('token', token.access_token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: env.DEV,
       sameSite: 'strict',
     });
