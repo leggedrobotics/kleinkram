@@ -49,13 +49,16 @@ async function processFile(buffer: Buffer, fileName: string) {
 }
 
 
+
+
+
 @Processor('file-queue')
 @Injectable()
 export class FileProcessor implements OnModuleInit {
   constructor(
     @InjectQueue('file-queue') private readonly fileQueue: Queue,
+    @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
     @InjectRepository(QueueEntity) private queueRepository: Repository<QueueEntity>,
-    @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectRepository(FileEntity) private fileRepository: Repository<FileEntity>,
     @InjectRepository(Topic) private topicRepository: Repository<Topic>
   ) {
@@ -68,11 +71,14 @@ export class FileProcessor implements OnModuleInit {
     logger.debug('Connecting to Redis...');
     try {
       await this.fileQueue.isReady();
+      await this.analysisQueue.isReady();
       logger.debug('Connected to Redis successfully!');
     } catch (error) {
       logger.error('Failed to connect to Redis:', error);
     }
   }
+
+
 
   @OnQueueActive()
   onActive(job: Job) {
@@ -89,13 +95,15 @@ export class FileProcessor implements OnModuleInit {
       const queue = await this.startProcessing(job.data.queueUuid);
       try {
         let buffer = await downloadMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
-        let filename = queue.identifier;
+        let identifier = queue.identifier;
+        let filename = queue.filename;
         if (filename.endsWith('.mcap')) {
           await moveMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, env.MINIO_BAG_BUCKET_NAME, queue.identifier);
         } else if (filename.endsWith('.bag')) {
-          filename = queue.identifier.replace('.bag', '.mcap');
+          filename = filename.replace('.bag', '.mcap');
+          identifier = identifier.replace('.bag', '.mcap');
           console.log("here")
-          buffer = await processFile(buffer, filename);
+          buffer = await processFile(buffer, identifier);
           console.log("here2")
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
@@ -111,9 +119,8 @@ export class FileProcessor implements OnModuleInit {
           return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
         });
         const createdTopics = await Promise.all(res);
-
         const newFile = this.fileRepository.create({
-          identifier: filename,
+          identifier,
           date,
           topics: createdTopics,
           run: queue.run,

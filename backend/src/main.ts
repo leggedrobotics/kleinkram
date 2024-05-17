@@ -2,15 +2,18 @@ import tracer from './tracing';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import logger from './logger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   tracer.start();
 
   const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:9002',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
+    credentials: true,
     optionsSuccessStatus: 204,
   });
   await app.listen(3000);

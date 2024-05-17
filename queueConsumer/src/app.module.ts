@@ -12,6 +12,8 @@ import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import Topic from './entities/topic.entity';
 import Project from './entities/project.entity';
+import {AnalysisProcessor} from "./analysis_provider";
+import AnalysisRun from "./entities/analysis.entity";
 
 
 @Module({
@@ -24,6 +26,10 @@ import Project from './entities/project.entity';
     }),
     BullModule.registerQueue({
       name: 'file-queue'
+    }),
+
+    BullModule.registerQueue({
+      name: 'analysis-queue'
     }),
 
     ConfigModule.forRoot({
@@ -40,15 +46,15 @@ import Project from './entities/project.entity';
           username: configService.getOrThrow<string>('database.username'),
           password: configService.getOrThrow<string>('database.password'),
           database: configService.getOrThrow<string>('database.database'),
-          entities: [QueueEntity, Run, FileEntity, Project, Topic],
+          entities: [QueueEntity, Run, FileEntity, Project, Topic, AnalysisRun],
           synchronize: env.DEV,
           logging: ['warn', 'error']
         }) as PostgresConnectionOptions,
       inject: [ConfigService]
     }),
-    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic])
+    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic, AnalysisRun])
   ],
-  providers: [FileProcessor]
+  providers: [FileProcessor, AnalysisProcessor]
 })
 export class AppModule {
 }

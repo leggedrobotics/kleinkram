@@ -1,9 +1,9 @@
 import axios from 'src/api/axios';
-import { FileEntity, Project, Queue, Run, Topic } from 'src/types/types';
+import {AnalysisRun, FileEntity, Project, Queue, Run, Topic} from 'src/types/types';
 
 export const fetchOverview = async (runName: string,
-                                    projectUUID: string|undefined,
-                                    runUUID: string|undefined,
+                                    projectUUID: string | undefined,
+                                    runUUID: string | undefined,
                                     startDate: Date,
                                     endDate: Date,
                                     topics: string[],
@@ -13,13 +13,13 @@ export const fetchOverview = async (runName: string,
     const formattedEndDate = endDate.toISOString();
 
     const queryParams = new URLSearchParams({
-      runName : runName || '',
+      fileName: runName || '',
       projectUUID: projectUUID || '',
       runUUID: runUUID || '',
       startDate: formattedStartDate,
       endDate: formattedEndDate,
       topics: topics.join(','),
-      andOr: andOr ? '1': ''
+      andOr: andOr ? '1' : ''
     }).toString();
     const projects: Record<string, Project> = {};
     const runs: Record<string, Run> = {};
@@ -27,7 +27,7 @@ export const fetchOverview = async (runName: string,
     const res = response.data.map((file: any) => {
       const project_uuid: string = file.run.project.uuid;
       let project: Project | undefined = projects[project_uuid];
-      if(!project) {
+      if (!project) {
         project = new Project(
           file.run.project.uuid,
           file.run.project.name,
@@ -39,7 +39,7 @@ export const fetchOverview = async (runName: string,
       }
       const run_uuid: string = file.run.uuid;
       let run: Run | undefined = runs[run_uuid];
-      if(!run){
+      if (!run) {
         run = new Run(
           file.run.uuid,
           file.run.name,
@@ -49,7 +49,6 @@ export const fetchOverview = async (runName: string,
           new Date(file.run.updatedAt),
           new Date(file.run.deletedAt));
       }
-      console.log(file)
       const newFile = new FileEntity(
         file.uuid,
         file.filename,
@@ -78,11 +77,26 @@ export const allProjects = async () => {
   return response.data;
 }
 
+
+export const analysisRuns = async (projectUUID: string, runUUIDs: string) => {
+
+  const params = {
+    project_uuid: projectUUID,
+    run_uuids: runUUIDs
+  };
+
+  const response = await axios.get('/analysis/list', {params});
+  return response.data.map((res: any) => {
+    return new AnalysisRun(res.uuid, new Date(res.createdAt), new Date(res.updatedAt), new Date(res.deletedAt), res.state, res.image, null)
+  });
+
+
+};
 export const currentQueue = async (startDate: Date) => {
   const params = {
     startDate: startDate.toISOString()
   };
-  const response = await axios.get('/queue/active', { params });
+  const response = await axios.get('/queue/active', {params});
   return response.data.map((res: any) => {
     return new Queue(res.uuid, res.identifier, res.filename, res.state, res.location, res.run, new Date(res.createdAt), new Date(res.updatedAt), new Date(res.deletedAt));
   })
@@ -92,7 +106,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
   try {
     const response = await axios.get('/file/one', {params: {uuid}});
     const file = response.data;
-    console.log(file)
     const project = new Project(
       file.run.project.uuid,
       file.run.project.name,
@@ -136,8 +149,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
       new Date(file.deletedAt));
     run.files.push(newFile);
     return newFile
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error fetching file:', error);
     throw error; // Rethrow or handle as appropriate
   }
@@ -163,8 +175,9 @@ export const allTopicsNames = async (): Promise<string[]> => {
 }
 
 export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
+
   const response = await axios.get(`/run/filtered/${projectUUID}`);
-  return response.data.map((run: any)=>{
+  return response.data.map((run: any) => {
     const project = new Project(
       run.project.uuid,
       run.project.name,

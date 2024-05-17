@@ -84,6 +84,8 @@ services:
       - ./queueConsumer:/usr/src/queueConsumer
       - /usr/src/queueConsumer/node_modules
       - /usr/src/queueConsumer/dist
+      # mount docker socket to access docker from within the container
+      - /var/run/docker.sock:/var/run/docker.sock
     develop:
       watch:
         - action: rebuild
@@ -147,7 +149,7 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
 
     environment:
-      - GF_LOG_LEVEL=error
+      - GF_LOG_LEVEL=debug
     ports:
       - '9050:3000' # localhost:9050 for accessing grafana
     networks:

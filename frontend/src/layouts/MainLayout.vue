@@ -13,16 +13,16 @@
             class="text-weight-bold"
             style="margin: 0"
           >
-            Grand Tour
+            Bagistry
           </h1>
           <h1 v-else class="text-weight-bold" style="font-size: 60px">
-            Grand Tour
+            Bagistry
           </h1>
           <h4 v-if="$q.screen.gt.xs" style="margin: 0">
-            Datasets
+            A structured bag & mcap storage solution
           </h4>
         </div>
-        <div class="col-4" >
+        <div class="col-4">
           <div style="max-height: 140px; height: 100%">
             <q-img
               src="/rsl.png"
@@ -70,18 +70,38 @@
             no-wrap
             class="q-ml-xs"
             icon="analytics"
+            @click="goAnalysis"
           >
             Run analysis
           </q-btn>
+          <q-space/>
+          <q-btn
+            v-if="!loggedIn"
+            icon="login"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="login"
+          >Login
+          </q-btn>
+          <q-btn
+            v-else
+            icon="logout"
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
+            @click="logout()">Logout</q-btn>
         </q-toolbar>
       </div>
     </q-header>
     <q-page-container>
-      <router-view />
+      <router-view/>
     </q-page-container>
     <q-banner class="text-white bg-red fixed-bottom" style="min-height: 10px">
       <div class="flex flex-center">
-        DEVELOPMENT SYSTEM v{{ENV.VERSION}}: Data will be reset without notice
+        DEVELOPMENT SYSTEM v{{ ENV.VERSION }}: Data will be reset without notice
       </div>
     </q-banner>
   </q-layout>
@@ -89,24 +109,37 @@
 
 <script setup lang="ts">
 import ROUTES from 'src/router/routes';
-import { inject } from 'vue';
+import {inject} from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
+import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
+
 const $routerService: RouterService | undefined = inject('$routerService');
+
 function goHome(): void {
-  console.log('goHome');
   console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
+
 function goDatatable(): void {
-  console.log('goDatatable');
   void $routerService?.routeTo(ROUTES.DATATABLE);
 }
 
 function goUpload(): void {
-  console.log('goUpload');
   void $routerService?.routeTo(ROUTES.UPLOAD);
 }
+
+function login(): void {
+  window.location.href = `${ENV.ENDPOINT}/auth/google`;
+
+}
+
+function goAnalysis(): void {
+  void $routerService?.routeTo(ROUTES.ANALYSIS);
+}
+
+loggedIn.value = isLoggedIn();
+
 </script>
 <style>
 .fixed-bottom {

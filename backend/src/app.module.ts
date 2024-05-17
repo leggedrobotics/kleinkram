@@ -10,6 +10,11 @@ import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConne
 import { TopicModule } from './topic/topic.module';
 import { RunModule } from './run/run.module';
 import { QueueModule } from './queue/queue.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
+import { PassportModule } from '@nestjs/passport';
+import {AnalysisModule} from "./analysis/analysisModule";
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,6 +42,10 @@ import { QueueModule } from './queue/queue.module';
     TopicModule,
     RunModule,
     QueueModule,
+    UserModule,
+    AuthModule,
+    PassportModule,
+    AnalysisModule
   ],
   controllers: [ProjectController],
 })
