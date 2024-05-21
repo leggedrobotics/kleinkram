@@ -23,7 +23,7 @@ axiosInstance.interceptors.response.use(
         loggedIn.value = isLoggedIn();
 
         console.error('Refresh token error', refreshError);
-        window.location.href = `${ENV.ENDPOINT}/auth/google`;
+        window.location.href = `${ENV.ENDPOINT}/auth/google?state=web`;
       }
     }
     return Promise.reject(error);

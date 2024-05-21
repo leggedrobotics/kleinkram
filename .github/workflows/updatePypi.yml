@@ -2,6 +2,9 @@ name: Build and Deploy CLI Tool
 
 on:
   push:
+    branches:
+      - main
+      - dev
     paths:
       - 'CLI/**'
 
