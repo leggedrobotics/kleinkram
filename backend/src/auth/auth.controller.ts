@@ -22,6 +22,14 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const user = req.user;
     const token = await this.authService.login(user);
+    const state = req.query.state;
+    console.log(req.query);
+    if (state == 'cli') {
+      res.redirect(
+        `http://localhost:8000/cli/callback?access_token=${token.access_token}&refresh_token=${token.refresh_token}`,
+      );
+      return;
+    }
     console.log(token);
     res.cookie('authtoken', token.access_token, {
       httpOnly: false,
