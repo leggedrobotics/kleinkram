@@ -98,7 +98,9 @@ services:
     depends_on:
       - database
       - loki
-
+    volumes:
+      # mount docker socket to access docker from within the container
+      - /var/run/docker.sock:/var/run/docker.sock
   prometheus:
     image: prom/prometheus
     volumes:
