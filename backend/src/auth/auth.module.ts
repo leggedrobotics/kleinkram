@@ -9,6 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import User from '../user/entities/user.entity';
 import env from '../env';
 import { JwtStrategy } from './jwt.strategy';
+import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
 
 @Module({
   imports: [
@@ -21,7 +22,15 @@ import { JwtStrategy } from './jwt.strategy';
     }),
     TypeOrmModule.forFeature([User]),
   ],
-  providers: [AuthService, GoogleStrategy, UserService, JwtStrategy],
+  providers: [
+    AuthService,
+    GoogleStrategy,
+    UserService,
+    JwtStrategy,
+    AdminOnlyGuard,
+    LoggedInUserGuard,
+  ],
   controllers: [AuthController],
+  exports: [AdminOnlyGuard, LoggedInUserGuard],
 })
 export class AuthModule {}

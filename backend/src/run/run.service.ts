@@ -55,6 +55,6 @@ export class RunService {
   }
 
   async clearRuns(): Promise<void> {
-    await this.runRepository.clear();
+    await this.runRepository.query('DELETE FROM "run"');
   }
 }

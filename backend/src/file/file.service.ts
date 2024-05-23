@@ -166,8 +166,8 @@ export class FileService {
   }
 
   async clear() {
-    await this.topicRepository.delete({});
-    return await this.fileRepository.delete({});
+    await this.topicRepository.query('DELETE FROM "topic"');
+    await this.fileRepository.query('DELETE FROM "file"');
   }
 
   async findByRun(runUUID: string) {
