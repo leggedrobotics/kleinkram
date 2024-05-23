@@ -1,5 +1,5 @@
 <template>
-  <InspectFile :run_uuid="route.query.uuid" />
+  <InspectFile :file_uuid="route.query.file_uuid" />
 </template>
 
 <script setup lang="ts">

@@ -59,6 +59,16 @@
             no-caps
             no-wrap
             class="q-ml-xs"
+            icon="account_tree"
+            @click="goExplorer"
+          >
+            Explorer
+          </q-btn>
+          <q-btn
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
             icon="cloud_upload"
             @click="goUpload"
           >
@@ -123,6 +133,10 @@ function goHome(): void {
 
 function goDatatable(): void {
   void $routerService?.routeTo(ROUTES.DATATABLE);
+}
+
+function goExplorer(): void {
+  void $routerService?.routeTo(ROUTES.EXPLORER);
 }
 
 function goUpload(): void {

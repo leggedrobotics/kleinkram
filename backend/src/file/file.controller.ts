@@ -79,6 +79,12 @@ export class FileController {
     return this.fileService.findByFilename(name);
   }
 
+  @Get('ofRun')
+  @LoggedIn()
+  async getFilesOfRun(@Query('runUUID') runUUID: string) {
+    return this.fileService.findByRun(runUUID);
+  }
+
   @Put(':uuid')
   @LoggedIn()
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {

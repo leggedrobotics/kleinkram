@@ -170,4 +170,11 @@ export class FileService {
     await this.topicRepository.delete({});
     return await this.fileRepository.delete({});
   }
+
+  async findByRun(runUUID: string) {
+    return this.fileRepository.find({
+      where: { run: { uuid: runUUID } },
+      relations: ['run', 'topics'],
+    });
+  }
 }

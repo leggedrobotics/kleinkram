@@ -24,14 +24,16 @@ export const fetchOverview = async (runName: string,
     const projects: Record<string, Project> = {};
     const runs: Record<string, Run> = {};
     const response = await axios.get(`/file/filtered?${queryParams}`);
-    const res = response.data.map((file: any) => {
+    return response.data.map((file: any) => {
       const project_uuid: string = file.run.project.uuid;
       let project: Project | undefined = projects[project_uuid];
       if (!project) {
         project = new Project(
           file.run.project.uuid,
           file.run.project.name,
+          file.run.project.description,
           [],
+          file.run.project.creator,
           new Date(file.run.project.createdAt),
           new Date(file.run.project.updatedAt),
           new Date(file.run.project.deletedAt)
@@ -65,7 +67,6 @@ export const fetchOverview = async (runName: string,
       return newFile;
 
     });
-    return res;
   } catch (error) {
     console.error('Error fetching overview:', error);
     throw error; // Rethrow or handle as appropriate
@@ -109,7 +110,9 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
     const project = new Project(
       file.run.project.uuid,
       file.run.project.name,
+      file.run.project.description,
       [],
+      file.run.project.creator,
       new Date(file.run.project.createdAt),
       new Date(file.run.project.updatedAt),
       new Date(file.run.project.deletedAt)
@@ -181,11 +184,14 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
     const project = new Project(
       run.project.uuid,
       run.project.name,
+      run.project.description,
       [],
+      run.project.creator,
       new Date(run.project.createdAt),
       new Date(run.project.updatedAt),
       new Date(run.project.deletedAt)
     );
+
     const runEntity = new Run(
       run.uuid,
       run.name,
@@ -195,6 +201,61 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
       new Date(run.updatedAt),
       new Date(run.deletedAt)
     );
+    runEntity.files = run.files.map((file: any) => {
+      return new FileEntity(
+        file.uuid,
+        file.filename,
+        file.identifier,
+        runEntity,
+        new Date(file.date),
+        file.topics,
+        file.size,
+        new Date(file.createdAt),
+        new Date(file.updatedAt),
+        new Date(file.deletedAt)
+      );
+    });
     return runEntity;
   })
+}
+
+export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
+  const response = await axios.get('file/ofRun', {params: {runUUID}});
+  return response.data.map((file: any) => {
+    const run = new Run(
+      file.run.uuid,
+      file.run.name,
+      undefined,
+      [],
+      new Date(file.run.createdAt),
+      new Date(file.run.updatedAt),
+      new Date(file.run.deletedAt)
+    );
+    const topics = file.topics.map((topic: any) => {
+      return new Topic(
+        topic.uuid,
+        topic.name,
+        topic.type,
+        topic.nrMessages,
+        topic.frequency,
+        new Date(topic.createdAt),
+        new Date(topic.updatedAt),
+        new Date(topic.deletedAt)
+      );
+    });
+    const newFile = new FileEntity(
+      file.uuid,
+      file.filename,
+      file.identifier,
+      run,
+      new Date(file.date),
+      topics,
+      file.size,
+      new Date(file.createdAt),
+      new Date(file.updatedAt),
+      new Date(file.deletedAt)
+    );
+    run.files.push(newFile);
+    return newFile;
+  });
 }

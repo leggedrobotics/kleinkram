@@ -24,7 +24,7 @@ const ROUTES: Record<string, RouteRecordRaw> = {
     component: () => import('layouts/MainLayout.vue'),
     children: [{path: '', component: () => import('pages/UploadPage.vue')}],
   },
-  RUN: {
+  FILE: {
     path: '/file',
     component: () => import('layouts/MainLayout.vue'),
     children: [{path: '', component: () => import('pages/FileInfo.vue')}],
@@ -40,6 +40,12 @@ const ROUTES: Record<string, RouteRecordRaw> = {
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/LandingPage.vue') }],
   },
+
+  EXPLORER: {
+    path: '/explorer',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{ path: '', component: () => import('pages/ExplorerPage.vue') }],
+  }
 
 };
 

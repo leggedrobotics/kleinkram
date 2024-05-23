@@ -55,15 +55,15 @@ import { Ref, ref, watch, watchEffect } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 
 const props = defineProps<{
-  run_uuid: string;
+  file_uuid: string;
 }>();
 
 const tableoniRef: Ref<QTable | null> = ref(null);
 
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
-  queryKey: ['file', props.run_uuid],
-  queryFn: ()=>fetchFile(props.run_uuid) });
+  queryKey: ['file', props.file_uuid],
+  queryFn: ()=>fetchFile(props.file_uuid) });
 
 const columns = [
   { name: 'Topic', label: 'Topic', field: 'name', sortable: true, align: 'left' },
@@ -74,7 +74,7 @@ const columns = [
 
 const downloadURL = ref<string>('');
 async function _downloadBag() {
-  const res = await downloadBag(props.run_uuid, true)
+  const res = await downloadBag(props.file_uuid, true)
   console.log(res)
   const a = document.createElement('a');
   a.href = res;
@@ -85,7 +85,7 @@ async function _downloadBag() {
 }
 
 async function _copyLink(){
-  const res = await downloadBag(props.run_uuid, false)
+  const res = await downloadBag(props.file_uuid, false)
   await copyToClipboard(res)
   Notify.create({
     group: false,

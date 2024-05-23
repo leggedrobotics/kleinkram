@@ -1,6 +1,7 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import { UserRole } from '../../enum';
+import Project from '../../project/entities/project.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -15,4 +16,7 @@ export default class User extends BaseEntity {
 
   @Column()
   googleId: string;
+
+  @OneToMany(() => Project, (project) => project.creator)
+  projects: Project[];
 }

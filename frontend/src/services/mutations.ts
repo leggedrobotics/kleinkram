@@ -1,8 +1,8 @@
 import axios from 'src/api/axios';
 import {FileEntity} from 'src/types/types';
 
-export const createProject = async (name: string) => {
-  const response = await axios.post('/project/create', {name});
+export const createProject = async (name: string, description: string) => {
+  const response = await axios.post('/project/create', {name, description});
   return response.data;
 }
 

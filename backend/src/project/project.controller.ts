@@ -1,9 +1,8 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { LoggedInUserGuard } from '../auth/roles.guard';
 import { LoggedIn } from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
 
 @Controller('project')
 export class ProjectController {
@@ -23,8 +22,11 @@ export class ProjectController {
 
   @Post('create')
   @LoggedIn()
-  async createProject(@Body() dto: CreateProject) {
-    return this.projectService.create(dto);
+  async createProject(
+    @Body() dto: CreateProject,
+    @addJWTUser() user?: JWTUser,
+  ) {
+    return this.projectService.create(dto, user);
   }
 
   @Get('byName')
