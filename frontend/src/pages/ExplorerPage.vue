@@ -65,7 +65,7 @@ const $routerService: RouterService | undefined = inject('$routerService');
 
 
 type crumb = { name: string, uuid: string, type: string };
-const crumbs: Ref<crumb[]> = ref([{name: '', uuid: '', type: 'Projects' }]);
+const crumbs: Ref<crumb[]> = ref([{name: 'All', uuid: '', type: 'Projects' }]);
 const column_index = ref(0)
 
 const projectsReturn = useQuery<Project[]>(
@@ -239,6 +239,9 @@ function view_file(file: FileEntity) {
 }
 
 function navigate(crumb: crumb) {
+  const index = crumbs.value.findIndex((c) => c.uuid === crumb.uuid);
+  crumbs.value = crumbs.value.slice(0, index + 1);
+  column_index.value = index;
   console.log('navigate', crumb);
 }
 </script>
