@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
-import { LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
 
 @Controller('project')
@@ -33,5 +33,11 @@ export class ProjectController {
   @LoggedIn()
   async getProjectByName(@Query('name') name: string) {
     return this.projectService.findOneByName(name);
+  }
+
+  @Delete('clear')
+  @AdminOnly()
+  async clearProjects() {
+    return this.projectService.clearProjects();
   }
 }

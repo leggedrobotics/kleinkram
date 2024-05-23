@@ -10,7 +10,7 @@ import {
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
-import { LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 
 @Controller('file')
 export class FileController {
@@ -92,7 +92,7 @@ export class FileController {
   }
 
   @Delete('clear')
-  @LoggedIn()
+  @AdminOnly()
   async clear() {
     return this.fileService.clear();
   }

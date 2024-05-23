@@ -13,7 +13,7 @@ import { QueueModule } from './queue/queue.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
-import {AnalysisModule} from "./analysis/analysisModule";
+import { AnalysisModule } from './analysis/analysisModule';
 
 @Module({
   imports: [
@@ -45,8 +45,7 @@ import {AnalysisModule} from "./analysis/analysisModule";
     UserModule,
     AuthModule,
     PassportModule,
-    AnalysisModule
+    AnalysisModule,
   ],
-  controllers: [ProjectController],
 })
 export class AppModule {}

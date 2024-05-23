@@ -46,4 +46,8 @@ export class ProjectService {
   async remove(uuid: string): Promise<void> {
     await this.projectRepository.delete(uuid);
   }
+
+  async clearProjects(): Promise<void> {
+    await this.projectRepository.clear();
+  }
 }

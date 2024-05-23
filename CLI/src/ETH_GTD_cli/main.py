@@ -222,5 +222,28 @@ def clear_queue():
     else:
         print("Operation cancelled.")
 
+@app.command('wipe')
+def wipe():
+    """Wipe all data"""
+    # Prompt the user for confirmation
+    confirmation = typer.prompt("Are you sure you want to wipe all data? (y/n)")
+    if confirmation.lower() == 'y':
+        second_confirmation = typer.prompt("This action is irreversible. Are you really sure? (y/n)")
+        if second_confirmation.lower() != 'y':
+            print("Operation cancelled.")
+            return
+
+        response = client.delete(f"{API_URL}/queue/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/file/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/run/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/project/clear")
+        response.raise_for_status()
+        print("Data wiped.")
+    else:
+        print("Operation cancelled.")
+
 if __name__ == "__main__":
     app()
