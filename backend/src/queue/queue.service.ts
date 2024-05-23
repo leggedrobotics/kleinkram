@@ -150,6 +150,6 @@ export class QueueService {
   }
 
   async clear() {
-    return await this.queueRepository.clear();
+    return await this.queueRepository.query('DELETE FROM "queue_entity"');
   }
 }

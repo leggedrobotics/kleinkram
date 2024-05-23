@@ -5,6 +5,7 @@ import env from '../env';
 import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
+import logger from '../logger';
 
 @Controller('auth')
 export class AuthController {

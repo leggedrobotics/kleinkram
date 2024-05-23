@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ETH_GTD_cli"
-version = "0.0.55"
+version = "0.0.66"
 authors = [
   { name="Johann Schwabe", email="jschwab@ethz.ch" },
 ]
