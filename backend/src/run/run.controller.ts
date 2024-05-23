@@ -1,7 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { RunService } from './run.service';
 import { CreateRun } from './entities/create-run.dto';
-import { LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 
 @Controller('run')
 export class RunController {
@@ -35,5 +43,11 @@ export class RunController {
   @LoggedIn()
   async filteredByProjectName(@Param('projectName') projectName: string) {
     return this.runService.filteredByProjectName(projectName);
+  }
+
+  @Delete('clear')
+  @AdminOnly()
+  async clearRuns() {
+    return this.runService.clearRuns();
   }
 }

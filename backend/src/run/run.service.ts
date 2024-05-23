@@ -47,4 +47,8 @@ export class RunService {
   async findOneByName(name: string): Promise<Run> {
     return this.runRepository.findOne({ where: { name } });
   }
+
+  async clearRuns(): Promise<void> {
+    await this.runRepository.query('DELETE FROM "run"');
+  }
 }
