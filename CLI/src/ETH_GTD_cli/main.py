@@ -1,14 +1,16 @@
 import os
 
 import typer
-import httpx
 from typing import List, Optional
 from typing_extensions import Annotated
 from rich import print
 from rich.table import Table
 
+
 from .consts import API_URL
 from .helper import uploadFiles, expand_and_match
+
+from .auth import login, client
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -22,6 +24,7 @@ app.add_typer(runs)
 app.add_typer(topics)
 app.add_typer(files)
 app.add_typer(queue)
+app.command()(login)
 
 @files.command('list')
 def list_files(project: Annotated[str, typer.Option()] = None,
@@ -32,7 +35,7 @@ def list_files(project: Annotated[str, typer.Option()] = None,
     """
     try:
         url = f"{API_URL}/file/filteredByNames"
-        response = httpx.get(url, params={
+        response = client.get(url, params={
             'projectName': project,
             'runName': run,
             'topics': topics,
@@ -61,7 +64,7 @@ def list_files(project: Annotated[str, typer.Option()] = None,
                 for file in files_by_run_uuid[run]:
                     print(f"    - '{file['filename']}'")
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
 @projects.command('list')
@@ -70,14 +73,14 @@ def list_projects():
     List all projects.
     """
     try:
-        response = httpx.get(f"{API_URL}/project")
+        response = client.get(f"{API_URL}/project")
         response.raise_for_status()
         projects = response.json()
         print('Projects:')
         for project in projects:
             print(f"- {project['name']}")
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(f"Failed to fetch projects: {e}")
 
 
@@ -92,7 +95,7 @@ def list_runs(project: Annotated[str, typer.Option()]=None,):
             url += f"/filteredByProjectName/{project}"
         else:
             url += "/all"
-        response = httpx.get(url)
+        response = client.get(url)
         response.raise_for_status()
         data = response.json()
         runs_by_project_uuid = {}
@@ -108,14 +111,14 @@ def list_runs(project: Annotated[str, typer.Option()]=None,):
             for run in runs:
                 print(f"  - {run['name']}")
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
 @topics.command("list")
 def topics(file: Annotated[str, typer.Option()] = None, full: Annotated[bool, typer.Option()] = False):
     try:
         url = API_URL + "/file/byName"
-        response = httpx.get(url, params={"name": file})
+        response = client.get(url, params={"name": file})
         response.raise_for_status()
         data = response.json()
         if not full:
@@ -127,18 +130,18 @@ def topics(file: Annotated[str, typer.Option()] = None, full: Annotated[bool, ty
                 table.add_row(topic["uuid"], topic["name"], topic["type"], topic["nrMessages"], f"{topic['frequency']}")
             print(table)
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(f"Failed")
 
 @projects.command("create")
 def create_project(name: Annotated[str, typer.Option()]):
     try:
         url = API_URL + "/project/create"
-        response = httpx.post(url, json={"name": name})
+        response = client.post(url, json={"name": name})
         response.raise_for_status()
         print("Project created")
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(f"Failed to create project: {e}")
 
 @app.command("upload")
@@ -154,7 +157,7 @@ def upload(path: Annotated[str, typer.Option(prompt=True)],
             print(f"  - {path}")
     try:
         get_project_url = API_URL + "/project/byName"
-        project_response = httpx.get(get_project_url, params={"name": project})
+        project_response = client.get(get_project_url, params={"name": project})
         project_response.raise_for_status()
 
         project_json = project_response.json()
@@ -163,7 +166,7 @@ def upload(path: Annotated[str, typer.Option(prompt=True)],
             return
 
         get_run_url = API_URL + "/run/byName"
-        run_response = httpx.get(get_run_url, params={"name": run})
+        run_response = client.get(get_run_url, params={"name": run})
         run_response.raise_for_status()
         if run_response.content:
             run_json = run_response.json()
@@ -174,14 +177,14 @@ def upload(path: Annotated[str, typer.Option(prompt=True)],
             return
 
         create_run_url = API_URL + "/run/create"
-        new_run = httpx.post(create_run_url, json={"name": run, "projectUUID": project_json["uuid"]})
+        new_run = client.post(create_run_url, json={"name": run, "projectUUID": project_json["uuid"]})
         new_run.raise_for_status()
         new_run_data = new_run.json()
         print(f"Created run: {new_run_data['name']}")
 
 
         get_presigned_url = API_URL + "/queue/createPreSignedURLS"
-        response_2 = httpx.post(get_presigned_url, json={"filenames": filenames, "runUUID": new_run_data["uuid"]})
+        response_2 = client.post(get_presigned_url, json={"filenames": filenames, "runUUID": new_run_data["uuid"]})
         response_2.raise_for_status()
         presigned_urls = response_2.json()
         for file in filenames:
@@ -192,7 +195,7 @@ def upload(path: Annotated[str, typer.Option(prompt=True)],
 
 
 
-    except httpx.HTTPError as e:
+    except client.HTTPError as e:
         print(e)
 
 @queue.command('clear')
@@ -201,7 +204,7 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the queue? (y/n)")
     if confirmation.lower() == 'y':
-        response = httpx.delete(f"{API_URL}/queue/clear")
+        response = client.delete(f"{API_URL}/queue/clear")
         response.raise_for_status()
         print("Queue cleared.")
     else:
@@ -213,9 +216,32 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the Files? (y/n)")
     if confirmation.lower() == 'y':
-        response = httpx.delete(f"{API_URL}/file/clear")
+        response = client.delete(f"{API_URL}/file/clear")
         response.raise_for_status()
         print("Files cleared.")
+    else:
+        print("Operation cancelled.")
+
+@app.command('wipe')
+def wipe():
+    """Wipe all data"""
+    # Prompt the user for confirmation
+    confirmation = typer.prompt("Are you sure you want to wipe all data? (y/n)")
+    if confirmation.lower() == 'y':
+        second_confirmation = typer.prompt("This action is irreversible. Are you really sure? (y/n)")
+        if second_confirmation.lower() != 'y':
+            print("Operation cancelled.")
+            return
+
+        response = client.delete(f"{API_URL}/queue/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/file/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/run/clear")
+        response.raise_for_status()
+        response = client.delete(f"{API_URL}/project/clear")
+        response.raise_for_status()
+        print("Data wiped.")
     else:
         print("Operation cancelled.")
 
