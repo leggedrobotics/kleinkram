@@ -106,7 +106,6 @@ export class FileService {
         topicCount: splitTopics.length,
       });
     }
-    console.log(query.getQuery());
     // Execute the query
     const fileIds = await query.getMany();
     if (fileIds.length === 0) {
@@ -169,5 +168,12 @@ export class FileService {
   async clear() {
     await this.topicRepository.query('DELETE FROM "topic"');
     await this.fileRepository.query('DELETE FROM "file"');
+  }
+
+  async findByRun(runUUID: string) {
+    return this.fileRepository.find({
+      where: { run: { uuid: runUUID } },
+      relations: ['run', 'topics'],
+    });
   }
 }

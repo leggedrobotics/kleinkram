@@ -134,7 +134,7 @@
           <q-btn
             color="primary"
             label="View"
-            @click="()=>$routerService?.routeTo(ROUTES.RUN, { uuid: props.row.uuid })"
+            @click="()=>$routerService?.routeTo(ROUTES.FILE, { uuid: props.row.uuid })"
           ></q-btn>
         </q-td>
       </template>
@@ -145,13 +145,13 @@
 import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query'
-import { allProjects, allTopics, allTopicsNames, fetchOverview, runsOfProject } from 'src/services/queries';
-import { format } from 'date-fns';
-import { FileEntity, Project, Run, Topic } from 'src/types/types';
+import { allProjects, allTopicsNames, fetchOverview, runsOfProject } from 'src/services/queries';
+import { FileEntity, Project, Run } from 'src/types/types';
 import EditRun from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
+import {formatSize} from 'src/services/generalFormatting';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
@@ -227,24 +227,14 @@ const { isLoading, isError, data, error } = useQuery({ queryKey: [
   ]
   , queryFn: ()=> fetchOverview(debouncedFilter.value, selected_project.value?.uuid,selected_run.value?.uuid, startDate.value, endDate.value, selectedTopics.value || [], and_or.value) });
 
-function formatSize(val: number): string {
-  if (val < 1024) {
-    return `${val} B`;
-  } else if (val < 1024 * 1024) {
-    return `${(val / 1024).toFixed(2)} KB`;
-  } else if (val < 1024 * 1024 * 1024) {
-    return `${(val / (1024 * 1024)).toFixed(2)} MB`;
-  } else {
-    return `${(val / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  }
-}
+
 const columns = [
   {
     name: 'Project',
     required: true,
     label: 'Project',
     align: 'left',
-    field: (row: FileEntity) => row.run.project.name,
+    field: (row: FileEntity) => row.run?.project?.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -269,10 +259,19 @@ const columns = [
   {
     name: 'Date',
     required: true,
-    label: 'Date',
+    label: 'Recoring Date',
     align: 'left',
     field: (row: FileEntity)  => row.date,
-    format: (val:string) => format(new Date(val), 'MMMM dd, yyyy'),
+    format: (val:string) => formatDate(new Date(val)),
+    sortable: true
+  },
+  {
+    name: 'Creation Date',
+    required: true,
+    label: 'Creation Date',
+    align: 'left',
+    field: (row: FileEntity)  => row.createdAt,
+    format: (val:string) => formatDate(new Date(val)),
     sortable: true
   },
   {

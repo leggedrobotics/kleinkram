@@ -1,8 +1,8 @@
 import axios from 'src/api/axios';
 import {FileEntity} from 'src/types/types';
 
-export const createProject = async (name: string) => {
-  const response = await axios.post('/project/create', {name});
+export const createProject = async (name: string, description: string) => {
+  const response = await axios.post('/project/create', {name, description});
   return response.data;
 }
 
@@ -18,8 +18,8 @@ export const createAnalysis = async (docker_image: string, runUUID: string) => {
 
 }
 
-export const getUploadURL = async (filenames: string[]) => {
-  const response = await axios.post('/queue/createPreSignedURLS', {filenames});
+export const getUploadURL = async (filenames: string[], runUUID: string) => {
+  const response = await axios.post('/queue/createPreSignedURLS', {filenames, runUUID});
   return response.data;
 }
 

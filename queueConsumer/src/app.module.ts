@@ -14,6 +14,7 @@ import Topic from './entities/topic.entity';
 import Project from './entities/project.entity';
 import {AnalysisProcessor} from "./analysis_provider";
 import AnalysisRun from "./entities/analysis.entity";
+import User from "./entities/user.entity";
 
 
 @Module({
@@ -46,13 +47,13 @@ import AnalysisRun from "./entities/analysis.entity";
           username: configService.getOrThrow<string>('database.username'),
           password: configService.getOrThrow<string>('database.password'),
           database: configService.getOrThrow<string>('database.database'),
-          entities: [QueueEntity, Run, FileEntity, Project, Topic, AnalysisRun],
+          entities: [QueueEntity, Run, FileEntity, Project, Topic, AnalysisRun, Project, User],
           synchronize: env.DEV,
           logging: ['warn', 'error']
         }) as PostgresConnectionOptions,
       inject: [ConfigService]
     }),
-    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic, AnalysisRun])
+    TypeOrmModule.forFeature([QueueEntity, Run, FileEntity, Topic, AnalysisRun, Project, User])
   ],
   providers: [FileProcessor, AnalysisProcessor]
 })

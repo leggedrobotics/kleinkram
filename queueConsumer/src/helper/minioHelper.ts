@@ -49,7 +49,6 @@ export async function downloadMinioFile(bucketName: string, fileName: string) {
   return await traceWrapper(async (): Promise<Buffer> =>
 
       new Promise(async (resolve, reject) => {
-        console.log('Downloading: ', fileName)
         const stream = await minio.getObject(bucketName, fileName);
         const chunks: Uint8Array[] = [];
 

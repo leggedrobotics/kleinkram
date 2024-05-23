@@ -1,4 +1,5 @@
 import {AnalysisRunState, FileState} from 'src/enum/QUEUE_ENUM';
+import ROLE from 'src/enum/USER_ROLES';
 
 class BaseEntity {
   uuid: string;
@@ -14,27 +15,73 @@ class BaseEntity {
   }
 }
 
-export class Project extends BaseEntity {
+class User extends BaseEntity {
   name: string;
-  runs: Run[];
+  email: string;
+  role: ROLE;
+  googleId: string;
+  projects: Project[];
 
-  constructor(uuid: string, name: string, runs: Run[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+  constructor(uuid: string,
+              name: string,
+              email: string,
+              role: ROLE,
+              googleId: string,
+              projects: Project[],
+              createdAt: Date | null,
+              updatedAt: Date | null,
+              deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
     this.name = name;
+    this.email = email;
+    this.role = role;
+    this.googleId = googleId;
+    this.projects = projects;
+
+  }
+}
+
+export class Project extends BaseEntity {
+  name: string;
+  description: string;
+  runs: Run[];
+  creator: User;
+
+  constructor(uuid: string,
+              name: string,
+              description: string,
+              runs: Run[],
+              creator: User,
+              createdAt: Date | null,
+              updatedAt: Date | null,
+              deletedAt: Date | null) {
+    super(uuid, createdAt, updatedAt, deletedAt);
+    this.name = name;
+    this.creator = creator;
     this.runs = runs;
+    this.description = description;
   }
 
   clone(): Project {
-    return new Project(this.uuid, this.name, this.runs, this.createdAt, this.updatedAt, this.deletedAt);
+    return new Project(
+      this.uuid,
+      this.name,
+      this.description,
+      this.runs,
+      this.creator,
+      this.createdAt,
+      this.updatedAt,
+      this.deletedAt
+    );
   }
 }
 
 export class Run extends BaseEntity {
   name: string;
-  project: Project;
+  project: Project | undefined;
   files: FileEntity[];
 
-  constructor(uuid: string, name: string, project: Project, files: FileEntity[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+  constructor(uuid: string, name: string, project: Project | undefined, files: FileEntity[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
     this.name = name;
     this.project = project;
@@ -42,7 +89,7 @@ export class Run extends BaseEntity {
   }
 
   clone(): Run {
-    return new Run(this.uuid, this.name, this.project.clone(), this.files, this.createdAt, this.updatedAt, this.deletedAt);
+    return new Run(this.uuid, this.name, this.project?.clone(), this.files, this.createdAt, this.updatedAt, this.deletedAt);
   }
 }
 

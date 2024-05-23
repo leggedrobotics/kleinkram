@@ -76,6 +76,10 @@ class AuthenticatedClient(httpx.Client):
 
     def request(self, method, url, *args, **kwargs):
         response = super().request(method, url, *args, **kwargs)
+        if (url == f"{API_URL}/auth/refresh-token") and response.status_code == 401:
+            print("Refresh token expired. Please login again.")
+            response.status_code = 403
+            exit(1)
         if response.status_code == 401:
             print("Token expired, refreshing token...")
             self.refresh_token()
