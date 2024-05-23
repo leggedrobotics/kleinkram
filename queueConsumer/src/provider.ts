@@ -102,9 +102,7 @@ export class FileProcessor implements OnModuleInit {
         } else if (filename.endsWith('.bag')) {
           filename = filename.replace('.bag', '.mcap');
           identifier = identifier.replace('.bag', '.mcap');
-          console.log("here")
           buffer = await processFile(buffer, identifier);
-          console.log("here2")
           await deleteMinioFile(env.MINIO_TEMP_BAG_BUCKET_NAME, queue.identifier);
         } else {
           throw new Error('Invalid file extension');

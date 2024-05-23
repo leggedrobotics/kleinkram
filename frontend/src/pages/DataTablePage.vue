@@ -234,7 +234,7 @@ const columns = [
     required: true,
     label: 'Project',
     align: 'left',
-    field: (row: FileEntity) => row.run?.project.name,
+    field: (row: FileEntity) => row.run?.project?.name,
     format: (val:string) => `${val}`,
     sortable: true
   },
@@ -259,9 +259,18 @@ const columns = [
   {
     name: 'Date',
     required: true,
-    label: 'Date',
+    label: 'Recoring Date',
     align: 'left',
     field: (row: FileEntity)  => row.date,
+    format: (val:string) => formatDate(new Date(val)),
+    sortable: true
+  },
+  {
+    name: 'Creation Date',
+    required: true,
+    label: 'Creation Date',
+    align: 'left',
+    field: (row: FileEntity)  => row.createdAt,
     format: (val:string) => formatDate(new Date(val)),
     sortable: true
   },
