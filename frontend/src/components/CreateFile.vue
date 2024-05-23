@@ -126,7 +126,7 @@ const submitNewFile = async () => {
   if (files.value && files.value.length > 0) {
     const filesToRecord : Record<string, File>=  files.value.reduce((acc, file) => ({ ...acc, [file.name]: file }), {});
     const filenames = Object.keys(filesToRecord);
-    const urls = await getUploadURL(filenames)
+    const urls = await getUploadURL(filenames, selected_run.value.uuid);
     await Promise.all(filenames.map((filename)=>{
       const file = filesToRecord[filename];
       if(!urls[filename]) {

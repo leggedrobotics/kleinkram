@@ -127,7 +127,6 @@ import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 function goHome(): void {
-  console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
 

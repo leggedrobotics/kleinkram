@@ -18,8 +18,8 @@ export const createAnalysis = async (docker_image: string, runUUID: string) => {
 
 }
 
-export const getUploadURL = async (filenames: string[]) => {
-  const response = await axios.post('/queue/createPreSignedURLS', {filenames});
+export const getUploadURL = async (filenames: string[], runUUID: string) => {
+  const response = await axios.post('/queue/createPreSignedURLS', {filenames, runUUID});
   return response.data;
 }
 

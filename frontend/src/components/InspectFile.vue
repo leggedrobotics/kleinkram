@@ -75,7 +75,6 @@ const columns = [
 const downloadURL = ref<string>('');
 async function _downloadBag() {
   const res = await downloadBag(props.file_uuid, true)
-  console.log(res)
   const a = document.createElement('a');
   a.href = res;
   a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download

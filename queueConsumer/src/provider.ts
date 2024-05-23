@@ -133,7 +133,7 @@ export class FileProcessor implements OnModuleInit {
         queue.state = FileState.ERROR;
         await this.queueRepository.save(queue);
         logger.error(`Error processing file: ${queue.identifier}`);
-        throw error;
+        // throw error; #Todo: this completely crashes the worker, need to handle this better
       }
     }, 'processMinioFile')();
 

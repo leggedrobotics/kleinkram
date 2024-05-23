@@ -61,6 +61,7 @@ export class QueueService {
   }
 
   async handleFileUpload(filenames: string[], runUUID: string, user: JWTUser) {
+    console.log(runUUID);
     const creator = await this.userRepository.findOneOrFail({
       where: { googleId: user.userId },
     });
