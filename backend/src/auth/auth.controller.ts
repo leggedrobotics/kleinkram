@@ -5,6 +5,7 @@ import env from '../env';
 import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
+import logger from '../logger';
 
 @Controller('auth')
 export class AuthController {
@@ -23,8 +24,9 @@ export class AuthController {
     const user = req.user;
     const token = await this.authService.login(user);
     const state = req.query.state;
-    console.log(req.query);
+    logger.debug(`State: ${state}`);
     if (state == 'cli') {
+      logger.debug('Redirecting to CLI');
       res.redirect(
         `http://localhost:8000/cli/callback?access_token=${token.access_token}&refresh_token=${token.refresh_token}`,
       );
