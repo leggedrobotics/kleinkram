@@ -10,8 +10,3 @@ export enum FileLocation {
   DRIVE = 'DRIVE',
   MINIO = 'MINIO',
 }
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-}

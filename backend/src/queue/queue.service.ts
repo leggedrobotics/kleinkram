@@ -10,6 +10,8 @@ import { Queue } from 'bull';
 import env from '../env';
 import { minio } from '../minioHelper';
 import logger from '../logger';
+import { JWTUser } from '../auth/paramDecorator';
+import User from '../user/entities/user.entity';
 
 function extractFileIdFromUrl(url: string): string | null {
   const regex =
@@ -26,6 +28,7 @@ export class QueueService {
     @InjectRepository(Run) private runRepository: Repository<Run>,
     @InjectQueue('file-queue') private fileProcessingQueue: Queue,
     @InjectQueue('analysis-queue') private analysisQueue: Queue,
+    @InjectRepository(User) private userRepository: Repository<User>,
   ) {}
 
   async addAnalysisQueue(run_analysis_id: string) {
@@ -57,7 +60,10 @@ export class QueueService {
     logger.debug('added to queue');
   }
 
-  async handleFileUpload(filenames: string[], runUUID: string) {
+  async handleFileUpload(filenames: string[], runUUID: string, user: JWTUser) {
+    const creator = await this.userRepository.findOneOrFail({
+      where: { googleId: user.userId },
+    });
     const filteredFilenames = filenames.filter(
       (filename) => filename.endsWith('.bag') || filename.endsWith('.mcap'),
     );
@@ -95,6 +101,7 @@ export class QueueService {
           state: FileState.AWAITING_UPLOAD,
           location: FileLocation.MINIO,
           run,
+          creator,
         });
         await this.queueRepository.save(newQueue);
         return {
@@ -134,7 +141,7 @@ export class QueueService {
       where: {
         updatedAt: MoreThan(startDate),
       },
-      relations: ['run', 'run.project'],
+      relations: ['run', 'run.project', 'creator'],
       order: {
         createdAt: 'DESC',
       },

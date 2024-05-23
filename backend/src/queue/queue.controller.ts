@@ -3,6 +3,7 @@ import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
 import logger from '../logger';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('queue')
 export class QueueController {
@@ -25,9 +26,16 @@ export class QueueController {
 
   @Post('createPreSignedURLS')
   @LoggedIn()
-  async create(@Body() body: { filenames: string[]; runUUID: string }) {
+  async create(
+    @Body() body: { filenames: string[]; runUUID: string },
+    @addJWTUser() user: JWTUser,
+  ) {
     logger.debug('createPreSignedURLS', body.filenames, body.runUUID);
-    return this.queueService.handleFileUpload(body.filenames, body.runUUID);
+    return this.queueService.handleFileUpload(
+      body.filenames,
+      body.runUUID,
+      user,
+    );
   }
 
   @Post('confirmUpload')

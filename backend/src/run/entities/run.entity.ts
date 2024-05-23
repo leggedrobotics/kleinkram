@@ -3,6 +3,7 @@ import BaseEntity from '../../base-entity.entity';
 import Project from '../../project/entities/project.entity';
 import File from '../../file/entities/file.entity';
 import QueueEntity from '../../queue/entities/queue.entity';
+import User from '../../user/entities/user.entity';
 
 @Entity()
 export default class Run extends BaseEntity {
@@ -17,4 +18,7 @@ export default class Run extends BaseEntity {
 
   @OneToMany(() => QueueEntity, (queue) => queue.run)
   queues: QueueEntity[];
+
+  @ManyToOne(() => User, (user) => user.runs)
+  creator: User;
 }
