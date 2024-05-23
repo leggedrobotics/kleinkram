@@ -1,10 +1,10 @@
-import { Column, Entity, OneToMany } from 'typeorm';
-import BaseEntity from '../../base-entity.entity';
-import { UserRole } from '../../enum';
-import Project from '../../project/entities/project.entity';
-import Run from '../../run/entities/run.entity';
-import File from '../../file/entities/file.entity';
-import QueueEntity from '../../queue/entities/queue.entity';
+import {Column, Entity, OneToMany} from "typeorm";
+import BaseEntity from "../base-entity.entity";
+import Project from "./project.entity";
+import QueueEntity from "./queue.entity";
+import Run from "./run.entity";
+import File from "./file.entity";
+import { UserRole } from "src/enum";
 
 @Entity()
 export default class User extends BaseEntity {

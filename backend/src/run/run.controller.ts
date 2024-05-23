@@ -10,6 +10,7 @@ import {
 import { RunService } from './run.service';
 import { CreateRun } from './entities/create-run.dto';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('run')
 export class RunController {
@@ -17,8 +18,8 @@ export class RunController {
 
   @Post('create')
   @LoggedIn()
-  async createRun(@Body() createRun: CreateRun) {
-    return this.runService.create(createRun);
+  async createRun(@Body() createRun: CreateRun, @addJWTUser() user: JWTUser) {
+    return this.runService.create(createRun, user);
   }
 
   @Get('filtered/:projectUUID')

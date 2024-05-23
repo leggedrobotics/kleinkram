@@ -59,6 +59,16 @@
             no-caps
             no-wrap
             class="q-ml-xs"
+            icon="account_tree"
+            @click="goExplorer"
+          >
+            Explorer
+          </q-btn>
+          <q-btn
+            flat
+            no-caps
+            no-wrap
+            class="q-ml-xs"
             icon="cloud_upload"
             @click="goUpload"
           >
@@ -117,12 +127,15 @@ import {isLoggedIn, loggedIn, logout} from 'src/services/auth';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 function goHome(): void {
-  console.log($routerService);
   void $routerService?.routeTo(ROUTES.HOME);
 }
 
 function goDatatable(): void {
   void $routerService?.routeTo(ROUTES.DATATABLE);
+}
+
+function goExplorer(): void {
+  void $routerService?.routeTo(ROUTES.EXPLORER);
 }
 
 function goUpload(): void {

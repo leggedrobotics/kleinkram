@@ -10,7 +10,7 @@ import {
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
-import { LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 
 @Controller('file')
 export class FileController {
@@ -79,6 +79,12 @@ export class FileController {
     return this.fileService.findByFilename(name);
   }
 
+  @Get('ofRun')
+  @LoggedIn()
+  async getFilesOfRun(@Query('runUUID') runUUID: string) {
+    return this.fileService.findByRun(runUUID);
+  }
+
   @Put(':uuid')
   @LoggedIn()
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
@@ -86,7 +92,7 @@ export class FileController {
   }
 
   @Delete('clear')
-  @LoggedIn()
+  @AdminOnly()
   async clear() {
     return this.fileService.clear();
   }

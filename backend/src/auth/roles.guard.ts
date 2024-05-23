@@ -8,6 +8,9 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../enum';
+import { InjectRepository } from '@nestjs/typeorm';
+import User from '../user/entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -21,12 +24,19 @@ export class LoggedInUserGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }
+
+  handleRequest(err, user, info) {
+    if (err || !user) {
+      throw err || new UnauthorizedException();
+    }
+    return user;
+  }
 }
 
 @Injectable()
 export class AdminOnlyGuard extends AuthGuard('jwt') {
   constructor(
-    private readonly userService: UserService,
+    @InjectRepository(User) private userRepository: Repository<User>,
     private reflector: Reflector,
   ) {
     super();
@@ -42,7 +52,10 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
       throw new UnauthorizedException('User not logged in');
     }
 
-    const userFromDb = await this.userService.findOneById(user.userId);
+    const userFromDb = await this.userRepository.findOne({
+      where: { googleId: user.userId },
+    });
+
     if (userFromDb.role !== UserRole.ADMIN) {
       throw new UnauthorizedException('User is not an admin');
     }

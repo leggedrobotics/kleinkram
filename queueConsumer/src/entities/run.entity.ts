@@ -1,8 +1,9 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import QueueEntity from './queue.entity';
-import FileEntity from './file.entity';
 import Project from './project.entity';
+import User from "./user.entity";
+import File from "./file.entity";
 
 @Entity()
 export default class Run extends BaseEntity {
@@ -12,9 +13,12 @@ export default class Run extends BaseEntity {
   @ManyToOne(() => Project, (project) => project.runs)
   project: Project;
 
-  @OneToMany(() => FileEntity, (file) => file.run)
-  files: FileEntity[];
+  @OneToMany(() => File, (file) => file.run)
+  files: File[];
 
   @OneToMany(() => QueueEntity, (queue) => queue.run)
   queues: QueueEntity[];
+
+  @ManyToOne(() => User, (user) => user.runs)
+  creator: User;
 }
