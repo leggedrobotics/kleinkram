@@ -259,10 +259,17 @@ def users():
     response = client.get(f"{API_URL}/user/all")
     response.raise_for_status()
     data = response.json()
-    table = Table("Name", "Email", "Role")
+    table = Table("Name", "Email", "Role", "googleId")
     for user in data:
-        table.add_row(user["name"], user["email"], user["role"])
+        table.add_row(user["name"], user["email"], user["role"], user["googleId"])
     print(table)
+
+@user.command('info')
+def user_info():
+    response = client.get(f"{API_URL}/user/me")
+    response.raise_for_status()
+    data = response.json()
+    print(data)
 
 if __name__ == "__main__":
     app()

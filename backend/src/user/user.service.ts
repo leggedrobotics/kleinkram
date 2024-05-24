@@ -44,6 +44,12 @@ export class UserService {
     return user;
   }
 
+  async me(jwtuser: JWTUser) {
+    return this.userRepository.findOneOrFail({
+      where: { googleId: jwtuser.userId },
+    });
+  }
+
   async findAll() {
     return this.userRepository.find();
   }
