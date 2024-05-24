@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
@@ -57,7 +58,7 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
     });
 
     if (userFromDb.role !== UserRole.ADMIN) {
-      throw new UnauthorizedException('User is not an admin');
+      throw new ForbiddenException('User is not an admin');
     }
 
     return true;

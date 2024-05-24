@@ -18,12 +18,14 @@ runs = typer.Typer(name="runs")
 files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
 queue = typer.Typer(name="queue")
+user = typer.Typer(name="user")
 
 app.add_typer(projects)
 app.add_typer(runs)
 app.add_typer(topics)
 app.add_typer(files)
 app.add_typer(queue)
+app.add_typer(user)
 app.command()(login)
 
 @files.command('list')
@@ -244,6 +246,23 @@ def wipe():
         print("Data wiped.")
     else:
         print("Operation cancelled.")
+
+@app.command('claim')
+def claim():
+    response = client.post(f"{API_URL}/user/claimAdmin")
+    response.raise_for_status()
+    print("Admin claimed.")
+
+
+@user.command('list')
+def users():
+    response = client.get(f"{API_URL}/user/all")
+    response.raise_for_status()
+    data = response.json()
+    table = Table("Name", "Email", "Role")
+    for user in data:
+        table.add_row(user["name"], user["email"], user["role"])
+    print(table)
 
 if __name__ == "__main__":
     app()
