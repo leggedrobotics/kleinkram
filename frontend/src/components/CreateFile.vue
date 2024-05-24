@@ -85,7 +85,7 @@ import { Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 import { confirmUpload, createDrive, createFile, createRun, getUploadURL } from 'src/services/mutations';
 import { Project, Run } from 'src/types/types';
-import { useQuery } from '@tanstack/vue-query';
+import {useQuery, useQueryClient} from '@tanstack/vue-query';
 import { allProjects, runsOfProject } from 'src/services/queries';
 import axios from 'axios';
 
@@ -95,8 +95,18 @@ const files = ref<File[]>([]);
 const selected_project: Ref<Project | null> = ref(null);
 const selected_run: Ref<Run | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
+const queryClient = useQueryClient();
 
 const drive_url = ref('');
+
+const props = defineProps<{
+  run?: Run;
+}>();
+
+if(props.run && props.run.project) {
+  selected_project.value = props.run.project;
+  selected_run.value = props.run;
+}
 
 const { data: runs, refetch } = useQuery(
   { queryKey: ['runs', selected_project.value?.uuid],
@@ -186,6 +196,13 @@ const submitNewFile = async () => {
       timeout: 5000,
 
     })
+    const cache = queryClient.getQueryCache();
+    console.log(cache.getAll())
+    const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'files' && query.queryKey[1] === selected_run.value?.uuid);
+    filtered.forEach((query) => {
+      console.log('Invalidating query', query.queryKey)
+      queryClient.invalidateQueries(query.queryKey);
+    });
   }
   else if (drive_url.value) {
     if(!selected_run.value) {

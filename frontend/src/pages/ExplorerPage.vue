@@ -1,15 +1,34 @@
 <template>
   <q-card class="q-pa-md" flat bordered>
-    <q-breadcrumbs>
-      <q-breadcrumbs-el
-        v-for="crumb in crumbs"
-        :key="crumb.uuid"
-        :label="crumb.name"
-        clickable
-        @click="navigate(crumb)"
-      >
-      </q-breadcrumbs-el>
-    </q-breadcrumbs>
+
+    <div class="row">
+      <div class="col-9">
+        <q-breadcrumbs>
+          <q-breadcrumbs-el
+            v-for="crumb in crumbs"
+            :key="crumb.uuid"
+            :label="crumb.name"
+            clickable
+            @click="navigate(crumb)"
+          >
+          </q-breadcrumbs-el>
+        </q-breadcrumbs>
+      </div>
+      <div class="col-2">
+        <q-btn
+          color="primary"
+          @click="create"
+          :label="'Create ' + crumbs[crumbs.length - 1].type"
+        />
+      </div>
+      <div class="col-1">
+        <q-btn
+          color="primary"
+          @click="refresh"
+          icon="refresh"
+        />
+      </div>
+    </div>
     <QTable
       ref="tableRef"
       v-model:pagination="pagination"
@@ -55,18 +74,27 @@
 import {useQuery} from '@tanstack/vue-query';
 import {FileEntity, Project, Run} from 'src/types/types';
 import {allProjects, filesOfRun, runsOfProject} from 'src/services/queries';
-import {QTable} from 'quasar';
+import {QTable, useQuasar} from 'quasar';
 import {computed, inject, Ref, ref} from 'vue';
 import {formatDate} from 'src/services/dateFormating';
 import {formatSize} from 'src/services/generalFormatting';
 import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
+import CreateProjectDialog from 'components/CreateProjectDialog.vue';
+import CreateRunDialog from 'components/CreateRunDialog.vue';
+import CreateFileDialog from 'components/CreateFileDialog.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 
-type crumb = { name: string, uuid: string, type: string };
-const crumbs: Ref<crumb[]> = ref([{name: 'All', uuid: '', type: 'Projects' }]);
+type crumb = { name: string, entity: Project|Run|FileEntity|undefined, type: string, uuid: string};
+const crumbs: Ref<crumb[]> = ref([{name: 'All', entity: undefined, type: 'Projects', uuid: ''}]);
 const column_index = ref(0)
+const runsQueryKey = computed(() => ['runs', crumbs.value[crumbs.value.length - 1].uuid]);
+const filesQueryKey = computed(() => ['files', crumbs.value[crumbs.value.length - 1].uuid]);
+const runsQueryEnabled = computed(() => crumbs.value[crumbs.value.length - 1].type === 'Runs');
+const filesQueryEnabled = computed(() => crumbs.value[crumbs.value.length - 1].type === 'Files');
+const $q = useQuasar();
+
 
 const projectsReturn = useQuery<Project[]>(
   { queryKey: ['projects'],
@@ -75,16 +103,16 @@ const projectsReturn = useQuery<Project[]>(
 );
 
 const runsReturn = useQuery(
-  { queryKey: ['runs', crumbs.value[crumbs.value.length - 1].uuid] ,
+  { queryKey: runsQueryKey ,
     queryFn: () => runsOfProject(crumbs.value[crumbs.value.length - 1].uuid),
-    enabled: crumbs.value[crumbs.value.length - 1].type === 'Runs',
+    enabled: runsQueryEnabled,
   }
 );
 
 const filesReturn = useQuery(
-  { queryKey: ['files', crumbs.value[crumbs.value.length - 1].uuid] ,
+  { queryKey: filesQueryKey ,
     queryFn: () => filesOfRun(crumbs.value[crumbs.value.length - 1].uuid),
-    enabled: crumbs.value[crumbs.value.length - 1].type === 'Files',
+    enabled: filesQueryEnabled,
   }
 );
 
@@ -223,13 +251,13 @@ const file_columns = [
 ]
 const columns = [project_columns, run_columns, file_columns]
 function view_project(project: Project) {
-  crumbs.value.push({ name: project.name, uuid: project.uuid, type: 'Runs' });
+  crumbs.value.push({ name: project.name, entity: project, type: 'Runs', uuid: project.uuid });
   runsReturn.refetch();
   column_index.value = 1;
 }
 
 function view_run(run: Run) {
-  crumbs.value.push({ name: run.name, uuid: run.uuid, type: 'Files' });
+  crumbs.value.push({ name: run.name, uuid: run.uuid, type: 'Files', entity: run });
   filesReturn.refetch();
   column_index.value = 2;
 }
@@ -243,6 +271,44 @@ function navigate(crumb: crumb) {
   crumbs.value = crumbs.value.slice(0, index + 1);
   column_index.value = index;
   console.log('navigate', crumb);
+}
+
+function create() {
+  if(column_index.value === 0) {
+    $q.dialog({
+      title: 'Create new project',
+      component: CreateProjectDialog,
+      persistent: false,
+      style: 'max-width: 1500px',
+    });
+  } else if(column_index.value === 1) {
+    $q.dialog({
+      title: 'Create new run',
+      component: CreateRunDialog,
+      persistent: false,
+      style: 'max-width: 1500px',
+      componentProps: { project: crumbs.value[crumbs.value.length - 1].entity }
+
+    });
+  } else if(column_index.value === 2) {
+    $q.dialog({
+      title: 'Create new file',
+      component: CreateFileDialog,
+      persistent: false,
+      style: 'max-width: 1500px',
+      componentProps: { run: crumbs.value[crumbs.value.length - 1].entity }
+    });
+  }
+}
+
+function refresh() {
+  if(column_index.value === 0) {
+    projectsReturn.refetch();
+  } else if(column_index.value === 1) {
+    runsReturn.refetch();
+  } else if(column_index.value === 2) {
+    filesReturn.refetch();
+  }
 }
 </script>
 

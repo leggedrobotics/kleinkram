@@ -68,14 +68,23 @@ const runName = ref('');
 const ddr_open = ref(false);
 const { isLoading, isError, data, error } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: allProjects });
 
+const props = defineProps<{
+  project?: Project;
+}>();
+
+if(props.project) {
+  selected_project.value = props.project;
+}
 const submitNewRun = async () => {
   if (!selected_project.value) {
     return;
   }
   await createRun(runName.value, selected_project.value.uuid)
   const cache = queryClient.getQueryCache();
+  console.log(cache.getAll())
   const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'runs' && query.queryKey[1] === selected_project.value?.uuid);
   filtered.forEach((query) => {
+    console.log('Invalidating query', query.queryKey)
     queryClient.invalidateQueries(query.queryKey);
   });
   Notify.create({
