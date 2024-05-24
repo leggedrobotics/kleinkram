@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
@@ -18,6 +26,12 @@ export class ProjectController {
   @LoggedIn()
   async getProjectById(@Query('uuid') uuid: string) {
     return this.projectService.findOne(uuid);
+  }
+
+  @Put('update')
+  @LoggedIn()
+  async updateProject(@Query('uuid') uuid: string, @Body() dto: CreateProject) {
+    return this.projectService.update(uuid, dto);
   }
 
   @Post('create')

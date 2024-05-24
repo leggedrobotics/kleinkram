@@ -361,3 +361,29 @@ export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
     return newFile;
   });
 }
+
+export const getProject = async (uuid: string): Promise<Project> => {
+  const response = await axios.get('/project/one', {params: {uuid}});
+  const project = response.data;
+  const creator = new User(
+    project.creator.uuid,
+    project.creator.name,
+    project.creator.email,
+    project.creator.role,
+    project.creator.googleId,
+    [],
+    new Date(project.creator.createdAt),
+    new Date(project.creator.updatedAt),
+    new Date(project.creator.deletedAt)
+  );
+  return new Project(
+    project.uuid,
+    project.name,
+    project.description,
+    [],
+    creator,
+    new Date(project.createdAt),
+    new Date(project.updatedAt),
+    new Date(project.deletedAt)
+  );
+}

@@ -235,15 +235,25 @@ def wipe():
             print("Operation cancelled.")
             return
 
-        response = client.delete(f"{API_URL}/queue/clear")
-        response.raise_for_status()
-        response = client.delete(f"{API_URL}/file/clear")
-        response.raise_for_status()
-        response = client.delete(f"{API_URL}/run/clear")
-        response.raise_for_status()
-        response = client.delete(f"{API_URL}/project/clear")
-        response.raise_for_status()
-        print("Data wiped.")
+        response_queue = client.delete(f"{API_URL}/queue/clear")
+        response_file = client.delete(f"{API_URL}/file/clear")
+        response_run = client.delete(f"{API_URL}/run/clear")
+        response_project = client.delete(f"{API_URL}/project/clear")
+
+        if response_queue.status_code >= 400:
+            print("Failed to clear queue.")
+            print(response_queue.text)
+        elif response_file.status_code >= 400:
+            print("Failed to clear files.")
+            print(response_file.text)
+        elif response_run.status_code >= 400:
+            print("Failed to clear runs.")
+            print(response_run.text)
+        elif response_project.status_code >= 400:
+            print("Failed to clear projects.")
+            print(response_project.text)
+        else:
+            print("Data wiped.")
     else:
         print("Operation cancelled.")
 

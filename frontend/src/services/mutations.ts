@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import {FileEntity} from 'src/types/types';
+import {FileEntity, Project} from 'src/types/types';
 
 export const createProject = async (name: string, description: string) => {
   const response = await axios.post('/project/create', {name, description});
@@ -51,4 +51,9 @@ export const createDrive = async (projectUUID: string, driveURL: string) => {
 export const updateFile = async (file: FileEntity) => {
   const response = await axios.put(`/file/${file.uuid}`, file);
   return response.data;
+}
+
+export const updateProject = async (projectUUID: string, name: string, description: string) => {
+  const response = await axios.put('/project/update', {name, description}, {params:{uuid: projectUUID}});
+  return response.data as Project;
 }

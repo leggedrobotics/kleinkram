@@ -20,7 +20,10 @@ export class ProjectService {
   }
 
   async findOne(uuid: string): Promise<Project> {
-    return this.projectRepository.findOne({ where: { uuid } });
+    return this.projectRepository.findOne({
+      where: { uuid },
+      relations: ['creator', 'runs'],
+    });
   }
 
   async findOneByName(name: string): Promise<Project> {
