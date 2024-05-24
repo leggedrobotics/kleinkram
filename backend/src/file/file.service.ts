@@ -57,6 +57,8 @@ export class FileService {
       .leftJoinAndSelect('file.run', 'run')
       .leftJoinAndSelect('run.project', 'project')
       .leftJoinAndSelect('file.topics', 'topic')
+      .leftJoinAndSelect('file.creator', 'creator')
+
       .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
       .getMany();
   }
@@ -117,6 +119,7 @@ export class FileService {
       .leftJoinAndSelect('file.run', 'run')
       .leftJoinAndSelect('run.project', 'project')
       .leftJoinAndSelect('file.topics', 'topic')
+      .leftJoinAndSelect('file.creator', 'creator')
       .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
       .getMany();
   }
@@ -124,7 +127,7 @@ export class FileService {
   async findOne(uuid: string) {
     return this.fileRepository.findOne({
       where: { uuid },
-      relations: ['run', 'topics', 'run.project'],
+      relations: ['run', 'topics', 'run.project', 'creator'],
     });
   }
 
@@ -173,7 +176,7 @@ export class FileService {
   async findByRun(runUUID: string) {
     return this.fileRepository.find({
       where: { run: { uuid: runUUID } },
-      relations: ['run', 'topics'],
+      relations: ['run', 'topics', 'creator', 'run.creator'],
     });
   }
 }

@@ -5,11 +5,11 @@
       <q-separator class="q-my-xs q-mb-md"></q-separator>
       <div class="q-gutter-md q-mt-xs">
         <div class="row items-start">
-          <div class="col-3">
+          <div class="col-2">
             <div class="text-subtitle3">Project</div>
             <div class="text-caption text-primary" style="font-size: 16px">{{ data?.run.project.name }}</div>
           </div>
-          <div class="col-3">
+          <div class="col-2">
             <div class="text-subtitle3">Run</div>
             <div class="text-caption text-primary" style="font-size: 16px">{{ data?.run.name }}</div>
           </div>
@@ -17,6 +17,12 @@
             <div v-if="data?.date">
               <div class="text-subtitle3">Start Date</div>
               <div class="text-caption text-primary" style="font-size: 16px">{{ formatDate(data.date, true) }}</div>
+            </div>
+          </div>
+          <div class="col-2">
+            <div v-if="data?.creator">
+              <div class="text-subtitle3">Creator</div>
+              <div class="text-caption text-primary" style="font-size: 16px">{{ data.creator.name }}</div>
             </div>
           </div>
           <div class="col-1">
