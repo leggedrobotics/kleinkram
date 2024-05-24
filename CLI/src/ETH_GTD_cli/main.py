@@ -271,5 +271,17 @@ def user_info():
     data = response.json()
     print(data)
 
+@user.command('promote')
+def promote(email: Annotated[str, typer.Option()]):
+    response = client.post(f"{API_URL}/user/promote", json={"email": email})
+    response.raise_for_status()
+    print("User promoted.")
+
+@user.command('demote')
+def demote(email: Annotated[str, typer.Option()]):
+    response = client.post(f"{API_URL}/user/demote", json={"email": email})
+    response.raise_for_status()
+    print("User demoted.")
+
 if __name__ == "__main__":
     app()
