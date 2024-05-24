@@ -275,6 +275,15 @@ const columns = [
     sortable: true
   },
   {
+    name: 'Creator',
+    required: true,
+    label: 'Creator',
+    align: 'left',
+    field: (row: FileEntity)  => row.creator,
+    format: (val:string) => `${val}`,
+    sortable: true
+  },
+  {
     name: 'Size',
     required: true,
     label: 'Size',

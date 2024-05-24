@@ -15,7 +15,7 @@ class BaseEntity {
   }
 }
 
-class User extends BaseEntity {
+export class User extends BaseEntity {
   name: string;
   email: string;
   role: ROLE;
@@ -45,13 +45,13 @@ export class Project extends BaseEntity {
   name: string;
   description: string;
   runs: Run[];
-  creator: User;
+  creator?: User;
 
   constructor(uuid: string,
               name: string,
               description: string,
               runs: Run[],
-              creator: User,
+              creator: User|undefined,
               createdAt: Date | null,
               updatedAt: Date | null,
               deletedAt: Date | null) {
@@ -80,16 +80,33 @@ export class Run extends BaseEntity {
   name: string;
   project: Project | undefined;
   files: FileEntity[];
+  creator?: User;
 
-  constructor(uuid: string, name: string, project: Project | undefined, files: FileEntity[], createdAt: Date | null, updatedAt: Date | null, deletedAt: Date | null) {
+  constructor(uuid: string,
+              name: string,
+              project: Project | undefined,
+              files: FileEntity[],
+              creator: User | undefined,
+              createdAt: Date | null,
+              updatedAt: Date | null,
+              deletedAt: Date | null) {
     super(uuid, createdAt, updatedAt, deletedAt);
     this.name = name;
     this.project = project;
     this.files = files;
+    this.creator = creator;
   }
 
   clone(): Run {
-    return new Run(this.uuid, this.name, this.project?.clone(), this.files, this.createdAt, this.updatedAt, this.deletedAt);
+    return new Run(
+      this.uuid,
+      this.name,
+      this.project?.clone(),
+      this.files,
+      this.creator,
+      this.createdAt,
+      this.updatedAt,
+      this.deletedAt);
   }
 }
 
@@ -100,11 +117,13 @@ export class FileEntity extends BaseEntity {
   topics: Topic[];
   size: number;
   identifier: string;
+  creator: User;
 
   constructor(uuid: string,
               filename: string,
               identifier: string,
               run: Run,
+              creator: User,
               date: Date,
               topics: Topic[],
               size: number,
@@ -114,6 +133,7 @@ export class FileEntity extends BaseEntity {
     super(uuid, createdAt, updatedAt, deletedAt);
     this.size = size;
     this.run = run;
+    this.creator = creator;
     this.date = date;
     this.filename = filename;
     this.identifier = identifier;

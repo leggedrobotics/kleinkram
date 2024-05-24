@@ -152,6 +152,7 @@ watch(() => data.value, (newValue) => {
       newValue.filename,
       data.value.identifier,
       newValue.run.clone(),
+      newValue.creator,
       newValue.date,
       [],
       newValue.size,

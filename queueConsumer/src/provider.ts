@@ -117,10 +117,12 @@ export class FileProcessor implements OnModuleInit {
           return this.topicRepository.findOne({ where: { uuid: newTopic.uuid } });
         });
         const createdTopics = await Promise.all(res);
+        console.log('creator', queue.creator)
         const newFile = this.fileRepository.create({
           identifier,
           date,
           topics: createdTopics,
+          creator: queue.creator,
           run: queue.run,
           size,
           filename
@@ -243,7 +245,7 @@ export class FileProcessor implements OnModuleInit {
       where: {
         uuid: queueUuid
       },
-      relations: ['run']
+      relations: ['run', 'creator']
     });
     queue.state = FileState.PROCESSING;
     await this.queueRepository.save(queue);
