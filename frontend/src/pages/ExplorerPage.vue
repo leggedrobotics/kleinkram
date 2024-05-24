@@ -29,6 +29,7 @@
         />
       </div>
     </div>
+    <EditProject v-if="column_index===1" :project_uuid="crumbs[crumbs.length - 1].uuid" />
     <QTable
       ref="tableRef"
       v-model:pagination="pagination"
@@ -47,6 +48,7 @@
             label="View"
             @click="()=>view_project(props.row)"
           ></q-btn>
+
         </q-td>
       </template>
       <template v-slot:body-cell-runaction="props">
@@ -83,6 +85,7 @@ import ROUTES from 'src/router/routes';
 import CreateProjectDialog from 'components/CreateProjectDialog.vue';
 import CreateRunDialog from 'components/CreateRunDialog.vue';
 import CreateFileDialog from 'components/CreateFileDialog.vue';
+import EditProject from 'components/EditProject.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 

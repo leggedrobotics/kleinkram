@@ -40,6 +40,8 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'Authentication successful. You can close this window.')
             return
+    def log_message(self, format, *args):
+        pass
 
 
 def get_auth_tokens():
