@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import User from './entities/user.entity';
 import { UserRole } from '../enum';
+import { JWTUser } from '../auth/paramDecorator';
 
 @Injectable()
 export class UserService {
@@ -25,5 +26,25 @@ export class UserService {
     });
     await this.userRepository.save(res);
     return this.userRepository.findOneOrFail({ where: { email } });
+  }
+
+  async claimAdmin(jwtuser: JWTUser) {
+    const nrAdmins = await this.userRepository.count({
+      where: { role: UserRole.ADMIN },
+    });
+    if (nrAdmins > 0) {
+      throw new ForbiddenException('Admin already exists');
+    }
+    const user = await this.userRepository.findOneOrFail({
+      where: { googleId: jwtuser.userId },
+    });
+
+    user.role = UserRole.ADMIN;
+    await this.userRepository.save(user);
+    return user;
+  }
+
+  async findAll() {
+    return this.userRepository.find();
   }
 }
