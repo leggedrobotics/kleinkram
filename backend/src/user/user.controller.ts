@@ -28,13 +28,13 @@ export class UserController {
 
   @Post('promote')
   @LoggedIn()
-  async promoteUser(@Body() mail: string) {
-    return this.userService.promoteUser(mail);
+  async promoteUser(@Body() bd: { mail: string }) {
+    return this.userService.promoteUser(bd.mail);
   }
 
   @Post('demote')
   @LoggedIn()
-  async demoteUser(@Body() mail: string) {
-    return this.userService.demoteUser(mail);
+  async demoteUser(@Body() bd: { mail: string }) {
+    return this.userService.demoteUser(bd.mail);
   }
 }
