@@ -19,4 +19,10 @@ export class UserController {
   async allUsers() {
     return this.userService.findAll();
   }
+
+  @Get('me')
+  @LoggedIn()
+  async me(@addJWTUser() user?: JWTUser) {
+    return this.userService.me(user);
+  }
 }
