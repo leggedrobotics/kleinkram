@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 import { LoggedIn } from '../auth/roles.decorator';
 import { JWTUser } from 'src/auth/paramDecorator';
@@ -24,5 +24,17 @@ export class UserController {
   @LoggedIn()
   async me(@addJWTUser() user?: JWTUser) {
     return this.userService.me(user);
+  }
+
+  @Post('promote')
+  @LoggedIn()
+  async promoteUser(@Body() mail: string) {
+    return this.userService.promoteUser(mail);
+  }
+
+  @Post('demote')
+  @LoggedIn()
+  async demoteUser(@Body() mail: string) {
+    return this.userService.demoteUser(mail);
   }
 }

@@ -53,4 +53,22 @@ export class UserService {
   async findAll() {
     return this.userRepository.find();
   }
+
+  async promoteUser(usermail: string) {
+    const user = await this.userRepository.findOneOrFail({
+      where: { email: usermail },
+    });
+    user.role = UserRole.ADMIN;
+    await this.userRepository.save(user);
+    return user;
+  }
+
+  async demoteUser(usermail: string) {
+    const user = await this.userRepository.findOneOrFail({
+      where: { email: usermail },
+    });
+    user.role = UserRole.USER;
+    await this.userRepository.save(user);
+    return user;
+  }
 }
