@@ -106,11 +106,21 @@ export const analysisRuns = async (projectUUID: string, runUUIDs: string) => {
 
   const response = await axios.get('/analysis/list', {params});
   return response.data.map((res: any) => {
-    return new AnalysisRun(res.uuid, new Date(res.createdAt), new Date(res.updatedAt), new Date(res.deletedAt), res.state, res.image, null)
+    return new AnalysisRun(res.uuid, new Date(res.createdAt), new Date(res.updatedAt), new Date(res.deletedAt), res.state, res.docker_image, null)
   });
-
-
 };
+
+export const analysisDetails = async (analysis_uuid: string) => {
+  const params = {
+    analysis_uuid: analysis_uuid
+  };
+
+  const response = await axios.get('/analysis/details', {params});
+  console.log(response.data);
+  return new AnalysisRun(response.data.uuid, new Date(response.data.createdAt), new Date(response.data.updatedAt), new Date(response.data.deletedAt), response.data.state, response.data.docker_image, null, response.data.logs);
+};
+
+
 export const currentQueue = async (startDate: Date) => {
   const params = {
     startDate: startDate.toISOString()
@@ -147,15 +157,15 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
       new Date(file.run.deletedAt)
     )
     const creator = new User(
-        file.creator.uuid,
-        file.creator.name,
-        file.creator.email,
-        file.creator.role,
-        file.creator.googleId,
-        [],
-        new Date(file.creator.createdAt),
-        new Date(file.creator.updatedAt),
-        new Date(file.creator.deletedAt)
+      file.creator.uuid,
+      file.creator.name,
+      file.creator.email,
+      file.creator.role,
+      file.creator.googleId,
+      [],
+      new Date(file.creator.createdAt),
+      new Date(file.creator.updatedAt),
+      new Date(file.creator.deletedAt)
     );
 
 
@@ -287,12 +297,12 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
 
 export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
   const response = await axios.get('file/ofRun', {params: {runUUID}});
-  if(response.data.length === 0) {
+  if (response.data.length === 0) {
     return [];
   }
   const users: Record<string, User> = {};
   let runCreator: User | undefined = users[response.data[0].run.creator.uuid];
-  if(!runCreator) {
+  if (!runCreator) {
     runCreator = new User(
       response.data[0].run.creator.uuid,
       response.data[0].run.creator.name,
@@ -318,7 +328,7 @@ export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
   )
   return response.data.map((file: any) => {
     let fileCreator: User | undefined = users[file.creator.uuid];
-    if(!fileCreator) {
+    if (!fileCreator) {
       fileCreator = new User(
         file.creator.uuid,
         file.creator.name,

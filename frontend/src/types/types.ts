@@ -51,7 +51,7 @@ export class Project extends BaseEntity {
               name: string,
               description: string,
               runs: Run[],
-              creator: User|undefined,
+              creator: User | undefined,
               createdAt: Date | null,
               updatedAt: Date | null,
               deletedAt: Date | null) {
@@ -141,12 +141,22 @@ export class FileEntity extends BaseEntity {
   }
 }
 
+type ContainerLog = {
+
+  timestamp: string,
+  message: string,
+  type: 'stdout' | 'stderr'
+
+
+}
+
 export class AnalysisRun extends BaseEntity {
 
   state: AnalysisRunState;
   docker_image: string;
 
   run: Run | null
+  logs: ContainerLog[] | null
 
   constructor(
     uuid: string,
@@ -155,13 +165,15 @@ export class AnalysisRun extends BaseEntity {
     deletedAt: Date | null,
     state: AnalysisRunState,
     docker_image: string,
-    run: Run | null
+    run: Run | null,
+    logs: ContainerLog[] | null = null
   ) {
     super(uuid, createdAt, updatedAt, deletedAt);
 
     this.state = state;
     this.docker_image = docker_image;
     this.run = run;
+    this.logs = logs;
 
   }
 
