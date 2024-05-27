@@ -7,9 +7,9 @@ import Project from '../project/entities/project.entity';
 import User from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Run, Project, User])],
-  providers: [RunService],
-  controllers: [RunController],
-  exports: [RunService],
+    imports: [TypeOrmModule.forFeature([Run, Project, User])],
+    providers: [RunService],
+    controllers: [RunController],
+    exports: [RunService],
 })
 export class RunModule {}

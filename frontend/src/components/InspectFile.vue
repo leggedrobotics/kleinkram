@@ -1,58 +1,87 @@
 <template>
-  <q-card>
-    <q-card-section>
-      <div class="text-h4 q-mb-md">{{ data?.filename }}</div>
-      <q-separator class="q-my-xs q-mb-md"></q-separator>
-      <div class="q-gutter-md q-mt-xs">
-        <div class="row items-start">
-          <div class="col-2">
-            <div class="text-subtitle3">Project</div>
-            <div class="text-caption text-primary" style="font-size: 16px">{{ data?.run.project.name }}</div>
-          </div>
-          <div class="col-2">
-            <div class="text-subtitle3">Run</div>
-            <div class="text-caption text-primary" style="font-size: 16px">{{ data?.run.name }}</div>
-          </div>
-          <div class="col-3">
-            <div v-if="data?.date">
-              <div class="text-subtitle3">Start Date</div>
-              <div class="text-caption text-primary" style="font-size: 16px">{{ formatDate(data.date, true) }}</div>
+    <q-card>
+        <q-card-section>
+            <div class="text-h4 q-mb-md">{{ data?.filename }}</div>
+            <q-separator class="q-my-xs q-mb-md"></q-separator>
+            <div class="q-gutter-md q-mt-xs">
+                <div class="row items-start">
+                    <div class="col-2">
+                        <div class="text-subtitle3">Project</div>
+                        <div
+                            class="text-caption text-primary"
+                            style="font-size: 16px"
+                        >
+                            {{ data?.run.project.name }}
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="text-subtitle3">Run</div>
+                        <div
+                            class="text-caption text-primary"
+                            style="font-size: 16px"
+                        >
+                            {{ data?.run.name }}
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div v-if="data?.date">
+                            <div class="text-subtitle3">Start Date</div>
+                            <div
+                                class="text-caption text-primary"
+                                style="font-size: 16px"
+                            >
+                                {{ formatDate(data.date, true) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div v-if="data?.creator">
+                            <div class="text-subtitle3">Creator</div>
+                            <div
+                                class="text-caption text-primary"
+                                style="font-size: 16px"
+                            >
+                                {{ data.creator.name }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-1">
+                        <q-btn
+                            flat
+                            label="Download"
+                            icon="cloud_download"
+                            @click="_downloadBag"
+                            class="full-width"
+                        ></q-btn>
+                    </div>
+                    <div class="col-2">
+                        <q-btn
+                            flat
+                            label="Copy public link"
+                            icon="content_copy"
+                            @click="_copyLink"
+                            class="full-width"
+                        ></q-btn>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col-2">
-            <div v-if="data?.creator">
-              <div class="text-subtitle3">Creator</div>
-              <div class="text-caption text-primary" style="font-size: 16px">{{ data.creator.name }}</div>
-            </div>
-          </div>
-          <div class="col-1">
-            <q-btn flat label="Download" icon="cloud_download" @click="_downloadBag" class="full-width"></q-btn>
-          </div>
-          <div class="col-2">
-            <q-btn flat label="Copy public link" icon="content_copy" @click="_copyLink" class="full-width"></q-btn>
-          </div>
-        </div>
+        </q-card-section>
 
-      </div>
-    </q-card-section>
-
-    <q-card-section>
-      <QTable
-        ref="tableoniRef"
-        v-model:pagination="pagination"
-        title="Topics"
-        :rows="data?.topics"
-        :columns="columns"
-        row-key="uuid"
-        :loading="isLoading"
-      >
-
-      </QTable>
-    </q-card-section>
-  </q-card>
+        <q-card-section>
+            <QTable
+                ref="tableoniRef"
+                v-model:pagination="pagination"
+                title="Topics"
+                :rows="data?.topics"
+                :columns="columns"
+                row-key="uuid"
+                :loading="isLoading"
+            >
+            </QTable>
+        </q-card-section>
+    </q-card>
 </template>
 <script setup lang="ts">
-
 import { useQuery } from '@tanstack/vue-query';
 import { downloadBag, fetchFile } from 'src/services/queries';
 import { FileEntity, Run } from 'src/types/types';
@@ -61,49 +90,67 @@ import { Ref, ref, watch, watchEffect } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 
 const props = defineProps<{
-  file_uuid: string;
+    file_uuid: string;
 }>();
 
 const tableoniRef: Ref<QTable | null> = ref(null);
 
-
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
-  queryKey: ['file', props.file_uuid],
-  queryFn: ()=>fetchFile(props.file_uuid) });
+    queryKey: ['file', props.file_uuid],
+    queryFn: () => fetchFile(props.file_uuid),
+});
 
 const columns = [
-  { name: 'Topic', label: 'Topic', field: 'name', sortable: true, align: 'left' },
-  { name: 'Datatype', label: 'Datatype', field: 'type', sortable: true },
-  { name: 'NrMessages', label: 'NrMessages', field: 'nrMessages', sortable: true },
-  {name: 'Frequency', label: 'Frequency', field: 'frequency', sortable: true },
-]
+    {
+        name: 'Topic',
+        label: 'Topic',
+        field: 'name',
+        sortable: true,
+        align: 'left',
+    },
+    { name: 'Datatype', label: 'Datatype', field: 'type', sortable: true },
+    {
+        name: 'NrMessages',
+        label: 'NrMessages',
+        field: 'nrMessages',
+        sortable: true,
+    },
+    {
+        name: 'Frequency',
+        label: 'Frequency',
+        field: 'frequency',
+        sortable: true,
+    },
+];
 
 const downloadURL = ref<string>('');
 async function _downloadBag() {
-  const res = await downloadBag(props.file_uuid, true)
-  const a = document.createElement('a');
-  a.href = res;
-  a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+    const res = await downloadBag(props.file_uuid, true);
+    const a = document.createElement('a');
+    a.href = res;
+    a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
-async function _copyLink(){
-  const res = await downloadBag(props.file_uuid, false)
-  await copyToClipboard(res)
-  Notify.create({
-    group: false,
-    message: 'Copied: Link valid for 7 days',
-    color: 'positive',
-    position: 'top-right',
-    timeout: 2000,
-  })
+async function _copyLink() {
+    const res = await downloadBag(props.file_uuid, false);
+    await copyToClipboard(res);
+    Notify.create({
+        group: false,
+        message: 'Copied: Link valid for 7 days',
+        color: 'positive',
+        position: 'top-right',
+        timeout: 2000,
+    });
 }
 
-const pagination = ref({ sortBy: 'name', descending: false, page: 1, rowsPerPage: 10 });
-
+const pagination = ref({
+    sortBy: 'name',
+    descending: false,
+    page: 1,
+    rowsPerPage: 10,
+});
 </script>
-<style scoped>
-
-</style>
+<style scoped></style>

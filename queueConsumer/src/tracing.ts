@@ -1,16 +1,16 @@
-import {BatchSpanProcessor} from '@opentelemetry/sdk-trace-base';
-import {AsyncHooksContextManager} from '@opentelemetry/context-async-hooks';
-import {Resource} from '@opentelemetry/resources';
-import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
-import {HttpInstrumentation} from '@opentelemetry/instrumentation-http';
-import {ExpressInstrumentation} from '@opentelemetry/instrumentation-express';
-import {NodeTracerProvider} from '@opentelemetry/sdk-trace-node';
-import {FetchInstrumentation} from '@opentelemetry/instrumentation-fetch';
-import {context, Exception, trace} from '@opentelemetry/api';
-import {WinstonInstrumentation} from '@opentelemetry/instrumentation-winston';
-import {NodeSDK} from '@opentelemetry/sdk-node';
-import {NestInstrumentation} from '@opentelemetry/instrumentation-nestjs-core';
-import {TypeormInstrumentation} from 'opentelemetry-instrumentation-typeorm';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { Resource } from '@opentelemetry/resources';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { context, Exception, trace } from '@opentelemetry/api';
+import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import { TypeormInstrumentation } from 'opentelemetry-instrumentation-typeorm';
 
 // Export the tracing
 const contextManager = new AsyncHooksContextManager().enable();
@@ -23,14 +23,14 @@ const provider = new NodeTracerProvider({
         new Resource({
             // Replace with any string to identify this service in your system
             'service.name': 'queue-consumer',
-            job: 'queue-consumer'
-        })
-    )
+            job: 'queue-consumer',
+        }),
+    ),
 });
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
-    concurrencyLimit: 10 // an optional limit on pending requests
+    concurrencyLimit: 10, // an optional limit on pending requests
 });
 
 // Configure how spans are processed and exported. In this case we're sending spans
@@ -38,8 +38,8 @@ const exporter = new OTLPTraceExporter({
 provider.addSpanProcessor(
     new BatchSpanProcessor(exporter, {
         maxQueueSize: 1000,
-        scheduledDelayMillis: 1000
-    })
+        scheduledDelayMillis: 1000,
+    }),
 );
 
 // Register the provider
@@ -52,8 +52,8 @@ const sdk = new NodeSDK({
         new ExpressInstrumentation(),
         new FetchInstrumentation(),
         new WinstonInstrumentation(),
-        new TypeormInstrumentation()
-    ]
+        new TypeormInstrumentation(),
+    ],
 });
 
 // initialize the SDK and register with the OpenTelemetry API
@@ -62,15 +62,13 @@ sdk.start();
 
 // gracefully shut down the SDK on process exit
 process.on('SIGTERM', () => {
-    sdk
-        .shutdown()
+    sdk.shutdown()
         .then(() => console.log('Tracing terminated'))
         .catch((error) => console.log('Error terminating tracing', error))
         .finally(() => process.exit(0));
 });
 
 export default sdk;
-
 
 const tracer = trace.getTracer('graphQL-backend');
 
@@ -85,36 +83,36 @@ const tracer = trace.getTracer('graphQL-backend');
  *
  */
 export const traceWrapper =
-    <T extends unknown[], U>(fn: (..._: T) => U, fnName?: string): ((...__: T) => U) =>
-        (...args: T): U =>
-            tracer.startActiveSpan(fnName || fn.name || 'traceWrapper', (span) => {
+    <T extends unknown[], U>(
+        fn: (..._: T) => U,
+        fnName?: string,
+    ): ((...__: T) => U) =>
+    (...args: T): U =>
+        tracer.startActiveSpan(fnName || fn.name || 'traceWrapper', (span) => {
+            let result: U | Promise<any>;
 
-                let result: U | Promise<any>;
+            try {
+                result = fn(...args);
 
-                try {
-
-                    result = fn(...args);
-
-                    // if the result is a promise, we need to catch any
-                    // exceptions and record them before ending the span
-                    if (result instanceof Promise)
-                        result.catch((e) => {
+                // if the result is a promise, we need to catch any
+                // exceptions and record them before ending the span
+                if (result instanceof Promise)
+                    result
+                        .catch((e) => {
                             span.recordException(e);
                             span.setAttribute('error', true);
-                        }).finally(() => span.end());
+                        })
+                        .finally(() => span.end());
+            } catch (e) {
+                span.recordException(e as Exception);
+                span.setAttribute('error', true);
+                throw e;
+            } finally {
+                if (!(result instanceof Promise)) span.end();
+            }
 
-                } catch (e) {
-                    span.recordException(e as Exception);
-                    span.setAttribute('error', true);
-                    throw e;
-
-                } finally {
-                    if (!(result instanceof Promise)) span.end();
-                }
-
-                return result;
-
-            });
+            return result;
+        });
 
 /**
  *
@@ -123,8 +121,15 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
-export function tracing<A extends unknown[], C>(trace_name: string = undefined):
-    (MethodDecorator & ClassDecorator) | ((target: Record<string | symbol, any>, propertyKey?: (string | symbol), descriptor?: TypedPropertyDescriptor<(...args: A) => C>) => void) {
+export function tracing<A extends unknown[], C>(
+    trace_name: string = undefined,
+):
+    | (MethodDecorator & ClassDecorator)
+    | ((
+          target: Record<string | symbol, any>,
+          propertyKey?: string | symbol,
+          descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
+      ) => void) {
     return function (
         target: new (...args: A) => C,
         propertyKey?: string | symbol,
@@ -138,7 +143,10 @@ export function tracing<A extends unknown[], C>(trace_name: string = undefined):
             originalMethod: (...args: A) => C,
         ): ((...args: A) => C) => {
             return function (...args: A): C {
-                return traceWrapper(originalMethod.bind(this), trace_name)(...args) as C;
+                return traceWrapper(
+                    originalMethod.bind(this),
+                    trace_name,
+                )(...args) as C;
             };
         };
 

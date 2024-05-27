@@ -1,15 +1,18 @@
-import {Body, Controller, Get, Post, Query} from '@nestjs/common';
-import {AnalysisService} from './anaylsis.service';
-import {AnalysisRunDetailsQuery, AnalysisRunQuery, SubmitAnalysisRun,} from './entities/submit_analysis.dto';
-import {QueueService} from '../queue/queue.service';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { AnalysisService } from './anaylsis.service';
+import {
+    AnalysisRunDetailsQuery,
+    AnalysisRunQuery,
+    SubmitAnalysisRun,
+} from './entities/submit_analysis.dto';
+import { QueueService } from '../queue/queue.service';
 
 @Controller('analysis')
 export class AnalysisController {
     constructor(
         private readonly analysisService: AnalysisService,
         private readonly queueService: QueueService,
-    ) {
-    }
+    ) {}
 
     @Post('submit')
     async createProject(@Body() dto: SubmitAnalysisRun) {
@@ -30,5 +33,4 @@ export class AnalysisController {
     async details(@Query() dto: AnalysisRunDetailsQuery) {
         return this.analysisService.details(dto.analysis_uuid);
     }
-
 }

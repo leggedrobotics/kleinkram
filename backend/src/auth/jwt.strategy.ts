@@ -7,24 +7,24 @@ import env from '../env';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
-    super({
-      jwtFromRequest: (req: Request) => {
-        let token = null;
-        if (req && req.cookies) {
-          token = req.cookies['authtoken'];
-        }
-        return token;
-      },
-      ignoreExpiration: false,
-      secretOrKey: env.JWT_SECRET,
-    });
-  }
+    constructor(private configService: ConfigService) {
+        super({
+            jwtFromRequest: (req: Request) => {
+                let token = null;
+                if (req && req.cookies) {
+                    token = req.cookies['authtoken'];
+                }
+                return token;
+            },
+            ignoreExpiration: false,
+            secretOrKey: env.JWT_SECRET,
+        });
+    }
 
-  async validate(payload: any) {
-    return {
-      userId: payload.sub,
-      username: payload.username,
-    };
-  }
+    async validate(payload: any) {
+        return {
+            userId: payload.sub,
+            username: payload.username,
+        };
+    }
 }

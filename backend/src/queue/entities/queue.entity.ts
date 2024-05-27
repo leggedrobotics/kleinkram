@@ -6,29 +6,29 @@ import User from '../../user/entities/user.entity';
 
 @Entity()
 export default class QueueEntity extends BaseEntity {
-  @Column()
-  identifier: string;
+    @Column()
+    identifier: string;
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string;
 
-  @Column({
-    type: 'enum',
-    enum: FileState,
-    default: 'PENDING',
-  })
-  state: FileState;
+    @Column({
+        type: 'enum',
+        enum: FileState,
+        default: 'PENDING',
+    })
+    state: FileState;
 
-  @ManyToOne(() => Run, (project) => project.queues)
-  run: Run;
+    @ManyToOne(() => Run, (project) => project.queues)
+    run: Run;
 
-  @Column({
-    type: 'enum',
-    enum: FileLocation,
-    default: 'DRIVE',
-  })
-  location: FileLocation;
+    @Column({
+        type: 'enum',
+        enum: FileLocation,
+        default: 'DRIVE',
+    })
+    location: FileLocation;
 
-  @ManyToOne(() => User, (user) => user.queues)
-  creator: User;
+    @ManyToOne(() => User, (user) => user.queues)
+    creator: User;
 }

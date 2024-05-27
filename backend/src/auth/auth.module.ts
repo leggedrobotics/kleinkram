@@ -12,25 +12,25 @@ import { JwtStrategy } from './jwt.strategy';
 import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
 
 @Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      useFactory: async () => ({
-        secret: env.JWT_SECRET,
-        signOptions: { expiresIn: '60m' },
-      }),
-    }),
-    TypeOrmModule.forFeature([User]),
-  ],
-  providers: [
-    AuthService,
-    GoogleStrategy,
-    UserService,
-    JwtStrategy,
-    AdminOnlyGuard,
-    LoggedInUserGuard,
-  ],
-  controllers: [AuthController],
-  exports: [AdminOnlyGuard, LoggedInUserGuard],
+    imports: [
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.registerAsync({
+            useFactory: async () => ({
+                secret: env.JWT_SECRET,
+                signOptions: { expiresIn: '60m' },
+            }),
+        }),
+        TypeOrmModule.forFeature([User]),
+    ],
+    providers: [
+        AuthService,
+        GoogleStrategy,
+        UserService,
+        JwtStrategy,
+        AdminOnlyGuard,
+        LoggedInUserGuard,
+    ],
+    controllers: [AuthController],
+    exports: [AdminOnlyGuard, LoggedInUserGuard],
 })
 export class AuthModule {}

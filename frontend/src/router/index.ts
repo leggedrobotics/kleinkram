@@ -1,9 +1,5 @@
 import { route } from 'quasar/wrappers';
-import {
-  createRouter,
-  createWebHashHistory,
-  RouteRecordRaw,
-} from 'vue-router';
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router';
 import routes from './routes';
 
 /*
@@ -16,16 +12,15 @@ import routes from './routes';
  */
 
 export default route(() => {
+    const routeArray: RouteRecordRaw[] = Object.values(routes);
 
-  const routeArray: RouteRecordRaw[] = Object.values(routes);
+    return createRouter({
+        scrollBehavior: () => ({ left: 0, top: 0 }),
+        routes: routeArray,
 
-  return createRouter({
-    scrollBehavior: () => ({ left: 0, top: 0 }),
-    routes: routeArray,
-
-    // Leave this as is and make changes in quasar.conf.js instead!
-    // quasar.conf.js -> build -> vueRouterMode
-    // quasar.conf.js -> build -> publicPath
-    history: createWebHashHistory('/'),
-  });
+        // Leave this as is and make changes in quasar.conf.js instead!
+        // quasar.conf.js -> build -> vueRouterMode
+        // quasar.conf.js -> build -> publicPath
+        history: createWebHashHistory('/'),
+    });
 });

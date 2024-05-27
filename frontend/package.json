@@ -1,43 +1,41 @@
 {
-  "name": "frontend",
-  "version": "0.1.1",
-  "description": "Data storage of ROS bags",
-  "productName": "Bagistry",
-  "author": "Johann Schwabe <johann@schwabe.dev>",
-  "private": true,
-  "scripts": {
-    "lint": "eslint --ext .js,.ts,.vue ./",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
-    "test": "echo \"No test speciyafied\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build"
-  },
-  "dependencies": {
-    "@quasar/extras": "^1.16.4",
-    "@tanstack/vue-query": "^5.24.1",
-    "axios": "^1.6.7",
-    "date-fns": "^3.3.1",
-    "jwt-decode": "^4.0.0",
-    "quasar": "^2.8.0",
-    "vue": "^3.4.18",
-    "vue-json-pretty": "^2.4.0",
-    "vue-router": "^4.0.12"
-  },
-  "devDependencies": {
-    "@quasar/app-vite": "1.7.3",
-    "@types/node": "^12.20.21",
-    "@typescript-eslint/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^5.10.0",
-    "autoprefixer": "^10.4.2",
-    "eslint": "^8.11.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-vue": "^9.0.0",
-    "prettier": "^2.5.1",
-    "typescript": "^4.5.4"
-  },
-  "engines": {
-    "node": "^21 || ^20 || ^18 || ^16",
-    "npm": ">= 6.13.4",
-    "yarn": ">= 1.21.1"
-  }
+    "name": "frontend",
+    "version": "0.1.1",
+    "description": "Data storage of ROS bags",
+    "productName": "Bagistry",
+    "author": "Johann Schwabe <johann@schwabe.dev>",
+    "private": true,
+    "scripts": {
+        "lint": "eslint --ext .js,.ts,.vue ./",
+        "test": "echo \"No test speciyafied\" && exit 0",
+        "dev": "quasar dev",
+        "build": "quasar build"
+    },
+    "dependencies": {
+        "@quasar/extras": "^1.16.4",
+        "@tanstack/vue-query": "^5.24.1",
+        "axios": "^1.6.7",
+        "date-fns": "^3.3.1",
+        "jwt-decode": "^4.0.0",
+        "quasar": "^2.8.0",
+        "vue": "^3.4.18",
+        "vue-json-pretty": "^2.4.0",
+        "vue-router": "^4.0.12"
+    },
+    "devDependencies": {
+        "@quasar/app-vite": "1.7.3",
+        "@types/node": "^12.20.21",
+        "@typescript-eslint/eslint-plugin": "^5.10.0",
+        "@typescript-eslint/parser": "^5.10.0",
+        "autoprefixer": "^10.4.2",
+        "eslint": "^8.11.0",
+        "eslint-config-prettier": "^8.1.0",
+        "eslint-plugin-vue": "^9.0.0",
+        "typescript": "^4.5.4"
+    },
+    "engines": {
+        "node": "^21 || ^20 || ^18 || ^16",
+        "npm": ">= 6.13.4",
+        "yarn": ">= 1.21.1"
+    }
 }

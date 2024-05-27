@@ -10,9 +10,9 @@ import Project from '../project/entities/project.entity';
 import User from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Run, File, Topic, Project, User])],
-  providers: [FileService, TopicService],
-  controllers: [FileController],
-  exports: [FileService],
+    imports: [TypeOrmModule.forFeature([Run, File, Topic, Project, User])],
+    providers: [FileService, TopicService],
+    controllers: [FileController],
+    exports: [FileService],
 })
 export class FileModule {}
