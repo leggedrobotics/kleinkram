@@ -53,7 +53,7 @@ import {useQuery, useQueryClient} from '@tanstack/vue-query';
 import {Project, Run} from 'src/types/types';
 import {allProjects} from 'src/services/queries';
 import {ref} from 'vue';
-import {useDialogPluginComponent} from 'quasar';
+import {Notify, useDialogPluginComponent} from 'quasar';
 import {moveRun} from 'src/services/mutations';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent()
@@ -80,7 +80,21 @@ async function onOk() {
     return;
   }
   try {
+    const creating = Notify.create({
+      group: false,
+      message: `Moving run ${props.run.name} to project ${selected_project.value.name}`,
+      color: 'positive',
+      spinner: true,
+      timeout: 4000,
+      position: 'top-right',
+    })
     await moveRun(props.run.uuid, selected_project.value.uuid,);
+    creating({
+      message: `Run ${props.run.name} moved to project ${selected_project.value.name}`,
+      color: 'positive',
+      spinner: false,
+      timeout: 4000,
+    })
     const cache = queryClient.getQueryCache();
     const filtered = cache.getAll().filter((query) => (query.queryKey[0] === 'runs' || query.queryKey[0] === 'projects') );
     filtered.forEach((query) => {
@@ -89,6 +103,13 @@ async function onOk() {
   }
   catch (e){
     console.error(e);
+    Notify.create({
+      message: `Error moving run ${props.run.name} to project ${selected_project.value.name}`,
+      color: 'negative',
+      spinner: false,
+      timeout: 4000,
+      position: 'top-right',
+    })
   }
   onDialogOK()
 }

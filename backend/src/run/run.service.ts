@@ -6,6 +6,7 @@ import { CreateRun } from './entities/create-run.dto';
 import Project from '../project/entities/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import { moveRunFilesInMinio } from '../minioHelper';
 
 @Injectable()
 export class RunService {
@@ -63,9 +64,14 @@ export class RunService {
       where: { uuid: runUUID },
       relations: ['project'],
     });
+    const old_project = run.project;
     run.project = await this.projectRepository.findOneOrFail({
       where: { uuid: projectUUID },
     });
+    await moveRunFilesInMinio(
+      `${old_project.name}/${run.name}`,
+      run.project.name,
+    );
     return this.runRepository.save(run);
   }
 }
