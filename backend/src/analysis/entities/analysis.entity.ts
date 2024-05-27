@@ -1,6 +1,8 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import Run from '../../run/entities/run.entity';
+import Token from '../../auth/entities/token.entity';
+import { JoinColumn } from 'typeorm/browser';
 
 export type ContainerLog = {
     timestamp: string;
@@ -24,4 +26,8 @@ export default class AnalysisRun extends BaseEntity {
 
     @Column({ type: 'json', nullable: true })
     logs: ContainerLog[];
+
+    @JoinColumn()
+    @OneToOne(() => AnalysisRun, (analysis) => analysis.token)
+    token: Token;
 }

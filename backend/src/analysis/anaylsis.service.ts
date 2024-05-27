@@ -3,20 +3,34 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import AnalysisRun from './entities/analysis.entity';
 import { SubmitAnalysisRun } from './entities/submit_analysis.dto';
+import Token from '../auth/entities/token.entity';
+import { TokenTypes } from '../enum';
 
 @Injectable()
 export class AnalysisService {
     constructor(
         @InjectRepository(AnalysisRun)
         private analysisRepository: Repository<AnalysisRun>,
+
+        @InjectRepository(Token)
+        private tokenRepository: Repository<Token>,
     ) {}
 
     async submit(data: SubmitAnalysisRun): Promise<AnalysisRun> {
+        const now = new Date();
+        const newToken = this.tokenRepository.create({
+            run: { uuid: data.runUUID },
+            tokenType: TokenTypes.CONTAINER,
+            deletedAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
+        });
+        const token = await this.tokenRepository.save(newToken);
+
         // TODO: write to the database
         let run_analysis = this.analysisRepository.create({
             run: { uuid: data.runUUID },
             state: 'PENDING',
             docker_image: data.docker_image,
+            token: token,
         });
 
         await this.analysisRepository.save(run_analysis);
