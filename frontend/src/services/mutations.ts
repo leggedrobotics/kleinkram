@@ -57,3 +57,13 @@ export const updateProject = async (projectUUID: string, name: string, descripti
   const response = await axios.put('/project/update', {name, description}, {params:{uuid: projectUUID}});
   return response.data as Project;
 }
+
+export const deleteProject = async (projectUUID: string) => {
+  const response = await axios.delete('/project/delete', {params:{uuid: projectUUID}});
+  return response.data;
+}
+
+export const moveRun = async (runUUID: string, projectUUID: string) => {
+  const response = await axios.post('/run/move', {}, {params:{runUUID, projectUUID}});
+  return response.data;
+}

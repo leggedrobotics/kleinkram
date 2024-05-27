@@ -376,11 +376,23 @@ export const getProject = async (uuid: string): Promise<Project> => {
     new Date(project.creator.updatedAt),
     new Date(project.creator.deletedAt)
   );
+  const runs: Run[] = project.runs.map((run: any) => {
+    return new Run(
+      run.uuid,
+      run.name,
+      undefined,
+      [],
+      undefined,
+      new Date(run.createdAt),
+      new Date(run.updatedAt),
+      new Date(run.deletedAt)
+    );
+  })
   return new Project(
     project.uuid,
     project.name,
     project.description,
-    [],
+    runs,
     creator,
     new Date(project.createdAt),
     new Date(project.updatedAt),

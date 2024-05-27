@@ -29,7 +29,7 @@
         />
       </div>
     </div>
-    <EditProject v-if="column_index===1" :project_uuid="crumbs[crumbs.length - 1].uuid" />
+    <EditProject v-if="column_index===1" :project_uuid="crumbs[crumbs.length - 1].uuid" @project-deleted="projectDeleted"/>
     <QTable
       ref="tableRef"
       v-model:pagination="pagination"
@@ -55,9 +55,15 @@
         <q-td :props="props">
           <q-btn
             color="primary"
+            label="Move"
+            style="margin-right: 5px"
+            @click="()=>move(props.row)"
+          />
+          <q-btn
+            color="primary"
             label="View"
             @click="()=>view_run(props.row)"
-          ></q-btn>
+          />
         </q-td>
       </template>
       <template v-slot:body-cell-fileaction="props">
@@ -86,6 +92,7 @@ import CreateProjectDialog from 'components/CreateProjectDialog.vue';
 import CreateRunDialog from 'components/CreateRunDialog.vue';
 import CreateFileDialog from 'components/CreateFileDialog.vue';
 import EditProject from 'components/EditProject.vue';
+import MoveRun from 'components/MoveRun.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 
@@ -118,6 +125,11 @@ const filesReturn = useQuery(
     enabled: filesQueryEnabled,
   }
 );
+
+function projectDeleted(){
+  column_index.value = 0;
+  crumbs.value = [{name: 'All', entity: undefined, type: 'Projects', uuid: ''}];
+}
 
 const currentData = computed(() => {
   if (column_index.value === 0) {
@@ -312,6 +324,16 @@ function refresh() {
   } else if(column_index.value === 2) {
     filesReturn.refetch();
   }
+}
+
+function move(run: Run) {
+  $q.dialog({
+    title: 'Move run',
+    component: MoveRun,
+    persistent: false,
+    style: 'max-width: 1500px',
+    componentProps: { run: run }
+  });
 }
 </script>
 

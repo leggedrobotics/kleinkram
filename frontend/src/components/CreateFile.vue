@@ -54,7 +54,7 @@
             </q-list>
           </q-btn-dropdown>
         </div>
-        <div class="col-1">
+        <div class="col-5">
           <div class="row" style="padding-bottom: 8px">
             <q-file outlined v-model="files" hint="Upload File" multiple accept=".bag, .mcap">
               <template v-slot:prepend>
@@ -197,7 +197,6 @@ const submitNewFile = async () => {
 
     })
     const cache = queryClient.getQueryCache();
-    console.log(cache.getAll())
     const filtered = cache.getAll().filter((query) => query.queryKey[0] === 'files' && query.queryKey[1] === selected_run.value?.uuid);
     filtered.forEach((query) => {
       console.log('Invalidating query', query.queryKey)

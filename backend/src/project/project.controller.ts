@@ -54,4 +54,10 @@ export class ProjectController {
   async clearProjects() {
     return this.projectService.clearProjects();
   }
+
+  @Delete('delete')
+  @LoggedIn()
+  async deleteProject(@Query('uuid') uuid: string) {
+    return this.projectService.deleteProject(uuid);
+  }
 }

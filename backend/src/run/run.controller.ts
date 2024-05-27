@@ -51,4 +51,13 @@ export class RunController {
   async clearRuns() {
     return this.runService.clearRuns();
   }
+
+  @Post('move')
+  @LoggedIn()
+  async moveRun(
+    @Query('runUUID') runUUID: string,
+    @Query('projectUUID') projectUUID: string,
+  ) {
+    return this.runService.moveRun(runUUID, projectUUID);
+  }
 }

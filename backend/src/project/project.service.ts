@@ -53,4 +53,8 @@ export class ProjectService {
   async clearProjects(): Promise<void> {
     await this.projectRepository.query('DELETE FROM "project"');
   }
+
+  async deleteProject(uuid: string): Promise<void> {
+    await this.projectRepository.delete(uuid);
+  }
 }

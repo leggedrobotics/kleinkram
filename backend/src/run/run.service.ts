@@ -57,4 +57,15 @@ export class RunService {
   async clearRuns(): Promise<void> {
     await this.runRepository.query('DELETE FROM "run"');
   }
+
+  async moveRun(runUUID: string, projectUUID: string): Promise<Run> {
+    const run = await this.runRepository.findOneOrFail({
+      where: { uuid: runUUID },
+      relations: ['project'],
+    });
+    run.project = await this.projectRepository.findOneOrFail({
+      where: { uuid: projectUUID },
+    });
+    return this.runRepository.save(run);
+  }
 }
