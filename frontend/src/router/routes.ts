@@ -34,6 +34,11 @@ const ROUTES: Record<string, RouteRecordRaw> = {
     component: () => import('layouts/MainLayout.vue'),
     children: [{path: '', component: () => import('pages/AnalysisPage.vue')}],
   },
+  ANALYSIS_DETAILS: {
+    path: '/analysis/:id',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{path: '', component: () => import('pages/AnalysisDetailsPage.vue')}],
+  },
 
   LANDING: {
     path: '/landing',

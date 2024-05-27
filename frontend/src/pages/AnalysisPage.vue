@@ -68,7 +68,7 @@
           <div class="col-5">
             <div class="row">
               <q-input v-model="image_name" outlined dense clearable label="Docker Image"
-                       hint="e.g., rsleth/run-alys:latest"/>
+                       hint="e.g., rslethz/run-alys:latest"/>
             </div>
           </div>
           <div class="col-1">
