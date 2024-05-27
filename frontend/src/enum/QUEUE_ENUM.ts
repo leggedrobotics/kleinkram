@@ -16,6 +16,6 @@ export enum AnalysisRunState {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
   DONE = 'DONE',
-  ERROR = 'ERROR',
+  FAILED = 'FAILED',
 
 }

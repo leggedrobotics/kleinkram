@@ -7,3 +7,7 @@ export class AnalysisRunQuery {
   projectUUID: string;
   run_uuids: string;
 }
+
+export class AnalysisRunDetailsQuery {
+  analysis_uuid: string;
+}

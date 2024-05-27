@@ -149,7 +149,7 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
 
     environment:
-      - GF_LOG_LEVEL=debug
+      - GF_LOG_LEVEL=critical
     ports:
       - '9050:3000' # localhost:9050 for accessing grafana
     networks:
