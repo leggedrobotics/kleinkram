@@ -7,8 +7,6 @@ import User from "./user.entity";
 
 @Entity()
 export default class File extends BaseEntity {
-  @Column()
-  identifier: string;
 
   @ManyToOne(() => Run, (run) => run.files)
   run: Run;

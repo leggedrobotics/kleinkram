@@ -116,12 +116,10 @@ export class FileEntity extends BaseEntity {
   date: Date;
   topics: Topic[];
   size: number;
-  identifier: string;
   creator: User;
 
   constructor(uuid: string,
               filename: string,
-              identifier: string,
               run: Run,
               creator: User,
               date: Date,
@@ -136,7 +134,6 @@ export class FileEntity extends BaseEntity {
     this.creator = creator;
     this.date = date;
     this.filename = filename;
-    this.identifier = identifier;
     this.topics = topics;
   }
 }
