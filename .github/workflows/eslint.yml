@@ -1,0 +1,22 @@
+on:
+  push:
+    branches: ['main', 'dev']
+
+jobs:
+    eslint:
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+        - name: Use Node.js
+          uses: actions/setup-node@v2
+          with:
+            node-version: '14'
+        - name: Install dependencies
+          run: npm install
+
+        - name: Run ESLint
+          run: yarn lint
+
+        - name: Run prettier
+          run: yarn prettier

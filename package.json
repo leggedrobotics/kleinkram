@@ -7,8 +7,7 @@
     },
     "scripts": {
         "start": "docker compose up --build -d",
-        "lint": "eslint .",
-        "init": "eslint --init",
+        "lint": "eslint .; (cd CLI && ./.venv/bin/python -m black .)",
         "prettier": "prettier --write .",
         "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines )"
     },
