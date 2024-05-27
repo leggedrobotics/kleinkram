@@ -119,7 +119,6 @@ export class FileProcessor implements OnModuleInit {
         const createdTopics = await Promise.all(res);
         console.log('creator', queue.creator)
         const newFile = this.fileRepository.create({
-          identifier,
           date,
           topics: createdTopics,
           creator: queue.creator,
@@ -195,7 +194,6 @@ export class FileProcessor implements OnModuleInit {
           const createdTopics = await Promise.all(res);
           logger.debug(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`);
           const newFile = this.fileRepository.create({
-            identifier: queue.identifier,
             date,
             topics: createdTopics,
             run: queue.run,

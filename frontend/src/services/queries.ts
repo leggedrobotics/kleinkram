@@ -71,7 +71,6 @@ export const fetchOverview = async (runName: string,
       const newFile = new FileEntity(
         file.uuid,
         file.filename,
-        file.identifier,
         run,
         user,
         new Date(file.date),
@@ -185,7 +184,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
     const newFile = new FileEntity(
       file.uuid,
       file.filename,
-      file.identifier,
       run,
       creator,
       new Date(file.date),
@@ -280,7 +278,6 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
       return new FileEntity(
         file.uuid,
         file.filename,
-        file.identifier,
         runEntity,
         fileCreator,
         new Date(file.date),
@@ -357,7 +354,6 @@ export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
     const newFile = new FileEntity(
       file.uuid,
       file.filename,
-      file.identifier,
       run,
       fileCreator,
       new Date(file.date),
