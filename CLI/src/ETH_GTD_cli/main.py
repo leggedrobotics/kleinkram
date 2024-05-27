@@ -1,5 +1,6 @@
 import os
 
+import httpx
 import typer
 from typing import List, Optional
 from typing_extensions import Annotated
@@ -72,7 +73,7 @@ def list_files(
                 for file in files_by_run_uuid[run]:
                     print(f"    - '{file['filename']}'")
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
 
@@ -89,7 +90,7 @@ def list_projects():
         for project in projects:
             print(f"- {project['name']}")
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(f"Failed to fetch projects: {e}")
 
 
@@ -122,9 +123,25 @@ def list_runs(
             for run in runs:
                 print(f"  - {run['name']}")
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
+@runs.command("byUUID")
+def run_by_uuid(
+    uuid: Annotated[str, typer.Argument()],
+):
+    try:
+        url = f"{API_URL}/run/byUUID"
+        response = client.get(url, params={"uuid": uuid})
+        response.raise_for_status()
+        data = response.json()
+        print(f"Run: {data['name']}")
+        print(f"Creator: {data['creator']['name']}")
+        table = Table("Filename", "Size", "date")
+        for file in data["files"]:
+            table.add_row(file["filename"], f"{file['size']}", file["date"])
+    except httpx.HTTPError as e:
+        print(f"Failed to fetch runs: {e}")
 
 @topics.command("list")
 def topics(
@@ -151,7 +168,7 @@ def topics(
                 )
             print(table)
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(f"Failed")
 
 
@@ -163,7 +180,7 @@ def create_project(name: Annotated[str, typer.Option()]):
         response.raise_for_status()
         print("Project created")
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(f"Failed to create project: {e}")
 
 
@@ -224,7 +241,7 @@ def upload(
         if len(presigned_urls) > 0:
             uploadFiles(presigned_urls, filepaths, 4)
 
-    except client.HTTPError as e:
+    except httpx.HTTPError as e:
         print(e)
 
 
@@ -329,6 +346,17 @@ def demote(email: Annotated[str, typer.Option()]):
     response.raise_for_status()
     print("User demoted.")
 
+
+@files.command("download")
+def download(
+        runuuid: Annotated[str, typer.Argument()],
+):
+    try:
+        response = client.get(f"{API_URL}/file/downloadWithToken", params={"uuid": runuuid})
+        response.raise_for_status()
+        print(response.json())
+    except:
+        print("Failed to download file")
 
 if __name__ == "__main__":
     app()

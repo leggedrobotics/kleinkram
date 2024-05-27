@@ -6,7 +6,7 @@ import AnalysisRun from '../../analysis/entities/analysis.entity';
 
 @Entity()
 export default class Token extends BaseEntity {
-    @Column()
+    @Column({ unique: true })
     @Generated('uuid')
     token: string;
 

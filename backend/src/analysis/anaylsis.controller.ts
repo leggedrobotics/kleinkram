@@ -15,7 +15,7 @@ export class AnalysisController {
     ) {}
 
     @Post('submit')
-    async createProject(@Body() dto: SubmitAnalysisRun) {
+    async createAnalysisRun(@Body() dto: SubmitAnalysisRun) {
         // TODO: validate input: similar to the frontend, we should validate the input
         // to ensure that the user has provided the necessary information to create a new project.
 

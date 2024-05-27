@@ -4,6 +4,8 @@ import time
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing_extensions import Annotated
+
 from pathlib import Path
 
 import httpx
@@ -64,7 +66,10 @@ class AuthenticatedClient(httpx.Client):
 
     def _load_cookies(self):
         tokens = get_token()
-        self.cookies.set("authtoken", tokens["access_token"])
+        if "cli_token" in tokens:
+            self.cookies.set("cli_token", tokens["cli_token"])
+        else:
+            self.cookies.set("authtoken", tokens["access_token"])
 
     def refresh_token(self):
         tokens = get_token()
@@ -98,20 +103,24 @@ class AuthenticatedClient(httpx.Client):
 client = AuthenticatedClient()
 
 
-def login():
-    print("Opening browser for authentication...")
-    webbrowser.open(API_URL + "/auth/google?state=cli")
+def login(token: Annotated[str, typer.Option()] = None):
+    if token:
+        with TOKEN_FILE.open("w") as token_file:
+            token_file.write(f"{{\"cli_token\": \"{token}\"}}")
+    else:
+        print("Opening browser for authentication...")
+        webbrowser.open(API_URL + "/auth/google?state=cli")
 
-    print("Waiting for authentication to complete...")
-    auth_tokens = get_auth_tokens()
+        print("Waiting for authentication to complete...")
+        auth_tokens = get_auth_tokens()
 
-    if not auth_tokens:
-        print("Failed to get authentication tokens.")
-        return
+        if not auth_tokens:
+            print("Failed to get authentication tokens.")
+            return
 
-    save_token(auth_tokens)
+        save_token(auth_tokens)
 
-    print("Authentication complete. Tokens saved to tokens.json.")
+        print("Authentication complete. Tokens saved to tokens.json.")
 
 
 def save_token(tokens):

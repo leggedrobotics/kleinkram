@@ -15,6 +15,13 @@ export enum UserRole {
     USER = 'USER',
 }
 
+export enum AnalysisState {
+    PENDING = 'PENDING',
+    PROCESSING = 'PROCESSING',
+    DONE = 'DONE',
+    ERROR = 'ERROR',
+}
+
 export enum TokenTypes {
     CONTAINER = 'CONTAINER',
 }

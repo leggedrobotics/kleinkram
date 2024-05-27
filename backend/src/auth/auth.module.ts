@@ -9,10 +9,16 @@ import { JwtModule } from '@nestjs/jwt';
 import User from '../user/entities/user.entity';
 import env from '../env';
 import { JwtStrategy } from './jwt.strategy';
-import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
+import {
+    AdminOnlyGuard,
+    LoggedInUserGuard,
+    TokenOrUserGuard,
+} from './roles.guard';
+import Token from './entities/token.entity';
 
 @Module({
     imports: [
+        TypeOrmModule.forFeature([Token, User]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: async () => ({
@@ -20,7 +26,6 @@ import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
                 signOptions: { expiresIn: '60m' },
             }),
         }),
-        TypeOrmModule.forFeature([User]),
     ],
     providers: [
         AuthService,
@@ -29,8 +34,9 @@ import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
         JwtStrategy,
         AdminOnlyGuard,
         LoggedInUserGuard,
+        TokenOrUserGuard,
     ],
     controllers: [AuthController],
-    exports: [AdminOnlyGuard, LoggedInUserGuard],
+    exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
 export class AuthModule {}

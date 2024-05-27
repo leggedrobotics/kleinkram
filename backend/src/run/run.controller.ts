@@ -6,10 +6,11 @@ import {
     Param,
     Post,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 import { RunService } from './run.service';
 import { CreateRun } from './entities/create-run.dto';
-import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn, TokenOrUser } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('run')
@@ -38,6 +39,12 @@ export class RunController {
     @LoggedIn()
     async getRunByName(@Query('name') name: string) {
         return this.runService.findOneByName(name);
+    }
+
+    @Get('byUUID')
+    @TokenOrUser()
+    async getRunByUUID(@Query('uuid') uuid: string) {
+        return this.runService.findOneByUUID(uuid);
     }
 
     @Get('filteredByProjectName/:projectName')

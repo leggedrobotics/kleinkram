@@ -58,6 +58,13 @@ export class RunService {
         return this.runRepository.findOne({ where: { name } });
     }
 
+    async findOneByUUID(uuid: string): Promise<Run> {
+        return this.runRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['project', 'files', 'creator', 'files.topics'],
+        });
+    }
+
     async clearRuns(): Promise<void> {
         await this.runRepository.query('DELETE FROM "run"');
     }

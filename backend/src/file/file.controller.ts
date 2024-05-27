@@ -10,7 +10,7 @@ import {
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
-import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import { AdminOnly, LoggedIn, TokenOrUser } from '../auth/roles.decorator';
 
 @Controller('file')
 export class FileController {
@@ -65,6 +65,13 @@ export class FileController {
     ) {
         logger.debug('download', uuid, expires);
         return this.fileService.generateDownload(uuid, expires);
+    }
+
+    @Get('downloadWithToken')
+    @TokenOrUser()
+    async downloadWithToken(@Query('uuid') uuid: string) {
+        logger.debug('downloadWithToken', uuid);
+        return this.fileService.generateDownloadForToken(uuid);
     }
 
     @Get('one')

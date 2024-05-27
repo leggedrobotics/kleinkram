@@ -162,13 +162,32 @@ export class FileService {
     async generateDownload(uuid: string, expires: boolean) {
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
+            relations: ['run', 'run.project'],
         });
         return await minio.presignedUrl(
             'GET',
             env.MINIO_BAG_BUCKET_NAME,
-            file.filename,
+            `${file.run.project.name}/${file.run.name}/${file.filename}`,
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
         );
+    }
+
+    async generateDownloadForToken(runUUID: string) {
+        const run = await this.runRepository.findOneOrFail({
+            where: { uuid: runUUID },
+            relations: ['files', 'project'],
+        });
+        const urls = await Promise.all(
+            run.files.map((f) =>
+                minio.presignedUrl(
+                    'GET',
+                    env.MINIO_BAG_BUCKET_NAME,
+                    `${run.project.name}/${run.name}/${f.filename}`,
+                    4 * 60 * 60,
+                ),
+            ),
+        );
+        return urls;
     }
 
     async clear() {

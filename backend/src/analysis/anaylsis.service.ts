@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import AnalysisRun from './entities/analysis.entity';
 import { SubmitAnalysisRun } from './entities/submit_analysis.dto';
 import Token from '../auth/entities/token.entity';
-import { TokenTypes } from '../enum';
+import { AnalysisState, TokenTypes } from '../enum';
 
 @Injectable()
 export class AnalysisService {
@@ -17,6 +17,8 @@ export class AnalysisService {
     ) {}
 
     async submit(data: SubmitAnalysisRun): Promise<AnalysisRun> {
+        // TODO: write to the database
+
         const now = new Date();
         const newToken = this.tokenRepository.create({
             run: { uuid: data.runUUID },
@@ -25,15 +27,13 @@ export class AnalysisService {
         });
         const token = await this.tokenRepository.save(newToken);
 
-        // TODO: write to the database
         let run_analysis = this.analysisRepository.create({
             run: { uuid: data.runUUID },
-            state: 'PENDING',
+            state: AnalysisState.PENDING,
             docker_image: data.docker_image,
             token: token,
         });
-
-        await this.analysisRepository.save(run_analysis);
+        const saved_analysis = await this.analysisRepository.save(run_analysis);
 
         // return the created analysis run
         run_analysis = await this.analysisRepository.findOne({

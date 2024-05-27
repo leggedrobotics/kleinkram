@@ -8,9 +8,12 @@ import Topic from '../topic/entities/topic.entity';
 import Run from '../run/entities/run.entity';
 import Project from '../project/entities/project.entity';
 import User from '../user/entities/user.entity';
+import Token from '../auth/entities/token.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Run, File, Topic, Project, User])],
+    imports: [
+        TypeOrmModule.forFeature([Run, File, Topic, Project, User, Token]),
+    ],
     providers: [FileService, TopicService],
     controllers: [FileController],
     exports: [FileService],

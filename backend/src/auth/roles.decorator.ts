@@ -1,5 +1,10 @@
 import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
-import { PublicGuard, LoggedInUserGuard, AdminOnlyGuard } from './roles.guard';
+import {
+    PublicGuard,
+    LoggedInUserGuard,
+    AdminOnlyGuard,
+    TokenOrUserGuard,
+} from './roles.guard';
 
 // Public route decorator
 export function Public() {
@@ -22,5 +27,12 @@ export function AdminOnly() {
     return applyDecorators(
         SetMetadata('isAdmin', true),
         UseGuards(AdminOnlyGuard),
+    );
+}
+
+export function TokenOrUser() {
+    return applyDecorators(
+        SetMetadata('isTokenOrUser', true),
+        UseGuards(TokenOrUserGuard),
     );
 }

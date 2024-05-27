@@ -4,14 +4,16 @@ import {
     ExecutionContext,
     UnauthorizedException,
     ForbiddenException,
+    Type,
+    mixin,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { UserService } from '../user/user.service';
 import { UserRole } from '../enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
+import Token from './entities/token.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -21,16 +23,43 @@ export class PublicGuard implements CanActivate {
 }
 
 @Injectable()
-export class LoggedInUserGuard extends AuthGuard('jwt') {
-    canActivate(context: ExecutionContext) {
-        return super.canActivate(context);
+export class TokenOrUserGuard extends AuthGuard('jwt') {
+    constructor(
+        @InjectRepository(Token) private tokenRepository: Repository<Token>,
+        private reflector: Reflector,
+    ) {
+        super();
     }
 
-    handleRequest(err, user, info) {
-        if (err || !user) {
-            throw err || new UnauthorizedException();
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        if (request.cookies['cli_token']) {
+            // const token = await this.tokenRepository.find();
+            const token = await this.tokenRepository.findOne({
+                where: {
+                    token: request.cookies['cli_token'],
+                },
+                relations: ['run'],
+            });
+            if (request.query.uuid != token.run.uuid) {
+                throw new ForbiddenException('Invalid token');
+            }
+        } else {
+            await super.canActivate(context);
         }
-        return user;
+        return true;
+    }
+}
+
+@Injectable()
+export class LoggedInUserGuard extends AuthGuard('jwt') {
+    constructor(private reflector: Reflector) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context);
+        return true;
     }
 }
 
