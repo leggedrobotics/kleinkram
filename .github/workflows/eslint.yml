@@ -13,7 +13,7 @@ jobs:
           with:
             node-version: '14'
         - name: Install dependencies
-          run: npm install
+          run: yarn install
 
         - name: Run ESLint
           run: yarn lint
