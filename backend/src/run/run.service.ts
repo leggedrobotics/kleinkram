@@ -10,68 +10,78 @@ import { moveRunFilesInMinio } from '../minioHelper';
 
 @Injectable()
 export class RunService {
-  constructor(
-    @InjectRepository(Run) private runRepository: Repository<Run>,
-    @InjectRepository(Project) private projectRepository: Repository<Project>,
-    @InjectRepository(User) private userRepository: Repository<User>,
-  ) {}
+    constructor(
+        @InjectRepository(Run) private runRepository: Repository<Run>,
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
+        @InjectRepository(User) private userRepository: Repository<User>,
+    ) {}
 
-  async create(createRun: CreateRun, user: JWTUser): Promise<Run> {
-    const creator = await this.userRepository.findOneOrFail({
-      where: { googleId: user.userId },
-    });
-    const project = await this.projectRepository.findOneOrFail({
-      where: { uuid: createRun.projectUUID },
-    });
-    const run = this.runRepository.create({
-      name: createRun.name,
-      project: project,
-      creator,
-    });
-    const newRun = await this.runRepository.save(run);
-    return this.runRepository.findOneOrFail({ where: { uuid: newRun.uuid } });
-  }
+    async create(createRun: CreateRun, user: JWTUser): Promise<Run> {
+        const creator = await this.userRepository.findOneOrFail({
+            where: { googleId: user.userId },
+        });
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid: createRun.projectUUID },
+        });
+        const run = this.runRepository.create({
+            name: createRun.name,
+            project: project,
+            creator,
+        });
+        const newRun = await this.runRepository.save(run);
+        return this.runRepository.findOneOrFail({
+            where: { uuid: newRun.uuid },
+        });
+    }
 
-  async findRunByProject(projectUUID: string): Promise<Run[]> {
-    return await this.runRepository.find({
-      where: { project: { uuid: projectUUID } },
-      relations: ['project', 'files', 'creator', 'files.creator'],
-    });
-  }
+    async findRunByProject(projectUUID: string): Promise<Run[]> {
+        return await this.runRepository.find({
+            where: { project: { uuid: projectUUID } },
+            relations: ['project', 'files', 'creator', 'files.creator'],
+        });
+    }
 
-  async filteredByProjectName(projectName: string): Promise<Run[]> {
-    const project = await this.projectRepository.findOneOrFail({
-      where: { name: projectName },
-      relations: ['runs', 'runs.project', 'runs.creator'],
-    });
-    return project.runs;
-  }
+    async filteredByProjectName(projectName: string): Promise<Run[]> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { name: projectName },
+            relations: ['runs', 'runs.project', 'runs.creator'],
+        });
+        return project.runs;
+    }
 
-  async findAll(): Promise<Run[]> {
-    return this.runRepository.find({ relations: ['project'] });
-  }
+    async findAll(): Promise<Run[]> {
+        return this.runRepository.find({ relations: ['project'] });
+    }
 
-  async findOneByName(name: string): Promise<Run> {
-    return this.runRepository.findOne({ where: { name } });
-  }
+    async findOneByName(name: string): Promise<Run> {
+        return this.runRepository.findOne({ where: { name } });
+    }
 
-  async clearRuns(): Promise<void> {
-    await this.runRepository.query('DELETE FROM "run"');
-  }
+    async findOneByUUID(uuid: string): Promise<Run> {
+        return this.runRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['project', 'files', 'creator', 'files.topics'],
+        });
+    }
 
-  async moveRun(runUUID: string, projectUUID: string): Promise<Run> {
-    const run = await this.runRepository.findOneOrFail({
-      where: { uuid: runUUID },
-      relations: ['project'],
-    });
-    const old_project = run.project;
-    run.project = await this.projectRepository.findOneOrFail({
-      where: { uuid: projectUUID },
-    });
-    await moveRunFilesInMinio(
-      `${old_project.name}/${run.name}`,
-      run.project.name,
-    );
-    return this.runRepository.save(run);
-  }
+    async clearRuns(): Promise<void> {
+        await this.runRepository.query('DELETE FROM "run"');
+    }
+
+    async moveRun(runUUID: string, projectUUID: string): Promise<Run> {
+        const run = await this.runRepository.findOneOrFail({
+            where: { uuid: runUUID },
+            relations: ['project'],
+        });
+        const old_project = run.project;
+        run.project = await this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+        });
+        await moveRunFilesInMinio(
+            `${old_project.name}/${run.name}`,
+            run.project.name,
+        );
+        return this.runRepository.save(run);
+    }
 }

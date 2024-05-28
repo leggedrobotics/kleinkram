@@ -6,21 +6,21 @@ import User from '../../user/entities/user.entity';
 
 @Entity()
 export default class File extends BaseEntity {
-  @ManyToOne(() => Run, (run) => run.files)
-  run: Run;
+    @ManyToOne(() => Run, (run) => run.files)
+    run: Run;
 
-  @Column()
-  date: Date;
+    @Column()
+    date: Date;
 
-  @OneToMany(() => Topic, (topic) => topic.run, { cascade: ['remove'] })
-  topics: Topic[];
+    @OneToMany(() => Topic, (topic) => topic.run, { cascade: ['remove'] })
+    topics: Topic[];
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string;
 
-  @Column({ type: 'bigint' })
-  size: number;
+    @Column({ type: 'bigint' })
+    size: number;
 
-  @ManyToOne(() => User, (user) => user.files)
-  creator: User;
+    @ManyToOne(() => User, (user) => user.files)
+    creator: User;
 }

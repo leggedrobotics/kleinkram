@@ -6,35 +6,35 @@ import { addJWTUser } from '../auth/paramDecorator';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+    constructor(private readonly userService: UserService) {}
 
-  @Post('claimAdmin')
-  @LoggedIn()
-  async claimAdmin(@addJWTUser() user?: JWTUser) {
-    return this.userService.claimAdmin(user);
-  }
+    @Post('claimAdmin')
+    @LoggedIn()
+    async claimAdmin(@addJWTUser() user?: JWTUser) {
+        return this.userService.claimAdmin(user);
+    }
 
-  @Get('all')
-  @LoggedIn()
-  async allUsers() {
-    return this.userService.findAll();
-  }
+    @Get('all')
+    @LoggedIn()
+    async allUsers() {
+        return this.userService.findAll();
+    }
 
-  @Get('me')
-  @LoggedIn()
-  async me(@addJWTUser() user?: JWTUser) {
-    return this.userService.me(user);
-  }
+    @Get('me')
+    @LoggedIn()
+    async me(@addJWTUser() user?: JWTUser) {
+        return this.userService.me(user);
+    }
 
-  @Post('promote')
-  @AdminOnly()
-  async promoteUser(@Body() bd: { email: string }) {
-    return this.userService.promoteUser(bd.email);
-  }
+    @Post('promote')
+    @AdminOnly()
+    async promoteUser(@Body() bd: { email: string }) {
+        return this.userService.promoteUser(bd.email);
+    }
 
-  @Post('demote')
-  @AdminOnly()
-  async demoteUser(@Body() bd: { email: string }) {
-    return this.userService.demoteUser(bd.email);
-  }
+    @Post('demote')
+    @AdminOnly()
+    async demoteUser(@Body() bd: { email: string }) {
+        return this.userService.demoteUser(bd.email);
+    }
 }

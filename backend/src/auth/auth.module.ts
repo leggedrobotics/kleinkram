@@ -9,28 +9,34 @@ import { JwtModule } from '@nestjs/jwt';
 import User from '../user/entities/user.entity';
 import env from '../env';
 import { JwtStrategy } from './jwt.strategy';
-import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
-
-@Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      useFactory: async () => ({
-        secret: env.JWT_SECRET,
-        signOptions: { expiresIn: '60m' },
-      }),
-    }),
-    TypeOrmModule.forFeature([User]),
-  ],
-  providers: [
-    AuthService,
-    GoogleStrategy,
-    UserService,
-    JwtStrategy,
+import {
     AdminOnlyGuard,
     LoggedInUserGuard,
-  ],
-  controllers: [AuthController],
-  exports: [AdminOnlyGuard, LoggedInUserGuard],
+    TokenOrUserGuard,
+} from './roles.guard';
+import Token from './entities/token.entity';
+
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([Token, User]),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.registerAsync({
+            useFactory: async () => ({
+                secret: env.JWT_SECRET,
+                signOptions: { expiresIn: '60m' },
+            }),
+        }),
+    ],
+    providers: [
+        AuthService,
+        GoogleStrategy,
+        UserService,
+        JwtStrategy,
+        AdminOnlyGuard,
+        LoggedInUserGuard,
+        TokenOrUserGuard,
+    ],
+    controllers: [AuthController],
+    exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
 export class AuthModule {}

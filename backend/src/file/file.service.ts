@@ -11,172 +11,194 @@ import Topic from '../topic/entities/topic.entity';
 
 @Injectable()
 export class FileService {
-  constructor(
-    @InjectRepository(File) private fileRepository: Repository<File>,
-    @InjectRepository(Run) private runRepository: Repository<Run>,
-    @InjectRepository(Project) private projectRepository: Repository<Project>,
-    @InjectRepository(Topic) private topicRepository: Repository<Topic>,
-  ) {}
+    constructor(
+        @InjectRepository(File) private fileRepository: Repository<File>,
+        @InjectRepository(Run) private runRepository: Repository<Run>,
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
+        @InjectRepository(Topic) private topicRepository: Repository<Topic>,
+    ) {}
 
-  async findAll() {
-    return this.fileRepository.find({ relations: ['run'] });
-  }
+    async findAll() {
+        return this.fileRepository.find({ relations: ['run'] });
+    }
 
-  async findFilteredByNames(
-    projectName: string,
-    runName: string,
-    topics: string[],
-  ) {
-    // Start building your query with basic filters
-    const query = this.fileRepository
-      .createQueryBuilder('file')
-      .select('file.uuid')
-      .leftJoin('file.run', 'run')
-      .leftJoin('file.topics', 'topic')
-      .leftJoin('run.project', 'project');
-    if (projectName) {
-      query.andWhere('project.name = :projectName', { projectName });
-    }
-    if (runName) {
-      query.andWhere('run.name = :runName', { runName });
-    }
-    if (topics && topics.length > 0) {
-      query.andWhere('topic.name IN (:...topics)', { topics });
+    async findFilteredByNames(
+        projectName: string,
+        runName: string,
+        topics: string[],
+    ) {
+        // Start building your query with basic filters
+        const query = this.fileRepository
+            .createQueryBuilder('file')
+            .select('file.uuid')
+            .leftJoin('file.run', 'run')
+            .leftJoin('file.topics', 'topic')
+            .leftJoin('run.project', 'project');
+        if (projectName) {
+            query.andWhere('project.name = :projectName', { projectName });
+        }
+        if (runName) {
+            query.andWhere('run.name = :runName', { runName });
+        }
+        if (topics && topics.length > 0) {
+            query.andWhere('topic.name IN (:...topics)', { topics });
 
-      query.groupBy('file.uuid').having('COUNT(file.uuid) = :topicCount', {
-        topicCount: topics.length,
-      });
-    } // Execute the query
-    const fileIds = await query.getMany();
-    if (fileIds.length === 0) {
-      return [];
-    }
-    const fileIdsArray = fileIds.map((file) => file.uuid);
-    return await this.fileRepository
-      .createQueryBuilder('file')
-      .leftJoinAndSelect('file.run', 'run')
-      .leftJoinAndSelect('run.project', 'project')
-      .leftJoinAndSelect('file.topics', 'topic')
-      .leftJoinAndSelect('file.creator', 'creator')
+            query
+                .groupBy('file.uuid')
+                .having('COUNT(file.uuid) = :topicCount', {
+                    topicCount: topics.length,
+                });
+        } // Execute the query
+        const fileIds = await query.getMany();
+        if (fileIds.length === 0) {
+            return [];
+        }
+        const fileIdsArray = fileIds.map((file) => file.uuid);
+        return await this.fileRepository
+            .createQueryBuilder('file')
+            .leftJoinAndSelect('file.run', 'run')
+            .leftJoinAndSelect('run.project', 'project')
+            .leftJoinAndSelect('file.topics', 'topic')
+            .leftJoinAndSelect('file.creator', 'creator')
 
-      .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-      .getMany();
-  }
+            .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .getMany();
+    }
 
-  async findFiltered(
-    fileName: string,
-    projectUUID: string,
-    runUUID: string,
-    startDate: string,
-    endDate: string,
-    topics: string,
-    and_or: boolean,
-  ) {
-    // Start building your query with basic filters
-    const query = this.fileRepository
-      .createQueryBuilder('file')
-      .select('file.uuid')
-      .leftJoin('file.run', 'run')
-      .leftJoin('file.topics', 'topic')
-      .leftJoin('run.project', 'project');
-    // Apply filters for fileName, projectUUID, and date
-    if (fileName) {
-      query.andWhere('file.filename LIKE :fileName', {
-        fileName: `%${fileName}%`,
-      });
-    }
-    if (projectUUID) {
-      query.andWhere('project.uuid = :projectUUID', { projectUUID });
-    }
-    if (runUUID) {
-      query.andWhere('run.uuid = :runUUID', { runUUID });
-    }
-    if (startDate && endDate) {
-      query.andWhere('file.date BETWEEN :startDate AND :endDate', {
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-      });
-    }
-    const splitTopics = topics.split(',');
-    if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
-      query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
-    }
-    query.groupBy('file.uuid');
+    async findFiltered(
+        fileName: string,
+        projectUUID: string,
+        runUUID: string,
+        startDate: string,
+        endDate: string,
+        topics: string,
+        and_or: boolean,
+    ) {
+        // Start building your query with basic filters
+        const query = this.fileRepository
+            .createQueryBuilder('file')
+            .select('file.uuid')
+            .leftJoin('file.run', 'run')
+            .leftJoin('file.topics', 'topic')
+            .leftJoin('run.project', 'project');
+        // Apply filters for fileName, projectUUID, and date
+        if (fileName) {
+            query.andWhere('file.filename LIKE :fileName', {
+                fileName: `%${fileName}%`,
+            });
+        }
+        if (projectUUID) {
+            query.andWhere('project.uuid = :projectUUID', { projectUUID });
+        }
+        if (runUUID) {
+            query.andWhere('run.uuid = :runUUID', { runUUID });
+        }
+        if (startDate && endDate) {
+            query.andWhere('file.date BETWEEN :startDate AND :endDate', {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
+        }
+        const splitTopics = topics.split(',');
+        if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
+            query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
+        }
+        query.groupBy('file.uuid');
 
-    if (and_or) {
-      query.having('COUNT(file.uuid) = :topicCount', {
-        topicCount: splitTopics.length,
-      });
+        if (and_or) {
+            query.having('COUNT(file.uuid) = :topicCount', {
+                topicCount: splitTopics.length,
+            });
+        }
+        // Execute the query
+        const fileIds = await query.getMany();
+        if (fileIds.length === 0) {
+            return [];
+        }
+        const fileIdsArray = fileIds.map((file) => file.uuid);
+        return await this.fileRepository
+            .createQueryBuilder('file')
+            .leftJoinAndSelect('file.run', 'run')
+            .leftJoinAndSelect('run.project', 'project')
+            .leftJoinAndSelect('file.topics', 'topic')
+            .leftJoinAndSelect('file.creator', 'creator')
+            .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .getMany();
     }
-    // Execute the query
-    const fileIds = await query.getMany();
-    if (fileIds.length === 0) {
-      return [];
+
+    async findOne(uuid: string) {
+        return this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['run', 'topics', 'run.project', 'creator'],
+        });
     }
-    const fileIdsArray = fileIds.map((file) => file.uuid);
-    return await this.fileRepository
-      .createQueryBuilder('file')
-      .leftJoinAndSelect('file.run', 'run')
-      .leftJoinAndSelect('run.project', 'project')
-      .leftJoinAndSelect('file.topics', 'topic')
-      .leftJoinAndSelect('file.creator', 'creator')
-      .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-      .getMany();
-  }
 
-  async findOne(uuid: string) {
-    return this.fileRepository.findOne({
-      where: { uuid },
-      relations: ['run', 'topics', 'run.project', 'creator'],
-    });
-  }
-
-  async findByFilename(filename: string) {
-    return this.fileRepository.findOne({
-      where: { filename },
-      relations: ['run', 'topics', 'run.project'],
-    });
-  }
-
-  async update(uuid: string, file: UpdateFile) {
-    const db_file = await this.fileRepository.findOne({ where: { uuid } });
-    db_file.filename = file.filename;
-    db_file.date = file.date;
-    if (file.run) {
-      db_file.run = await this.runRepository.findOne({
-        where: { uuid: file.run.uuid },
-      });
+    async findByFilename(filename: string) {
+        return this.fileRepository.findOne({
+            where: { filename },
+            relations: ['run', 'topics', 'run.project'],
+        });
     }
-    if (file.project) {
-      db_file.run.project = await this.projectRepository.findOne({
-        where: { uuid: file.project.uuid },
-      });
+
+    async update(uuid: string, file: UpdateFile) {
+        const db_file = await this.fileRepository.findOne({ where: { uuid } });
+        db_file.filename = file.filename;
+        db_file.date = file.date;
+        if (file.run) {
+            db_file.run = await this.runRepository.findOne({
+                where: { uuid: file.run.uuid },
+            });
+        }
+        if (file.project) {
+            db_file.run.project = await this.projectRepository.findOne({
+                where: { uuid: file.project.uuid },
+            });
+        }
+        await this.fileRepository.save(db_file);
+        return this.fileRepository.findOne({ where: { uuid } });
     }
-    await this.fileRepository.save(db_file);
-    return this.fileRepository.findOne({ where: { uuid } });
-  }
 
-  async generateDownload(uuid: string, expires: boolean) {
-    const file = await this.fileRepository.findOneOrFail({
-      where: { uuid },
-    });
-    return await minio.presignedUrl(
-      'GET',
-      env.MINIO_BAG_BUCKET_NAME,
-      file.filename,
-      expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
-    );
-  }
+    async generateDownload(uuid: string, expires: boolean) {
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['run', 'run.project'],
+        });
+        return await minio.presignedUrl(
+            'GET',
+            env.MINIO_BAG_BUCKET_NAME,
+            `${file.run.project.name}/${file.run.name}/${file.filename}`,
+            expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
+        );
+    }
 
-  async clear() {
-    await this.topicRepository.query('DELETE FROM "topic"');
-    await this.fileRepository.query('DELETE FROM "file"');
-  }
+    async generateDownloadForToken(runUUID: string) {
+        const run = await this.runRepository.findOneOrFail({
+            where: { uuid: runUUID },
+            relations: ['files', 'project'],
+        });
+        const urls = await Promise.all(
+            run.files.map((f) =>
+                minio.presignedUrl(
+                    'GET',
+                    env.MINIO_BAG_BUCKET_NAME,
+                    `${run.project.name}/${run.name}/${f.filename}`,
+                    4 * 60 * 60,
+                ),
+            ),
+        );
+        return urls;
+    }
 
-  async findByRun(runUUID: string) {
-    return this.fileRepository.find({
-      where: { run: { uuid: runUUID } },
-      relations: ['run', 'topics', 'creator', 'run.creator'],
-    });
-  }
+    async clear() {
+        await this.topicRepository.query('DELETE FROM "topic"');
+        await this.fileRepository.query('DELETE FROM "file"');
+    }
+
+    async findByRun(runUUID: string) {
+        return this.fileRepository.find({
+            where: { run: { uuid: runUUID } },
+            relations: ['run', 'topics', 'creator', 'run.creator'],
+        });
+    }
 }

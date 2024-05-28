@@ -16,36 +16,39 @@ import { PassportModule } from '@nestjs/passport';
 import { AnalysisModule } from './analysis/analysisModule';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [configuration],
-    }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) =>
-        ({
-          type: 'postgres',
-          host: configService.getOrThrow<string>('database.host'),
-          port: configService.getOrThrow<number>('database.port'),
-          username: configService.getOrThrow<string>('database.username'),
-          password: configService.getOrThrow<string>('database.password'),
-          database: configService.getOrThrow<string>('database.database'),
-          entities: [configService.getOrThrow<string>('entities')],
-          synchronize: env.DEV,
-          logging: ['warn', 'error'],
-        }) as PostgresConnectionOptions,
-      inject: [ConfigService],
-    }),
-    FileModule,
-    ProjectModule,
-    TopicModule,
-    RunModule,
-    QueueModule,
-    UserModule,
-    AuthModule,
-    PassportModule,
-    AnalysisModule,
-  ],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [configuration],
+        }),
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) =>
+                ({
+                    type: 'postgres',
+                    host: configService.getOrThrow<string>('database.host'),
+                    port: configService.getOrThrow<number>('database.port'),
+                    username:
+                        configService.getOrThrow<string>('database.username'),
+                    password:
+                        configService.getOrThrow<string>('database.password'),
+                    database:
+                        configService.getOrThrow<string>('database.database'),
+                    entities: [configService.getOrThrow<string>('entities')],
+                    synchronize: env.DEV,
+                    logging: ['warn', 'error'],
+                }) as PostgresConnectionOptions,
+            inject: [ConfigService],
+        }),
+        FileModule,
+        ProjectModule,
+        TopicModule,
+        RunModule,
+        QueueModule,
+        UserModule,
+        AuthModule,
+        PassportModule,
+        AnalysisModule,
+    ],
 })
 export class AppModule {}

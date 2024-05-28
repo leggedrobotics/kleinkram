@@ -7,27 +7,28 @@ import e from 'express';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(private authService: AuthService) {
-    super({
-      clientID: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${env.ENDPOINT}/auth/google/callback`,
-      scope: ['email', 'profile'],
-    });
-  }
+    constructor(private authService: AuthService) {
+        super({
+            clientID: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+            callbackURL: `${env.ENDPOINT}/auth/google/callback`,
+            scope: ['email', 'profile'],
+        });
+    }
 
-  authenticate(req: e.Request, options?: any) {
-    options.state = req.query.state;
-    super.authenticate(req, options);
-  }
+    authenticate(req: e.Request, options?: any) {
+        options.state = req.query.state;
+        super.authenticate(req, options);
+    }
 
-  async validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: any,
-    done: VerifyCallback,
-  ): Promise<any> {
-    const user = await this.authService.validateAndCreateUserByGoogle(profile);
-    done(null, user);
-  }
+    async validate(
+        accessToken: string,
+        refreshToken: string,
+        profile: any,
+        done: VerifyCallback,
+    ): Promise<any> {
+        const user =
+            await this.authService.validateAndCreateUserByGoogle(profile);
+        done(null, user);
+    }
 }
