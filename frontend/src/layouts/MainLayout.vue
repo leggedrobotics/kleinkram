@@ -108,9 +108,8 @@
             class="text-white bg-red fixed-bottom"
             style="min-height: 10px"
         >
-            <div class="flex flex-center">
-                DEVELOPMENT SYSTEM v{{ ENV.VERSION }}: Data will be reset
-                without notice. Build: {{ BUILD_INFO.version }} ({{ BUILD_INFO.timestamp }}) - {{ BUILD_INFO.git.branch }} - {{ BUILD_INFO.git.hash }}
+            <div class="flex flex-center text-center">
+                Data will be reset without notice! <br> Build: {{ BUILD_INFO.version }} ({{ BUILD_INFO.timestamp }}) - {{ BUILD_INFO.git.branch }} - {{ BUILD_INFO.git.hash }}
             </div>
         </q-banner>
     </q-layout>
