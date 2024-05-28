@@ -10,12 +10,14 @@ version=$(node -pe "require('./package.json').version")
 if [ -f ".git/HEAD" ]; then
   git_commit=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2))
   git_branch=$(cat .git/HEAD | cut -d'/' -f3)
+  git_commit="${git_commit:0:8}"
+
 else # set default values
   git_commit="unknown"
   git_branch="unknown"
 fi
 
-echo "Building version ${version} from branch ${git_branch} with commit ${git_commit}"
+
 
 build_info="
 const build = {
@@ -24,7 +26,7 @@ const build = {
     message: null,
     git: {
         branch: \"${git_branch}\",
-        hash: \"${git_commit:0:8}\"
+        hash: \"${git_commit}\"
     }
 };
 
