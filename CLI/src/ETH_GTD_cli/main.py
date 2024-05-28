@@ -7,8 +7,6 @@ from typing_extensions import Annotated
 from rich import print
 from rich.table import Table
 
-
-from .consts import API_URL
 from .helper import uploadFiles, expand_and_match
 
 from .auth import login, client, endpoint
@@ -29,6 +27,7 @@ app.add_typer(queue)
 app.add_typer(user)
 app.command()(login)
 app.command()(endpoint)
+
 
 @files.command("list")
 def list_files(
@@ -83,7 +82,7 @@ def list_projects():
     List all projects.
     """
     try:
-        response = client.get(f"{API_URL}/project")
+        response = client.get("/project")
         response.raise_for_status()
         projects = response.json()
         print("Projects:")
@@ -102,7 +101,7 @@ def list_runs(
     List all runs with optional filter for project.
     """
     try:
-        url = f"{API_URL}/run"
+        url = "/run"
         if project:
             url += f"/filteredByProjectName/{project}"
         else:
@@ -126,12 +125,13 @@ def list_runs(
     except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
+
 @runs.command("byUUID")
 def run_by_uuid(
     uuid: Annotated[str, typer.Argument()],
 ):
     try:
-        url = f"{API_URL}/run/byUUID"
+        url = "/run/byUUID"
         response = client.get(url, params={"uuid": uuid})
         response.raise_for_status()
         data = response.json()
@@ -143,13 +143,14 @@ def run_by_uuid(
     except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
+
 @topics.command("list")
 def topics(
     file: Annotated[str, typer.Option()] = None,
     full: Annotated[bool, typer.Option()] = False,
 ):
     try:
-        url = API_URL + "/file/byName"
+        url = "/file/byName"
         response = client.get(url, params={"name": file})
         response.raise_for_status()
         data = response.json()
@@ -175,7 +176,7 @@ def topics(
 @projects.command("create")
 def create_project(name: Annotated[str, typer.Option()]):
     try:
-        url = API_URL + "/project/create"
+        url = "/project/create"
         response = client.post(url, json={"name": name})
         response.raise_for_status()
         print("Project created")
@@ -198,7 +199,7 @@ def upload(
             filepaths[path.split("/")[-1]] = path
             print(f"  - {path}")
     try:
-        get_project_url = API_URL + "/project/byName"
+        get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
         project_response.raise_for_status()
 
@@ -207,7 +208,7 @@ def upload(
             print(f"Project not found: {project}")
             return
 
-        get_run_url = API_URL + "/run/byName"
+        get_run_url = "/run/byName"
         run_response = client.get(get_run_url, params={"name": run})
         run_response.raise_for_status()
         if run_response.content:
@@ -220,7 +221,7 @@ def upload(
             print(f"Something failed, should not happen")
             return
 
-        create_run_url = API_URL + "/run/create"
+        create_run_url = "/run/create"
         new_run = client.post(
             create_run_url, json={"name": run, "projectUUID": project_json["uuid"]}
         )
@@ -228,7 +229,7 @@ def upload(
         new_run_data = new_run.json()
         print(f"Created run: {new_run_data['name']}")
 
-        get_presigned_url = API_URL + "/queue/createPreSignedURLS"
+        get_presigned_url = "/queue/createPreSignedURLS"
         response_2 = client.post(
             get_presigned_url,
             json={"filenames": filenames, "runUUID": new_run_data["uuid"]},
@@ -251,7 +252,7 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the queue? (y/n)")
     if confirmation.lower() == "y":
-        response = client.delete(f"{API_URL}/queue/clear")
+        response = client.delete("/queue/clear")
         response.raise_for_status()
         print("Queue cleared.")
     else:
@@ -264,7 +265,7 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the Files? (y/n)")
     if confirmation.lower() == "y":
-        response = client.delete(f"{API_URL}/file/clear")
+        response = client.delete("/file/clear")
         response.raise_for_status()
         print("Files cleared.")
     else:
@@ -284,10 +285,10 @@ def wipe():
             print("Operation cancelled.")
             return
 
-        response_queue = client.delete(f"{API_URL}/queue/clear")
-        response_file = client.delete(f"{API_URL}/file/clear")
-        response_run = client.delete(f"{API_URL}/run/clear")
-        response_project = client.delete(f"{API_URL}/project/clear")
+        response_queue = client.delete("/queue/clear")
+        response_file = client.delete("/file/clear")
+        response_run = client.delete("/run/clear")
+        response_project = client.delete("/project/clear")
 
         if response_queue.status_code >= 400:
             print("Failed to clear queue.")
@@ -309,14 +310,14 @@ def wipe():
 
 @app.command("claim")
 def claim():
-    response = client.post(f"{API_URL}/user/claimAdmin")
+    response = client.post("/user/claimAdmin")
     response.raise_for_status()
     print("Admin claimed.")
 
 
 @user.command("list")
 def users():
-    response = client.get(f"{API_URL}/user/all")
+    response = client.get("/user/all")
     response.raise_for_status()
     data = response.json()
     table = Table("Name", "Email", "Role", "googleId")
@@ -327,7 +328,7 @@ def users():
 
 @user.command("info")
 def user_info():
-    response = client.get(f"{API_URL}/user/me")
+    response = client.get("/user/me")
     response.raise_for_status()
     data = response.json()
     print(data)
@@ -335,28 +336,31 @@ def user_info():
 
 @user.command("promote")
 def promote(email: Annotated[str, typer.Option()]):
-    response = client.post(f"{API_URL}/user/promote", json={"email": email})
+    response = client.post("/user/promote", json={"email": email})
     response.raise_for_status()
     print("User promoted.")
 
 
 @user.command("demote")
 def demote(email: Annotated[str, typer.Option()]):
-    response = client.post(f"{API_URL}/user/demote", json={"email": email})
+    response = client.post("/user/demote", json={"email": email})
     response.raise_for_status()
     print("User demoted.")
 
 
 @files.command("download")
 def download(
-        runuuid: Annotated[str, typer.Argument()],
+    runuuid: Annotated[str, typer.Argument()],
 ):
     try:
-        response = client.get(f"{API_URL}/file/downloadWithToken", params={"uuid": runuuid})
+        response = client.get(
+            "/file/downloadWithToken", params={"uuid": runuuid}
+        )
         response.raise_for_status()
         print(response.json())
     except:
         print("Failed to download file")
+
 
 if __name__ == "__main__":
     app()
