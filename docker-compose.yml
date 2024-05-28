@@ -50,18 +50,19 @@ services:
         image: rslethz/grandtour-datasets:vuejs_frontend-latest
         build:
             context: .
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: ./frontend/dev.Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
         container_name: vuejs_frontend
         ports:
-            - '8003:80'
+            - '8003:8003'
 
         env_file:
             - .env
+
         develop:
             watch:
-                - action: rebuild
+                - action: sync
                   path: ./frontend
                   target: /app
 
