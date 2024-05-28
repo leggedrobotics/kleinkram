@@ -8,13 +8,14 @@ RUN echo "QUASAR_ENDPOINT is set to ${QUASAR_ENDPOINT}"
 
 WORKDIR /app
 
-COPY ./package.json ./
-COPY ./yarn.lock ./
-
+COPY ./frontend/package.json ./
+COPY ./frontend/yarn.lock ./
+COPY ./.git/HEAD /app/.git/HEAD
+COPY ./.git/refs/heads/ /app/.git/refs/heads/
 
 RUN yarn install --ignore-engines
 
-COPY . .
+COPY ./frontend/. .
 
 RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") && \
     echo "VITE_QUASAR_VERSION is set to ${VITE_QUASAR_VERSION}" && \

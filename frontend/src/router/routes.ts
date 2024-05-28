@@ -1,4 +1,4 @@
-import {RouteRecordRaw} from 'vue-router';
+import { RouteRecordRaw } from 'vue-router';
 
 import ROLE from 'src/enum/USER_ROLES';
 
@@ -8,61 +8,82 @@ import ROLE from 'src/enum/USER_ROLES';
 
 // All routes available within the application
 const ROUTES: Record<string, RouteRecordRaw> = {
-  HOME: {
-    path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{path: '', component: () => import('pages/IndexPage.vue')}],
-  },
+    HOME: {
+        path: '/',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/IndexPage.vue') },
+        ],
+    },
 
-  DATATABLE: {
-    path: '/datatable',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{path: '', component: () => import('pages/DataTablePage.vue')}],
-  },
-  UPLOAD: {
-    path: '/upload',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{path: '', component: () => import('pages/UploadPage.vue')}],
-  },
-  FILE: {
-    path: '/file',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{path: '', component: () => import('pages/FileInfo.vue')}],
-  },
-  ANALYSIS: {
-    path: '/analysis',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{path: '', component: () => import('pages/AnalysisPage.vue')}],
-  },
+    DATATABLE: {
+        path: '/datatable',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/DataTablePage.vue') },
+        ],
+    },
+    UPLOAD: {
+        path: '/upload',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/UploadPage.vue') },
+        ],
+    },
+    FILE: {
+        path: '/file',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
+    },
+    ANALYSIS: {
+        path: '/analysis',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/AnalysisPage.vue') },
+        ],
+    },
+    ANALYSIS_DETAILS: {
+        path: '/analysis/:id',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            {
+                path: '',
+                component: () => import('pages/AnalysisDetailsPage.vue'),
+            },
+        ],
+    },
 
-  LANDING: {
-    path: '/landing',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/LandingPage.vue') }],
-  },
+    LANDING: {
+        path: '/landing',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/LandingPage.vue') },
+        ],
+    },
 
-  EXPLORER: {
-    path: '/explorer',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/ExplorerPage.vue') }],
-  }
-
+    EXPLORER: {
+        path: '/explorer',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/ExplorerPage.vue') },
+        ],
+    },
 };
 
 // Routes that can be accessed without being logged in
 export const PUBLIC_ROUTES: RouteRecordRaw[] = [
-  ROUTES.LOGIN,
-  ROUTES.HOME,
-  ROUTES.DATATABLE,
-  ROUTES.UPLOAD,
-  ROUTES.WILDCARD,
-  ROUTES.RUN,
+    ROUTES.LOGIN,
+    ROUTES.HOME,
+    ROUTES.DATATABLE,
+    ROUTES.UPLOAD,
+    ROUTES.WILDCARD,
+    ROUTES.RUN,
 ];
 
 // Type for constrained route
 type ConstrainedRoute = {
-  path: string; // URL path
-  allowedRoles: string[]; // Roles that are allowed to access the path
+    path: string; // URL path
+    allowedRoles: string[]; // Roles that are allowed to access the path
 };
 
 /*
@@ -73,8 +94,8 @@ type ConstrainedRoute = {
  */
 
 export const CONSTRAINED_ROUTES: ConstrainedRoute[] = [
-  {path: '/users', allowedRoles: [ROLE.ADMIN]},
-  {path: '/files', allowedRoles: [ROLE.ADMIN, ROLE.USER]},
+    { path: '/users', allowedRoles: [ROLE.ADMIN] },
+    { path: '/files', allowedRoles: [ROLE.ADMIN, ROLE.USER] },
 ];
 
 export default ROUTES;

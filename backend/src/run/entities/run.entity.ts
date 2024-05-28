@@ -4,21 +4,25 @@ import Project from '../../project/entities/project.entity';
 import File from '../../file/entities/file.entity';
 import QueueEntity from '../../queue/entities/queue.entity';
 import User from '../../user/entities/user.entity';
+import Token from '../../auth/entities/token.entity';
 
 @Entity()
 export default class Run extends BaseEntity {
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @ManyToOne(() => Project, (project) => project.runs)
-  project: Project;
+    @ManyToOne(() => Project, (project) => project.runs)
+    project: Project;
 
-  @OneToMany(() => File, (file) => file.run)
-  files: File[];
+    @OneToMany(() => File, (file) => file.run)
+    files: File[];
 
-  @OneToMany(() => QueueEntity, (queue) => queue.run)
-  queues: QueueEntity[];
+    @OneToMany(() => QueueEntity, (queue) => queue.run)
+    queues: QueueEntity[];
 
-  @ManyToOne(() => User, (user) => user.runs)
-  creator: User;
+    @ManyToOne(() => User, (user) => user.runs)
+    creator: User;
+
+    @OneToMany(() => Token, (token) => token.run)
+    tokens: Token[];
 }

@@ -5,15 +5,15 @@ import User from '../../user/entities/user.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @OneToMany(() => Run, (run) => run.project)
-  runs: Run[];
+    @OneToMany(() => Run, (run) => run.project)
+    runs: Run[];
 
-  @Column({ nullable: true })
-  description: string;
+    @Column({ nullable: true })
+    description: string;
 
-  @ManyToOne(() => User, (user) => user.projects)
-  creator: User;
+    @ManyToOne(() => User, (user) => user.projects)
+    creator: User;
 }

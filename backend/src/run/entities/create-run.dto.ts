@@ -1,4 +1,4 @@
 export class CreateRun {
-  name: string;
-  projectUUID: string;
+    name: string;
+    projectUUID: string;
 }

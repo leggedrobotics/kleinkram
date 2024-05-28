@@ -8,27 +8,27 @@ import QueueEntity from '../../queue/entities/queue.entity';
 
 @Entity()
 export default class User extends BaseEntity {
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @Column()
-  email: string;
+    @Column()
+    email: string;
 
-  @Column()
-  role: UserRole;
+    @Column()
+    role: UserRole;
 
-  @Column()
-  googleId: string;
+    @Column()
+    googleId: string;
 
-  @OneToMany(() => Project, (project) => project.creator)
-  projects: Project[];
+    @OneToMany(() => Project, (project) => project.creator)
+    projects: Project[];
 
-  @OneToMany(() => Run, (run) => run.creator)
-  runs: Run[];
+    @OneToMany(() => Run, (run) => run.creator)
+    runs: Run[];
 
-  @OneToMany(() => File, (file) => file.creator)
-  files: File[];
+    @OneToMany(() => File, (file) => file.creator)
+    files: File[];
 
-  @OneToMany(() => QueueEntity, (queue) => queue.creator)
-  queues: QueueEntity[];
+    @OneToMany(() => QueueEntity, (queue) => queue.creator)
+    queues: QueueEntity[];
 }

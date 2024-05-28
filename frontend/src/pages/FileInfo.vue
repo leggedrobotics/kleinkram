@@ -1,15 +1,12 @@
 <template>
-  <InspectFile :file_uuid="route.query.file_uuid" />
+    <InspectFile :file_uuid="route.query.file_uuid" />
 </template>
 
 <script setup lang="ts">
-
 import InspectFile from 'components/InspectFile.vue';
 import { useRoute } from 'vue-router';
 
-const route = useRoute()
+const route = useRoute();
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

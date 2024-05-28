@@ -6,16 +6,14 @@ import { AppModule } from './app.module';
 import logger from './logger';
 
 async function bootstrap() {
+    tracer.start();
+    const app = await NestFactory.create(AppModule);
+    await app.listen(3000);
 
-  tracer.start();
-  const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
-
-  logger.info('Application started');
-
+    logger.info('Application started');
 }
 
 bootstrap().catch((err) => {
-  logger.error('Failed to start application');
-  logger.error(err);
+    logger.error('Failed to start application');
+    logger.error(err);
 });

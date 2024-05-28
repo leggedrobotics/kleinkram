@@ -1,3 +1,5 @@
+#!/usr/bin/zsh
+
 rm ./dist/*
 
 python3 -m build

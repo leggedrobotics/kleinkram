@@ -5,9 +5,9 @@ import { TopicService } from './topic.service';
 import { TopicController } from './topic.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Topic])],
-  providers: [TopicService],
-  controllers: [TopicController],
-  exports: [TopicService],
+    imports: [TypeOrmModule.forFeature([Topic])],
+    providers: [TopicService],
+    controllers: [TopicController],
+    exports: [TopicService],
 })
 export class TopicModule {}

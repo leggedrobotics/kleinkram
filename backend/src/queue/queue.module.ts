@@ -6,25 +6,26 @@ import { QueueController } from './queue.controller';
 import { BullModule } from '@nestjs/bull';
 import Run from '../run/entities/run.entity';
 import User from '../user/entities/user.entity';
+import Token from '../auth/entities/token.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([QueueEntity, Run, User]),
-    BullModule.forRoot({
-      redis: {
-        host: 'redis',
-        port: 6379,
-      },
-    }),
-    BullModule.registerQueue({
-      name: 'file-queue',
-    }),
-    BullModule.registerQueue({
-      name: 'analysis-queue',
-    }),
-  ],
-  providers: [QueueService],
-  controllers: [QueueController],
-  exports: [QueueService],
+    imports: [
+        TypeOrmModule.forFeature([QueueEntity, Run, User, Token]),
+        BullModule.forRoot({
+            redis: {
+                host: 'redis',
+                port: 6379,
+            },
+        }),
+        BullModule.registerQueue({
+            name: 'file-queue',
+        }),
+        BullModule.registerQueue({
+            name: 'analysis-queue',
+        }),
+    ],
+    providers: [QueueService],
+    controllers: [QueueController],
+    exports: [QueueService],
 })
 export class QueueModule {}
