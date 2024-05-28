@@ -15,6 +15,7 @@ export async function downloadDriveFile(fileId: string): Promise<Buffer> {
         {
             fileId,
             alt: 'media',
+            supportsAllDrives: true,
         },
         { responseType: 'stream' },
     );
