@@ -3,6 +3,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import User from '../user/entities/user.entity';
 import { JwtPayload } from 'jsonwebtoken';
+import { CookieNames } from '../enum';
 
 @Injectable()
 export class AuthService {
@@ -32,8 +33,12 @@ export class AuthService {
             sub: user.googleId,
         };
         return {
-            access_token: this.jwtService.sign(payload, { expiresIn: '30m' }),
-            refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
+            [CookieNames.AUTH_TOKEN]: this.jwtService.sign(payload, {
+                expiresIn: '30m',
+            }),
+            [CookieNames.REFRESH_TOKEN]: this.jwtService.sign(payload, {
+                expiresIn: '7d',
+            }),
         };
     }
 }

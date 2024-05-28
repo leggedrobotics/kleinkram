@@ -16,18 +16,39 @@ app = typer.Typer()
 from .consts import API_URL
 
 TOKEN_FILE = Path(os.path.expanduser("~/.gtd.json"))
+REFRESH_TOKEN = "refreshtoken"
+AUTH_TOKEN = "authtoken"
+CLI_KEY = "clikey"
+class TokenFile:
+    def __init__(self):
+        try:
+            with TOKEN_FILE.open("r") as token_file:
+                content = json.load(token_file)
+                self.endpoint = content["endpoint"]
+                self.tokens = content["tokens"]
+        except FileNotFoundError:
+            print("Token file not found. Please run 'login' command first.")
+        except json.JSONDecodeError:
+            print("Token file is corrupted. Please run 'login' command again.")
+            raise
 
+    def isCliToken(self):
+        return "cli_token" in self.tokens[self.endpoint]
 
-def get_token():
-    try:
-        with TOKEN_FILE.open("r") as token_file:
-            return json.load(token_file)
-    except FileNotFoundError:
-        print("Token file not found. Please run 'login' command first.")
-        raise
-    except json.JSONDecodeError:
-        print("Token file is corrupted. Please run 'login' command again.")
-        raise
+    def getAuthToken(self):
+        return self.tokens[self.endpoint][AUTH_TOKEN]
+
+    def getRefreshToken(self):
+        return self.tokens[self.endpoint][REFRESH_TOKEN]
+
+    def getCLIToken(self):
+        return self.tokens[self.endpoint][CLI_KEY]
+
+    def saveTokens(self, tokens):
+        self.tokens[self.endpoint] = tokens
+        with TOKEN_FILE.open("w") as token_file:
+            json.dump(self, token_file)
+
 
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
@@ -60,32 +81,33 @@ class AuthenticatedClient(httpx.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self._load_cookies()
+            self.tokenfile = TokenFile()
         except:
             print("Not authenticated. Please run 'GTD auth login'.")
 
     def _load_cookies(self):
-        tokens = get_token()
-        if "cli_token" in tokens:
-            self.cookies.set("cli_token", tokens["cli_token"])
+        if self.tokenfile.isCliToken():
+            self.cookies.set(CLI_KEY, self.tokenfile.getCLIToken())
         else:
-            self.cookies.set("authtoken", tokens["access_token"])
+            self.cookies.set(AUTH_TOKEN, self.tokenfile.getAuthToken())
 
     def refresh_token(self):
-        tokens = get_token()
-        refresh_token = tokens.get("refresh_token")
+        if self.tokenfile.isCliToken():
+            print("CLI key cannot be refreshed.")
+            return
+        refresh_token = self.tokenfile.getRefreshToken()
         if not refresh_token:
             print("No refresh token found. Please login again.")
             raise Exception("No refresh token found.")
 
         response = self.post(
-            f"{API_URL}/auth/refresh-token", json={"refreshtoken": refresh_token}
+            f"{API_URL}/auth/refresh-token", json={REFRESH_TOKEN: refresh_token}
         )
         response.raise_for_status()
-        new_access_token = response.cookies.get("authtoken")
-        new_tokens = {"access_token": new_access_token, "refresh_token": refresh_token}
-        save_token(new_tokens)
-        self.cookies.set("authtoken", new_access_token)
+        new_access_token = response.cookies.get(AUTH_TOKEN)
+        new_tokens = {AUTH_TOKEN: new_access_token, REFRESH_TOKEN: refresh_token}
+        self.tokenfile.saveTokens(new_tokens)
+        self.cookies.set(AUTH_TOKEN, new_access_token)
 
     def request(self, method, url, *args, **kwargs):
         response = super().request(method, url, *args, **kwargs)
@@ -103,10 +125,10 @@ class AuthenticatedClient(httpx.Client):
 client = AuthenticatedClient()
 
 
-def login(token: Annotated[str, typer.Option()] = None):
-    if token:
-        with TOKEN_FILE.open("w") as token_file:
-            token_file.write(f"{{\"cli_token\": \"{token}\"}}")
+def login(key: Annotated[str, typer.Option()] = None):
+    tokenfile = TokenFile()
+    if key:
+        tokenfile.saveTokens(key)
     else:
         print("Opening browser for authentication...")
         webbrowser.open(API_URL + "/auth/google?state=cli")
@@ -118,11 +140,7 @@ def login(token: Annotated[str, typer.Option()] = None):
             print("Failed to get authentication tokens.")
             return
 
-        save_token(auth_tokens)
+        tokenfile.saveTokens(auth_tokens)
 
         print("Authentication complete. Tokens saved to tokens.json.")
 
-
-def save_token(tokens):
-    with TOKEN_FILE.open("w") as token_file:
-        json.dump(tokens, token_file)
