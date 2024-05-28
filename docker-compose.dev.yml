@@ -65,8 +65,8 @@ services:
         container_name: vuejs_frontend
 
         build:
-            context: ./frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: ./frontend/Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
 
