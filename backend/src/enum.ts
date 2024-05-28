@@ -25,3 +25,9 @@ export enum AnalysisState {
 export enum TokenTypes {
     CONTAINER = 'CONTAINER',
 }
+
+export enum CookieNames {
+    AUTH_TOKEN = 'authtoken',
+    REFRESH_TOKEN = 'refreshtoken',
+    CLI_KEY = 'clikey',
+}

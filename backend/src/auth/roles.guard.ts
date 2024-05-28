@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { UserRole } from '../enum';
+import { CookieNames, UserRole } from '../enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -37,7 +37,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
             // const token = await this.tokenRepository.find();
             const token = await this.tokenRepository.findOne({
                 where: {
-                    token: request.cookies['cli_token'],
+                    token: request.cookies[CookieNames.CLI_KEY],
                 },
                 relations: ['run'],
             });
