@@ -17,6 +17,8 @@ TOKEN_FILE = Path(os.path.expanduser("~/.gtd.json"))
 REFRESH_TOKEN = "refreshtoken"
 AUTH_TOKEN = "authtoken"
 CLI_KEY = "clikey"
+
+
 class TokenFile:
     def __init__(self):
         try:
@@ -54,7 +56,6 @@ class TokenFile:
     def saveTokens(self, tokens):
         self.tokens[self.endpoint] = tokens
         self.writeToFile()
-
 
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
@@ -109,7 +110,8 @@ class AuthenticatedClient(httpx.Client):
             raise Exception("No refresh token found.")
 
         response = self.post(
-            f"{self.tokenfile.endpoint}/auth/refresh-token", json={REFRESH_TOKEN: refresh_token}
+            f"{self.tokenfile.endpoint}/auth/refresh-token",
+            json={REFRESH_TOKEN: refresh_token},
         )
         response.raise_for_status()
         new_access_token = response.cookies.get(AUTH_TOKEN)
@@ -118,8 +120,12 @@ class AuthenticatedClient(httpx.Client):
         self.cookies.set(AUTH_TOKEN, new_access_token)
 
     def request(self, method, url, *args, **kwargs):
-        response = super().request(method, self.tokenfile.endpoint+url, *args, **kwargs)
-        if (url == f"{self.tokenfile.endpoint}/auth/refresh-token") and response.status_code == 401:
+        response = super().request(
+            method, self.tokenfile.endpoint + url, *args, **kwargs
+        )
+        if (
+            url == f"{self.tokenfile.endpoint}/auth/refresh-token"
+        ) and response.status_code == 401:
             print("Refresh token expired. Please login again.")
             response.status_code = 403
             exit(1)
@@ -151,6 +157,7 @@ def login(key: Annotated[str, typer.Option()] = None):
         tokenfile.saveTokens(auth_tokens)
 
         print("Authentication complete. Tokens saved to tokens.json.")
+
 
 def endpoint(endpoint: Annotated[str, typer.Argument()]):
     tokenfile = TokenFile()

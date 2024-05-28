@@ -30,6 +30,7 @@ app.add_typer(user)
 app.command()(login)
 app.command()(endpoint)
 
+
 @files.command("list")
 def list_files(
     project: Annotated[str, typer.Option()] = None,
@@ -126,6 +127,7 @@ def list_runs(
     except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
 
+
 @runs.command("byUUID")
 def run_by_uuid(
     uuid: Annotated[str, typer.Argument()],
@@ -142,6 +144,7 @@ def run_by_uuid(
             table.add_row(file["filename"], f"{file['size']}", file["date"])
     except httpx.HTTPError as e:
         print(f"Failed to fetch runs: {e}")
+
 
 @topics.command("list")
 def topics(
@@ -349,14 +352,17 @@ def demote(email: Annotated[str, typer.Option()]):
 
 @files.command("download")
 def download(
-        runuuid: Annotated[str, typer.Argument()],
+    runuuid: Annotated[str, typer.Argument()],
 ):
     try:
-        response = client.get(f"{API_URL}/file/downloadWithToken", params={"uuid": runuuid})
+        response = client.get(
+            f"{API_URL}/file/downloadWithToken", params={"uuid": runuuid}
+        )
         response.raise_for_status()
         print(response.json())
     except:
         print("Failed to download file")
+
 
 if __name__ == "__main__":
     app()
