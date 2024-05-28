@@ -110,7 +110,7 @@
         >
             <div class="flex flex-center">
                 DEVELOPMENT SYSTEM v{{ ENV.VERSION }}: Data will be reset
-                without notice
+                without notice. Build: {{ BUILD_INFO.version }} ({{ BUILD_INFO.timestamp }}) - {{ BUILD_INFO.git.branch }} - {{ BUILD_INFO.git.hash }}
             </div>
         </q-banner>
     </q-layout>
@@ -122,6 +122,8 @@ import { inject } from 'vue';
 import RouterService from 'src/services/routerService';
 import ENV from 'src/env';
 import { isLoggedIn, loggedIn, logout } from 'src/services/auth';
+
+import BUILD_INFO from 'src/build.ts';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
