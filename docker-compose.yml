@@ -49,13 +49,14 @@ services:
     frontend:
         image: rslethz/grandtour-datasets:vuejs_frontend-latest
         build:
-            context: ./frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: ./frontend/Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
         container_name: vuejs_frontend
         ports:
             - '8003:80'
+
         env_file:
             - .env
         develop:
