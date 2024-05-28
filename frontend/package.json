@@ -7,7 +7,7 @@
     "private": true,
     "scripts": {
         "test": "echo \"No test speciyafied\" && exit 0",
-        "dev": "sh ./create_build_info.sh && quasar dev",
+        "dev": "sh ./create_build_info.sh && quasar dev -p 8003 ",
         "build": "sh ./create_build_info.sh && quasar build"
     },
     "dependencies": {

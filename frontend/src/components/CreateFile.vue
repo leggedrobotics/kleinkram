@@ -209,6 +209,7 @@ const submitNewFile = async () => {
                                     spinner: false,
                                     position: 'top-right',
                                     group: false,
+                                    closeBtn: true,
                                     timeout: 0,
                                 });
                             });
@@ -220,6 +221,7 @@ const submitNewFile = async () => {
                             position: 'top-right',
                             group: false,
                             spinner: false,
+                            closeBtn: true,
                             timeout: 0,
                         });
                     });
