@@ -5,7 +5,7 @@ import env from '../env';
 import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
-import logger from '../logger';
+import { CookieNames } from '../enum';
 
 @Controller('auth')
 export class AuthController {
@@ -26,20 +26,24 @@ export class AuthController {
         const state = req.query.state;
         if (state == 'cli') {
             res.redirect(
-                `http://localhost:8000/cli/callback?access_token=${token.access_token}&refresh_token=${token.refresh_token}`,
+                `http://localhost:8000/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
             );
             return;
         }
-        res.cookie('authtoken', token.access_token, {
+        res.cookie(CookieNames.AUTH_TOKEN, token[CookieNames.AUTH_TOKEN], {
             httpOnly: false,
             secure: env.DEV,
             sameSite: 'strict',
         });
-        res.cookie('refreshtoken', token.refresh_token, {
-            httpOnly: true,
-            secure: env.DEV,
-            sameSite: 'strict',
-        });
+        res.cookie(
+            CookieNames.REFRESH_TOKEN,
+            token[CookieNames.REFRESH_TOKEN],
+            {
+                httpOnly: true,
+                secure: env.DEV,
+                sameSite: 'strict',
+            },
+        );
         res.redirect(`${env.FRONTEND_URL}/#/landing`);
     }
 
@@ -52,7 +56,7 @@ export class AuthController {
 
     @Post('refresh-token')
     async refreshToken(@Req() req: Request, @Res() res: Response) {
-        const refreshToken = req.cookies['refreshtoken'];
+        const refreshToken = req.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
             return res.status(401).json({ message: 'Refresh token not found' });
         }
@@ -68,11 +72,11 @@ export class AuthController {
                     .json({ message: 'Invalid refresh token' });
             }
 
-            const newAccessToken = this.jwtService.sign(
+            const newAuthToken = this.jwtService.sign(
                 { username: user.email, sub: user.googleId },
                 { expiresIn: '30m' },
             );
-            res.cookie('authtoken', newAccessToken, {
+            res.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {
                 httpOnly: false,
                 secure: env.DEV,
                 sameSite: 'strict',
@@ -86,12 +90,12 @@ export class AuthController {
 
     @Post('logout')
     logout(@Res() res: Response) {
-        res.cookie('authtoken', '', {
+        res.cookie(CookieNames.AUTH_TOKEN, '', {
             httpOnly: false,
             expires: new Date(0),
             secure: true,
         });
-        res.cookie('refreshtoken', '', {
+        res.cookie(CookieNames.REFRESH_TOKEN, '', {
             httpOnly: true,
             expires: new Date(0),
             secure: true,

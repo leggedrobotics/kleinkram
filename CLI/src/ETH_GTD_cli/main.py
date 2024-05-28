@@ -11,7 +11,7 @@ from rich.table import Table
 from .consts import API_URL
 from .helper import uploadFiles, expand_and_match
 
-from .auth import login, client
+from .auth import login, client, endpoint
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -28,7 +28,7 @@ app.add_typer(files)
 app.add_typer(queue)
 app.add_typer(user)
 app.command()(login)
-
+app.command()(endpoint)
 
 @files.command("list")
 def list_files(
@@ -40,7 +40,7 @@ def list_files(
     List all files with optional filters for project, run, or topics.
     """
     try:
-        url = f"{API_URL}/file/filteredByNames"
+        url = f"/file/filteredByNames"
         response = client.get(
             url,
             params={
