@@ -29,5 +29,5 @@ export enum TokenTypes {
 export enum CookieNames {
     AUTH_TOKEN = 'authtoken',
     REFRESH_TOKEN = 'refreshtoken',
-    cli_key = 'clikey',
+    CLI_KEY = 'clikey',
 }
