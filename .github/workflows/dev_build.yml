@@ -22,5 +22,5 @@ jobs:
               env:
                   QUASAR_ENDPOINT: ${{ vars.QUASAR_ENDPOINT_DEV }}
             - working-directory: .
-              name: push the docker -f docker-compose.dev.yml image
-              run: docker compose push
+              name: push the docker image
+              run: docker compose -f docker-compose.dev.yml push
