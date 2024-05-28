@@ -213,6 +213,7 @@ export class Queue extends BaseEntity {
     state: FileState;
     location: string;
     run: Run;
+    creator: User;
 
     constructor(
         uuid: string,
@@ -221,6 +222,7 @@ export class Queue extends BaseEntity {
         state: FileState,
         location: string,
         run: Run,
+        creator: User,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -231,5 +233,6 @@ export class Queue extends BaseEntity {
         this.state = state;
         this.location = location;
         this.run = run;
+        this.creator = creator;
     }
 }

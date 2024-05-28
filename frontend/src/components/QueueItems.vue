@@ -150,6 +150,13 @@ const columns = [
         field: (row: Queue) =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
     },
+    {
+        name: 'Creator',
+        required: true,
+        label: 'Creator',
+        align: 'left',
+        field: (row: Queue) => row?.creator?.name,
+    },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];
 
