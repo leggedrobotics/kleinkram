@@ -17,7 +17,7 @@ runs = typer.Typer(name="runs")
 files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
 queue = typer.Typer(name="queue")
-user = typer.Typer(name="user")
+user = typer.Typer(name="users")
 
 app.add_typer(projects)
 app.add_typer(runs)
@@ -201,8 +201,9 @@ def upload(
     try:
         get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
-        project_response.raise_for_status()
-
+        if project_response.status_code >= 400:
+            print(f"Failed to fetch project: {project_response.text}")
+            return
         project_json = project_response.json()
         if not project_json["uuid"]:
             print(f"Project not found: {project}")

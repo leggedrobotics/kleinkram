@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    HttpException,
     Post,
     Put,
     Query,
@@ -49,7 +50,11 @@ export class ProjectController {
     @Get('byName')
     @LoggedIn()
     async getProjectByName(@Query('name') name: string) {
-        return this.projectService.findOneByName(name);
+        const project = await this.projectService.findOneByName(name);
+        if (!project) {
+            throw new HttpException('Project not found', 404);
+        }
+        return project;
     }
 
     @Delete('clear')
