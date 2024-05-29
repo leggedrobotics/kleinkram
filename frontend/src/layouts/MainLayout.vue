@@ -86,7 +86,7 @@
                         no-wrap
                         class="q-ml-xs"
                         @click="login"
-                        >Login
+                    >Login
                     </q-btn>
                     <q-btn
                         v-else
@@ -96,7 +96,8 @@
                         no-wrap
                         class="q-ml-xs"
                         @click="logout()"
-                        >Logout</q-btn
+                    >Logout
+                    </q-btn
                     >
                 </q-toolbar>
             </div>
@@ -109,7 +110,9 @@
             style="min-height: 10px"
         >
             <div class="flex flex-center text-center">
-                Data will be reset without notice! <br> Build: {{ BUILD_INFO.version }} ({{ BUILD_INFO.timestamp }}) - {{ BUILD_INFO.git.branch }} - {{ BUILD_INFO.git.hash }}
+                Data will be reset without notice! <br> Build: {{ BUILD_INFO.version }}
+                ({{ (new Date(BUILD_INFO.timestamp)).toLocaleString() }}) - {{ BUILD_INFO.git.branch }} -
+                {{ BUILD_INFO.git.hash }}
             </div>
         </q-banner>
     </q-layout>
