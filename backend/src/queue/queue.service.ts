@@ -69,7 +69,6 @@ export class QueueService {
         runUUID: string,
         user: JWTUser,
     ) {
-        console.log(filenames);
         const creator = await this.userRepository.findOneOrFail({
             where: { googleId: user.userId },
         });

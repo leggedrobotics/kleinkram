@@ -41,7 +41,6 @@ export class QueueController {
     @Post('confirmUpload')
     @LoggedIn()
     async confirmUpload(@Body() body: { filename: string }) {
-        console.log('confirmUpload', body.filename);
         return this.queueService.confirmUpload(body.filename);
     }
 
