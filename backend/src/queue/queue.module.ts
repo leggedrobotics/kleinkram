@@ -6,11 +6,11 @@ import { QueueController } from './queue.controller';
 import { BullModule } from '@nestjs/bull';
 import Run from '../run/entities/run.entity';
 import User from '../user/entities/user.entity';
-import Token from '../auth/entities/token.entity';
+import Apikey from '../auth/entities/apikey.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([QueueEntity, Run, User, Token]),
+        TypeOrmModule.forFeature([QueueEntity, Run, User, Apikey]),
         BullModule.forRoot({
             redis: {
                 host: 'redis',
