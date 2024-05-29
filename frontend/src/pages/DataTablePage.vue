@@ -333,7 +333,7 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: FileEntity) => row.creator,
+        field: (row: FileEntity) => row.creator.name,
         format: (val: string) => `${val}`,
         sortable: true,
     },
