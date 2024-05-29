@@ -183,6 +183,12 @@ export class FileProcessor implements OnModuleInit {
                 return null;
             }
             const filename = metadataRes.name.replace('.bag', '.mcap');
+
+            const project_name = queue.run.project.name;
+            const run_name = queue.run.name;
+            const full_pathname = `${project_name}/${run_name}/${filename}`;
+
+
             if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
                 logger.debug(
                     `Job {${job.id}} is a file: ${metadataRes.name}, processing...`,
@@ -195,16 +201,16 @@ export class FileProcessor implements OnModuleInit {
                     if (metadataRes.name.endsWith('.mcap')) {
                         await uploadFile(
                             env.MINIO_BAG_BUCKET_NAME,
-                            metadataRes.name,
+                            full_pathname,
                             buffer,
                         );
                         logger.debug(
                             `Job {${job.id}} uploaded file: ${metadataRes.name}`,
                         );
                     } else if (metadataRes.name.endsWith('.bag')) {
-                        buffer = await processFile(buffer, filename);
+                        buffer = await processFile(buffer, full_pathname);
                         logger.debug(
-                            `Job {${job.id}} processed file: ${filename}`,
+                            `Job {${job.id}} processed file: ${full_pathname}`,
                         );
                     } else {
                         throw new Error('Invalid file extension');
@@ -273,7 +279,7 @@ export class FileProcessor implements OnModuleInit {
             where: {
                 uuid: queueUuid,
             },
-            relations: ['run', 'creator'],
+            relations: ['run', 'creator', 'run.project'],
         });
         queue.state = FileState.PROCESSING;
         await this.queueRepository.save(queue);
