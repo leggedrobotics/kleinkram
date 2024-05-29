@@ -5,7 +5,7 @@ import File from './entities/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '../env';
 import Run from '../run/entities/run.entity';
-import { minio } from '../minioHelper';
+import { externalMinio } from '../minioHelper';
 import Project from '../project/entities/project.entity';
 import Topic from '../topic/entities/topic.entity';
 
@@ -164,7 +164,7 @@ export class FileService {
             where: { uuid },
             relations: ['run', 'run.project'],
         });
-        return await minio.presignedUrl(
+        return await externalMinio.presignedUrl(
             'GET',
             env.MINIO_BAG_BUCKET_NAME,
             `${file.run.project.name}/${file.run.name}/${file.filename}`,
@@ -179,7 +179,7 @@ export class FileService {
         });
         const urls = await Promise.all(
             run.files.map((f) =>
-                minio.presignedUrl(
+                externalMinio.presignedUrl(
                     'GET',
                     env.MINIO_BAG_BUCKET_NAME,
                     `${run.project.name}/${run.name}/${f.filename}`,

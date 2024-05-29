@@ -8,7 +8,7 @@ import { FileLocation, FileState } from '../enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '../env';
-import { minio } from '../minioHelper';
+import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
@@ -101,7 +101,7 @@ export class QueueService {
         const expiry = 2 * 60 * 60;
         const urlPromises = processedFilenames.map(
             async ({ filename, location }) => {
-                const minioURL = await minio.presignedPutObject(
+                const minioURL = await externalMinio.presignedPutObject(
                     env.MINIO_TEMP_BAG_BUCKET_NAME,
                     location,
                     expiry,
