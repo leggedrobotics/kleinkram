@@ -111,7 +111,7 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: Queue) => row.run.project.name,
+        field: (row: Queue) => row?.run?.project?.name,
     },
     {
         name: 'Run',
@@ -124,7 +124,7 @@ const columns = [
     {
         name: 'Location',
         required: true,
-        label: 'Location',
+        label: 'File Origin',
         align: 'left',
         field: 'location',
     },
@@ -138,7 +138,7 @@ const columns = [
                 row.filename == row.identifier &&
                 row.location == FileLocation.DRIVE
             )
-                return 'Folder';
+                return 'Not available';
             return row.filename;
         },
     },
@@ -149,6 +149,13 @@ const columns = [
         align: 'left',
         field: (row: Queue) =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
+    },
+    {
+        name: 'Creator',
+        required: true,
+        label: 'Creator',
+        align: 'left',
+        field: (row: Queue) => row?.creator?.name,
     },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];

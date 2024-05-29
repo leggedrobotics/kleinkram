@@ -11,8 +11,8 @@ export class QueueController {
 
     @Post('createdrive')
     @LoggedIn()
-    async createDrive(@Body() body: DriveCreate) {
-        return this.queueService.createDrive(body);
+    async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
+        return this.queueService.createDrive(body, user);
     }
 
     // @Post('create')

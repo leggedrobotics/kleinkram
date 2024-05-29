@@ -353,9 +353,7 @@ def download(
     runuuid: Annotated[str, typer.Argument()],
 ):
     try:
-        response = client.get(
-            "/file/downloadWithToken", params={"uuid": runuuid}
-        )
+        response = client.get("/file/downloadWithToken", params={"uuid": runuuid})
         response.raise_for_status()
         print(response.json())
     except:

@@ -67,6 +67,7 @@
                             hint="Upload File"
                             multiple
                             accept=".bag, .mcap"
+                            style="min-width: 300px"
                         >
                             <template v-slot:prepend>
                                 <q-icon name="attach_file" />
@@ -83,6 +84,7 @@
                             dense
                             clearable
                             hint="Google Drive URL"
+                            style="min-width: 300px"
                         />
                     </div>
                 </div>

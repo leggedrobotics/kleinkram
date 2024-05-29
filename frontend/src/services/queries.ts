@@ -149,7 +149,23 @@ export const currentQueue = async (startDate: Date) => {
         startDate: startDate.toISOString(),
     };
     const response = await axios.get('/queue/active', { params });
+    const users: Record<string, User> = {};
     return response.data.map((res: any) => {
+        let creator: User | undefined = users[res.creator.uuid];
+        if (!creator) {
+            creator = new User(
+                res.creator.uuid,
+                res.creator.name,
+                res.creator.email,
+                res.creator.role,
+                res.creator.googleId,
+                [],
+                new Date(res.creator.createdAt),
+                new Date(res.creator.updatedAt),
+                new Date(res.creator.deletedAt),
+            );
+            users[res.creator.uuid] = creator;
+        }
         return new Queue(
             res.uuid,
             res.identifier,
@@ -157,6 +173,7 @@ export const currentQueue = async (startDate: Date) => {
             res.state,
             res.location,
             res.run,
+            creator,
             new Date(res.createdAt),
             new Date(res.updatedAt),
             new Date(res.deletedAt),

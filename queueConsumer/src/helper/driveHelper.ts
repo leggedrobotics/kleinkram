@@ -15,6 +15,7 @@ export async function downloadDriveFile(fileId: string): Promise<Buffer> {
         {
             fileId,
             alt: 'media',
+            supportsAllDrives: true,
         },
         { responseType: 'stream' },
     );
@@ -37,6 +38,7 @@ export async function getMetadata(fileId: string) {
     const metadataRes = await drive.files.get({
         fileId: fileId,
         fields: 'name,mimeType',
+        supportsAllDrives: true,
     });
     return metadataRes.data;
 }
@@ -45,6 +47,7 @@ export async function listFiles(folderId: string) {
     const response = await drive.files.list({
         q: `'${folderId}' in parents`,
         fields: 'nextPageToken, files(id,name,mimeType)',
+        supportsAllDrives: true,
     });
     return response.data.files;
 }

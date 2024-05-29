@@ -37,9 +37,12 @@ export class QueueService {
         });
     }
 
-    async createDrive(driveCreate: DriveCreate) {
+    async createDrive(driveCreate: DriveCreate, user: JWTUser) {
         const run = await this.runRepository.findOneOrFail({
             where: { uuid: driveCreate.runUUID },
+        });
+        const creator = await this.userRepository.findOneOrFail({
+            where: { googleId: user.userId },
         });
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
@@ -48,6 +51,7 @@ export class QueueService {
             state: FileState.PENDING,
             location: FileLocation.DRIVE,
             run,
+            creator,
         });
         await this.queueRepository.save(newQueue);
         await this.fileProcessingQueue
@@ -65,7 +69,6 @@ export class QueueService {
         runUUID: string,
         user: JWTUser,
     ) {
-        console.log(runUUID);
         const creator = await this.userRepository.findOneOrFail({
             where: { googleId: user.userId },
         });
