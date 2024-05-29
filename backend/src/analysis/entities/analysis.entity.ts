@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import Run from '../../run/entities/run.entity';
-import Token from '../../auth/entities/token.entity';
+import Apikey from '../../auth/entities/apikey.entity';
 import { AnalysisState } from '../../enum';
 
 export type ContainerLog = {
@@ -27,7 +27,7 @@ export default class AnalysisRun extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     logs: ContainerLog[];
 
-    @OneToOne(() => Token, { cascade: true })
+    @OneToOne(() => Apikey)
     @JoinColumn()
-    token: Token;
+    key: Apikey;
 }
