@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { AnalysisService } from './anaylsis.service';
 import {
     AnalysisRunDetailsQuery,
@@ -6,6 +6,7 @@ import {
     SubmitAnalysisRun,
 } from './entities/submit_analysis.dto';
 import { QueueService } from '../queue/queue.service';
+import { AdminOnly } from '../auth/roles.decorator';
 
 @Controller('analysis')
 export class AnalysisController {
@@ -32,5 +33,11 @@ export class AnalysisController {
     @Get('details')
     async details(@Query() dto: AnalysisRunDetailsQuery) {
         return this.analysisService.details(dto.analysis_uuid);
+    }
+
+    @Delete('clear')
+    @AdminOnly()
+    async clear() {
+        return this.analysisService.clear();
     }
 }

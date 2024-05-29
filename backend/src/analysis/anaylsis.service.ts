@@ -58,4 +58,10 @@ export class AnalysisService {
             relations: ['run', 'run.project'],
         });
     }
+
+    async clear() {
+        return await this.analysisRepository.query(
+            'DELETE FROM "analysis_run"',
+        );
+    }
 }

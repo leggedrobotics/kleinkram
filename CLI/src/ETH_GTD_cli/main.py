@@ -287,6 +287,7 @@ def wipe():
 
         response_queue = client.delete("/queue/clear")
         response_file = client.delete("/file/clear")
+        response_analysis = client.delete("/analysis/clear")
         response_run = client.delete("/run/clear")
         response_project = client.delete("/project/clear")
 
@@ -296,6 +297,9 @@ def wipe():
         elif response_file.status_code >= 400:
             print("Failed to clear files.")
             print(response_file.text)
+        elif response_analysis.status_code >= 400:
+            print("Failed to clear analysis.")
+            print(response_analysis.text)
         elif response_run.status_code >= 400:
             print("Failed to clear runs.")
             print(response_run.text)
