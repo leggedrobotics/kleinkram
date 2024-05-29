@@ -28,7 +28,7 @@ export class ProjectService {
     }
 
     async findOneByName(name: string): Promise<Project> {
-        return this.projectRepository.findOneOrFail({ where: { name } });
+        return this.projectRepository.findOne({ where: { name } });
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {

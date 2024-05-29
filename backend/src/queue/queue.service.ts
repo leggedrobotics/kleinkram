@@ -69,6 +69,7 @@ export class QueueService {
         runUUID: string,
         user: JWTUser,
     ) {
+        console.log(filenames);
         const creator = await this.userRepository.findOneOrFail({
             where: { googleId: user.userId },
         });
@@ -98,6 +99,7 @@ export class QueueService {
         processedFilenames = processedFilenames.filter(
             (_, index) => unique[index],
         );
+        console.log('processedFilenames', processedFilenames);
         const expiry = 2 * 60 * 60;
         const urlPromises = processedFilenames.map(
             async ({ filename, location }) => {

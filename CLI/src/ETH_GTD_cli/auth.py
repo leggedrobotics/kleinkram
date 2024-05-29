@@ -110,7 +110,7 @@ class AuthenticatedClient(httpx.Client):
             raise Exception("No refresh token found.")
 
         response = self.post(
-            f"{self.tokenfile.endpoint}/auth/refresh-token",
+            "/auth/refresh-token",
             json={REFRESH_TOKEN: refresh_token},
         )
         response.raise_for_status()
@@ -124,7 +124,7 @@ class AuthenticatedClient(httpx.Client):
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )
         if (
-            url == f"{self.tokenfile.endpoint}/auth/refresh-token"
+            url == "/auth/refresh-token"
         ) and response.status_code == 401:
             print("Refresh token expired. Please login again.")
             response.status_code = 403
