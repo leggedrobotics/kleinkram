@@ -12,7 +12,6 @@ import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
-import { NotFoundError } from 'rxjs';
 
 @Controller('project')
 export class ProjectController {
