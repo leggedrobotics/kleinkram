@@ -22,7 +22,7 @@ export enum AnalysisState {
     ERROR = 'ERROR',
 }
 
-export enum TokenTypes {
+export enum KeyTypes {
     CONTAINER = 'CONTAINER',
 }
 

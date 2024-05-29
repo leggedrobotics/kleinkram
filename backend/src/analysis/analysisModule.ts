@@ -4,12 +4,12 @@ import { AnalysisService } from './anaylsis.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import AnalysisRun from './entities/analysis.entity';
 import { QueueModule } from '../queue/queue.module';
-import Token from '../auth/entities/token.entity';
+import Apikey from '../auth/entities/apikey.entity';
 import User from '../user/entities/user.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([AnalysisRun, Token, User]),
+        TypeOrmModule.forFeature([AnalysisRun, Apikey, User]),
         QueueModule,
     ],
     providers: [AnalysisService],

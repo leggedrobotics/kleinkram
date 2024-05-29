@@ -4,7 +4,7 @@ import Project from '../../project/entities/project.entity';
 import File from '../../file/entities/file.entity';
 import QueueEntity from '../../queue/entities/queue.entity';
 import User from '../../user/entities/user.entity';
-import Token from '../../auth/entities/token.entity';
+import Apikey from '../../auth/entities/apikey.entity';
 
 @Entity()
 export default class Run extends BaseEntity {
@@ -23,6 +23,6 @@ export default class Run extends BaseEntity {
     @ManyToOne(() => User, (user) => user.runs)
     creator: User;
 
-    @OneToMany(() => Token, (token) => token.run)
-    tokens: Token[];
+    @OneToMany(() => Apikey, (token) => token.run)
+    tokens: Apikey[];
 }

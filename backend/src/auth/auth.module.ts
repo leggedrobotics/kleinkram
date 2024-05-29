@@ -14,11 +14,11 @@ import {
     LoggedInUserGuard,
     TokenOrUserGuard,
 } from './roles.guard';
-import Token from './entities/token.entity';
+import Apikey from './entities/apikey.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Token, User]),
+        TypeOrmModule.forFeature([Apikey, User]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: async () => ({

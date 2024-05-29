@@ -13,7 +13,7 @@ import { CookieNames, UserRole } from '../enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
-import Token from './entities/token.entity';
+import Apikey from './entities/apikey.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -25,7 +25,7 @@ export class PublicGuard implements CanActivate {
 @Injectable()
 export class TokenOrUserGuard extends AuthGuard('jwt') {
     constructor(
-        @InjectRepository(Token) private tokenRepository: Repository<Token>,
+        @InjectRepository(Apikey) private tokenRepository: Repository<Apikey>,
         private reflector: Reflector,
     ) {
         super();
@@ -37,7 +37,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
             // const token = await this.tokenRepository.find();
             const token = await this.tokenRepository.findOne({
                 where: {
-                    token: request.cookies[CookieNames.CLI_KEY],
+                    apikey: request.cookies[CookieNames.CLI_KEY],
                 },
                 relations: ['run'],
             });
