@@ -151,6 +151,12 @@ services:
         networks:
             - privatenet
 
+    awt-docs:
+        image: rslethz/grandtour-datasets:docs-dev
+        build:
+            context: docs/.
+            dockerfile: Dockerfile
+
 volumes:
     postgres_db_data:
     minio_data:

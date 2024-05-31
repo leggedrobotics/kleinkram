@@ -9,6 +9,7 @@ export default [
             '**/dist/**',
             'CLI/**',
             '**.py',
+            'docs/.vitepress',
         ],
     },
 ];

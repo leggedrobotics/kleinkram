@@ -7,7 +7,7 @@
     "license": "MIT",
     "scripts": {
         "start": "docker compose up --build -d",
-        "lint": "eslint . --fix; (cd CLI && ./.venv/bin/python -m black .)",
+        "lint": "eslint . --fix",
         "prettier": "prettier --write .",
         "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines )"
     },
