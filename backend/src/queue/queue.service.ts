@@ -41,8 +41,6 @@ export class QueueService {
         const run = await this.runRepository.findOneOrFail({
             where: { uuid: driveCreate.runUUID },
         });
-        console.log('uuid', driveCreate.runUUID);
-        console.log('run', run);
         const creator = await this.userRepository.findOneOrFail({
             where: { googleId: user.userId },
         });

@@ -188,7 +188,6 @@ export class FileProcessor implements OnModuleInit {
             const run_name = queue.run.name;
             const full_pathname = `${project_name}/${run_name}/${filename}`;
 
-
             if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
                 logger.debug(
                     `Job {${job.id}} is a file: ${metadataRes.name}, processing...`,
@@ -235,6 +234,7 @@ export class FileProcessor implements OnModuleInit {
                         run: queue.run,
                         size,
                         filename: filename,
+                        creator: queue.creator,
                     });
                     const savedFile = await this.fileRepository.save(newFile);
                     queue.state = FileState.DONE;
