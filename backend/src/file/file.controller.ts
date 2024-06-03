@@ -86,10 +86,10 @@ export class FileController {
         return this.fileService.findByFilename(name);
     }
 
-    @Get('ofRun')
+    @Get('ofMission')
     @LoggedIn()
-    async getFilesOfRun(@Query('missionUUID') missionUUID: string) {
-        return this.fileService.findByRun(missionUUID);
+    async getFilesOfMission(@Query('missionUUID') missionUUID: string) {
+        return this.fileService.findByMission(missionUUID);
     }
 
     @Put(':uuid')

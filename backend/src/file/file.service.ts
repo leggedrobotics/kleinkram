@@ -196,7 +196,7 @@ export class FileService {
         await this.fileRepository.query('DELETE FROM "file"');
     }
 
-    async findByRun(missionUUID: string) {
+    async findByMission(missionUUID: string) {
         return this.fileRepository.find({
             where: { mission: { uuid: missionUUID } },
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
