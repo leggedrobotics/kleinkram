@@ -6,7 +6,8 @@ import { Job, Queue } from 'bull';
 import { tracing } from './tracing';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import AnalysisRun, { ContainerLog } from './entities/analysis.entity';
+import Action, { ContainerLog } from './entities/action.entity';
+import { ActionState } from './enum';
 
 @Processor('action-queue')
 @Injectable()
@@ -15,8 +16,8 @@ export class AnalysisProcessor implements OnModuleInit {
 
     constructor(
         @InjectQueue('action-queue') private readonly analysisQueue: Queue,
-        @InjectRepository(AnalysisRun)
-        private runAnalysisRepository: Repository<AnalysisRun>,
+        @InjectRepository(Action)
+        private actionRepository: Repository<Action>,
     ) {
         this.docker = new Docker({ socketPath: '/var/mission/docker.sock' });
         logger.debug('AnalysisProcessor constructor');
@@ -38,18 +39,18 @@ export class AnalysisProcessor implements OnModuleInit {
     }
 
     /**
-     * Checks all pending runs, if no container is running, it updates the state of the mission to 'FAILED'.
+     * Checks all pending missions, if no container is missionning, it updates the state of the mission to 'FAILED'.
      */
     @tracing()
     private async findCrashedContainers() {
-        logger.debug('Checking pending runs');
+        logger.debug('Checking pending missions');
 
-        const runs = await this.runAnalysisRepository.find({
-            where: { state: 'PROCESSING' },
-            relations: ['run', 'mission.project'],
+        const actions = await this.actionRepository.find({
+            where: { state: ActionState.PROCESSING },
+            relations: ['action', 'mission.project'],
         });
 
-        logger.info(`Checking ${runs.length} pending runs.`);
+        logger.info(`Checking ${actions.length} pending Actions.`);
 
         const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
         const container_ids = await docker.listContainers({ all: true });
@@ -57,14 +58,14 @@ export class AnalysisProcessor implements OnModuleInit {
             (container) => container.Id,
         );
 
-        for (const run of runs) {
-            if (!running_containers.includes(run.docker_image)) {
+        for (const action of actions) {
+            if (!running_containers.includes(action.docker_image)) {
                 logger.info(
-                    `Run ${run.uuid} is running but has no running container. Setting state to 'FAILED'.`,
+                    `Action ${action.uuid} is running but has no running container. Setting state to 'FAILED'.`,
                 );
-                run.state = 'FAILED';
-                run.state_cause = 'Container crashed';
-                await this.runAnalysisRepository.save(run);
+                action.state = ActionState.FAILED;
+                action.state_cause = 'Container crashed';
+                await this.actionRepository.save(action);
             }
         }
     }
@@ -104,21 +105,21 @@ export class AnalysisProcessor implements OnModuleInit {
 
                 // set state in the database
                 const uuid = containerName.split('-')[2];
-                const analysis_run = await this.runAnalysisRepository.findOne({
+                const action = await this.actionRepository.findOne({
                     where: { uuid: uuid },
-                    relations: ['run', 'mission.project'],
+                    relations: ['action', 'mission.project'],
                 });
 
-                analysis_run.state = 'FAILED';
-                analysis_run.state_cause = 'Container killed.';
-                await this.runAnalysisRepository.save(analysis_run);
+                action.state = ActionState.FAILED;
+                action.state_cause = 'Container killed.';
+                await this.actionRepository.save(action);
             }
         }
     }
 
-    @tracing('processing_analysis_run')
-    private async handleAnalysisRun(job: Job<{ run_analysis_id: string }>) {
-        logger.info(`\n\nProcessing analysis run ${job.data.run_analysis_id}`);
+    @tracing('processing_action')
+    private async handleAction(job: Job<{ action_id: string }>) {
+        logger.info(`\n\nProcessing Action ${job.data.action_id}`);
 
         // TODO: currently we allow only one container to mission at a time, we should change this to allow more
         //  containers to mission concurrently
@@ -127,20 +128,20 @@ export class AnalysisProcessor implements OnModuleInit {
         await this.findCrashedContainers();
 
         logger.info('Creating container.');
-        const uuid = job.data.run_analysis_id;
-        const analysis_run = await this.runAnalysisRepository.findOne({
+        const uuid = job.data.action_id;
+        const action = await this.actionRepository.findOne({
             where: { uuid: uuid },
-            relations: ['run', 'mission.project'],
+            relations: ['mission', 'mission.project'],
         });
 
         // set state to 'RUNNING'
-        analysis_run.state = 'PROCESSING';
-        await this.runAnalysisRepository.save(analysis_run);
+        action.state = ActionState.PROCESSING;
+        await this.actionRepository.save(action);
 
         // TODO: remove this hardcoded image
-        analysis_run.docker_image = 'ubuntu:latest';
-        await this.pull_image(analysis_run.docker_image);
-        const container = await this.run_container(analysis_run, uuid);
+        action.docker_image = 'ubuntu:latest';
+        await this.pull_image(action.docker_image);
+        const container = await this.run_container(action, uuid);
 
         // get logs from container
         logger.info('Getting logs from container:\n');
@@ -150,19 +151,19 @@ export class AnalysisProcessor implements OnModuleInit {
         });
 
         // save results in database
-        analysis_run.state = 'DONE';
-        analysis_run.logs = logs;
-        await this.runAnalysisRepository.save(analysis_run);
+        action.state = ActionState.DONE;
+        action.logs = logs;
+        await this.actionRepository.save(action);
 
         // mark the job as completed
         return { success: true };
     }
 
     @tracing()
-    private async run_container(analysis_run: AnalysisRun, uuid: string) {
+    private async run_container(action: Action, uuid: string) {
         logger.info('Creating container...');
         const container = await this.docker.createContainer({
-            Image: analysis_run.docker_image,
+            Image: action.docker_image,
             name: 'datasets-runner-' + uuid,
             Cmd: [
                 '/bin/sh',
@@ -263,7 +264,7 @@ export class AnalysisProcessor implements OnModuleInit {
     //  running at the same time by considering the resources available on the machine and the
     //  resources required by the containers (e.g., memory, CPU, disk space)
     @Process({ concurrency: 1, name: 'processAnalysisFile' })
-    async process_run_analysis(job: Job<{ run_analysis_id: string }>) {
-        return await this.handleAnalysisRun(job);
+    async process_action(job: Job<{ action_id: string }>) {
+        return await this.handleAction(job);
     }
 }

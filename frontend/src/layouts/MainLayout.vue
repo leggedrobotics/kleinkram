@@ -151,7 +151,7 @@ function login(): void {
 }
 
 function goAnalysis(): void {
-    void $routerService?.routeTo(ROUTES.ANALYSIS);
+    void $routerService?.routeTo(ROUTES.ACTION);
 }
 
 loggedIn.value = isLoggedIn();

@@ -131,7 +131,6 @@ export const actionDetails = async (action_uuid: string) => {
     };
 
     const response = await axios.get('/action/details', { params });
-    console.log(response.data);
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),

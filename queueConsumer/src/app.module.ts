@@ -8,13 +8,13 @@ import configuration from './config';
 
 import { FileProcessor } from './provider';
 import QueueEntity from './entities/queue.entity';
-import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import Topic from './entities/topic.entity';
 import Project from './entities/project.entity';
 import { AnalysisProcessor } from './analysis_provider';
-import AnalysisRun from './entities/analysis.entity';
+import Action from './entities/action.entity';
 import User from './entities/user.entity';
+import Mission from './entities/mission.entity';
 
 @Module({
     imports: [
@@ -52,11 +52,11 @@ import User from './entities/user.entity';
                         configService.getOrThrow<string>('database.database'),
                     entities: [
                         QueueEntity,
-                        Run,
+                        Mission,
                         FileEntity,
                         Project,
                         Topic,
-                        AnalysisRun,
+                        Action,
                         Project,
                         User,
                     ],
@@ -67,10 +67,10 @@ import User from './entities/user.entity';
         }),
         TypeOrmModule.forFeature([
             QueueEntity,
-            Run,
+            Mission,
             FileEntity,
             Topic,
-            AnalysisRun,
+            Action,
             Project,
             User,
         ]),
