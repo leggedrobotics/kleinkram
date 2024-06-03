@@ -8,12 +8,12 @@ import env from './env';
 import configuration from './config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
-import { RunModule } from './run/run.module';
+import { MissionModule } from './mission/mission.module';
 import { QueueModule } from './queue/queue.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
-import { AnalysisModule } from './analysis/analysisModule';
+import { ActionModule } from './action/actionModule';
 
 @Module({
     imports: [
@@ -43,12 +43,12 @@ import { AnalysisModule } from './analysis/analysisModule';
         FileModule,
         ProjectModule,
         TopicModule,
-        RunModule,
+        MissionModule,
         QueueModule,
         UserModule,
         AuthModule,
         PassportModule,
-        AnalysisModule,
+        ActionModule,
     ],
 })
 export class AppModule {}

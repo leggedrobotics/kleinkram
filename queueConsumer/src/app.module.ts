@@ -30,7 +30,7 @@ import User from './entities/user.entity';
         }),
 
         BullModule.registerQueue({
-            name: 'analysis-queue',
+            name: 'action-queue',
         }),
 
         ConfigModule.forRoot({

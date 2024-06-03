@@ -35,20 +35,20 @@ const ROUTES: Record<string, RouteRecordRaw> = {
         component: () => import('layouts/MainLayout.vue'),
         children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
     },
-    ANALYSIS: {
-        path: '/analysis',
+    ACTION: {
+        path: '/action',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            { path: '', component: () => import('pages/AnalysisPage.vue') },
+            { path: '', component: () => import('pages/ActionPage.vue') },
         ],
     },
     ANALYSIS_DETAILS: {
-        path: '/analysis/:id',
+        path: '/action/:id',
         component: () => import('layouts/MainLayout.vue'),
         children: [
             {
                 path: '',
-                component: () => import('pages/AnalysisDetailsPage.vue'),
+                component: () => import('pages/ActionDetailsPage.vue'),
             },
         ],
     },

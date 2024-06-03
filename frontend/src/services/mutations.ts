@@ -6,23 +6,29 @@ export const createProject = async (name: string, description: string) => {
     return response.data;
 };
 
-export const createRun = async (name: string, projectUUID: string) => {
-    const response = await axios.post('/run/create', { name, projectUUID });
+export const createMission = async (name: string, projectUUID: string) => {
+    const response = await axios.post('/mission/create', { name, projectUUID });
     return response.data;
 };
 
-export const createAnalysis = async (docker_image: string, runUUID: string) => {
-    const response = await axios.post('/analysis/submit', {
-        runUUID,
+export const createAnalysis = async (
+    docker_image: string,
+    missionUUID: string,
+) => {
+    const response = await axios.post('/action/submit', {
+        missionUUID,
         docker_image,
     });
     return response.data;
 };
 
-export const getUploadURL = async (filenames: string[], runUUID: string) => {
+export const getUploadURL = async (
+    filenames: string[],
+    missionUUID: string,
+) => {
     const response = await axios.post('/queue/createPreSignedURLS', {
         filenames,
-        runUUID,
+        missionUUID,
     });
     return response.data;
 };
@@ -34,12 +40,12 @@ export const confirmUpload = async (filename: string) => {
 
 export const createFile = async (
     name: string,
-    runUUID: string,
+    missionUUID: string,
     file: File,
 ): Promise<FileEntity> => {
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('runUUID', runUUID);
+    formData.append('missionUUID', missionUUID);
     formData.append('file', file);
 
     const response = await axios.post('/queue/create', formData, {
@@ -49,9 +55,9 @@ export const createFile = async (
     return response.data;
 };
 
-export const createDrive = async (runUUID: string, driveURL: string) => {
+export const createDrive = async (missionUUID: string, driveURL: string) => {
     const response = await axios.post('/queue/createdrive', {
-        runUUID,
+        missionUUID,
         driveURL,
     });
     return response.data;
@@ -82,11 +88,11 @@ export const deleteProject = async (projectUUID: string) => {
     return response.data;
 };
 
-export const moveRun = async (runUUID: string, projectUUID: string) => {
+export const moveMission = async (missionUUID: string, projectUUID: string) => {
     const response = await axios.post(
-        '/run/move',
+        '/mission/move',
         {},
-        { params: { runUUID, projectUUID } },
+        { params: { missionUUID, projectUUID } },
     );
     return response.data;
 };

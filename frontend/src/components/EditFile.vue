@@ -50,7 +50,7 @@
                         <div class="col-1">
                             <q-btn-dropdown
                                 v-model="dd_open_2"
-                                :label="editableFile.run.name || 'Run'"
+                                :label="editableFile.mission.name || 'Mission'"
                                 outlined
                                 dense
                                 clearable
@@ -58,17 +58,17 @@
                             >
                                 <q-list>
                                     <q-item
-                                        v-for="run in runs"
-                                        :key="run.uuid"
+                                        v-for="mission in missions"
+                                        :key="mission.uuid"
                                         clickable
                                         @click="
-                                            editableFile.run = run;
+                                            editableFile.mission = mission;
                                             dd_open_2 = false;
                                         "
                                     >
                                         <q-item-section>
                                             <q-item-label>
-                                                {{ run.name }}
+                                                {{ mission.name }}
                                             </q-item-label>
                                         </q-item-section>
                                     </q-item>
@@ -153,10 +153,10 @@
                             :disable="
                                 !dateTime ||
                                 !editableFile ||
-                                !editableFile.run ||
+                                !editableFile.mission ||
                                 !editableFile.filename
                             "
-                            @click="_updateRun"
+                            @click="_updateMission"
                         />
                     </div>
                 </q-form>
@@ -171,9 +171,13 @@ import {
     useQuery,
     useQueryClient,
 } from '@tanstack/vue-query';
-import { allProjects, fetchFile, runsOfProject } from 'src/services/queries';
+import {
+    allProjects,
+    fetchFile,
+    missionsOfProject,
+} from 'src/services/queries';
 import { Ref, ref, watch, watchEffect } from 'vue';
-import { FileEntity, Project, Run } from 'src/types/types';
+import { FileEntity, Project, Mission } from 'src/types/types';
 import { updateFile } from 'src/services/mutations';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
@@ -201,13 +205,13 @@ const editableFile: Ref<FileEntity | null> = ref(null);
 watch(
     () => data.value,
     (newValue) => {
-        selected_project.value = newValue?.run.project;
+        selected_project.value = newValue?.mission.project;
         if (newValue?.date && data.value) {
             editableFile.value = new FileEntity(
                 newValue.uuid,
                 newValue.filename,
                 data.value.identifier,
-                newValue.run.clone(),
+                newValue.mission.clone(),
                 newValue.creator,
                 newValue.date,
                 [],
@@ -220,7 +224,7 @@ watch(
         }
     },
     {
-        immediate: true, // Run the watcher immediately on component mount
+        immediate: true, // Mission the watcher immediately on component mount
     },
 );
 const projectsReturn = useQuery<Project[]>({
@@ -229,9 +233,9 @@ const projectsReturn = useQuery<Project[]>({
 });
 const projects = projectsReturn.data;
 
-const { data: runs, refetch } = useQuery({
-    queryKey: ['runs', selected_project.value?.uuid],
-    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+const { data: missions, refetch } = useQuery({
+    queryKey: ['missions', selected_project.value?.uuid],
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 
@@ -242,12 +246,12 @@ watch(
             refetch().then(() => {
                 if (
                     editableFile.value &&
-                    runs.value?.length !== undefined &&
-                    runs.value?.length > 0 &&
-                    editableFile.value?.run.project.uuid !==
+                    missions.value?.length !== undefined &&
+                    missions.value?.length > 0 &&
+                    editableFile.value?.mission.project.uuid !==
                         selected_project.value?.uuid
                 ) {
-                    editableFile.value.run = runs.value[0];
+                    editableFile.value.mission = missions.value[0];
                 }
             });
         }
@@ -282,7 +286,7 @@ const { mutate: updateFileMutation } = useMutation({
     },
 });
 
-function _updateRun() {
+function _updateMission() {
     const convertedDate = parseDate(dateTime.value);
     if (
         editableFile.value &&
@@ -290,10 +294,10 @@ function _updateRun() {
         !isNaN(convertedDate.getTime())
     ) {
         editableFile.value.date = convertedDate;
-        const noncircularRun = editableFile.value?.run.clone();
-        noncircularRun.project = undefined;
-        noncircularRun.files = undefined;
-        editableFile.value.run = noncircularRun;
+        const noncircularMission = editableFile.value?.mission.clone();
+        noncircularMission.project = undefined;
+        noncircularMission.files = undefined;
+        editableFile.value.mission = noncircularMission;
         updateFileMutation(editableFile.value);
         onDialogOK();
     }

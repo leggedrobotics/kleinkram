@@ -27,13 +27,13 @@ export class QueueController {
     @Post('createPreSignedURLS')
     @LoggedIn()
     async create(
-        @Body() body: { filenames: string[]; runUUID: string },
+        @Body() body: { filenames: string[]; missionUUID: string },
         @addJWTUser() user: JWTUser,
     ) {
-        logger.debug('createPreSignedURLS', body.filenames, body.runUUID);
+        logger.debug('createPreSignedURLS', body.filenames, body.missionUUID);
         return this.queueService.handleFileUpload(
             body.filenames,
-            body.runUUID,
+            body.missionUUID,
             user,
         );
     }

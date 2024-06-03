@@ -1,31 +1,31 @@
 import axios from 'src/api/axios';
 import {
-    AnalysisRun,
+    Action,
     FileEntity,
     Project,
     Queue,
-    Run,
+    Mission,
     Topic,
     User,
 } from 'src/types/types';
 
 export const fetchOverview = async (
-    runName: string,
+    missionName: string,
     projectUUID: string | undefined,
-    runUUID: string | undefined,
+    missionUUID: string | undefined,
     startDate: Date,
     endDate: Date,
     topics: string[],
     andOr: boolean,
-): Promise<Run[]> => {
+): Promise<Mission[]> => {
     try {
         const formattedStartDate = startDate.toISOString();
         const formattedEndDate = endDate.toISOString();
 
         const queryParams = new URLSearchParams({
-            fileName: runName || '',
+            fileName: missionName || '',
             projectUUID: projectUUID || '',
-            runUUID: runUUID || '',
+            missionUUID: missionUUID || '',
             startDate: formattedStartDate,
             endDate: formattedEndDate,
             topics: topics.join(','),
@@ -33,21 +33,21 @@ export const fetchOverview = async (
         }).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};
-        const runs: Record<string, Run> = {};
+        const missions: Record<string, Mission> = {};
         const response = await axios.get(`/file/filtered?${queryParams}`);
         return response.data.map((file: any) => {
-            const project_uuid: string = file.run.project.uuid;
+            const project_uuid: string = file.mission.project.uuid;
             let project: Project | undefined = projects[project_uuid];
             if (!project) {
                 project = new Project(
-                    file.run.project.uuid,
-                    file.run.project.name,
-                    file.run.project.description,
+                    file.mission.project.uuid,
+                    file.mission.project.name,
+                    file.mission.project.description,
                     [],
-                    file.run.project.creator,
-                    new Date(file.run.project.createdAt),
-                    new Date(file.run.project.updatedAt),
-                    new Date(file.run.project.deletedAt),
+                    file.mission.project.creator,
+                    new Date(file.mission.project.createdAt),
+                    new Date(file.mission.project.updatedAt),
+                    new Date(file.mission.project.deletedAt),
                 );
             }
             let user: User | undefined = creator[file.creator.uuid];
@@ -65,24 +65,24 @@ export const fetchOverview = async (
                 );
                 creator[file.creator.uuid] = user;
             }
-            const run_uuid: string = file.run.uuid;
-            let run: Run | undefined = runs[run_uuid];
-            if (!run) {
-                run = new Run(
-                    file.run.uuid,
-                    file.run.name,
+            const mission_uuid: string = file.mission.uuid;
+            let mission: Mission | undefined = missions[mission_uuid];
+            if (!mission) {
+                mission = new Mission(
+                    file.mission.uuid,
+                    file.mission.name,
                     project,
                     [],
-                    file.run.creator,
-                    new Date(file.run.createdAt),
-                    new Date(file.run.updatedAt),
-                    new Date(file.run.deletedAt),
+                    file.mission.creator,
+                    new Date(file.mission.createdAt),
+                    new Date(file.mission.updatedAt),
+                    new Date(file.mission.deletedAt),
                 );
             }
             const newFile = new FileEntity(
                 file.uuid,
                 file.filename,
-                run,
+                mission,
                 user,
                 new Date(file.date),
                 file.topics,
@@ -91,7 +91,7 @@ export const fetchOverview = async (
                 new Date(file.updatedAt),
                 new Date(file.deletedAt),
             );
-            run.files.push(newFile);
+            mission.files.push(newFile);
             return newFile;
         });
     } catch (error) {
@@ -105,15 +105,15 @@ export const allProjects = async () => {
     return response.data;
 };
 
-export const analysisRuns = async (projectUUID: string, runUUIDs: string) => {
+export const actions = async (projectUUID: string, missionUUIDs: string) => {
     const params = {
         project_uuid: projectUUID,
-        run_uuids: runUUIDs,
+        mission_uuids: missionUUIDs,
     };
 
-    const response = await axios.get('/analysis/list', { params });
+    const response = await axios.get('/action/list', { params });
     return response.data.map((res: any) => {
-        return new AnalysisRun(
+        return new Action(
             res.uuid,
             new Date(res.createdAt),
             new Date(res.updatedAt),
@@ -125,14 +125,14 @@ export const analysisRuns = async (projectUUID: string, runUUIDs: string) => {
     });
 };
 
-export const analysisDetails = async (analysis_uuid: string) => {
+export const actionDetails = async (action_uuid: string) => {
     const params = {
-        analysis_uuid: analysis_uuid,
+        action_uuid: action_uuid,
     };
 
-    const response = await axios.get('/analysis/details', { params });
+    const response = await axios.get('/action/details', { params });
     console.log(response.data);
-    return new AnalysisRun(
+    return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),
         new Date(response.data.updatedAt),
@@ -172,7 +172,7 @@ export const currentQueue = async (startDate: Date) => {
             res.filename,
             res.state,
             res.location,
-            res.run,
+            res.mission,
             creator,
             new Date(res.createdAt),
             new Date(res.updatedAt),
@@ -186,25 +186,25 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
         const response = await axios.get('/file/one', { params: { uuid } });
         const file = response.data;
         const project = new Project(
-            file.run.project.uuid,
-            file.run.project.name,
-            file.run.project.description,
+            file.mission.project.uuid,
+            file.mission.project.name,
+            file.mission.project.description,
             [],
             undefined,
-            new Date(file.run.project.createdAt),
-            new Date(file.run.project.updatedAt),
-            new Date(file.run.project.deletedAt),
+            new Date(file.mission.project.createdAt),
+            new Date(file.mission.project.updatedAt),
+            new Date(file.mission.project.deletedAt),
         );
 
-        const run = new Run(
-            file.run.uuid,
-            file.run.name,
+        const mission = new Mission(
+            file.mission.uuid,
+            file.mission.name,
             project,
             [],
             undefined,
-            new Date(file.run.createdAt),
-            new Date(file.run.updatedAt),
-            new Date(file.run.deletedAt),
+            new Date(file.mission.createdAt),
+            new Date(file.mission.updatedAt),
+            new Date(file.mission.deletedAt),
         );
         const creator = new User(
             file.creator.uuid,
@@ -218,7 +218,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             new Date(file.creator.deletedAt),
         );
 
-        project.runs.push(run);
+        project.missions.push(mission);
         const topics = file.topics.map((topic: any) => {
             return new Topic(
                 topic.uuid,
@@ -234,7 +234,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
         const newFile = new FileEntity(
             file.uuid,
             file.filename,
-            run,
+            mission,
             creator,
             new Date(file.date),
             topics,
@@ -243,7 +243,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             new Date(file.updatedAt),
             new Date(file.deletedAt),
         );
-        run.files.push(newFile);
+        mission.files.push(newFile);
         return newFile;
     } catch (error) {
         console.error('Error fetching file:', error);
@@ -271,46 +271,48 @@ export const allTopicsNames = async (): Promise<string[]> => {
     return response.data;
 };
 
-export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
-    const response = await axios.get(`/run/filtered/${projectUUID}`);
+export const missionsOfProject = async (
+    projectUUID: string,
+): Promise<Mission[]> => {
+    const response = await axios.get(`/mission/filtered/${projectUUID}`);
     const users: Record<string, User> = {};
-    return response.data.map((run: any) => {
+    return response.data.map((mission: any) => {
         const project = new Project(
-            run.project.uuid,
-            run.project.name,
-            run.project.description,
+            mission.project.uuid,
+            mission.project.name,
+            mission.project.description,
             [],
             undefined,
-            new Date(run.project.createdAt),
-            new Date(run.project.updatedAt),
-            new Date(run.project.deletedAt),
+            new Date(mission.project.createdAt),
+            new Date(mission.project.updatedAt),
+            new Date(mission.project.deletedAt),
         );
-        let runCreator: User | undefined = users[run.creator.uuid];
-        if (!runCreator) {
-            runCreator = new User(
-                run.creator.uuid,
-                run.creator.name,
-                run.creator.email,
-                run.creator.role,
-                run.creator.googleId,
+        let missionCreator: User | undefined = users[mission.creator.uuid];
+        if (!missionCreator) {
+            missionCreator = new User(
+                mission.creator.uuid,
+                mission.creator.name,
+                mission.creator.email,
+                mission.creator.role,
+                mission.creator.googleId,
                 [],
-                new Date(run.creator.createdAt),
-                new Date(run.creator.updatedAt),
-                new Date(run.creator.deletedAt),
+                new Date(mission.creator.createdAt),
+                new Date(mission.creator.updatedAt),
+                new Date(mission.creator.deletedAt),
             );
-            users[run.creator.uuid] = runCreator;
+            users[mission.creator.uuid] = missionCreator;
         }
-        const runEntity = new Run(
-            run.uuid,
-            run.name,
+        const missionEntity = new Mission(
+            mission.uuid,
+            mission.name,
             project,
             [],
-            runCreator,
-            new Date(run.createdAt),
-            new Date(run.updatedAt),
-            new Date(run.deletedAt),
+            missionCreator,
+            new Date(mission.createdAt),
+            new Date(mission.updatedAt),
+            new Date(mission.deletedAt),
         );
-        runEntity.files = run.files.map((file: any) => {
+        missionEntity.files = mission.files.map((file: any) => {
             let fileCreator: User | undefined = users[file.creator.uuid];
             if (!fileCreator) {
                 fileCreator = new User(
@@ -329,7 +331,7 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
             return new FileEntity(
                 file.uuid,
                 file.filename,
-                runEntity,
+                missionEntity,
                 fileCreator,
                 new Date(file.date),
                 file.topics,
@@ -339,40 +341,45 @@ export const runsOfProject = async (projectUUID: string): Promise<Run[]> => {
                 new Date(file.deletedAt),
             );
         });
-        return runEntity;
+        return missionEntity;
     });
 };
 
-export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
-    const response = await axios.get('file/ofRun', { params: { runUUID } });
+export const filesOfMission = async (
+    missionUUID: string,
+): Promise<FileEntity[]> => {
+    const response = await axios.get('file/ofMission', {
+        params: { missionUUID },
+    });
     if (response.data.length === 0) {
         return [];
     }
     const users: Record<string, User> = {};
-    let runCreator: User | undefined = users[response.data[0].run.creator.uuid];
-    if (!runCreator) {
-        runCreator = new User(
-            response.data[0].run.creator.uuid,
-            response.data[0].run.creator.name,
-            response.data[0].run.creator.email,
-            response.data[0].run.creator.role,
-            response.data[0].run.creator.googleId,
+    let missionCreator: User | undefined =
+        users[response.data[0].mission.creator.uuid];
+    if (!missionCreator) {
+        missionCreator = new User(
+            response.data[0].mission.creator.uuid,
+            response.data[0].mission.creator.name,
+            response.data[0].mission.creator.email,
+            response.data[0].mission.creator.role,
+            response.data[0].mission.creator.googleId,
             [],
-            new Date(response.data[0].run.creator.createdAt),
-            new Date(response.data[0].run.creator.updatedAt),
-            new Date(response.data[0].run.creator.deletedAt),
+            new Date(response.data[0].mission.creator.createdAt),
+            new Date(response.data[0].mission.creator.updatedAt),
+            new Date(response.data[0].mission.creator.deletedAt),
         );
-        users[response.data[0].run.creator.uuid] = runCreator;
+        users[response.data[0].mission.creator.uuid] = missionCreator;
     }
-    const run = new Run(
-        runUUID,
-        response.data[0].run.name,
+    const mission = new Mission(
+        missionUUID,
+        response.data[0].mission.name,
         undefined,
         [],
-        runCreator,
-        new Date(response.data[0].run.createdAt),
-        new Date(response.data[0].run.updatedAt),
-        new Date(response.data[0].run.deletedAt),
+        missionCreator,
+        new Date(response.data[0].mission.createdAt),
+        new Date(response.data[0].mission.updatedAt),
+        new Date(response.data[0].mission.deletedAt),
     );
     return response.data.map((file: any) => {
         let fileCreator: User | undefined = users[file.creator.uuid];
@@ -405,7 +412,7 @@ export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
         const newFile = new FileEntity(
             file.uuid,
             file.filename,
-            run,
+            mission,
             fileCreator,
             new Date(file.date),
             topics,
@@ -414,7 +421,7 @@ export const filesOfRun = async (runUUID: string): Promise<FileEntity[]> => {
             new Date(file.updatedAt),
             new Date(file.deletedAt),
         );
-        run.files.push(newFile);
+        mission.files.push(newFile);
         return newFile;
     });
 };
@@ -433,23 +440,23 @@ export const getProject = async (uuid: string): Promise<Project> => {
         new Date(project.creator.updatedAt),
         new Date(project.creator.deletedAt),
     );
-    const runs: Run[] = project.runs.map((run: any) => {
-        return new Run(
-            run.uuid,
-            run.name,
+    const missions: Mission[] = project.missions.map((mission: any) => {
+        return new Mission(
+            mission.uuid,
+            mission.name,
             undefined,
             [],
             undefined,
-            new Date(run.createdAt),
-            new Date(run.updatedAt),
-            new Date(run.deletedAt),
+            new Date(mission.createdAt),
+            new Date(mission.updatedAt),
+            new Date(mission.deletedAt),
         );
     });
     return new Project(
         project.uuid,
         project.name,
         project.description,
-        runs,
+        missions,
         creator,
         new Date(project.createdAt),
         new Date(project.updatedAt),

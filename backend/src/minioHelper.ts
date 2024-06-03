@@ -84,12 +84,12 @@ export async function moveRunFilesInMinio(srcPath, destProject) {
             process.env.MINIO_BAG_BUCKET_NAME,
             srcPath,
         );
-        const run = srcPath.split('/')[1];
+        const mission = srcPath.split('/')[1];
         await Promise.all(
             objects.map(async (obj) => {
                 const filename = obj.name.split('/').slice(2).join('/');
                 console.log('destFile', filename);
-                const destName = `${destProject}/${run}/${filename}`;
+                const destName = `${destProject}/${mission}/${filename}`;
                 await copyObject(
                     process.env.MINIO_BAG_BUCKET_NAME,
                     obj.name,

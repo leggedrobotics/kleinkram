@@ -1,14 +1,14 @@
 <template>
     <q-card-section>
-        <h3 class="text-h6">Create new run</h3>
+        <h3 class="text-h6">Create new mission</h3>
         <div class="row justify-between q-gutter-md">
             <div class="col-5">
-                <q-form @submit="submitNewRun">
+                <q-form @submit="submitNewMission">
                     <div class="row items-center justify-between q-gutter-md">
                         <div class="col-5">
                             <q-input
-                                v-model="runName"
-                                label="Run Name"
+                                v-model="missionName"
+                                label="Mission Name"
                                 outlined
                                 dense
                                 clearable
@@ -47,7 +47,11 @@
                 </q-form>
             </div>
             <div class="col-2">
-                <q-btn label="Submit" color="primary" @click="submitNewRun" />
+                <q-btn
+                    label="Submit"
+                    color="primary"
+                    @click="submitNewMission"
+                />
             </div>
         </div>
     </q-card-section>
@@ -58,12 +62,12 @@ import { ref, Ref } from 'vue';
 import { Project } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { allProjects } from 'src/services/queries';
-import { createRun } from 'src/services/mutations';
+import { createMission } from 'src/services/mutations';
 import { Notify } from 'quasar';
 const queryClient = useQueryClient();
 
 const selected_project: Ref<Project | null> = ref(null);
-const runName = ref('');
+const missionName = ref('');
 const ddr_open = ref(false);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],
@@ -77,18 +81,18 @@ const props = defineProps<{
 if (props.project) {
     selected_project.value = props.project;
 }
-const submitNewRun = async () => {
+const submitNewMission = async () => {
     if (!selected_project.value) {
         return;
     }
-    await createRun(runName.value, selected_project.value.uuid);
+    await createMission(missionName.value, selected_project.value.uuid);
     const cache = queryClient.getQueryCache();
     console.log(cache.getAll());
     const filtered = cache
         .getAll()
         .filter(
             (query) =>
-                query.queryKey[0] === 'runs' &&
+                query.queryKey[0] === 'missions' &&
                 query.queryKey[1] === selected_project.value?.uuid,
         );
     filtered.forEach((query) => {
@@ -96,13 +100,13 @@ const submitNewRun = async () => {
         queryClient.invalidateQueries(query.queryKey);
     });
     Notify.create({
-        message: `Run ${runName.value} created`,
+        message: `Mission ${missionName.value} created`,
         color: 'positive',
         spinner: false,
         timeout: 4000,
         position: 'top-right',
     });
-    runName.value = '';
+    missionName.value = '';
 };
 </script>
 

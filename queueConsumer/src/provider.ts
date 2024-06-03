@@ -59,7 +59,7 @@ async function processFile(buffer: Buffer, fileName: string) {
 export class FileProcessor implements OnModuleInit {
     constructor(
         @InjectQueue('file-queue') private readonly fileQueue: Queue,
-        @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
+        @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(FileEntity)
@@ -279,7 +279,7 @@ export class FileProcessor implements OnModuleInit {
             where: {
                 uuid: queueUuid,
             },
-            relations: ['run', 'creator', 'run.project'],
+            relations: ['run', 'creator', 'mission.project'],
         });
         queue.state = FileState.PROCESSING;
         await this.queueRepository.save(queue);

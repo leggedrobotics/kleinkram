@@ -11,7 +11,7 @@ export enum FileLocation {
     MINIO = 'MINIO',
 }
 
-export enum AnalysisRunState {
+export enum ActionState {
     PENDING = 'PENDING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',

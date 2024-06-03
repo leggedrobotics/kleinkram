@@ -17,13 +17,15 @@ export class ProjectService {
 
     async findAll(): Promise<Project[]> {
         logger.debug('Finding all projects');
-        return this.projectRepository.find({ relations: ['creator', 'runs'] });
+        return this.projectRepository.find({
+            relations: ['creator', 'missions'],
+        });
     }
 
     async findOne(uuid: string): Promise<Project> {
         return this.projectRepository.findOne({
             where: { uuid },
-            relations: ['creator', 'runs'],
+            relations: ['creator', 'missions'],
         });
     }
 

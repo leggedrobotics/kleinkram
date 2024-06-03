@@ -7,22 +7,22 @@ import User from '../../user/entities/user.entity';
 import Apikey from '../../auth/entities/apikey.entity';
 
 @Entity()
-export default class Run extends BaseEntity {
+export default class Mission extends BaseEntity {
     @Column()
     name: string;
 
-    @ManyToOne(() => Project, (project) => project.runs)
+    @ManyToOne(() => Project, (project) => project.missions)
     project: Project;
 
-    @OneToMany(() => File, (file) => file.run)
+    @OneToMany(() => File, (file) => file.mission)
     files: File[];
 
-    @OneToMany(() => QueueEntity, (queue) => queue.run)
+    @OneToMany(() => QueueEntity, (queue) => queue.mission)
     queues: QueueEntity[];
 
-    @ManyToOne(() => User, (user) => user.runs)
+    @ManyToOne(() => User, (user) => user.missions)
     creator: User;
 
-    @OneToMany(() => Apikey, (token) => token.run)
+    @OneToMany(() => Apikey, (token) => token.mission)
     tokens: Apikey[];
 }

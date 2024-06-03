@@ -1,8 +1,8 @@
 import { Column, Entity, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
-import Run from '../../run/entities/run.entity';
+import Mission from '../../mission/entities/mission.entity';
 import Apikey from '../../auth/entities/apikey.entity';
-import { AnalysisState } from '../../enum';
+import { ActionState } from '../../enum';
 
 export type ContainerLog = {
     timestamp: string;
@@ -11,9 +11,9 @@ export type ContainerLog = {
 };
 
 @Entity()
-export default class AnalysisRun extends BaseEntity {
+export default class Action extends BaseEntity {
     @Column()
-    state: AnalysisState;
+    state: ActionState;
 
     @Column({ nullable: true })
     state_cause: string;
@@ -21,8 +21,8 @@ export default class AnalysisRun extends BaseEntity {
     @Column()
     docker_image: string;
 
-    @ManyToOne(() => Run, (run) => run.files)
-    run: Run;
+    @ManyToOne(() => Mission, (mission) => mission.files)
+    mission: Mission;
 
     @Column({ type: 'json', nullable: true })
     logs: ContainerLog[];

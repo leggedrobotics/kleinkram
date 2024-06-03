@@ -8,17 +8,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import AnalysisRun, { ContainerLog } from './entities/analysis.entity';
 
-@Processor('analysis-queue')
+@Processor('action-queue')
 @Injectable()
 export class AnalysisProcessor implements OnModuleInit {
     private readonly docker: Docker;
 
     constructor(
-        @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
+        @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(AnalysisRun)
         private runAnalysisRepository: Repository<AnalysisRun>,
     ) {
-        this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        this.docker = new Docker({ socketPath: '/var/mission/docker.sock' });
         logger.debug('AnalysisProcessor constructor');
     }
 
@@ -38,7 +38,7 @@ export class AnalysisProcessor implements OnModuleInit {
     }
 
     /**
-     * Checks all pending runs, if no container is running, it updates the state of the run to 'FAILED'.
+     * Checks all pending runs, if no container is running, it updates the state of the mission to 'FAILED'.
      */
     @tracing()
     private async findCrashedContainers() {
@@ -46,12 +46,12 @@ export class AnalysisProcessor implements OnModuleInit {
 
         const runs = await this.runAnalysisRepository.find({
             where: { state: 'PROCESSING' },
-            relations: ['run', 'run.project'],
+            relations: ['run', 'mission.project'],
         });
 
         logger.info(`Checking ${runs.length} pending runs.`);
 
-        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
         const container_ids = await docker.listContainers({ all: true });
         const running_containers = container_ids.map(
             (container) => container.Id,
@@ -80,7 +80,7 @@ export class AnalysisProcessor implements OnModuleInit {
     private async killOldContainers(killAge: number = 0) {
         logger.info(`Killing containers older than ${killAge} minutes`);
 
-        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
         const container_ids = await docker.listContainers({ all: true });
 
         const now = new Date().getTime();
@@ -106,7 +106,7 @@ export class AnalysisProcessor implements OnModuleInit {
                 const uuid = containerName.split('-')[2];
                 const analysis_run = await this.runAnalysisRepository.findOne({
                     where: { uuid: uuid },
-                    relations: ['run', 'run.project'],
+                    relations: ['run', 'mission.project'],
                 });
 
                 analysis_run.state = 'FAILED';
@@ -120,8 +120,8 @@ export class AnalysisProcessor implements OnModuleInit {
     private async handleAnalysisRun(job: Job<{ run_analysis_id: string }>) {
         logger.info(`\n\nProcessing analysis run ${job.data.run_analysis_id}`);
 
-        // TODO: currently we allow only one container to run at a time, we should change this to allow more
-        //  containers to run concurrently
+        // TODO: currently we allow only one container to mission at a time, we should change this to allow more
+        //  containers to mission concurrently
         logger.info('Killing old containers and finding crashed containers');
         await this.killOldContainers(0);
         await this.findCrashedContainers();
@@ -130,7 +130,7 @@ export class AnalysisProcessor implements OnModuleInit {
         const uuid = job.data.run_analysis_id;
         const analysis_run = await this.runAnalysisRepository.findOne({
             where: { uuid: uuid },
-            relations: ['run', 'run.project'],
+            relations: ['run', 'mission.project'],
         });
 
         // set state to 'RUNNING'
