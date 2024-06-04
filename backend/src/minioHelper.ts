@@ -24,7 +24,7 @@ export const internalMinio: Client = new Client({
 export async function uploadToMinio(response: any, originalname: string) {
     const filename = originalname.replace('.bag', '.mcap');
     await internalMinio.putObject(
-        env.MINIO_TEMP_BAG_BUCKET_NAME,
+        env.MINIO_BAG_BUCKET_NAME,
         filename,
         response.data,
         {

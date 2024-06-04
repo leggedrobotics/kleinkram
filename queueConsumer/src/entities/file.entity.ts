@@ -3,6 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import Mission from './mission.entity';
 import Topic from './topic.entity';
 import User from './user.entity';
+import { FileType } from '../enum';
 
 @Entity()
 export default class File extends BaseEntity {
@@ -23,4 +24,7 @@ export default class File extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.files)
     creator: User;
+
+    @Column()
+    type: FileType;
 }

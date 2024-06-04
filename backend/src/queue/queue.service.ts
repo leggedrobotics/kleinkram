@@ -103,7 +103,9 @@ export class QueueService {
         const urlPromises = processedFilenames.map(
             async ({ filename, location }) => {
                 const minioURL = await externalMinio.presignedPutObject(
-                    env.MINIO_TEMP_BAG_BUCKET_NAME,
+                    filename.endsWith('.bag')
+                        ? env.MINIO_BAG_BUCKET_NAME
+                        : env.MINIO_MCAP_BUCKET_NAME,
                     location,
                     expiry,
                 );
