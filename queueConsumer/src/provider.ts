@@ -258,6 +258,7 @@ export class FileProcessor implements OnModuleInit {
                                 state: FileState.PENDING,
                                 location: FileLocation.DRIVE,
                                 mission: queue.mission,
+                                creator: queue.creator,
                             });
                             await this.queueRepository.save(newQueue);
 

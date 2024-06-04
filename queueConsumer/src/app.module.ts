@@ -15,6 +15,7 @@ import { AnalysisProcessor } from './analysis_provider';
 import Action from './entities/action.entity';
 import User from './entities/user.entity';
 import Mission from './entities/mission.entity';
+import Apikey from './entities/apikey.entity';
 
 @Module({
     imports: [
@@ -59,6 +60,7 @@ import Mission from './entities/mission.entity';
                         Action,
                         Project,
                         User,
+                        Apikey,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -73,6 +75,7 @@ import Mission from './entities/mission.entity';
             Action,
             Project,
             User,
+            Apikey,
         ]),
     ],
     providers: [FileProcessor, AnalysisProcessor],

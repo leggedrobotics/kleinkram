@@ -8,7 +8,7 @@
             <div class="q-mt-md row">
                 <div class="col-10" />
                 <div class="col-2">
-                    <q-btn label="OK" color="primary" @click="onDialogOK" />
+                    <q-btn label="Close" color="orange" @click="onDialogOK" />
                 </div>
             </div>
         </q-card>
