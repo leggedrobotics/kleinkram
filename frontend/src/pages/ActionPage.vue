@@ -121,7 +121,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { allProjects, missionsOfProject } from 'src/services/queries';
 import { Notify } from 'quasar';
 import { createAnalysis } from 'src/services/mutations';
-import Action from 'components/Action.vue';
+import Action from 'components/Actions.vue';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);

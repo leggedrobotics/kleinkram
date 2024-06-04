@@ -33,8 +33,8 @@ export const getUploadURL = async (
     return response.data;
 };
 
-export const confirmUpload = async (filename: string) => {
-    const response = await axios.post('/queue/confirmUpload', { filename });
+export const confirmUpload = async (uuid: string) => {
+    const response = await axios.post('/queue/confirmUpload', { uuid });
     return response.data;
 };
 

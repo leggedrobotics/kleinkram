@@ -40,8 +40,8 @@ export class QueueController {
 
     @Post('confirmUpload')
     @LoggedIn()
-    async confirmUpload(@Body() body: { filename: string }) {
-        return this.queueService.confirmUpload(body.filename);
+    async confirmUpload(@Body() body: { uuid: string }) {
+        return this.queueService.confirmUpload(body.uuid);
     }
 
     @Get('active')

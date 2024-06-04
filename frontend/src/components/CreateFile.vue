@@ -182,7 +182,7 @@ const submitNewFile = async () => {
                     });
                     return;
                 }
-                const uploadURL = urls[filename];
+                const uploadURL = urls[filename]['url'];
 
                 // Use axios to upload the file
                 return axios
@@ -193,7 +193,7 @@ const submitNewFile = async () => {
                         },
                     })
                     .then(async () => {
-                        confirmUpload(filename)
+                        confirmUpload(urls[filename]['uuid'])
                             .then(() => {
                                 Notify.create({
                                     message: `File ${filename} uploaded`,
@@ -203,6 +203,7 @@ const submitNewFile = async () => {
                                     group: false,
                                     timeout: 2000,
                                 });
+                                files.value = [];
                             })
                             .catch((e) => {
                                 Notify.create({
