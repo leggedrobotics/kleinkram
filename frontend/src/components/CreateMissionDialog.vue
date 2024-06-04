@@ -4,7 +4,7 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 250px; max-width: 1500px"
         >
-            <create-run :project="props.project" />
+            <create-mission :project="props.project" />
             <div class="q-mt-md row">
                 <div class="col-10" />
                 <div class="col-2">
@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import CreateRun from 'components/CreateRun.vue';
+import CreateMission from 'components/CreateMission.vue';
 import { Project } from 'src/types/types';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

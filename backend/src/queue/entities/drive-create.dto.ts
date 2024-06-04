@@ -1,4 +1,4 @@
 export class DriveCreate {
-    runUUID: string;
+    missionUUID: string;
     driveURL: string;
 }

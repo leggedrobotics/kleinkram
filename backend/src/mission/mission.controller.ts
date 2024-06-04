@@ -8,63 +8,63 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common';
-import { RunService } from './run.service';
-import { CreateRun } from './entities/create-run.dto';
+import { MissionService } from './mission.service';
+import { CreateRun } from './entities/create-mission.dto';
 import { AdminOnly, LoggedIn, TokenOrUser } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
-@Controller('run')
-export class RunController {
-    constructor(private readonly runService: RunService) {}
+@Controller('mission')
+export class MissionController {
+    constructor(private readonly missionService: MissionService) {}
 
     @Post('create')
     @LoggedIn()
     async createRun(@Body() createRun: CreateRun, @addJWTUser() user: JWTUser) {
-        return this.runService.create(createRun, user);
+        return this.missionService.create(createRun, user);
     }
 
     @Get('filtered/:projectUUID')
     @LoggedIn()
     async filteredRuns(@Param('projectUUID') projectUUID: string) {
-        return this.runService.findRunByProject(projectUUID);
+        return this.missionService.findRunByProject(projectUUID);
     }
 
     @Get('all')
     @LoggedIn()
     async allRuns() {
-        return this.runService.findAll();
+        return this.missionService.findAll();
     }
 
     @Get('byName')
     @LoggedIn()
     async getRunByName(@Query('name') name: string) {
-        return this.runService.findOneByName(name);
+        return this.missionService.findOneByName(name);
     }
 
     @Get('byUUID')
     @TokenOrUser()
     async getRunByUUID(@Query('uuid') uuid: string) {
-        return this.runService.findOneByUUID(uuid);
+        return this.missionService.findOneByUUID(uuid);
     }
 
     @Get('filteredByProjectName/:projectName')
     @LoggedIn()
     async filteredByProjectName(@Param('projectName') projectName: string) {
-        return this.runService.filteredByProjectName(projectName);
+        return this.missionService.filteredByProjectName(projectName);
     }
 
     @Delete('clear')
     @AdminOnly()
     async clearRuns() {
-        return this.runService.clearRuns();
+        return this.missionService.clearRuns();
     }
 
     @Post('move')
     @LoggedIn()
     async moveRun(
-        @Query('runUUID') runUUID: string,
+        @Query('missionUUID') missionUUID: string,
         @Query('projectUUID') projectUUID: string,
     ) {
-        return this.runService.moveRun(runUUID, projectUUID);
+        return this.missionService.moveRun(missionUUID, projectUUID);
     }
 }

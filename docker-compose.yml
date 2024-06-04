@@ -86,7 +86,7 @@ services:
             - /usr/src/queueConsumer/node_modules
             - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
-            - /var/run/docker.sock:/var/run/docker.sock
+            - /var/mission/docker.sock:/var/mission/docker.sock
         develop:
             watch:
                 - action: rebuild

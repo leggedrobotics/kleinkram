@@ -39,9 +39,9 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                 where: {
                     apikey: request.cookies[CookieNames.CLI_KEY],
                 },
-                relations: ['run'],
+                relations: ['mission'],
             });
-            if (request.query.uuid != token.run.uuid) {
+            if (request.query.uuid != token.mission.uuid) {
                 throw new ForbiddenException('Invalid token');
             }
         } else {

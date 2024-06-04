@@ -11,16 +11,16 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.run.project.name }}
+                            {{ data?.mission.project.name }}
                         </div>
                     </div>
                     <div class="col-2">
-                        <div class="text-subtitle3">Run</div>
+                        <div class="text-subtitle3">Mission</div>
                         <div
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.run.name }}
+                            {{ data?.mission.name }}
                         </div>
                     </div>
                     <div class="col-3">
@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { downloadBag, fetchFile } from 'src/services/queries';
-import { FileEntity, Run } from 'src/types/types';
+import { FileEntity, Mission } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';

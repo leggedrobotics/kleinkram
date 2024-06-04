@@ -4,7 +4,6 @@ import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import QueueEntity from './entities/queue.entity';
-import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import env from './env';
 import { convert, mcapMetaInfo } from './helper/converter';
@@ -59,7 +58,7 @@ async function processFile(buffer: Buffer, fileName: string) {
 export class FileProcessor implements OnModuleInit {
     constructor(
         @InjectQueue('file-queue') private readonly fileQueue: Queue,
-        @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
+        @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(FileEntity)
@@ -132,7 +131,7 @@ export class FileProcessor implements OnModuleInit {
                     date,
                     topics: createdTopics,
                     creator: queue.creator,
-                    run: queue.run,
+                    mission: queue.mission,
                     size,
                     filename,
                 });
@@ -184,9 +183,9 @@ export class FileProcessor implements OnModuleInit {
             }
             const filename = metadataRes.name.replace('.bag', '.mcap');
 
-            const project_name = queue.run.project.name;
-            const run_name = queue.run.name;
-            const full_pathname = `${project_name}/${run_name}/${filename}`;
+            const project_name = queue.mission.project.name;
+            const mission_name = queue.mission.name;
+            const full_pathname = `${project_name}/${mission_name}/${filename}`;
 
             if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
                 logger.debug(
@@ -231,7 +230,7 @@ export class FileProcessor implements OnModuleInit {
                     const newFile = this.fileRepository.create({
                         date,
                         topics: createdTopics,
-                        run: queue.run,
+                        mission: queue.mission,
                         size,
                         filename: filename,
                         creator: queue.creator,
@@ -258,7 +257,8 @@ export class FileProcessor implements OnModuleInit {
                                 identifier: file.id,
                                 state: FileState.PENDING,
                                 location: FileLocation.DRIVE,
-                                run: queue.run,
+                                mission: queue.mission,
+                                creator: queue.creator,
                             });
                             await this.queueRepository.save(newQueue);
 
@@ -279,7 +279,7 @@ export class FileProcessor implements OnModuleInit {
             where: {
                 uuid: queueUuid,
             },
-            relations: ['run', 'creator', 'run.project'],
+            relations: ['mission', 'creator', 'mission.project'],
         });
         queue.state = FileState.PROCESSING;
         await this.queueRepository.save(queue);

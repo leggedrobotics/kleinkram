@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import { UserRole } from '../../enum';
 import Project from '../../project/entities/project.entity';
-import Run from '../../run/entities/run.entity';
+import Mission from '../../mission/entities/mission.entity';
 import File from '../../file/entities/file.entity';
 import QueueEntity from '../../queue/entities/queue.entity';
 
@@ -23,8 +23,8 @@ export default class User extends BaseEntity {
     @OneToMany(() => Project, (project) => project.creator)
     projects: Project[];
 
-    @OneToMany(() => Run, (run) => run.creator)
-    runs: Run[];
+    @OneToMany(() => Mission, (mission) => mission.creator)
+    missions: Mission[];
 
     @OneToMany(() => File, (file) => file.creator)
     files: File[];

@@ -26,12 +26,12 @@ export class FileController {
     @LoggedIn()
     async filteredByNames(
         @Query('projectName') projectName: string,
-        @Query('runName') runName: string,
+        @Query('missionName') missionName: string,
         @Query('topics') topics: string[],
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
-            runName,
+            missionName,
             topics,
         );
     }
@@ -41,7 +41,7 @@ export class FileController {
     async filteredFiles(
         @Query('fileName') fileName: string,
         @Query('projectUUID') projectUUID: string,
-        @Query('runUUID') runUUID: string,
+        @Query('missionUUID') missionUUID: string,
         @Query('startDate') startDate: string,
         @Query('endDate') endDate: string,
         @Query('topics') topics: string,
@@ -50,7 +50,7 @@ export class FileController {
         return await this.fileService.findFiltered(
             fileName,
             projectUUID,
-            runUUID,
+            missionUUID,
             startDate,
             endDate,
             topics,
@@ -86,10 +86,10 @@ export class FileController {
         return this.fileService.findByFilename(name);
     }
 
-    @Get('ofRun')
+    @Get('ofMission')
     @LoggedIn()
-    async getFilesOfRun(@Query('runUUID') runUUID: string) {
-        return this.fileService.findByRun(runUUID);
+    async getFilesOfMission(@Query('missionUUID') missionUUID: string) {
+        return this.fileService.findByMission(missionUUID);
     }
 
     @Put(':uuid')

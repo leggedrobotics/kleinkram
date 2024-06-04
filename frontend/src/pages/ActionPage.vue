@@ -1,21 +1,21 @@
 <template>
     <q-page class="flex">
         <div class="q-pa-md">
-            <div class="text-h4">Run Analysis</div>
+            <div class="text-h4">Mission Analysis</div>
             <p>
-                <i>Run analysis</i> allows you to perform automated analysis,
-                tests and checks on a project or run level. Run analysis works
-                similar to GitHub Actions or GitLab CI/CD pipelines. The
-                analysis is performed in a docker container, which gets executed
-                on the server. All you have to do is to specify the docker
-                image, which contains the analysis code. The analysis code will
-                be executed in the docker container, the results will be stored,
-                and can be viewed via Webinterface.
+                <i>Actions</i> allows you to perform automated action, tests and
+                checks on a project or mission level. Actions works similar to
+                GitHub Actions or GitLab CI/CD pipelines. The action is
+                performed in a docker container, which gets executed on the
+                server. All you have to do is to specify the docker image, which
+                contains the action code. The action code will be executed in
+                the docker container, the results will be stored, and can be
+                viewed via Webinterface.
             </p>
 
-            <h3 class="text-h6">Submit new Run Analysis</h3>
+            <h3 class="text-h6">Submit new Mission Analysis</h3>
 
-            <!-- Select a project and run, on which the anylsis will be performed -->
+            <!-- Select a project and mission, on which the anylsis will be performed -->
             <q-form @submit.prevent="submitAnalysis">
                 <div class="row items-center justify-between q-gutter-md">
                     <div class="col-1">
@@ -48,8 +48,8 @@
                     </div>
                     <div class="col-1">
                         <q-btn-dropdown
-                            v-model="dropdownNewFileRun"
-                            :label="selected_run?.name || 'Run'"
+                            v-model="dropdownNewFileMission"
+                            :label="selected_mission?.name || 'Mission'"
                             outlined
                             dense
                             clearable
@@ -57,17 +57,17 @@
                         >
                             <q-list>
                                 <q-item
-                                    v-for="run in runs"
-                                    :key="run.uuid"
+                                    v-for="mission in missions"
+                                    :key="mission.uuid"
                                     clickable
                                     @click="
-                                        selected_run = run;
-                                        dropdownNewFileRun = false;
+                                        selected_mission = mission;
+                                        dropdownNewFileMission = false;
                                     "
                                 >
                                     <q-item-section>
                                         <q-item-label>
-                                            {{ run.name }}
+                                            {{ mission.name }}
                                         </q-item-label>
                                     </q-item-section>
                                 </q-item>
@@ -82,7 +82,7 @@
                                 dense
                                 clearable
                                 label="Docker Image"
-                                hint="e.g., rslethz/run-alys:latest"
+                                hint="e.g., rslethz/action:latest"
                             />
                         </div>
                     </div>
@@ -96,16 +96,16 @@
                 </div>
             </q-form>
 
-            <template v-if="selected_project && selected_run">
-                <RunAnalysis
+            <template v-if="selected_project && selected_mission">
+                <Action
                     :project_uuid="selected_project?.uuid"
-                    :run_uuid="selected_run?.uuid"
-                ></RunAnalysis>
+                    :mission_uuid="selected_mission?.uuid"
+                ></Action>
             </template>
             <template v-else>
                 <q-card class="q-pa-sm q-ma-lg text-center">
                     <div class="text">
-                        Please select a project and a run to...
+                        Please select a project and a mission to...
                     </div>
                 </q-card>
             </template>
@@ -116,27 +116,27 @@
 <script setup lang="ts">
 import { Ref, ref, watchEffect } from 'vue';
 
-import { Project, Run } from 'src/types/types';
+import { Project, Mission } from 'src/types/types';
 import { useQuery } from '@tanstack/vue-query';
-import { allProjects, runsOfProject } from 'src/services/queries';
+import { allProjects, missionsOfProject } from 'src/services/queries';
 import { Notify } from 'quasar';
 import { createAnalysis } from 'src/services/mutations';
-import RunAnalysis from 'components/RunAnalysis.vue';
+import Action from 'components/Action.vue';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);
-const dropdownNewFileRun = ref(false);
+const dropdownNewFileMission = ref(false);
 const selected_project: Ref<Project | null> = ref(null);
-const selected_run: Ref<Run | null> = ref(null);
+const selected_mission: Ref<Mission | null> = ref(null);
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: allProjects,
 });
 
-const { data: runs, refetch } = useQuery({
-    queryKey: ['runs', selected_project.value?.uuid],
-    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+const { data: missions, refetch } = useQuery({
+    queryKey: ['missions', selected_project.value?.uuid],
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 
@@ -148,16 +148,16 @@ watchEffect(() => {
 
 const submitAnalysis = () => {
     console.log(
-        `Submit new analysis: ${selected_project.value?.uuid}, ${selected_run.value?.uuid}, ${image_name.value}`,
+        `Submit new action: ${selected_project.value?.uuid}, ${selected_mission.value?.uuid}, ${image_name.value}`,
     );
 
     // validate input (this will also be performed on the backend)
-    // the user must select a project and a run
+    // the user must select a project and a mission
     // the image name must start with 'rslethz/'
-    if (!selected_project.value || !selected_run.value) {
+    if (!selected_project.value || !selected_mission.value) {
         Notify.create({
             group: false,
-            message: 'Please select a project and a run',
+            message: 'Please select a project and a mission',
             color: 'negative',
             position: 'top-right',
             timeout: 2000,
@@ -178,8 +178,8 @@ const submitAnalysis = () => {
 
     // post: the input should be valid now
 
-    // send the analysis request to the backend and show a notification
-    createAnalysis(image_name.value, selected_run.value.uuid)
+    // send the action request to the backend and show a notification
+    createAnalysis(image_name.value, selected_mission.value.uuid)
         .then(() => {
             Notify.create({
                 group: false,

@@ -40,10 +40,10 @@
                 color="red"
                 @click="_deleteProject"
                 icon="delete"
-                :disable="project.runs.length > 0"
+                :disable="project.missions.length > 0"
             >
                 <q-tooltip class="bg-accent"
-                    >Only projects without runs can be deleted</q-tooltip
+                    >Only projects without missions can be deleted</q-tooltip
                 >
             </q-btn>
         </div>

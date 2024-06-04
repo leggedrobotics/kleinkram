@@ -3,7 +3,7 @@
         <q-table
             ref="tableRef"
             v-model:pagination="pagination"
-            title="Analysis Runs"
+            title="Actions"
             :rows="data"
             :columns="columns"
             row-key="uuid"
@@ -20,7 +20,7 @@
 
             <template v-slot:body-cell-Details="props">
                 <q-td :props="props">
-                    <a :href="'#/analysis/' + props.row.uuid">
+                    <a :href="'#/action/' + props.row.uuid">
                         <q-btn color="primary" label="Details"></q-btn>
                     </a>
                 </q-td>
@@ -32,27 +32,27 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { AnalysisRun } from 'src/types/types';
-import { analysisRuns } from 'src/services/queries';
+import { Action } from 'src/types/types';
+import { actions } from 'src/services/queries';
 import { ref, Ref, watchEffect } from 'vue';
-import { AnalysisRunState } from 'src/enum/QUEUE_ENUM';
+import { ActionState } from 'src/enum/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 
 // list all props of the component
 const props = defineProps<{
     project_uuid: string;
-    run_uuid: string;
+    mission_uuid: string;
 }>();
 
 // watch for changes in props
 watchEffect(() => {
     console.log(props.project_uuid);
-    console.log(props.run_uuid);
+    console.log(props.mission_uuid);
 });
 
-const runs = useQuery<AnalysisRun[]>({
-    queryKey: ['analysis_run', props.project_uuid, props.run_uuid],
-    queryFn: () => analysisRuns(props.project_uuid, props.run_uuid),
+const missions = useQuery<Action[]>({
+    queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
+    queryFn: () => actions(props.project_uuid, props.mission_uuid),
     refetchInterval: 1000,
 });
 
@@ -65,7 +65,7 @@ const pagination = ref({
     rowsPerPage: 10,
 });
 
-const data = runs.data;
+const data = missions.data;
 
 const columns = [
     {
@@ -73,7 +73,7 @@ const columns = [
         label: 'Last Update',
         align: 'left',
         sortable: true,
-        field: (row: AnalysisRun) =>
+        field: (row: Action) =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
     },
     {
@@ -81,7 +81,7 @@ const columns = [
         label: 'Creation Date',
         align: 'left',
         sortable: true,
-        field: (row: AnalysisRun) =>
+        field: (row: Action) =>
             row.createdAt ? formatDate(row.createdAt, true) : 'N/A',
     },
     {
@@ -89,8 +89,7 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: true,
-        field: (row: AnalysisRun) =>
-            row.docker_image ? row.docker_image : 'N/A',
+        field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
     },
     {
         name: 'Status',
@@ -108,15 +107,15 @@ const columns = [
     },
 ];
 
-function getColor(state: AnalysisRunState) {
+function getColor(state: ActionState) {
     switch (state) {
-        case AnalysisRunState.DONE:
+        case ActionState.DONE:
             return 'green';
-        case AnalysisRunState.FAILED:
+        case ActionState.FAILED:
             return 'red';
-        case AnalysisRunState.PENDING:
+        case ActionState.PENDING:
             return 'orange';
-        case AnalysisRunState.PROCESSING:
+        case ActionState.PROCESSING:
             return 'blue';
         default:
             return 'grey'; // Default color for unknown states

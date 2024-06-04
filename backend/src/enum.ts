@@ -15,11 +15,12 @@ export enum UserRole {
     USER = 'USER',
 }
 
-export enum AnalysisState {
+export enum ActionState {
     PENDING = 'PENDING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     ERROR = 'ERROR',
+    FAILED = 'FAILED',
 }
 
 export enum KeyTypes {

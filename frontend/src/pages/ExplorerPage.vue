@@ -49,7 +49,7 @@
                     ></q-btn>
                 </q-td>
             </template>
-            <template v-slot:body-cell-runaction="props">
+            <template v-slot:body-cell-missionaction="props">
                 <q-td :props="props">
                     <q-btn
                         color="primary"
@@ -60,7 +60,7 @@
                     <q-btn
                         color="primary"
                         label="View"
-                        @click="() => view_run(props.row)"
+                        @click="() => view_mission(props.row)"
                     />
                 </q-td>
             </template>
@@ -78,8 +78,12 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { FileEntity, Project, Run } from 'src/types/types';
-import { allProjects, filesOfRun, runsOfProject } from 'src/services/queries';
+import { FileEntity, Project, Mission } from 'src/types/types';
+import {
+    allProjects,
+    filesOfMission,
+    missionsOfProject,
+} from 'src/services/queries';
 import { QTable, useQuasar } from 'quasar';
 import { computed, inject, Ref, ref } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
@@ -87,15 +91,15 @@ import { formatSize } from 'src/services/generalFormatting';
 import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import CreateProjectDialog from 'components/CreateProjectDialog.vue';
-import CreateRunDialog from 'components/CreateRunDialog.vue';
+import CreateMissionDialog from 'components/CreateMissionDialog.vue';
 import CreateFileDialog from 'components/CreateFileDialog.vue';
 import EditProject from 'components/EditProject.vue';
-import MoveRun from 'components/MoveRun.vue';
+import MoveMission from 'components/MoveMission.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 type crumb = {
     name: string;
-    entity: Project | Run | FileEntity | undefined;
+    entity: Project | Mission | FileEntity | undefined;
     type: string;
     uuid: string;
 };
@@ -103,16 +107,16 @@ const crumbs: Ref<crumb[]> = ref([
     { name: 'All', entity: undefined, type: 'Projects', uuid: '' },
 ]);
 const column_index = ref(0);
-const runsQueryKey = computed(() => [
-    'runs',
+const missionsQueryKey = computed(() => [
+    'missions',
     crumbs.value[crumbs.value.length - 1].uuid,
 ]);
 const filesQueryKey = computed(() => [
     'files',
     crumbs.value[crumbs.value.length - 1].uuid,
 ]);
-const runsQueryEnabled = computed(
-    () => crumbs.value[crumbs.value.length - 1].type === 'Runs',
+const missionsQueryEnabled = computed(
+    () => crumbs.value[crumbs.value.length - 1].type === 'Missions',
 );
 const filesQueryEnabled = computed(
     () => crumbs.value[crumbs.value.length - 1].type === 'Files',
@@ -124,15 +128,16 @@ const projectsReturn = useQuery<Project[]>({
     queryFn: allProjects,
 });
 
-const runsReturn = useQuery({
-    queryKey: runsQueryKey,
-    queryFn: () => runsOfProject(crumbs.value[crumbs.value.length - 1].uuid),
-    enabled: runsQueryEnabled,
+const missionsReturn = useQuery({
+    queryKey: missionsQueryKey,
+    queryFn: () =>
+        missionsOfProject(crumbs.value[crumbs.value.length - 1].uuid),
+    enabled: missionsQueryEnabled,
 });
 
 const filesReturn = useQuery({
     queryKey: filesQueryKey,
-    queryFn: () => filesOfRun(crumbs.value[crumbs.value.length - 1].uuid),
+    queryFn: () => filesOfMission(crumbs.value[crumbs.value.length - 1].uuid),
     enabled: filesQueryEnabled,
 });
 
@@ -147,7 +152,7 @@ const currentData = computed(() => {
     if (column_index.value === 0) {
         return projectsReturn.data?.value || [];
     } else if (column_index.value === 1) {
-        return runsReturn.data?.value || [];
+        return missionsReturn.data?.value || [];
     } else if (column_index.value === 2) {
         return filesReturn.data?.value || [];
     }
@@ -199,11 +204,11 @@ const project_columns = [
         sortable: true,
     },
     {
-        name: 'NrOfRuns',
+        name: 'NrOfMissions',
         required: true,
-        label: 'Nr of Runs',
+        label: 'Nr of Missions',
         align: 'left',
-        field: (row: Project) => row.runs.length,
+        field: (row: Project) => row.missions.length,
         format: (val: number) => `${val}`,
         sortable: true,
     },
@@ -213,13 +218,13 @@ const project_columns = [
         align: 'center',
     },
 ];
-const run_columns = [
+const mission_columns = [
     {
-        name: 'Run',
+        name: 'Mission',
         required: true,
-        label: 'Run',
+        label: 'Mission',
         align: 'left',
-        field: (row: Run) => row.name,
+        field: (row: Mission) => row.name,
         format: (val: string) => `${val}`,
         sortable: true,
     },
@@ -228,7 +233,7 @@ const run_columns = [
         required: true,
         label: 'Created',
         align: 'left',
-        field: (row: Run) => row.createdAt,
+        field: (row: Mission) => row.createdAt,
         format: (val: string) => formatDate(new Date(val)),
     },
     {
@@ -236,12 +241,12 @@ const run_columns = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: Run) => row.files.length,
+        field: (row: Mission) => row.files.length,
         format: (val: number) => `${val}`,
         sortable: true,
     },
     {
-        name: 'runaction',
+        name: 'missionaction',
         label: 'Action',
         align: 'center',
     },
@@ -281,24 +286,24 @@ const file_columns = [
         align: 'center',
     },
 ];
-const columns = [project_columns, run_columns, file_columns];
+const columns = [project_columns, mission_columns, file_columns];
 function view_project(project: Project) {
     crumbs.value.push({
         name: project.name,
         entity: project,
-        type: 'Runs',
+        type: 'Missions',
         uuid: project.uuid,
     });
-    runsReturn.refetch();
+    missionsReturn.refetch();
     column_index.value = 1;
 }
 
-function view_run(run: Run) {
+function view_mission(mission: Mission) {
     crumbs.value.push({
-        name: run.name,
-        uuid: run.uuid,
+        name: mission.name,
+        uuid: mission.uuid,
         type: 'Files',
-        entity: run,
+        entity: mission,
     });
     filesReturn.refetch();
     column_index.value = 2;
@@ -325,8 +330,8 @@ function create() {
         });
     } else if (column_index.value === 1) {
         $q.dialog({
-            title: 'Create new run',
-            component: CreateRunDialog,
+            title: 'Create new mission',
+            component: CreateMissionDialog,
             persistent: false,
             style: 'max-width: 1500px',
             componentProps: {
@@ -340,7 +345,7 @@ function create() {
             persistent: false,
             style: 'max-width: 1500px',
             componentProps: {
-                run: crumbs.value[crumbs.value.length - 1].entity,
+                mission: crumbs.value[crumbs.value.length - 1].entity,
             },
         });
     }
@@ -350,19 +355,19 @@ function refresh() {
     if (column_index.value === 0) {
         projectsReturn.refetch();
     } else if (column_index.value === 1) {
-        runsReturn.refetch();
+        missionsReturn.refetch();
     } else if (column_index.value === 2) {
         filesReturn.refetch();
     }
 }
 
-function move(run: Run) {
+function move(mission: Mission) {
     $q.dialog({
-        title: 'Move run',
-        component: MoveRun,
+        title: 'Move mission',
+        component: MoveMission,
         persistent: false,
         style: 'max-width: 1500px',
-        componentProps: { run: run },
+        componentProps: { mission: mission },
     });
 }
 </script>

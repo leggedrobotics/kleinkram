@@ -98,7 +98,7 @@ services:
       - loki
     volumes:
       # mount docker socket to access docker from within the container
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/mission/docker.sock:/var/mission/docker.sock
   prometheus:
     image: prom/prometheus
     volumes:

@@ -9,7 +9,7 @@ RUN yarn install
 
 # Build the docs
 COPY . ./
-RUN yarn run docs:build
+RUN yarn mission docs:build
 
 
 FROM nginx:1.23.2-alpine

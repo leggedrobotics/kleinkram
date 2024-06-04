@@ -111,14 +111,14 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: Queue) => row?.run?.project?.name,
+        field: (row: Queue) => row?.mission?.project?.name,
     },
     {
-        name: 'Run',
+        name: 'Mission',
         required: true,
-        label: 'Run',
+        label: 'Mission',
         align: 'left',
-        field: (row: Queue) => row.run.name,
+        field: (row: Queue) => row.mission.name,
     },
     { name: 'Status', label: 'Status', align: 'left', field: 'state' },
     {
