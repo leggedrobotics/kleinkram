@@ -98,6 +98,7 @@ export class FileProcessor implements OnModuleInit {
                         : env.MINIO_MCAP_BUCKET_NAME,
                     queue.identifier,
                 );
+                const src_size = buffer.length;
                 let identifier = queue.identifier;
                 let filename = queue.filename;
                 if (sourceIsBag) {
@@ -136,7 +137,7 @@ export class FileProcessor implements OnModuleInit {
                         topics: [], // Topics are only saved on the MCAP file to avoid duplication
                         creator: queue.creator,
                         mission: queue.mission,
-                        size,
+                        size: src_size,
                         filename: queue.filename,
                         type: FileType.BAG,
                     });

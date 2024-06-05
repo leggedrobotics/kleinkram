@@ -119,19 +119,30 @@
                             class="full-width"
                         />
                     </div>
-                    <div class="col-2 flex justify-center">
+                    <div class="col-2 flex justify-right">
                         <q-toggle
                             style="padding-left: 5px"
                             v-model="and_or"
                             :label="and_or ? 'And' : 'Or'"
                             dense
-                        />
-                        <q-tooltip
-                            >Toggle between AND/OR conditions for the topics.
-                            <br />And: Mission contains all selected topics, Or:
-                            Mission contains any of the selected
-                            topics</q-tooltip
                         >
+                            <q-tooltip>
+                                Toggle between AND/OR conditions for the topics.
+                                <br />And: Mission contains all selected topics,
+                                Or: Mission contains any of the selected topics
+                            </q-tooltip>
+                        </q-toggle>
+
+                        <q-toggle
+                            style="padding-left: 5px"
+                            v-model="mcap_bag"
+                            :label="mcap_bag ? 'MCAP' : 'Bag'"
+                            dense
+                        >
+                            <q-tooltip>
+                                Display only Bag / MCAP Files.
+                            </q-tooltip>
+                        </q-toggle>
                     </div>
                 </div>
             </div>
@@ -231,6 +242,7 @@ const topicsReturn = useQuery<string[]>({
 const topics = topicsReturn.data;
 const selectedTopics = ref([]);
 const and_or = ref(false);
+const mcap_bag = ref(true);
 
 const start = new Date();
 start.setHours(0, 0, 0, 0);
@@ -270,6 +282,7 @@ const { isLoading, isError, data, error } = useQuery({
         endDate,
         selectedTopics,
         and_or,
+        mcap_bag,
     ],
     queryFn: () =>
         fetchOverview(
@@ -280,6 +293,7 @@ const { isLoading, isError, data, error } = useQuery({
             endDate.value,
             selectedTopics.value || [],
             and_or.value,
+            mcap_bag.value,
         ),
 });
 

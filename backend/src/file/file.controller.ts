@@ -46,6 +46,7 @@ export class FileController {
         @Query('endDate') endDate: string,
         @Query('topics') topics: string,
         @Query('andOr') andOr: boolean,
+        @Query('mcapBag') mcapBag: boolean,
     ) {
         return await this.fileService.findFiltered(
             fileName,
@@ -55,6 +56,7 @@ export class FileController {
             endDate,
             topics,
             andOr,
+            mcapBag,
         );
     }
     @Get('download')

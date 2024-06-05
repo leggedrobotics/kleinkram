@@ -210,12 +210,12 @@ watch(
             editableFile.value = new FileEntity(
                 newValue.uuid,
                 newValue.filename,
-                data.value.identifier,
                 newValue.mission.clone(),
                 newValue.creator,
                 newValue.date,
                 [],
                 newValue.size,
+                newValue.type,
                 newValue.createdAt,
                 newValue.updatedAt,
                 newValue.deletedAt,

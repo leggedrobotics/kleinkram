@@ -13,7 +13,16 @@
                     </q-breadcrumbs-el>
                 </q-breadcrumbs>
             </div>
-            <div class="col-2">
+            <div class="col-1 flex">
+                <q-toggle
+                    v-if="column_index === 2"
+                    style="padding-left: 5px"
+                    v-model="mcap_bag"
+                    :label="mcap_bag ? 'MCAP' : 'Bag'"
+                    dense
+                />
+            </div>
+            <div class="col-1">
                 <q-btn
                     color="primary"
                     @click="create"
@@ -95,6 +104,7 @@ import CreateMissionDialog from 'components/CreateMissionDialog.vue';
 import CreateFileDialog from 'components/CreateFileDialog.vue';
 import EditProject from 'components/EditProject.vue';
 import MoveMission from 'components/MoveMission.vue';
+import { FileType } from 'src/enum/FILE_ENUM';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 type crumb = {
@@ -106,11 +116,15 @@ type crumb = {
 const crumbs: Ref<crumb[]> = ref([
     { name: 'All', entity: undefined, type: 'Projects', uuid: '' },
 ]);
+
+const mcap_bag = ref(true);
 const column_index = ref(0);
+
 const missionsQueryKey = computed(() => [
     'missions',
     crumbs.value[crumbs.value.length - 1].uuid,
 ]);
+
 const filesQueryKey = computed(() => [
     'files',
     crumbs.value[crumbs.value.length - 1].uuid,
@@ -154,7 +168,14 @@ const currentData = computed(() => {
     } else if (column_index.value === 1) {
         return missionsReturn.data?.value || [];
     } else if (column_index.value === 2) {
-        return filesReturn.data?.value || [];
+        return (
+            filesReturn.data?.value?.filter((file) => {
+                return (
+                    file.type ===
+                    (mcap_bag.value ? FileType.MCAP : FileType.BAG)
+                );
+            }) || []
+        );
     }
     return [];
 });
