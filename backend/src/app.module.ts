@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
-import { ProjectController } from './project/project.controller';
 import { ProjectModule } from './project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import env from './env';

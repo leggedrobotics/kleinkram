@@ -8,6 +8,7 @@ import Mission from '../mission/entities/mission.entity';
 import { externalMinio } from '../minioHelper';
 import Project from '../project/entities/project.entity';
 import Topic from '../topic/entities/topic.entity';
+import { FileType } from '../enum';
 
 @Injectable()
 export class FileService {
@@ -75,6 +76,7 @@ export class FileService {
         endDate: string,
         topics: string,
         and_or: boolean,
+        mcapBag: boolean,
     ) {
         // Start building your query with basic filters
         const query = this.fileRepository
@@ -82,7 +84,10 @@ export class FileService {
             .select('file.uuid')
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
-            .leftJoin('mission.project', 'project');
+            .leftJoin('mission.project', 'project')
+            .andWhere('file.type = :type', {
+                type: mcapBag ? FileType.MCAP : FileType.BAG,
+            });
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
             query.andWhere('file.filename LIKE :fileName', {

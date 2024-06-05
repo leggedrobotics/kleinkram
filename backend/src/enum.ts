@@ -32,3 +32,8 @@ export enum CookieNames {
     REFRESH_TOKEN = 'refreshtoken',
     CLI_KEY = 'clikey',
 }
+
+export enum FileType {
+    BAG = 'BAG',
+    MCAP = 'MCAP',
+}

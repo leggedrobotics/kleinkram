@@ -17,6 +17,7 @@ export const fetchOverview = async (
     endDate: Date,
     topics: string[],
     andOr: boolean,
+    mcapBag: boolean,
 ): Promise<Mission[]> => {
     try {
         const formattedStartDate = startDate.toISOString();
@@ -30,6 +31,7 @@ export const fetchOverview = async (
             endDate: formattedEndDate,
             topics: topics.join(','),
             andOr: andOr ? '1' : '',
+            mcapBag: mcapBag ? '1' : '',
         }).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};
@@ -87,6 +89,7 @@ export const fetchOverview = async (
                 new Date(file.date),
                 file.topics,
                 file.size,
+                file.type,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
                 new Date(file.deletedAt),
@@ -238,6 +241,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             new Date(file.date),
             topics,
             file.size,
+            file.type,
             new Date(file.createdAt),
             new Date(file.updatedAt),
             new Date(file.deletedAt),
@@ -335,6 +339,7 @@ export const missionsOfProject = async (
                 new Date(file.date),
                 file.topics,
                 file.size,
+                file.type,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
                 new Date(file.deletedAt),
@@ -416,6 +421,7 @@ export const filesOfMission = async (
             new Date(file.date),
             topics,
             file.size,
+            file.type,
             new Date(file.createdAt),
             new Date(file.updatedAt),
             new Date(file.deletedAt),

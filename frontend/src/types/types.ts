@@ -1,5 +1,6 @@
 import { ActionState, FileState } from 'src/enum/QUEUE_ENUM';
 import ROLE from 'src/enum/USER_ROLES';
+import { FileType } from 'src/enum/FILE_ENUM';
 
 class BaseEntity {
     uuid: string;
@@ -128,6 +129,7 @@ export class FileEntity extends BaseEntity {
     topics: Topic[];
     size: number;
     creator: User;
+    type: FileType;
 
     constructor(
         uuid: string,
@@ -137,6 +139,7 @@ export class FileEntity extends BaseEntity {
         date: Date,
         topics: Topic[],
         size: number,
+        type: FileType,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -148,6 +151,7 @@ export class FileEntity extends BaseEntity {
         this.date = date;
         this.filename = filename;
         this.topics = topics;
+        this.type = type;
     }
 }
 
