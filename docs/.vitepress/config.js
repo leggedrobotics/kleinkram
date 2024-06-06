@@ -43,6 +43,10 @@ export default {
                             text: 'Application Structure',
                             link: '/development/application-structure',
                         },
+                        {
+                            text: 'Entities & Relationships',
+                            link: '/development/entities',
+                        },
                     ],
                     collapsed: false,
                 },
