@@ -6,6 +6,7 @@ import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class ProjectService {
@@ -13,6 +14,7 @@ export class ProjectService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private userservice: UserService,
     ) {}
 
     async findAll(): Promise<Project[]> {
@@ -34,9 +36,8 @@ export class ProjectService {
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneById(user.userId);
+
         const newProject = this.projectRepository.create({
             ...project,
             creator: creator,

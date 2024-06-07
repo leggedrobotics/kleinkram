@@ -6,10 +6,14 @@ import { MissionController } from './mission.controller';
 import Project from '../project/entities/project.entity';
 import User from '../user/entities/user.entity';
 import Apikey from '../auth/entities/apikey.entity';
+import { UserService } from '../user/user.service';
+import Account from '../auth/entities/account.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Mission, Project, User, Apikey])],
-    providers: [MissionService],
+    imports: [
+        TypeOrmModule.forFeature([Mission, Project, User, Apikey, Account]),
+    ],
+    providers: [MissionService, UserService],
     controllers: [MissionController],
     exports: [MissionService],
 })

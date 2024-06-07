@@ -12,6 +12,8 @@ import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import Account from '../auth/entities/account.entity';
+import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
     const regex =
@@ -29,7 +31,7 @@ export class QueueService {
         private missionRepository: Repository<Mission>,
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
-        @InjectRepository(User) private userRepository: Repository<User>,
+        private userservice: UserService,
     ) {}
 
     async addActionQueue(mission_action_id: string) {
@@ -42,9 +44,8 @@ export class QueueService {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneById(user.userId);
+
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
             filename: fileId,
@@ -70,9 +71,8 @@ export class QueueService {
         missionUUID: string,
         user: JWTUser,
     ) {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneById(user.userId);
+
         const filteredFilenames = filenames.filter(
             (filename) =>
                 filename.endsWith('.bag') || filename.endsWith('.mcap'),

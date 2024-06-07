@@ -15,10 +15,12 @@ import {
     TokenOrUserGuard,
 } from './roles.guard';
 import Apikey from './entities/apikey.entity';
+import AccessGroup from './entities/accessgroup.entity';
+import Account from './entities/account.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Apikey, User]),
+        TypeOrmModule.forFeature([Apikey, User, AccessGroup, Account]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: async () => ({

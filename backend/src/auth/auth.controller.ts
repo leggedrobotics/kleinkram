@@ -6,12 +6,14 @@ import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { CookieNames } from '../enum';
+import { UserService } from '../user/user.service';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private authService: AuthService,
         private readonly jwtService: JwtService,
+        private userService: UserService,
     ) {}
 
     @Get('google')
@@ -21,8 +23,9 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
-        const user = req.user;
-        const token = await this.authService.login(user);
+        const account = req.user;
+        console.log(account);
+        const token = await this.authService.login(account);
         const state = req.query.state;
         if (state == 'cli') {
             res.redirect(
@@ -63,9 +66,7 @@ export class AuthController {
 
         try {
             const payload = this.jwtService.verify(refreshToken);
-            const user = await this.authService.validateUserByGoogle(
-                payload.username,
-            );
+            const user = await this.userService.findOneById(payload.uuid);
             if (!user) {
                 return res
                     .status(401)
@@ -73,7 +74,7 @@ export class AuthController {
             }
 
             const newAuthToken = this.jwtService.sign(
-                { username: user.email, sub: user.googleId },
+                { uuid: user.account.uuid },
                 { expiresIn: '30m' },
             );
             res.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {

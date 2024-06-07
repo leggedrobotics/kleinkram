@@ -14,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import Apikey from './entities/apikey.entity';
+import Account from './entities/account.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -66,7 +67,8 @@ export class LoggedInUserGuard extends AuthGuard('jwt') {
 @Injectable()
 export class AdminOnlyGuard extends AuthGuard('jwt') {
     constructor(
-        @InjectRepository(User) private userRepository: Repository<User>,
+        @InjectRepository(Account)
+        private accountRepository: Repository<Account>,
         private reflector: Reflector,
     ) {
         super();
@@ -77,16 +79,17 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
 
         const request = context.switchToHttp().getRequest();
         const user = request.user;
-
+        console.log('canActivate -> user', user);
         if (!user) {
             throw new UnauthorizedException('User not logged in');
         }
 
-        const userFromDb = await this.userRepository.findOne({
-            where: { googleId: user.userId },
+        const userFromDb = await this.accountRepository.findOne({
+            where: { oauthID: user.userId },
+            relations: ['user'],
         });
 
-        if (userFromDb.role !== UserRole.ADMIN) {
+        if (userFromDb.user.role !== UserRole.ADMIN) {
             throw new ForbiddenException('User is not an admin');
         }
 

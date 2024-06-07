@@ -7,6 +7,7 @@ import Project from '../project/entities/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class MissionService {
@@ -16,12 +17,11 @@ export class MissionService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private userservice: UserService,
     ) {}
 
     async create(createRun: CreateRun, user: JWTUser): Promise<Mission> {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneById(user.userId);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createRun.projectUUID },
         });

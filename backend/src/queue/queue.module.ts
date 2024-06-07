@@ -7,10 +7,12 @@ import { BullModule } from '@nestjs/bull';
 import Mission from '../mission/entities/mission.entity';
 import User from '../user/entities/user.entity';
 import Apikey from '../auth/entities/apikey.entity';
+import { UserService } from '../user/user.service';
+import Account from '../auth/entities/account.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([QueueEntity, Mission, User, Apikey]),
+        TypeOrmModule.forFeature([QueueEntity, Mission, User, Apikey, Account]),
         BullModule.forRoot({
             redis: {
                 host: 'redis',
@@ -24,7 +26,7 @@ import Apikey from '../auth/entities/apikey.entity';
             name: 'action-queue',
         }),
     ],
-    providers: [QueueService],
+    providers: [QueueService, UserService],
     controllers: [QueueController],
     exports: [QueueService],
 })
