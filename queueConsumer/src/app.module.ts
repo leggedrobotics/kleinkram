@@ -16,6 +16,8 @@ import Action from './entities/action.entity';
 import User from './entities/user.entity';
 import Mission from './entities/mission.entity';
 import Apikey from './entities/apikey.entity';
+import Account from './entities/account.entity';
+import AccessGroup from './entities/accessgroup.entity';
 
 @Module({
     imports: [
@@ -61,6 +63,8 @@ import Apikey from './entities/apikey.entity';
                         Project,
                         User,
                         Apikey,
+                        Account,
+                        AccessGroup,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],

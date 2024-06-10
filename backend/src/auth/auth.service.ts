@@ -78,9 +78,9 @@ export class AuthService implements OnModuleInit {
             role: UserRole.USER,
         });
 
-        const saved_user = await this.userRepository.save(user);
-        account.user = user;
         const saved_account = await this.accountRepository.save(account);
+        user.account = saved_account;
+        const saved_user = await this.userRepository.save(user);
 
         const personal_group = this.accessGroupRepository.create({
             name: `Personal: ${saved_user.name}`,

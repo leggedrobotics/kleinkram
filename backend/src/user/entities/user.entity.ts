@@ -27,7 +27,7 @@ export default class User extends BaseEntity {
     role: UserRole;
 
     @OneToOne(() => Account, (account) => account.user)
-    @JoinColumn()
+    @JoinColumn({ name: 'account_uuid' })
     account: Account;
 
     @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.users)
