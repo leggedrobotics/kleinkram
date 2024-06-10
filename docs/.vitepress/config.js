@@ -40,14 +40,14 @@ export default {
                             link: '/development/getting-started',
                         },
                     ],
-                    collapsed: false,
+                    collapsed: true,
                 },
                 {
                     text: 'Application Structure',
                     items: [
 
                         {
-                            text: 'Application Structure',
+                            text: 'Overview',
                             link: '/development/application-structure',
                         },
 
@@ -109,17 +109,17 @@ export default {
                             items: [
 
                                 {
-                                    text: 'Grafana',
+                                    text: 'grafana',
                                     link: '/development/application-structure/grafana',
                                 },
 
                                 {
-                                    text: 'Tempo',
+                                    text: 'tempo',
                                     link: '/development/application-structure/tempo',
                                 },
 
                                 {
-                                    text: 'Loki',
+                                    text: 'loki',
                                     link: '/development/application-structure/loki',
                                 },
 
@@ -136,6 +136,16 @@ export default {
                     collapsed: true,
                 },
 
+                {
+                    text: 'Access Control',
+                    items: [
+                        {
+                            text: 'Base Concepts',
+                            link: '/development/access-control/base-concepts',
+                        },
+                    ],
+                    collapsed: true,
+                },
 
             ],
         },
