@@ -39,17 +39,104 @@ export default {
                             text: 'Getting Started',
                             link: '/development/getting-started',
                         },
+                    ],
+                    collapsed: false,
+                },
+                {
+                    text: 'Application Structure',
+                    items: [
+
                         {
                             text: 'Application Structure',
                             link: '/development/application-structure',
                         },
+
                         {
-                            text: 'Entities & Relationships',
-                            link: '/development/entities',
+                            text: 'Core Services',
+                            items: [
+
+
+                                {
+                                    text: 'frontend',
+                                    link: '/development/application-structure/frontend',
+                                },
+
+                                {
+                                    text: 'api-server',
+                                    link: '/development/application-structure/api-server',
+                                },
+
+                                {
+                                    text: 'queue-processor',
+                                    link: '/development/application-structure/queue-processor',
+                                },
+
+                            ],
+                            collapsed: true,
                         },
+
+                        {
+                            text: 'Databases and File Storage',
+                            items: [
+
+                                {
+                                    text: 'minio',
+                                    link: '/development/application-structure/minio',
+                                },
+
+                                {
+                                    text: 'postgres',
+                                    link: '/development/application-structure/postgres',
+                                },
+
+                                {
+                                    text: 'redis',
+                                    link: '/development/application-structure/redis',
+                                },
+
+                                {
+                                    text: 'prometheus',
+                                    link: '/development/application-structure/prometheus',
+                                },
+
+                            ],
+                            collapsed: true,
+                        },
+
+
+                        {
+                            text: 'Logging and Monitoring',
+                            items: [
+
+                                {
+                                    text: 'Grafana',
+                                    link: '/development/application-structure/grafana',
+                                },
+
+                                {
+                                    text: 'Tempo',
+                                    link: '/development/application-structure/tempo',
+                                },
+
+                                {
+                                    text: 'Loki',
+                                    link: '/development/application-structure/loki',
+                                },
+
+                            ],
+                            collapsed: true,
+                        },
+
+                        {
+                            text: 'Documentation',
+                            link: '/development/application-structure/docs',
+                        },
+
                     ],
-                    collapsed: false,
+                    collapsed: true,
                 },
+
+
             ],
         },
 

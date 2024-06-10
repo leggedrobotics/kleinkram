@@ -1,64 +1,50 @@
 # Application Structure
 
-This document describes the structure of the application and how it is organized.
+This page describes the structure of the application and how it is organized.
 
-The application consists of 12 Docker containers grouped into operational and non-operational containers. The operational containers are responsible for running the application, while the non-operational containers are responsible for Monitoring and Documentation.
+## Service Overview
 
-The operaional Containers are again split into publicly accessible and non-publicly accessible containers. 
-Publicly accessible are:
-- `Frontend` - The web application
-- `API` - The backend application
-- `Minio` - The file storage
+The application is composed of multiple Docker containers (services), categorized into two primary groups:
 
-In a private network are:
-- `Postgres` - The Postres database
-- `Redis` - Database to manage the Queue
-- `QueingService` - The service worker processing the queues
-- `Action Container` - Custom container by users scheduled by the QueingService
+- [**operational containers**](#operational-containers): responsible for running the application
+- [**non-operational** containers](#non-operational-containers): responsible for monitoring, logging, and documentation.
 
-The non-operational containers are:
-- `Docs` - This documentation
-- `Prometheus` - ??
-- `Grafana` - ??
-- `Tempo` - ??
-- `Loki` - ??
+::: tip Application Structure
+The application code is stored inside a monorepo.
 
-
-![Infrastructure.jpg](..%2Fimg%2FInfrastructure.jpg)
-
-## Frontend
-The Fronted is a Vue3 application with the Quasar Framework & Component Library. It is responsible for the user interface. The Frontend is statically served by the Nginx in the Frontend container.
-
-For more information see the [Frontend Documentation](./frontend/README.md)
-
-## API
-The API is a NestJS application with TypeORM as an ORM. It is responsible for the business logic and the communication with the database. 
-
-For more information see the [API Documentation](./api/README.md)
-
-## Minio
-Minio is a high-performance object storage. It is used to store files. The API should never handle files directly. These files can be too large and slow down the API. Instead, the API should use presigned URLs to Minio so that files are directly uploaded to & downloaded from Minio.
-
-In minio are two buckets: one for `.bag` files and one for `.mcap` files. The files are grouped by their Project and Mission.
-
-## Postgres
-Postgres is a relational database. It is used to store the data of the application. The database is only accessed by the API & the QueingService.
-::: warning Todo
-Find out how to handle the database migrations
+Each service is responsible for a specific part of the application and is bundled into a Docker container. The services
+are orchestrated by [Docker Compose](https://docs.docker.com/compose/).
 :::
 
-## Redis
-Redis is a key-value store. It is used to manage the queue. The QueingService reads from the queue and processes the tasks. The API adds tasks to the queue.
+### Operational Containers
 
-## QueingService
-The QueingService is a NodeJS application. It reads from the Redis queue and processes the tasks. The tasks are scheduled by the API. The QueingService is responsible for offloading heavy processing from the API.
+The operational containers are again split into publicly accessible and non-publicly accessible containers.
 
-For more information see the [QueingService Documentation](./queuingService/README.md)
+#### Publicly Accessible
 
+- [frontend](./application-structure/frontend.md) - the web application written using Vue3 and Quasar
+- [api-server](./application-structure/api-server.md) - the backend application written using NestJS
+- [minio](application-structure/minio.md) - the file storage
 
+#### Private Network (Not Publicly Accessible)
 
+- [queue-processor](./application-structure/queue-processor.md) - The service worker processing the queues
+- [postgres](application-structure/postgres.md) - The Postres database
+- [redis](application-structure/redis.md) - Database to manage the Queue
+- `action containers` - custom containers scheduled by the `queue-processor` to perform user specific actions
 
+## Non-Operational Containers:
 
-::: danger Not Yet Documented
-This document is a work in progress and will be updated as the project evolves.
+- [docs](application-structure/docs.md) - this documentation, built using VitePress
+- [prometheus](application-structure/prometheus.md) - monitoring (for time series data)
+- [tempo](application-structure/tempo.md) - tracing
+- [loki](application-structure/loki.md) - logging
+- [grafana](application-structure/grafana.md) - visualization of the monitoring dat, logs, and traces
+
+## Infrastructure Overview
+
+![Infrastructure.jpg](imgs/infrastructure.svg)
+
+::: warning How to Edit the Figure
+The above figure can be edited using https://drive.google.com/file/d/1w4JAuPfGMLiISAmuAbiq0NbgInp4VGlP/view?ts=6666d313
 :::
