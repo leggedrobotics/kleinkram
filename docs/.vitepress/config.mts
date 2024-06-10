@@ -1,9 +1,16 @@
-export default {
+import { withMermaid } from 'vitepress-plugin-mermaid';
+
+export default withMermaid({
     lang: 'en-US',
 
     title: 'Bagestry',
     description: 'A structured bag and mcap dataset storage.',
     titleTemplate: ':title - Custom Suffix',
+
+
+    mermaidPlugin: {
+        class: "mermaid",
+    },
 
     ignoreDeadLinks: true,
     themeConfig: {
@@ -195,4 +202,4 @@ export default {
             copyright: 'Copyright © 2024-present Robotics Systems Lab',
         },
     },
-};
+});
