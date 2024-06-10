@@ -30,6 +30,29 @@ export default {
                     ],
                     collapsed: false,
                 },
+
+                {
+                    text: 'Data Validation and Actions',
+                    items: [
+                        {
+                            text: 'Getting Started',
+                            link: '/usage/actions/getting-started',
+                        },
+                    ],
+                    collapsed: true,
+                },
+
+                {
+                    text: 'CLI and API',
+                    items: [
+                        {
+                            text: 'Getting Started',
+                            link: '/usage/cli-api/cli-getting-started',
+                        },
+                    ],
+                    collapsed: true,
+                },
+
             ],
             '/development/': [
                 {
