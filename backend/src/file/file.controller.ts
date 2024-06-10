@@ -27,8 +27,8 @@ export class FileController {
 
     @Get('all')
     @LoggedIn()
-    async allFiles() {
-        return await this.fileService.findAll();
+    async allFiles(@addJWTUser() user: JWTUser) {
+        return await this.fileService.findAll(user.uuid);
     }
 
     @Get('filteredByNames')

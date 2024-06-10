@@ -23,8 +23,32 @@ export class FileService {
         @InjectRepository(User) private userRepository: Repository<User>,
     ) {}
 
-    async findAll() {
-        return this.fileRepository.find({ relations: ['mission'] });
+    async findAll(userUUID: string) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        if (user.role === UserRole.ADMIN) {
+            return this.fileRepository.find({
+                relations: ['mission'],
+            });
+        }
+        return this.fileRepository
+            .createQueryBuilder('file')
+            .leftJoinAndSelect('file.mission', 'mission')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :userUUID', {
+                        userUUID,
+                    }).orWhere('missionUsers.uuid = :userUUID', {
+                        userUUID,
+                    });
+                }),
+            );
     }
 
     async findFilteredByNames(
