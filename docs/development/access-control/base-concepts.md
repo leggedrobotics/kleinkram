@@ -56,13 +56,13 @@ These default groups can be configured in the configuration file: `backend/acces
 
 ```mermaid
 graph TD
-    A["AccessCheck(user, right, mission | project)"] --> B{"check if user is admin"}
+    A["AccessCheck(user, right, mission | project)"] --> B{"check if user\nis a global admin"}
     B -->|Yes| C[Access Granted]
-    B -->|No| D["is project"]
-    D -->|Yes| E["is there a group (user, right, project)"]
+    B -->|No| E{"is there a group\n(user, right, project)"}
     E -->|Yes| C[Access Granted]
-    E -->|No| G["is mission"]
-    G -->|Yes| H["is there a group (user, right, mission)"]
+    E -->|No| G{"is mission"}
+    G -->|No| F[Access Denied]
+    G -->|Yes| H{"is there a group\n(user, right, mission)"}
     H -->|Yes| C[Access Granted]
-    H -->|No| F[Access Denied]
+    H -->|No| F
 ```
