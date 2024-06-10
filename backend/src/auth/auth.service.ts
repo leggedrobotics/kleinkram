@@ -90,15 +90,15 @@ export class AuthService implements OnModuleInit {
             personal: true,
         });
         await this.accessGroupRepository.save(personal_group);
+        user.accessGroups = [personal_group];
 
         const legged_robotics_group = await this.accessGroupRepository.findOne({
             where: { uuid: DEFAULT_ACCESS_GROUP_UUID },
         });
         if (legged_robotics_group) {
-            user.accessGroups = [legged_robotics_group];
-            await this.userRepository.save(user);
+            user.accessGroups.push(legged_robotics_group);
         }
-        console.log('saved');
+        await this.userRepository.save(user);
         return this.accountRepository.findOneOrFail({
             where: { uuid: saved_account.uuid },
             relations: ['user'],

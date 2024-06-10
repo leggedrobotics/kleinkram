@@ -37,10 +37,15 @@ export class ProjectService {
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
         const creator = await this.userservice.findOneById(user.userId);
-
+        console.log(creator.accessGroups);
+        const personal_access_group = creator.accessGroups.find(
+            (accessGroup) => accessGroup.personal,
+        );
+        console.log('personal_access_group', personal_access_group);
         const newProject = this.projectRepository.create({
             ...project,
             creator: creator,
+            accessGroups: [personal_access_group],
         });
         return this.projectRepository.save(newProject);
     }

@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, OneToMany } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import User from './user.entity';
 import Project from './project.entity';
 import Mission from './mission.entity';
@@ -11,14 +11,20 @@ export default class AccessGroup extends BaseEntity {
     name: string;
 
     @ManyToMany(() => User, (user) => user.accessGroups)
+    @JoinTable()
     users: User[];
 
     @ManyToMany(() => Project, (project) => project.accessGroups)
+    @JoinTable()
     projects: Project[];
 
     @ManyToMany(() => Mission, (mission) => mission.accessGroups)
+    @JoinTable()
     missions: Mission[];
 
     @Column()
     rights: AccessGroupRights;
+
+    @Column()
+    personal: boolean;
 }

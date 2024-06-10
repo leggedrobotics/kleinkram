@@ -20,7 +20,7 @@ export class UserService {
     async findOneById(oauthID: string) {
         const account = await this.accountRepository.findOneOrFail({
             where: { oauthID: oauthID },
-            relations: ['user'],
+            relations: ['user', 'user.accessGroups'],
         });
         return account.user;
     }
