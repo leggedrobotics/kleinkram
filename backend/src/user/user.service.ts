@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import User from './entities/user.entity';
-import { AccountType, UserRole } from '../enum';
+import { UserRole } from '../enum';
 import { JWTUser } from '../auth/paramDecorator';
 import Account from '../auth/entities/account.entity';
 
@@ -17,12 +17,11 @@ export class UserService {
         return this.userRepository.findOne({ where: { email } });
     }
 
-    async findOneById(oauthID: string) {
-        const account = await this.accountRepository.findOneOrFail({
-            where: { oauthID: oauthID },
-            relations: ['user', 'user.accessGroups'],
+    async findOneByUUID(uuid: string) {
+        return this.userRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['accessGroups', 'account'],
         });
-        return account.user;
     }
 
     async claimAdmin(jwtuser: JWTUser) {

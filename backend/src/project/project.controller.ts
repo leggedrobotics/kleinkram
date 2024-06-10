@@ -28,7 +28,6 @@ export class ProjectController {
     @Get()
     @LoggedIn()
     async allProjects(@addJWTUser() user?: JWTUser) {
-        console.log('User:', user);
         return this.projectService.findAll(user);
     }
 

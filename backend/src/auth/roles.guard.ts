@@ -12,7 +12,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from './entities/apikey.entity';
 import Account from './entities/account.entity';
-import { GuardService } from './guard.service';
+import { ProjectGuardService } from './projectGuard.service';
+import { MissionGuardService } from './missionGuard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -97,7 +98,7 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
 @Injectable()
 export class ReadProjectGuard extends AuthGuard('jwt') {
     constructor(
-        private guardService: GuardService,
+        private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
     ) {
         super();
@@ -111,14 +112,17 @@ export class ReadProjectGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const projectUUID = request.query.uuid;
-        return this.guardService.canAccessProject(user.userId, projectUUID);
+        return this.projectGuardService.canAccessProject(
+            user.userId,
+            projectUUID,
+        );
     }
 }
 
 @Injectable()
 export class ReadProjectByNameGuard extends AuthGuard('jwt') {
     constructor(
-        private guardService: GuardService,
+        private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
     ) {
         super();
@@ -132,7 +136,7 @@ export class ReadProjectByNameGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const projectName = request.query.name;
-        return this.guardService.canAccessProjectByName(
+        return this.projectGuardService.canAccessProjectByName(
             user.userId,
             projectName,
         );
@@ -142,7 +146,7 @@ export class ReadProjectByNameGuard extends AuthGuard('jwt') {
 @Injectable()
 export class WriteProjectGuard extends AuthGuard('jwt') {
     constructor(
-        private guardService: GuardService,
+        private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
     ) {
         super();
@@ -156,7 +160,7 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const projectUUID = request.query.uuid;
-        return this.guardService.canAccessProject(
+        return this.projectGuardService.canAccessProject(
             user.userId,
             projectUUID,
             AccessGroupRights.WRITE,
@@ -167,7 +171,7 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
 @Injectable()
 export class DeleteProjectGuard extends AuthGuard('jwt') {
     constructor(
-        private guardService: GuardService,
+        private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
     ) {
         super();
@@ -181,7 +185,7 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const projectUUID = request.query.uuid;
-        return this.guardService.canAccessProject(
+        return this.projectGuardService.canAccessProject(
             user.userId,
             projectUUID,
             AccessGroupRights.DELETE,
@@ -192,7 +196,7 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
 @Injectable()
 export class CreateProjectGuard extends AuthGuard('jwt') {
     constructor(
-        private guardService: GuardService,
+        private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
     ) {
         super();
@@ -205,6 +209,30 @@ export class CreateProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        return this.guardService.canCreateProject(user.userId);
+        return this.projectGuardService.canCreateProject(user.userId);
+    }
+}
+
+@Injectable()
+export class ReadMissionGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectUUID = request.query.uuid;
+        return this.missionGuardService.canAccessMission(
+            user.userId,
+            projectUUID,
+        );
     }
 }

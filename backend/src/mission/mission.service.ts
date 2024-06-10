@@ -21,7 +21,7 @@ export class MissionService {
     ) {}
 
     async create(createRun: CreateRun, user: JWTUser): Promise<Mission> {
-        const creator = await this.userservice.findOneById(user.uuid);
+        const creator = await this.userservice.findOneByUUID(user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createRun.projectUUID },
         });
