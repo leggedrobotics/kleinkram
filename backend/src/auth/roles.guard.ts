@@ -14,6 +14,7 @@ import Apikey from './entities/apikey.entity';
 import Account from './entities/account.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
+import { FileGuardService } from './fileGuard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -289,16 +290,91 @@ export class MoveMissionToProjectGuard extends AuthGuard('jwt') {
         const missionUUID = request.query.missionUUID;
         const projectUUID = request.query.projectUUID;
         return (
-            this.projectGuardService.canAccessProject(
+            (await this.projectGuardService.canAccessProject(
                 user.userId,
                 projectUUID,
                 AccessGroupRights.CREATE,
-            ) &&
-            this.missionGuardService.canAccessMission(
+            )) &&
+            (await this.missionGuardService.canAccessMission(
                 user.userId,
                 missionUUID,
                 AccessGroupRights.DELETE,
-            )
+            ))
+        );
+    }
+}
+
+@Injectable()
+export class ReadFileGuard extends AuthGuard('jwt') {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const fileUUID = request.query.uuid;
+        return this.fileGuardService.canAccessFile(
+            user.userId,
+            fileUUID,
+            AccessGroupRights.READ,
+        );
+    }
+}
+
+@Injectable()
+export class ReadFileByNameGuard extends AuthGuard('jwt') {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const filename = request.query.name;
+        return this.fileGuardService.canAccessFileByName(
+            user.userId,
+            filename,
+            AccessGroupRights.READ,
+        );
+    }
+}
+
+@Injectable()
+export class WriteFileGuard extends AuthGuard('jwt') {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const fileUUID = request.query.uuid;
+        return this.fileGuardService.canAccessFile(
+            user.userId,
+            fileUUID,
+            AccessGroupRights.WRITE,
         );
     }
 }

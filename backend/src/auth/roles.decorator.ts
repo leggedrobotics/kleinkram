@@ -12,6 +12,9 @@ import {
     ReadMissionGuard,
     ReadMissionByNameGuard,
     MoveMissionToProjectGuard,
+    ReadFileGuard,
+    ReadFileByNameGuard,
+    WriteFileGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -97,5 +100,26 @@ export function CanMoveMission() {
     return applyDecorators(
         SetMetadata('CanMoveMission', true),
         UseGuards(MoveMissionToProjectGuard),
+    );
+}
+
+export function CanReadFile() {
+    return applyDecorators(
+        SetMetadata('CanReadFile', true),
+        UseGuards(ReadFileGuard),
+    );
+}
+
+export function CanReadFileByName() {
+    return applyDecorators(
+        SetMetadata('CanReadFileByName', true),
+        UseGuards(ReadFileByNameGuard),
+    );
+}
+
+export function CanWriteFile() {
+    return applyDecorators(
+        SetMetadata('CanWriteFile', true),
+        UseGuards(WriteFileGuard),
     );
 }

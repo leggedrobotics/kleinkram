@@ -355,7 +355,7 @@ export const filesOfMission = async (
     missionUUID: string,
 ): Promise<FileEntity[]> => {
     const response = await axios.get('file/ofMission', {
-        params: { missionUUID },
+        params: { uuid: missionUUID },
     });
     if (response.data.length === 0) {
         return [];
