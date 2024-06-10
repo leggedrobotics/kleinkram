@@ -8,6 +8,7 @@ import Account from './entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import AccessGroup from './entities/accessgroup.entity';
+import Project from '../project/entities/project.entity';
 
 type AccessGroupConfig = {
     emails: [{ email: string; access_group: string[] }];
@@ -26,6 +27,8 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
     ) {
         this.config = require('../../access_config.json');
     }

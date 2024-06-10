@@ -17,10 +17,12 @@ import {
 import Apikey from './entities/apikey.entity';
 import AccessGroup from './entities/accessgroup.entity';
 import Account from './entities/account.entity';
+import Project from '../project/entities/project.entity';
+import { GuardService } from './guard.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Apikey, User, AccessGroup, Account]),
+        TypeOrmModule.forFeature([Apikey, User, AccessGroup, Account, Project]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: async () => ({
@@ -33,6 +35,7 @@ import Account from './entities/account.entity';
         AuthService,
         GoogleStrategy,
         UserService,
+        GuardService,
         JwtStrategy,
         AdminOnlyGuard,
         LoggedInUserGuard,

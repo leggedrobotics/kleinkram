@@ -4,6 +4,11 @@ import {
     LoggedInUserGuard,
     AdminOnlyGuard,
     TokenOrUserGuard,
+    ReadProjectGuard,
+    WriteProjectGuard,
+    ReadProjectByNameGuard,
+    CreateProjectGuard,
+    DeleteProjectGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -34,5 +39,40 @@ export function TokenOrUser() {
     return applyDecorators(
         SetMetadata('isTokenOrUser', true),
         UseGuards(TokenOrUserGuard),
+    );
+}
+
+export function CanReadProject() {
+    return applyDecorators(
+        SetMetadata('CanReadProject', true),
+        UseGuards(ReadProjectGuard),
+    );
+}
+
+export function CanReadProjectByName() {
+    return applyDecorators(
+        SetMetadata('CanReadProjectByName', true),
+        UseGuards(ReadProjectByNameGuard),
+    );
+}
+
+export function CanWriteProject() {
+    return applyDecorators(
+        SetMetadata('CanWriteProject', true),
+        UseGuards(WriteProjectGuard),
+    );
+}
+
+export function CanDeleteProject() {
+    return applyDecorators(
+        SetMetadata('CanDeleteProject', true),
+        UseGuards(DeleteProjectGuard),
+    );
+}
+
+export function CanCreateProject() {
+    return applyDecorators(
+        SetMetadata('CanCreateProject', true),
+        UseGuards(CreateProjectGuard),
     );
 }

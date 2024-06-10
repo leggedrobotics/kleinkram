@@ -9,12 +9,13 @@ import { UserService } from '../user/user.service';
 import { AuthService } from '../auth/auth.service';
 import Account from '../auth/entities/account.entity';
 import AccessGroup from '../auth/entities/accessgroup.entity';
+import { GuardService } from '../auth/guard.service';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Project, User, Apikey, Account, AccessGroup]),
     ],
-    providers: [ProjectService, UserService],
+    providers: [ProjectService, UserService, GuardService],
     exports: [ProjectService],
     controllers: [ProjectController],
 })

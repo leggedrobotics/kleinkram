@@ -1,20 +1,18 @@
 import {
-    Injectable,
     CanActivate,
     ExecutionContext,
-    UnauthorizedException,
     ForbiddenException,
-    Type,
-    mixin,
+    Injectable,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { CookieNames, UserRole } from '../enum';
+import { AccessGroupRights, CookieNames, UserRole } from '../enum';
 import { InjectRepository } from '@nestjs/typeorm';
-import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import Apikey from './entities/apikey.entity';
 import Account from './entities/account.entity';
+import { GuardService } from './guard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -93,5 +91,120 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
         }
 
         return true;
+    }
+}
+
+@Injectable()
+export class ReadProjectGuard extends AuthGuard('jwt') {
+    constructor(
+        private guardService: GuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectUUID = request.query.uuid;
+        return this.guardService.canAccessProject(user.userId, projectUUID);
+    }
+}
+
+@Injectable()
+export class ReadProjectByNameGuard extends AuthGuard('jwt') {
+    constructor(
+        private guardService: GuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectName = request.query.name;
+        return this.guardService.canAccessProjectByName(
+            user.userId,
+            projectName,
+        );
+    }
+}
+
+@Injectable()
+export class WriteProjectGuard extends AuthGuard('jwt') {
+    constructor(
+        private guardService: GuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectUUID = request.query.uuid;
+        return this.guardService.canAccessProject(
+            user.userId,
+            projectUUID,
+            AccessGroupRights.WRITE,
+        );
+    }
+}
+
+@Injectable()
+export class DeleteProjectGuard extends AuthGuard('jwt') {
+    constructor(
+        private guardService: GuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectUUID = request.query.uuid;
+        return this.guardService.canAccessProject(
+            user.userId,
+            projectUUID,
+            AccessGroupRights.DELETE,
+        );
+    }
+}
+
+@Injectable()
+export class CreateProjectGuard extends AuthGuard('jwt') {
+    constructor(
+        private guardService: GuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        return this.guardService.canCreateProject(user.userId);
     }
 }

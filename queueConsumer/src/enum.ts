@@ -40,10 +40,10 @@ export enum FileType {
 
 export enum AccessGroupRights {
     READ = 0,
-    WRITE = 1,
-    DELETE = 2,
+    CREATE = 10,
+    WRITE = 20,
+    DELETE = 30,
 }
-
 export enum AccountType {
     GOOGLE = 'GOOGLE',
 }

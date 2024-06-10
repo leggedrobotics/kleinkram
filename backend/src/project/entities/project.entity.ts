@@ -6,7 +6,7 @@ import AccessGroup from '../../auth/entities/accessgroup.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
-    @Column()
+    @Column({ unique: true })
     name: string;
 
     @OneToMany(() => Mission, (mission) => mission.project)
