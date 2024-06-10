@@ -33,7 +33,7 @@ export class UserService {
             throw new ForbiddenException('Admin already exists');
         }
         const account = await this.accountRepository.findOneOrFail({
-            where: { oauthID: jwtuser.userId },
+            where: { oauthID: jwtuser.uuid },
             relations: ['user'],
         });
 
@@ -44,7 +44,7 @@ export class UserService {
 
     async me(jwtuser: JWTUser) {
         const account = await this.accountRepository.findOneOrFail({
-            where: { oauthID: jwtuser.userId },
+            where: { oauthID: jwtuser.uuid },
             relations: ['user'],
         });
         return account.user;

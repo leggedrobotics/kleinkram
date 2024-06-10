@@ -44,7 +44,7 @@ export class QueueService {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.userservice.findOneById(user.userId);
+        const creator = await this.userservice.findOneById(user.uuid);
 
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
@@ -71,7 +71,7 @@ export class QueueService {
         missionUUID: string,
         user: JWTUser,
     ) {
-        const creator = await this.userservice.findOneById(user.userId);
+        const creator = await this.userservice.findOneById(user.uuid);
 
         const filteredFilenames = filenames.filter(
             (filename) =>

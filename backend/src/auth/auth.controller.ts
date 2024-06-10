@@ -23,8 +23,8 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
-        const account = req.user;
-        const token = await this.authService.login(account);
+        const user = req.user;
+        const token = await this.authService.login(user);
         const state = req.query.state;
         if (state == 'cli') {
             res.redirect(
@@ -73,7 +73,7 @@ export class AuthController {
             }
 
             const newAuthToken = this.jwtService.sign(
-                { uuid: user.account.uuid },
+                { uuid: user.uuid },
                 { expiresIn: '30m' },
             );
             res.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {

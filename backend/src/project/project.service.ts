@@ -9,6 +9,8 @@ import User from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 
 import AccessGroup from '../auth/entities/accessgroup.entity';
+import { AccessGroupRights } from '../enum';
+import Account from 'src/auth/entities/account.entity';
 
 @Injectable()
 export class ProjectService {
@@ -21,11 +23,20 @@ export class ProjectService {
         private accessGroupRepository: Repository<AccessGroup>,
     ) {}
 
-    async findAll(): Promise<Project[]> {
-        logger.debug('Finding all projects');
-        return this.projectRepository.find({
-            relations: ['creator', 'missions'],
-        });
+    async findAll(user: JWTUser): Promise<Project[]> {
+        logger.debug('Finding all projects as user: ', user.uuid);
+
+        return this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoinAndSelect('project.creator', 'creator')
+            .leftJoinAndSelect('project.missions', 'missions')
+            .leftJoin('project.accessGroups', 'accessGroups')
+            .leftJoin('accessGroups.users', 'users')
+            .where('accessGroups.rights >= :rights', {
+                rights: AccessGroupRights.READ,
+            })
+            .andWhere('users.uuid = :uuid', { uuid: user.uuid })
+            .getMany();
     }
 
     async findOne(uuid: string): Promise<Project> {
@@ -40,7 +51,7 @@ export class ProjectService {
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
-        const creator = await this.userservice.findOneById(user.userId);
+        const creator = await this.userservice.findOneById(user.uuid);
         const access_groups_default = creator.accessGroups.filter(
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );

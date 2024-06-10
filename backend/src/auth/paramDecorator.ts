@@ -8,6 +8,5 @@ export const addJWTUser = createParamDecorator(
 );
 
 export class JWTUser {
-    userId: string;
-    username: string;
+    uuid: string;
 }

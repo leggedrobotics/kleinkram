@@ -54,22 +54,23 @@ export class AuthService implements OnModuleInit {
         );
     }
 
-    async validateAndCreateUserByGoogle(profile: any): Promise<Account> {
+    async validateAndCreateUserByGoogle(profile: any): Promise<User> {
         const { id, emails, displayName } = profile;
         const email = emails[0].value;
         const account = await this.accountRepository.findOne({
             where: { oauthID: id },
+            relations: ['user'],
         });
         if (account) {
-            return account;
+            return account.user;
         }
 
         return this.create(id, email, displayName);
     }
 
-    async login(account: Account) {
+    async login(user: User) {
         const payload: JwtPayload = {
-            uuid: account.uuid,
+            uuid: user.uuid,
         };
         return {
             [CookieNames.AUTH_TOKEN]: this.jwtService.sign(payload, {
@@ -119,10 +120,10 @@ export class AuthService implements OnModuleInit {
             }
         });
 
-        await this.userRepository.save(user);
-        return this.accountRepository.findOneOrFail({
-            where: { uuid: saved_account.uuid },
-            relations: ['user'],
+        const new_user = await this.userRepository.save(user);
+        return this.userRepository.findOneOrFail({
+            where: { uuid: new_user.uuid },
+            relations: ['account'],
         });
     }
 }

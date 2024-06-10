@@ -27,8 +27,9 @@ export class ProjectController {
 
     @Get()
     @LoggedIn()
-    async allProjects() {
-        return this.projectService.findAll();
+    async allProjects(@addJWTUser() user?: JWTUser) {
+        console.log('User:', user);
+        return this.projectService.findAll(user);
     }
 
     @Get('one')
