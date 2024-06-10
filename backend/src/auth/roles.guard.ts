@@ -27,6 +27,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
     constructor(
         @InjectRepository(Apikey) private tokenRepository: Repository<Apikey>,
         private reflector: Reflector,
+        private missionGuardService: MissionGuardService,
     ) {
         super();
     }
@@ -45,6 +46,13 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                 throw new ForbiddenException('Invalid token');
             }
         } else {
+            const canAccess = await this.missionGuardService.canAccessMission(
+                request.user.uuid,
+                request.query.uuid,
+            );
+            if (!canAccess) {
+                throw new ForbiddenException('User does not have access');
+            }
             await super.canActivate(context);
         }
         return true;
@@ -229,10 +237,68 @@ export class ReadMissionGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const projectUUID = request.query.uuid;
+        const missionUUID = request.query.uuid;
         return this.missionGuardService.canAccessMission(
             user.userId,
-            projectUUID,
+            missionUUID,
+        );
+    }
+}
+
+@Injectable()
+export class ReadMissionByNameGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionName = request.query.name;
+        return this.missionGuardService.canAccessMissionByName(
+            user.userId,
+            missionName,
+        );
+    }
+}
+
+@Injectable()
+export class MoveMissionToProjectGuard extends AuthGuard('jwt') {
+    constructor(
+        private projectGuardService: ProjectGuardService,
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUID = request.query.missionUUID;
+        const projectUUID = request.query.projectUUID;
+        return (
+            this.projectGuardService.canAccessProject(
+                user.userId,
+                projectUUID,
+                AccessGroupRights.CREATE,
+            ) &&
+            this.missionGuardService.canAccessMission(
+                user.userId,
+                missionUUID,
+                AccessGroupRights.DELETE,
+            )
         );
     }
 }

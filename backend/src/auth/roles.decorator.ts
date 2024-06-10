@@ -10,6 +10,8 @@ import {
     CreateProjectGuard,
     DeleteProjectGuard,
     ReadMissionGuard,
+    ReadMissionByNameGuard,
+    MoveMissionToProjectGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -82,5 +84,18 @@ export function CanReadMission() {
     return applyDecorators(
         SetMetadata('CanReadMission', true),
         UseGuards(ReadMissionGuard),
+    );
+}
+export function CanReadMissionByName() {
+    return applyDecorators(
+        SetMetadata('CanReadMission', true),
+        UseGuards(ReadMissionByNameGuard),
+    );
+}
+
+export function CanMoveMission() {
+    return applyDecorators(
+        SetMetadata('CanMoveMission', true),
+        UseGuards(MoveMissionToProjectGuard),
     );
 }

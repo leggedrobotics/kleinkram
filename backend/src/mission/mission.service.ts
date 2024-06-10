@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import Mission from './entities/mission.entity';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateRun } from './entities/create-mission.dto';
+import { CreateMission } from './entities/create-mission.dto';
 import Project from '../project/entities/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
+import { UserRole } from '../enum';
 
 @Injectable()
 export class MissionService {
@@ -20,7 +21,7 @@ export class MissionService {
         private userservice: UserService,
     ) {}
 
-    async create(createRun: CreateRun, user: JWTUser): Promise<Mission> {
+    async create(createRun: CreateMission, user: JWTUser): Promise<Mission> {
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createRun.projectUUID },
@@ -36,23 +37,71 @@ export class MissionService {
         });
     }
 
-    async findRunByProject(projectUUID: string): Promise<Mission[]> {
+    async findOne(uuid: string): Promise<Mission> {
+        return this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['project', 'files', 'creator'],
+        });
+    }
+
+    async findMissionByProject(projectUUID: string): Promise<Mission[]> {
         return await this.missionRepository.find({
             where: { project: { uuid: projectUUID } },
             relations: ['project', 'files', 'creator', 'files.creator'],
         });
     }
 
-    async filteredByProjectName(projectName: string): Promise<Mission[]> {
-        const project = await this.projectRepository.findOneOrFail({
-            where: { name: projectName },
-            relations: ['missions', 'missions.project', 'missions.creator'],
+    async filteredByProjectName(
+        projectName: string,
+        userUUID: string,
+    ): Promise<Mission[]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
         });
-        return project.missions;
+        if (user.role === UserRole.ADMIN) {
+            const project = await this.projectRepository.findOneOrFail({
+                where: { name: projectName },
+                relations: ['missions', 'missions.project', 'missions.creator'],
+            });
+            return project.missions;
+        }
+        return this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where('project.name = :name', { name: projectName })
+            .andWhere(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :user', {
+                        user: userUUID,
+                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
+                }),
+            )
+            .getMany();
     }
 
-    async findAll(): Promise<Mission[]> {
-        return this.missionRepository.find({ relations: ['project'] });
+    // TODO Test!
+    async findAll(userUUID: string): Promise<Mission[]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        if (user.role === UserRole.ADMIN) {
+            return this.missionRepository.find({ relations: ['project'] });
+        }
+        return this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where('projectUsers.uuid = :user', { user: userUUID })
+            .orWhere('missionUsers.uuid = :user', { user: userUUID })
+            .getMany();
     }
 
     async findOneByName(name: string): Promise<Mission> {
@@ -66,11 +115,14 @@ export class MissionService {
         });
     }
 
-    async clearRuns(): Promise<void> {
+    async clearMissions(): Promise<void> {
         await this.missionRepository.query('DELETE FROM "mission"');
     }
 
-    async moveRun(missionUUID: string, projectUUID: string): Promise<Mission> {
+    async moveMission(
+        missionUUID: string,
+        projectUUID: string,
+    ): Promise<Mission> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],

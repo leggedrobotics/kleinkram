@@ -277,7 +277,9 @@ export const allTopicsNames = async (): Promise<string[]> => {
 export const missionsOfProject = async (
     projectUUID: string,
 ): Promise<Mission[]> => {
-    const response = await axios.get(`/mission/filtered/${projectUUID}`);
+    const response = await axios.get(`/mission/filtered`, {
+        params: { uuid: projectUUID },
+    });
     const users: Record<string, User> = {};
     return response.data.map((mission: any) => {
         const project = new Project(

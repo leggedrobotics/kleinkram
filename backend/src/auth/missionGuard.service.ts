@@ -58,4 +58,15 @@ export class MissionGuardService {
 
         return res.length > 0;
     }
+
+    async canAccessMissionByName(
+        userUUID: string,
+        missionName: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const mission = await this.missionRepository.findOne({
+            where: { name: missionName },
+        });
+        return this.canAccessMission(userUUID, mission.uuid, rights);
+    }
 }
