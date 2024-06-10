@@ -10,7 +10,7 @@ export default class AccessGroup extends BaseEntity {
     @Column()
     name: string;
 
-    @ManyToMany(() => User, (user) => user.accessGroups, { cascade: true })
+    @ManyToMany(() => User, (user) => user.accessGroups)
     @JoinTable()
     users: User[];
 
@@ -24,4 +24,7 @@ export default class AccessGroup extends BaseEntity {
 
     @Column()
     rights: AccessGroupRights;
+
+    @Column()
+    personal: boolean;
 }

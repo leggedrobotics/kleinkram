@@ -33,6 +33,7 @@ export class AuthService implements OnModuleInit {
                 name: 'Legged Robotics',
                 uuid: DEFAULT_ACCESS_GROUP_UUID,
                 rights: AccessGroupRights.READ,
+                personal: false,
             });
             await this.accessGroupRepository.save(group);
         }
@@ -86,6 +87,7 @@ export class AuthService implements OnModuleInit {
             name: `Personal: ${saved_user.name}`,
             rights: AccessGroupRights.WRITE,
             users: [saved_user],
+            personal: true,
         });
         await this.accessGroupRepository.save(personal_group);
 
