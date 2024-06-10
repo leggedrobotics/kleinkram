@@ -136,10 +136,10 @@ export class QueueService {
         }, {});
     }
 
-    async confirmUpload(filename: string) {
-        console.debug('confirmUpload', filename);
+    async confirmUpload(uuid: string) {
+        console.debug('confirmUpload', uuid);
         const queue = await this.queueRepository.findOneOrFail({
-            where: { uuid: filename },
+            where: { uuid: uuid },
         });
 
         queue.state = FileState.PENDING;
