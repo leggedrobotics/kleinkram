@@ -79,7 +79,6 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
 
         const request = context.switchToHttp().getRequest();
         const user = request.user;
-        console.log('canActivate -> user', user);
         if (!user) {
             throw new UnauthorizedException('User not logged in');
         }

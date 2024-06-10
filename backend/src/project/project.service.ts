@@ -8,6 +8,8 @@ import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 
+import AccessGroup from '../auth/entities/accessgroup.entity';
+
 @Injectable()
 export class ProjectService {
     constructor(
@@ -15,6 +17,8 @@ export class ProjectService {
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private userservice: UserService,
+        @InjectRepository(AccessGroup)
+        private accessGroupRepository: Repository<AccessGroup>,
     ) {}
 
     async findAll(): Promise<Project[]> {
@@ -37,15 +41,14 @@ export class ProjectService {
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
         const creator = await this.userservice.findOneById(user.userId);
-        console.log(creator.accessGroups);
-        const personal_access_group = creator.accessGroups.find(
-            (accessGroup) => accessGroup.personal,
+        const access_groups_default = creator.accessGroups.filter(
+            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );
-        console.log('personal_access_group', personal_access_group);
+
         const newProject = this.projectRepository.create({
             ...project,
             creator: creator,
-            accessGroups: [personal_access_group],
+            accessGroups: access_groups_default,
         });
         return this.projectRepository.save(newProject);
     }

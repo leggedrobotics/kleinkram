@@ -9,10 +9,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import AccessGroup from './entities/accessgroup.entity';
 
-const DEFAULT_ACCESS_GROUP_UUID = '00000000-0000-0000-0000-000000000000';
+type AccessGroupConfig = {
+    emails: [{ email: string; access_group: string[] }];
+    access_groups: [{ name: string; uuid: string; rights: number }];
+};
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+    config: AccessGroupConfig;
     constructor(
         private userService: UserService,
         private jwtService: JwtService,
@@ -22,25 +26,32 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-    ) {}
+    ) {
+        this.config = require('../../access_config.json');
+    }
 
     async onModuleInit() {
-        const legged_robotics_group = await this.accessGroupRepository.findOne({
-            where: { uuid: DEFAULT_ACCESS_GROUP_UUID },
-        });
-        if (!legged_robotics_group) {
-            const group = this.accessGroupRepository.create({
-                name: 'Legged Robotics',
-                uuid: DEFAULT_ACCESS_GROUP_UUID,
-                rights: AccessGroupRights.READ,
-                personal: false,
-            });
-            await this.accessGroupRepository.save(group);
-        }
+        // Read access_config/*.json and create access groups
+        await Promise.all(
+            this.config.access_groups.map(async (group) => {
+                const db_group = await this.accessGroupRepository.findOne({
+                    where: { uuid: group.uuid },
+                });
+                if (!db_group) {
+                    const new_group = this.accessGroupRepository.create({
+                        name: group.name,
+                        uuid: group.uuid,
+                        rights: group.rights,
+                        personal: false,
+                        inheriting: true,
+                    });
+                    return this.accessGroupRepository.save(new_group);
+                }
+            }),
+        );
     }
 
     async validateAndCreateUserByGoogle(profile: any): Promise<Account> {
-        console.log('creating');
         const { id, emails, displayName } = profile;
         const email = emails[0].value;
         const account = await this.accountRepository.findOne({
@@ -92,12 +103,19 @@ export class AuthService implements OnModuleInit {
         await this.accessGroupRepository.save(personal_group);
         user.accessGroups = [personal_group];
 
-        const legged_robotics_group = await this.accessGroupRepository.findOne({
-            where: { uuid: DEFAULT_ACCESS_GROUP_UUID },
+        this.config.emails.forEach((config) => {
+            if (user.email.endsWith(config.email)) {
+                config.access_group.forEach(async (uuid) => {
+                    const group = await this.accessGroupRepository.findOne({
+                        where: { uuid },
+                    });
+                    if (group) {
+                        user.accessGroups.push(group);
+                    }
+                });
+            }
         });
-        if (legged_robotics_group) {
-            user.accessGroups.push(legged_robotics_group);
-        }
+
         await this.userRepository.save(user);
         return this.accountRepository.findOneOrFail({
             where: { uuid: saved_account.uuid },

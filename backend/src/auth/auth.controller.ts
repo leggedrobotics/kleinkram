@@ -24,7 +24,6 @@ export class AuthController {
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
         const account = req.user;
-        console.log(account);
         const token = await this.authService.login(account);
         const state = req.query.state;
         if (state == 'cli') {

@@ -27,4 +27,7 @@ export default class AccessGroup extends BaseEntity {
 
     @Column()
     personal: boolean;
+
+    @Column({ default: false })
+    inheriting: boolean;
 }
