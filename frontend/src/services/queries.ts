@@ -130,7 +130,7 @@ export const actions = async (projectUUID: string, missionUUIDs: string) => {
 
 export const actionDetails = async (action_uuid: string) => {
     const params = {
-        action_uuid: action_uuid,
+        uuid: action_uuid,
     };
 
     const response = await axios.get('/action/details', { params });
