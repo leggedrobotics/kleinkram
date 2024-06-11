@@ -1,7 +1,17 @@
 # Getting Started (For Users)
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo erat, posuere a pulvinar ac, blandit ac turpis.
-Mauris consequat pellentesque tellus consectetur dapibus. Nullam elementum metus sed consequat lacinia. Nunc et eros
-lacinia, sagittis nunc quis, tristique elit. Duis nec porttitor lectus. Donec semper congue suscipit. Donec tincidunt
-vel libero nec tristique. Fusce a libero condimentum, viverra purus sit amet, tincidunt dolor. Sed enim leo, semper
-vitae vehicula sit amet, tempor elementum purus.
+This guide will help you get started with the project.
+
+## Core Concepts
+
+::: details How to write a custom action?
+See the [documentation](actions/getting-started.md) for more information.
+:::
+
+::: details How does the access control work?
+See the [documentation](/development/access-control/base-concepts.md) for more information.
+:::
+
+::: details Is there a CLI / API to interact with the application?
+Yes, there is a python CLI, see [here](cli-api/cli-getting-started.md) for more information.
+:::

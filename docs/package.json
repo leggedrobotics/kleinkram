@@ -8,5 +8,9 @@
   "author": "Cyrill Püntener",
   "dependencies": {
     "vitepress": "^1.2.2"
+  },
+  "devDependencies": {
+    "vitepress-plugin-mermaid": "2.0.16",
+    "mermaid": "^10.9.0"
   }
 }

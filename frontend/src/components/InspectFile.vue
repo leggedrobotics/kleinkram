@@ -68,6 +68,12 @@
         </q-card-section>
 
         <q-card-section>
+            <q-input
+                v-model="filterKey"
+                filled
+                placeholder="Search"
+                class="q-mb-md"
+            />
             <QTable
                 v-if="data?.type === FileType.MCAP"
                 ref="tableoniRef"
@@ -77,6 +83,7 @@
                 :columns="columns"
                 row-key="uuid"
                 :loading="isLoading"
+                :filter="filterKey"
             >
             </QTable>
             <q-btn
@@ -106,7 +113,7 @@ const props = defineProps<{
 }>();
 
 const file_uuid = computed(() => props.file_uuid);
-
+const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
@@ -183,7 +190,7 @@ const pagination = ref({
     sortBy: 'name',
     descending: false,
     page: 1,
-    rowsPerPage: 10,
+    rowsPerPage: 20,
 });
 </script>
 <style scoped></style>

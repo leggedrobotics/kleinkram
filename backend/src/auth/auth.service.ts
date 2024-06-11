@@ -109,7 +109,7 @@ export class AuthService implements OnModuleInit {
 
         this.config.emails.forEach((config) => {
             if (user.email.endsWith(config.email)) {
-                config.access_group.forEach(async (uuid) => {
+                config.access_group?.forEach(async (uuid) => {
                     const group = await this.accessGroupRepository.findOne({
                         where: { uuid },
                     });
