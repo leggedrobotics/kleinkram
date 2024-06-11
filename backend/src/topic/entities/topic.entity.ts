@@ -17,5 +17,5 @@ export default class Topic extends BaseEntity {
     frequency: number;
 
     @ManyToOne(() => File, (file) => file.topics)
-    mission: File;
+    file: File;
 }

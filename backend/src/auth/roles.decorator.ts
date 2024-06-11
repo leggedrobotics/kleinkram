@@ -15,6 +15,8 @@ import {
     ReadFileGuard,
     ReadFileByNameGuard,
     WriteFileGuard,
+    WriteMissionByBodyGuard,
+    CreateQueueByBodyGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -121,5 +123,19 @@ export function CanWriteFile() {
     return applyDecorators(
         SetMetadata('CanWriteFile', true),
         UseGuards(WriteFileGuard),
+    );
+}
+
+export function CanWriteMissionByBody() {
+    return applyDecorators(
+        SetMetadata('CanReadMissionByBody', true),
+        UseGuards(WriteMissionByBodyGuard),
+    );
+}
+
+export function CanCreateQueueByBody() {
+    return applyDecorators(
+        SetMetadata('CanCreateQueueByBody', true),
+        UseGuards(CreateQueueByBodyGuard),
     );
 }

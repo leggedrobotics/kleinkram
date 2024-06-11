@@ -15,7 +15,7 @@ import Account from './entities/account.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
 import { FileGuardService } from './fileGuard.service';
-
+import Queue from '../queue/entities/queue.entity';
 @Injectable()
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
@@ -266,6 +266,63 @@ export class ReadMissionByNameGuard extends AuthGuard('jwt') {
         return this.missionGuardService.canAccessMissionByName(
             user.userId,
             missionName,
+        );
+    }
+}
+
+@Injectable()
+export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUID = request.body.missionUUID;
+        return this.missionGuardService.canAccessMission(
+            user.userId,
+            missionUUID,
+            AccessGroupRights.WRITE,
+        );
+    }
+}
+
+@Injectable()
+export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(Queue)
+        private queueRepository: Repository<Queue>,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const queueUUID = request.body.uuid;
+        const queue = await this.queueRepository.findOneOrFail({
+            where: { uuid: queueUUID },
+            relations: ['mission'],
+        });
+
+        return this.missionGuardService.canAccessMission(
+            user.userId,
+            queue.mission.uuid,
+            AccessGroupRights.WRITE,
         );
     }
 }

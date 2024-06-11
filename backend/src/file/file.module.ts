@@ -15,6 +15,7 @@ import Account from '../auth/entities/account.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import AccessGroup from '../auth/entities/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
+import { FileGuardService } from '../auth/fileGuard.service';
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { ProjectGuardService } from '../auth/projectGuard.service';
         UserService,
         MissionGuardService,
         ProjectGuardService,
+        FileGuardService,
     ],
     controllers: [FileController],
     exports: [FileService],

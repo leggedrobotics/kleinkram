@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { TopicService } from './topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('topic')
 export class TopicController {
@@ -8,13 +9,13 @@ export class TopicController {
 
     @Get('all')
     @LoggedIn()
-    async allTopics() {
-        return await this.topicService.findAll();
+    async allTopics(@addJWTUser() user: JWTUser) {
+        return await this.topicService.findAll(user.uuid);
     }
 
     @Get('names')
     @LoggedIn()
-    async allNames() {
-        return await this.topicService.findAllNames();
+    async allNames(@addJWTUser() user: JWTUser) {
+        return await this.topicService.findAllNames(user.uuid);
     }
 }

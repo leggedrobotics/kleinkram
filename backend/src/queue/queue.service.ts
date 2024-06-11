@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import QueueEntity from './entities/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '../mission/entities/mission.entity';
-import { FileLocation, FileState } from '../enum';
+import { FileLocation, FileState, UserRole } from '../enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '../env';
@@ -151,16 +151,37 @@ export class QueueService {
         });
     }
 
-    async active(startDate: Date) {
-        return await this.queueRepository.find({
-            where: {
-                updatedAt: MoreThan(startDate),
-            },
-            relations: ['mission', 'mission.project', 'creator'],
-            order: {
-                createdAt: 'DESC',
-            },
-        });
+    async active(startDate: Date, userUUID: string) {
+        const user = await this.userservice.findOneByUUID(userUUID);
+        if (user.role === UserRole.ADMIN) {
+            return await this.queueRepository.find({
+                where: {
+                    updatedAt: MoreThan(startDate),
+                },
+                relations: ['mission', 'mission.project', 'creator'],
+                order: {
+                    createdAt: 'DESC',
+                },
+            });
+        }
+        return this.queueRepository
+            .createQueryBuilder('queue')
+            .leftJoinAndSelect('queue.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('queue.creator', 'creator')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where('queue.updatedAt > :startDate', { startDate })
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :user', {
+                        user: userUUID,
+                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
+                }),
+            )
+            .getMany();
     }
 
     async clear() {
