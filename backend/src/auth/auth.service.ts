@@ -30,10 +30,17 @@ export class AuthService implements OnModuleInit {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
     ) {
-        this.config = require('../../access_config.json');
+        try {
+            this.config = require('../../access_config.json');
+        } catch (e) {
+            console.error('No access_config.json found');
+        }
     }
 
     async onModuleInit() {
+        if (!this.config) {
+            return;
+        }
         // Read access_config/*.json and create access groups
         await Promise.all(
             this.config.access_groups.map(async (group) => {

@@ -2,18 +2,20 @@ import { DataSourceOptions } from 'typeorm';
 import dotenv from 'dotenv';
 import * as process from 'node:process';
 
-dotenv.config();
+dotenv.config({ path: './migration/.env' });
 
 export function getConfig() {
+    console.log(process.env.dbpassword);
     return {
         type: 'postgres',
-        host: 'localhost',
-        port: 5432,
-        username: 'dbuser',
-        password: 'dbuserpass',
-        database: 'dbname',
+        host: 'db.datasets.dev.leggedrobotics.com',
+        port: 443,
+        ssl: true,
+        username: 'postgress_user',
+        password: process.env.dbpassword,
+        database: 'grandtour',
         synchronize: false,
-        migrations: ['migrations/*.ts'],
-        entities: [__dirname + '/../**/entity/*.entity.{ts,js}'],
+        migrations: ['migration/migrations/*.ts'],
+        entities: ['src/**/*.entity{.ts,.js}'],
     } as DataSourceOptions;
 }
