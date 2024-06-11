@@ -7,7 +7,7 @@ dotenv.config({ path: './migration/.env' });
 export function getConfig() {
     return {
         type: 'postgres',
-        host: 'db.datasets.dev.leggedrobotics.com',
+        host: 'db.datasets.leggedrobotics.com',
         port: 443,
         ssl: true,
         username: 'postgress_user',
