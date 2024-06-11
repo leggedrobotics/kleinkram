@@ -130,7 +130,7 @@ export const actions = async (projectUUID: string, missionUUIDs: string) => {
 
 export const actionDetails = async (action_uuid: string) => {
     const params = {
-        action_uuid: action_uuid,
+        uuid: action_uuid,
     };
 
     const response = await axios.get('/action/details', { params });
@@ -277,7 +277,9 @@ export const allTopicsNames = async (): Promise<string[]> => {
 export const missionsOfProject = async (
     projectUUID: string,
 ): Promise<Mission[]> => {
-    const response = await axios.get(`/mission/filtered/${projectUUID}`);
+    const response = await axios.get(`/mission/filtered`, {
+        params: { uuid: projectUUID },
+    });
     const users: Record<string, User> = {};
     return response.data.map((mission: any) => {
         const project = new Project(
@@ -353,7 +355,7 @@ export const filesOfMission = async (
     missionUUID: string,
 ): Promise<FileEntity[]> => {
     const response = await axios.get('file/ofMission', {
-        params: { missionUUID },
+        params: { uuid: missionUUID },
     });
     if (response.data.length === 0) {
         return [];

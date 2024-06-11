@@ -4,6 +4,21 @@ import {
     LoggedInUserGuard,
     AdminOnlyGuard,
     TokenOrUserGuard,
+    ReadProjectGuard,
+    WriteProjectGuard,
+    ReadProjectByNameGuard,
+    CreateProjectGuard,
+    DeleteProjectGuard,
+    ReadMissionGuard,
+    ReadMissionByNameGuard,
+    MoveMissionToProjectGuard,
+    ReadFileGuard,
+    ReadFileByNameGuard,
+    WriteFileGuard,
+    WriteMissionByBodyGuard,
+    CreateQueueByBodyGuard,
+    ReadActionGuard,
+    CreateActionGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -34,5 +49,108 @@ export function TokenOrUser() {
     return applyDecorators(
         SetMetadata('isTokenOrUser', true),
         UseGuards(TokenOrUserGuard),
+    );
+}
+
+export function CanReadProject() {
+    return applyDecorators(
+        SetMetadata('CanReadProject', true),
+        UseGuards(ReadProjectGuard),
+    );
+}
+
+export function CanReadProjectByName() {
+    return applyDecorators(
+        SetMetadata('CanReadProjectByName', true),
+        UseGuards(ReadProjectByNameGuard),
+    );
+}
+
+export function CanWriteProject() {
+    return applyDecorators(
+        SetMetadata('CanWriteProject', true),
+        UseGuards(WriteProjectGuard),
+    );
+}
+
+export function CanDeleteProject() {
+    return applyDecorators(
+        SetMetadata('CanDeleteProject', true),
+        UseGuards(DeleteProjectGuard),
+    );
+}
+
+export function CanCreateProject() {
+    return applyDecorators(
+        SetMetadata('CanCreateProject', true),
+        UseGuards(CreateProjectGuard),
+    );
+}
+
+export function CanReadMission() {
+    return applyDecorators(
+        SetMetadata('CanReadMission', true),
+        UseGuards(ReadMissionGuard),
+    );
+}
+export function CanReadMissionByName() {
+    return applyDecorators(
+        SetMetadata('CanReadMission', true),
+        UseGuards(ReadMissionByNameGuard),
+    );
+}
+
+export function CanMoveMission() {
+    return applyDecorators(
+        SetMetadata('CanMoveMission', true),
+        UseGuards(MoveMissionToProjectGuard),
+    );
+}
+
+export function CanReadFile() {
+    return applyDecorators(
+        SetMetadata('CanReadFile', true),
+        UseGuards(ReadFileGuard),
+    );
+}
+
+export function CanReadFileByName() {
+    return applyDecorators(
+        SetMetadata('CanReadFileByName', true),
+        UseGuards(ReadFileByNameGuard),
+    );
+}
+
+export function CanWriteFile() {
+    return applyDecorators(
+        SetMetadata('CanWriteFile', true),
+        UseGuards(WriteFileGuard),
+    );
+}
+
+export function CanWriteMissionByBody() {
+    return applyDecorators(
+        SetMetadata('CanReadMissionByBody', true),
+        UseGuards(WriteMissionByBodyGuard),
+    );
+}
+
+export function CanCreateQueueByBody() {
+    return applyDecorators(
+        SetMetadata('CanCreateQueueByBody', true),
+        UseGuards(CreateQueueByBodyGuard),
+    );
+}
+export function CanReadAction() {
+    return applyDecorators(
+        SetMetadata('CanReadAction', true),
+        UseGuards(ReadActionGuard),
+    );
+}
+
+export function CanCreateAction() {
+    return applyDecorators(
+        SetMetadata('CanCreateAction', true),
+        UseGuards(CreateActionGuard),
     );
 }

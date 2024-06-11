@@ -9,8 +9,16 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { MissionService } from './mission.service';
-import { CreateRun } from './entities/create-mission.dto';
-import { AdminOnly, LoggedIn, TokenOrUser } from '../auth/roles.decorator';
+import { CreateMission } from './entities/create-mission.dto';
+import {
+    AdminOnly,
+    CanMoveMission,
+    CanReadMission,
+    CanReadMissionByName,
+    CanReadProject,
+    LoggedIn,
+    TokenOrUser,
+} from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('mission')
@@ -19,52 +27,67 @@ export class MissionController {
 
     @Post('create')
     @LoggedIn()
-    async createRun(@Body() createRun: CreateRun, @addJWTUser() user: JWTUser) {
-        return this.missionService.create(createRun, user);
+    async createMission(
+        @Body() createMission: CreateMission,
+        @addJWTUser() user: JWTUser,
+    ) {
+        return this.missionService.create(createMission, user);
     }
 
-    @Get('filtered/:projectUUID')
-    @LoggedIn()
-    async filteredRuns(@Param('projectUUID') projectUUID: string) {
-        return this.missionService.findRunByProject(projectUUID);
+    @Get('filtered')
+    @CanReadProject()
+    async filteredMissions(@Query('uuid') uuid: string) {
+        return this.missionService.findMissionByProject(uuid);
+    }
+
+    @Get('one')
+    @CanReadMission()
+    async getMissionById(@Query('uuid') uuid: string) {
+        return this.missionService.findOne(uuid);
     }
 
     @Get('all')
     @LoggedIn()
-    async allRuns() {
-        return this.missionService.findAll();
+    async allMissions(@addJWTUser() user: JWTUser) {
+        return this.missionService.findAll(user.uuid);
     }
 
     @Get('byName')
-    @LoggedIn()
-    async getRunByName(@Query('name') name: string) {
+    @CanReadMissionByName()
+    async getMissionByName(@Query('name') name: string) {
         return this.missionService.findOneByName(name);
     }
 
     @Get('byUUID')
     @TokenOrUser()
-    async getRunByUUID(@Query('uuid') uuid: string) {
+    async getMissionByUUID(@Query('uuid') uuid: string) {
         return this.missionService.findOneByUUID(uuid);
     }
 
     @Get('filteredByProjectName/:projectName')
     @LoggedIn()
-    async filteredByProjectName(@Param('projectName') projectName: string) {
-        return this.missionService.filteredByProjectName(projectName);
+    async filteredByProjectName(
+        @Param('projectName') projectName: string,
+        @addJWTUser() user: JWTUser,
+    ) {
+        return this.missionService.filteredByProjectName(
+            projectName,
+            user.uuid,
+        );
     }
 
     @Delete('clear')
     @AdminOnly()
-    async clearRuns() {
-        return this.missionService.clearRuns();
+    async clearMissions() {
+        return this.missionService.clearMissions();
     }
 
     @Post('move')
-    @LoggedIn()
-    async moveRun(
+    @CanMoveMission()
+    async moveMission(
         @Query('missionUUID') missionUUID: string,
         @Query('projectUUID') projectUUID: string,
     ) {
-        return this.missionService.moveRun(missionUUID, projectUUID);
+        return this.missionService.moveMission(missionUUID, projectUUID);
     }
 }

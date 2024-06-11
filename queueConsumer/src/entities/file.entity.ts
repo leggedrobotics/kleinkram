@@ -13,7 +13,7 @@ export default class File extends BaseEntity {
     @Column()
     date: Date;
 
-    @OneToMany(() => Topic, (topic) => topic.mission, { cascade: ['remove'] })
+    @OneToMany(() => Topic, (topic) => topic.file, { cascade: ['remove'] })
     topics: Topic[];
 
     @Column()

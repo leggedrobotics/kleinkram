@@ -37,3 +37,13 @@ export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',
 }
+
+export enum AccessGroupRights {
+    READ = 0,
+    CREATE = 10,
+    WRITE = 20,
+    DELETE = 30,
+}
+export enum AccountType {
+    GOOGLE = 'GOOGLE',
+}

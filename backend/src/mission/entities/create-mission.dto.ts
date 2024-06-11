@@ -1,4 +1,4 @@
-export class CreateRun {
+export class CreateMission {
     name: string;
     projectUUID: string;
 }

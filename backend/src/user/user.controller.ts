@@ -15,7 +15,7 @@ export class UserController {
     }
 
     @Get('all')
-    @LoggedIn()
+    @AdminOnly()
     async allUsers() {
         return this.userService.findAll();
     }

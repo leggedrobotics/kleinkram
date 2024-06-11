@@ -2,7 +2,12 @@ import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
 import logger from '../logger';
-import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import {
+    AdminOnly,
+    CanCreateQueueByBody,
+    CanWriteMissionByBody,
+    LoggedIn,
+} from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('queue')
@@ -10,7 +15,7 @@ export class QueueController {
     constructor(private readonly queueService: QueueService) {}
 
     @Post('createdrive')
-    @LoggedIn()
+    @CanWriteMissionByBody()
     async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
         return this.queueService.createDrive(body, user);
     }
@@ -25,7 +30,7 @@ export class QueueController {
     // }
 
     @Post('createPreSignedURLS')
-    @LoggedIn()
+    @CanWriteMissionByBody()
     async create(
         @Body() body: { filenames: string[]; missionUUID: string },
         @addJWTUser() user: JWTUser,
@@ -39,21 +44,24 @@ export class QueueController {
     }
 
     @Post('confirmUpload')
-    @LoggedIn()
+    @CanCreateQueueByBody()
     async confirmUpload(@Body() body: { uuid: string }) {
         return this.queueService.confirmUpload(body.uuid);
     }
 
     @Get('active')
     @LoggedIn()
-    async active(@Query('startDate') startDate: string) {
+    async active(
+        @Query('startDate') startDate: string,
+        @addJWTUser() user: JWTUser,
+    ) {
         const date = new Date(startDate);
         // Additional validation to handle invalid dates could be placed here
         if (isNaN(date.getTime())) {
             // Check if date is valid
             throw new Error('Invalid date format');
         }
-        return this.queueService.active(date);
+        return this.queueService.active(date, user.uuid);
     }
 
     @Delete('clear')

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action from './entities/action.entity';
 import { SubmitAction } from './entities/submit_action.dto';
 import Apikey from '../auth/entities/apikey.entity';
-import { ActionState, KeyTypes } from '../enum';
+import { ActionState, KeyTypes, UserRole } from '../enum';
+import User from '../user/entities/user.entity';
 
 @Injectable()
 export class ActionService {
@@ -14,6 +15,9 @@ export class ActionService {
 
         @InjectRepository(Apikey)
         private apikeyRepository: Repository<Apikey>,
+
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
     ) {}
 
     async submit(data: SubmitAction): Promise<Action> {
@@ -44,12 +48,37 @@ export class ActionService {
         return action;
     }
 
-    async list(mission_uuids: string): Promise<Action[]> {
-        return await this.actionRepository.find({
-            where: { mission: { uuid: mission_uuids } },
-            relations: ['mission', 'mission.project'],
-            order: { createdAt: 'DESC' },
+    async list(mission_uuids: string, userUUID: string): Promise<Action[]> {
+        const user = await this.userRepository.findOne({
+            where: { uuid: userUUID },
         });
+        if (user.role === UserRole.ADMIN) {
+            return this.actionRepository.find({
+                where: { mission: { uuid: mission_uuids } },
+                relations: ['mission', 'mission.project'],
+                order: { createdAt: 'DESC' },
+            });
+        }
+        return this.actionRepository
+            .createQueryBuilder('action')
+            .leftJoinAndSelect('action.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoin('project.accessgroups', 'projectAccessgroup')
+            .leftJoin('projectAccessgroup.users', 'projectUser')
+            .leftJoin('mission.accessgroups', 'missionAccessgroup')
+            .leftJoin('missionAccessgroup.users', 'missionUser')
+            .where('mission.uuid IN (:...uuids)', {
+                uuids: mission_uuids.split(','),
+            })
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUser.uuid = :userUUID', {
+                        userUUID,
+                    }).orWhere('missionUser.uuid = :userUUID', { userUUID });
+                }),
+            )
+            .orderBy('createdAt', 'DESC')
+            .getMany();
     }
 
     async details(action_uuid: string) {

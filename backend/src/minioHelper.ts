@@ -88,7 +88,6 @@ export async function moveRunFilesInMinio(srcPath, destProject) {
         await Promise.all(
             objects.map(async (obj) => {
                 const filename = obj.name.split('/').slice(2).join('/');
-                console.log('destFile', filename);
                 const destName = `${destProject}/${mission}/${filename}`;
                 await copyObject(
                     process.env.MINIO_BAG_BUCKET_NAME,
@@ -98,8 +97,6 @@ export async function moveRunFilesInMinio(srcPath, destProject) {
                 await removeObject(process.env.MINIO_BAG_BUCKET_NAME, obj.name);
             }),
         );
-
-        console.log('Files moved successfully');
     } catch (err) {
         console.error('Error moving files:', err);
     }

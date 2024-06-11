@@ -1,10 +1,11 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Project from './project.entity';
 import QueueEntity from './queue.entity';
 import User from './user.entity';
 import Apikey from './apikey.entity';
 import File from './file.entity';
+import AccessGroup from './accessgroup.entity';
 
 @Entity()
 export default class Mission extends BaseEntity {
@@ -25,4 +26,7 @@ export default class Mission extends BaseEntity {
 
     @OneToMany(() => Apikey, (token) => token.mission)
     tokens: Apikey[];
+
+    @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.missions)
+    accessGroups: AccessGroup[];
 }

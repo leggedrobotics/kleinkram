@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import QueueEntity from './entities/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '../mission/entities/mission.entity';
-import { FileLocation, FileState } from '../enum';
+import { FileLocation, FileState, UserRole } from '../enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '../env';
@@ -12,6 +12,8 @@ import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import Account from '../auth/entities/account.entity';
+import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
     const regex =
@@ -29,7 +31,7 @@ export class QueueService {
         private missionRepository: Repository<Mission>,
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
-        @InjectRepository(User) private userRepository: Repository<User>,
+        private userservice: UserService,
     ) {}
 
     async addActionQueue(mission_action_id: string) {
@@ -42,9 +44,8 @@ export class QueueService {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneByUUID(user.uuid);
+
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
             filename: fileId,
@@ -70,9 +71,8 @@ export class QueueService {
         missionUUID: string,
         user: JWTUser,
     ) {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneByUUID(user.uuid);
+
         const filteredFilenames = filenames.filter(
             (filename) =>
                 filename.endsWith('.bag') || filename.endsWith('.mcap'),
@@ -151,16 +151,37 @@ export class QueueService {
         });
     }
 
-    async active(startDate: Date) {
-        return await this.queueRepository.find({
-            where: {
-                updatedAt: MoreThan(startDate),
-            },
-            relations: ['mission', 'mission.project', 'creator'],
-            order: {
-                createdAt: 'DESC',
-            },
-        });
+    async active(startDate: Date, userUUID: string) {
+        const user = await this.userservice.findOneByUUID(userUUID);
+        if (user.role === UserRole.ADMIN) {
+            return await this.queueRepository.find({
+                where: {
+                    updatedAt: MoreThan(startDate),
+                },
+                relations: ['mission', 'mission.project', 'creator'],
+                order: {
+                    createdAt: 'DESC',
+                },
+            });
+        }
+        return this.queueRepository
+            .createQueryBuilder('queue')
+            .leftJoinAndSelect('queue.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('queue.creator', 'creator')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where('queue.updatedAt > :startDate', { startDate })
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :user', {
+                        user: userUUID,
+                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
+                }),
+            )
+            .getMany();
     }
 
     async clear() {

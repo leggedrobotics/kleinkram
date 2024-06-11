@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import File from './entities/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '../env';
@@ -8,7 +8,8 @@ import Mission from '../mission/entities/mission.entity';
 import { externalMinio } from '../minioHelper';
 import Project from '../project/entities/project.entity';
 import Topic from '../topic/entities/topic.entity';
-import { FileType } from '../enum';
+import { FileType, UserRole } from '../enum';
+import User from '../user/entities/user.entity';
 
 @Injectable()
 export class FileService {
@@ -19,17 +20,47 @@ export class FileService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
+        @InjectRepository(User) private userRepository: Repository<User>,
     ) {}
 
-    async findAll() {
-        return this.fileRepository.find({ relations: ['mission'] });
+    async findAll(userUUID: string) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        if (user.role === UserRole.ADMIN) {
+            return this.fileRepository.find({
+                relations: ['mission'],
+            });
+        }
+        return this.fileRepository
+            .createQueryBuilder('file')
+            .leftJoinAndSelect('file.mission', 'mission')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :userUUID', {
+                        userUUID,
+                    }).orWhere('missionUsers.uuid = :userUUID', {
+                        userUUID,
+                    });
+                }),
+            );
     }
 
     async findFilteredByNames(
         projectName: string,
         missionName: string,
         topics: string[],
+        userUUID: string,
     ) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
         // Start building your query with basic filters
         const query = this.fileRepository
             .createQueryBuilder('file')
@@ -37,6 +68,23 @@ export class FileService {
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
             .leftJoin('mission.project', 'project');
+
+        if (user.role !== UserRole.ADMIN) {
+            query
+                .leftJoin('mission.accessGroups', 'missionAccessGroups')
+                .leftJoin('missionAccessGroups.users', 'missionUsers')
+                .leftJoin('project.accessGroups', 'projectAccessGroups')
+                .leftJoin('projectAccessGroups.users', 'projectUsers')
+                .andWhere(
+                    new Brackets((qb) => {
+                        qb.where('missionUsers.uuid = :userUUID', {
+                            userUUID,
+                        }).orWhere('projectUsers.uuid = :userUUID', {
+                            userUUID,
+                        });
+                    }),
+                );
+        }
         if (projectName) {
             query.andWhere('project.name = :projectName', { projectName });
         }
@@ -77,7 +125,11 @@ export class FileService {
         topics: string,
         and_or: boolean,
         mcapBag: boolean,
+        userUUID: string,
     ) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
         // Start building your query with basic filters
         const query = this.fileRepository
             .createQueryBuilder('file')
@@ -88,6 +140,23 @@ export class FileService {
             .andWhere('file.type = :type', {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
             });
+
+        if (user.role !== UserRole.ADMIN) {
+            query
+                .leftJoin('mission.accessGroups', 'missionAccessGroups')
+                .leftJoin('missionAccessGroups.users', 'missionUsers')
+                .leftJoin('project.accessGroups', 'projectAccessGroups')
+                .leftJoin('projectAccessGroups.users', 'projectUsers')
+                .andWhere(
+                    new Brackets((qb) => {
+                        qb.where('missionUsers.uuid = :userUUID', {
+                            userUUID,
+                        }).orWhere('projectUsers.uuid = :userUUID', {
+                            userUUID,
+                        });
+                    }),
+                );
+        }
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
             query.andWhere('file.filename LIKE :fileName', {

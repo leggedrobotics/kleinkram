@@ -6,7 +6,13 @@ import {
     ActionDetailsQuery,
 } from './entities/submit_action.dto';
 import { QueueService } from '../queue/queue.service';
-import { AdminOnly } from '../auth/roles.decorator';
+import {
+    AdminOnly,
+    CanCreateAction,
+    CanReadAction,
+    LoggedIn,
+} from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('action')
 export class ActionController {
@@ -16,6 +22,7 @@ export class ActionController {
     ) {}
 
     @Post('submit')
+    @CanCreateAction()
     async createActionRun(@Body() dto: SubmitAction) {
         // TODO: validate input: similar to the frontend, we should validate the input
         // to ensure that the user has provided the necessary information to create a new project.
@@ -26,13 +33,15 @@ export class ActionController {
     }
 
     @Get('list')
-    async list(@Query() dto: ActionQuery) {
-        return this.actionService.list(dto.mission_uuids);
+    @LoggedIn()
+    async list(@Query() dto: ActionQuery, @addJWTUser() user: JWTUser) {
+        return this.actionService.list(dto.mission_uuids, user.uuid);
     }
 
     @Get('details')
-    async details(@Query() dto: ActionDetailsQuery) {
-        return this.actionService.details(dto.action_uuid);
+    @CanReadAction()
+    async details(@Query('uuid') uuid: string) {
+        return this.actionService.details(uuid);
     }
 
     @Delete('clear')

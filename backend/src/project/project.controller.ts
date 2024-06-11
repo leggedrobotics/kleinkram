@@ -10,7 +10,15 @@ import {
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
-import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
+import {
+    AdminOnly,
+    LoggedIn,
+    CanReadProject,
+    CanReadProjectByName,
+    CanWriteProject,
+    CanCreateProject,
+    CanDeleteProject,
+} from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
 
 @Controller('project')
@@ -19,18 +27,18 @@ export class ProjectController {
 
     @Get()
     @LoggedIn()
-    async allProjects() {
-        return this.projectService.findAll();
+    async allProjects(@addJWTUser() user?: JWTUser) {
+        return this.projectService.findAll(user);
     }
 
     @Get('one')
-    @LoggedIn()
+    @CanReadProject()
     async getProjectById(@Query('uuid') uuid: string) {
         return this.projectService.findOne(uuid);
     }
 
     @Put('update')
-    @LoggedIn()
+    @CanWriteProject()
     async updateProject(
         @Query('uuid') uuid: string,
         @Body() dto: CreateProject,
@@ -39,7 +47,7 @@ export class ProjectController {
     }
 
     @Post('create')
-    @LoggedIn()
+    @CanCreateProject()
     async createProject(
         @Body() dto: CreateProject,
         @addJWTUser() user?: JWTUser,
@@ -48,7 +56,7 @@ export class ProjectController {
     }
 
     @Get('byName')
-    @LoggedIn()
+    @CanReadProjectByName()
     async getProjectByName(@Query('name') name: string) {
         const project = await this.projectService.findOneByName(name);
         if (!project) {
@@ -64,7 +72,7 @@ export class ProjectController {
     }
 
     @Delete('delete')
-    @LoggedIn()
+    @CanDeleteProject()
     async deleteProject(@Query('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }

@@ -4,7 +4,6 @@ export class SubmitAction {
 }
 
 export class ActionQuery {
-    projectUUID: string;
     mission_uuids: string;
 }
 

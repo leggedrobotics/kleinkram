@@ -6,6 +6,10 @@ import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
+
+import AccessGroup from '../auth/entities/accessgroup.entity';
+import { AccessGroupRights, UserRole } from '../enum';
 
 @Injectable()
 export class ProjectService {
@@ -13,13 +17,33 @@ export class ProjectService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private userservice: UserService,
+        @InjectRepository(AccessGroup)
+        private accessGroupRepository: Repository<AccessGroup>,
     ) {}
 
-    async findAll(): Promise<Project[]> {
-        logger.debug('Finding all projects');
-        return this.projectRepository.find({
-            relations: ['creator', 'missions'],
+    async findAll(user: JWTUser): Promise<Project[]> {
+        logger.debug('Finding all projects as user: ', user.uuid);
+        const db_user = await this.userRepository.findOne({
+            where: { uuid: user.uuid },
         });
+        if (db_user.role === UserRole.ADMIN) {
+            return this.projectRepository.find({
+                relations: ['creator', 'missions'],
+            });
+        }
+
+        return this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoinAndSelect('project.creator', 'creator')
+            .leftJoinAndSelect('project.missions', 'missions')
+            .leftJoin('project.accessGroups', 'accessGroups')
+            .leftJoin('accessGroups.users', 'users')
+            .where('accessGroups.rights >= :rights', {
+                rights: AccessGroupRights.READ,
+            })
+            .andWhere('users.uuid = :uuid', { uuid: user.uuid })
+            .getMany();
     }
 
     async findOne(uuid: string): Promise<Project> {
@@ -34,12 +58,15 @@ export class ProjectService {
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const access_groups_default = creator.accessGroups.filter(
+            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
+        );
+
         const newProject = this.projectRepository.create({
             ...project,
             creator: creator,
+            accessGroups: access_groups_default,
         });
         return this.projectRepository.save(newProject);
     }
