@@ -70,13 +70,13 @@ export class ProjectGuardService {
         }
 
         const canCreate = await this.accessGroupRepository
-            .createQueryBuilder('accessGroup')
-            .leftJoin('accessGroups.users', 'users')
-            .where('accessGroup.rights >= :rights', {
-                rights: AccessGroupRights.WRITE,
+            .createQueryBuilder('access_group')
+            .leftJoin('access_group.users', 'users')
+            .where('access_group.rights >= :rights', {
+                rights: AccessGroupRights.CREATE,
             })
             .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('accessGroup.personal = FALSE')
+            .andWhere('access_group.personal = FALSE')
             .getCount();
         return canCreate > 0;
     }
