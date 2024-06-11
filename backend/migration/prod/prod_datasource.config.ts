@@ -11,10 +11,10 @@ export function getConfig() {
         port: 443,
         ssl: true,
         username: 'postgress_user',
-        password: process.env.dbpassword,
+        password: process.env.prod_dbpassword,
         database: 'grandtour',
         synchronize: false,
-        migrations: ['migration/migrations/*.ts'],
+        migrations: ['migration/prod/migrations/*.ts'],
         entities: ['src/**/*.entity{.ts,.js}'],
     } as DataSourceOptions;
 }
