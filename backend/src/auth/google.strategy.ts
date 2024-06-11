@@ -4,6 +4,7 @@ import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { AuthService } from './auth.service';
 import env from '../env';
 import e from 'express';
+import User from '../user/entities/user.entity';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -27,8 +28,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         profile: any,
         done: VerifyCallback,
     ): Promise<any> {
-        const account =
+        const user: User =
             await this.authService.validateAndCreateUserByGoogle(profile);
-        done(null, account);
+        done(null, user);
     }
 }
