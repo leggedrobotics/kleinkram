@@ -5,7 +5,6 @@ import * as process from 'node:process';
 dotenv.config({ path: './migration/.env' });
 
 export function getConfig() {
-    console.log(process.env.dbpassword);
     return {
         type: 'postgres',
         host: 'db.datasets.dev.leggedrobotics.com',
