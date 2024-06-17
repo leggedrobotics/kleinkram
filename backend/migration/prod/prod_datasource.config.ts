@@ -7,12 +7,12 @@ dotenv.config({ path: './migration/.env' });
 export function getConfig() {
     return {
         type: 'postgres',
-        host: 'db.datasets.leggedrobotics.com',
-        port: 443,
-        ssl: true,
-        username: 'postgress_user',
+        host: process.env.prod_dbhost,
+        port: parseInt(process.env.prod_dbport, 10),
+        ssl: process.env.prod_ssl === 'true',
+        username: process.env.prod_dbuser,
         password: process.env.prod_dbpassword,
-        database: 'grandtour',
+        database: process.env.prod_dbname,
         synchronize: false,
         migrations: ['migration/prod/migrations/*.ts'],
         entities: ['src/**/*.entity{.ts,.js}'],
