@@ -63,9 +63,9 @@ export class ActionService {
             .createQueryBuilder('action')
             .leftJoinAndSelect('action.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoin('project.accessgroups', 'projectAccessgroup')
+            .leftJoin('project.accessGroups', 'projectAccessgroup')
             .leftJoin('projectAccessgroup.users', 'projectUser')
-            .leftJoin('mission.accessgroups', 'missionAccessgroup')
+            .leftJoin('mission.accessGroups', 'missionAccessgroup')
             .leftJoin('missionAccessgroup.users', 'missionUser')
             .where('mission.uuid IN (:...uuids)', {
                 uuids: mission_uuids.split(','),
@@ -77,7 +77,7 @@ export class ActionService {
                     }).orWhere('missionUser.uuid = :userUUID', { userUUID });
                 }),
             )
-            .orderBy('createdAt', 'DESC')
+            .orderBy('action.createdAt', 'DESC')
             .getMany();
     }
 
