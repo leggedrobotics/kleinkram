@@ -17,11 +17,12 @@ axiosInstance.interceptors.response.use(
             await axios.post(
                 `${env.ENDPOINT}/auth/refresh-token`,
                 {},
-                { withCredentials: true },
+                {withCredentials: true},
             );
             return axios(originalRequest);
         }
-        return error;
+
+        return Promise.reject(error);
     },
 );
 
