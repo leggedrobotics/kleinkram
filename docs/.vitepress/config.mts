@@ -176,6 +176,15 @@ export default withMermaid({
                     ],
                     collapsed: true,
                 },
+                {
+                    text: 'Migrations',
+                    items: [
+                        {
+                            text: 'Running Migrations',
+                            link: '/development/migrations/Readme',
+                        },
+                    ],
+                }
 
             ],
         },
