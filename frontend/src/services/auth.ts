@@ -17,8 +17,7 @@ export function logout() {
             .post('/auth/logout')
             .then(() => {
 
-                // navigate to the login page
-                routerInstance.push(ROUTES.LOGIN.path)
+                routerInstance.push(ROUTES.HOME.path)
                     .then(() => resolve(true));
 
             })
