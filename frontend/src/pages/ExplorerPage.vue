@@ -2,7 +2,7 @@
     <q-card class="q-pa-md" flat bordered>
         <div class="row">
             <div class="col-9">
-                <q-breadcrumbs>
+                <q-breadcrumbs v-if="crumbs.length > 1">
                     <q-breadcrumbs-el
                         v-for="crumb in crumbs"
                         :key="crumb.uuid"
