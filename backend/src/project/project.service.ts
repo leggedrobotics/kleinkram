@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import Project from './entities/project.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -58,6 +58,14 @@ export class ProjectService {
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
+        const exists = await this.projectRepository.exists({
+            where: { name: project.name },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Project with that name already exists',
+            );
+        }
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const access_groups_default = creator.accessGroups.filter(
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,

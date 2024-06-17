@@ -31,7 +31,7 @@ export class AuthService implements OnModuleInit {
         private projectRepository: Repository<Project>,
     ) {
         try {
-            this.config = require('../../access_config.json');
+            this.config = require('../../../access_config.json');
         } catch (e) {
             console.error('No access_config.json found');
         }

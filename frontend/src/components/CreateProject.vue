@@ -35,6 +35,7 @@
                     label="Submit"
                     color="primary"
                     @click="submitNewProject"
+                    :disable="!projectName"
                 />
             </div>
         </div>
@@ -51,7 +52,19 @@ const projectDescription = ref('');
 const queryClient = useQueryClient();
 
 const submitNewProject = async () => {
-    await createProject(projectName.value, projectDescription.value);
+    try {
+        await createProject(projectName.value, projectDescription.value);
+    } catch (error) {
+        console.log(error);
+        Notify.create({
+            message: `Error creating project: ${error?.response?.data?.message || error.message}`,
+            color: 'negative',
+            spinner: false,
+            timeout: 4000,
+            position: 'top-right',
+        });
+        return;
+    }
     const cache = queryClient.getQueryCache();
     const filtered = cache
         .getAll()
