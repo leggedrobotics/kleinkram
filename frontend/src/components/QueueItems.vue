@@ -172,6 +172,8 @@ function getColor(state: FileState) {
             return 'blue';
         case FileState.AWAITING_UPLOAD:
             return 'purple';
+        case FileState.CORRUPTED_FILE:
+            return 'orange';
         default:
             return 'grey'; // Default color for unknown states
     }

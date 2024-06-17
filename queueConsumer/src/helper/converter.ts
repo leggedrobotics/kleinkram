@@ -15,9 +15,17 @@ export async function convert(
     outfile: string,
 ): Promise<Buffer> {
     // Convert file
-    await traceWrapper(async (): Promise<void> => {
-        await execPromisify(`mcap convert ${infile} ${outfile}`);
-    }, 'MCAP Conversion')();
+    try {
+        await traceWrapper(async (): Promise<void> => {
+            await execPromisify(`mcap convert ${infile} ${outfile}`);
+        }, 'MCAP Conversion')();
+    } catch (error) {
+        throw new Error(
+            error.message.startsWith('Command failed: mcap convert ')
+                ? 'Corrupted'
+                : error.message,
+        );
+    }
 
     return new Promise((resolve, reject) => {
         const readStream = fs.createReadStream(outfile);

@@ -45,7 +45,6 @@ async function processFile(buffer: Buffer, fileName: string) {
             await fs.unlink(mcapPath);
             return convertedBuffer;
         } catch (error) {
-            logger.error('Error converting file:', error);
             await fs.unlink(tempFilePath);
             throw error;
         }
@@ -104,7 +103,15 @@ export class FileProcessor implements OnModuleInit {
                 if (sourceIsBag) {
                     filename = filename.replace('.bag', '.mcap');
                     identifier = identifier.replace('.bag', '.mcap');
-                    buffer = await processFile(buffer, identifier);
+                    try {
+                        buffer = await processFile(buffer, identifier);
+                    } catch (error) {
+                        if (error.message === 'Corrupted') {
+                            queue.state = FileState.CORRUPTED_FILE;
+                            await this.queueRepository.save(queue);
+                            return;
+                        }
+                    }
                 } else if (!filename.endsWith('.mcap')) {
                     throw new Error('Invalid file extension');
                 }
@@ -221,10 +228,16 @@ export class FileProcessor implements OnModuleInit {
                         logger.debug(
                             `Job {${job.id}} uploaded file: ${metadataRes.name}`,
                         );
-                        buffer = await processFile(buffer, full_pathname);
-                        logger.debug(
-                            `Job {${job.id}} processed file: ${full_pathname}`,
-                        );
+                        try {
+                            buffer = await processFile(buffer, full_pathname);
+                        } catch (error) {
+                            if (error.message === 'Corrupted') {
+                                queue.state = FileState.CORRUPTED_FILE;
+                                await this.queueRepository.save(queue);
+                                return;
+                            }
+                            console.log('Error processing file:', error);
+                        }
                     } else {
                         throw new Error('Invalid file extension');
                     }
