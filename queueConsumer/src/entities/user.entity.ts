@@ -1,13 +1,6 @@
-import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToMany,
-    OneToMany,
-    OneToOne,
-} from 'typeorm';
+import {Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne,} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { UserRole } from '../enum';
+import {UserRole} from '../enum';
 import Project from './project.entity';
 import Mission from './mission.entity';
 import File from './file.entity';
@@ -26,8 +19,11 @@ export default class User extends BaseEntity {
     @Column()
     role: UserRole;
 
+    @Column({nullable: true})
+    avatarUrl: string;
+
     @OneToOne(() => Account, (account) => account.user)
-    @JoinColumn({ name: 'account_uuid' })
+    @JoinColumn({name: 'account_uuid'})
     account: Account;
 
     @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.users)

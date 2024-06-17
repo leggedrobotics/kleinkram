@@ -1,7 +1,6 @@
 import axios from 'src/api/axios';
 import ENV from 'src/env';
 import ROUTES from 'src/router/routes';
-import { routerInstance } from 'boot/router';
 
 
 export const isAuthenticated = () =>
@@ -10,6 +9,11 @@ export const isAuthenticated = () =>
         .then(() => true)
         .catch(() => false);
 
+export const getUser = () =>
+    axios.get('/user/me')
+        .then((response) => response.data)
+        .catch(() => null);
+
 
 export function logout() {
     return new Promise((resolve, reject) => {
@@ -17,8 +21,8 @@ export function logout() {
             .post('/auth/logout')
             .then(() => {
 
-                routerInstance.push(ROUTES.HOME.path)
-                    .then(() => resolve(true));
+                // reload the page to clear the cache
+                window.location.reload();
 
             })
             .catch(() => reject(false));

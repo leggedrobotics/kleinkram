@@ -62,7 +62,7 @@ export class AuthService implements OnModuleInit {
     }
 
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
-        const { id, emails, displayName } = profile;
+        const { id, emails, displayName, photos } = profile;
         const email = emails[0].value;
         const account = await this.accountRepository.findOne({
             where: { oauthID: id },
@@ -72,7 +72,7 @@ export class AuthService implements OnModuleInit {
             return account.user;
         }
 
-        return this.create(id, email, displayName);
+        return this.create(id, email, displayName, photos[0].value);
     }
 
     async login(user: User) {
@@ -89,7 +89,7 @@ export class AuthService implements OnModuleInit {
         };
     }
 
-    async create(oauthID: string, email: string, username: string) {
+    async create(oauthID: string, email: string, username: string, picture: string) {
         const account: Account = this.accountRepository.create({
             oauthID: oauthID,
             type: AccountType.GOOGLE,
@@ -99,6 +99,7 @@ export class AuthService implements OnModuleInit {
             email: email,
             name: username,
             role: UserRole.USER,
+            avatarUrl: picture || '',
         });
 
         const saved_account = await this.accountRepository.save(account);
