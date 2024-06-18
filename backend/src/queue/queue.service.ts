@@ -72,10 +72,11 @@ export class QueueService {
         user: JWTUser,
     ) {
         const creator = await this.userservice.findOneByUUID(user.uuid);
-
+        const filenameRegex = /^[a-zA-Z0-9_\-\.]+$/;
         const filteredFilenames = filenames.filter(
             (filename) =>
-                filename.endsWith('.bag') || filename.endsWith('.mcap'),
+                (filename.endsWith('.bag') || filename.endsWith('.mcap')) &&
+                filenameRegex.test(filename),
         );
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
