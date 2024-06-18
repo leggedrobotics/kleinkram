@@ -166,9 +166,44 @@ const submitNewFile = async () => {
             {},
         );
         const filenames = Object.keys(filesToRecord);
-        const urls = await getUploadURL(filenames, selected_mission.value.uuid);
+        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
+        const filteredFilenames: string[] = [];
+        filenames.forEach((filename) => {
+            const isBagOrMCAP =
+                filename.endsWith('.bag') || filename.endsWith('.mcap');
+            const isValidName = filenameRegex.test(filename);
+            if (isBagOrMCAP && isValidName) {
+                filteredFilenames.push(filename);
+            } else {
+                if (!isBagOrMCAP) {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: Invalid file type. Only .bag and .mcap files are allowed.`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'top-right',
+                        timeout: 30000,
+                        closeBtn: true,
+                    });
+                } else {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'top-right',
+                        timeout: 30000,
+                        closeBtn: true,
+                    });
+                }
+            }
+        });
+        const urls = await getUploadURL(
+            filteredFilenames,
+            selected_mission.value.uuid,
+        );
         await Promise.all(
-            filenames.map((filename) => {
+            filteredFilenames.map((filename) => {
                 const file = filesToRecord[filename];
                 if (!urls[filename]) {
                     Notify.create({

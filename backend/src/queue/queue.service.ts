@@ -72,7 +72,7 @@ export class QueueService {
         user: JWTUser,
     ) {
         const creator = await this.userservice.findOneByUUID(user.uuid);
-        const filenameRegex = /^[a-zA-Z0-9_\-\.]+$/;
+        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
         const filteredFilenames = filenames.filter(
             (filename) =>
                 (filename.endsWith('.bag') || filename.endsWith('.mcap')) &&
