@@ -1,48 +1,35 @@
-import { jwtDecode } from 'jwt-decode';
-import { ref } from 'vue';
 import axios from 'src/api/axios';
-function getCookie(name: string) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift();
-    return null;
-}
+import ENV from 'src/env';
+import ROUTES from 'src/router/routes';
 
-// Function to check if the JWT token is valid
-export function isTokenValid(token: string) {
-    try {
-        const decoded = jwtDecode(token);
-        const currentTime = Date.now() / 1000; // Current time in seconds
-        if (decoded.exp && decoded.exp < currentTime) {
-            return false; // Token has expired
-        }
-        return true; // Token is valid
-    } catch (error) {
-        return false; // Error decoding token
-    }
-}
 
-// Function to check if the user is logged in
-export function isLoggedIn() {
-    const token = getCookie('authtoken');
-    if (token && isTokenValid(token)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-export const loggedIn = ref(false);
+export const isAuthenticated = () =>
+    axios
+        .get('/user/me')
+        .then(() => true)
+        .catch(() => false);
+
+export const getUser = () =>
+    axios.get('/user/me')
+        .then((response) => response.data)
+        .catch(() => null);
+
 
 export function logout() {
     return new Promise((resolve, reject) => {
         axios
             .post('/auth/logout')
             .then(() => {
-                resolve(true);
-                loggedIn.value = false;
+
+                // reload the page to clear the cache
+                window.location.reload();
+
             })
-            .catch(() => {
-                reject(false);
-            });
+            .catch(() => reject(false));
     });
 }
+
+
+export const login = () => {
+    window.location.href = `${ENV.ENDPOINT}/auth/google`;
+};

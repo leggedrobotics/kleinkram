@@ -26,6 +26,9 @@ export default class User extends BaseEntity {
     @Column()
     role: UserRole;
 
+    @Column({nullable: true})
+    avatarUrl: string;
+
     @OneToOne(() => Account, (account) => account.user)
     @JoinColumn({ name: 'account_uuid' })
     account: Account;
@@ -44,4 +47,6 @@ export default class User extends BaseEntity {
 
     @OneToMany(() => QueueEntity, (queue) => queue.creator)
     queues: QueueEntity[];
+
+
 }

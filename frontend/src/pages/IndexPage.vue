@@ -1,6 +1,6 @@
 <template>
-    <q-page class="flex flex-center">
-        <div class="q-pa-md">
+    <div class="flex flex-center">
+        <div class="q-pa-lg">
             <div class="text-h3 text-center">
                 Dataset Processing and Storage
             </div>
@@ -77,7 +77,7 @@
                 </ul>
             </ul>
         </div>
-    </q-page>
+    </div>
 </template>
 
 <script setup lang="ts"></script>

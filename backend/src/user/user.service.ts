@@ -1,9 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {ForbiddenException, Injectable} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
 import User from './entities/user.entity';
-import { UserRole } from '../enum';
-import { JWTUser } from '../auth/paramDecorator';
+import {UserRole} from '../enum';
+import {JWTUser} from '../auth/paramDecorator';
 import Account from '../auth/entities/account.entity';
 
 @Injectable()
@@ -12,41 +12,40 @@ export class UserService {
         @InjectRepository(User) private userRepository: Repository<User>,
         @InjectRepository(Account)
         private accountRepository: Repository<Account>,
-    ) {}
+    ) {
+    }
+
     async findOneByEmail(email: string) {
-        return this.userRepository.findOne({ where: { email } });
+        return this.userRepository.findOne({where: {email}});
     }
 
     async findOneByUUID(uuid: string) {
         return this.userRepository.findOneOrFail({
-            where: { uuid },
+            where: {uuid},
             relations: ['accessGroups', 'account'],
         });
     }
 
-    async claimAdmin(jwtuser: JWTUser) {
+    async claimAdmin(jwt_user: JWTUser) {
         const nrAdmins = await this.userRepository.count({
-            where: { role: UserRole.ADMIN },
+            where: {role: UserRole.ADMIN},
         });
         if (nrAdmins > 0) {
             throw new ForbiddenException('Admin already exists');
         }
-        const account = await this.accountRepository.findOneOrFail({
-            where: { oauthID: jwtuser.uuid },
-            relations: ['user'],
+        const user = await this.userRepository.findOneOrFail({
+            where: {uuid: jwt_user.uuid},
         });
 
-        account.user.role = UserRole.ADMIN;
-        await this.userRepository.save(account.user);
-        return account.user;
+        user.role = UserRole.ADMIN;
+        await this.userRepository.save(user);
+        return user;
     }
 
-    async me(jwtuser: JWTUser) {
-        const account = await this.accountRepository.findOneOrFail({
-            where: { oauthID: jwtuser.uuid },
-            relations: ['user'],
+    async me(jwt_user: JWTUser) {
+        return await this.userRepository.findOneOrFail({
+            where: {uuid: jwt_user.uuid},
         });
-        return account.user;
     }
 
     async findAll() {
@@ -55,7 +54,7 @@ export class UserService {
 
     async promoteUser(usermail: string) {
         const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
+            where: {email: usermail},
         });
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
@@ -64,7 +63,7 @@ export class UserService {
 
     async demoteUser(usermail: string) {
         const user = await this.userRepository.findOneOrFail({
-            where: { email: usermail },
+            where: {email: usermail},
         });
         user.role = UserRole.USER;
         await this.userRepository.save(user);
