@@ -18,15 +18,14 @@
                 </q-menu>
 
             </q-btn>
-
-
+            
             <q-toolbar-title shrink style="margin-right: 30px">
                 Bagistry
             </q-toolbar-title>
 
             <q-tabs v-show="$q.screen.gt.sm" inline-label>
                 <q-route-tab v-for="item in main_menu" :key="item.title" :label="item.title" :to="item.to"
-                       :icon="item.icon" />
+                             :icon="item.icon" />
             </q-tabs>
 
             <q-space />
