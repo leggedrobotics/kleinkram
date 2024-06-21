@@ -241,7 +241,7 @@ export class FileService {
         });
         return await externalMinio.presignedUrl(
             'GET',
-            env.MINIO_BAG_BUCKET_NAME,
+            (file.type === FileType.MCAP) ? env.MINIO_MCAP_BUCKET_NAME : env.MINIO_BAG_BUCKET_NAME,
             `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
         );
