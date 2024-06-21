@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { getUser, isAuthenticated, logout } from 'src/services/auth';
 import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
 
 const is_authenticated = await isAuthenticated();
 const user = await getUser();
+
+const $router = useRouter();
+const navigateTo = (path: string) => {
+    $router.push(path);
+};
+
 </script>
 
 <template>
@@ -23,7 +30,7 @@ const user = await getUser();
 
                 <q-menu auto-close style="width: 280px">
                     <q-list>
-                        <q-item clickable v-close-popup>
+                        <q-item clickable v-close-popup @click="navigateTo(ROUTES.USER_PROFILE.path)">
                             <q-item-section avatar></q-item-section>
                             <q-item-section>
                                 <q-item-section>{{ user['name'] }}</q-item-section>

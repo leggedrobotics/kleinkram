@@ -1,4 +1,4 @@
-import {RouteRecordRaw} from 'vue-router';
+import { RouteRecordRaw } from 'vue-router';
 
 
 /**
@@ -13,7 +13,7 @@ const ROUTES = {
         path: '/login',
         component: () => import('layouts/NoTopNavLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/LoginPage.vue')},
+            { path: '', component: () => import('pages/LoginPage.vue') },
         ],
     },
 
@@ -22,7 +22,7 @@ const ROUTES = {
         path: '/',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/IndexPage.vue')},
+            { path: '', component: () => import('pages/IndexPage.vue') },
         ],
     },
 
@@ -31,7 +31,7 @@ const ROUTES = {
         path: '/datatable',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/DataTablePage.vue')},
+            { path: '', component: () => import('pages/DataTablePage.vue') },
         ],
     },
     UPLOAD: {
@@ -39,21 +39,21 @@ const ROUTES = {
         path: '/upload',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/UploadPage.vue')},
+            { path: '', component: () => import('pages/UploadPage.vue') },
         ],
     },
     FILE: {
         name: 'File',
         path: '/file',
         component: () => import('layouts/MainLayout.vue'),
-        children: [{path: '', component: () => import('pages/FileInfo.vue')}],
+        children: [{ path: '', component: () => import('pages/FileInfo.vue') }],
     },
     ACTION: {
         name: 'Action',
         path: '/action',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/ActionPage.vue')},
+            { path: '', component: () => import('pages/ActionPage.vue') },
         ],
     },
     ANALYSIS_DETAILS: {
@@ -73,7 +73,7 @@ const ROUTES = {
         path: '/landing',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/LandingPage.vue')},
+            { path: '', component: () => import('pages/LandingPage.vue') },
         ],
     },
 
@@ -82,7 +82,7 @@ const ROUTES = {
         path: '/explorer',
         component: () => import('layouts/MainLayout.vue'),
         children: [
-            {path: '', component: () => import('pages/ExplorerPage.vue')},
+            { path: '', component: () => import('pages/ExplorerPage.vue') },
         ],
     },
 
@@ -90,9 +90,15 @@ const ROUTES = {
         name: 'Error404',
         path: '/:catchAll(.*)',
         component: () => import('layouts/NoTopNavLayout.vue'),
-        children: [{path: '', component: () => import('pages/Error404Page.vue')}],
+        children: [{ path: '', component: () => import('pages/Error404Page.vue') }],
     },
 
+    USER_PROFILE: {
+        name: 'UserProfile',
+        path: '/user-profile',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [{ path: '', component: () => import('pages/UserProfilePage.vue') }],
+    },
 
 };
 
