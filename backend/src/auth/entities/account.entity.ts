@@ -1,12 +1,13 @@
-import { Column, Entity, OneToOne } from 'typeorm';
+import { Column, Entity, OneToOne, Unique } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
-import { AccountType } from '../../enum';
+import { Providers } from '../../enum';
 import User from '../../user/entities/user.entity';
 
 @Entity()
+@Unique('provider_oauthID', ['provider', 'oauthID'])
 export default class Account extends BaseEntity {
     @Column()
-    type: AccountType;
+    provider: Providers;
 
     @OneToOne(() => User, (user) => user.account)
     user: User;

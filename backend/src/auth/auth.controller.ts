@@ -14,11 +14,13 @@ export class AuthController {
         private authService: AuthService,
         private readonly jwtService: JwtService,
         private userService: UserService,
-    ) {}
+    ) {
+    }
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth(@Req() req) {}
+    async googleAuth(@Req() req) {
+    }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))

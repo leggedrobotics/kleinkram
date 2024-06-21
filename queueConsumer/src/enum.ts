@@ -45,6 +45,6 @@ export enum AccessGroupRights {
     WRITE = 20,
     DELETE = 30,
 }
-export enum AccountType {
-    GOOGLE = 'GOOGLE',
+export enum Providers {
+    GOOGLE = 'google',
 }
