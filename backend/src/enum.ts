@@ -4,6 +4,7 @@ export enum FileState {
     DONE = 'DONE',
     ERROR = 'ERROR',
     AWAITING_UPLOAD = 'AWAITING_UPLOAD',
+    CORRUPTED_FILE = 'CORRUPTED_FILE',
 }
 
 export enum FileLocation {
@@ -15,14 +16,15 @@ export enum UserRole {
     USER = 'USER',
 }
 
-export enum AnalysisState {
+export enum ActionState {
     PENDING = 'PENDING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     ERROR = 'ERROR',
+    FAILED = 'FAILED',
 }
 
-export enum TokenTypes {
+export enum KeyTypes {
     CONTAINER = 'CONTAINER',
 }
 
@@ -30,4 +32,20 @@ export enum CookieNames {
     AUTH_TOKEN = 'authtoken',
     REFRESH_TOKEN = 'refreshtoken',
     CLI_KEY = 'clikey',
+}
+
+export enum FileType {
+    BAG = 'BAG',
+    MCAP = 'MCAP',
+}
+
+export enum AccountType {
+    GOOGLE = 'GOOGLE',
+}
+
+export enum AccessGroupRights {
+    READ = 0,
+    CREATE = 10,
+    WRITE = 20,
+    DELETE = 30,
 }

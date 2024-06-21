@@ -1,18 +1,19 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../../base-entity.entity';
 import Topic from '../../topic/entities/topic.entity';
-import Run from '../../run/entities/run.entity';
+import Mission from '../../mission/entities/mission.entity';
 import User from '../../user/entities/user.entity';
+import { FileType } from '../../enum';
 
 @Entity()
 export default class File extends BaseEntity {
-    @ManyToOne(() => Run, (run) => run.files)
-    run: Run;
+    @ManyToOne(() => Mission, (mission) => mission.files)
+    mission: Mission;
 
     @Column()
     date: Date;
 
-    @OneToMany(() => Topic, (topic) => topic.run, { cascade: ['remove'] })
+    @OneToMany(() => Topic, (topic) => topic.file, { cascade: ['remove'] })
     topics: Topic[];
 
     @Column()
@@ -23,4 +24,7 @@ export default class File extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.files)
     creator: User;
+
+    @Column()
+    type: FileType;
 }

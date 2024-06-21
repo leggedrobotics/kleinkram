@@ -4,3 +4,5 @@ CLI/dist
 **/__pycache__
 
 **/node_modules/**
+
+backend/migration/.env

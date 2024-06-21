@@ -33,8 +33,8 @@
                 </div>
                 <div class="col-1">
                     <q-btn-dropdown
-                        v-model="dropdownNewFileRun"
-                        :label="selected_run?.name || 'Run'"
+                        v-model="dropdownNewFileMission"
+                        :label="selected_mission?.name || 'Mission'"
                         outlined
                         dense
                         clearable
@@ -42,17 +42,17 @@
                     >
                         <q-list>
                             <q-item
-                                v-for="run in runs"
-                                :key="run.uuid"
+                                v-for="mission in missions"
+                                :key="mission.uuid"
                                 clickable
                                 @click="
-                                    selected_run = run;
-                                    dropdownNewFileRun = false;
+                                    selected_mission = mission;
+                                    dropdownNewFileMission = false;
                                 "
                             >
                                 <q-item-section>
                                     <q-item-label>
-                                        {{ run.name }}
+                                        {{ mission.name }}
                                     </q-item-label>
                                 </q-item-section>
                             </q-item>
@@ -67,6 +67,7 @@
                             hint="Upload File"
                             multiple
                             accept=".bag, .mcap"
+                            style="min-width: 300px"
                         >
                             <template v-slot:prepend>
                                 <q-icon name="attach_file" />
@@ -83,6 +84,7 @@
                             dense
                             clearable
                             hint="Google Drive URL"
+                            style="min-width: 300px"
                         />
                     </div>
                 </div>
@@ -104,19 +106,19 @@ import {
     confirmUpload,
     createDrive,
     createFile,
-    createRun,
+    createMission,
     getUploadURL,
 } from 'src/services/mutations';
-import { Project, Run } from 'src/types/types';
+import { Project, Mission } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects, runsOfProject } from 'src/services/queries';
+import { allProjects, missionsOfProject } from 'src/services/queries';
 import axios from 'axios';
 
 const dropdownNewFileProject = ref(false);
-const dropdownNewFileRun = ref(false);
+const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
 const selected_project: Ref<Project | null> = ref(null);
-const selected_run: Ref<Run | null> = ref(null);
+const selected_mission: Ref<Mission | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: allProjects,
@@ -126,17 +128,17 @@ const queryClient = useQueryClient();
 const drive_url = ref('');
 
 const props = defineProps<{
-    run?: Run;
+    mission?: Mission;
 }>();
 
-if (props.run && props.run.project) {
-    selected_project.value = props.run.project;
-    selected_run.value = props.run;
+if (props.mission && props.mission.project) {
+    selected_project.value = props.mission.project;
+    selected_mission.value = props.mission;
 }
 
-const { data: runs, refetch } = useQuery({
-    queryKey: ['runs', selected_project.value?.uuid],
-    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+const { data: missions, refetch } = useQuery({
+    queryKey: ['missions', selected_project.value?.uuid],
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 
@@ -147,7 +149,7 @@ watchEffect(() => {
 });
 
 const submitNewFile = async () => {
-    if (!selected_run.value) {
+    if (!selected_mission.value) {
         return;
     }
     const noti = Notify.create({
@@ -164,9 +166,44 @@ const submitNewFile = async () => {
             {},
         );
         const filenames = Object.keys(filesToRecord);
-        const urls = await getUploadURL(filenames, selected_run.value.uuid);
+        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
+        const filteredFilenames: string[] = [];
+        filenames.forEach((filename) => {
+            const isBagOrMCAP =
+                filename.endsWith('.bag') || filename.endsWith('.mcap');
+            const isValidName = filenameRegex.test(filename);
+            if (isBagOrMCAP && isValidName) {
+                filteredFilenames.push(filename);
+            } else {
+                if (!isBagOrMCAP) {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: Invalid file type. Only .bag and .mcap files are allowed.`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'top-right',
+                        timeout: 30000,
+                        closeBtn: true,
+                    });
+                } else {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'top-right',
+                        timeout: 30000,
+                        closeBtn: true,
+                    });
+                }
+            }
+        });
+        const urls = await getUploadURL(
+            filteredFilenames,
+            selected_mission.value.uuid,
+        );
         await Promise.all(
-            filenames.map((filename) => {
+            filteredFilenames.map((filename) => {
                 const file = filesToRecord[filename];
                 if (!urls[filename]) {
                     Notify.create({
@@ -180,7 +217,7 @@ const submitNewFile = async () => {
                     });
                     return;
                 }
-                const uploadURL = urls[filename];
+                const uploadURL = urls[filename]['url'];
 
                 // Use axios to upload the file
                 return axios
@@ -191,7 +228,7 @@ const submitNewFile = async () => {
                         },
                     })
                     .then(async () => {
-                        confirmUpload(filename)
+                        confirmUpload(urls[filename]['uuid'])
                             .then(() => {
                                 Notify.create({
                                     message: `File ${filename} uploaded`,
@@ -201,6 +238,7 @@ const submitNewFile = async () => {
                                     group: false,
                                     timeout: 2000,
                                 });
+                                files.value = [];
                             })
                             .catch((e) => {
                                 Notify.create({
@@ -209,6 +247,7 @@ const submitNewFile = async () => {
                                     spinner: false,
                                     position: 'top-right',
                                     group: false,
+                                    closeBtn: true,
                                     timeout: 0,
                                 });
                             });
@@ -220,13 +259,14 @@ const submitNewFile = async () => {
                             position: 'top-right',
                             group: false,
                             spinner: false,
+                            closeBtn: true,
                             timeout: 0,
                         });
                     });
             }),
         );
         noti({
-            message: `Files for Run ${selected_run.value?.name} uploaded`,
+            message: `Files for Mission ${selected_mission.value?.name} uploaded`,
             color: 'positive',
             spinner: false,
             timeout: 5000,
@@ -237,20 +277,20 @@ const submitNewFile = async () => {
             .filter(
                 (query) =>
                     query.queryKey[0] === 'files' &&
-                    query.queryKey[1] === selected_run.value?.uuid,
+                    query.queryKey[1] === selected_mission.value?.uuid,
             );
         filtered.forEach((query) => {
             console.log('Invalidating query', query.queryKey);
             queryClient.invalidateQueries(query.queryKey);
         });
     } else if (drive_url.value) {
-        if (!selected_run.value) {
+        if (!selected_mission.value) {
             return;
         }
-        await createDrive(selected_run.value.uuid, drive_url.value)
+        await createDrive(selected_mission.value.uuid, drive_url.value)
             .then(() => {
                 noti({
-                    message: `Files for Run ${selected_run.value?.name} are now importing...`,
+                    message: `Files for Mission ${selected_mission.value?.name} are now importing...`,
                     color: 'positive',
                     spinner: false,
                     timeout: 5000,
@@ -258,7 +298,7 @@ const submitNewFile = async () => {
             })
             .catch((e) => {
                 noti({
-                    message: `Upload of Files for Run ${selected_run.value?.name} failed: ${e}`,
+                    message: `Upload of Files for Mission ${selected_mission.value?.name} failed: ${e}`,
                     color: 'negative',
                     spinner: false,
                     timeout: 0,

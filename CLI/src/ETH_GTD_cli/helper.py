@@ -9,8 +9,9 @@ import tqdm
 from rich import print
 import queue
 
-from .consts import API_URL
 from typing import Dict
+
+from .auth import client
 
 
 def expand_and_match(path_pattern):
@@ -47,23 +48,21 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
             filename, url = _queue.get(timeout=3)
             filepath = paths[filename]
             headers = {"Content-Type": "application/octet-stream"}
-            chunk_size = 4096 * 512
             with open(filepath, "rb") as f:
-                nr_chunks = math.ceil(os.path.getsize(filepath) / chunk_size)
-                update_size = math.floor(1000000 / nr_chunks) / 10000
-
-                print(f"Uploading: {filename}")
-                while chunk := f.read(chunk_size):  # Read in chunks of 4KB
-                    resp = httpx.put(url, content=chunk, headers=headers, timeout=60.0)
-                    resp.raise_for_status()
-                    pbar.update(update_size)
-
-                httpx.post(
-                    API_URL + "/queue/confirmUpload", json={"filename": filename}
-                )
-
+                with httpx.Client() as cli:
+                    # Using PUT method directly for the upload
+                    response = cli.put(url, content=f, headers=headers)
+                    if response.status_code == 200:
+                        pbar.update(100)  # Update progress for each file
+                        client.post("/queue/confirmUpload", json={"filename": filename})
+                    else:
+                        print(f"Failed to upload {filename}. HTTP status: {response.status_code}")
+            _queue.task_done()
         except queue.Empty:
             break
+        except Exception as e:
+            print(f"Error uploading {filename}: {e}")
+            _queue.task_done()
 
 
 if __name__ == "__main__":

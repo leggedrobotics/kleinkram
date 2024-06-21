@@ -98,7 +98,7 @@ services:
             - loki
         volumes:
             # mount docker socket to access docker from within the container
-            - /var/run/docker.sock:/var/run/docker.sock
+            - /var/mission/docker.sock:/var/mission/docker.sock
     prometheus:
         image: prom/prometheus
         volumes:
@@ -150,6 +150,12 @@ services:
             - '9050:3000' # localhost:9050 for accessing grafana
         networks:
             - privatenet
+
+    awt-docs:
+        image: rslethz/grandtour-datasets:docs-dev
+        build:
+            context: docs/.
+            dockerfile: Dockerfile
 
 volumes:
     postgres_db_data:

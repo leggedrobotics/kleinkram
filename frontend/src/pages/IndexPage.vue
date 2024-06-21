@@ -1,6 +1,6 @@
 <template>
-    <q-page class="flex flex-center">
-        <div class="q-pa-md">
+    <div class="flex flex-center">
+        <div class="q-pa-lg">
             <div class="text-h3 text-center">
                 Dataset Processing and Storage
             </div>
@@ -28,10 +28,10 @@
                 <li class="q-py-xs q-pl-md">File is a single .mcap file</li>
                 <li class="q-py-xs q-pl-md">
                     Files recorded consecutively / parallely are grouped into a
-                    Run
+                    Mission
                 </li>
                 <li class="q-py-xs q-pl-md">
-                    Several Runs are then grouped into a Project
+                    Several Missions are then grouped into a Project
                 </li>
                 <li class="q-py-xs q-pl-md">
                     One File contains recordings of one or more Topics
@@ -77,7 +77,7 @@
                 </ul>
             </ul>
         </div>
-    </q-page>
+    </div>
 </template>
 
 <script setup lang="ts"></script>

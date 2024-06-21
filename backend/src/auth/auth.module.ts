@@ -14,11 +14,24 @@ import {
     LoggedInUserGuard,
     TokenOrUserGuard,
 } from './roles.guard';
-import Token from './entities/token.entity';
+import Apikey from './entities/apikey.entity';
+import AccessGroup from './entities/accessgroup.entity';
+import Account from './entities/account.entity';
+import Project from '../project/entities/project.entity';
+import { ProjectGuardService } from './projectGuard.service';
+import { MissionGuardService } from './missionGuard.service';
+import Mission from '../mission/entities/mission.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Token, User]),
+        TypeOrmModule.forFeature([
+            Apikey,
+            User,
+            AccessGroup,
+            Account,
+            Project,
+            Mission,
+        ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: async () => ({
@@ -31,6 +44,8 @@ import Token from './entities/token.entity';
         AuthService,
         GoogleStrategy,
         UserService,
+        ProjectGuardService,
+        MissionGuardService,
         JwtStrategy,
         AdminOnlyGuard,
         LoggedInUserGuard,

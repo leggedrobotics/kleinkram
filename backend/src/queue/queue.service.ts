@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import QueueEntity from './entities/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
-import Run from '../run/entities/run.entity';
-import { FileLocation, FileState } from '../enum';
+import Mission from '../mission/entities/mission.entity';
+import { FileLocation, FileState, UserRole } from '../enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '../env';
-import { minio } from '../minioHelper';
+import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '../user/entities/user.entity';
+import Account from '../auth/entities/account.entity';
+import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
     const regex =
@@ -25,29 +27,33 @@ export class QueueService {
     constructor(
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
-        @InjectRepository(Run) private runRepository: Repository<Run>,
+        @InjectRepository(Mission)
+        private missionRepository: Repository<Mission>,
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
-        @InjectQueue('analysis-queue') private analysisQueue: Queue,
-        @InjectRepository(User) private userRepository: Repository<User>,
+        @InjectQueue('action-queue') private actionQueue: Queue,
+        private userservice: UserService,
     ) {}
 
-    async addAnalysisQueue(run_analysis_id: string) {
-        await this.analysisQueue.add('processAnalysisFile', {
-            run_analysis_id: run_analysis_id,
+    async addActionQueue(mission_action_id: string) {
+        await this.actionQueue.add('processActionFile', {
+            mission_action_id: mission_action_id,
         });
     }
 
-    async createDrive(driveCreate: DriveCreate) {
-        const run = await this.runRepository.findOneOrFail({
-            where: { uuid: driveCreate.runUUID },
+    async createDrive(driveCreate: DriveCreate, user: JWTUser) {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: driveCreate.missionUUID },
         });
+        const creator = await this.userservice.findOneByUUID(user.uuid);
+
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,
             state: FileState.PENDING,
             location: FileLocation.DRIVE,
-            run,
+            mission,
+            creator,
         });
         await this.queueRepository.save(newQueue);
         await this.fileProcessingQueue
@@ -62,26 +68,25 @@ export class QueueService {
 
     async handleFileUpload(
         filenames: string[],
-        runUUID: string,
+        missionUUID: string,
         user: JWTUser,
     ) {
-        console.log(runUUID);
-        const creator = await this.userRepository.findOneOrFail({
-            where: { googleId: user.userId },
-        });
+        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
         const filteredFilenames = filenames.filter(
             (filename) =>
-                filename.endsWith('.bag') || filename.endsWith('.mcap'),
+                (filename.endsWith('.bag') || filename.endsWith('.mcap')) &&
+                filenameRegex.test(filename),
         );
-        const run = await this.runRepository.findOneOrFail({
-            where: { uuid: runUUID },
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
             relations: ['project'],
         });
 
         let processedFilenames = filteredFilenames.map((filename) => {
             return {
                 filename,
-                location: `${run.project.name}/${run.name}/${filename}`,
+                location: `${mission.project.name}/${mission.name}/${filename}`,
             };
         });
         const unique = await Promise.all(
@@ -98,8 +103,10 @@ export class QueueService {
         const expiry = 2 * 60 * 60;
         const urlPromises = processedFilenames.map(
             async ({ filename, location }) => {
-                const minioURL = await minio.presignedPutObject(
-                    env.MINIO_TEMP_BAG_BUCKET_NAME,
+                const minioURL = await externalMinio.presignedPutObject(
+                    filename.endsWith('.bag')
+                        ? env.MINIO_BAG_BUCKET_NAME
+                        : env.MINIO_MCAP_BUCKET_NAME,
                     location,
                     expiry,
                 );
@@ -108,13 +115,14 @@ export class QueueService {
                     identifier: location,
                     state: FileState.AWAITING_UPLOAD,
                     location: FileLocation.MINIO,
-                    run,
+                    mission,
                     creator,
                 });
                 await this.queueRepository.save(newQueue);
                 return {
                     filename,
                     minioURL,
+                    uuid: newQueue.uuid,
                 };
             },
         );
@@ -123,16 +131,16 @@ export class QueueService {
 
         console.debug('createPreSignedURLS', urls);
 
-        return urls.reduce((acc, { filename, minioURL }) => {
-            acc[filename] = minioURL;
+        return urls.reduce((acc, { filename, minioURL, uuid }) => {
+            acc[filename] = { url: minioURL, uuid };
             return acc;
         }, {});
     }
 
-    async confirmUpload(filename: string) {
-        console.debug('confirmUpload', filename);
+    async confirmUpload(uuid: string) {
+        console.debug('confirmUpload', uuid);
         const queue = await this.queueRepository.findOneOrFail({
-            where: { filename: filename },
+            where: { uuid: uuid },
         });
 
         queue.state = FileState.PENDING;
@@ -144,16 +152,37 @@ export class QueueService {
         });
     }
 
-    async active(startDate: Date) {
-        return await this.queueRepository.find({
-            where: {
-                updatedAt: MoreThan(startDate),
-            },
-            relations: ['run', 'run.project', 'creator'],
-            order: {
-                createdAt: 'DESC',
-            },
-        });
+    async active(startDate: Date, userUUID: string) {
+        const user = await this.userservice.findOneByUUID(userUUID);
+        if (user.role === UserRole.ADMIN) {
+            return await this.queueRepository.find({
+                where: {
+                    updatedAt: MoreThan(startDate),
+                },
+                relations: ['mission', 'mission.project', 'creator'],
+                order: {
+                    createdAt: 'DESC',
+                },
+            });
+        }
+        return this.queueRepository
+            .createQueryBuilder('queue')
+            .leftJoinAndSelect('queue.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('queue.creator', 'creator')
+            .leftJoin('project.accessGroups', 'projectAccessGroups')
+            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('mission.accessGroups', 'missionAccessGroups')
+            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .where('queue.updatedAt > :startDate', { startDate })
+            .where(
+                new Brackets((qb) => {
+                    qb.where('projectUsers.uuid = :user', {
+                        user: userUUID,
+                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
+                }),
+            )
+            .getMany();
     }
 
     async clear() {

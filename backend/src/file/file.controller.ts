@@ -10,7 +10,16 @@ import {
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
-import { AdminOnly, LoggedIn, TokenOrUser } from '../auth/roles.decorator';
+import {
+    AdminOnly,
+    CanReadFile,
+    CanReadFileByName,
+    CanReadMission,
+    CanWriteFile,
+    LoggedIn,
+    TokenOrUser,
+} from '../auth/roles.decorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('file')
 export class FileController {
@@ -18,21 +27,23 @@ export class FileController {
 
     @Get('all')
     @LoggedIn()
-    async allFiles() {
-        return await this.fileService.findAll();
+    async allFiles(@addJWTUser() user: JWTUser) {
+        return await this.fileService.findAll(user.uuid);
     }
 
     @Get('filteredByNames')
     @LoggedIn()
     async filteredByNames(
         @Query('projectName') projectName: string,
-        @Query('runName') runName: string,
+        @Query('missionName') missionName: string,
         @Query('topics') topics: string[],
+        @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
-            runName,
+            missionName,
             topics,
+            user.uuid,
         );
     }
 
@@ -41,24 +52,28 @@ export class FileController {
     async filteredFiles(
         @Query('fileName') fileName: string,
         @Query('projectUUID') projectUUID: string,
-        @Query('runUUID') runUUID: string,
+        @Query('missionUUID') missionUUID: string,
         @Query('startDate') startDate: string,
         @Query('endDate') endDate: string,
         @Query('topics') topics: string,
         @Query('andOr') andOr: boolean,
+        @Query('mcapBag') mcapBag: boolean,
+        @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
             fileName,
             projectUUID,
-            runUUID,
+            missionUUID,
             startDate,
             endDate,
             topics,
             andOr,
+            mcapBag,
+            user.uuid,
         );
     }
     @Get('download')
-    @LoggedIn()
+    @CanReadFile()
     async download(
         @Query('uuid') uuid: string,
         @Query('expires') expires: boolean,
@@ -75,25 +90,25 @@ export class FileController {
     }
 
     @Get('one')
-    @LoggedIn()
+    @CanReadFile()
     async getFileById(@Query('uuid') uuid: string) {
         return this.fileService.findOne(uuid);
     }
 
     @Get('byName')
-    @LoggedIn()
+    @CanReadFileByName()
     async getFileByName(@Query('name') name: string) {
         return this.fileService.findByFilename(name);
     }
 
-    @Get('ofRun')
-    @LoggedIn()
-    async getFilesOfRun(@Query('runUUID') runUUID: string) {
-        return this.fileService.findByRun(runUUID);
+    @Get('ofMission')
+    @CanReadMission()
+    async getFilesOfMission(@Query('uuid') uuid: string) {
+        return this.fileService.findByMission(uuid);
     }
 
     @Put(':uuid')
-    @LoggedIn()
+    @CanWriteFile()
     async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
         return this.fileService.update(uuid, dto);
     }

@@ -76,7 +76,7 @@ export async function deleteMinioFile(
     }, 'deleteMinioFile')();
 }
 
-export async function moveMinioFile(
+export async function copyMinioFile(
     sourceBucket: string,
     destBucket: string,
     fileName: string,
@@ -90,7 +90,6 @@ export async function moveMinioFile(
             new CopyConditions(),
             async (err, res) => {
                 if (err) reject(err);
-                await minio.removeObject(sourceBucket, fileName);
                 resolve();
             },
         );

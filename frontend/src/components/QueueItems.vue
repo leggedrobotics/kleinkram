@@ -111,20 +111,20 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: Queue) => row.run.project.name,
+        field: (row: Queue) => row?.mission?.project?.name,
     },
     {
-        name: 'Run',
+        name: 'Mission',
         required: true,
-        label: 'Run',
+        label: 'Mission',
         align: 'left',
-        field: (row: Queue) => row.run.name,
+        field: (row: Queue) => row.mission.name,
     },
     { name: 'Status', label: 'Status', align: 'left', field: 'state' },
     {
         name: 'Location',
         required: true,
-        label: 'Location',
+        label: 'File Origin',
         align: 'left',
         field: 'location',
     },
@@ -138,7 +138,7 @@ const columns = [
                 row.filename == row.identifier &&
                 row.location == FileLocation.DRIVE
             )
-                return 'Folder';
+                return 'Not available';
             return row.filename;
         },
     },
@@ -149,6 +149,13 @@ const columns = [
         align: 'left',
         field: (row: Queue) =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
+    },
+    {
+        name: 'Creator',
+        required: true,
+        label: 'Creator',
+        align: 'left',
+        field: (row: Queue) => row?.creator?.name,
     },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];
@@ -165,6 +172,8 @@ function getColor(state: FileState) {
             return 'blue';
         case FileState.AWAITING_UPLOAD:
             return 'purple';
+        case FileState.CORRUPTED_FILE:
+            return 'orange';
         default:
             return 'grey'; // Default color for unknown states
     }

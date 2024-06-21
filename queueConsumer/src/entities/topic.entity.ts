@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToMany, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import FileEntity from './file.entity';
+import File from './file.entity';
 
 @Entity()
 export default class Topic extends BaseEntity {
@@ -16,6 +16,6 @@ export default class Topic extends BaseEntity {
     @Column('float')
     frequency: number;
 
-    @ManyToOne(() => FileEntity, (file) => file.topics)
-    run: FileEntity;
+    @ManyToOne(() => File, (file) => file.topics)
+    file: File;
 }

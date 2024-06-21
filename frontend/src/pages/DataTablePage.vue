@@ -29,8 +29,8 @@
             </div>
             <div class="col-12 col-md-2">
                 <q-btn-dropdown
-                    v-model="dd_open_runs"
-                    :label="selected_run?.name || 'Filter by Run'"
+                    v-model="dd_open_missions"
+                    :label="selected_mission?.name || 'Filter by Mission'"
                     outlined
                     dense
                     clearable
@@ -38,16 +38,16 @@
                 >
                     <q-list>
                         <q-item
-                            v-for="run in runs"
-                            :key="run.uuid"
+                            v-for="mission in missions"
+                            :key="mission.uuid"
                             clickable
                             @click="
-                                selected_run = run;
-                                dd_open_runs = false;
+                                selected_mission = mission;
+                                dd_open_missions = false;
                             "
                         >
                             <q-item-section>
-                                <q-item-label>{{ run.name }}</q-item-label>
+                                <q-item-label>{{ mission.name }}</q-item-label>
                             </q-item-section>
                         </q-item>
                     </q-list>
@@ -60,7 +60,7 @@
                     outlined
                     dense
                     clearable
-                    placeholder="Filter by Run Name"
+                    placeholder="Filter by Mission Name"
                     class="full-width"
                 />
             </div>
@@ -119,18 +119,30 @@
                             class="full-width"
                         />
                     </div>
-                    <div class="col-2 flex justify-center">
+                    <div class="col-2 flex justify-right">
                         <q-toggle
                             style="padding-left: 5px"
                             v-model="and_or"
                             :label="and_or ? 'And' : 'Or'"
                             dense
-                        />
-                        <q-tooltip
-                            >Toggle between AND/OR conditions for the topics.
-                            <br />And: Run contains all selected topics, Or: Run
-                            contains any of the selected topics</q-tooltip
                         >
+                            <q-tooltip>
+                                Toggle between AND/OR conditions for the topics.
+                                <br />And: Mission contains all selected topics,
+                                Or: Mission contains any of the selected topics
+                            </q-tooltip>
+                        </q-toggle>
+
+                        <q-toggle
+                            style="padding-left: 5px"
+                            v-model="mcap_bag"
+                            :label="mcap_bag ? 'MCAP' : 'Bag'"
+                            dense
+                        >
+                            <q-tooltip>
+                                Display only Bag / MCAP Files.
+                            </q-tooltip>
+                        </q-toggle>
                     </div>
                 </div>
             </div>
@@ -179,10 +191,10 @@ import {
     allProjects,
     allTopicsNames,
     fetchOverview,
-    runsOfProject,
+    missionsOfProject,
 } from 'src/services/queries';
-import { FileEntity, Project, Run } from 'src/types/types';
-import EditRun from 'components/EditFile.vue';
+import { FileEntity, Project, Mission } from 'src/types/types';
+import EditMission from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
@@ -208,12 +220,12 @@ const projectsReturn = useQuery<Project[]>({
 });
 const projects = projectsReturn.data;
 
-const dd_open_runs = ref(false);
-const selected_run: Ref<Run | null> = ref(null);
+const dd_open_missions = ref(false);
+const selected_mission: Ref<Mission | null> = ref(null);
 
-const { data: runs, refetch } = useQuery({
-    queryKey: ['runs', selected_project.value?.uuid],
-    queryFn: () => runsOfProject(selected_project.value?.uuid || ''),
+const { data: missions, refetch } = useQuery({
+    queryKey: ['missions', selected_project.value?.uuid],
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 
@@ -230,6 +242,7 @@ const topicsReturn = useQuery<string[]>({
 const topics = topicsReturn.data;
 const selectedTopics = ref([]);
 const and_or = ref(false);
+const mcap_bag = ref(true);
 
 const start = new Date();
 start.setHours(0, 0, 0, 0);
@@ -264,21 +277,23 @@ const { isLoading, isError, data, error } = useQuery({
         'Filtered Files',
         debouncedFilter,
         selected_project,
-        selected_run,
+        selected_mission,
         startDate,
         endDate,
         selectedTopics,
         and_or,
+        mcap_bag,
     ],
     queryFn: () =>
         fetchOverview(
             debouncedFilter.value,
             selected_project.value?.uuid,
-            selected_run.value?.uuid,
+            selected_mission.value?.uuid,
             startDate.value,
             endDate.value,
             selectedTopics.value || [],
             and_or.value,
+            mcap_bag.value,
         ),
 });
 
@@ -288,16 +303,16 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: FileEntity) => row.run?.project?.name,
+        field: (row: FileEntity) => row.mission?.project?.name,
         format: (val: string) => `${val}`,
         sortable: true,
     },
     {
-        name: 'Run',
+        name: 'Mission',
         required: true,
-        label: 'Run',
+        label: 'Mission',
         align: 'left',
-        field: (row: FileEntity) => row.run.name,
+        field: (row: FileEntity) => row.mission.name,
         format: (val: string) => `${val}`,
         sortable: true,
     },
@@ -333,7 +348,7 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: FileEntity) => row.creator,
+        field: (row: FileEntity) => row.creator.name,
         format: (val: string) => `${val}`,
         sortable: true,
     },
@@ -360,7 +375,7 @@ const columns = [
 function openQDialog(file: FileEntity): void {
     $q.dialog({
         title: 'Profilbild wählen',
-        component: EditRun,
+        component: EditMission,
         componentProps: {
             file_uuid: file.uuid,
         },

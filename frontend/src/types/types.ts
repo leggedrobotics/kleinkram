@@ -1,5 +1,6 @@
-import { AnalysisRunState, FileState } from 'src/enum/QUEUE_ENUM';
+import { ActionState, FileState } from 'src/enum/QUEUE_ENUM';
 import ROLE from 'src/enum/USER_ROLES';
+import { FileType } from 'src/enum/FILE_ENUM';
 
 class BaseEntity {
     uuid: string;
@@ -50,14 +51,14 @@ export class User extends BaseEntity {
 export class Project extends BaseEntity {
     name: string;
     description: string;
-    runs: Run[];
+    missions: Mission[];
     creator?: User;
 
     constructor(
         uuid: string,
         name: string,
         description: string,
-        runs: Run[],
+        missions: Mission[],
         creator: User | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
@@ -66,7 +67,7 @@ export class Project extends BaseEntity {
         super(uuid, createdAt, updatedAt, deletedAt);
         this.name = name;
         this.creator = creator;
-        this.runs = runs;
+        this.missions = missions;
         this.description = description;
     }
 
@@ -75,7 +76,7 @@ export class Project extends BaseEntity {
             this.uuid,
             this.name,
             this.description,
-            this.runs,
+            this.missions,
             this.creator,
             this.createdAt,
             this.updatedAt,
@@ -84,7 +85,7 @@ export class Project extends BaseEntity {
     }
 }
 
-export class Run extends BaseEntity {
+export class Mission extends BaseEntity {
     name: string;
     project: Project | undefined;
     files: FileEntity[];
@@ -107,8 +108,8 @@ export class Run extends BaseEntity {
         this.creator = creator;
     }
 
-    clone(): Run {
-        return new Run(
+    clone(): Mission {
+        return new Mission(
             this.uuid,
             this.name,
             this.project?.clone(),
@@ -123,31 +124,34 @@ export class Run extends BaseEntity {
 
 export class FileEntity extends BaseEntity {
     filename: string;
-    run: Run;
+    mission: Mission;
     date: Date;
     topics: Topic[];
     size: number;
     creator: User;
+    type: FileType;
 
     constructor(
         uuid: string,
         filename: string,
-        run: Run,
+        mission: Mission,
         creator: User,
         date: Date,
         topics: Topic[],
         size: number,
+        type: FileType,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
         this.size = size;
-        this.run = run;
+        this.mission = mission;
         this.creator = creator;
         this.date = date;
         this.filename = filename;
         this.topics = topics;
+        this.type = type;
     }
 }
 
@@ -157,11 +161,11 @@ type ContainerLog = {
     type: 'stdout' | 'stderr';
 };
 
-export class AnalysisRun extends BaseEntity {
-    state: AnalysisRunState;
+export class Action extends BaseEntity {
+    state: ActionState;
     docker_image: string;
 
-    run: Run | null;
+    mission: Mission | null;
     logs: ContainerLog[] | null;
 
     constructor(
@@ -169,16 +173,16 @@ export class AnalysisRun extends BaseEntity {
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
-        state: AnalysisRunState,
+        state: ActionState,
         docker_image: string,
-        run: Run | null,
+        mission: Mission | null,
         logs: ContainerLog[] | null = null,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
 
         this.state = state;
         this.docker_image = docker_image;
-        this.run = run;
+        this.mission = mission;
         this.logs = logs;
     }
 }
@@ -212,7 +216,8 @@ export class Queue extends BaseEntity {
     filename: string;
     state: FileState;
     location: string;
-    run: Run;
+    mission: Mission;
+    creator: User;
 
     constructor(
         uuid: string,
@@ -220,7 +225,8 @@ export class Queue extends BaseEntity {
         filename: string,
         state: FileState,
         location: string,
-        run: Run,
+        mission: Mission,
+        creator: User,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -230,6 +236,7 @@ export class Queue extends BaseEntity {
         this.identifier = identifier;
         this.state = state;
         this.location = location;
-        this.run = run;
+        this.mission = mission;
+        this.creator = creator;
     }
 }

@@ -2,7 +2,7 @@
     <q-card>
         <create-project />
         <q-separator />
-        <create-run />
+        <create-mission />
         <q-separator />
         <create-file />
     </q-card>
@@ -12,7 +12,7 @@
 </template>
 <script setup lang="ts">
 import CreateProject from 'components/CreateProject.vue';
-import CreateRun from 'components/CreateRun.vue';
+import CreateMission from 'components/CreateMission.vue';
 import CreateFile from 'components/CreateFile.vue';
 import QueueItems from 'components/QueueItems.vue';
 </script>

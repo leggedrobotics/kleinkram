@@ -4,7 +4,6 @@ import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import QueueEntity from './entities/queue.entity';
-import Run from './entities/run.entity';
 import FileEntity from './entities/file.entity';
 import env from './env';
 import { convert, mcapMetaInfo } from './helper/converter';
@@ -14,13 +13,12 @@ import {
     listFiles,
 } from './helper/driveHelper';
 import {
-    deleteMinioFile,
     downloadMinioFile,
-    moveMinioFile,
+    copyMinioFile,
     uploadFile,
 } from './helper/minioHelper';
 import Topic from './entities/topic.entity';
-import { FileLocation, FileState } from './enum';
+import { FileLocation, FileState, FileType } from './enum';
 import logger from './logger';
 import { traceWrapper } from './tracing';
 
@@ -38,7 +36,7 @@ async function processFile(buffer: Buffer, fileName: string) {
             logger.debug('File converted successfully');
             // Read converted file and upload
             await uploadFile(
-                env.MINIO_BAG_BUCKET_NAME,
+                env.MINIO_MCAP_BUCKET_NAME,
                 fileName,
                 convertedBuffer,
             );
@@ -47,7 +45,6 @@ async function processFile(buffer: Buffer, fileName: string) {
             await fs.unlink(mcapPath);
             return convertedBuffer;
         } catch (error) {
-            logger.error('Error converting file:', error);
             await fs.unlink(tempFilePath);
             throw error;
         }
@@ -59,7 +56,7 @@ async function processFile(buffer: Buffer, fileName: string) {
 export class FileProcessor implements OnModuleInit {
     constructor(
         @InjectQueue('file-queue') private readonly fileQueue: Queue,
-        @InjectQueue('analysis-queue') private readonly analysisQueue: Queue,
+        @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(FileEntity)
@@ -92,28 +89,30 @@ export class FileProcessor implements OnModuleInit {
                 `Job ${job.id} started, uuid is ${job.data.queueUuid}`,
             );
             const queue = await this.startProcessing(job.data.queueUuid);
+            const sourceIsBag = queue.filename.endsWith('.bag');
             try {
                 let buffer = await downloadMinioFile(
-                    env.MINIO_TEMP_BAG_BUCKET_NAME,
+                    sourceIsBag
+                        ? env.MINIO_BAG_BUCKET_NAME
+                        : env.MINIO_MCAP_BUCKET_NAME,
                     queue.identifier,
                 );
+                const src_size = buffer.length;
                 let identifier = queue.identifier;
                 let filename = queue.filename;
-                if (filename.endsWith('.mcap')) {
-                    await moveMinioFile(
-                        env.MINIO_TEMP_BAG_BUCKET_NAME,
-                        env.MINIO_BAG_BUCKET_NAME,
-                        queue.identifier,
-                    );
-                } else if (filename.endsWith('.bag')) {
+                if (sourceIsBag) {
                     filename = filename.replace('.bag', '.mcap');
                     identifier = identifier.replace('.bag', '.mcap');
-                    buffer = await processFile(buffer, identifier);
-                    await deleteMinioFile(
-                        env.MINIO_TEMP_BAG_BUCKET_NAME,
-                        queue.identifier,
-                    );
-                } else {
+                    try {
+                        buffer = await processFile(buffer, identifier);
+                    } catch (error) {
+                        if (error.message === 'Corrupted') {
+                            queue.state = FileState.CORRUPTED_FILE;
+                            await this.queueRepository.save(queue);
+                            return;
+                        }
+                    }
+                } else if (!filename.endsWith('.mcap')) {
                     throw new Error('Invalid file extension');
                 }
                 const { topics, date, size } = await mcapMetaInfo(buffer);
@@ -132,11 +131,25 @@ export class FileProcessor implements OnModuleInit {
                     date,
                     topics: createdTopics,
                     creator: queue.creator,
-                    run: queue.run,
+                    mission: queue.mission,
                     size,
                     filename,
+                    type: FileType.MCAP,
                 });
                 const savedFile = await this.fileRepository.save(newFile);
+
+                if (sourceIsBag) {
+                    const newBagFile = this.fileRepository.create({
+                        date,
+                        topics: [], // Topics are only saved on the MCAP file to avoid duplication
+                        creator: queue.creator,
+                        mission: queue.mission,
+                        size: src_size,
+                        filename: queue.filename,
+                        type: FileType.BAG,
+                    });
+                    await this.fileRepository.save(newBagFile);
+                }
                 queue.state = FileState.DONE;
                 await this.queueRepository.save(queue);
                 return savedFile;
@@ -183,6 +196,11 @@ export class FileProcessor implements OnModuleInit {
                 return null;
             }
             const filename = metadataRes.name.replace('.bag', '.mcap');
+
+            const project_name = queue.mission.project.name;
+            const mission_name = queue.mission.name;
+            const full_pathname = `${project_name}/${mission_name}/${filename}`;
+
             if (metadataRes.mimeType !== 'application/vnd.google-apps.folder') {
                 logger.debug(
                     `Job {${job.id}} is a file: ${metadataRes.name}, processing...`,
@@ -194,18 +212,32 @@ export class FileProcessor implements OnModuleInit {
                     );
                     if (metadataRes.name.endsWith('.mcap')) {
                         await uploadFile(
-                            env.MINIO_BAG_BUCKET_NAME,
-                            metadataRes.name,
+                            env.MINIO_MCAP_BUCKET_NAME,
+                            full_pathname,
                             buffer,
                         );
                         logger.debug(
                             `Job {${job.id}} uploaded file: ${metadataRes.name}`,
                         );
                     } else if (metadataRes.name.endsWith('.bag')) {
-                        buffer = await processFile(buffer, filename);
-                        logger.debug(
-                            `Job {${job.id}} processed file: ${filename}`,
+                        await uploadFile(
+                            env.MINIO_BAG_BUCKET_NAME,
+                            full_pathname,
+                            buffer,
                         );
+                        logger.debug(
+                            `Job {${job.id}} uploaded file: ${metadataRes.name}`,
+                        );
+                        try {
+                            buffer = await processFile(buffer, full_pathname);
+                        } catch (error) {
+                            if (error.message === 'Corrupted') {
+                                queue.state = FileState.CORRUPTED_FILE;
+                                await this.queueRepository.save(queue);
+                                return;
+                            }
+                            console.log('Error processing file:', error);
+                        }
                     } else {
                         throw new Error('Invalid file extension');
                     }
@@ -226,11 +258,28 @@ export class FileProcessor implements OnModuleInit {
                     const newFile = this.fileRepository.create({
                         date,
                         topics: createdTopics,
-                        run: queue.run,
+                        mission: queue.mission,
                         size,
                         filename: filename,
+                        creator: queue.creator,
+                        type: FileType.MCAP,
                     });
                     const savedFile = await this.fileRepository.save(newFile);
+
+                    if (metadataRes.name.endsWith('.bag')) {
+                        const newFile = this.fileRepository.create({
+                            date,
+                            topics: createdTopics,
+                            mission: queue.mission,
+                            size,
+                            filename: metadataRes.name,
+                            creator: queue.creator,
+                            type: FileType.BAG,
+                        });
+                        const savedFile =
+                            await this.fileRepository.save(newFile);
+                    }
+
                     queue.state = FileState.DONE;
                     await this.queueRepository.save(queue);
                     logger.debug(`Job {${job.id}} saved file: ${savedFile}`);
@@ -252,7 +301,8 @@ export class FileProcessor implements OnModuleInit {
                                 identifier: file.id,
                                 state: FileState.PENDING,
                                 location: FileLocation.DRIVE,
-                                run: queue.run,
+                                mission: queue.mission,
+                                creator: queue.creator,
                             });
                             await this.queueRepository.save(newQueue);
 
@@ -273,7 +323,7 @@ export class FileProcessor implements OnModuleInit {
             where: {
                 uuid: queueUuid,
             },
-            relations: ['run', 'creator'],
+            relations: ['mission', 'creator', 'mission.project'],
         });
         queue.state = FileState.PROCESSING;
         await this.queueRepository.save(queue);

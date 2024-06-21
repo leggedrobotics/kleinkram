@@ -1,1 +1,10 @@
 // app global css in SCSS form
+
+body {
+  overflow-y: scroll;
+}
+
+q-page {
+  // that's a bit ugly, but it is necessary to avoid unwanted scrollbars
+  min-height: 0 !important;
+}

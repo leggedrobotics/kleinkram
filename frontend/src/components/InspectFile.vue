@@ -11,16 +11,16 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.run.project.name }}
+                            {{ data?.mission.project.name }}
                         </div>
                     </div>
                     <div class="col-2">
-                        <div class="text-subtitle3">Run</div>
+                        <div class="text-subtitle3">Mission</div>
                         <div
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.run.name }}
+                            {{ data?.mission.name }}
                         </div>
                     </div>
                     <div class="col-3">
@@ -68,7 +68,14 @@
         </q-card-section>
 
         <q-card-section>
+            <q-input
+                v-model="filterKey"
+                filled
+                placeholder="Search"
+                class="q-mb-md"
+            />
             <QTable
+                v-if="data?.type === FileType.MCAP"
                 ref="tableoniRef"
                 v-model:pagination="pagination"
                 title="Topics"
@@ -76,28 +83,52 @@
                 :columns="columns"
                 row-key="uuid"
                 :loading="isLoading"
+                :filter="filterKey"
             >
             </QTable>
+            <q-btn
+                v-else
+                label="Got to Mcap"
+                icon="turn_slight_right"
+                @click="redirectToMcap"
+            >
+            </q-btn>
         </q-card-section>
     </q-card>
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { downloadBag, fetchFile } from 'src/services/queries';
-import { FileEntity, Run } from 'src/types/types';
+import { downloadBag, fetchFile, filesOfMission } from 'src/services/queries';
+import { FileEntity, Mission } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
-import { Ref, ref, watch, watchEffect } from 'vue';
+import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
+import { FileType } from 'src/enum/FILE_ENUM';
+import RouterService from 'src/services/routerService';
+import ROUTES from 'src/router/routes';
+const $routerService: RouterService | undefined = inject('$routerService');
 
 const props = defineProps<{
     file_uuid: string;
 }>();
 
+const file_uuid = computed(() => props.file_uuid);
+const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
-    queryKey: ['file', props.file_uuid],
-    queryFn: () => fetchFile(props.file_uuid),
+    queryKey: ['file', file_uuid],
+    queryFn: () => fetchFile(file_uuid.value),
+});
+
+const missionUUID = computed(() => data.value?.mission.uuid);
+
+const { data: filesReturn, refetch } = useQuery({
+    queryKey: ['files', missionUUID.value],
+    queryFn: () => filesOfMission(missionUUID.value || ''),
+    enabled() {
+        return !!missionUUID.value;
+    },
 });
 
 const columns = [
@@ -134,6 +165,15 @@ async function _downloadBag() {
     document.body.removeChild(a);
 }
 
+async function redirectToMcap() {
+    const mcap = filesReturn.value?.find((file: FileEntity) => {
+        return file.filename === data.value?.filename.replace('.bag', '.mcap');
+    });
+    if (mcap && $routerService) {
+        await $routerService.routeTo(ROUTES.FILE, { uuid: mcap.uuid });
+    }
+}
+
 async function _copyLink() {
     const res = await downloadBag(props.file_uuid, false);
     await copyToClipboard(res);
@@ -150,7 +190,7 @@ const pagination = ref({
     sortBy: 'name',
     descending: false,
     page: 1,
-    rowsPerPage: 10,
+    rowsPerPage: 20,
 });
 </script>
 <style scoped></style>

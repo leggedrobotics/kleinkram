@@ -50,18 +50,19 @@ services:
         image: rslethz/grandtour-datasets:vuejs_frontend-latest
         build:
             context: .
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: ./frontend/dev.Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
         container_name: vuejs_frontend
         ports:
-            - '8003:80'
+            - '8003:8003'
 
         env_file:
             - .env
+
         develop:
             watch:
-                - action: rebuild
+                - action: sync
                   path: ./frontend
                   target: /app
 
@@ -85,7 +86,7 @@ services:
             - /usr/src/queueConsumer/node_modules
             - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
-            - /var/run/docker.sock:/var/run/docker.sock
+            - /var/mission/docker.sock:/var/mission/docker.sock
         develop:
             watch:
                 - action: rebuild
@@ -155,12 +156,25 @@ services:
             - privatenet
             - webnet
 
+    docs:
+        build:
+            context: docs/.
+            dockerfile: local-dev.Dockerfile
+        ports:
+            - "4000:4000"
+        volumes:
+            - ./docs:/app/src
+            - vitepress_dist:/app/src/.vitepress/dist
+            - node_modules:/app/src/node_modules
+
 volumes:
     db_data:
     minio_data:
     logging-prometheus-storage:
     logging-grafana-storage:
     logging-tempo-data:
+    vitepress_dist:
+    node_modules:
 
 networks:
     webnet:

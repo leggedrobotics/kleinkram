@@ -4,11 +4,18 @@ import { ProjectController } from './project.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import Project from './entities/project.entity';
 import User from '../user/entities/user.entity';
-import Token from '../auth/entities/token.entity';
+import Apikey from '../auth/entities/apikey.entity';
+import { UserService } from '../user/user.service';
+import { AuthService } from '../auth/auth.service';
+import Account from '../auth/entities/account.entity';
+import AccessGroup from '../auth/entities/accessgroup.entity';
+import { ProjectGuardService } from '../auth/projectGuard.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Project, User, Token])],
-    providers: [ProjectService],
+    imports: [
+        TypeOrmModule.forFeature([Project, User, Apikey, Account, AccessGroup]),
+    ],
+    providers: [ProjectService, UserService, ProjectGuardService],
     exports: [ProjectService],
     controllers: [ProjectController],
 })

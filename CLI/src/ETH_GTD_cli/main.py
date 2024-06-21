@@ -17,7 +17,7 @@ runs = typer.Typer(name="runs")
 files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
 queue = typer.Typer(name="queue")
-user = typer.Typer(name="user")
+user = typer.Typer(name="users")
 
 app.add_typer(projects)
 app.add_typer(runs)
@@ -201,8 +201,9 @@ def upload(
     try:
         get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
-        project_response.raise_for_status()
-
+        if project_response.status_code >= 400:
+            print(f"Failed to fetch project: {project_response.text}")
+            return
         project_json = project_response.json()
         if not project_json["uuid"]:
             print(f"Project not found: {project}")
@@ -287,6 +288,7 @@ def wipe():
 
         response_queue = client.delete("/queue/clear")
         response_file = client.delete("/file/clear")
+        response_analysis = client.delete("/analysis/clear")
         response_run = client.delete("/run/clear")
         response_project = client.delete("/project/clear")
 
@@ -296,6 +298,9 @@ def wipe():
         elif response_file.status_code >= 400:
             print("Failed to clear files.")
             print(response_file.text)
+        elif response_analysis.status_code >= 400:
+            print("Failed to clear analysis.")
+            print(response_analysis.text)
         elif response_run.status_code >= 400:
             print("Failed to clear runs.")
             print(response_run.text)
@@ -353,9 +358,7 @@ def download(
     runuuid: Annotated[str, typer.Argument()],
 ):
     try:
-        response = client.get(
-            "/file/downloadWithToken", params={"uuid": runuuid}
-        )
+        response = client.get("/file/downloadWithToken", params={"uuid": runuuid})
         response.raise_for_status()
         print(response.json())
     except:

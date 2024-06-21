@@ -4,13 +4,28 @@ import QueueEntity from './entities/queue.entity';
 import { QueueService } from './queue.service';
 import { QueueController } from './queue.controller';
 import { BullModule } from '@nestjs/bull';
-import Run from '../run/entities/run.entity';
+import Mission from '../mission/entities/mission.entity';
 import User from '../user/entities/user.entity';
-import Token from '../auth/entities/token.entity';
+import Apikey from '../auth/entities/apikey.entity';
+import { UserService } from '../user/user.service';
+import Account from '../auth/entities/account.entity';
+import { MissionService } from '../mission/mission.service';
+import AccessGroup from '../auth/entities/accessgroup.entity';
+import Project from '../project/entities/project.entity';
+import { MissionGuardService } from '../auth/missionGuard.service';
+import { ProjectGuardService } from '../auth/projectGuard.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([QueueEntity, Run, User, Token]),
+        TypeOrmModule.forFeature([
+            QueueEntity,
+            Mission,
+            User,
+            Apikey,
+            Account,
+            AccessGroup,
+            Project,
+        ]),
         BullModule.forRoot({
             redis: {
                 host: 'redis',
@@ -21,10 +36,15 @@ import Token from '../auth/entities/token.entity';
             name: 'file-queue',
         }),
         BullModule.registerQueue({
-            name: 'analysis-queue',
+            name: 'action-queue',
         }),
     ],
-    providers: [QueueService],
+    providers: [
+        QueueService,
+        UserService,
+        MissionGuardService,
+        ProjectGuardService,
+    ],
     controllers: [QueueController],
     exports: [QueueService],
 })

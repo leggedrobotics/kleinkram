@@ -1,0 +1,83 @@
+import { Injectable } from '@nestjs/common';
+import { UserService } from '../user/user.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import User from '../user/entities/user.entity';
+import AccessGroup from './entities/accessgroup.entity';
+import Project from '../project/entities/project.entity';
+import { AccessGroupRights, UserRole } from '../enum';
+
+@Injectable()
+export class ProjectGuardService {
+    constructor(
+        private userService: UserService,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
+        @InjectRepository(AccessGroup)
+        private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
+    ) {}
+
+    async canAccessProject(
+        userUUID: string,
+        projectUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const user = await this.userRepository.findOne({
+            where: { uuid: userUUID },
+        });
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        const res = await this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoin('project.accessGroups', 'accessGroups')
+            .leftJoin('accessGroups.users', 'users')
+            .where('project.uuid = :uuid', { uuid: projectUUID })
+            .andWhere('users.uuid = :user', { user: user.uuid })
+            .andWhere('accessGroups.rights >= :rights', {
+                rights,
+            })
+            .getMany();
+        return res.length > 0;
+    }
+
+    async canAccessProjectByName(
+        userUUID: string,
+        projectName: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const project = await this.projectRepository.findOne({
+            where: { name: projectName },
+        });
+        if (!project) {
+            return false;
+        }
+        return this.canAccessProject(userUUID, project.uuid, rights);
+    }
+
+    async canCreateProject(userUUID: string) {
+        const user = await this.userService.findOneByUUID(userUUID);
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        const canCreate = await this.accessGroupRepository
+            .createQueryBuilder('access_group')
+            .leftJoin('access_group.users', 'users')
+            .where('access_group.rights >= :rights', {
+                rights: AccessGroupRights.CREATE,
+            })
+            .andWhere('users.uuid = :user', { user: user.uuid })
+            .andWhere('access_group.personal = FALSE')
+            .getCount();
+        return canCreate > 0;
+    }
+}
