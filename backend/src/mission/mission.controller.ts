@@ -1,13 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Post,
-    Query,
-    UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { MissionService } from './mission.service';
 import { CreateMission } from './entities/create-mission.dto';
 import {
@@ -23,7 +14,8 @@ import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('mission')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) {}
+    constructor(private readonly missionService: MissionService) {
+    }
 
     @Post('create')
     @LoggedIn()

@@ -3,9 +3,10 @@ services:
         image: rslethz/grandtour-datasets:api-server-latest
         container_name: API
         build:
-            context: ./backend
+            context: .
+            dockerfile: backend/Dockerfile
         volumes:
-            - ./backend:/usr/src/app
+            - ./backend:/usr/src/app/backend
             - /usr/src/app/node_modules
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -80,7 +81,8 @@ services:
         image: rslethz/grandtour-datasets:bull-consumer-latest
         container_name: bullconsumer
         build:
-            context: ./queueConsumer
+            context: .
+            dockerfile: queueConsumer/Dockerfile
         volumes:
             - ./queueConsumer:/usr/src/queueConsumer
             - /usr/src/queueConsumer/node_modules

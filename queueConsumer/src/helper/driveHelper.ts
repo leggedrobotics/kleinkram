@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import env from '../env';
+import env from '@common/env';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 const KEYFILEPATH = env.GOOGLE_KEY_FILE;

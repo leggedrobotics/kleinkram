@@ -1,14 +1,16 @@
-import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import User from '../user/entities/user.entity';
 import { JwtPayload } from 'jsonwebtoken';
-import { AccessGroupRights, CookieNames, Providers, UserRole } from '../enum';
-import Account from './entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import AccessGroup from './entities/accessgroup.entity';
 import logger from '../logger';
 import { AuthFlowException } from './authFlowException';
+import Account from '@common/entities/auth/account.entity';
+import User from '@common/entities/user/user.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { AccessGroupRights, CookieNames, Providers, UserRole } from '@common/enum';
+
+import access_config from '../../access_config.json';
 
 type AccessGroupConfig = {
     emails: [{ email: string; access_groups: string[] }];
@@ -29,7 +31,9 @@ export class AuthService implements OnModuleInit {
         private accessGroupRepository: Repository<AccessGroup>,
     ) {
         try {
-            this.config = require('../../../access_config.json');
+            this.config = access_config as AccessGroupConfig;
+            logger.debug('Access config loaded');
+            logger.debug(JSON.stringify(this.config));
         } catch (e) {
             console.error('No access_config.json found');
         }

@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import env from '../env';
 import { LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
-import { CookieNames } from '../enum';
 import { UserService } from '../user/user.service';
+import { CookieNames } from '@common/enum';
+import env from '@common/env';
 
 @Controller('auth')
 export class AuthController {

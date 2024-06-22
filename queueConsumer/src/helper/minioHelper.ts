@@ -1,8 +1,8 @@
 import { Client, CopyConditions } from 'minio';
-import env from '../env';
 import { Readable } from 'stream';
 import logger from '../logger';
 import { traceWrapper } from '../tracing';
+import env from '@common/env';
 
 const minio: Client = new Client({
     endPoint: 'minio',

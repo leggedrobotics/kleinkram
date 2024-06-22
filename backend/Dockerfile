@@ -1,15 +1,21 @@
 FROM node:21-alpine
 
-WORKDIR /usr/src/app
+COPY ./backend/package.json /usr/src/app/backend/
+COPY ./backend/yarn.lock /usr/src/app/backend/
+COPY ./common/package.json /usr/src/app/common/
+COPY ./common/yarn.lock /usr/src/app/common/
 
-COPY package.json ./
-COPY yarn.lock ./
-
+WORKDIR /usr/src/app/backend
 RUN yarn
 
-COPY . .
+WORKDIR /usr/src/app/common
+RUN yarn
 
-RUN rm -rf dist
+# copy the rest of the files
+COPY ./backend /usr/src/app/backend
+COPY ./common /usr/src/app/common
 
+# build the app
+WORKDIR /usr/src/app/backend
 RUN yarn build
 CMD ["yarn", "start:dev"]

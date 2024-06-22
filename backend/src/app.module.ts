@@ -3,8 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import env from './env';
-import configuration from './config';
+import configuration from '@common/typeorm_config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
 import { MissionModule } from './mission/mission.module';
@@ -13,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { ActionModule } from './action/actionModule';
+import env from '@common/env';
 
 @Module({
     imports: [
@@ -50,4 +50,5 @@ import { ActionModule } from './action/actionModule';
         ActionModule,
     ],
 })
-export class AppModule {}
+export class AppModule {
+}

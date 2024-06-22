@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import logger from './logger';
 import cookieParser from 'cookie-parser';
-import env from './env';
+import env from '../../common/env';
 import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
 async function bootstrap() {
