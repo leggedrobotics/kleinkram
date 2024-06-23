@@ -48,7 +48,7 @@ services:
             /usr/bin/minio server --console-address ':9001' /data & 
             sleep 10 &&
             mc alias set myminio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&
-            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} &&
+            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
             echo 'minio is ready' &&
             sleep infinity"
         ports:
