@@ -173,6 +173,7 @@ export class FileProcessor implements OnModuleInit {
             let metadataRes = null;
             try {
                 metadataRes = await getMetadata(queue.identifier);
+                logger.debug(`Metadata for file ${queue.identifier}`, metadataRes)
             } catch (error) {
                 logger.error(
                     `Error getting metadata for file: ${queue.identifier}`,
@@ -293,6 +294,7 @@ export class FileProcessor implements OnModuleInit {
                 logger.debug(`Job {${job.id}} is a folder, processing...`);
 
                 const files = await listFiles(queue.identifier);
+                logger.debug(`Job {${job.id}} found files: ${files.map((file) => file.name)}`)
                 await Promise.all(
                     files.map(async (file) => {
                         if (file.name.endsWith('.bag')) {
