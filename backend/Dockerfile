@@ -18,4 +18,7 @@ COPY ./common /usr/src/app/common
 # build the app
 WORKDIR /usr/src/app/backend
 RUN yarn build
-CMD ["yarn", "start:dev"]
+
+# marke the entrypoint.sh as executable
+RUN chmod +x entrypoint.sh
+CMD ["sh", "entrypoint.sh"]

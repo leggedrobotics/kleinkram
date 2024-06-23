@@ -7,6 +7,7 @@ services:
             dockerfile: backend/Dockerfile
         volumes:
             - ./backend:/usr/src/app/backend
+            - ./common:/usr/src/app/common
             - /usr/src/app/node_modules
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -96,6 +97,7 @@ services:
             dockerfile: queueConsumer/Dockerfile
         volumes:
             - ./queueConsumer:/usr/src/queueConsumer
+            - ./common:/usr/src/common
             - /usr/src/queueConsumer/node_modules
             - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
@@ -103,7 +105,7 @@ services:
         develop:
             watch:
                 - action: rebuild
-                  path: .
+                  path: ./queueConsumer
                   target: /usr/src/queueConsumer
         env_file:
             - .env
