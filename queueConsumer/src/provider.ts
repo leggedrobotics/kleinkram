@@ -21,6 +21,7 @@ import Topic from './entities/topic.entity';
 import { FileLocation, FileState, FileType } from './enum';
 import logger from './logger';
 import { traceWrapper } from './tracing';
+import {drive_v3} from "googleapis";
 
 const fs = require('fs').promises;
 
@@ -292,8 +293,20 @@ export class FileProcessor implements OnModuleInit {
                 }
             } else {
                 logger.debug(`Job {${job.id}} is a folder, processing...`);
-
-                const files = await listFiles(queue.identifier);
+                let files: drive_v3.Schema$File[] = [];
+                try {
+                    files = await listFiles(queue.identifier);
+                }
+                catch (error) {
+                    logger.error(
+                        `Error getting files in folder: ${queue.identifier}`,
+                    );
+                    logger.error(error);
+                    logger.error(error.stack);
+                    queue.state = FileState.ERROR;
+                    await this.queueRepository.save(queue);
+                    return null;
+                }
                 logger.debug(`Job {${job.id}} found files: ${files.map((file) => file.name)}`)
                 await Promise.all(
                     files.map(async (file) => {
