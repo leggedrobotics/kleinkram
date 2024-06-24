@@ -1,14 +1,14 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { UserService } from '../user/user.service';
+import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import User from '../user/entities/user.entity';
 import { JwtPayload } from 'jsonwebtoken';
-import { AccessGroupRights, AccountType, CookieNames, UserRole } from '../enum';
+import { AccessGroupRights, CookieNames, Providers, UserRole } from '../enum';
 import Account from './entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import AccessGroup from './entities/accessgroup.entity';
-import Project from '../project/entities/project.entity';
+import logger from '../logger';
+import { AuthFlowException } from './authFlowException';
 
 type AccessGroupConfig = {
     emails: [{ email: string; access_groups: string[] }];
@@ -18,8 +18,8 @@ type AccessGroupConfig = {
 @Injectable()
 export class AuthService implements OnModuleInit {
     config: AccessGroupConfig;
+
     constructor(
-        private userService: UserService,
         private jwtService: JwtService,
         @InjectRepository(Account)
         private accountRepository: Repository<Account>,
@@ -27,8 +27,6 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(Project)
-        private projectRepository: Repository<Project>,
     ) {
         try {
             this.config = require('../../../access_config.json');
@@ -64,15 +62,22 @@ export class AuthService implements OnModuleInit {
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
         const { id, emails, displayName, photos } = profile;
         const email = emails[0].value;
+
         const account = await this.accountRepository.findOne({
-            where: { oauthID: id },
+            where: { oauthID: id, provider: Providers.GOOGLE },
             relations: ['user'],
         });
+
+        if (account && !account.user) {
+            logger.error('Account exists but has no linked user!');
+            throw new AuthFlowException('Account exists but has no linked user!');
+        }
+
         if (account) {
             return account.user;
         }
 
-        return this.create(id, email, displayName, photos[0].value);
+        return this.create(id, Providers.GOOGLE, email, displayName, photos[0].value);
     }
 
     async login(user: User) {
@@ -89,12 +94,47 @@ export class AuthService implements OnModuleInit {
         };
     }
 
-    async create(oauthID: string, email: string, username: string, picture: string) {
-        const account: Account = this.accountRepository.create({
-            oauthID: oauthID,
-            type: AccountType.GOOGLE,
+    /**
+     * Create a new account and user with the given information.
+     *
+     * If the user already exists, but has no linked account, the account will be linked to the existing user.
+     * If the user exists and has a linked account, this method throws an error.
+     *
+     * @param oauthID The ID provided by the OAuth provider
+     * @param provider The OAuth provider (e.g. 'google')
+     * @param email The email address of the user
+     * @param username The name of the user
+     * @param picture The URL of the user's profile picture
+     */
+    async create(oauthID: string, provider: Providers, email: string, username: string, picture: string) {
+
+        const existing_user = await this.userRepository.findOne({
+            where: { email: email },
+            relations: ['account'],
         });
 
+        // assert that we don't have a user with the same email but a different provider
+        if (!!existing_user && existing_user.account) {
+            throw new AuthFlowException('User already exists and has a linked account!');
+        }
+
+        const account: Account = this.accountRepository.create({
+            oauthID: oauthID,
+            provider: provider,
+        });
+
+        // if the user exists but has no linked account
+        if (!!existing_user && !existing_user.account) {
+            logger.debug(`Linking account ${account} to existing user ${existing_user.uuid}`);
+            account.user = existing_user;
+            return this.accountRepository.save(account).then(() => existing_user);
+        }
+
+        logger.debug(`Creating new user with email ${email}`);
+
+        /////////////////////////////////////////////////////////
+        // Create New User and Link Account
+        /////////////////////////////////////////////////////////
         const user: User = this.userRepository.create({
             email: email,
             name: username,
@@ -102,8 +142,7 @@ export class AuthService implements OnModuleInit {
             avatarUrl: picture || '',
         });
 
-        const saved_account = await this.accountRepository.save(account);
-        user.account = saved_account;
+        user.account = await this.accountRepository.save(account);
         const saved_user = await this.userRepository.save(user);
 
         const personal_group = this.accessGroupRepository.create({

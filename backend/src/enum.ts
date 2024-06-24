@@ -39,8 +39,8 @@ export enum FileType {
     MCAP = 'MCAP',
 }
 
-export enum AccountType {
-    GOOGLE = 'GOOGLE',
+export enum Providers {
+    GOOGLE = 'google',
 }
 
 export enum AccessGroupRights {

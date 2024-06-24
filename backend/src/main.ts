@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import env from './env';
+import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import logger from './logger';
@@ -28,6 +29,7 @@ async function bootstrap() {
 
     const app = await NestFactory.create(AppModule);
     app.use(cookieParser());
+    app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
     app.enableCors({
         origin: env.FRONTEND_URL,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
