@@ -16,10 +16,24 @@ import Account from '../auth/entities/account.entity';
 import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
-    const regex =
-      /drive\.google\.com\/drive\/(?:u\/\d+\/)?(?:file\/d\/|open\?id=|folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
+    // Define the regex patterns for file and folder IDs
+    const filePattern = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const folderPattern = /\/drive\/folders\/([a-zA-Z0-9_-]+)/;
+
+    // Test the URL against the file pattern
+    let match = url.match(filePattern);
+    if (match && match[1]) {
+        return match[1];
+    }
+
+    // Test the URL against the folder pattern
+    match = url.match(folderPattern);
+    if (match && match[1]) {
+        return match[1];
+    }
+
+    // Return null if no match is found
+    return null;
 }
 
 @Injectable()
