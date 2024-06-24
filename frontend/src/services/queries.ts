@@ -336,7 +336,7 @@ export const missionsOfProject = async (
             return new FileEntity(
                 file.uuid,
                 file.filename,
-                missionEntity,
+                null,
                 fileCreator,
                 new Date(file.date),
                 file.topics,
