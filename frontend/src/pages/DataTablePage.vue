@@ -244,10 +244,9 @@ const selectedTopics = ref([]);
 const and_or = ref(false);
 const mcap_bag = ref(true);
 
-const start = new Date();
-start.setHours(0, 0, 0, 0);
-start.setMonth(start.getMonth() - 12);
-
+const start = new Date(0);
+// start.setHours(0, 0, 0, 0);
+// start.setMonth(start.getMonth() - 12);
 const end = new Date();
 end.setHours(23, 59, 59, 999);
 const dateTime: Ref<{ from: string; to: string }> = ref({
