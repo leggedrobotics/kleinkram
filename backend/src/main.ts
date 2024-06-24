@@ -4,15 +4,22 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import env from './env';
 
-import { Catch, ExceptionFilter } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import logger from './logger';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
-    public catch(exception: Error, host) {
+    public catch(exception: Error, host: ArgumentsHost) {
         logger.error(`An error occurred on route ${host.getArgByIndex(0).url}!`);
         logger.error(exception.message);
         logger.error(exception.stack);
+
+        const response = host.switchToHttp().getResponse();
+        response.status(500).json({
+            statusCode: 500,
+            message: 'Internal server error',
+        });
+
     }
 }
 
