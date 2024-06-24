@@ -109,10 +109,10 @@ import ROUTES from 'src/router/routes';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const props = defineProps<{
-    file_uuid: string;
+    uuid: string;
 }>();
 
-const file_uuid = computed(() => props.file_uuid);
+const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 

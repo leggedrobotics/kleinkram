@@ -126,6 +126,7 @@ export class FileProcessor implements OnModuleInit {
                     type: FileType.MCAP,
                 });
                 const savedFile = await this.fileRepository.save(newFile);
+                console.log('saved file', savedFile.filename);
                 const res = topics.map(async (topic) => {
                     const newTopic = this.topicRepository.create({
                         ...topic,
@@ -257,7 +258,9 @@ export class FileProcessor implements OnModuleInit {
                         type: FileType.MCAP,
                     });
                     const savedFile = await this.fileRepository.save(newFile);
-                    logger.debug(`Job {${job.id}} saved file: ${savedFile}`);
+                    logger.debug(
+                        `Job {${job.id}} saved file: ${savedFile.filename}`,
+                    );
 
                     const res = topics.map(async (topic) => {
                         const newTopic = this.topicRepository.create({
@@ -268,9 +271,11 @@ export class FileProcessor implements OnModuleInit {
 
                         return this.topicRepository.findOne({
                             where: { uuid: newTopic.uuid },
+                            relations: ['file'],
                         });
                     });
                     const createdTopics = await Promise.all(res);
+                    console.log('created topics', createdTopics);
                     logger.debug(
                         `Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`,
                     );
@@ -278,7 +283,6 @@ export class FileProcessor implements OnModuleInit {
                     if (metadataRes.name.endsWith('.bag')) {
                         const newFile = this.fileRepository.create({
                             date,
-                            topics: createdTopics,
                             mission: queue.mission,
                             size,
                             filename: metadataRes.name,
