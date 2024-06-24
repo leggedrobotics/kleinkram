@@ -124,7 +124,7 @@ export class Mission extends BaseEntity {
 
 export class FileEntity extends BaseEntity {
     filename: string;
-    mission: Mission;
+    mission: Mission | null;
     date: Date;
     topics: Topic[];
     size: number;
@@ -134,7 +134,7 @@ export class FileEntity extends BaseEntity {
     constructor(
         uuid: string,
         filename: string,
-        mission: Mission,
+        mission: Mission | null,
         creator: User,
         date: Date,
         topics: Topic[],
