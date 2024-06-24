@@ -9,7 +9,6 @@ async function bootstrap() {
     tracer.start();
     const app = await NestFactory.create(AppModule);
     await app.listen(3000);
-
     logger.info('Application started');
 }
 

@@ -1,8 +1,8 @@
 import { Client, CopyConditions } from 'minio';
 import env from '../env';
-import { Readable } from 'stream';
 import logger from '../logger';
 import { traceWrapper } from '../tracing';
+import fs from 'node:fs';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -17,54 +17,34 @@ const minio: Client = new Client({
 export async function uploadFile(
     bucketName: string,
     fileName: string,
-    buffer: Buffer,
+    tmp_file_path: string
 ) {
-    return await traceWrapper(async (): Promise<void> => {
+    return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        const chunksize = 1000000;
-        const nrChunks = Math.ceil(buffer.length / chunksize);
-        let partIndex = 0;
-
-        const stream = new Readable({
-            read() {
-                if (partIndex < nrChunks) {
-                    const start = partIndex * chunksize;
-                    const end = start + chunksize;
-                    const part = buffer.slice(start, end);
-                    this.push(part);
-                    partIndex += 1;
-                } else {
-                    this.push(null); // No more data to push, signal EOF
-                }
-            },
-        });
-
-        await minio.putObject(bucketName, fileName, stream);
+        await minio.fPutObject(bucketName, fileName, tmp_file_path)
         logger.debug('File uploaded to Minio in parts');
+        return true;
     }, 'uploadFile')();
 }
 
-export async function downloadMinioFile(bucketName: string, fileName: string) {
-    return await traceWrapper(
-        async (): Promise<Buffer> =>
-            new Promise(async (resolve, reject) => {
-                const stream = await minio.getObject(bucketName, fileName);
-                const chunks: Uint8Array[] = [];
-
-                stream.on('data', (chunk) => {
-                    chunks.push(chunk);
+export async function downloadMinioFile(bucketName: string, fileName: string, tmp_file_name: string): Promise<boolean> {
+    return await traceWrapper(async (): Promise<boolean> => {
+            logger.debug('Downloading file from Minio...');
+            const fileStream = await minio.getObject(bucketName, fileName);
+            const writeStream = fs.createWriteStream(tmp_file_name);
+            fileStream.pipe(writeStream);
+            return new Promise((resolve, reject) => {
+                writeStream.on('finish', () => {
+                    logger.debug('File downloaded from Minio');
+                    resolve(true);
                 });
-
-                stream.on('end', () => {
-                    resolve(Buffer.concat(chunks));
-                });
-
-                stream.on('error', (err) => {
+                writeStream.on('error', (err) => {
                     reject(err);
                 });
-            }),
-        'downloadMinioFile',
-    )();
+            });
+
+        },
+        'downloadMinioFile')();
 }
 
 export async function deleteMinioFile(

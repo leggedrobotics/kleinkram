@@ -1,4 +1,4 @@
-FROM node:21-alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/queueConsumer
 COPY package.json ./
@@ -12,4 +12,4 @@ COPY . .
 RUN rm -rf dist
 
 #RUN yarn build
-CMD ["yarn", "start"]
+CMD ["yarn", "start:dev"]
