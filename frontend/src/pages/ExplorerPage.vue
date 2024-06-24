@@ -331,7 +331,7 @@ function view_mission(mission: Mission) {
 }
 
 function view_file(file: FileEntity) {
-    $routerService?.routeTo(ROUTES.FILE, { file_uuid: file.uuid });
+    $routerService?.routeTo(ROUTES.FILE, { uuid: file.uuid });
 }
 
 function navigate(crumb: crumb) {
