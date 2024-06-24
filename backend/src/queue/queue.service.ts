@@ -17,7 +17,7 @@ import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
     const regex =
-      /drive\.google\.com\/drive\/(?:u\/\d+\/)?(?:file\/d\/|open\?id=|folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})/;
+        /drive\.google\.com\/(?:file\/d\/|open\?id=|drive\/folders\/|document\/d\/)([a-zA-Z0-9_-]{25,})(?=[\/?])/;
     const match = url.match(regex);
     return match ? match[1] : null;
 }
