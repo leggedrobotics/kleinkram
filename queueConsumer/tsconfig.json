@@ -1,37 +1,32 @@
 {
-  "extends": [
-    "tslint:recommended"
-  ],
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false,
-    "esModuleInterop": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "paths": {
-      "@common/*": [
-        "../common/*"
-      ]
+    "extends": ["tslint:recommended"],
+    "compilerOptions": {
+        "declaration": true,
+        "esModuleInterop": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "./",
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false,
+        "target": "ES2022",
+        "module": "commonjs",
+        "moduleResolution": "node",
+      "paths": {
+        "@common/*": [
+          "../common/*"
+        ]
+      }
+    },
+    "rules": {
+        "no-console": [true, "warning"]
     }
-  },
-  "rules": {
-    "no-console": [
-      true,
-      "warning"
-    ]
-  },
-
 }

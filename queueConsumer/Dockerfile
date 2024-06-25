@@ -1,4 +1,4 @@
-FROM node:21-alpine
+FROM node:22-alpine
 
 COPY ./queueConsumer/package.json /usr/src/queueConsumer/
 COPY ./queueConsumer/yarn.lock /usr/src/queueConsumer/
@@ -19,4 +19,4 @@ COPY ./common /usr/src/common
 
 # build the app
 WORKDIR /usr/src/queueConsumer
-CMD ["yarn", "start"]
+CMD ["yarn", "start:dev"]

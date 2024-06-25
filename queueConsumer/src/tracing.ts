@@ -1,16 +1,15 @@
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { Resource } from '@opentelemetry/resources';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { context, Exception, trace } from '@opentelemetry/api';
-import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-import { TypeormInstrumentation } from 'opentelemetry-instrumentation-typeorm';
+import {BatchSpanProcessor} from '@opentelemetry/sdk-trace-base';
+import {AsyncHooksContextManager} from '@opentelemetry/context-async-hooks';
+import {Resource} from '@opentelemetry/resources';
+import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
+import {ExpressInstrumentation} from '@opentelemetry/instrumentation-express';
+import {NodeTracerProvider} from '@opentelemetry/sdk-trace-node';
+import {FetchInstrumentation} from '@opentelemetry/instrumentation-fetch';
+import {context, Exception, trace} from '@opentelemetry/api';
+import {WinstonInstrumentation} from '@opentelemetry/instrumentation-winston';
+import {NodeSDK} from '@opentelemetry/sdk-node';
+import {NestInstrumentation} from '@opentelemetry/instrumentation-nestjs-core';
+import {TypeormInstrumentation} from 'opentelemetry-instrumentation-typeorm';
 
 // Export the tracing
 const contextManager = new AsyncHooksContextManager().enable();
@@ -87,32 +86,44 @@ export const traceWrapper =
         fn: (..._: T) => U,
         fnName?: string,
     ): ((...__: T) => U) =>
-    (...args: T): U =>
-        tracer.startActiveSpan(fnName || fn.name || 'traceWrapper', (span) => {
-            let result: U | Promise<any>;
+        (...args: T): U =>
+            tracer.startActiveSpan(fnName || fn.name || 'traceWrapper', (span) => {
+                let result: U | Promise<any>;
 
-            try {
-                result = fn(...args);
+                // capture some metadata about the function call
+                args.forEach((arg: any) => {
 
-                // if the result is a promise, we need to catch any
-                // exceptions and record them before ending the span
-                if (result instanceof Promise)
-                    result
-                        .catch((e) => {
-                            span.recordException(e);
-                            span.setAttribute('error', true);
-                        })
-                        .finally(() => span.end());
-            } catch (e) {
-                span.recordException(e as Exception);
-                span.setAttribute('error', true);
-                throw e;
-            } finally {
-                if (!(result instanceof Promise)) span.end();
-            }
+                    // check if arg is of type Job or QueueEntity and add metadata
+                    if (arg.constructor.name === 'Job' && !!arg?.id) {
+                        span.setAttribute('queue_processor_job_id', arg?.id);
+                    } else if (arg.constructor.name === 'QueueEntity' && !!arg?.uuid) {
+                        span.setAttribute('queue_uuid', arg?.uuid);
+                    }
 
-            return result;
-        });
+                });
+
+                try {
+                    result = fn(...args);
+
+                    // if the result is a promise, we need to catch any
+                    // exceptions and record them before ending the span
+                    if (result instanceof Promise)
+                        result
+                            .catch((e) => {
+                                span.recordException(e);
+                                span.setAttribute('error', true);
+                            })
+                            .finally(() => span.end());
+                } catch (e) {
+                    span.recordException(e as Exception);
+                    span.setAttribute('error', true);
+                    throw e;
+                } finally {
+                    if (!(result instanceof Promise)) span.end();
+                }
+
+                return result;
+            });
 
 /**
  *
@@ -126,10 +137,10 @@ export function tracing<A extends unknown[], C>(
 ):
     | (MethodDecorator & ClassDecorator)
     | ((
-          target: Record<string | symbol, any>,
-          propertyKey?: string | symbol,
-          descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
-      ) => void) {
+    target: Record<string | symbol, any>,
+    propertyKey?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
+) => void) {
     return function (
         target: new (...args: A) => C,
         propertyKey?: string | symbol,

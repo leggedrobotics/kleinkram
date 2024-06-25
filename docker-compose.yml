@@ -104,9 +104,12 @@ services:
             - /var/mission/docker.sock:/var/mission/docker.sock
         develop:
             watch:
-                - action: rebuild
+                - action: sync
                   path: ./queueConsumer
                   target: /usr/src/queueConsumer
+                  ignore:
+                    - node_modules/
+                    - dist/
         env_file:
             - .env
         networks:

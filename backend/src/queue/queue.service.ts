@@ -126,7 +126,7 @@ export class QueueService {
                 const newQueue = this.queueRepository.create({
                     filename,
                     identifier: location,
-                    state: FileState.AWAITING_UPLOAD,
+                    state: FileState.UPLOADING,
                     location: FileLocation.MINIO,
                     mission,
                     creator,

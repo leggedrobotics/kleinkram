@@ -1,10 +1,10 @@
 export enum FileState {
     PENDING = 'PENDING',
+    UPLOADING = 'UPLOADING',
     PROCESSING = 'PROCESSING',
-    DONE = 'DONE',
-    ERROR = 'ERROR',
-    AWAITING_UPLOAD = 'AWAITING_UPLOAD',
     CORRUPTED_FILE = 'CORRUPTED_FILE',
+    ERROR = 'ERROR',
+    DONE = 'DONE',
 }
 
 export enum FileLocation {

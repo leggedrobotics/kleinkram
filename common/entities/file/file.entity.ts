@@ -1,11 +1,12 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import {Column, Entity, ManyToOne, OneToMany, Unique} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Topic from '../topic/topic.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import { FileType } from '../../enum';
+import {FileType} from '../../enum';
 
 @Entity()
+@Unique(['filename', 'mission'])
 export default class FileEntity extends BaseEntity {
     @ManyToOne(() => Mission, (mission) => mission.files)
     mission: Mission;
@@ -13,13 +14,13 @@ export default class FileEntity extends BaseEntity {
     @Column()
     date: Date;
 
-    @OneToMany(() => Topic, (topic) => topic.file, { cascade: ['remove'] })
+    @OneToMany(() => Topic, (topic) => topic.file, {cascade: ['remove']})
     topics: Topic[];
 
     @Column()
     filename: string;
 
-    @Column({ type: 'bigint' })
+    @Column({type: 'bigint'})
     size: number;
 
     @ManyToOne(() => User, (user) => user.files)

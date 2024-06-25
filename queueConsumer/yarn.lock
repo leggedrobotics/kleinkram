@@ -207,6 +207,11 @@
     heap-js "^2.2.0"
     tslib "^2.5.0"
 
+"@mcap/nodejs@^1.0.0":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@mcap/nodejs/-/nodejs-1.0.1.tgz#225eb5b9569d42a241a554a9acb9d28668b7c79e"
+  integrity sha512-jEtFcMoDV2mqgf82e50xznN8hl6rEORaiXI0bZ6L/3tAmtCEnpVIQxCz8VI+BDslppfzKgcRzOTauc91UglCGg==
+
 "@mcap/support@^1.0.0":
   version "1.0.0"
   resolved "https://registry.npmjs.org/@mcap/support/-/support-1.0.0.tgz"
