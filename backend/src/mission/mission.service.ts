@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import Mission from './entities/mission.entity';
-import { Repository, Brackets } from 'typeorm';
+import Mission from '@common/entities/mission/mission.entity';
+import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
-import Project from '../project/entities/project.entity';
+import Project from '@common/entities/project/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
-import User from '../user/entities/user.entity';
+import User from '@common/entities/user/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { UserRole } from '../enum';
+import { UserRole } from '@common/enum';
 
 @Injectable()
 export class MissionService {
@@ -19,7 +19,8 @@ export class MissionService {
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private userservice: UserService,
-    ) {}
+    ) {
+    }
 
     async create(createRun: CreateMission, user: JWTUser): Promise<Mission> {
         const creator = await this.userservice.findOneByUUID(user.uuid);

@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import Mission from './entities/mission.entity';
+import Mission from '@common/entities/mission/mission.entity';
 import { MissionService } from './mission.service';
 import { MissionController } from './mission.controller';
-import Project from '../project/entities/project.entity';
-import User from '../user/entities/user.entity';
-import Apikey from '../auth/entities/apikey.entity';
+import Project from '@common/entities/project/project.entity';
+import User from '@common/entities/user/user.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 import { UserService } from '../user/user.service';
-import Account from '../auth/entities/account.entity';
+import Account from '@common/entities/auth/account.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
-import AccessGroup from '../auth/entities/accessgroup.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Module({
     imports: [
@@ -32,4 +32,5 @@ import AccessGroup from '../auth/entities/accessgroup.entity';
     controllers: [MissionController],
     exports: [MissionService],
 })
-export class MissionModule {}
+export class MissionModule {
+}

@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import User from '../user/entities/user.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import Project from '../project/entities/project.entity';
-import { AccessGroupRights, UserRole } from '../enum';
+import User from '@common/entities/user/user.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Project from '@common/entities/project/project.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
 
 @Injectable()
 export class ProjectGuardService {

@@ -6,8 +6,8 @@ services:
     container_name: api-server
 
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
 
     ports:
       - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -87,8 +87,8 @@ services:
     image: rslethz/grandtour-datasets:bull-consumer-latest
     container_name: bullconsumer
     build:
-      context: ./queueConsumer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./queueConsumer/Dockerfile
     env_file:
       - .env
     networks:

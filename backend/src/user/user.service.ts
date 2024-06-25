@@ -1,10 +1,10 @@
 import {ForbiddenException, Injectable} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
-import User from './entities/user.entity';
-import {UserRole} from '../enum';
+import User from '@common/entities/user/user.entity';
+import {UserRole} from '@common/enum';
 import {JWTUser} from '../auth/paramDecorator';
-import Account from '../auth/entities/account.entity';
+import Account from '@common/entities/auth/account.entity';
 
 @Injectable()
 export class UserService {

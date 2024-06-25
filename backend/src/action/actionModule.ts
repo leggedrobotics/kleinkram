@@ -2,18 +2,19 @@ import { Module } from '@nestjs/common';
 import { ActionController } from './action.controller';
 import { ActionService } from './action.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import Action from './entities/action.entity';
+import Action from '@common/entities/action/action.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import User from '@common/entities/user/user.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Project from '@common/entities/project/project.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Account from '@common/entities/auth/account.entity';
 import { QueueModule } from '../queue/queue.module';
-import Apikey from '../auth/entities/apikey.entity';
-import User from '../user/entities/user.entity';
 import { ActionGuardService } from '../auth/actionGuard.service';
-import AccessGroup from '../auth/entities/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
-import Project from '../project/entities/project.entity';
-import Mission from '../mission/entities/mission.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { UserService } from '../user/user.service';
-import Account from '../auth/entities/account.entity';
+
 
 @Module({
     imports: [

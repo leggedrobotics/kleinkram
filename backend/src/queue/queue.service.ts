@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import QueueEntity from './entities/queue.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
-import Mission from '../mission/entities/mission.entity';
-import { FileLocation, FileState, UserRole } from '../enum';
+import Mission from '@common/entities/mission/mission.entity';
+import { FileLocation, FileState, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import env from '../env';
+import env from '@common/env';
 import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
-import User from '../user/entities/user.entity';
-import Account from '../auth/entities/account.entity';
 import { UserService } from '../user/user.service';
 
 function extractFileIdFromUrl(url: string): string | null {
@@ -46,7 +44,8 @@ export class QueueService {
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
         private userservice: UserService,
-    ) {}
+    ) {
+    }
 
     async addActionQueue(mission_action_id: string) {
         await this.actionQueue.add('processActionFile', {

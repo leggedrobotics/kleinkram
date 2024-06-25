@@ -3,21 +3,21 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import env from './env';
-import configuration from './config';
-
+import configuration from '@common/typeorm_config';
+import Mission from '@common/entities/mission/mission.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import Project from '@common/entities/project/project.entity';
+import Topic from '@common/entities/topic/topic.entity';
+import Action from '@common/entities/action/action.entity';
+import User from '@common/entities/user/user.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import Account from '@common/entities/auth/account.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { FileProcessor } from './provider';
-import QueueEntity from './entities/queue.entity';
-import FileEntity from './entities/file.entity';
-import Topic from './entities/topic.entity';
-import Project from './entities/project.entity';
 import { AnalysisProcessor } from './analysis_provider';
-import Action from './entities/action.entity';
-import User from './entities/user.entity';
-import Mission from './entities/mission.entity';
-import Apikey from './entities/apikey.entity';
-import Account from './entities/account.entity';
-import AccessGroup from './entities/accessgroup.entity';
+import env from '@common/env';
+
 
 @Module({
     imports: [
@@ -84,4 +84,5 @@ import AccessGroup from './entities/accessgroup.entity';
     ],
     providers: [FileProcessor, AnalysisProcessor],
 })
-export class AppModule {}
+export class AppModule {
+}

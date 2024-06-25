@@ -2,7 +2,7 @@ import tracer from './tracing';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
-import env from './env';
+import env from '../../common/env';
 import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';

@@ -6,21 +6,18 @@ import { AuthController } from './auth.controller';
 import { UserService } from '../user/user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import User from '../user/entities/user.entity';
-import env from '../env';
 import { JwtStrategy } from './jwt.strategy';
-import {
-    AdminOnlyGuard,
-    LoggedInUserGuard,
-    TokenOrUserGuard,
-} from './roles.guard';
-import Apikey from './entities/apikey.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import Account from './entities/account.entity';
-import Project from '../project/entities/project.entity';
+import { AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard } from './roles.guard';
+import Apikey from '@common/entities/auth/apikey.entity';
+import User from '@common/entities/user/user.entity';
+import Account from '@common/entities/auth/account.entity';
+import Project from '@common/entities/project/project.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import env from '@common/env';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
-import Mission from '../mission/entities/mission.entity';
+
 
 @Module({
     imports: [
@@ -54,4 +51,5 @@ import Mission from '../mission/entities/mission.entity';
     controllers: [AuthController],
     exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
-export class AuthModule {}
+export class AuthModule {
+}

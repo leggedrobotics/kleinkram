@@ -1,22 +1,22 @@
 {
-    "name": "Bagistry",
-    "version": "1.0.0",
-    "main": "index.js",
-    "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
-    "author": "Johann Schwabe <johann@schwabe.dev>",
-    "license": "MIT",
-    "scripts": {
-        "start": "docker compose up --build -d",
-        "lint": "eslint . --fix",
-        "prettier": "prettier --write .",
-        "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines )"
-    },
-    "devDependencies": {
-        "eslint": "^9.3.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-vue": "^9.26.0",
-        "prettier": "^3.2.5",
-        "@typescript-eslint/eslint-plugin": "^5.10.0",
-        "@typescript-eslint/parser": "^5.10.0"
-    }
+  "name": "Bagistry",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
+  "author": "Johann Schwabe <johann@schwabe.dev>",
+  "license": "MIT",
+  "scripts": {
+    "start": "docker compose up --build -d",
+    "lint": "eslint . --fix",
+    "prettier": "prettier --write .",
+    "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines )"
+  },
+  "devDependencies": {
+    "eslint": "^9.3.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.26.0",
+    "prettier": "^3.2.5",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0"
+  }
 }
