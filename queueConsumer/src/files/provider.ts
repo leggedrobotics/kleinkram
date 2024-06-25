@@ -61,12 +61,17 @@ export class FileProcessor implements OnModuleInit {
     }
 
     private async deleteTmpFiles(job: FileProcessorJob) {
-        return await Promise.all(
-            job.data.tmp_files.map((tmp_file) => {
-                logger.debug(`Deleting tmp file: ${tmp_file}`);
-                if (fs.existsSync(tmp_file)) fs_promises.unlink(tmp_file)
-            })
-        );
+        try {
+            await Promise.all(
+                job.data.tmp_files.map((tmp_file) => {
+                        logger.debug(`Deleting tmp file: ${tmp_file}`);
+                        if (fs.existsSync(tmp_file)) fs_promises.unlink(tmp_file)
+                    }
+                )
+            );
+        } catch (error) {
+            logger.debug(`Error deleting tmp files`);
+        }
     }
 
     @OnQueueActive()
@@ -83,7 +88,8 @@ export class FileProcessor implements OnModuleInit {
         // mark queue as done
         const queue = await this.getQueue(job);
         queue.state = FileState.DONE;
-        await this.queueRepository.save(queue);
+        queue.processingDuration = job.finishedOn - job.processedOn;
+        await this.queueRepository.save(queue)
 
         await this.deleteTmpFiles(job);
 
@@ -97,7 +103,8 @@ export class FileProcessor implements OnModuleInit {
 
         // mark queue as error
         const queue = await this.getQueue(job);
-        queue.state = FileState.ERROR;
+        if (queue.state != FileState.CORRUPTED_FILE) queue.state = FileState.ERROR;
+        queue.processingDuration = job.finishedOn - job.processedOn;
         await this.queueRepository.save(queue);
 
         await this.deleteTmpFiles(job);
@@ -136,6 +143,12 @@ export class FileProcessor implements OnModuleInit {
         if (sourceIsBag) {
             logger.debug(`Convert file ${queue.identifier} from bag to mcap`);
             await convertToMcapAndSave(tmp_file_name, queue.identifier)
+                .catch(async (error) => {
+                    logger.error(`Error converting file, possibly corrupted!`);
+                    queue.state = FileState.CORRUPTED_FILE;
+                    await this.queueRepository.save(queue);
+                    throw error;
+                });
 
             // create file entity for bag file
             const newFile = this.fileRepository.create({
@@ -169,8 +182,7 @@ export class FileProcessor implements OnModuleInit {
         ////////////////////////////////////////////////////////////////
 
         await this.extractTopics(job, queue, savedMcapFileEntity, mcap_temp_file_name);
-
-
+        return true; // return true to indicate that the job is done
     }
 
     @Process({name: 'processDriveFile', concurrency: 1})
@@ -224,6 +236,7 @@ export class FileProcessor implements OnModuleInit {
         }, 'downloadDriveFile')();
 
         queueEntity.state = FileState.PROCESSING;
+        queueEntity.filename = originalFileName;
         await this.queueRepository.save(queueEntity);
 
         logger.debug(`Job {${job.id}} downloaded file: ${originalFileName}`);
@@ -233,7 +246,7 @@ export class FileProcessor implements OnModuleInit {
         ////////////////////////////////////////////////////////////////
 
         await this.processTmpFile(job, queueEntity, tmp_file_name, originalFileName);
-
+        return true; // return true to indicate that the job is done
     }
 
     @tracing('processTmpFile')
@@ -271,6 +284,12 @@ export class FileProcessor implements OnModuleInit {
         if (file_type === 'bag') {
             logger.debug(`Convert file ${originalFileName} from bag to mcap`);
             await convertToMcapAndSave(tmpFileName, full_pathname)
+                .catch(async (error) => {
+                    logger.error(`Error converting file ${queueEntity.identifier} to mcap: ${error}`);
+                    queueEntity.state = FileState.CORRUPTED_FILE;
+                    await this.queueRepository.save(queueEntity);
+                    throw error;
+                });
             logger.debug(`File ${originalFileName} converted successfully`);
 
             // create file entity for bag file
@@ -309,7 +328,6 @@ export class FileProcessor implements OnModuleInit {
         ////////////////////////////////////////////////////////////////
 
         await this.extractTopics(job, queueEntity, savedMcapFileEntity, mcap_temp_file_name);
-
     }
 
     @tracing('extractTopics')
@@ -389,7 +407,6 @@ export class FileProcessor implements OnModuleInit {
         );
         queue.state = FileState.DONE;
         await this.queueRepository.save(queue);
-        return;
     }
 
     private async startProcessing(queueUuid: string) {
