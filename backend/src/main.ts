@@ -1,10 +1,28 @@
 import tracer from './tracing';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import logger from './logger';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
 import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
+
+import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import logger from './logger';
+
+@Catch()
+export class GlobalErrorFilter implements ExceptionFilter {
+    public catch(exception: Error, host: ArgumentsHost) {
+        logger.error(`An error occurred on route ${host.getArgByIndex(0).url}!`);
+        logger.error(exception.message);
+        logger.error(exception.stack);
+
+        const response = host.switchToHttp().getResponse();
+        response.status(500).json({
+            statusCode: 500,
+            message: 'Internal server error',
+        });
+
+    }
+}
 
 async function bootstrap() {
     tracer.start();
@@ -19,6 +37,7 @@ async function bootstrap() {
         credentials: true,
         optionsSuccessStatus: 204,
     });
+    app.useGlobalFilters(new GlobalErrorFilter());
     await app.listen(3000);
 }
 

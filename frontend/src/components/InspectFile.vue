@@ -50,7 +50,7 @@
                             flat
                             label="Download"
                             icon="cloud_download"
-                            @click="_downloadBag"
+                            @click="_downloadFile"
                             class="full-width"
                         ></q-btn>
                     </div>
@@ -98,7 +98,7 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { downloadBag, fetchFile, filesOfMission } from 'src/services/queries';
+import { downloadFile, fetchFile, filesOfMission } from 'src/services/queries';
 import { FileEntity, Mission } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
 import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
@@ -109,10 +109,10 @@ import ROUTES from 'src/router/routes';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const props = defineProps<{
-    file_uuid: string;
+    uuid: string;
 }>();
 
-const file_uuid = computed(() => props.file_uuid);
+const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
@@ -155,8 +155,8 @@ const columns = [
 ];
 
 const downloadURL = ref<string>('');
-async function _downloadBag() {
-    const res = await downloadBag(props.file_uuid, true);
+async function _downloadFile() {
+    const res = await downloadFile(props.file_uuid, true);
     const a = document.createElement('a');
     a.href = res;
     a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
@@ -175,7 +175,7 @@ async function redirectToMcap() {
 }
 
 async function _copyLink() {
-    const res = await downloadBag(props.file_uuid, false);
+    const res = await downloadFile(props.file_uuid, false);
     await copyToClipboard(res);
     Notify.create({
         group: false,

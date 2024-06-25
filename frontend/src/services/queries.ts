@@ -259,7 +259,7 @@ export const allTopics = async () => {
     return response.data;
 };
 
-export const downloadBag = async (uuid: string, expires: boolean) => {
+export const downloadFile = async (uuid: string, expires: boolean) => {
     const response = await axios.get('file/download', {
         params: {
             uuid,
@@ -336,7 +336,7 @@ export const missionsOfProject = async (
             return new FileEntity(
                 file.uuid,
                 file.filename,
-                missionEntity,
+                null,
                 fileCreator,
                 new Date(file.date),
                 file.topics,

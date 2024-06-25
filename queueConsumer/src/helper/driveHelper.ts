@@ -48,6 +48,7 @@ export async function listFiles(folderId: string) {
         q: `'${folderId}' in parents`,
         fields: 'nextPageToken, files(id,name,mimeType)',
         supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
     });
     return response.data.files;
 }

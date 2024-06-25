@@ -14,6 +14,7 @@ import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/env';
 import { FileLocation, FileState, FileType } from '@common/enum';
+import { drive_v3 } from 'googleapis';
 
 const fs = require('fs').promises;
 
@@ -109,20 +110,8 @@ export class FileProcessor implements OnModuleInit {
                     throw new Error('Invalid file extension');
                 }
                 const { topics, date, size } = await mcapMetaInfo(buffer);
-
-                const res = topics.map(async (topic) => {
-                    const newTopic = this.topicRepository.create(topic);
-                    await this.topicRepository.save(newTopic);
-
-                    return this.topicRepository.findOne({
-                        where: { uuid: newTopic.uuid },
-                    });
-                });
-                const createdTopics = await Promise.all(res);
-                console.log('creator', queue.creator);
                 const newFile = this.fileRepository.create({
                     date,
-                    topics: createdTopics,
                     creator: queue.creator,
                     mission: queue.mission,
                     size,
@@ -130,6 +119,19 @@ export class FileProcessor implements OnModuleInit {
                     type: FileType.MCAP,
                 });
                 const savedFile = await this.fileRepository.save(newFile);
+                console.log('saved file', savedFile.filename);
+                const res = topics.map(async (topic) => {
+                    const newTopic = this.topicRepository.create({
+                        ...topic,
+                        file: savedFile,
+                    });
+                    await this.topicRepository.save(newTopic);
+
+                    return this.topicRepository.findOne({
+                        where: { uuid: newTopic.uuid },
+                    });
+                });
+                await Promise.all(res);
 
                 if (sourceIsBag) {
                     const newBagFile = this.fileRepository.create({
@@ -155,7 +157,7 @@ export class FileProcessor implements OnModuleInit {
         }, 'processMinioFile')();
     }
 
-    @Process('processDriveFile')
+    @Process({ name: 'processDriveFile', concurrency: 1 })
     async handleDriveFileProcessing(job: Job<{ queueUuid: string }>) {
         return await traceWrapper(async () => {
             logger.debug(
@@ -166,6 +168,10 @@ export class FileProcessor implements OnModuleInit {
             let metadataRes = null;
             try {
                 metadataRes = await getMetadata(queue.identifier);
+                logger.debug(
+                    `Metadata for file ${queue.identifier}`,
+                    metadataRes,
+                );
             } catch (error) {
                 logger.error(
                     `Error getting metadata for file: ${queue.identifier}`,
@@ -236,21 +242,8 @@ export class FileProcessor implements OnModuleInit {
                     }
                     const { topics, date, size } = await mcapMetaInfo(buffer);
 
-                    const res = topics.map(async (topic) => {
-                        const newTopic = this.topicRepository.create(topic);
-                        await this.topicRepository.save(newTopic);
-
-                        return this.topicRepository.findOne({
-                            where: { uuid: newTopic.uuid },
-                        });
-                    });
-                    const createdTopics = await Promise.all(res);
-                    logger.debug(
-                        `Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`,
-                    );
                     const newFile = this.fileRepository.create({
                         date,
-                        topics: createdTopics,
                         mission: queue.mission,
                         size,
                         filename: filename,
@@ -258,6 +251,27 @@ export class FileProcessor implements OnModuleInit {
                         type: FileType.MCAP,
                     });
                     const savedFile = await this.fileRepository.save(newFile);
+                    logger.debug(
+                        `Job {${job.id}} saved file: ${savedFile.filename}`,
+                    );
+
+                    const res = topics.map(async (topic) => {
+                        const newTopic = this.topicRepository.create({
+                            ...topic,
+                            file: savedFile,
+                        });
+                        await this.topicRepository.save(newTopic);
+
+                        return this.topicRepository.findOne({
+                            where: { uuid: newTopic.uuid },
+                            relations: ['file'],
+                        });
+                    });
+                    const createdTopics = await Promise.all(res);
+                    console.log('created topics', createdTopics);
+                    logger.debug(
+                        `Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`,
+                    );
 
                     if (metadataRes.name.endsWith('.bag')) {
                         const newFile = this.fileRepository.create({
@@ -284,8 +298,22 @@ export class FileProcessor implements OnModuleInit {
                 }
             } else {
                 logger.debug(`Job {${job.id}} is a folder, processing...`);
-
-                const files = await listFiles(queue.identifier);
+                let files: drive_v3.Schema$File[] = [];
+                try {
+                    files = await listFiles(queue.identifier);
+                } catch (error) {
+                    logger.error(
+                        `Error getting files in folder: ${queue.identifier}`,
+                    );
+                    logger.error(error);
+                    logger.error(error.stack);
+                    queue.state = FileState.ERROR;
+                    await this.queueRepository.save(queue);
+                    return null;
+                }
+                logger.debug(
+                    `Job {${job.id}} found files: ${files.map((file) => file.name)}`,
+                );
                 await Promise.all(
                     files.map(async (file) => {
                         if (file.name.endsWith('.bag')) {
