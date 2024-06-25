@@ -1,20 +1,20 @@
-import { InjectQueue, OnQueueActive, Process, Processor } from '@nestjs/bull';
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Job, Queue } from 'bull';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {InjectQueue, OnQueueActive, Process, Processor} from '@nestjs/bull';
+import {Injectable, OnModuleInit} from '@nestjs/common';
+import {Job, Queue} from 'bull';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Like, Repository} from 'typeorm';
 
-import { convert, mcapMetaInfo } from './helper/converter';
-import { downloadDriveFile, getMetadata, listFiles } from './helper/driveHelper';
-import { downloadMinioFile, uploadFile } from './helper/minioHelper';
+import {convert, mcapMetaInfo} from './helper/converter';
+import {downloadDriveFile, getMetadata, listFiles} from './helper/driveHelper';
+import {downloadMinioFile, uploadFile} from './helper/minioHelper';
 import logger from '../logger';
-import { traceWrapper } from '../tracing';
+import {traceWrapper} from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/env';
-import { FileLocation, FileState, FileType } from '@common/enum';
-import { drive_v3 } from 'googleapis';
+import {FileLocation, FileState, FileType} from '@common/enum';
+import {drive_v3} from 'googleapis';
 
 const fs_promises = require('fs').promises;
 
@@ -67,7 +67,7 @@ export class FileProcessor implements OnModuleInit {
         logger.debug(`Processing job ${job.id} of type ${job.name}.`);
     }
 
-    @Process({ concurrency: 1, name: 'processMinioFile' })
+    @Process({concurrency: 1, name: 'processMinioFile'})
     async handleMinioFileProcessing(job: Job<{ queueUuid: string }>) {
         return await traceWrapper(async () => {
             logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
@@ -123,7 +123,7 @@ export class FileProcessor implements OnModuleInit {
                 });
 
             if (!meta) return null;
-            const { topics, date, size } = meta;
+            const {topics, date, size} = meta;
 
             const newFile = this.fileRepository.create({
                 date,
@@ -133,10 +133,17 @@ export class FileProcessor implements OnModuleInit {
                 creator: queue.creator,
                 type: FileType.MCAP,
             });
-            const savedFile = await this.fileRepository.save(newFile);
-            logger.debug(
-                `Job {${job.id}} saved file: ${savedFile.filename}`,
+            const savedFile = await this.fileRepository.save(newFile).catch(
+                (error) => {
+                    logger.error(`Error saving file: ${newFile.filename}`);
+                    logger.error(error);
+                    queue.state = FileState.ERROR;
+                    this.queueRepository.save(queue);
+                    fs_promises.unlink(tmp_file_name);
+                }
             );
+            if (!savedFile) return null;
+            logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
 
             const res = topics.map(async (topic) => {
                 const newTopic = this.topicRepository.create({
@@ -146,7 +153,7 @@ export class FileProcessor implements OnModuleInit {
                 await this.topicRepository.save(newTopic);
 
                 return this.topicRepository.findOne({
-                    where: { uuid: newTopic.uuid },
+                    where: {uuid: newTopic.uuid},
                     relations: ['file'],
                 });
             });
@@ -164,7 +171,16 @@ export class FileProcessor implements OnModuleInit {
                     creator: queue.creator,
                     type: FileType.BAG,
                 });
-                await this.fileRepository.save(newFile);
+                const resp = await this.fileRepository.save(newFile).catch(
+                    (error) => {
+                        logger.error(`Error saving file: ${newFile.filename}`);
+                        logger.error(error);
+                        queue.state = FileState.ERROR;
+                        this.queueRepository.save(queue);
+                        fs_promises.unlink(tmp_file_name);
+                    }
+                );
+                if (!resp) return null;
             }
 
             queue.state = FileState.DONE;
@@ -175,7 +191,7 @@ export class FileProcessor implements OnModuleInit {
         }, 'processMinioFile')();
     }
 
-    @Process({ name: 'processDriveFile', concurrency: 1 })
+    @Process({name: 'processDriveFile', concurrency: 1})
     async handleDriveFileProcessing(job: Job<{ queueUuid: string }>) {
         return await traceWrapper(async () => {
 
@@ -222,6 +238,24 @@ export class FileProcessor implements OnModuleInit {
             logger.debug(`Job {${job.id}} is a file: ${metadataRes.name}, processing...`);
 
             const file_type = metadataRes.name.endsWith('.bag') ? 'bag' : 'mcap';
+
+            // check if file already exists with either bag or mcap extension
+            const file_count = await this.fileRepository.count({
+                where: {
+                    filename: Like(`%${
+                        filename.split('.').slice(0, -1).join('.') // strip extension
+                    }`),
+                },
+            });
+
+            if (file_count > 0) {
+                logger.debug(`File ${filename} already exists in database; skipping...`);
+                queue.state = FileState.ERROR;
+                await this.queueRepository.save(queue);
+                return null;
+            }
+
+
             let tmp_file_name = `/tmp/${queue.identifier}.${file_type}`;
 
             let succeeded = await downloadDriveFile(queue.identifier, tmp_file_name).catch(
@@ -292,7 +326,7 @@ export class FileProcessor implements OnModuleInit {
                 });
 
             if (!meta) return null;
-            const { topics, date, size } = meta;
+            const {topics, date, size} = meta;
 
             ////////////////////////////////////////////////////////////////
             // Save file and topics to database
@@ -306,10 +340,17 @@ export class FileProcessor implements OnModuleInit {
                 creator: queue.creator,
                 type: FileType.MCAP,
             });
-            const savedFile = await this.fileRepository.save(newFile);
-            logger.debug(
-                `Job {${job.id}} saved file: ${savedFile.filename}`,
+            const savedFile = await this.fileRepository.save(newFile).catch(
+                (error) => {
+                    logger.error(`Error saving file: ${newFile.filename}`);
+                    logger.error(error);
+                    queue.state = FileState.ERROR;
+                    this.queueRepository.save(queue);
+                    fs_promises.unlink(tmp_file_name);
+                }
             );
+            if (!savedFile) return null;
+            logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
 
             const res = topics.map(async (topic) => {
                 const newTopic = this.topicRepository.create({
@@ -319,7 +360,7 @@ export class FileProcessor implements OnModuleInit {
                 await this.topicRepository.save(newTopic);
 
                 return this.topicRepository.findOne({
-                    where: { uuid: newTopic.uuid },
+                    where: {uuid: newTopic.uuid},
                     relations: ['file'],
                 });
             });
@@ -337,7 +378,16 @@ export class FileProcessor implements OnModuleInit {
                     creator: queue.creator,
                     type: FileType.BAG,
                 });
-                await this.fileRepository.save(newFile);
+               const resp =  await this.fileRepository.save(newFile).catch(
+                    (error) => {
+                        logger.error(`Error saving file: ${newFile.filename}`);
+                        logger.error(error);
+                        queue.state = FileState.ERROR;
+                        this.queueRepository.save(queue);
+                        fs_promises.unlink(tmp_file_name);
+                    }
+                )
+                if (!resp) return null;
             }
 
             queue.state = FileState.DONE;
