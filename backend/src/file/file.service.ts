@@ -240,6 +240,11 @@ export class FileService {
             where: { uuid },
             relations: ['mission', 'mission.project'],
         });
+
+        if (file.uuid === undefined || file.uuid !== uuid) {
+            throw new Error('File not found');
+        }
+
         return await externalMinio.presignedUrl(
             'GET',
             (file.type === FileType.MCAP) ? env.MINIO_MCAP_BUCKET_NAME : env.MINIO_BAG_BUCKET_NAME,

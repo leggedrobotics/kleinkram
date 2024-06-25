@@ -121,7 +121,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryFn: () => fetchFile(file_uuid.value),
 });
 
-const missionUUID = computed(() => data.value?.mission.uuid);
+const missionUUID = computed(() => data.value?.mission?.uuid);
 
 const { data: filesReturn, refetch } = useQuery({
     queryKey: ['files', missionUUID.value],
@@ -156,7 +156,7 @@ const columns = [
 
 const downloadURL = ref<string>('');
 async function _downloadFile() {
-    const res = await downloadFile(props.file_uuid, true);
+    const res = await downloadFile(props.uuid, true);
     const a = document.createElement('a');
     a.href = res;
     a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
@@ -175,7 +175,7 @@ async function redirectToMcap() {
 }
 
 async function _copyLink() {
-    const res = await downloadFile(props.file_uuid, false);
+    const res = await downloadFile(props.uuid, false);
     await copyToClipboard(res);
     Notify.create({
         group: false,
