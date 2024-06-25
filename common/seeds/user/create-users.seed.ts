@@ -7,9 +7,18 @@ import Mission from "../../entities/mission/mission.entity";
 import FileEntity from "../../entities/file/file.entity";
 import Topic from "../../entities/topic/topic.entity";
 import {extendedFaker} from "../../faker_extended";
+import { Connection } from 'typeorm'
 
 export default class CreateUsers implements Seeder {
-    public async run(factory: Factory): Promise<void> {
+    public async run(factory: Factory, conn: Connection): Promise<void> {
+
+        // check if DB is empty
+        const usersCount = await conn.getRepository(User).count()
+
+        if (usersCount > 0) {
+            console.log('\n\n »» Users already exist in the DB; skipping seeding\n\n')
+            return
+        }
 
         // generate user and projects
         const users = await factory(User)().createMany(10)
