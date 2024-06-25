@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
-import { FileService } from './file.service';
-import { UpdateFile } from './entities/update-file.dto';
+import {Body, Controller, Delete, Get, Param, Put, Query} from '@nestjs/common';
+import {FileService} from './file.service';
+import {UpdateFile} from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -11,7 +11,7 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import {addJWTUser, JWTUser} from '../auth/paramDecorator';
 
 @Controller('file')
 export class FileController {
