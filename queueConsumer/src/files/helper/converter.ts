@@ -12,6 +12,7 @@ import env from "@common/env";
 
 const execPromisify = promisify(exec);
 
+
 export async function convertToMcapAndSave(tmp_file_name: string, full_pathname: string): Promise<boolean> {
     return await traceWrapper(async () => {
         const tmp_file_name_mcap = tmp_file_name.replace('.bag', '.mcap');
@@ -30,24 +31,14 @@ export async function convertToMcapAndSave(tmp_file_name: string, full_pathname:
     }, 'processFile')();
 }
 
-export async function convert(
+export const convert = (
     infile: string,
     outfile: string,
-): Promise<boolean> {
+): Promise<boolean> => traceWrapper(async (): Promise<boolean> => {
+    await execPromisify(`mcap convert ${infile} ${outfile}`);
+    return true;
+}, 'MCAP Conversion')();
 
-    // Convert file
-    return await traceWrapper(async (): Promise<boolean> => {
-        await execPromisify(`mcap convert ${infile} ${outfile}`);
-        return true;
-    }, 'MCAP Conversion')()
-        .catch((error) => {
-            logger.error(error);
-            throw new Error(
-                error.message.startsWith('Command failed: mcap convert ')
-                    ? 'Corrupted' : error.message);
-        });
-
-}
 
 export async function mcapMetaInfo(mcap_tmp_file_name: string):
     Promise<{ topics: Record<string, unknown>[], date: Date, size: number }> {
