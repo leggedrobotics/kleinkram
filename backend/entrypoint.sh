@@ -4,9 +4,14 @@ echo "Start Backend"
 yarn start:dev &
 
 sleep 5
-echo "Seed Database"
 cd ../common
-yarn seed:run
-echo "Database Seeded"
+
+if [ "$SEED" = "true" ]; then
+  echo "Seeding Database"
+  yarn seed:run
+else
+  echo "Not Seeding Database"
+  tail -f /dev/null
+fi
 
 tail -f /dev/null
