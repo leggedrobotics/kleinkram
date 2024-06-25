@@ -1,12 +1,12 @@
-import { loadDecompressHandlers } from '@mcap/support';
-import { McapIndexedReader } from '@mcap/core';
+import {loadDecompressHandlers} from '@mcap/support';
+import {McapIndexedReader} from '@mcap/core';
 
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import { traceWrapper } from '../../tracing';
+import {promisify} from 'util';
+import {exec} from 'child_process';
+import {traceWrapper} from '../../tracing';
 import logger from '../../logger';
-import { open } from 'fs/promises';
-import { FileHandleReadable } from '@mcap/nodejs';
+import {open} from 'fs/promises';
+import {FileHandleReadable} from '@mcap/nodejs';
 import {uploadFile} from "./minioHelper";
 import env from "@common/env";
 
@@ -25,7 +25,7 @@ export async function convertToMcapAndSave(tmp_file_name: string, full_pathname:
             env.MINIO_MCAP_BUCKET_NAME,
             full_pathname_mcap,
             tmp_file_name_mcap,
-        );
+        )
 
     }, 'processFile')();
 }

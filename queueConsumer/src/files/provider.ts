@@ -8,7 +8,7 @@ import {convertToMcapAndSave, mcapMetaInfo} from './helper/converter';
 import {downloadDriveFile, getMetadata, listFiles} from './helper/driveHelper';
 import {downloadMinioFile, uploadFile} from './helper/minioHelper';
 import logger from '../logger';
-import {tracing} from '../tracing';
+import {traceWrapper, tracing} from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
@@ -119,13 +119,15 @@ export class FileProcessor implements OnModuleInit {
         queue.state = FileState.PROCESSING;
         await this.queueRepository.save(queue);
 
-        await downloadMinioFile(
-            sourceIsBag
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
-            queue.identifier,
-            tmp_file_name,
-        )
+        await traceWrapper(async () => {
+            return await downloadMinioFile(
+                sourceIsBag
+                    ? env.MINIO_BAG_BUCKET_NAME
+                    : env.MINIO_MCAP_BUCKET_NAME,
+                queue.identifier,
+                tmp_file_name,
+            )
+        }, 'downloadMinioFile')();
 
         logger.debug(`Job ${job.id} downloaded file: ${queue.identifier}`);
         const originalFileName = queue.filename.split('/').pop();
@@ -217,7 +219,9 @@ export class FileProcessor implements OnModuleInit {
         let tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
-        await downloadDriveFile(queueEntity.identifier, tmp_file_name);
+        await traceWrapper(async () => {
+            return await downloadDriveFile(queueEntity.identifier, tmp_file_name);
+        }, 'downloadDriveFile')();
 
         queueEntity.state = FileState.PROCESSING;
         await this.queueRepository.save(queueEntity);
@@ -232,6 +236,7 @@ export class FileProcessor implements OnModuleInit {
 
     }
 
+    @tracing('processTmpFile')
     private async processTmpFile(
         job: FileProcessorJob,
         queueEntity: QueueEntity,
@@ -307,6 +312,7 @@ export class FileProcessor implements OnModuleInit {
 
     }
 
+    @tracing('extractTopics')
     private async extractTopics(
         job: FileProcessorJob,
         queueEntity: QueueEntity,
@@ -348,11 +354,11 @@ export class FileProcessor implements OnModuleInit {
         });
 
         const createdTopics = await Promise.all(res);
-        console.log('created topics', createdTopics);
         logger.debug(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`);
 
     }
 
+    @tracing('processDriveFolder')
     private async processDriveFolder(job: FileProcessorJob, queue: QueueEntity) {
         logger.debug(`Job {${job.id}} is a folder, processing...`);
         const files: drive_v3.Schema$File[] | void = await listFiles(queue.identifier);
