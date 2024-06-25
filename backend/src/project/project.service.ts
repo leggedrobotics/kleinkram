@@ -1,15 +1,15 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import Project from './entities/project.entity';
+import Project from '@common/entities/project/project.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
-import User from '../user/entities/user.entity';
+import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 
-import AccessGroup from '../auth/entities/accessgroup.entity';
-import { AccessGroupRights, UserRole } from '../enum';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
 
 @Injectable()
 export class ProjectService {
@@ -20,7 +20,8 @@ export class ProjectService {
         private userservice: UserService,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-    ) {}
+    ) {
+    }
 
     async findAll(user: JWTUser): Promise<Project[]> {
         logger.debug('Finding all projects as user: ', user.uuid);

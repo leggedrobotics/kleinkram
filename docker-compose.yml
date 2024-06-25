@@ -3,9 +3,11 @@ services:
         image: rslethz/grandtour-datasets:api-server-latest
         container_name: API
         build:
-            context: ./backend
+            context: .
+            dockerfile: backend/Dockerfile
         volumes:
-            - ./backend:/usr/src/app
+            - ./backend:/usr/src/app/backend
+            - ./common:/usr/src/app/common
             - /usr/src/app/node_modules
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -38,7 +40,18 @@ services:
         environment:
             MINIO_ROOT_USER: ${MINIO_USER}
             MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-        command: server --console-address ":9001" /data
+        entrypoint: sh
+        # initialize buckets (see https://github.com/minio/minio/issues/4769#issuecomment-331033735)
+        # and add service worker access key after startup of the minio server
+        command: >
+            -c "mkdir -p /data/${MINIO_BAG_BUCKET_NAME} &&
+            mkdir -p /data/${MINIO_MCAP_BUCKET_NAME} && 
+            /usr/bin/minio server --console-address ':9001' /data & 
+            sleep 10 &&
+            mc alias set myminio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&
+            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
+            echo 'minio is ready' &&
+            sleep infinity"
         ports:
             - '127.0.0.1:9000:9000'
             - '127.0.0.1:9001:9001'
@@ -80,9 +93,11 @@ services:
         image: rslethz/grandtour-datasets:bull-consumer-latest
         container_name: bullconsumer
         build:
-            context: ./queueConsumer
+            context: .
+            dockerfile: queueConsumer/Dockerfile
         volumes:
             - ./queueConsumer:/usr/src/queueConsumer
+            - ./common:/usr/src/common
             - /usr/src/queueConsumer/node_modules
             - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container

@@ -3,16 +3,17 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import QueueEntity from './entities/queue.entity';
-import FileEntity from './entities/file.entity';
-import env from './env';
+
 import { convert, mcapMetaInfo } from './helper/converter';
 import { downloadDriveFile, getMetadata, listFiles } from './helper/driveHelper';
 import { downloadMinioFile, uploadFile } from './helper/minioHelper';
-import Topic from './entities/topic.entity';
-import { FileLocation, FileState, FileType } from './enum';
 import logger from './logger';
 import { traceWrapper } from './tracing';
+import QueueEntity from '@common/entities/queue/queue.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import Topic from '@common/entities/topic/topic.entity';
+import env from '@common/env';
+import { FileLocation, FileState, FileType } from '@common/enum';
 import { drive_v3 } from 'googleapis';
 
 const fs_promises = require('fs').promises;

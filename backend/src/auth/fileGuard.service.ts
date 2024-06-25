@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import User from '../user/entities/user.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import { AccessGroupRights, UserRole } from '../enum';
-import Mission from '../mission/entities/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
-import File from '../file/entities/file.entity';
 import { MissionGuardService } from './missionGuard.service';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import User from '@common/entities/user/user.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
 
 @Injectable()
 export class FileGuardService {
@@ -16,8 +15,8 @@ export class FileGuardService {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(File)
-        private fileRepository: Repository<File>,
+        @InjectRepository(FileEntity)
+        private fileRepository: Repository<FileEntity>,
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
     ) {}

@@ -7,18 +7,16 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, CookieNames, UserRole } from '../enum';
+import { AccessGroupRights, CookieNames, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Apikey from './entities/apikey.entity';
-import Account from './entities/account.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import Account from '@common/entities/auth/account.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
 import { FileGuardService } from './fileGuard.service';
-import Queue from '../queue/entities/queue.entity';
+import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
-import Mission from '../mission/entities/mission.entity';
-import { MissionService } from '../mission/mission.service';
 @Injectable()
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {

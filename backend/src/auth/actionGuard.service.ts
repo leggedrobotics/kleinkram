@@ -1,26 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import User from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
-import AccessGroup from './entities/accessgroup.entity';
-import File from '../file/entities/file.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
-import { AccessGroupRights, UserRole } from '../enum';
-import Action from '../action/entities/action.entity';
+import User from '@common/entities/user/user.entity';
+import Action from '@common/entities/action/action.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
 
 @Injectable()
 export class ActionGuardService {
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(AccessGroup)
-        private accessGroupRepository: Repository<AccessGroup>,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
-    ) {}
+    ) {
+    }
 
     async canAccessAction(
         userUUID: string,

@@ -1,5 +1,5 @@
 import { BucketItem, Client } from 'minio';
-import env from './env';
+import env from '@common/env';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,

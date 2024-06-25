@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import Action from './entities/action.entity';
 import { SubmitAction } from './entities/submit_action.dto';
-import Apikey from '../auth/entities/apikey.entity';
-import { ActionState, KeyTypes, UserRole } from '../enum';
-import User from '../user/entities/user.entity';
+import Action from '@common/entities/action/action.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import User from '@common/entities/user/user.entity';
+import { ActionState, KeyTypes, UserRole } from '@common/enum';
 
 @Injectable()
 export class ActionService {

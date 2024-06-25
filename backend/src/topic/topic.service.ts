@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import Topic from './entities/topic.entity';
+import Topic from '@common/entities/topic/topic.entity';
 import { Brackets, Repository } from 'typeorm';
-import User from '../user/entities/user.entity';
-import { UserRole } from '../enum';
+import User from '@common/entities/user/user.entity';
+import { UserRole } from '@common/enum';
 
 @Injectable()
 export class TopicService {

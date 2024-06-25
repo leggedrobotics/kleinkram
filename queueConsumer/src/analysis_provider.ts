@@ -6,8 +6,9 @@ import { Job, Queue } from 'bull';
 import { tracing } from './tracing';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Action, { ContainerLog } from './entities/action.entity';
-import { ActionState } from './enum';
+import { ActionState } from '@common/enum';
+import Action, { ContainerLog } from '@common/entities/action/action.entity';
+
 
 @Processor('action-queue')
 @Injectable()

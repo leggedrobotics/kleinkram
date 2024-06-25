@@ -1,27 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
-import File from './entities/file.entity';
+import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
-import env from '../env';
-import Mission from '../mission/entities/mission.entity';
+import env from '@common/env';
+import Mission from '@common/entities/mission/mission.entity';
 import { externalMinio } from '../minioHelper';
-import Project from '../project/entities/project.entity';
-import Topic from '../topic/entities/topic.entity';
-import { FileType, UserRole } from '../enum';
-import User from '../user/entities/user.entity';
+import Project from '@common/entities/project/project.entity';
+import Topic from '@common/entities/topic/topic.entity';
+import { FileType, UserRole } from '@common/enum';
+import User from '@common/entities/user/user.entity';
 
 @Injectable()
 export class FileService {
     constructor(
-        @InjectRepository(File) private fileRepository: Repository<File>,
+        @InjectRepository(FileEntity) private fileRepository: Repository<FileEntity>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
-    ) {}
+    ) {
+    }
 
     async findAll(userUUID: string) {
         const user = await this.userRepository.findOneOrFail({

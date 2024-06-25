@@ -19,7 +19,12 @@
         "noFallthroughCasesInSwitch": false,
         "target": "ES2022",
         "module": "commonjs",
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+      "paths": {
+        "@common/*": [
+          "../common/*"
+        ]
+      }
     },
     "rules": {
         "no-console": [true, "warning"]

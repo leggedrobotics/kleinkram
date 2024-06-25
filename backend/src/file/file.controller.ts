@@ -1,12 +1,4 @@
-import {
-    Controller,
-    Body,
-    Get,
-    Put,
-    Param,
-    Query,
-    Delete,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -23,7 +15,8 @@ import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(private readonly fileService: FileService) {
+    }
 
     @Get('all')
     @LoggedIn()
@@ -72,6 +65,7 @@ export class FileController {
             user.uuid,
         );
     }
+
     @Get('download')
     @CanReadFile()
     async download(
