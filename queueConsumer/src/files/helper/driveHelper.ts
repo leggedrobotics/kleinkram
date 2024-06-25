@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import env from '@common/env';
-import logger from '../logger';
+import logger from '../../logger';
 import * as fs from 'node:fs';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];

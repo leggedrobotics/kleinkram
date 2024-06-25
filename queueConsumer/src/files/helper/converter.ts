@@ -3,8 +3,8 @@ import { McapIndexedReader } from '@mcap/core';
 
 import { promisify } from 'util';
 import { exec } from 'child_process';
-import { traceWrapper } from '../tracing';
-import logger from '../logger';
+import { traceWrapper } from '../../tracing';
+import logger from '../../logger';
 import { open } from 'fs/promises';
 import { FileHandleReadable } from '@mcap/nodejs';
 

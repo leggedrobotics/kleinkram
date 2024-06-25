@@ -1,9 +1,9 @@
 import Docker from 'dockerode';
-import logger from './logger';
+import logger from '../logger';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectQueue, OnQueueActive, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
-import { tracing } from './tracing';
+import { tracing } from '../tracing';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState } from '@common/enum';

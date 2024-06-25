@@ -14,8 +14,8 @@ import User from '@common/entities/user/user.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { FileProcessor } from './provider';
-import { AnalysisProcessor } from './analysis_provider';
+import { FileProcessor } from './files/provider';
+import { AnalysisProcessor } from './actions/provider';
 import env from '@common/env';
 
 

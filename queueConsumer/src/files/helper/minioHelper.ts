@@ -1,7 +1,7 @@
 import { Client, CopyConditions } from 'minio';
 import env from '@common/env';
-import logger from '../logger';
-import { traceWrapper } from '../tracing';
+import logger from '../../logger';
+import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
 
 const minio: Client = new Client({
