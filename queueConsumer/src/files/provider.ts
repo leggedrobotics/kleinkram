@@ -1,40 +1,29 @@
-import {InjectQueue, OnQueueActive, Process, Processor} from '@nestjs/bull';
+import {InjectQueue, OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor} from '@nestjs/bull';
 import {Injectable, OnModuleInit} from '@nestjs/common';
 import {Job, Queue} from 'bull';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Like, Repository} from 'typeorm';
 
-import {convert, mcapMetaInfo} from './helper/converter';
+import {convertToMcapAndSave, mcapMetaInfo} from './helper/converter';
 import {downloadDriveFile, getMetadata, listFiles} from './helper/driveHelper';
 import {downloadMinioFile, uploadFile} from './helper/minioHelper';
 import logger from '../logger';
-import {traceWrapper} from '../tracing';
+import {tracing} from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/env';
 import {FileLocation, FileState, FileType} from '@common/enum';
 import {drive_v3} from 'googleapis';
+import fs from "node:fs";
 
 const fs_promises = require('fs').promises;
 
-async function saveAsMcap(tmp_file_name: string, full_pathname: string): Promise<boolean> {
-    return await traceWrapper(async () => {
-        const tmp_file_name_mcap = tmp_file_name.replace('.bag', '.mcap');
-        const full_pathname_mcap = full_pathname.replace('.bag', '.mcap');
+type FileProcessorJob = Job<{
+    queueUuid: string;
+    tmp_files: string[];
+}>;
 
-        logger.debug(`Converting file ${tmp_file_name} from bag to mcap ${tmp_file_name_mcap}`);
-        await convert(tmp_file_name, tmp_file_name_mcap);
-        logger.debug('File converted successfully');
-
-        return await uploadFile(
-            env.MINIO_MCAP_BUCKET_NAME,
-            full_pathname_mcap,
-            tmp_file_name_mcap,
-        );
-
-    }, 'processFile')();
-}
 
 @Processor('file-queue')
 @Injectable()
@@ -62,360 +51,319 @@ export class FileProcessor implements OnModuleInit {
         }
     }
 
+    private async getQueue(job: FileProcessorJob) {
+        return await this.queueRepository.findOneOrFail({
+            where: {
+                uuid: job.data.queueUuid,
+            },
+            relations: ['mission', 'creator', 'mission.project'],
+        });
+    }
+
+    private async deleteTmpFiles(job: FileProcessorJob) {
+        return await Promise.all(
+            job.data.tmp_files.map((tmp_file) => {
+                logger.debug(`Deleting tmp file: ${tmp_file}`);
+                if (fs.existsSync(tmp_file)) fs_promises.unlink(tmp_file)
+            })
+        );
+    }
+
     @OnQueueActive()
-    onActive(job: Job) {
+    onActive(job: FileProcessorJob) {
         logger.debug(`Processing job ${job.id} of type ${job.name}.`);
+        job.data.tmp_files = []; // initialize tmp_files
+    }
+
+    @OnQueueCompleted()
+    @tracing('onCompleted')
+    async onCompleted(job: FileProcessorJob) {
+        logger.debug(`Job ${job.id} of type ${job.name} has been completed.`);
+
+        // mark queue as done
+        const queue = await this.getQueue(job);
+        queue.state = FileState.DONE;
+        await this.queueRepository.save(queue);
+
+        await this.deleteTmpFiles(job);
+
+    }
+
+    @OnQueueFailed()
+    @tracing('onFailed')
+    async onFailed(job: FileProcessorJob, error: Error) {
+        logger.error(`Job ${job.id} of type ${job.name} has failed with error:\n  » ${error.message}`);
+        logger.error(error.stack);
+
+        // mark queue as error
+        const queue = await this.getQueue(job);
+        queue.state = FileState.ERROR;
+        await this.queueRepository.save(queue);
+
+        await this.deleteTmpFiles(job);
+
     }
 
     @Process({concurrency: 1, name: 'processMinioFile'})
-    async handleMinioFileProcessing(job: Job<{ queueUuid: string }>) {
-        return await traceWrapper(async () => {
-            logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
-            const queue = await this.startProcessing(job.data.queueUuid);
-            const sourceIsBag = queue.filename.endsWith('.bag');
+    @tracing('processMinioFile')
+    async handleMinioFileProcessing(job: FileProcessorJob) {
 
-            const uuid = crypto.randomUUID();
-            let tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
-            let succeded = await downloadMinioFile(
-                sourceIsBag
-                    ? env.MINIO_BAG_BUCKET_NAME
-                    : env.MINIO_MCAP_BUCKET_NAME,
-                queue.identifier,
-                tmp_file_name,
-            ).catch((error) => {
-                logger.error(`Error downloading file: ${queue.identifier} to ${tmp_file_name}`);
-                logger.error(error);
-                queue.state = FileState.ERROR;
-                this.queueRepository.save(queue);
-            });
+        logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
+        const queue = await this.startProcessing(job.data.queueUuid);
+        const sourceIsBag = queue.filename.endsWith('.bag');
 
-            if (!succeded) return null;
-            logger.debug(`Job ${job.id} downloaded file: ${queue.identifier}`);
+        const uuid = crypto.randomUUID();
+        let tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
+        job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
-            queue.state = FileState.LOADED;
-            await this.queueRepository.save(queue);
+        queue.state = FileState.PROCESSING;
+        await this.queueRepository.save(queue);
 
-            if (sourceIsBag) {
+        await downloadMinioFile(
+            sourceIsBag
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            queue.identifier,
+            tmp_file_name,
+        )
 
-                // convert to bag and upload to minio
-                logger.debug(`Convert file ${queue.identifier} from bag to mcap`);
-                const succeeded = await saveAsMcap(tmp_file_name, queue.identifier)
-                    .catch((error) => {
-                        logger.error(`Error converting file: ${queue.identifier}`);
-                        logger.error(error);
-                        queue.state = FileState.CORRUPTED_FILE;
-                        this.queueRepository.save(queue);
-                        fs_promises.unlink(tmp_file_name);
-                    });
+        logger.debug(`Job ${job.id} downloaded file: ${queue.identifier}`);
+        const originalFileName = queue.filename.split('/').pop();
 
-                if (!succeeded) return null;
+        // convert to bag and upload to minio
+        if (sourceIsBag) {
+            logger.debug(`Convert file ${queue.identifier} from bag to mcap`);
+            await convertToMcapAndSave(tmp_file_name, queue.identifier)
 
-            }
-
-            tmp_file_name = tmp_file_name.replace('.bag', '.mcap');
-            const meta = await mcapMetaInfo(tmp_file_name).catch(
-                (error) => {
-                    logger.error(`Error extracting topics from file: ${tmp_file_name}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                    fs_promises.unlink(tmp_file_name);
-                });
-
-            if (!meta) return null;
-            const {topics, date, size} = meta;
-
+            // create file entity for bag file
             const newFile = this.fileRepository.create({
-                date,
+                date: new Date(),
                 mission: queue.mission,
-                size: size as number,
-                filename: queue.filename.replace('.bag', '.mcap'),
+                size: fs.statSync(tmp_file_name).size,
+                filename: originalFileName,
                 creator: queue.creator,
-                type: FileType.MCAP,
+                type: FileType.BAG,
             });
-            const savedFile = await this.fileRepository.save(newFile).catch(
-                (error) => {
-                    logger.error(`Error saving file: ${newFile.filename}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                    fs_promises.unlink(tmp_file_name);
-                }
-            );
-            if (!savedFile) return null;
-            logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
+            await this.fileRepository.save(newFile)
 
-            const res = topics.map(async (topic) => {
-                const newTopic = this.topicRepository.create({
-                    ...topic,
-                    file: savedFile,
-                });
-                await this.topicRepository.save(newTopic);
+        }
 
-                return this.topicRepository.findOne({
-                    where: {uuid: newTopic.uuid},
-                    relations: ['file'],
-                });
-            });
+        const mcap_temp_file_name = tmp_file_name.replace('.bag', '.mcap');
+        job.data.tmp_files.push(mcap_temp_file_name); // saved for cleanup
 
-            const createdTopics = await Promise.all(res);
-            console.log('created topics', createdTopics);
-            logger.debug(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`);
+        const mcapFileEntity = this.fileRepository.create({
+            date: new Date(),
+            mission: queue.mission,
+            size: fs.statSync(mcap_temp_file_name).size,
+            filename: originalFileName.replace('.bag', '.mcap'),
+            creator: queue.creator,
+            type: FileType.MCAP,
+        });
 
-            if (sourceIsBag) {
-                const newFile = this.fileRepository.create({
-                    date,
-                    mission: queue.mission,
-                    size,
-                    filename: queue.filename,
-                    creator: queue.creator,
-                    type: FileType.BAG,
-                });
-                const resp = await this.fileRepository.save(newFile).catch(
-                    (error) => {
-                        logger.error(`Error saving file: ${newFile.filename}`);
-                        logger.error(error);
-                        queue.state = FileState.ERROR;
-                        this.queueRepository.save(queue);
-                        fs_promises.unlink(tmp_file_name);
-                    }
-                );
-                if (!resp) return null;
-            }
+        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity)
 
-            queue.state = FileState.DONE;
-            await this.queueRepository.save(queue);
-            logger.debug(`Job {${job.id}} saved file: ${savedFile}`);
-            return savedFile;
+        ////////////////////////////////////////////////////////////////
+        // Extract Topics from MCAP file
+        ////////////////////////////////////////////////////////////////
 
-        }, 'processMinioFile')();
+        await this.extractTopics(job, queue, savedMcapFileEntity, mcap_temp_file_name);
+
+
     }
 
     @Process({name: 'processDriveFile', concurrency: 1})
-    async handleDriveFileProcessing(job: Job<{ queueUuid: string }>) {
-        return await traceWrapper(async () => {
+    @tracing('processDriveFile')
+    async handleDriveFileProcessing(job: FileProcessorJob) {
 
-            ////////////////////////////////////////////////////////////////////
-            // Extract Metadata from Google Drive
-            ////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+        // Extract Metadata from Google Drive
+        ////////////////////////////////////////////////////////////////////
 
-            logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
-            const queue = await this.startProcessing(job.data.queueUuid);
+        logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
+        const queueEntity = await this.startProcessing(job.data.queueUuid);
 
-            const metadataRes = await getMetadata(queue.identifier)
-                .catch((error) => {
-                    logger.error(`Error getting metadata for file: ${queue.identifier}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                });
+        const driveMetadata = await getMetadata(queueEntity.identifier);
+        const originalFileName = driveMetadata.name;
+        if (!originalFileName) throw new Error('File has no filename. File not found on Google Drive?');
+        logger.debug(`Metadata for file ${queueEntity.identifier} is:\n  » ${originalFileName}`);
 
-            if (!metadataRes) return null;
-            logger.debug(`Metadata for file ${queue.identifier} is:\n  » ${metadataRes.name}`);
+        ////////////////////////////////////////////////////////////////////
+        // Download file from Google Drive
+        ////////////////////////////////////////////////////////////////////
 
-            ////////////////////////////////////////////////////////////////////
-            // Download file from Google Drive
-            ////////////////////////////////////////////////////////////////////
+        queueEntity.state = FileState.UPLOADING;
+        await this.queueRepository.save(queueEntity);
 
-            const filename = metadataRes.name;
-            const project_name = queue.mission.project.name;
-            const mission_name = queue.mission.name;
-            const full_pathname = `${project_name}/${mission_name}/${filename}`;
+        // recursively process folders
+        if (driveMetadata.mimeType === 'application/vnd.google-apps.folder') {
+            logger.debug(`Job {${job.id}} is a folder: ${originalFileName}, processing...`);
+            return await this.processDriveFolder(job, queueEntity);
+        }
 
-            if (metadataRes.mimeType === 'application/vnd.google-apps.folder') {
+        // it's a file, process it
+        logger.debug(`Job {${job.id}} is a file: ${originalFileName}, processing...`);
+        const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
 
-                logger.debug(`Job {${job.id}} is a folder: ${metadataRes.name}, processing...`);
-                return await this.processDriveFolder(job, queue)
-                    .catch((error) => {
-                        logger.error(`Error processing folder: ${queue.identifier}`);
-                        logger.error(error);
-                        queue.state = FileState.ERROR;
-                        this.queueRepository.save(queue);
-                    });
+        // check if file already exists with either bag or mcap extension
+        const file_count = await this.fileRepository.count({
+            where: {
+                filename: Like(`%${
+                    originalFileName.split('.').slice(0, -1).join('.') // strip extension
+                }`),
+            },
+        });
 
-            }
+        if (file_count > 0) throw new Error(`File ${originalFileName} already exists in database; skipping...`);
+        let tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
+        job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
-            logger.debug(`Job {${job.id}} is a file: ${metadataRes.name}, processing...`);
+        await downloadDriveFile(queueEntity.identifier, tmp_file_name);
 
-            const file_type = metadataRes.name.endsWith('.bag') ? 'bag' : 'mcap';
+        queueEntity.state = FileState.PROCESSING;
+        await this.queueRepository.save(queueEntity);
 
-            // check if file already exists with either bag or mcap extension
-            const file_count = await this.fileRepository.count({
-                where: {
-                    filename: Like(`%${
-                        filename.split('.').slice(0, -1).join('.') // strip extension
-                    }`),
-                },
-            });
+        logger.debug(`Job {${job.id}} downloaded file: ${originalFileName}`);
 
-            if (file_count > 0) {
-                logger.debug(`File ${filename} already exists in database; skipping...`);
-                queue.state = FileState.ERROR;
-                await this.queueRepository.save(queue);
-                return null;
-            }
+        ////////////////////////////////////////////////////////////////
+        // Process the tmp file
+        ////////////////////////////////////////////////////////////////
 
+        await this.processTmpFile(job, queueEntity, tmp_file_name, originalFileName);
 
-            let tmp_file_name = `/tmp/${queue.identifier}.${file_type}`;
-
-            let succeeded = await downloadDriveFile(queue.identifier, tmp_file_name).catch(
-                (error) => {
-                    logger.error(`Error downloading file: ${queue.identifier}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                    fs_promises.unlink(tmp_file_name);
-                });
-
-            if (!succeeded) return null;
-
-            queue.state = FileState.LOADED;
-            await this.queueRepository.save(queue);
-            logger.debug(`Job {${job.id}} downloaded file: ${metadataRes.name}`);
-
-            ////////////////////////////////////////////////////////////////
-            // Upload file to Minio
-            ////////////////////////////////////////////////////////////////
-
-            logger.debug(`Uploading file: ${metadataRes.name} to Minio`);
-            succeeded = await uploadFile(
-                file_type === 'bag' ? env.MINIO_BAG_BUCKET_NAME : env.MINIO_MCAP_BUCKET_NAME,
-                full_pathname,
-                tmp_file_name,
-            ).catch((error) => {
-                logger.error(`Error uploading file: ${metadataRes.name}`);
-                logger.error(error);
-                queue.state = FileState.ERROR;
-                this.queueRepository.save(queue);
-                fs_promises.unlink(tmp_file_name);
-            });
-
-            if (!succeeded) return null;
-            logger.debug(`Job {${job.id}} uploaded file: ${metadataRes.name}`);
-
-            if (file_type === 'bag') {
-
-                // convert to bag and upload to minio
-                logger.debug(`Convert file ${metadataRes.name} from bag to mcap`);
-                const succeeded = await saveAsMcap(tmp_file_name, full_pathname)
-                    .catch((error) => {
-                        logger.error(`Error converting file: ${metadataRes.name}`);
-                        logger.error(error);
-                        queue.state = FileState.CORRUPTED_FILE;
-                        this.queueRepository.save(queue);
-                        fs_promises.unlink(tmp_file_name);
-                    });
-
-                if (!succeeded) return null;
-                logger.debug(`File ${metadataRes.name} converted successfully`);
-
-            }
-
-            ////////////////////////////////////////////////////////////////
-            // Extract Topics from MCAP file
-            ////////////////////////////////////////////////////////////////
-
-            tmp_file_name = tmp_file_name.replace('.bag', '.mcap');
-            const meta = await mcapMetaInfo(tmp_file_name).catch(
-                (error) => {
-                    logger.error(`Error extracting topics from file: ${tmp_file_name}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                    fs_promises.unlink(tmp_file_name);
-                });
-
-            if (!meta) return null;
-            const {topics, date, size} = meta;
-
-            ////////////////////////////////////////////////////////////////
-            // Save file and topics to database
-            ////////////////////////////////////////////////////////////////
-
-            const newFile = this.fileRepository.create({
-                date,
-                mission: queue.mission,
-                size: size as number,
-                filename: filename.replace('.bag', '.mcap'),
-                creator: queue.creator,
-                type: FileType.MCAP,
-            });
-            const savedFile = await this.fileRepository.save(newFile).catch(
-                (error) => {
-                    logger.error(`Error saving file: ${newFile.filename}`);
-                    logger.error(error);
-                    queue.state = FileState.ERROR;
-                    this.queueRepository.save(queue);
-                    fs_promises.unlink(tmp_file_name);
-                }
-            );
-            if (!savedFile) return null;
-            logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
-
-            const res = topics.map(async (topic) => {
-                const newTopic = this.topicRepository.create({
-                    ...topic,
-                    file: savedFile,
-                });
-                await this.topicRepository.save(newTopic);
-
-                return this.topicRepository.findOne({
-                    where: {uuid: newTopic.uuid},
-                    relations: ['file'],
-                });
-            });
-
-            const createdTopics = await Promise.all(res);
-            console.log('created topics', createdTopics);
-            logger.debug(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`);
-
-            if (metadataRes.name.endsWith('.bag')) {
-                const newFile = this.fileRepository.create({
-                    date,
-                    mission: queue.mission,
-                    size,
-                    filename: metadataRes.name,
-                    creator: queue.creator,
-                    type: FileType.BAG,
-                });
-               const resp =  await this.fileRepository.save(newFile).catch(
-                    (error) => {
-                        logger.error(`Error saving file: ${newFile.filename}`);
-                        logger.error(error);
-                        queue.state = FileState.ERROR;
-                        this.queueRepository.save(queue);
-                        fs_promises.unlink(tmp_file_name);
-                    }
-                )
-                if (!resp) return null;
-            }
-
-            queue.state = FileState.DONE;
-            await this.queueRepository.save(queue);
-            logger.debug(`Job {${job.id}} saved file: ${savedFile}`);
-            return savedFile;
-
-
-        }, 'processDriveFile')();
     }
 
-    private async processDriveFolder(job: Job<{ queueUuid: string }>, queue: QueueEntity) {
-        logger.debug(`Job {${job.id}} is a folder, processing...`);
-        const files: drive_v3.Schema$File[] | void = await listFiles(queue.identifier)
-            .catch((error) => {
-                logger.error(`Error getting files in folder: ${queue.identifier}`);
-                logger.error(error);
-                logger.error(error.stack);
-                queue.state = FileState.ERROR;
-                this.queueRepository.save(queue);
-            });
+    private async processTmpFile(
+        job: FileProcessorJob,
+        queueEntity: QueueEntity,
+        tmpFileName: string,
+        originalFileName: string
+    ) {
 
-        if (!files) return null;
+        // validate that the tmp file exists
+        if (!fs.existsSync(tmpFileName)) throw new Error(`File ${tmpFileName} does not exist`);
+        const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
+
+        // validate that the tmp file is of the correct type
+        if (!tmpFileName.endsWith(`.${file_type}`)) throw new Error(`File ${tmpFileName} is not a ${file_type} file`);
+
+        const project_name = queueEntity.mission.project.name;
+        const mission_name = queueEntity.mission.name;
+        const full_pathname = `${project_name}/${mission_name}/${originalFileName}`;
+
+        ////////////////////////////////////////////////////////////////
+        // Upload file to Minio (and convert to mcap if necessary)
+        ////////////////////////////////////////////////////////////////
+
+        logger.debug(`Uploading file: ${originalFileName} to Minio`);
+        await uploadFile(
+            file_type === 'bag' ? env.MINIO_BAG_BUCKET_NAME : env.MINIO_MCAP_BUCKET_NAME,
+            full_pathname,
+            tmpFileName,
+        )
+        logger.debug(`Job {${job.id}} uploaded file: ${originalFileName}`);
+
+        // convert to bag to mcap and upload to minio
+        if (file_type === 'bag') {
+            logger.debug(`Convert file ${originalFileName} from bag to mcap`);
+            await convertToMcapAndSave(tmpFileName, full_pathname)
+            logger.debug(`File ${originalFileName} converted successfully`);
+
+            // create file entity for bag file
+            const newFile = this.fileRepository.create({
+                date: new Date(),
+                mission: queueEntity.mission,
+                size: fs.statSync(tmpFileName).size,
+                filename: originalFileName,
+                creator: queueEntity.creator,
+                type: FileType.BAG,
+            });
+            await this.fileRepository.save(newFile)
+
+        }
+
+        const mcap_temp_file_name = tmpFileName.replace('.bag', '.mcap');
+        job.data.tmp_files.push(mcap_temp_file_name); // saved for cleanup
+
+        ////////////////////////////////////////////////////////////////
+        // Save file and topics to database
+        ////////////////////////////////////////////////////////////////
+
+        const mcapFileEntity = this.fileRepository.create({
+            date: new Date(),
+            mission: queueEntity.mission,
+            size: fs.statSync(mcap_temp_file_name).size,
+            filename: originalFileName.replace('.bag', '.mcap'),
+            creator: queueEntity.creator,
+            type: FileType.MCAP,
+        });
+
+        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity)
+
+        ////////////////////////////////////////////////////////////////
+        // Extract Topics from MCAP file
+        ////////////////////////////////////////////////////////////////
+
+        await this.extractTopics(job, queueEntity, savedMcapFileEntity, mcap_temp_file_name);
+
+    }
+
+    private async extractTopics(
+        job: FileProcessorJob,
+        queueEntity: QueueEntity,
+        savedFile: FileEntity,
+        tmp_file_name: string
+    ) {
+
+        if (!tmp_file_name.endsWith('.mcap'))
+            throw new Error(`File ${tmp_file_name} is not an mcap file, cannot extract topics`);
+
+        if (!fs.existsSync(tmp_file_name))
+            throw new Error(`File ${tmp_file_name} does not exist`);
+
+        if (savedFile.type !== FileType.MCAP)
+            throw new Error(`File ${savedFile.filename} is not an mcap file, cannot extract topics`);
+
+        const meta = await mcapMetaInfo(tmp_file_name).catch(
+            async (error) => {
+                logger.error(`Error extracting topics from file ${tmp_file_name}: ${error}`);
+                queueEntity.state = FileState.CORRUPTED_FILE;
+                await this.queueRepository.save(queueEntity);
+                throw error;
+            },
+        )
+        const {topics, date, size} = meta;
+        logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
+
+        const res = topics.map(async (topic) => {
+            const newTopic = this.topicRepository.create({
+                ...topic,
+                file: savedFile,
+            });
+            await this.topicRepository.save(newTopic);
+
+            return this.topicRepository.findOne({
+                where: {uuid: newTopic.uuid},
+                relations: ['file'],
+            });
+        });
+
+        const createdTopics = await Promise.all(res);
+        console.log('created topics', createdTopics);
+        logger.debug(`Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`);
+
+    }
+
+    private async processDriveFolder(job: FileProcessorJob, queue: QueueEntity) {
+        logger.debug(`Job {${job.id}} is a folder, processing...`);
+        const files: drive_v3.Schema$File[] | void = await listFiles(queue.identifier);
         logger.debug(`Job {${job.id}} found files: ${files.map((file) => file.name)}`);
 
         await Promise.all(
             files.map(async (file) => {
-                if (file.name.endsWith('.bag')) {
+
+                // create new queue entity
+                if (file.name.endsWith('.bag') || file.name.endsWith('.mcap') ||
+                    file.mimeType === 'application/vnd.google-apps.folder') {
                     const newQueue = this.queueRepository.create({
                         filename: file.name,
                         identifier: file.id,
@@ -430,6 +378,7 @@ export class FileProcessor implements OnModuleInit {
                         queueUuid: newQueue.uuid,
                     });
                 }
+
             }),
         );
         queue.state = FileState.DONE;
@@ -437,7 +386,7 @@ export class FileProcessor implements OnModuleInit {
         return;
     }
 
-    async startProcessing(queueUuid: string) {
+    private async startProcessing(queueUuid: string) {
         const queue = await this.queueRepository.findOneOrFail({
             where: {
                 uuid: queueUuid,
