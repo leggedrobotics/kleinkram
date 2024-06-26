@@ -10,6 +10,7 @@ import {WinstonInstrumentation} from '@opentelemetry/instrumentation-winston';
 import {NodeSDK} from '@opentelemetry/sdk-node';
 import {NestInstrumentation} from '@opentelemetry/instrumentation-nestjs-core';
 import {TypeormInstrumentation} from 'opentelemetry-instrumentation-typeorm';
+import { QUEUE_CONSUMER_LABEL } from './logger';
 
 // Export the tracing
 const contextManager = new AsyncHooksContextManager().enable();
@@ -21,8 +22,8 @@ const provider = new NodeTracerProvider({
     resource: Resource.default().merge(
         new Resource({
             // Replace with any string to identify this service in your system
-            'service.name': 'queue-consumer',
-            job: 'queue-consumer',
+            'service.name': QUEUE_CONSUMER_LABEL,
+            job: QUEUE_CONSUMER_LABEL,
         }),
     ),
 });
@@ -94,9 +95,9 @@ export const traceWrapper =
                 args.forEach((arg: any) => {
 
                     // check if arg is of type Job or QueueEntity and add metadata
-                    if (arg.constructor.name === 'Job' && !!arg?.id) {
+                    if (arg?.constructor?.name === 'Job' && !!arg?.id) {
                         span.setAttribute('queue_processor_job_id', arg?.id);
-                    } else if (arg.constructor.name === 'QueueEntity' && !!arg?.uuid) {
+                    } else if (arg?.constructor?.name === 'QueueEntity' && !!arg?.uuid) {
                         span.setAttribute('queue_uuid', arg?.uuid);
                     }
 

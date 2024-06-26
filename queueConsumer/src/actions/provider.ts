@@ -5,9 +5,10 @@ import { Job, Queue } from 'bull';
 import { tracing } from '../tracing';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ActionState } from '@common/enum';
+import { ActionState, KeyTypes } from '@common/enum';
 import Action from '@common/entities/action/action.entity';
-import { ContainerScheduler } from './container_scheduler';
+import { ContainerEnv, ContainerScheduler } from './container_scheduler';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 
 @Processor('action-queue')
@@ -18,6 +19,8 @@ export class ActionQueueProcessor extends ContainerScheduler implements OnModule
         @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
+        @InjectRepository(Apikey)
+        private apikeyRepository: Repository<Apikey>,
     ) {
         super();
         logger.debug('AnalysisProcessor constructor');
@@ -168,22 +171,52 @@ export class ActionQueueProcessor extends ContainerScheduler implements OnModule
             relations: ['mission', 'mission.project'],
         });
 
+        if (!action.uuid || action.uuid !== uuid)
+            throw new Error('Action not found');
+
         // set state to 'RUNNING'
         action.state = ActionState.PROCESSING;
         await this.actionRepository.save(action);
 
-        // TODO: remove this hardcoded image
-        action.docker_image = 'ubuntu:latest';
-        const container = await this.start_container(action.docker_image, uuid);
+        const now = new Date();
+        const newToken = this.apikeyRepository.create({
+            mission: { uuid: action.mission.uuid },
+            apikeytype: KeyTypes.CONTAINER,
+            deletedAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
+        });
+        const apikey = await this.apikeyRepository.save(newToken);
+
+        const env_variables: ContainerEnv = {
+            APIKEY: apikey.apikey,
+            PROJECT_UUID: action.mission.project.uuid,
+            MISSION_UUID: action.mission.uuid,
+            ACTION_UUID: action.uuid,
+        };
+
+        const container = await this.start_container({
+            docker_image: action.docker_image,
+            uuid,
+            limits: { max_runtime: 10 * 1_000 }, // 10 seconds
+            environment: env_variables,
+        });
+
+        const sanitize = (str: string) => {
+            return str.replace(apikey.apikey, '***');
+        };
 
         // get logs from container
-        logger.info('Getting logs from container:\n');
-        action.logs = await this.getContainerLogs(container);
+        logger.info('Getting logs from container...');
+        action.logs = await this.getContainerLogs(container, sanitize);
         await this.actionRepository.save(action);
 
         // wait for the container to stop
         await container.wait();
         logger.info('Container stopped');
+
+        // expire the apikey
+        // TODO: check if that really invalidates the token!!!
+        apikey.deletedAt = new Date();
+        await this.apikeyRepository.save(apikey);
 
         return true; // mark the job as completed
 

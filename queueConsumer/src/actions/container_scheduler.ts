@@ -1,22 +1,46 @@
 import Docker from 'dockerode';
 import Dockerode from 'dockerode';
 import { tracing } from '../tracing';
-import logger from '../logger';
+import logger, { ACTION_CONTAINER_LABEL } from '../logger';
 import { ContainerLog } from '@common/entities/action/action.entity';
 
-export type ContainerLimitations = {
+export type ContainerLimits = {
+    /**
+     * The maximum runtime of the container in milliseconds.
+     */
     max_runtime: number;
+    /**
+     * The maximum memory the container can use in bytes.
+     */
     memory_limit: number;
+    /**
+     * The maximum CPU the container can use in nano CPUs.
+     */
     cpu_limit: number;
+    /**
+     * The maximum disk space the container can use in bytes.
+     */
     disk_quota: number;
 }
 
-export const defaultContainerLimitations: ContainerLimitations = {
+const defaultContainerLimitations: ContainerLimits = {
     max_runtime: 10_000,
     memory_limit: 1073741824, // memory limit in bytes
     cpu_limit: 1000000000, // CPU limit in nano CPUs
     disk_quota: 10737418240,
 };
+
+export type ContainerEnv = {
+    [key: string]: string;
+}
+
+export type ContainerOptions = {
+    docker_image: string; // the docker image to run
+    uuid: string; // a unique identifier for the container
+    limits?: Partial<ContainerLimits>;
+    environment?: ContainerEnv;
+}
+
 
 export class ContainerScheduler {
 
@@ -34,26 +58,25 @@ export class ContainerScheduler {
      *
      * This function returns as soon as the container is started.
      *
-     * @param docker_image - the docker image to run
-     * @param uuid - a unique identifier for the container
-     * @param container_limitations
      * @private
-     *
+     * @param container_options
      * @returns the container object
-     *
      * @throws Error if the docker image is not from the rslethz organization
      *
      */
     @tracing()
-    protected async start_container(
-        docker_image: string,
-        uuid: string,
-        container_limitations?: Partial<ContainerLimitations>,
-    ): Promise<Dockerode.Container> {
+    protected async start_container(container_options?: Partial<ContainerOptions>): Promise<Dockerode.Container> {
 
         // merge the given container limitations with the default ones
-        if (!container_limitations) container_limitations = {};
-        container_limitations = { ...defaultContainerLimitations, ...container_limitations };
+        if (!container_options) container_options = {};
+        container_options = {
+            ...defaultContainerLimitations,
+            ...container_options,
+            limits: { ...defaultContainerLimitations, ...container_options?.limits },
+            environment: { ...container_options?.environment },
+        };
+
+        logger.debug(`Starting container with options: ${JSON.stringify(container_options)}`);
 
         // assert that we only run rslethz images
         // TODO: uncomment this line when we have our own images
@@ -66,22 +89,40 @@ export class ContainerScheduler {
             throw new Error('Docker socket not available or not responding');
         }
 
-        await this.pull_image(docker_image);
+        const err_msg = await this.pull_image(container_options.docker_image)
+            .catch(
+                (error) => {
+
+                    // cleanup error message
+                    error.message = error.message.replace(/\(.*?\)/g, '');
+                    error.message = error.message.replace(/ +/g, ' ').trim();
+
+                    logger.warn(`Failed to pull image: ${error.message}`);
+                    return error.message;
+                },
+            );
 
         logger.info('Creating container...');
         const container = await this.docker.createContainer({
-            Image: docker_image,
-            name: 'datasets-runner-' + uuid,
-            Cmd: [
-                '/bin/sh',
-                '-c',
-                'while true; do echo hello world; sleep 1; done',
-            ],
+            Image: container_options.docker_image,
+            name: 'datasets-runner-' + container_options.uuid,
+            Env: Object.entries(container_options.environment).map(([key, value]) => `${key}=${value}`),
             HostConfig: {
-                Memory: container_limitations.memory_limit, // memory limit in bytes
-                NanoCpus: container_limitations.cpu_limit, // CPU limit in nano CPUs
-                DiskQuota: container_limitations.disk_quota,
+                Memory: container_options.limits.memory_limit, // memory limit in bytes
+                NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
+                DiskQuota: container_options.limits.disk_quota,
             },
+        }).catch((error) => {
+
+            // cleanup error message
+            error.message = error.message.replace(/\(.*?\)/g, '');
+            error.message = error.message.replace(/ +/g, ' ').trim();
+
+            if (!!err_msg && err_msg !== '')
+                throw new Error(`Failed to create container: ${error.message} due to image pull error: ${err_msg}`);
+
+            logger.error(`Failed to create container: ${error.message}`);
+            throw error;
         });
 
         logger.info('Container created! Starting container...');
@@ -89,7 +130,18 @@ export class ContainerScheduler {
         logger.info(`Container started wit id: ${container.id}`);
 
         // stop the container after max_runtime seconds
+        // TODO: check if there is a better solution which not used setTimeout
         setTimeout(async () => {
+
+            if (!container || !await container.inspect().catch(() => false)) {
+                throw new Error(`Container ${container.id} not found, cannot stop it.`);
+            }
+
+            if (!(await container.inspect()).State.Running) {
+                logger.debug(`Container ${container.id} already stopped - no action required.`);
+                return;
+            }
+
             await container.stop();
             logger.info(`Runtime limit reached. Stopping container ${container.id}...`);
 
@@ -102,7 +154,7 @@ export class ContainerScheduler {
                 }
             }, 10_000);
 
-        }, container_limitations.max_runtime);
+        }, container_options.limits.max_runtime);
 
         container.wait().then(() => {
             logger.info(`Container ${container.id} stopped.`);
@@ -113,6 +165,15 @@ export class ContainerScheduler {
 
     @tracing()
     private async pull_image(docker_image: string): Promise<void> {
+
+        if (!this.docker || !await this.docker.ping()) {
+            throw new Error('Docker socket not available or not responding');
+        }
+
+        if (!docker_image || docker_image === '') {
+            throw new Error('No docker image specified');
+        }
+
         logger.info(`Pulling image ${docker_image}`);
         const pullStream = await this.docker.pull(docker_image);
         await new Promise((res) =>
@@ -128,18 +189,20 @@ export class ContainerScheduler {
      * If the container is still running, the function will not return until the container stops.
      *
      * @param container - The container to get logs from
+     * @param sanitize_callback - A callback function to sanitize the log messages
      *
      */
     @tracing()
     protected async getContainerLogs(
         container: Docker.Container,
+        sanitize_callback?: (str: string) => string,
     ): Promise<ContainerLog[]> {
         const logs: ContainerLog[] = [];
 
         const container_logger = logger.child({
             labels: {
                 container_id: container.id,
-                job: 'action_container',
+                job: ACTION_CONTAINER_LABEL,
             },
         });
 
@@ -156,7 +219,11 @@ export class ContainerScheduler {
                 logLines.forEach((line) => {
                     if (line.trim() !== '') {
                         const timestamp = line.split(' ')[0].split('+')[1];
-                        const message = line.split(' ').slice(1).join(' ');
+                        let message = line.split(' ').slice(1).join(' ');
+
+                        if (sanitize_callback) {
+                            message = sanitize_callback(message);
+                        }
 
                         logger.silly(message, { container_id: container.id });
                         container_logger.info(message);
