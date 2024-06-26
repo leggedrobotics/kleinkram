@@ -12,7 +12,7 @@ import Action, { ContainerLog } from '@common/entities/action/action.entity';
 
 @Processor('action-queue')
 @Injectable()
-export class AnalysisProcessor implements OnModuleInit {
+export class ActionQueueProcessor implements OnModuleInit {
     private readonly docker: Docker;
 
     constructor(
@@ -32,6 +32,14 @@ export class AnalysisProcessor implements OnModuleInit {
         } catch (error) {
             logger.error('Failed to connect to Redis:', error);
         }
+    }
+
+    // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
+    //  running at the same time by considering the resources available on the machine and the
+    //  resources required by the containers (e.g., memory, CPU, disk space)
+    @Process({ concurrency: 1, name: 'actionProcessQueue' })
+    async process_action(job: Job<{ mission_action_id: string }>) {
+        return await this.handleAction(job);
     }
 
     @OnQueueActive()
@@ -67,7 +75,8 @@ export class AnalysisProcessor implements OnModuleInit {
     }
 
     /**
-     * Checks all pending missions, if no container is missionning, it updates the state of the mission to 'FAILED'.
+     * Checks all pending missions, if no container is running,
+     * it updates the state of the mission to 'FAILED'.
      */
     @tracing()
     private async findCrashedContainers() {
@@ -80,8 +89,7 @@ export class AnalysisProcessor implements OnModuleInit {
 
         logger.info(`Checking ${actions.length} pending Actions.`);
 
-        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-        const container_ids = await docker.listContainers({ all: true });
+        const container_ids = await this.docker.listContainers({ all: true });
         const running_containers = container_ids.map(
             (container) => container.Id,
         );
@@ -109,14 +117,13 @@ export class AnalysisProcessor implements OnModuleInit {
     private async killOldContainers(killAge: number = 0) {
         logger.info(`Killing containers older than ${killAge} minutes`);
 
-        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-        const container_ids = await docker.listContainers({ all: true });
+        const container_ids = await this.docker.listContainers({ all: true });
 
         const now = new Date().getTime();
         const killTime = now - killAge * 60 * 1000;
 
         for (const container of container_ids) {
-            const containerInfo = await docker
+            const containerInfo = await  this.docker
                 .getContainer(container.Id)
                 .inspect();
             const containerName = containerInfo.Name;
@@ -129,7 +136,7 @@ export class AnalysisProcessor implements OnModuleInit {
                 logger.info(
                     `Killing container ${containerName} created at ${containerCreated}`,
                 );
-                await docker.getContainer(container.Id).kill();
+                await  this.docker.getContainer(container.Id).kill();
 
                 // set state in the database
                 const uuid = containerName.split('-')[2];
@@ -288,11 +295,4 @@ export class AnalysisProcessor implements OnModuleInit {
         });
     }
 
-    // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
-    //  running at the same time by considering the resources available on the machine and the
-    //  resources required by the containers (e.g., memory, CPU, disk space)
-    @Process({ concurrency: 1, name: 'actionProcessQueue' })
-    async process_action(job: Job<{ mission_action_id: string }>) {
-        return await this.handleAction(job);
-    }
 }
