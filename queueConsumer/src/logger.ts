@@ -6,8 +6,7 @@ const messageOnly = winston.format.printf(({ level, message }) => {
 });
 
 const logger = winston.createLogger({
-    level: 'debug',
-    levels: winston.config.npm.levels,
+    level: 'silly',
     format: format.json(),
     transports: [
         new transports.Console({ format: messageOnly }),
