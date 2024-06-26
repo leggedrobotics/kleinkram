@@ -1,16 +1,26 @@
 import tracer from './tracing';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import {NestFactory} from '@nestjs/core';
+import {AppModule} from './app.module';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
-import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
+import {AuthFlowExceptionRedirectFilter} from './auth/authFlowException';
 
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import {ArgumentsHost, Catch, ExceptionFilter, UnauthorizedException} from '@nestjs/common';
 import logger from './logger';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
+
+        if (exception instanceof UnauthorizedException) {
+            const response = host.switchToHttp().getResponse();
+            response.status(401).json({
+                statusCode: 401,
+                message: 'Unauthorized'
+            });
+            return;
+        }
+
         logger.error(`An error occurred on route ${host.getArgByIndex(0).url}!`);
         logger.error(exception.message);
         logger.error(exception.stack);
