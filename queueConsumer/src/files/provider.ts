@@ -1,21 +1,21 @@
-import {InjectQueue, OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor} from '@nestjs/bull';
-import {Injectable, OnModuleInit} from '@nestjs/common';
-import {Job, Queue} from 'bull';
-import {InjectRepository} from '@nestjs/typeorm';
-import {Like, Repository} from 'typeorm';
+import { InjectQueue, OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Job, Queue } from 'bull';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Like, Repository } from 'typeorm';
 
-import {convertToMcapAndSave, mcapMetaInfo} from './helper/converter';
-import {downloadDriveFile, getMetadata, listFiles} from './helper/driveHelper';
-import {downloadMinioFile, uploadFile} from './helper/minioHelper';
+import { convertToMcapAndSave, mcapMetaInfo } from './helper/converter';
+import { downloadDriveFile, getMetadata, listFiles } from './helper/driveHelper';
+import { downloadMinioFile, uploadFile } from './helper/minioHelper';
 import logger from '../logger';
-import {traceWrapper, tracing} from '../tracing';
+import { traceWrapper, tracing } from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/env';
-import {FileLocation, FileState, FileType} from '@common/enum';
-import {drive_v3} from 'googleapis';
-import fs from "node:fs";
+import { FileLocation, FileState, FileType } from '@common/enum';
+import { drive_v3 } from 'googleapis';
+import fs from 'node:fs';
 
 const fs_promises = require('fs').promises;
 
@@ -62,13 +62,18 @@ export class FileProcessor implements OnModuleInit {
 
     private async deleteTmpFiles(job: FileProcessorJob) {
         try {
+
+            const tmp_files_deduplicated = job.data.tmp_files
+                .filter((value, index, self) => self.indexOf(value) === index);
+
             await Promise.all(
-                job.data.tmp_files.map((tmp_file) => {
+                tmp_files_deduplicated.map((tmp_file) => {
                         logger.debug(`Deleting tmp file: ${tmp_file}`);
-                        if (fs.existsSync(tmp_file)) fs_promises.unlink(tmp_file)
-                    }
-                )
+                        if (fs.existsSync(tmp_file)) fs_promises.unlink(tmp_file);
+                    },
+                ),
             );
+
         } catch (error) {
             logger.debug(`Error deleting tmp files`);
         }
@@ -89,7 +94,7 @@ export class FileProcessor implements OnModuleInit {
         const queue = await this.getQueue(job);
         queue.state = FileState.DONE;
         queue.processingDuration = job.finishedOn - job.processedOn;
-        await this.queueRepository.save(queue)
+        await this.queueRepository.save(queue);
 
         await this.deleteTmpFiles(job);
 
@@ -111,7 +116,7 @@ export class FileProcessor implements OnModuleInit {
 
     }
 
-    @Process({concurrency: 1, name: 'processMinioFile'})
+    @Process({ concurrency: 1, name: 'processMinioFile' })
     @tracing('processMinioFile')
     async handleMinioFileProcessing(job: FileProcessorJob) {
 
@@ -133,7 +138,7 @@ export class FileProcessor implements OnModuleInit {
                     : env.MINIO_MCAP_BUCKET_NAME,
                 queue.identifier,
                 tmp_file_name,
-            )
+            );
         }, 'downloadMinioFile')();
 
         logger.debug(`Job ${job.id} downloaded file: ${queue.identifier}`);
@@ -159,7 +164,7 @@ export class FileProcessor implements OnModuleInit {
                 creator: queue.creator,
                 type: FileType.BAG,
             });
-            await this.fileRepository.save(newFile)
+            await this.fileRepository.save(newFile);
 
         }
 
@@ -175,7 +180,7 @@ export class FileProcessor implements OnModuleInit {
             type: FileType.MCAP,
         });
 
-        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity)
+        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity);
 
         ////////////////////////////////////////////////////////////////
         // Extract Topics from MCAP file
@@ -185,7 +190,7 @@ export class FileProcessor implements OnModuleInit {
         return true; // return true to indicate that the job is done
     }
 
-    @Process({name: 'processDriveFile', concurrency: 1})
+    @Process({ name: 'processDriveFile', concurrency: 1 })
     @tracing('processDriveFile')
     async handleDriveFileProcessing(job: FileProcessorJob) {
 
@@ -254,7 +259,7 @@ export class FileProcessor implements OnModuleInit {
         job: FileProcessorJob,
         queueEntity: QueueEntity,
         tmpFileName: string,
-        originalFileName: string
+        originalFileName: string,
     ) {
 
         // validate that the tmp file exists
@@ -277,7 +282,7 @@ export class FileProcessor implements OnModuleInit {
             file_type === 'bag' ? env.MINIO_BAG_BUCKET_NAME : env.MINIO_MCAP_BUCKET_NAME,
             full_pathname,
             tmpFileName,
-        )
+        );
         logger.debug(`Job {${job.id}} uploaded file: ${originalFileName}`);
 
         // convert to bag to mcap and upload to minio
@@ -301,7 +306,7 @@ export class FileProcessor implements OnModuleInit {
                 creator: queueEntity.creator,
                 type: FileType.BAG,
             });
-            await this.fileRepository.save(newFile)
+            await this.fileRepository.save(newFile);
 
         }
 
@@ -321,7 +326,7 @@ export class FileProcessor implements OnModuleInit {
             type: FileType.MCAP,
         });
 
-        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity)
+        const savedMcapFileEntity = await this.fileRepository.save(mcapFileEntity);
 
         ////////////////////////////////////////////////////////////////
         // Extract Topics from MCAP file
@@ -335,7 +340,7 @@ export class FileProcessor implements OnModuleInit {
         job: FileProcessorJob,
         queueEntity: QueueEntity,
         savedFile: FileEntity,
-        tmp_file_name: string
+        tmp_file_name: string,
     ) {
 
         if (!tmp_file_name.endsWith('.mcap'))
@@ -354,8 +359,8 @@ export class FileProcessor implements OnModuleInit {
                 await this.queueRepository.save(queueEntity);
                 throw error;
             },
-        )
-        const {topics, date, size} = meta;
+        );
+        const { topics, date, size } = meta;
         logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
 
         const res = topics.map(async (topic) => {
@@ -366,7 +371,7 @@ export class FileProcessor implements OnModuleInit {
             await this.topicRepository.save(newTopic);
 
             return this.topicRepository.findOne({
-                where: {uuid: newTopic.uuid},
+                where: { uuid: newTopic.uuid },
                 relations: ['file'],
             });
         });
