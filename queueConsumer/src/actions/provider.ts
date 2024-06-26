@@ -35,9 +35,7 @@ export class ActionQueueProcessor extends ContainerScheduler implements OnModule
             logger.error('Failed to connect to Redis:', error);
         }
 
-        // cleanup containers every 5 minutes
-        await this.cleanupContainers();
-        setInterval(async () => await this.cleanupContainers(), 1000 * 60 * 5);
+        await super.onModuleInit();
 
     }
 

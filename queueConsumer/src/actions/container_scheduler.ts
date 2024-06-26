@@ -60,6 +60,12 @@ export class ContainerScheduler {
         this.docker = new Docker({socketPath: '/var/run/docker.sock'});
     }
 
+    protected async onModuleInit() {
+        // cleanup containers every 5 minutes
+        await this.cleanupContainers();
+        setInterval(async () => await this.cleanupContainers(), 1000 * 60 * 5);
+    }
+
     /**
      * Start a container with the given action and uuid.
      *
