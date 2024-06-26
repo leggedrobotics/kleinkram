@@ -3,41 +3,27 @@ import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubmitAction } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
-import Apikey from '@common/entities/auth/apikey.entity';
 import User from '@common/entities/user/user.entity';
-import { ActionState, KeyTypes, UserRole } from '@common/enum';
+import { ActionState, UserRole } from '@common/enum';
 
 @Injectable()
 export class ActionService {
     constructor(
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
-
-        @InjectRepository(Apikey)
-        private apikeyRepository: Repository<Apikey>,
-
         @InjectRepository(User)
         private userRepository: Repository<User>,
-    ) {}
+    ) {
+    }
 
     async submit(data: SubmitAction): Promise<Action> {
-        // TODO: write to the database
-
-        const now = new Date();
-        const newToken = this.apikeyRepository.create({
-            mission: { uuid: data.missionUUID },
-            apikeytype: KeyTypes.CONTAINER,
-            deletedAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
-        });
-        const apikey = await this.apikeyRepository.save(newToken);
 
         let action = this.actionRepository.create({
             mission: { uuid: data.missionUUID },
             state: ActionState.PENDING,
             docker_image: data.docker_image,
-            key: apikey,
         });
-        const saved_action = await this.actionRepository.save(action);
+        await this.actionRepository.save(action);
 
         // return the created action mission
         action = await this.actionRepository.findOne({

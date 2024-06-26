@@ -15,7 +15,7 @@ import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { FileProcessor } from './files/provider';
-import { AnalysisProcessor } from './actions/provider';
+import { ActionQueueProcessor } from './actions/provider';
 import env from '@common/env';
 
 
@@ -82,7 +82,7 @@ import env from '@common/env';
             Apikey,
         ]),
     ],
-    providers: [FileProcessor, AnalysisProcessor],
+    providers: [FileProcessor, ActionQueueProcessor],
 })
 export class AppModule {
 }

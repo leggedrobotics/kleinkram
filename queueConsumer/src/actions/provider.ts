@@ -1,26 +1,28 @@
-import Docker from 'dockerode';
 import logger from '../logger';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectQueue, OnQueueActive, Process, Processor } from '@nestjs/bull';
+import { InjectQueue, OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
 import { tracing } from '../tracing';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ActionState } from '@common/enum';
-import Action, { ContainerLog } from '@common/entities/action/action.entity';
+import { ActionState, KeyTypes } from '@common/enum';
+import Action from '@common/entities/action/action.entity';
+import { ContainerEnv, ContainerScheduler } from './container_scheduler';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 
 @Processor('action-queue')
 @Injectable()
-export class AnalysisProcessor implements OnModuleInit {
-    private readonly docker: Docker;
+export class ActionQueueProcessor extends ContainerScheduler implements OnModuleInit {
 
     constructor(
         @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
+        @InjectRepository(Apikey)
+        private apikeyRepository: Repository<Apikey>,
     ) {
-        this.docker = new Docker({ socketPath: '/var/mission/docker.sock' });
+        super();
         logger.debug('AnalysisProcessor constructor');
     }
 
@@ -34,27 +36,62 @@ export class AnalysisProcessor implements OnModuleInit {
         }
     }
 
+    // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
+    //  running at the same time by considering the resources available on the machine and the
+    //  resources required by the containers (e.g., memory, CPU, disk space)
+    @Process({ concurrency: 1, name: 'actionProcessQueue' })
+    async process_action(job: Job<{ mission_action_id: string }>) {
+        return await this.handleAction(job);
+    }
+
     @OnQueueActive()
     onActive(job: Job) {
         logger.debug(`Processing job ${job.id} of type ${job.name}.`);
     }
 
+    @OnQueueCompleted()
+    async onCompleted(job: Job) {
+        logger.debug(`Job ${job.id} of type ${job.name} completed.`);
+
+        // update the state of the action in the database
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: job.data.mission_action_id },
+        });
+        action.state = ActionState.DONE;
+        await this.actionRepository.save(action);
+
+    }
+
+    @OnQueueFailed()
+    async onFailed(job: Job, error: any) {
+        logger.error(`Job ${job.id} of type ${job.name} failed with error: ${error.message}.`);
+        logger.error(error.stack);
+
+        // update the state of the action in the database
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: job.data.mission_action_id },
+        });
+        action.state = ActionState.FAILED;
+        action.state_cause = error.message;
+        await this.actionRepository.save(action);
+    }
+
     /**
-     * Checks all pending missions, if no container is missionning, it updates the state of the mission to 'FAILED'.
+     * Checks all pending missions, if no container is running,
+     * it updates the state of the mission to 'FAILED'.
      */
     @tracing()
-    private async findCrashedContainers() {
+    private async setCrashedContainersToFailed() {
         logger.debug('Checking pending missions');
 
         const actions = await this.actionRepository.find({
             where: { state: ActionState.PROCESSING },
-            relations: ['action', 'mission.project'],
+            relations: ['mission', 'mission.project'],
         });
 
         logger.info(`Checking ${actions.length} pending Actions.`);
 
-        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
-        const container_ids = await docker.listContainers({ all: true });
+        const container_ids = await this.docker.listContainers({ all: true });
         const running_containers = container_ids.map(
             (container) => container.Id,
         );
@@ -82,14 +119,13 @@ export class AnalysisProcessor implements OnModuleInit {
     private async killOldContainers(killAge: number = 0) {
         logger.info(`Killing containers older than ${killAge} minutes`);
 
-        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
-        const container_ids = await docker.listContainers({ all: true });
+        const container_ids = await this.docker.listContainers({ all: true });
 
         const now = new Date().getTime();
         const killTime = now - killAge * 60 * 1000;
 
         for (const container of container_ids) {
-            const containerInfo = await docker
+            const containerInfo = await this.docker
                 .getContainer(container.Id)
                 .inspect();
             const containerName = containerInfo.Name;
@@ -102,13 +138,13 @@ export class AnalysisProcessor implements OnModuleInit {
                 logger.info(
                     `Killing container ${containerName} created at ${containerCreated}`,
                 );
-                await docker.getContainer(container.Id).kill();
+                await this.docker.getContainer(container.Id).kill();
 
                 // set state in the database
                 const uuid = containerName.split('-')[2];
                 const action = await this.actionRepository.findOne({
                     where: { uuid: uuid },
-                    relations: ['action', 'mission.project'],
+                    relations: ['mission', 'mission.project'],
                 });
 
                 action.state = ActionState.FAILED;
@@ -119,153 +155,72 @@ export class AnalysisProcessor implements OnModuleInit {
     }
 
     @tracing('processing_action')
-    private async handleAction(job: Job<{ action_id: string }>) {
-        logger.info(`\n\nProcessing Action ${job.data.action_id}`);
+    private async handleAction(job: Job<{ mission_action_id: string }>) {
+        logger.info(`\n\nProcessing Action ${job.data.mission_action_id}`);
 
         // TODO: currently we allow only one container to mission at a time, we should change this to allow more
         //  containers to mission concurrently
         logger.info('Killing old containers and finding crashed containers');
         await this.killOldContainers(0);
-        await this.findCrashedContainers();
+        await this.setCrashedContainersToFailed();
 
         logger.info('Creating container.');
-        const uuid = job.data.action_id;
+        const uuid = job.data.mission_action_id;
         const action = await this.actionRepository.findOne({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],
         });
 
+        if (!action.uuid || action.uuid !== uuid)
+            throw new Error('Action not found');
+
         // set state to 'RUNNING'
         action.state = ActionState.PROCESSING;
         await this.actionRepository.save(action);
 
-        // TODO: remove this hardcoded image
-        action.docker_image = 'ubuntu:latest';
-        await this.pull_image(action.docker_image);
-        const container = await this.run_container(action, uuid);
+        const now = new Date();
+        const newToken = this.apikeyRepository.create({
+            mission: { uuid: action.mission.uuid },
+            apikeytype: KeyTypes.CONTAINER,
+            deletedAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
+        });
+        const apikey = await this.apikeyRepository.save(newToken);
+
+        const env_variables: ContainerEnv = {
+            APIKEY: apikey.apikey,
+            PROJECT_UUID: action.mission.project.uuid,
+            MISSION_UUID: action.mission.uuid,
+            ACTION_UUID: action.uuid,
+        };
+
+        const container = await this.start_container({
+            docker_image: action.docker_image,
+            uuid,
+            limits: { max_runtime: 10 * 1_000 }, // 10 seconds
+            environment: env_variables,
+        });
+
+        const sanitize = (str: string) => {
+            return str.replace(apikey.apikey, '***');
+        };
 
         // get logs from container
-        logger.info('Getting logs from container:\n');
-        const logs = await this.getContainerLogs(container);
-        logs.forEach((log) => {
-            logger.info(`[${log.type}] @${log.timestamp}: ${log.message}`);
-        });
-
-        // save results in database
-        action.state = ActionState.DONE;
-        action.logs = logs;
+        logger.info('Getting logs from container...');
+        action.logs = await this.getContainerLogs(container, sanitize);
         await this.actionRepository.save(action);
 
-        // mark the job as completed
-        return { success: true };
+        // wait for the container to stop
+        await container.wait();
+        logger.info('Container stopped');
+
+        // expire the apikey
+        // TODO: check if that really invalidates the token!!!
+        apikey.deletedAt = new Date();
+        await this.apikeyRepository.save(apikey);
+
+        return true; // mark the job as completed
+
     }
 
-    @tracing()
-    private async run_container(action: Action, uuid: string) {
-        logger.info('Creating container...');
-        const container = await this.docker.createContainer({
-            Image: action.docker_image,
-            name: 'datasets-runner-' + uuid,
-            Cmd: [
-                '/bin/sh',
-                '-c',
-                'while true; do echo hello world; sleep 1; done',
-            ],
-            HostConfig: {
-                Memory: 1073741824, // memory limit in bytes
-                NanoCpus: 1000000000, // CPU limit in nano CPUs
-                DiskQuota: 10737418240,
-            },
-        });
 
-        logger.info('Container created! Starting container...');
-        await container.start();
-        logger.info(`Container started wit id: ${container.id}`);
-
-        // stop the container after 10 seconds
-        await new Promise<void>((resolve) => {
-            setTimeout(async () => {
-                await container.stop();
-                logger.info('Container stopped');
-
-                // wait for max 10 seconds for the container to stop, otherwise kill it
-                setTimeout(async () => {
-                    if ((await container.inspect()).State.Running) {
-                        await container.kill();
-                        logger.info('Container killed');
-                    }
-
-                    resolve();
-                }, 10_000);
-            }, 10_000);
-        });
-        return container;
-    }
-
-    @tracing()
-    private async pull_image(docker_image: string) {
-        logger.info(`Pulling image ${docker_image}`);
-        const pullStream = await this.docker.pull(docker_image);
-        await new Promise((res) =>
-            this.docker.modem.followProgress(pullStream, res),
-        );
-        logger.info('Image pulled!');
-    }
-
-    /**
-     * Get logs from running or stopped container and return the logs as an array of objects.
-     * Each object contains the timestamp, message, and type of the log (stdout or stderr).
-     *
-     * @param container - The container to get logs from
-     *
-     */
-    @tracing()
-    private async getContainerLogs(
-        container: Docker.Container,
-    ): Promise<ContainerLog[]> {
-        const logs: ContainerLog[] = [];
-
-        return new Promise(async (resolve, reject) => {
-            const stream = await container.logs({
-                follow: true,
-                stdout: true,
-                stderr: true,
-                timestamps: true,
-            });
-
-            stream.on('data', (chunk: Buffer) => {
-                const logLines = chunk.toString().split('\n');
-                logLines.forEach((line) => {
-                    if (line.trim() !== '') {
-                        const timestamp = line.split(' ')[0].split('+')[1];
-                        const message = line.split(' ').slice(1).join(' ');
-
-                        logs.push({
-                            timestamp: timestamp,
-                            message: message,
-                            type: line.startsWith('[stderr]')
-                                ? 'stderr'
-                                : 'stdout',
-                        });
-                    }
-                });
-            });
-
-            stream.on('end', () => {
-                resolve(logs);
-            });
-
-            stream.on('error', (error) => {
-                reject(error);
-            });
-        });
-    }
-
-    // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
-    //  running at the same time by considering the resources available on the machine and the
-    //  resources required by the containers (e.g., memory, CPU, disk space)
-    @Process({ concurrency: 1, name: 'processAnalysisFile' })
-    async process_action(job: Job<{ action_id: string }>) {
-        return await this.handleAction(job);
-    }
 }
