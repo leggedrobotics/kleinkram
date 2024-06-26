@@ -1,8 +1,8 @@
 import winston, { format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
 
-const messageOnly = winston.format.printf(({ level, message }) => {
-    return `[${level.toUpperCase()}]: ${message}`;
+const messageOnly = winston.format.printf(({ level, message, meta }) => {
+    return `[${level.toUpperCase()}]: ${message} ${JSON.stringify(meta, null, 2)}`;
 });
 
 const logger = winston.createLogger({

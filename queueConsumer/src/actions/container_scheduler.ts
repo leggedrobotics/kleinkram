@@ -91,18 +91,22 @@ export class ContainerScheduler {
         // stop the container after max_runtime seconds
         setTimeout(async () => {
             await container.stop();
-            logger.info('Container stopped');
+            logger.info(`Runtime limit reached. Stopping container ${container.id}...`);
 
             // wait for max 10 seconds for the container to stop,
             // otherwise kill it
             setTimeout(async () => {
                 if ((await container.inspect()).State.Running) {
                     await container.kill();
-                    logger.info('Container killed');
+                    logger.info(`Container ${container.id} killed after reaching runtime limit.`);
                 }
             }, 10_000);
 
         }, container_limitations.max_runtime);
+
+        container.wait().then(() => {
+            logger.info(`Container ${container.id} stopped.`);
+        });
 
         return container;
     }
@@ -132,6 +136,13 @@ export class ContainerScheduler {
     ): Promise<ContainerLog[]> {
         const logs: ContainerLog[] = [];
 
+        const container_logger = logger.child({
+            labels: {
+                container_id: container.id,
+                job: 'action_container',
+            },
+        });
+
         return new Promise(async (resolve, reject) => {
             const stream = await container.logs({
                 follow: true,
@@ -147,9 +158,8 @@ export class ContainerScheduler {
                         const timestamp = line.split(' ')[0].split('+')[1];
                         const message = line.split(' ').slice(1).join(' ');
 
-                        logger.silly(`[${timestamp}] [container ${container.id.substring(0, 12)}]\n   ${message}`, {
-                            container_id: container.id,
-                        });
+                        logger.silly(message, { container_id: container.id });
+                        container_logger.info(message);
 
                         logs.push({
                             timestamp: timestamp,
