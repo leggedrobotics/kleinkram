@@ -1,7 +1,7 @@
 import Docker from 'dockerode';
 import logger from '../logger';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectQueue, OnQueueActive, Process, Processor } from '@nestjs/bull';
+import { InjectQueue, OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
 import { tracing } from '../tracing';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,7 +20,7 @@ export class AnalysisProcessor implements OnModuleInit {
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
     ) {
-        this.docker = new Docker({ socketPath: '/var/mission/docker.sock' });
+        this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
         logger.debug('AnalysisProcessor constructor');
     }
 
@@ -39,6 +39,33 @@ export class AnalysisProcessor implements OnModuleInit {
         logger.debug(`Processing job ${job.id} of type ${job.name}.`);
     }
 
+    @OnQueueCompleted()
+    async onCompleted(job: Job) {
+        logger.debug(`Job ${job.id} of type ${job.name} completed.`);
+
+        // update the state of the action in the database
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: job.data.mission_action_id },
+        });
+        action.state = ActionState.DONE;
+        await this.actionRepository.save(action);
+
+    }
+
+    @OnQueueFailed()
+    async onFailed(job: Job, error: any) {
+        logger.error(`Job ${job.id} of type ${job.name} failed with error: ${error.message}.`);
+        logger.error(error.stack);
+
+        // update the state of the action in the database
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: job.data.mission_action_id },
+        });
+        action.state = ActionState.FAILED;
+        action.state_cause = error.message;
+        await this.actionRepository.save(action);
+    }
+
     /**
      * Checks all pending missions, if no container is missionning, it updates the state of the mission to 'FAILED'.
      */
@@ -48,12 +75,12 @@ export class AnalysisProcessor implements OnModuleInit {
 
         const actions = await this.actionRepository.find({
             where: { state: ActionState.PROCESSING },
-            relations: ['action', 'mission.project'],
+            relations: ['mission', 'mission.project'],
         });
 
         logger.info(`Checking ${actions.length} pending Actions.`);
 
-        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
+        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
         const container_ids = await docker.listContainers({ all: true });
         const running_containers = container_ids.map(
             (container) => container.Id,
@@ -82,7 +109,7 @@ export class AnalysisProcessor implements OnModuleInit {
     private async killOldContainers(killAge: number = 0) {
         logger.info(`Killing containers older than ${killAge} minutes`);
 
-        const docker = new Docker({ socketPath: '/var/mission/docker.sock' });
+        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
         const container_ids = await docker.listContainers({ all: true });
 
         const now = new Date().getTime();
@@ -108,7 +135,7 @@ export class AnalysisProcessor implements OnModuleInit {
                 const uuid = containerName.split('-')[2];
                 const action = await this.actionRepository.findOne({
                     where: { uuid: uuid },
-                    relations: ['action', 'mission.project'],
+                    relations: ['mission', 'mission.project'],
                 });
 
                 action.state = ActionState.FAILED;
@@ -119,8 +146,8 @@ export class AnalysisProcessor implements OnModuleInit {
     }
 
     @tracing('processing_action')
-    private async handleAction(job: Job<{ action_id: string }>) {
-        logger.info(`\n\nProcessing Action ${job.data.action_id}`);
+    private async handleAction(job: Job<{ mission_action_id: string }>) {
+        logger.info(`\n\nProcessing Action ${job.data.mission_action_id}`);
 
         // TODO: currently we allow only one container to mission at a time, we should change this to allow more
         //  containers to mission concurrently
@@ -129,7 +156,7 @@ export class AnalysisProcessor implements OnModuleInit {
         await this.findCrashedContainers();
 
         logger.info('Creating container.');
-        const uuid = job.data.action_id;
+        const uuid = job.data.mission_action_id;
         const action = await this.actionRepository.findOne({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],
@@ -264,8 +291,8 @@ export class AnalysisProcessor implements OnModuleInit {
     // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
     //  running at the same time by considering the resources available on the machine and the
     //  resources required by the containers (e.g., memory, CPU, disk space)
-    @Process({ concurrency: 1, name: 'processAnalysisFile' })
-    async process_action(job: Job<{ action_id: string }>) {
+    @Process({ concurrency: 1, name: 'actionProcessQueue' })
+    async process_action(job: Job<{ mission_action_id: string }>) {
         return await this.handleAction(job);
     }
 }

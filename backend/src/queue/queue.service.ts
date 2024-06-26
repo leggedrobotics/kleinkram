@@ -48,7 +48,7 @@ export class QueueService {
     }
 
     async addActionQueue(mission_action_id: string) {
-        await this.actionQueue.add('processActionFile', {
+        await this.actionQueue.add('actionProcessQueue', {
             mission_action_id: mission_action_id,
         });
     }
