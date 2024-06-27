@@ -10,7 +10,7 @@ import {
 } from 'src/types/types';
 
 export const fetchOverview = async (
-    missionName: string,
+    filename: string,
     projectUUID: string | undefined,
     missionUUID: string | undefined,
     startDate: Date,
@@ -24,7 +24,7 @@ export const fetchOverview = async (
         const formattedEndDate = endDate.toISOString();
 
         const queryParams = new URLSearchParams({
-            fileName: missionName || '',
+            fileName: filename || '',
             projectUUID: projectUUID || '',
             missionUUID: missionUUID || '',
             startDate: formattedStartDate,

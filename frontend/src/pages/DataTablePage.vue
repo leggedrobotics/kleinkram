@@ -60,7 +60,7 @@
                     outlined
                     dense
                     clearable
-                    placeholder="Filter by Mission Name"
+                    placeholder="Filter by File Name"
                     class="full-width"
                 />
             </div>
