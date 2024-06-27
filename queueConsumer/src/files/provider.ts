@@ -311,7 +311,8 @@ export class FileProcessor implements OnModuleInit {
         // validate that the tmp file exists
         if (!fs.existsSync(tmpFileName))
             throw new Error(`File ${tmpFileName} does not exist`);
-        const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
+        const sourceIsBag = originalFileName.endsWith('.bag');
+        const file_type = sourceIsBag ? 'bag' : 'mcap';
 
         // validate that the tmp file is of the correct type
         if (!tmpFileName.endsWith(`.${file_type}`))
@@ -327,16 +328,17 @@ export class FileProcessor implements OnModuleInit {
 
         logger.debug(`Uploading file: ${originalFileName} to Minio`);
         await uploadFile(
-            file_type === 'bag'
+            sourceIsBag
                 ? env.MINIO_BAG_BUCKET_NAME
                 : env.MINIO_MCAP_BUCKET_NAME,
             full_pathname,
             tmpFileName,
         );
         logger.debug(`Job {${job.id}} uploaded file: ${originalFileName}`);
+        let savedBagFileEntity: FileEntity | undefined;
 
         // convert to bag to mcap and upload to minio
-        if (file_type === 'bag') {
+        if (sourceIsBag) {
             logger.debug(`Convert file ${originalFileName} from bag to mcap`);
             await convertToMcapAndSave(tmpFileName, full_pathname).catch(
                 async (error) => {
@@ -359,7 +361,7 @@ export class FileProcessor implements OnModuleInit {
                 creator: queueEntity.creator,
                 type: FileType.BAG,
             });
-            await this.fileRepository.save(newFile);
+            savedBagFileEntity = await this.fileRepository.save(newFile);
         }
 
         const mcap_temp_file_name = tmpFileName.replace('.bag', '.mcap');
@@ -385,12 +387,22 @@ export class FileProcessor implements OnModuleInit {
         // Extract Topics from MCAP file
         ////////////////////////////////////////////////////////////////
 
-        await this.extractTopics(
+        const date = await this.extractTopics(
             job,
             queueEntity,
             savedMcapFileEntity,
             mcap_temp_file_name,
         );
+
+        ////////////////////////////////////////////////////////////////
+        // Update recording date
+        ////////////////////////////////////////////////////////////////
+        if (sourceIsBag) {
+            savedBagFileEntity.date = date;
+            await this.fileRepository.save(savedBagFileEntity);
+        }
+        savedMcapFileEntity.date = date;
+        await this.fileRepository.save(savedMcapFileEntity);
     }
 
     @tracing('extractTopics')
