@@ -359,6 +359,8 @@ const columns = [
         field: (row: FileEntity) => row.size,
         format: formatSize,
         sortable: true,
+        sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
+            a.size - b.size,
     },
     {
         name: 'action',
