@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { ActionModule } from './action/actionModule';
 import env from '@common/env';
+import { TagModule } from './tag/tag.module';
 
 @Module({
     imports: [
@@ -48,7 +49,7 @@ import env from '@common/env';
         AuthModule,
         PassportModule,
         ActionModule,
+        TagModule,
     ],
 })
-export class AppModule {
-}
+export class AppModule {}

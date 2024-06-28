@@ -1,6 +1,7 @@
 import { ActionState, FileState } from 'src/enum/QUEUE_ENUM';
 import ROLE from 'src/enum/USER_ROLES';
 import { FileType } from 'src/enum/FILE_ENUM';
+import { DataType } from 'src/enum/TAG_TYPES';
 
 class BaseEntity {
     uuid: string;
@@ -238,5 +239,53 @@ export class Queue extends BaseEntity {
         this.location = location;
         this.mission = mission;
         this.creator = creator;
+    }
+}
+
+export class TagType extends BaseEntity {
+    name: string;
+    type: DataType;
+
+    constructor(
+        uuid: string,
+        name: string,
+        type: DataType,
+        createdAt: Date | null,
+        updatedAt: Date | null,
+        deletedAt: Date | null,
+    ) {
+        super(uuid, createdAt, updatedAt, deletedAt);
+        this.name = name;
+        this.type = type;
+    }
+}
+
+export class Tag extends BaseEntity {
+    STRING?: string;
+    NUMBER?: number;
+    BOOLEAN?: boolean;
+    DATE?: Date;
+    LOCATION?: string;
+    type: TagType;
+
+    constructor(
+        uuid: string,
+        STRING: string | undefined,
+        NUMBER: number | undefined,
+        BOOLEAN: boolean | undefined,
+        DATE: Date | undefined,
+        LOCATION: string | undefined,
+        type: TagType,
+        createdAt: Date | null,
+        updatedAt: Date | null,
+        deletedAt: Date | null,
+    ) {
+        super(uuid, createdAt, updatedAt, deletedAt);
+        this.STRING = STRING;
+        this.NUMBER = NUMBER;
+        this.BOOLEAN = BOOLEAN;
+        this.DATE = DATE;
+        this.LOCATION = LOCATION;
+        this.type = type;
     }
 }

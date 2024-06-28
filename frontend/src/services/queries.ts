@@ -7,6 +7,7 @@ import {
     Mission,
     Topic,
     User,
+    TagType,
 } from 'src/types/types';
 
 export const fetchOverview = async (
@@ -469,4 +470,18 @@ export const getProject = async (uuid: string): Promise<Project> => {
         new Date(project.updatedAt),
         new Date(project.deletedAt),
     );
+};
+
+export const getTagTypes = async () => {
+    const response = await axios.get('/tag/all');
+    return response.data.map((tag: any) => {
+        return new TagType(
+            tag.uuid,
+            tag.name,
+            tag.datatype,
+            new Date(tag.createdAt),
+            new Date(tag.updatedAt),
+            new Date(tag.deletedAt),
+        );
+    });
 };

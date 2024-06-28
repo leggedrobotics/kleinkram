@@ -6,6 +6,7 @@ import QueueEntity from '../queue/queue.entity';
 import User from '../user/user.entity';
 import Apikey from '../auth/apikey.entity';
 import AccessGroup from '../auth/accessgroup.entity';
+import Tag from '../tag/tag.entity';
 
 @Entity()
 export default class Mission extends BaseEntity {
@@ -29,4 +30,7 @@ export default class Mission extends BaseEntity {
 
     @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.missions)
     accessGroups: AccessGroup[];
+
+    @OneToMany(() => Tag, (tag) => tag.mission)
+    tags: Tag[];
 }

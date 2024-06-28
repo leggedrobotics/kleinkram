@@ -9,14 +9,21 @@ import { UserService } from '../user/user.service';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
+import TagType from '@common/entities/tagType/tagType.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Project, User, Apikey, Account, AccessGroup]),
+        TypeOrmModule.forFeature([
+            Project,
+            User,
+            Apikey,
+            Account,
+            AccessGroup,
+            TagType,
+        ]),
     ],
     providers: [ProjectService, UserService, ProjectGuardService],
     exports: [ProjectService],
     controllers: [ProjectController],
 })
-export class ProjectModule {
-}
+export class ProjectModule {}

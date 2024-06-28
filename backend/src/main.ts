@@ -1,27 +1,33 @@
 import tracer from './tracing';
-import {NestFactory} from '@nestjs/core';
-import {AppModule} from './app.module';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
-import {AuthFlowExceptionRedirectFilter} from './auth/authFlowException';
+import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
-import {ArgumentsHost, Catch, ExceptionFilter, UnauthorizedException} from '@nestjs/common';
+import {
+    ArgumentsHost,
+    Catch,
+    ExceptionFilter,
+    UnauthorizedException,
+} from '@nestjs/common';
 import logger from './logger';
+import { HttpException } from '@nestjs/common/exceptions/http.exception';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
-
-        if (exception instanceof UnauthorizedException) {
+        if (exception instanceof HttpException) {
             const response = host.switchToHttp().getResponse();
-            response.status(401).json({
-                statusCode: 401,
-                message: 'Unauthorized'
+            response.status(exception.getStatus()).json({
+                statusCode: exception.getStatus(),
+                message: exception.message,
             });
             return;
         }
-
-        logger.error(`An error occurred on route ${host.getArgByIndex(0).url}!`);
+        logger.error(
+            `An error occurred on route ${host.getArgByIndex(0).url}!`,
+        );
         logger.error(exception.message);
         logger.error(exception.stack);
 
@@ -30,7 +36,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
             statusCode: 500,
             message: 'Internal server error',
         });
-
     }
 }
 
