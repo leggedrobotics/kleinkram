@@ -305,6 +305,7 @@ const columns = [
         field: (row: FileEntity) => row.mission?.project?.name,
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
     {
         name: 'Mission',
@@ -314,6 +315,7 @@ const columns = [
         field: (row: FileEntity) => row.mission.name,
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
         name: 'File',
@@ -323,6 +325,7 @@ const columns = [
         field: (row: FileEntity) => row.filename,
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  15%; max-width:  15%; min-width: 15%;',
     },
     {
         name: 'Date',
@@ -350,6 +353,7 @@ const columns = [
         field: (row: FileEntity) => row.creator.name,
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
         name: 'Size',

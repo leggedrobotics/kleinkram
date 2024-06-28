@@ -48,6 +48,7 @@
             row-key="uuid"
             :loading="loading"
             binary-state-sort
+            wrap-cells
         >
             <template v-slot:body-cell-projectaction="props">
                 <q-td :props="props">
@@ -196,6 +197,7 @@ const project_columns = [
         field: (row: Project) => row.name,
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
     {
         name: 'Description',
@@ -205,7 +207,9 @@ const project_columns = [
         field: (row: Project) => row.description || '',
         format: (val: string) => `${val}`,
         sortable: true,
+        style: 'width:  60%; max-width: 60%; min-width: 60%;',
     },
+
     {
         name: 'Creator',
         required: true,
@@ -214,6 +218,7 @@ const project_columns = [
         field: (row: Project) => (row.creator ? row.creator.name : ''),
         format: (val: number) => `${val}`,
         sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
     {
         name: 'Created',
