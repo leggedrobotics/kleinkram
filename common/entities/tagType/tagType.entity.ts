@@ -1,7 +1,15 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import {
+    Column,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import { DataType } from '../../enum';
 import Project from '../project/project.entity';
+import Tag from '../tag/tag.entity';
 
 @Entity()
 export default class TagType extends BaseEntity {
@@ -14,4 +22,7 @@ export default class TagType extends BaseEntity {
     @ManyToMany(() => Project, (project) => project.requiredTags)
     @JoinTable()
     project: Project;
+
+    @OneToMany(() => Tag, (tag) => tag.tagType)
+    tags: Tag[];
 }

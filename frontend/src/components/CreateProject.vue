@@ -30,7 +30,7 @@
                         <div class="col-5">
                             <q-select
                                 v-model="selectedTags"
-                                label="Select Topics"
+                                label="Select Tags"
                                 outlined
                                 dense
                                 clearable

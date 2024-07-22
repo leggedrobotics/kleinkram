@@ -1,9 +1,9 @@
 <template>
     <q-card-section>
         <h3 class="text-h6">Create new mission</h3>
-        <div class="row justify-between q-gutter-md">
-            <div class="col-5">
-                <q-form @submit="submitNewMission">
+        <q-form @submit="submitNewMission">
+            <div class="row justify-between q-gutter-md">
+                <div class="col-5">
                     <div class="row items-center justify-between q-gutter-md">
                         <div class="col-5">
                             <q-input
@@ -44,26 +44,72 @@
                             </q-btn-dropdown>
                         </div>
                     </div>
-                </q-form>
+                </div>
             </div>
-            <div class="col-2">
-                <q-btn
-                    label="Submit"
-                    color="primary"
-                    @click="submitNewMission"
-                />
+            <div
+                v-for="tagtype in project?.requiredTags"
+                :key="tagtype.uuid"
+                class="row q-gutter-sm"
+            >
+                <div class="col-3 flex flex-center">
+                    <div class="text-bold q-pa-md" style="width: 100%">
+                        {{ tagtype.name }}
+                    </div>
+                </div>
+                <div class="col-3 flex-center flex">
+                    <q-input
+                        v-model="tagValues[tagtype.uuid]"
+                        :label="tagtype.name"
+                        outlined
+                        dense
+                        clearable
+                        required
+                        :type="DataType_InputType[tagtype.type] || 'text'"
+                        style="width: 100%"
+                    />
+                </div>
             </div>
-        </div>
+            <div class="row">
+                <div class="col-3">
+                    <q-btn-dropdown label="Add another tag">
+                        <q-list>
+                            <q-item
+                                v-for="tagtype in tagTypes"
+                                :key="tagtype.uuid"
+                                clickable
+                                @click="addTag"
+                            >
+                                <q-item-section>
+                                    <q-item-label>
+                                        {{ tagtype.name }}
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-btn-dropdown>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-9"></div>
+                <div class="col-1">
+                    <q-btn label="Add Tag" color="primary" @click="addTag" />
+                </div>
+                <div class="col-2">
+                    <q-btn label="Submit" color="primary" type="submit" />
+                </div>
+            </div>
+        </q-form>
     </q-card-section>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref } from 'vue';
-import { Project } from 'src/types/types';
+import { computed, ref, Ref, watch } from 'vue';
+import { Project, TagType } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects } from 'src/services/queries';
+import { allProjects, getProject, getTagTypes } from 'src/services/queries';
 import { createMission } from 'src/services/mutations';
 import { Notify } from 'quasar';
+import { DataType } from 'src/enum/TAG_TYPES';
 const queryClient = useQueryClient();
 
 const selected_project: Ref<Project | null> = ref(null);
@@ -73,14 +119,36 @@ const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: allProjects,
 });
+const DataType_InputType = {
+    [DataType.STRING]: 'text',
+    [DataType.NUMBER]: 'number',
+    [DataType.BOOLEAN]: 'checkbox',
+    [DataType.DATE]: 'date',
+    [DataType.LOCATION]: 'text',
+};
 
 const props = defineProps<{
     project?: Project;
 }>();
+const tagValues: Ref<Record<string, string>> = ref({});
 
 if (props.project) {
     selected_project.value = props.project;
 }
+const { data: tagTypes } = useQuery<TagType[]>({
+    queryKey: ['tagTypes'],
+    queryFn: getTagTypes,
+});
+const { data: project } = useQuery<Project>({
+    queryKey: computed(() => ['project', selected_project.value?.uuid]),
+    queryFn: () => getProject(selected_project.value?.uuid as string),
+    enabled: computed(() => !!selected_project.value?.uuid),
+});
+watch(selected_project, (newVal) => {
+    if (!newVal) {
+        return;
+    }
+});
 const submitNewMission = async () => {
     if (!selected_project.value) {
         return;
@@ -107,6 +175,8 @@ const submitNewMission = async () => {
     });
     missionName.value = '';
 };
+
+function addTag() {}
 </script>
 
 <style scoped></style>

@@ -48,6 +48,7 @@ export const fetchOverview = async (
                     file.mission.project.description,
                     [],
                     file.mission.project.creator,
+                    undefined,
                     new Date(file.mission.project.createdAt),
                     new Date(file.mission.project.updatedAt),
                     new Date(file.mission.project.deletedAt),
@@ -194,6 +195,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.mission.project.description,
             [],
             undefined,
+            undefined,
             new Date(file.mission.project.createdAt),
             new Date(file.mission.project.updatedAt),
             new Date(file.mission.project.deletedAt),
@@ -288,6 +290,7 @@ export const missionsOfProject = async (
             mission.project.name,
             mission.project.description,
             [],
+            undefined,
             undefined,
             new Date(mission.project.createdAt),
             new Date(mission.project.updatedAt),
@@ -460,12 +463,23 @@ export const getProject = async (uuid: string): Promise<Project> => {
             new Date(mission.deletedAt),
         );
     });
+    const requiredTags = project.requiredTags.map((tag: any) => {
+        return new TagType(
+            tag.uuid,
+            tag.name,
+            tag.datatype,
+            new Date(tag.createdAt),
+            new Date(tag.updatedAt),
+            new Date(tag.deletedAt),
+        );
+    });
     return new Project(
         project.uuid,
         project.name,
         project.description,
         missions,
         creator,
+        requiredTags,
         new Date(project.createdAt),
         new Date(project.updatedAt),
         new Date(project.deletedAt),

@@ -55,25 +55,22 @@ export class TagService {
             case DataType.NUMBER:
             case DataType.LOCATION:
                 tag = this.tagRepository.create({
-                    datatype: tagType.datatype,
+                    tagType,
                     [tagType.datatype]: value,
-                    name: tagType.name,
                     mission,
                 });
                 break;
             case DataType.BOOLEAN:
                 tag = this.tagRepository.create({
-                    datatype: tagType.datatype,
+                    tagType,
                     [tagType.datatype]: !!value,
-                    name: tagType.name,
                     mission,
                 });
                 break;
             case DataType.DATE:
                 tag = this.tagRepository.create({
-                    datatype: tagType.datatype,
+                    tagType,
                     [tagType.datatype]: new Date(value),
-                    name: tagType.name,
                     mission,
                 });
                 break;

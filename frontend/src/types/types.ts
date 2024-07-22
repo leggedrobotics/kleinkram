@@ -53,6 +53,7 @@ export class Project extends BaseEntity {
     name: string;
     description: string;
     missions: Mission[];
+    requiredTags: TagType[];
     creator?: User;
 
     constructor(
@@ -61,6 +62,7 @@ export class Project extends BaseEntity {
         description: string,
         missions: Mission[],
         creator: User | undefined,
+        requiredTags: TagType[] | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -70,6 +72,7 @@ export class Project extends BaseEntity {
         this.creator = creator;
         this.missions = missions;
         this.description = description;
+        this.requiredTags = requiredTags || [];
     }
 
     clone(): Project {
@@ -79,6 +82,7 @@ export class Project extends BaseEntity {
             this.description,
             this.missions,
             this.creator,
+            this.requiredTags,
             this.createdAt,
             this.updatedAt,
             this.deletedAt,

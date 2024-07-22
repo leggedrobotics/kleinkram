@@ -53,7 +53,7 @@ export class ProjectService {
     async findOne(uuid: string): Promise<Project> {
         return this.projectRepository.findOne({
             where: { uuid },
-            relations: ['creator', 'missions'],
+            relations: ['creator', 'missions', 'requiredTags'],
         });
     }
 
