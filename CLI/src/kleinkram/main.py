@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 
 import httpx
@@ -13,14 +14,14 @@ from .auth import login, client, endpoint
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
-runs = typer.Typer(name="runs")
+missions = typer.Typer(name="missions")
 files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
 queue = typer.Typer(name="queue")
 user = typer.Typer(name="users")
 
 app.add_typer(projects)
-app.add_typer(runs)
+app.add_typer(missions)
 app.add_typer(topics)
 app.add_typer(files)
 app.add_typer(queue)
@@ -31,12 +32,12 @@ app.command()(endpoint)
 
 @files.command("list")
 def list_files(
-    project: Annotated[str, typer.Option()] = None,
-    run: Annotated[str, typer.Option()] = None,
-    topics: Annotated[List[str], typer.Option()] = None,
+        project: Annotated[str, typer.Option()] = None,
+        mission: Annotated[str, typer.Option()] = None,
+        topics: Annotated[List[str], typer.Option()] = None,
 ):
     """
-    List all files with optional filters for project, run, or topics.
+    List all files with optional filters for project, mission, or topics.
     """
     try:
         url = f"/file/filteredByNames"
@@ -44,36 +45,36 @@ def list_files(
             url,
             params={
                 "projectName": project,
-                "runName": run,
+                "missionName": mission,
                 "topics": topics,
             },
         )
         response.raise_for_status()
         data = response.json()
-        runs_by_project_uuid = {}
-        files_by_run_uuid = {}
+        missions_by_project_uuid = {}
+        files_by_mission_uuid = {}
         for file in data:
-            run_uuid = file["run"]["uuid"]
-            project_uuid = file["run"]["project"]["uuid"]
-            if project_uuid not in runs_by_project_uuid:
-                runs_by_project_uuid[project_uuid] = []
-            if run_uuid not in runs_by_project_uuid[project_uuid]:
-                runs_by_project_uuid[project_uuid].append(run_uuid)
-            if run_uuid not in files_by_run_uuid:
-                files_by_run_uuid[run_uuid] = []
-            files_by_run_uuid[run_uuid].append(file)
+            mission_uuid = file["mission"]["uuid"]
+            project_uuid = file["mission"]["project"]["uuid"]
+            if project_uuid not in missions_by_project_uuid:
+                missions_by_project_uuid[project_uuid] = []
+            if mission_uuid not in missions_by_project_uuid[project_uuid]:
+                missions_by_project_uuid[project_uuid].append(mission_uuid)
+            if mission_uuid not in files_by_mission_uuid:
+                files_by_mission_uuid[mission_uuid] = []
+            files_by_mission_uuid[mission_uuid].append(file)
 
-        print("Files by Run & Project:")
-        for project_uuid, runs in runs_by_project_uuid.items():
-            first_file = files_by_run_uuid[runs[0]][0]
-            print(f"* {first_file['run']['project']['name']}")
-            for run in runs:
-                print(f"  - {files_by_run_uuid[run][0]['run']['name']}")
-                for file in files_by_run_uuid[run]:
+        print("Files by mission & Project:")
+        for project_uuid, missions in missions_by_project_uuid.items():
+            first_file = files_by_mission_uuid[missions[0]][0]
+            print(f"* {first_file['mission']['project']['name']}")
+            for mission in missions:
+                print(f"  - {files_by_mission_uuid[mission][0]['mission']['name']}")
+                for file in files_by_mission_uuid[mission]:
                     print(f"    - '{file['filename']}'")
 
     except httpx.HTTPError as e:
-        print(f"Failed to fetch runs: {e}")
+        print(f"Failed to fetch missions: {e}")
 
 
 @projects.command("list")
@@ -93,15 +94,15 @@ def list_projects():
         print(f"Failed to fetch projects: {e}")
 
 
-@runs.command("list")
-def list_runs(
-    project: Annotated[str, typer.Option()] = None,
+@missions.command("list")
+def list_missions(
+        project: Annotated[str, typer.Option()] = None,
 ):
     """
-    List all runs with optional filter for project.
+    List all missions with optional filter for project.
     """
     try:
-        url = "/run"
+        url = "/mission"
         if project:
             url += f"/filteredByProjectName/{project}"
         else:
@@ -109,45 +110,45 @@ def list_runs(
         response = client.get(url)
         response.raise_for_status()
         data = response.json()
-        runs_by_project_uuid = {}
-        for run in data:
-            project_uuid = run["project"]["uuid"]
-            if project_uuid not in runs_by_project_uuid:
-                runs_by_project_uuid[project_uuid] = []
-            runs_by_project_uuid[project_uuid].append(run)
+        missions_by_project_uuid = {}
+        for mission in data:
+            project_uuid = mission["project"]["uuid"]
+            if project_uuid not in missions_by_project_uuid:
+                missions_by_project_uuid[project_uuid] = []
+            missions_by_project_uuid[project_uuid].append(mission)
 
-        print("Runs by Project:")
-        for project_uuid, runs in runs_by_project_uuid.items():
-            print(f"* {runs_by_project_uuid[project_uuid][0]['project']['name']}")
-            for run in runs:
-                print(f"  - {run['name']}")
+        print("missions by Project:")
+        for project_uuid, missions in missions_by_project_uuid.items():
+            print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
+            for mission in missions:
+                print(f"  - {mission['name']}")
 
     except httpx.HTTPError as e:
-        print(f"Failed to fetch runs: {e}")
+        print(f"Failed to fetch missions: {e}")
 
 
-@runs.command("byUUID")
-def run_by_uuid(
-    uuid: Annotated[str, typer.Argument()],
+@missions.command("byUUID")
+def mission_by_uuid(
+        uuid: Annotated[str, typer.Argument()],
 ):
     try:
-        url = "/run/byUUID"
+        url = "/mission/byUUID"
         response = client.get(url, params={"uuid": uuid})
         response.raise_for_status()
         data = response.json()
-        print(f"Run: {data['name']}")
+        print(f"mission: {data['name']}")
         print(f"Creator: {data['creator']['name']}")
         table = Table("Filename", "Size", "date")
         for file in data["files"]:
             table.add_row(file["filename"], f"{file['size']}", file["date"])
     except httpx.HTTPError as e:
-        print(f"Failed to fetch runs: {e}")
+        print(f"Failed to fetch missions: {e}")
 
 
 @topics.command("list")
 def topics(
-    file: Annotated[str, typer.Option()] = None,
-    full: Annotated[bool, typer.Option()] = False,
+        file: Annotated[str, typer.Option()] = None,
+        full: Annotated[bool, typer.Option()] = False,
 ):
     try:
         url = "/file/byName"
@@ -187,12 +188,12 @@ def create_project(name: Annotated[str, typer.Option()]):
 
 @app.command("upload")
 def upload(
-    path: Annotated[str, typer.Option(prompt=True)],
-    project: Annotated[str, typer.Option(prompt=True)],
-    run: Annotated[str, typer.Option(prompt=True)],
+        path: Annotated[str, typer.Option(prompt=True)],
+        project: Annotated[str, typer.Option(prompt=True)],
+        mission: Annotated[str, typer.Option(prompt=True)],
 ):
     files = expand_and_match(path)
-    filenames = list(map(lambda x: x.split("/")[-1], files))
+    filenames = list(map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x),files)))
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
@@ -209,31 +210,32 @@ def upload(
             print(f"Project not found: {project}")
             return
 
-        get_run_url = "/run/byName"
-        run_response = client.get(get_run_url, params={"name": run})
-        run_response.raise_for_status()
-        if run_response.content:
-            run_json = run_response.json()
-            if run_json["uuid"]:
+        get_mission_url = "/mission/byName"
+        mission_response = client.get(get_mission_url, params={"name": mission})
+        mission_response.raise_for_status()
+        if mission_response.content:
+            mission_json = mission_response.json()
+            if mission_json["uuid"]:
                 print(
-                    f"Run: {run_json['uuid']} already exists. Delete it or select another name."
+                    f"mission: {mission_json['uuid']} already exists. Delete it or select another name."
                 )
                 return
             print(f"Something failed, should not happen")
             return
 
-        create_run_url = "/run/create"
-        new_run = client.post(
-            create_run_url, json={"name": run, "projectUUID": project_json["uuid"]}
+        create_mission_url = "/mission/create"
+        new_mission = client.post(
+            create_mission_url, json={"name": mission, "projectUUID": project_json["uuid"]}
         )
-        new_run.raise_for_status()
-        new_run_data = new_run.json()
-        print(f"Created run: {new_run_data['name']}")
+        new_mission.raise_for_status()
+        new_mission_data = new_mission.json()
+        print(f"Created mission: {new_mission_data['name']}")
 
         get_presigned_url = "/queue/createPreSignedURLS"
+
         response_2 = client.post(
             get_presigned_url,
-            json={"filenames": filenames, "runUUID": new_run_data["uuid"]},
+            json={"filenames": filenames, "missionUUID": new_mission_data["uuid"]},
         )
         response_2.raise_for_status()
         presigned_urls = response_2.json()
@@ -258,6 +260,31 @@ def clear_queue():
         print("Queue cleared.")
     else:
         print("Operation cancelled.")
+
+
+@queue.command("list")
+def list_queue():
+    """List current Queue entities"""
+    try:
+        url = "/queue/active"
+        startDate = datetime.now().date() - timedelta(days=1)
+        response = client.get(url, params={"startDate": startDate})
+        response.raise_for_status()
+        data = response.json()
+        table = Table("UUID", "filename", "mission", "state", "origin", "createdAt")
+        for topic in data:
+            table.add_row(
+                topic["uuid"],
+                topic["filename"],
+                topic["mission"]["name"],
+                topic["state"],
+                topic["location"],
+                topic["createdAt"],
+            )
+        print(table)
+
+    except httpx.HTTPError as e:
+        print(e)
 
 
 @files.command("clear")
@@ -289,7 +316,7 @@ def wipe():
         response_queue = client.delete("/queue/clear")
         response_file = client.delete("/file/clear")
         response_analysis = client.delete("/analysis/clear")
-        response_run = client.delete("/run/clear")
+        response_mission = client.delete("/mission/clear")
         response_project = client.delete("/project/clear")
 
         if response_queue.status_code >= 400:
@@ -301,9 +328,9 @@ def wipe():
         elif response_analysis.status_code >= 400:
             print("Failed to clear analysis.")
             print(response_analysis.text)
-        elif response_run.status_code >= 400:
-            print("Failed to clear runs.")
-            print(response_run.text)
+        elif response_mission.status_code >= 400:
+            print("Failed to clear missions.")
+            print(response_mission.text)
         elif response_project.status_code >= 400:
             print("Failed to clear projects.")
             print(response_project.text)
@@ -355,10 +382,10 @@ def demote(email: Annotated[str, typer.Option()]):
 
 @files.command("download")
 def download(
-    runuuid: Annotated[str, typer.Argument()],
+        missionuuid: Annotated[str, typer.Argument()],
 ):
     try:
-        response = client.get("/file/downloadWithToken", params={"uuid": runuuid})
+        response = client.get("/file/downloadWithToken", params={"uuid": missionuuid})
         response.raise_for_status()
         print(response.json())
     except:

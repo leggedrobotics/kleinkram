@@ -22,6 +22,6 @@ export default class Project extends BaseEntity {
     @ManyToOne(() => User, (user) => user.projects)
     creator: User;
 
-    @OneToMany(() => TagType, (tag) => tag.project)
+    @ManyToMany(() => TagType, (tag) => tag.project)
     requiredTags: TagType[];
 }

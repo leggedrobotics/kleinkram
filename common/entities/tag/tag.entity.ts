@@ -2,7 +2,6 @@ import { Column, Entity, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import { DataType } from '../../enum';
 import Mission from '../mission/mission.entity';
-import Project from '../project/project.entity';
 
 @Entity()
 export default class Tag extends BaseEntity {
