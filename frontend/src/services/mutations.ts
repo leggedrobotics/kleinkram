@@ -15,8 +15,34 @@ export const createProject = async (
     return response.data;
 };
 
-export const createMission = async (name: string, projectUUID: string) => {
-    const response = await axios.post('/mission/create', { name, projectUUID });
+export const createMission = async (
+    name: string,
+    projectUUID: string,
+    tags: Record<string, string>,
+) => {
+    const response = await axios.post('/mission/create', {
+        name,
+        projectUUID,
+        tags,
+    });
+    return response.data;
+};
+
+export const removeTag = async (tagUUID: string) => {
+    const response = await axios.delete('/tag/deleteTag', {
+        params: { uuid: tagUUID },
+    });
+    return response.data;
+};
+
+export const addTags = async (
+    missionUUID: string,
+    tags: Record<string, string>,
+) => {
+    const response = await axios.post('/tag/addTags', {
+        mission: missionUUID,
+        tags,
+    });
     return response.data;
 };
 

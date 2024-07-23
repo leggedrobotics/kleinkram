@@ -9,6 +9,8 @@ import User from '@common/entities/user/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
 import { UserRole } from '@common/enum';
+import Tag from '@common/entities/tag/tag.entity';
+import { TagService } from '../tag/tag.service';
 
 @Injectable()
 export class MissionService {
@@ -19,29 +21,43 @@ export class MissionService {
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private userservice: UserService,
-    ) {
-    }
+        private tagservice: TagService,
+    ) {}
 
-    async create(createRun: CreateMission, user: JWTUser): Promise<Mission> {
+    async create(
+        createMission: CreateMission,
+        user: JWTUser,
+    ): Promise<Mission> {
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: createRun.projectUUID },
+            where: { uuid: createMission.projectUUID },
         });
         const mission = this.missionRepository.create({
-            name: createRun.name,
+            name: createMission.name,
             project: project,
             creator,
         });
-        const newRun = await this.missionRepository.save(mission);
+        const newMission = await this.missionRepository.save(mission);
+        await Promise.all(
+            Object.entries(createMission.tags).map(
+                async ([tagTypeUUID, value]) => {
+                    return this.tagservice.addTagType(
+                        newMission.uuid,
+                        tagTypeUUID,
+                        value,
+                    );
+                },
+            ),
+        );
         return this.missionRepository.findOneOrFail({
-            where: { uuid: newRun.uuid },
+            where: { uuid: newMission.uuid },
         });
     }
 
     async findOne(uuid: string): Promise<Mission> {
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'files', 'creator'],
+            relations: ['project', 'files', 'creator', 'tags', 'tags.tagType'],
         });
     }
 

@@ -47,7 +47,10 @@
                 </div>
             </div>
             <div
-                v-for="tagtype in project?.requiredTags"
+                v-for="tagtype in [
+                    ...(project?.requiredTags ?? []),
+                    ...additonalTags,
+                ]"
                 :key="tagtype.uuid"
                 class="row q-gutter-sm"
             >
@@ -58,6 +61,7 @@
                 </div>
                 <div class="col-3 flex-center flex">
                     <q-input
+                        v-if="tagtype.type !== DataType.BOOLEAN"
                         v-model="tagValues[tagtype.uuid]"
                         :label="tagtype.name"
                         outlined
@@ -67,6 +71,41 @@
                         :type="DataType_InputType[tagtype.type] || 'text'"
                         style="width: 100%"
                     />
+                    <q-field
+                        v-if="tagtype.type === DataType.BOOLEAN"
+                        :rules="[
+                            (val) =>
+                                val === true ||
+                                val === false ||
+                                'Please select a value',
+                        ]"
+                        style="width: 100%"
+                        color="black"
+                        dense
+                        outlined
+                        v-model="tagValues[tagtype.uuid]"
+                    >
+                        <q-toggle
+                            v-model="tagValues[tagtype.uuid]"
+                            :label="
+                                tagValues[tagtype.uuid] === undefined
+                                    ? '-'
+                                    : tagValues[tagtype.uuid]
+                                      ? 'True'
+                                      : 'False'
+                            "
+                            outlined
+                            dense
+                            required
+                            flat
+                            :type="DataType_InputType[tagtype.type] || 'text'"
+                            style="width: 100%"
+                            :options="[
+                                { label: 'True', value: true },
+                                { label: 'False', value: false },
+                            ]"
+                        />
+                    </q-field>
                 </div>
             </div>
             <div class="row">
@@ -74,10 +113,10 @@
                     <q-btn-dropdown label="Add another tag">
                         <q-list>
                             <q-item
-                                v-for="tagtype in tagTypes"
+                                v-for="tagtype in availableAdditionalTags"
                                 :key="tagtype.uuid"
                                 clickable
-                                @click="addTag"
+                                @click="() => addTag(tagtype)"
                             >
                                 <q-item-section>
                                     <q-item-label>
@@ -90,10 +129,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-9"></div>
-                <div class="col-1">
-                    <q-btn label="Add Tag" color="primary" @click="addTag" />
-                </div>
+                <div class="col-10"></div>
                 <div class="col-2">
                     <q-btn label="Submit" color="primary" type="submit" />
                 </div>
@@ -144,6 +180,20 @@ const { data: project } = useQuery<Project>({
     queryFn: () => getProject(selected_project.value?.uuid as string),
     enabled: computed(() => !!selected_project.value?.uuid),
 });
+
+const availableAdditionalTags: Ref<TagType[]> = computed(() => {
+    if (!tagTypes.value) return [];
+    if (!project.value) return tagTypes.value;
+    const usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
+    const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
+    return tagTypes.value?.filter(
+        (tagtype) =>
+            !usedTagUUIDs.includes(tagtype.uuid) &&
+            !addedTagUUIDs.includes(tagtype.uuid),
+    );
+});
+
+const additonalTags: Ref<TagType[]> = ref<TagType[]>([]);
 watch(selected_project, (newVal) => {
     if (!newVal) {
         return;
@@ -153,7 +203,11 @@ const submitNewMission = async () => {
     if (!selected_project.value) {
         return;
     }
-    await createMission(missionName.value, selected_project.value.uuid);
+    await createMission(
+        missionName.value,
+        selected_project.value.uuid,
+        tagValues.value,
+    );
     const cache = queryClient.getQueryCache();
     const filtered = cache
         .getAll()
@@ -174,9 +228,12 @@ const submitNewMission = async () => {
         position: 'top-right',
     });
     missionName.value = '';
+    tagValues.value = {};
 };
 
-function addTag() {}
+function addTag(tagtype: TagType) {
+    additonalTags.value.push(tagtype);
+}
 </script>
 
 <style scoped></style>

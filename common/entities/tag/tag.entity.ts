@@ -7,19 +7,19 @@ import User from '../user/user.entity';
 
 @Entity()
 export default class Tag extends BaseEntity {
-    @Column()
+    @Column({ nullable: true })
     STRING: string;
 
-    @Column()
+    @Column({ nullable: true })
     NUMBER: number;
 
-    @Column()
+    @Column({ nullable: true })
     BOOLEAN: boolean;
 
-    @Column()
+    @Column({ nullable: true })
     DATE: Date;
 
-    @Column()
+    @Column({ nullable: true })
     LOCATION: string;
 
     @ManyToOne(() => Mission, (mission) => mission.tags)

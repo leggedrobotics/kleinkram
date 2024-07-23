@@ -2,6 +2,7 @@ import { ActionState, FileState } from 'src/enum/QUEUE_ENUM';
 import ROLE from 'src/enum/USER_ROLES';
 import { FileType } from 'src/enum/FILE_ENUM';
 import { DataType } from 'src/enum/TAG_TYPES';
+import { formatDate } from 'src/services/dateFormating';
 
 class BaseEntity {
     uuid: string;
@@ -95,12 +96,14 @@ export class Mission extends BaseEntity {
     project: Project | undefined;
     files: FileEntity[];
     creator?: User;
+    tags: Tag[];
 
     constructor(
         uuid: string,
         name: string,
         project: Project | undefined,
         files: FileEntity[],
+        tags: Tag[],
         creator: User | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
@@ -111,6 +114,7 @@ export class Mission extends BaseEntity {
         this.project = project;
         this.files = files;
         this.creator = creator;
+        this.tags = tags;
     }
 
     clone(): Mission {
@@ -119,6 +123,7 @@ export class Mission extends BaseEntity {
             this.name,
             this.project?.clone(),
             this.files,
+            this.tags,
             this.creator,
             this.createdAt,
             this.updatedAt,
@@ -291,5 +296,20 @@ export class Tag extends BaseEntity {
         this.DATE = DATE;
         this.LOCATION = LOCATION;
         this.type = type;
+    }
+
+    asString(): string {
+        switch (this.type.type) {
+            case DataType.BOOLEAN:
+                return this.BOOLEAN ? 'true' : 'false';
+            case DataType.DATE:
+                return formatDate(this.DATE as Date);
+            case DataType.LOCATION:
+                return this.LOCATION as string;
+            case DataType.NUMBER:
+                return this.NUMBER?.toString() || '';
+            case DataType.STRING:
+                return this.STRING as string;
+        }
     }
 }

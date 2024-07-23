@@ -81,7 +81,16 @@ export class TagService {
 
         return this.tagRepository.save(tag);
     }
-
+    async addTags(
+        missionUUID: string,
+        tags: Record<string, string>,
+    ): Promise<Tag[]> {
+        return Promise.all(
+            Object.entries(tags).map(([tagTypeUUID, value]) =>
+                this.addTagType(missionUUID, tagTypeUUID, value),
+            ),
+        );
+    }
     async deleteTag(uuid: string): Promise<void> {
         await this.tagRepository.delete({ uuid });
     }

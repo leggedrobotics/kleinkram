@@ -8,6 +8,7 @@ import {
     Topic,
     User,
     TagType,
+    Tag,
 } from 'src/types/types';
 
 export const fetchOverview = async (
@@ -76,6 +77,7 @@ export const fetchOverview = async (
                     file.mission.uuid,
                     file.mission.name,
                     project,
+                    [],
                     [],
                     file.mission.creator,
                     new Date(file.mission.createdAt),
@@ -148,6 +150,65 @@ export const actionDetails = async (action_uuid: string) => {
     );
 };
 
+export const getMission = async (uuid: string): Promise<Mission> => {
+    const response = await axios.get('/mission/one', { params: { uuid } });
+    const mission = response.data;
+    const project = new Project(
+        mission.project.uuid,
+        mission.project.name,
+        mission.project.description,
+        [],
+        undefined,
+        undefined,
+        new Date(mission.project.createdAt),
+        new Date(mission.project.updatedAt),
+        new Date(mission.project.deletedAt),
+    );
+    const creator = new User(
+        mission.creator.uuid,
+        mission.creator.name,
+        mission.creator.email,
+        mission.creator.role,
+        mission.creator.googleId,
+        [],
+        new Date(mission.creator.createdAt),
+        new Date(mission.creator.updatedAt),
+        new Date(mission.creator.deletedAt),
+    );
+    const tags = mission.tags.map((tag: any) => {
+        const tagType = new TagType(
+            tag.tagType.uuid,
+            tag.tagType.name,
+            tag.tagType.datatype,
+            new Date(tag.tagType.createdAt),
+            new Date(tag.tagType.updatedAt),
+            new Date(tag.tagType.deletedAt),
+        );
+        return new Tag(
+            tag.uuid,
+            tag.STRING,
+            tag.NUMBER ? parseInt(tag.NUMBER) : tag.NUMBER,
+            tag.BOOLEAN ? !!tag.BOOLEAN : tag.BOOLEAN,
+            tag.DATE ? new Date(tag.DATE) : tag.DATE,
+            tag.LOCATION,
+            tagType,
+            new Date(tag.createdAt),
+            new Date(tag.updatedAt),
+            new Date(tag.deletedAt),
+        );
+    });
+    return new Mission(
+        mission.uuid,
+        mission.name,
+        project,
+        [],
+        tags,
+        creator,
+        new Date(mission.createdAt),
+        new Date(mission.updatedAt),
+        new Date(mission.deletedAt),
+    );
+};
 export const currentQueue = async (startDate: Date) => {
     const params = {
         startDate: startDate.toISOString(),
@@ -205,6 +266,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.mission.uuid,
             file.mission.name,
             project,
+            [],
             [],
             undefined,
             new Date(file.mission.createdAt),
@@ -316,6 +378,7 @@ export const missionsOfProject = async (
             mission.name,
             project,
             [],
+            [],
             missionCreator,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),
@@ -385,6 +448,7 @@ export const filesOfMission = async (
         missionUUID,
         response.data[0].mission.name,
         undefined,
+        [],
         [],
         missionCreator,
         new Date(response.data[0].mission.createdAt),
@@ -456,6 +520,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
             mission.uuid,
             mission.name,
             undefined,
+            [],
             [],
             undefined,
             new Date(mission.createdAt),
