@@ -11,7 +11,7 @@ local_dbpassword=dbuserpass
 Then you can create new migration scripts by running the following commands:
 ```
 yarn run typeorm migration:generate migration/dev/migrations/test -d migration/dev/migration.config.ts     
-yarn run typeorm migration:generate migration/local/migrations/test -d migration/local/dev/migration.config.ts     
+yarn run typeorm migration:generate migration/local/migrations/test -d migration/local/migration.config.ts     
 yarn run typeorm migration:generate migration/prod/migrations/test -d migration/prod/migration.config.ts     
 ```
 from within the backend folder. This will create a new migration script in the migration/migrations folder.
