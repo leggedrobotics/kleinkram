@@ -2,7 +2,7 @@
     "name": "frontend",
     "version": "0.2.0",
     "description": "Data storage of ROS bags",
-    "productName": "Bagistry",
+    "productName": "Kleinkram",
     "author": "Johann Schwabe <johann@schwabe.dev>",
     "private": true,
     "scripts": {
