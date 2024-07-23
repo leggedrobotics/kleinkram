@@ -105,7 +105,7 @@ function openAddTag() {
 }
 
 .rotating-element {
-    animation: rotate 2s linear infinite;
+    animation: rotate 20000s linear infinite;
     z-index: 99;
 }
 </style>
