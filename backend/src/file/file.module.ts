@@ -16,6 +16,9 @@ import { MissionGuardService } from '../auth/missionGuard.service';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import { FileGuardService } from '../auth/fileGuard.service';
+import { TagService } from '../tag/tag.service';
+import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tagType.entity';
 
 @Module({
     imports: [
@@ -28,6 +31,8 @@ import { FileGuardService } from '../auth/fileGuard.service';
             Apikey,
             Account,
             AccessGroup,
+            Tag,
+            TagType,
         ]),
     ],
     providers: [
@@ -38,9 +43,9 @@ import { FileGuardService } from '../auth/fileGuard.service';
         MissionGuardService,
         ProjectGuardService,
         FileGuardService,
+        TagService,
     ],
     controllers: [FileController],
     exports: [FileService],
 })
-export class FileModule {
-}
+export class FileModule {}

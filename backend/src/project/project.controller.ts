@@ -76,4 +76,22 @@ export class ProjectController {
     async deleteProject(@Query('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }
+
+    @Post('addTagType')
+    @CanWriteProject()
+    async addTagType(
+        @Query('uuid') uuid: string,
+        @Query('tagTypeUUID') tagTypeUUID: string,
+    ) {
+        return this.projectService.addTagType(uuid, tagTypeUUID);
+    }
+
+    @Post('removeTagType')
+    @CanWriteProject()
+    async removeTagType(
+        @Query('uuid') uuid: string,
+        @Query('tagTypeUUID') tagTypeUUID: string,
+    ) {
+        return this.projectService.removeTagType(uuid, tagTypeUUID);
+    }
 }

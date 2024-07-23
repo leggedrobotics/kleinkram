@@ -1,6 +1,8 @@
 import { ActionState, FileState } from 'src/enum/QUEUE_ENUM';
 import ROLE from 'src/enum/USER_ROLES';
 import { FileType } from 'src/enum/FILE_ENUM';
+import { DataType } from 'src/enum/TAG_TYPES';
+import { formatDate } from 'src/services/dateFormating';
 
 class BaseEntity {
     uuid: string;
@@ -52,6 +54,7 @@ export class Project extends BaseEntity {
     name: string;
     description: string;
     missions: Mission[];
+    requiredTags: TagType[];
     creator?: User;
 
     constructor(
@@ -60,6 +63,7 @@ export class Project extends BaseEntity {
         description: string,
         missions: Mission[],
         creator: User | undefined,
+        requiredTags: TagType[] | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -69,6 +73,7 @@ export class Project extends BaseEntity {
         this.creator = creator;
         this.missions = missions;
         this.description = description;
+        this.requiredTags = requiredTags || [];
     }
 
     clone(): Project {
@@ -78,6 +83,7 @@ export class Project extends BaseEntity {
             this.description,
             this.missions,
             this.creator,
+            this.requiredTags,
             this.createdAt,
             this.updatedAt,
             this.deletedAt,
@@ -90,12 +96,14 @@ export class Mission extends BaseEntity {
     project: Project | undefined;
     files: FileEntity[];
     creator?: User;
+    tags: Tag[];
 
     constructor(
         uuid: string,
         name: string,
         project: Project | undefined,
         files: FileEntity[],
+        tags: Tag[],
         creator: User | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
@@ -106,6 +114,7 @@ export class Mission extends BaseEntity {
         this.project = project;
         this.files = files;
         this.creator = creator;
+        this.tags = tags;
     }
 
     clone(): Mission {
@@ -114,6 +123,7 @@ export class Mission extends BaseEntity {
             this.name,
             this.project?.clone(),
             this.files,
+            this.tags,
             this.creator,
             this.createdAt,
             this.updatedAt,
@@ -238,5 +248,68 @@ export class Queue extends BaseEntity {
         this.location = location;
         this.mission = mission;
         this.creator = creator;
+    }
+}
+
+export class TagType extends BaseEntity {
+    name: string;
+    type: DataType;
+
+    constructor(
+        uuid: string,
+        name: string,
+        type: DataType,
+        createdAt: Date | null,
+        updatedAt: Date | null,
+        deletedAt: Date | null,
+    ) {
+        super(uuid, createdAt, updatedAt, deletedAt);
+        this.name = name;
+        this.type = type;
+    }
+}
+
+export class Tag extends BaseEntity {
+    STRING?: string;
+    NUMBER?: number;
+    BOOLEAN?: boolean;
+    DATE?: Date;
+    LOCATION?: string;
+    type: TagType;
+
+    constructor(
+        uuid: string,
+        STRING: string | undefined,
+        NUMBER: number | undefined,
+        BOOLEAN: boolean | undefined,
+        DATE: Date | undefined,
+        LOCATION: string | undefined,
+        type: TagType,
+        createdAt: Date | null,
+        updatedAt: Date | null,
+        deletedAt: Date | null,
+    ) {
+        super(uuid, createdAt, updatedAt, deletedAt);
+        this.STRING = STRING;
+        this.NUMBER = NUMBER;
+        this.BOOLEAN = BOOLEAN;
+        this.DATE = DATE;
+        this.LOCATION = LOCATION;
+        this.type = type;
+    }
+
+    asString(): string {
+        switch (this.type.type) {
+            case DataType.BOOLEAN:
+                return this.BOOLEAN ? 'true' : 'false';
+            case DataType.DATE:
+                return formatDate(this.DATE as Date);
+            case DataType.LOCATION:
+                return this.LOCATION as string;
+            case DataType.NUMBER:
+                return this.NUMBER?.toString() || '';
+            case DataType.STRING:
+                return this.STRING as string;
+        }
     }
 }

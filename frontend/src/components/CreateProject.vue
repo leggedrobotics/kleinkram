@@ -15,7 +15,7 @@
                                 required
                             />
                         </div>
-                        <div class="col-8">
+                        <div class="col-3">
                             <q-input
                                 v-model="projectDescription"
                                 label="Project Description"
@@ -25,6 +25,23 @@
                                 outlined
                                 dense
                                 clearable
+                            />
+                        </div>
+                        <div class="col-5">
+                            <q-select
+                                v-model="selectedTags"
+                                label="Select Tags"
+                                outlined
+                                dense
+                                clearable
+                                multiple
+                                use-chips
+                                :options="data"
+                                emit-value
+                                map-options
+                                class="full-width"
+                                option-label="name"
+                                option-value="uuid"
                             />
                         </div>
                     </div>
@@ -44,16 +61,28 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { createProject } from 'src/services/mutations';
-import { useQueryClient } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
+import { getTagTypes } from 'src/services/queries';
+import { TagType } from 'src/types/types';
 
 const projectName = ref('');
 const projectDescription = ref('');
 const queryClient = useQueryClient();
+const selectedTags = ref([]);
+
+const { isLoading, data, error } = useQuery<TagType[]>({
+    queryKey: ['tagTypes'],
+    queryFn: getTagTypes,
+});
 
 const submitNewProject = async () => {
     try {
-        await createProject(projectName.value, projectDescription.value);
+        await createProject(
+            projectName.value,
+            projectDescription.value,
+            selectedTags.value,
+        );
     } catch (error) {
         console.log(error);
         Notify.create({

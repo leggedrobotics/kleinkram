@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne } from 'typeorm';
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToMany,
+    OneToMany,
+    OneToOne,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Account from '../auth/account.entity';
 import AccessGroup from '../auth/accessgroup.entity';
@@ -7,14 +14,14 @@ import Mission from '../mission/mission.entity';
 import QueueEntity from '../queue/queue.entity';
 import { UserRole } from '../../enum';
 import FileEntity from '../file/file.entity';
-
+import Tag from '../tag/tag.entity';
 
 @Entity()
 export default class User extends BaseEntity {
     @Column()
     name: string;
 
-    @Column({unique: true})
+    @Column({ unique: true })
     email: string;
 
     @Column()
@@ -42,5 +49,6 @@ export default class User extends BaseEntity {
     @OneToMany(() => QueueEntity, (queue) => queue.creator)
     queues: QueueEntity[];
 
-
+    @OneToMany(() => Tag, (tag) => tag.creator)
+    tags: Tag[];
 }

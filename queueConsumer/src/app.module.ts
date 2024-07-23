@@ -17,7 +17,8 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { FileProcessor } from './files/provider';
 import { ActionQueueProcessor } from './actions/provider';
 import env from '@common/env';
-
+import TagType from '@common/entities/tagType/tagType.entity';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Module({
     imports: [
@@ -65,6 +66,8 @@ import env from '@common/env';
                         Apikey,
                         Account,
                         AccessGroup,
+                        TagType,
+                        Tag,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -80,9 +83,10 @@ import env from '@common/env';
             Project,
             User,
             Apikey,
+            TagType,
+            Tag,
         ]),
     ],
     providers: [FileProcessor, ActionQueueProcessor],
 })
-export class AppModule {
-}
+export class AppModule {}

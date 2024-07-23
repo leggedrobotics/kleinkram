@@ -38,6 +38,10 @@
             :project_uuid="crumbs[crumbs.length - 1].uuid"
             @project-deleted="projectDeleted"
         />
+        <EditMission
+            v-if="column_index === 2"
+            :mission_uuid="crumbs[crumbs.length - 1].uuid"
+        />
         <QTable
             ref="tableRef"
             v-model:pagination="pagination"
@@ -106,6 +110,7 @@ import CreateFileDialog from 'components/CreateFileDialog.vue';
 import EditProject from 'components/EditProject.vue';
 import MoveMission from 'components/MoveMission.vue';
 import { FileType } from 'src/enum/FILE_ENUM';
+import EditMission from 'components/EditMission.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 type crumb = {
@@ -345,7 +350,6 @@ function navigate(crumb: crumb) {
     const index = crumbs.value.findIndex((c) => c.uuid === crumb.uuid);
     crumbs.value = crumbs.value.slice(0, index + 1);
     column_index.value = index;
-    console.log('navigate', crumb);
 }
 
 function create() {

@@ -13,7 +13,7 @@ import typer
 app = typer.Typer()
 from .consts import API_URL
 
-TOKEN_FILE = Path(os.path.expanduser("~/.gtd.json"))
+TOKEN_FILE = Path(os.path.expanduser("~/.kleinkram.json"))
 REFRESH_TOKEN = "refreshtoken"
 AUTH_TOKEN = "authtoken"
 CLI_KEY = "clikey"
@@ -108,10 +108,9 @@ class AuthenticatedClient(httpx.Client):
         if not refresh_token:
             print("No refresh token found. Please login again.")
             raise Exception("No refresh token found.")
-
+        self.cookies.set(REFRESH_TOKEN, refresh_token,)
         response = self.post(
             "/auth/refresh-token",
-            json={REFRESH_TOKEN: refresh_token},
         )
         response.raise_for_status()
         new_access_token = response.cookies.get(AUTH_TOKEN)
@@ -132,7 +131,7 @@ class AuthenticatedClient(httpx.Client):
         if response.status_code == 401:
             print("Token expired, refreshing token...")
             self.refresh_token()
-            response = super().request(method, url, *args, **kwargs)
+            response = super().request(method, self.tokenfile.endpoint + url, *args, **kwargs)
         return response
 
 

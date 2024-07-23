@@ -3,6 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import AccessGroup from '../auth/accessgroup.entity';
+import TagType from '../tagType/tagType.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
@@ -20,4 +21,7 @@ export default class Project extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.projects)
     creator: User;
+
+    @ManyToMany(() => TagType, (tag) => tag.project)
+    requiredTags: TagType[];
 }

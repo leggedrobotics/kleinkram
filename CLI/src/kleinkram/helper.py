@@ -1,5 +1,3 @@
-import fnmatch
-import math
 import os
 import threading
 import glob
@@ -45,7 +43,9 @@ def uploadFiles(files: Dict[str, str], paths: Dict[str, str], nrThreads: int):
 def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
     while True:
         try:
-            filename, url = _queue.get(timeout=3)
+            filename, info = _queue.get(timeout=3)
+            url = info["url"]
+            uuid = info["uuid"]
             filepath = paths[filename]
             headers = {"Content-Type": "application/octet-stream"}
             with open(filepath, "rb") as f:
@@ -54,7 +54,7 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
                     response = cli.put(url, content=f, headers=headers)
                     if response.status_code == 200:
                         pbar.update(100)  # Update progress for each file
-                        client.post("/queue/confirmUpload", json={"filename": filename})
+                        client.post("/queue/confirmUpload", json={"uuid": uuid})
                     else:
                         print(f"Failed to upload {filename}. HTTP status: {response.status_code}")
             _queue.task_done()

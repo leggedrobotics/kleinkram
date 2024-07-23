@@ -10,6 +10,8 @@ import { UserService } from '../user/user.service';
 
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
+import TagType from '@common/entities/tagType/tagType.entity';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Injectable()
 export class ProjectService {
@@ -20,8 +22,9 @@ export class ProjectService {
         private userservice: UserService,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-    ) {
-    }
+        @InjectRepository(TagType)
+        private tagTypeRepository: Repository<TagType>,
+    ) {}
 
     async findAll(user: JWTUser): Promise<Project[]> {
         logger.debug('Finding all projects as user: ', user.uuid);
@@ -50,7 +53,7 @@ export class ProjectService {
     async findOne(uuid: string): Promise<Project> {
         return this.projectRepository.findOne({
             where: { uuid },
-            relations: ['creator', 'missions'],
+            relations: ['creator', 'missions', 'requiredTags'],
         });
     }
 
@@ -72,17 +75,51 @@ export class ProjectService {
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );
 
+        const tagTypes = await Promise.all(
+            project.requiredTags.map((tag) => {
+                return this.tagTypeRepository.findOneOrFail({
+                    where: { uuid: tag },
+                });
+            }),
+        );
+        console.log('tagTypes', tagTypes);
         const newProject = this.projectRepository.create({
-            ...project,
+            name: project.name,
+            description: project.description,
             creator: creator,
             accessGroups: access_groups_default,
+            requiredTags: tagTypes,
         });
         return this.projectRepository.save(newProject);
     }
 
-    async update(uuid: string, project: CreateProject): Promise<Project> {
+    async update(
+        uuid: string,
+        project: { name: string; description: string },
+    ): Promise<Project> {
         await this.projectRepository.update(uuid, project);
         return this.projectRepository.findOne({ where: { uuid } });
+    }
+
+    async addTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        });
+        const tagType = await this.tagTypeRepository.findOneOrFail({
+            where: { uuid: tagTypeUUID },
+        });
+        project.requiredTags.push(tagType);
+        return this.projectRepository.save(project);
+    }
+
+    async removeTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        });
+        project.requiredTags = project.requiredTags.filter(
+            (tagType) => tagType.uuid !== tagTypeUUID,
+        );
+        return this.projectRepository.save(project);
     }
 
     async remove(uuid: string): Promise<void> {

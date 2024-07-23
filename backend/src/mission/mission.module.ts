@@ -11,6 +11,9 @@ import Account from '@common/entities/auth/account.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tagType.entity';
+import { TagService } from '../tag/tag.service';
 
 @Module({
     imports: [
@@ -21,6 +24,8 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
             Apikey,
             Account,
             AccessGroup,
+            Tag,
+            TagType,
         ]),
     ],
     providers: [
@@ -28,9 +33,9 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
         UserService,
         MissionGuardService,
         ProjectGuardService,
+        TagService,
     ],
     controllers: [MissionController],
     exports: [MissionService],
 })
-export class MissionModule {
-}
+export class MissionModule {}

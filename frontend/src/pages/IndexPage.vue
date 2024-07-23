@@ -1,7 +1,7 @@
 <template>
     <div class="flex flex-center">
         <div class="q-pa-lg">
-            <div class="text-h3 text-center">Bagistry</div>
+            <div class="text-h3 text-center">Kleinkram</div>
             <div class="text-h5 text-center">
                 A web-based tool for managing ROS bags
             </div>

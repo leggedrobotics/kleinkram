@@ -49,3 +49,11 @@ export enum AccessGroupRights {
     WRITE = 20,
     DELETE = 30,
 }
+
+export enum DataType {
+    STRING = 'STRING',
+    NUMBER = 'NUMBER',
+    BOOLEAN = 'BOOLEAN',
+    DATE = 'DATE',
+    LOCATION = 'LOCATION',
+}
