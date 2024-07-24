@@ -21,7 +21,7 @@ export class TagController {
     async addTag(
         @Body('mission') mission: string,
         @Body('tagType') tagType: string,
-        @Body('value') value: string,
+        @Body('value') value: string | number | boolean,
     ) {
         return this.tagService.addTagType(mission, tagType, value);
     }

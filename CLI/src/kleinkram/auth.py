@@ -161,3 +161,10 @@ def endpoint(endpoint: Annotated[str, typer.Argument()]):
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
     tokenfile.writeToFile()
+
+def setCliKey(key: Annotated[str, typer.Argument()]):
+    tokenfile = TokenFile()
+    if not tokenfile.endpoint in tokenfile.tokens:
+        tokenfile.tokens[tokenfile.endpoint] = {}
+    tokenfile.tokens[tokenfile.endpoint][CLI_KEY] = key
+    tokenfile.writeToFile()

@@ -108,11 +108,9 @@ export class ActionQueueProcessor
         action.state = ActionState.PROCESSING;
         await this.actionRepository.save(action);
 
-        const now = new Date();
         const newToken = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             apikeytype: KeyTypes.CONTAINER,
-            deletedAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
         });
         const apikey = await this.apikeyRepository.save(newToken);
 

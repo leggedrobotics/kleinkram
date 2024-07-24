@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime, timedelta
 import os
 
@@ -10,7 +11,7 @@ from rich.table import Table
 
 from .helper import uploadFiles, expand_and_match
 
-from .auth import login, client, endpoint
+from .auth import login, client, endpoint, setCliKey
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -33,6 +34,7 @@ app.add_typer(tagtypes)
 app.add_typer(tag)
 app.command()(login)
 app.command()(endpoint)
+app.command()(setCliKey)
 
 
 @files.command("list")
@@ -423,9 +425,11 @@ def addTag(
         else:
             print(response.json())
             print("Failed to tag mission")
-    except:
-        print("Failed to tag mission"
-)
+    except httpx.HTTPError as e:
+        print(e)
+        print("Failed to tag mission")
+        sys.exit(1)
+
 
 @tagtypes.command('list')
 def tagTypes(

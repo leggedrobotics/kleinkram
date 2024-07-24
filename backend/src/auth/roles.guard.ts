@@ -44,6 +44,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                 },
                 relations: ['mission'],
             });
+
             if (request.query.uuid != token.mission.uuid) {
                 throw new ForbiddenException('Invalid key');
             }
@@ -319,6 +320,10 @@ export class AddTagGuard extends AuthGuard('jwt') {
                 },
                 relations: ['mission'],
             });
+            console.log(request.cookies[CookieNames.CLI_KEY]);
+            if (!token) {
+                throw new ForbiddenException('Invalid key');
+            }
             if (missionUUID != token.mission.uuid) {
                 console.log('Invalid key');
                 throw new ForbiddenException('Invalid key');
