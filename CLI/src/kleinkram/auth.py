@@ -63,7 +63,6 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         if self.path.startswith("/cli/callback"):
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
-            print(params)
             self.server.tokens = {
                 AUTH_TOKEN: params.get(AUTH_TOKEN)[0],
                 REFRESH_TOKEN: params.get(REFRESH_TOKEN)[0],

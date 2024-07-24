@@ -421,7 +421,7 @@ def addTag(
         if response.status_code < 400:
             print("Tagged mission")
         else:
-            print(response)
+            print(response.json())
             print("Failed to tag mission")
     except:
         print("Failed to tag mission"

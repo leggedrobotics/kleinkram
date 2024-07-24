@@ -19,17 +19,17 @@ export class TagController {
     @Post('addTag')
     @CanAddTag()
     async addTag(
-        @Query('mission') uuid: string,
-        @Query('tagType') tagTypeUUID: string,
-        @Query('value') value: string,
+        @Body('mission') mission: string,
+        @Body('tagType') tagType: string,
+        @Body('value') value: string,
     ) {
-        return this.tagService.addTagType(uuid, tagTypeUUID, value);
+        return this.tagService.addTagType(mission, tagType, value);
     }
 
     @Post('addTags')
     @CanAddTag()
     async addTags(
-        @Query('mission') uuid: string,
+        @Body('mission') uuid: string,
         @Body('tags') tags: Record<string, string>,
     ) {
         return this.tagService.addTags(uuid, tags);

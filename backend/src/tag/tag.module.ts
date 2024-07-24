@@ -12,6 +12,7 @@ import Project from '@common/entities/project/project.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import { UserService } from '../user/user.service';
 import Account from '@common/entities/auth/account.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import Account from '@common/entities/auth/account.entity';
             AccessGroup,
             Project,
             Account,
+            Apikey,
         ]),
     ],
     providers: [
