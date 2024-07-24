@@ -27,7 +27,7 @@ jobs:
 
             - name: Generate consts.py
               run: |
-                  echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/ETH_GTD_cli/consts.py
+                  echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/kleinkram/consts.py
 
             - name: Build package
               run: |
