@@ -19,6 +19,9 @@ files = typer.Typer(name="files")
 topics = typer.Typer(name="topics")
 queue = typer.Typer(name="queue")
 user = typer.Typer(name="users")
+tagtypes = typer.Typer(name="tagtypes")
+tag = typer.Typer(name="tag")
+
 
 app.add_typer(projects)
 app.add_typer(missions)
@@ -26,6 +29,8 @@ app.add_typer(topics)
 app.add_typer(files)
 app.add_typer(queue)
 app.add_typer(user)
+app.add_typer(tagtypes)
+app.add_typer(tag)
 app.command()(login)
 app.command()(endpoint)
 
@@ -97,6 +102,7 @@ def list_projects():
 @missions.command("list")
 def list_missions(
         project: Annotated[str, typer.Option()] = None,
+        verbose: Annotated[bool, typer.Option()] = False,
 ):
     """
     List all missions with optional filter for project.
@@ -118,10 +124,23 @@ def list_missions(
             missions_by_project_uuid[project_uuid].append(mission)
 
         print("missions by Project:")
-        for project_uuid, missions in missions_by_project_uuid.items():
-            print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
-            for mission in missions:
-                print(f"  - {mission['name']}")
+        if not verbose:
+            for project_uuid, missions in missions_by_project_uuid.items():
+                print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
+                for mission in missions:
+                    print(f"  - {mission['name']}")
+        else:
+            table = Table("UUID", "name", "project", "creator", "createdAt")
+            for project_uuid, missions in missions_by_project_uuid.items():
+                for mission in missions:
+                    table.add_row(
+                        mission["uuid"],
+                        mission["name"],
+                        mission["project"]["name"],
+                        mission["creator"]["name"],
+                        mission["createdAt"],
+                    )
+            print(table)
 
     except httpx.HTTPError as e:
         print(f"Failed to fetch missions: {e}")
@@ -390,6 +409,58 @@ def download(
         print(response.json())
     except:
         print("Failed to download file")
+
+@missions.command('tag')
+def addTag(
+        missionuuid: Annotated[str, typer.Argument()],
+        tagtypeuuid: Annotated[str, typer.Argument()],
+        value: Annotated[str, typer.Argument()],
+):
+    try:
+        response = client.post("/tag/addTag", json={"mission": missionuuid, "tagType": tagtypeuuid, "value": value})
+        if response.status_code < 400:
+            print("Tagged mission")
+        else:
+            print(response)
+            print("Failed to tag mission")
+    except:
+        print("Failed to tag mission"
+)
+
+@tagtypes.command('list')
+def tagTypes(
+        verbose: Annotated[bool, typer.Option()] = False,
+):
+    try:
+        response = client.get("/tag/all")
+        response.raise_for_status()
+        data = response.json()
+        if verbose:
+            table = Table("UUID","Name", "Datatype")
+            for tagtype in data:
+                table.add_row(tagtype["uuid"], tagtype["name"], tagtype["datatype"])
+        else:
+            table = Table("Name", "Datatype")
+            for tagtype in data:
+                table.add_row(tagtype["name"], tagtype["datatype"])
+        print(table)
+    except:
+        print("Failed to fetch tagtypes")
+
+@tag.command('delete')
+def deleteTag(
+        taguuid: Annotated[str, typer.Argument()],
+):
+    try:
+        response = client.delete("/tag/deleteTag", params={"uuid": taguuid})
+        if response.status_code < 400:
+            print("Deleted tag")
+        else:
+            print(response)
+            print("Failed to delete tag")
+    except:
+        print("Failed to delete tag"
+)
 
 
 if __name__ == "__main__":

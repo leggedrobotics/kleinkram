@@ -7,7 +7,11 @@ import { UserService } from '../user/user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
-import { AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard } from './roles.guard';
+import {
+    AdminOnlyGuard,
+    LoggedInUserGuard,
+    TokenOrUserGuard,
+} from './roles.guard';
 import Apikey from '@common/entities/auth/apikey.entity';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
@@ -17,7 +21,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import env from '@common/env';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
-
+import Tag from '@common/entities/tag/tag.entity';
 
 @Module({
     imports: [
@@ -28,6 +32,7 @@ import { MissionGuardService } from './missionGuard.service';
             Account,
             Project,
             Mission,
+            Tag,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
@@ -51,5 +56,4 @@ import { MissionGuardService } from './missionGuard.service';
     controllers: [AuthController],
     exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
-export class AuthModule {
-}
+export class AuthModule {}

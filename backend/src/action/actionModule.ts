@@ -14,7 +14,7 @@ import { ActionGuardService } from '../auth/actionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { UserService } from '../user/user.service';
-
+import Tag from '@common/entities/tag/tag.entity';
 
 @Module({
     imports: [
@@ -26,6 +26,7 @@ import { UserService } from '../user/user.service';
             Project,
             Mission,
             Account,
+            Tag,
         ]),
         QueueModule,
     ],

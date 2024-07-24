@@ -298,6 +298,56 @@ export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
+export class AddTagGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUID = request.body.mission;
+        return this.missionGuardService.canAccessMission(
+            user.uuid,
+            missionUUID,
+            AccessGroupRights.WRITE,
+        );
+    }
+}
+
+@Injectable()
+export class DeleteTagGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const taguuid = request.body.uuid;
+        return this.missionGuardService.canTagMission(
+            user.uuid,
+            taguuid,
+            AccessGroupRights.DELETE,
+        );
+    }
+}
+
+@Injectable()
 export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
     constructor(
         private missionGuardService: MissionGuardService,

@@ -107,11 +107,14 @@ export class MissionService {
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.missionRepository.find({ relations: ['project'] });
+            return this.missionRepository.find({
+                relations: ['project', 'creator'],
+            });
         }
         return this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoin('project.accessGroups', 'projectAccessGroups')
             .leftJoin('projectAccessGroups.users', 'projectUsers')
             .leftJoin('mission.accessGroups', 'missionAccessGroups')

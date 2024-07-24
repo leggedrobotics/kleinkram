@@ -47,7 +47,12 @@ export class TagService {
         });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
+            relations: ['tags', 'tags.tagType'],
         });
+        const exisitingTagType = mission.tags.map((tag) => tag.tagType.uuid);
+        if (exisitingTagType.includes(tagType.uuid)) {
+            throw new ConflictException('Tag already exists');
+        }
 
         let tag: Tag | undefined;
         switch (tagType.datatype) {
