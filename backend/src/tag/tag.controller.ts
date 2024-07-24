@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { TagService } from './tag.service';
 import { DataType } from '@common/enum';
-import { LoggedIn } from '../auth/roles.decorator';
+import { CanAddTag, CanDeleteTag, LoggedIn } from '../auth/roles.decorator';
 
 @Controller('tag')
 export class TagController {
@@ -17,26 +17,26 @@ export class TagController {
     }
 
     @Post('addTag')
-    @LoggedIn()
+    @CanAddTag()
     async addTag(
-        @Query('mission') uuid: string,
-        @Query('tagType') tagTypeUUID: string,
-        @Query('value') value: string,
+        @Body('mission') mission: string,
+        @Body('tagType') tagType: string,
+        @Body('value') value: string | number | boolean,
     ) {
-        return this.tagService.addTagType(uuid, tagTypeUUID, value);
+        return this.tagService.addTagType(mission, tagType, value);
     }
 
     @Post('addTags')
-    @LoggedIn()
+    @CanAddTag()
     async addTags(
-        @Query('mission') uuid: string,
+        @Body('mission') uuid: string,
         @Body('tags') tags: Record<string, string>,
     ) {
         return this.tagService.addTags(uuid, tags);
     }
 
     @Delete('deleteTag')
-    @LoggedIn()
+    @CanDeleteTag()
     async deleteTag(@Query('uuid') uuid: string) {
         return this.tagService.deleteTag(uuid);
     }

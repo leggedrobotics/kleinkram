@@ -13,6 +13,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { ProjectGuardService } from '../auth/projectGuard.service';
             Account,
             AccessGroup,
             Project,
+            Tag,
         ]),
         BullModule.forRoot({
             redis: {
@@ -47,5 +49,4 @@ import { ProjectGuardService } from '../auth/projectGuard.service';
     controllers: [QueueController],
     exports: [QueueService],
 })
-export class QueueModule {
-}
+export class QueueModule {}

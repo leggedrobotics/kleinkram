@@ -63,7 +63,6 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         if self.path.startswith("/cli/callback"):
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
-            print(params)
             self.server.tokens = {
                 AUTH_TOKEN: params.get(AUTH_TOKEN)[0],
                 REFRESH_TOKEN: params.get(REFRESH_TOKEN)[0],
@@ -161,4 +160,11 @@ def login(key: Annotated[str, typer.Option()] = None):
 def endpoint(endpoint: Annotated[str, typer.Argument()]):
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
+    tokenfile.writeToFile()
+
+def setCliKey(key: Annotated[str, typer.Argument()]):
+    tokenfile = TokenFile()
+    if not tokenfile.endpoint in tokenfile.tokens:
+        tokenfile.tokens[tokenfile.endpoint] = {}
+    tokenfile.tokens[tokenfile.endpoint][CLI_KEY] = key
     tokenfile.writeToFile()

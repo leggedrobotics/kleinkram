@@ -36,7 +36,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        if (request.cookies['cli_token']) {
+        if (request.cookies[CookieNames.CLI_KEY]) {
             // const token = await this.tokenRepository.find();
             const token = await this.tokenRepository.findOne({
                 where: {
@@ -44,8 +44,9 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                 },
                 relations: ['mission'],
             });
+
             if (request.query.uuid != token.mission.uuid) {
-                throw new ForbiddenException('Invalid token');
+                throw new ForbiddenException('Invalid key');
             }
         } else {
             const canAccess = await this.missionGuardService.canAccessMission(
@@ -293,6 +294,76 @@ export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
             user.uuid,
             missionUUID,
             AccessGroupRights.WRITE,
+        );
+    }
+}
+
+@Injectable()
+export class AddTagGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(Apikey) private apikeyRepository: Repository<Apikey>,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        const missionUUID = request.body.mission;
+
+        if (request.cookies[CookieNames.CLI_KEY]) {
+            // const token = await this.apikeyRepository.find();
+            const token = await this.apikeyRepository.findOne({
+                where: {
+                    apikey: request.cookies[CookieNames.CLI_KEY],
+                },
+                relations: ['mission'],
+            });
+            if (!token) {
+                throw new ForbiddenException('Invalid key');
+            }
+            if (missionUUID != token.mission.uuid) {
+                console.log('Invalid key');
+                throw new ForbiddenException('Invalid key');
+            }
+            return true;
+        } else {
+            await super.canActivate(context); // Ensure the user is authenticated first
+            if (!request.user) {
+                return false;
+            }
+            const user = request.user;
+            return this.missionGuardService.canAccessMission(
+                user.uuid,
+                missionUUID,
+                AccessGroupRights.WRITE,
+            );
+        }
+    }
+}
+
+@Injectable()
+export class DeleteTagGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const taguuid = request.body.uuid;
+        return this.missionGuardService.canTagMission(
+            user.uuid,
+            taguuid,
+            AccessGroupRights.DELETE,
         );
     }
 }

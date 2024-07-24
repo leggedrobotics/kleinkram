@@ -14,10 +14,12 @@ const messageOnly = winston.format.printf(({ level, message, label }) => {
 });
 
 const logger = winston.createLogger({
-    level: 'silly',
+    level: 'debug',
     format: format.json(),
     transports: [
-        new transports.Console({ format: format.combine(ignoreContainerLogs(), messageOnly) }),
+        new transports.Console({
+            format: format.combine(ignoreContainerLogs(), messageOnly),
+        }),
         new LokiTransport({
             host: 'http://loki:3100',
             interval: 5,

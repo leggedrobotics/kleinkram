@@ -19,6 +19,8 @@ import {
     CreateQueueByBodyGuard,
     ReadActionGuard,
     CreateActionGuard,
+    AddTagGuard,
+    DeleteTagGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -152,5 +154,19 @@ export function CanCreateAction() {
     return applyDecorators(
         SetMetadata('CanCreateAction', true),
         UseGuards(CreateActionGuard),
+    );
+}
+
+export function CanAddTag() {
+    return applyDecorators(
+        SetMetadata('CanAddTag', true),
+        UseGuards(AddTagGuard),
+    );
+}
+
+export function CanDeleteTag() {
+    return applyDecorators(
+        SetMetadata('CanDeleteTag', true),
+        UseGuards(DeleteTagGuard),
     );
 }

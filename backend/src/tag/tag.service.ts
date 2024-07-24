@@ -2,6 +2,7 @@ import {
     ConflictException,
     ForbiddenException,
     Injectable,
+    UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -40,20 +41,46 @@ export class TagService {
     async addTagType(
         missionUUID: string,
         tagTypeUUID: string,
-        value: string,
+        value: string | number | boolean,
     ): Promise<Tag> {
         const tagType = await this.tagTypeRepository.findOneOrFail({
             where: { uuid: tagTypeUUID },
         });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
+            relations: ['tags', 'tags.tagType'],
         });
+        const exisitingTagType = mission.tags.map((tag) => tag.tagType.uuid);
+        if (exisitingTagType.includes(tagType.uuid)) {
+            throw new ConflictException('Tag already exists');
+        }
 
         let tag: Tag | undefined;
+        const isString = typeof value === 'string';
         switch (tagType.datatype) {
-            case DataType.STRING:
             case DataType.NUMBER:
+                if (typeof value == 'number' || isString) {
+                    if (isString) {
+                        value = parseInt(value as string);
+                    }
+                    tag = this.tagRepository.create({
+                        tagType,
+                        [tagType.datatype]: value as number,
+                        mission,
+                    });
+                    break;
+                }
+
+                throw new UnprocessableEntityException(
+                    'Value must be a number',
+                );
+            case DataType.STRING:
             case DataType.LOCATION:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
                 tag = this.tagRepository.create({
                     tagType,
                     [tagType.datatype]: value,
@@ -61,13 +88,27 @@ export class TagService {
                 });
                 break;
             case DataType.BOOLEAN:
-                tag = this.tagRepository.create({
-                    tagType,
-                    [tagType.datatype]: !!value,
-                    mission,
-                });
-                break;
+                if (typeof value == 'boolean' || isString) {
+                    if (isString) {
+                        value = value === 'true';
+                    }
+                    tag = this.tagRepository.create({
+                        tagType,
+                        [tagType.datatype]: value as boolean,
+                        mission,
+                    });
+                    break;
+                }
+
+                throw new UnprocessableEntityException(
+                    'Value must be a number',
+                );
             case DataType.DATE:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
                 tag = this.tagRepository.create({
                     tagType,
                     [tagType.datatype]: new Date(value),

@@ -6,6 +6,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Injectable()
 export class MissionGuardService {
@@ -17,6 +18,8 @@ export class MissionGuardService {
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         private projectGuardService: ProjectGuardService,
+        @InjectRepository(Tag)
+        private tagRepository: Repository<Tag>,
     ) {}
     async canAccessMission(
         userUUID: string,
@@ -71,5 +74,32 @@ export class MissionGuardService {
             return true;
         }
         return this.canAccessMission(userUUID, mission.uuid, rights);
+    }
+
+    async canTagMission(
+        userUUID: string,
+        tagUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const user = await this.userRepository.findOne({
+            where: { uuid: userUUID },
+        });
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        const tag = await this.tagRepository.findOne({
+            where: { uuid: tagUUID },
+            relations: ['mission'],
+        });
+
+        // All interactions with tags except READ are considered WRITE on the mission
+        let accessRights = AccessGroupRights.READ;
+        if (rights !== AccessGroupRights.READ) {
+            accessRights = AccessGroupRights.WRITE;
+        }
+        return this.canAccessMission(userUUID, tag.mission.uuid, accessRights);
     }
 }
