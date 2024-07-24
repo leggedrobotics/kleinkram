@@ -8,19 +8,20 @@ import { AuthFlowException } from './authFlowException';
 import Account from '@common/entities/auth/account.entity';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { AccessGroupRights, CookieNames, Providers, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    CookieNames,
+    Providers,
+    UserRole,
+} from '@common/enum';
 
 import access_config from '../../access_config.json';
-
-type AccessGroupConfig = {
-    emails: [{ email: string; access_groups: string[] }];
-    access_groups: [{ name: string; uuid: string; rights: number }];
-};
+import { ConfigService } from '@nestjs/config';
+import { AccessGroupConfig } from '../app.module';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
-    config: AccessGroupConfig;
-
+    private config: AccessGroupConfig;
     constructor(
         private jwtService: JwtService,
         @InjectRepository(Account)
@@ -29,20 +30,12 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
+        private configService: ConfigService,
     ) {
-        try {
-            this.config = access_config as AccessGroupConfig;
-            logger.debug('Access config loaded');
-            logger.debug(JSON.stringify(this.config));
-        } catch (e) {
-            console.error('No access_config.json found');
-        }
+        this.config = this.configService.get('accessConfig');
     }
 
     async onModuleInit() {
-        if (!this.config) {
-            return;
-        }
         // Read access_config/*.json and create access groups
         await Promise.all(
             this.config.access_groups.map(async (group) => {
@@ -53,7 +46,6 @@ export class AuthService implements OnModuleInit {
                     const new_group = this.accessGroupRepository.create({
                         name: group.name,
                         uuid: group.uuid,
-                        rights: group.rights,
                         personal: false,
                         inheriting: true,
                     });
@@ -74,14 +66,22 @@ export class AuthService implements OnModuleInit {
 
         if (account && !account.user) {
             logger.error('Account exists but has no linked user!');
-            throw new AuthFlowException('Account exists but has no linked user!');
+            throw new AuthFlowException(
+                'Account exists but has no linked user!',
+            );
         }
 
         if (account) {
             return account.user;
         }
 
-        return this.create(id, Providers.GOOGLE, email, displayName, photos[0].value);
+        return this.create(
+            id,
+            Providers.GOOGLE,
+            email,
+            displayName,
+            photos[0].value,
+        );
     }
 
     async login(user: User) {
@@ -110,8 +110,13 @@ export class AuthService implements OnModuleInit {
      * @param username The name of the user
      * @param picture The URL of the user's profile picture
      */
-    async create(oauthID: string, provider: Providers, email: string, username: string, picture: string) {
-
+    async create(
+        oauthID: string,
+        provider: Providers,
+        email: string,
+        username: string,
+        picture: string,
+    ) {
         const existing_user = await this.userRepository.findOne({
             where: { email: email },
             relations: ['account'],
@@ -119,7 +124,9 @@ export class AuthService implements OnModuleInit {
 
         // assert that we don't have a user with the same email but a different provider
         if (!!existing_user && existing_user.account) {
-            throw new AuthFlowException('User already exists and has a linked account!');
+            throw new AuthFlowException(
+                'User already exists and has a linked account!',
+            );
         }
 
         const account: Account = this.accountRepository.create({
@@ -129,9 +136,13 @@ export class AuthService implements OnModuleInit {
 
         // if the user exists but has no linked account
         if (!!existing_user && !existing_user.account) {
-            logger.debug(`Linking account ${account} to existing user ${existing_user.uuid}`);
+            logger.debug(
+                `Linking account ${account} to existing user ${existing_user.uuid}`,
+            );
             account.user = existing_user;
-            return this.accountRepository.save(account).then(() => existing_user);
+            return this.accountRepository
+                .save(account)
+                .then(() => existing_user);
         }
 
         logger.debug(`Creating new user with email ${email}`);
@@ -151,7 +162,6 @@ export class AuthService implements OnModuleInit {
 
         const personal_group = this.accessGroupRepository.create({
             name: `Personal: ${saved_user.name}`,
-            rights: AccessGroupRights.WRITE,
             users: [saved_user],
             personal: true,
         });

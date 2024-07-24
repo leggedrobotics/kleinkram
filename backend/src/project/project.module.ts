@@ -10,6 +10,7 @@ import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import TagType from '@common/entities/tagType/tagType.entity';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import TagType from '@common/entities/tagType/tagType.entity';
             Account,
             AccessGroup,
             TagType,
+            ProjectAccess,
         ]),
     ],
     providers: [ProjectService, UserService, ProjectGuardService],

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
@@ -22,6 +22,10 @@ import env from '@common/env';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
 import Tag from '@common/entities/tag/tag.entity';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import MissionAccess from '@common/entities/auth/mission_access.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -33,6 +37,10 @@ import Tag from '@common/entities/tag/tag.entity';
             Project,
             Mission,
             Tag,
+            ProjectAccess,
+            MissionAccess,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({

@@ -19,6 +19,8 @@ import { ActionQueueProcessor } from './actions/provider';
 import env from '@common/env';
 import TagType from '@common/entities/tagType/tagType.entity';
 import Tag from '@common/entities/tag/tag.entity';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import MissionAccess from '@common/entities/auth/mission_access.entity';
 
 @Module({
     imports: [
@@ -68,6 +70,8 @@ import Tag from '@common/entities/tag/tag.entity';
                         AccessGroup,
                         TagType,
                         Tag,
+                        ProjectAccess,
+                        MissionAccess,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -85,6 +89,8 @@ import Tag from '@common/entities/tag/tag.entity';
             Apikey,
             TagType,
             Tag,
+            ProjectAccess,
+            MissionAccess,
         ]),
     ],
     providers: [FileProcessor, ActionQueueProcessor],

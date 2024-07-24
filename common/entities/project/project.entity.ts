@@ -4,6 +4,7 @@ import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import AccessGroup from '../auth/accessgroup.entity';
 import TagType from '../tagType/tagType.entity';
+import ProjectAccess from '../auth/project_access.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
@@ -13,8 +14,8 @@ export default class Project extends BaseEntity {
     @OneToMany(() => Mission, (mission) => mission.project)
     missions: Mission[];
 
-    @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.projects)
-    accessGroups: AccessGroup[];
+    @OneToMany(() => ProjectAccess, (project_access) => project_access.projects)
+    project_accesses: ProjectAccess[];
 
     @Column({ nullable: true })
     description: string;

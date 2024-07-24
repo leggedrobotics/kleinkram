@@ -8,23 +8,29 @@ import { JWTUser } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import TagType from '@common/entities/tagType/tagType.entity';
-import Tag from '@common/entities/tag/tag.entity';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import { ConfigService } from '@nestjs/config';
+import { AccessGroupConfig } from '../app.module';
 
 @Injectable()
 export class ProjectService {
+    private config: AccessGroupConfig;
+
     constructor(
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private userservice: UserService,
-        @InjectRepository(AccessGroup)
-        private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(ProjectAccess)
+        private projectAccessRepository: Repository<ProjectAccess>,
         @InjectRepository(TagType)
         private tagTypeRepository: Repository<TagType>,
-    ) {}
+        private configService: ConfigService,
+    ) {
+        this.config = this.configService.get('accessConfig');
+    }
 
     async findAll(user: JWTUser): Promise<Project[]> {
         logger.debug('Finding all projects as user: ', user.uuid);
@@ -41,9 +47,10 @@ export class ProjectService {
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator')
             .leftJoinAndSelect('project.missions', 'missions')
-            .leftJoin('project.accessGroups', 'accessGroups')
-            .leftJoin('accessGroups.users', 'users')
-            .where('accessGroups.rights >= :rights', {
+            .leftJoin('project.project_accesses', 'projectAccesses')
+            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+            .leftJoin('accessGroup.users', 'users')
+            .where('projectAccesses.rights >= :rights', {
                 rights: AccessGroupRights.READ,
             })
             .andWhere('users.uuid = :uuid', { uuid: user.uuid })
@@ -82,15 +89,33 @@ export class ProjectService {
                 });
             }),
         );
-        console.log('tagTypes', tagTypes);
         const newProject = this.projectRepository.create({
             name: project.name,
             description: project.description,
             creator: creator,
-            accessGroups: access_groups_default,
             requiredTags: tagTypes,
         });
-        return this.projectRepository.save(newProject);
+        const savedProject = await this.projectRepository.save(newProject);
+        await Promise.all(
+            access_groups_default.map(async (accessGroup) => {
+                let rights = AccessGroupRights.WRITE;
+                if (accessGroup.inheriting) {
+                    rights = this.config.access_groups.find((group) => {
+                        return group.uuid === accessGroup.uuid;
+                    }).rights;
+                }
+                const projectAccess = this.projectAccessRepository.create({
+                    rights,
+                    accessGroup,
+                    projects: savedProject,
+                });
+                return this.projectAccessRepository.save(projectAccess);
+            }),
+        );
+        return this.projectRepository.findOneOrFail({
+            where: { uuid: savedProject.uuid },
+            relations: ['creator', 'project_accesses'],
+        });
     }
 
     async update(

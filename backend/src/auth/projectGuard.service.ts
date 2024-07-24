@@ -35,11 +35,12 @@ export class ProjectGuardService {
         }
         const res = await this.projectRepository
             .createQueryBuilder('project')
-            .leftJoin('project.accessGroups', 'accessGroups')
-            .leftJoin('accessGroups.users', 'users')
+            .leftJoin('project.project_accesses', 'projectAccesses')
+            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+            .leftJoin('accessGroup.users', 'users')
             .where('project.uuid = :uuid', { uuid: projectUUID })
             .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('accessGroups.rights >= :rights', {
+            .andWhere('projectAccesses.rights >= :rights', {
                 rights,
             })
             .getMany();
@@ -72,7 +73,8 @@ export class ProjectGuardService {
         const canCreate = await this.accessGroupRepository
             .createQueryBuilder('access_group')
             .leftJoin('access_group.users', 'users')
-            .where('access_group.rights >= :rights', {
+            .leftJoin('access_group.project_accesses', 'project_accesses')
+            .where('project_accesses.rights >= :rights', {
                 rights: AccessGroupRights.CREATE,
             })
             .andWhere('users.uuid = :user', { user: user.uuid })

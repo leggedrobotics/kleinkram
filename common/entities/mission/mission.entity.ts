@@ -7,6 +7,7 @@ import User from '../user/user.entity';
 import Apikey from '../auth/apikey.entity';
 import AccessGroup from '../auth/accessgroup.entity';
 import Tag from '../tag/tag.entity';
+import MissionAccess from '../auth/mission_access.entity';
 
 @Entity()
 export default class Mission extends BaseEntity {
@@ -28,8 +29,8 @@ export default class Mission extends BaseEntity {
     @OneToMany(() => Apikey, (token) => token.mission)
     tokens: Apikey[];
 
-    @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.missions)
-    accessGroups: AccessGroup[];
+    @OneToMany(() => MissionAccess, (mission_access) => mission_access.missions)
+    mission_accesses: MissionAccess[];
 
     @OneToMany(() => Tag, (tag) => tag.mission)
     tags: Tag[];

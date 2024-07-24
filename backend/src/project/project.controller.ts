@@ -94,4 +94,14 @@ export class ProjectController {
     ) {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
+
+    // @Post('addUser')
+    // @CanWriteProject()
+    // async addUser(
+    //     @Body('uuid') uuid: string,
+    //     @Body('userUUID') userUUID: string,
+    //     @
+    // ) {
+    //     return this.projectService.addUser(uuid, userUUID);
+    // }
 }

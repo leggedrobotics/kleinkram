@@ -14,12 +14,14 @@ import { PassportModule } from '@nestjs/passport';
 import { ActionModule } from './action/actionModule';
 import env from '@common/env';
 import { TagModule } from './tag/tag.module';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import access_config from '../access_config.json';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [configuration],
+            load: [configuration, () => ({ accessConfig: access_config })],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -53,3 +55,8 @@ import { TagModule } from './tag/tag.module';
     ],
 })
 export class AppModule {}
+
+export type AccessGroupConfig = {
+    emails: [{ email: string; access_groups: string[] }];
+    access_groups: [{ name: string; uuid: string; rights: number }];
+};

@@ -44,8 +44,7 @@ export class QueueService {
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
         private userservice: UserService,
-    ) {
-    }
+    ) {}
 
     async addActionQueue(mission_action_id: string) {
         await this.actionQueue.add('actionProcessQueue', {
@@ -183,8 +182,9 @@ export class QueueService {
             .leftJoinAndSelect('queue.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('queue.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
+            .leftJoin('project.project_accesses', 'projectAccesses')
+            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+            .leftJoin('accessGroup.users', 'projectUsers')
             .leftJoin('mission.accessGroups', 'missionAccessGroups')
             .leftJoin('missionAccessGroups.users', 'missionUsers')
             .where('queue.updatedAt > :startDate', { startDate })

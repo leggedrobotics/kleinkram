@@ -3,7 +3,8 @@ import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
 import Project from '../project/project.entity';
 import Mission from '../mission/mission.entity';
-import { AccessGroupRights } from '../../enum';
+import ProjectAccess from './project_access.entity';
+import MissionAccess from './mission_access.entity';
 
 @Entity()
 export default class AccessGroup extends BaseEntity {
@@ -14,16 +15,18 @@ export default class AccessGroup extends BaseEntity {
     @JoinTable()
     users: User[];
 
-    @ManyToMany(() => Project, (project) => project.accessGroups)
-    @JoinTable()
-    projects: Project[];
+    @OneToMany(
+        () => ProjectAccess,
+        (project_access) => project_access.accessGroup,
+    )
+    project_accesses: ProjectAccess[];
 
-    @ManyToMany(() => Mission, (mission) => mission.accessGroups)
+    @OneToMany(
+        () => MissionAccess,
+        (mission_access) => mission_access.accessGroup,
+    )
     @JoinTable()
-    missions: Mission[];
-
-    @Column()
-    rights: AccessGroupRights;
+    mission_accesses: MissionAccess[];
 
     @Column()
     personal: boolean;
