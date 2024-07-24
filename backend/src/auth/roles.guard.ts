@@ -320,7 +320,6 @@ export class AddTagGuard extends AuthGuard('jwt') {
                 },
                 relations: ['mission'],
             });
-            console.log(request.cookies[CookieNames.CLI_KEY]);
             if (!token) {
                 throw new ForbiddenException('Invalid key');
             }

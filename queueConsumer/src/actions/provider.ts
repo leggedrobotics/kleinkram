@@ -77,7 +77,6 @@ export class ActionQueueProcessor
             `Job ${job.id} of type ${job.name} failed with error: ${error.message}.`,
         );
         logger.error(error.stack);
-        console.log('error', error);
         // update the state of the action in the database
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.mission_action_id },
