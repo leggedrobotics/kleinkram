@@ -12,6 +12,7 @@ import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs
@@ -177,25 +178,15 @@ export class QueueService {
                 },
             });
         }
-        return this.queueRepository
-            .createQueryBuilder('queue')
-            .leftJoinAndSelect('queue.mission', 'mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('queue.creator', 'creator')
-            .leftJoin('project.project_accesses', 'projectAccesses')
-            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-            .leftJoin('accessGroup.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('queue.updatedAt > :startDate', { startDate })
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-                }),
-            )
-            .getMany();
+        return addAccessJoinsAndConditions(
+            this.queueRepository
+                .createQueryBuilder('queue')
+                .leftJoinAndSelect('queue.mission', 'mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('queue.creator', 'creator')
+                .where('queue.updatedAt > :startDate', { startDate }),
+            userUUID,
+        ).getMany();
     }
 
     async clear() {

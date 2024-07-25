@@ -4,6 +4,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { Brackets, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class TopicService {
@@ -24,42 +25,13 @@ export class TopicService {
         if (user.role === UserRole.ADMIN) {
             distinctNames = await baseQuery.getRawMany();
         } else {
-            distinctNames = await baseQuery
-                .leftJoin('topic.file', 'file')
-                .leftJoin('file.mission', 'mission')
-                .leftJoin('mission.project', 'project')
-                .leftJoin(
-                    'ProjectAccessViewEntity',
-                    'projectAccessView',
-                    'projectAccessView.projectuuid = project.uuid',
-                )
-                .leftJoin(
-                    'MissionAccessViewEntity',
-                    'missionAccessView',
-                    'missionAccessView.missionuuid = mission.uuid',
-                )
-                .leftJoin(
-                    'AccessGroup',
-                    'projectAccessGroup',
-                    'projectAccessGroup.uuid = projectAccessView.accessgroupuuid',
-                )
-                .leftJoin('projectAccessGroup.users', 'projectUsers')
-                .leftJoin(
-                    'AccessGroup',
-                    'missionAccessGroup',
-                    'missionAccessGroup.uuid = missionAccessView.accessGroupUUID',
-                )
-                .leftJoin('missionAccessGroup.users', 'missionUsers')
-                .where(
-                    new Brackets((qb) => {
-                        qb.where('projectUsers.uuid = :user', {
-                            user: userUUID,
-                        }).orWhere('missionUsers.uuid = :user', {
-                            user: userUUID,
-                        });
-                    }),
-                )
-                .getRawMany();
+            distinctNames = await addAccessJoinsAndConditions(
+                baseQuery
+                    .leftJoin('topic.file', 'file')
+                    .leftJoin('file.mission', 'mission')
+                    .leftJoin('mission.project', 'project'),
+                userUUID,
+            ).getRawMany();
         }
 
         return distinctNames.map((item) => item.name);
@@ -72,35 +44,14 @@ export class TopicService {
         if (user.role === UserRole.ADMIN) {
             return this.topicRepository.find();
         }
-        return this.topicRepository
-            .createQueryBuilder('topic')
-            .leftJoin('topic.file', 'file')
-            .leftJoin('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
-            .leftJoin(
-                'ProjectAccessViewEntity',
-                'projectAccessView',
-                'projectAccessView.projectUUID = project.uuid',
-            )
-            .leftJoin(
-                'MissionAccessViewEntity',
-                'missionAccessView',
-                'missionAccessView.missionUUID = mission.uuid',
-            )
-            .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-            .leftJoin('projectAccessGroup.users', 'projectUsers')
-            .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-            .leftJoin('missionAccessGroup.users', 'missionUsers')
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.userUUID = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.userUUID = :user', {
-                        user: userUUID,
-                    });
-                }),
-            )
-            .getMany();
+        return addAccessJoinsAndConditions(
+            this.topicRepository
+                .createQueryBuilder('topic')
+                .leftJoin('topic.file', 'file')
+                .leftJoin('file.mission', 'mission')
+                .leftJoin('mission.project', 'project'),
+            userUUID,
+        ).getMany();
     }
 
     async create(

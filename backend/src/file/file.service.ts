@@ -10,6 +10,7 @@ import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class FileService {
@@ -152,7 +153,7 @@ export class FileService {
             where: { uuid: userUUID },
         });
         // Start building your query with basic filters
-        const query = this.fileRepository
+        let query = this.fileRepository
             .createQueryBuilder('file')
             .select('file.uuid')
             .leftJoin('file.mission', 'mission')
@@ -163,30 +164,7 @@ export class FileService {
             });
 
         if (user.role !== UserRole.ADMIN) {
-            query
-                .leftJoin(
-                    'projectAccessViewEntity',
-                    'projectAccessView',
-                    'projectAccessView.projectUUID = project.uuid',
-                )
-                .leftJoin(
-                    'missionAccessView',
-                    'missionAccessView',
-                    'missionAccessView.missionUUID = mission.uuid',
-                )
-                .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-                .leftJoin('projectAccessGroup.users', 'projectUsers')
-                .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-                .leftJoin('missionAccessGroup.users', 'missionUsers')
-                .andWhere(
-                    new Brackets((qb) => {
-                        qb.where('missionUsers.uuid = :userUUID', {
-                            userUUID,
-                        }).orWhere('projectUsers.uuid = :userUUID', {
-                            userUUID,
-                        });
-                    }),
-                );
+            query = addAccessJoinsAndConditions(query, userUUID);
         }
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {

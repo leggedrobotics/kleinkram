@@ -5,6 +5,7 @@ import { SubmitAction } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class ActionService {
@@ -13,11 +14,9 @@ export class ActionService {
         private actionRepository: Repository<Action>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
-    ) {
-    }
+    ) {}
 
     async submit(data: SubmitAction): Promise<Action> {
-
         let action = this.actionRepository.create({
             mission: { uuid: data.missionUUID },
             state: ActionState.PENDING,
@@ -45,26 +44,17 @@ export class ActionService {
                 order: { createdAt: 'DESC' },
             });
         }
-        return this.actionRepository
-            .createQueryBuilder('action')
-            .leftJoinAndSelect('action.mission', 'mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoin('project.accessGroups', 'projectAccessgroup')
-            .leftJoin('projectAccessgroup.users', 'projectUser')
-            .leftJoin('mission.accessGroups', 'missionAccessgroup')
-            .leftJoin('missionAccessgroup.users', 'missionUser')
-            .where('mission.uuid IN (:...uuids)', {
-                uuids: mission_uuids.split(','),
-            })
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUser.uuid = :userUUID', {
-                        userUUID,
-                    }).orWhere('missionUser.uuid = :userUUID', { userUUID });
-                }),
-            )
-            .orderBy('action.createdAt', 'DESC')
-            .getMany();
+        return addAccessJoinsAndConditions(
+            this.actionRepository
+                .createQueryBuilder('action')
+                .leftJoinAndSelect('action.mission', 'mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .where('mission.uuid IN (:...uuids)', {
+                    uuids: mission_uuids.split(','),
+                })
+                .orderBy('action.createdAt', 'DESC'),
+            userUUID,
+        ).getMany();
     }
 
     async details(action_uuid: string) {
