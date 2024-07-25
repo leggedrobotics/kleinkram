@@ -5,8 +5,8 @@ import { Project } from 'src/types/Project';
 export class User extends BaseEntity {
     name: string;
     email: string;
+    avatarUrl: string;
     role: ROLE;
-    googleId: string;
     projects: Project[];
 
     constructor(
@@ -14,7 +14,7 @@ export class User extends BaseEntity {
         name: string,
         email: string,
         role: ROLE,
-        googleId: string,
+        avatarUrl: string,
         projects: Project[],
         createdAt: Date | null,
         updatedAt: Date | null,
@@ -24,7 +24,7 @@ export class User extends BaseEntity {
         this.name = name;
         this.email = email;
         this.role = role;
-        this.googleId = googleId;
         this.projects = projects;
+        this.avatarUrl = avatarUrl;
     }
 }

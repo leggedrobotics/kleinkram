@@ -3,6 +3,7 @@ import { DataType } from 'src/enum/TAG_TYPES';
 import { FileEntity } from 'src/types/FileEntity';
 import { Project } from 'src/types/Project';
 import { Tag } from 'src/types/Tag';
+import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
 
 export const createProject = async (
     name: string,
@@ -148,4 +149,17 @@ export const createTagType = async (name: string, type: DataType) => {
         new Date(response.data.updatedAt),
         new Date(response.data.deletedAt),
     );
+};
+
+export const addUsersToProject = async (
+    userUUId: string,
+    projectUUID: string,
+    rights: AccessGroupRights,
+) => {
+    const response = await axios.post('/project/addUser', {
+        userUUID: userUUId,
+        uuid: projectUUID,
+        rights,
+    });
+    return response.data;
 };

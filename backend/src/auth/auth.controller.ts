@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { LoggedIn } from './roles.decorator';
+import { CanWriteProject, LoggedIn } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
@@ -14,13 +14,11 @@ export class AuthController {
         private authService: AuthService,
         private readonly jwtService: JwtService,
         private userService: UserService,
-    ) {
-    }
+    ) {}
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth(@Req() req) {
-    }
+    async googleAuth(@Req() req) {}
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))

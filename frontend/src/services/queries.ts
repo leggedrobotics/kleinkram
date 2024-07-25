@@ -64,7 +64,7 @@ export const fetchOverview = async (
                     file.creator.name,
                     file.creator.email,
                     file.creator.role,
-                    file.creator.googleId,
+                    file.creator.avatarUrl,
                     [],
                     new Date(file.creator.createdAt),
                     new Date(file.creator.updatedAt),
@@ -172,7 +172,7 @@ export const getMission = async (uuid: string): Promise<Mission> => {
         mission.creator.name,
         mission.creator.email,
         mission.creator.role,
-        mission.creator.googleId,
+        mission.creator.avatarUrl,
         [],
         new Date(mission.creator.createdAt),
         new Date(mission.creator.updatedAt),
@@ -226,7 +226,7 @@ export const currentQueue = async (startDate: Date) => {
                 res.creator.name,
                 res.creator.email,
                 res.creator.role,
-                res.creator.googleId,
+                res.creator.avatarUrl,
                 [],
                 new Date(res.creator.createdAt),
                 new Date(res.creator.updatedAt),
@@ -282,7 +282,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.creator.name,
             file.creator.email,
             file.creator.role,
-            file.creator.googleId,
+            file.creator.avatarUrl,
             [],
             new Date(file.creator.createdAt),
             new Date(file.creator.updatedAt),
@@ -370,7 +370,7 @@ export const missionsOfProject = async (
                 mission.creator.name,
                 mission.creator.email,
                 mission.creator.role,
-                mission.creator.googleId,
+                mission.creator.avatarUrl,
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),
@@ -397,7 +397,7 @@ export const missionsOfProject = async (
                     file.creator.name,
                     file.creator.email,
                     file.creator.role,
-                    file.creator.googleId,
+                    file.creator.avatarUrl,
                     [],
                     new Date(file.creator.createdAt),
                     new Date(file.creator.updatedAt),
@@ -441,7 +441,7 @@ export const filesOfMission = async (
             response.data[0].mission.creator.name,
             response.data[0].mission.creator.email,
             response.data[0].mission.creator.role,
-            response.data[0].mission.creator.googleId,
+            response.data[0].mission.creator.avatarUrl,
             [],
             new Date(response.data[0].mission.creator.createdAt),
             new Date(response.data[0].mission.creator.updatedAt),
@@ -468,7 +468,7 @@ export const filesOfMission = async (
                 file.creator.name,
                 file.creator.email,
                 file.creator.role,
-                file.creator.googleId,
+                file.creator.avatarUrl,
                 [],
                 new Date(file.creator.createdAt),
                 new Date(file.creator.updatedAt),
@@ -514,7 +514,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
         project.creator.name,
         project.creator.email,
         project.creator.role,
-        project.creator.googleId,
+        project.creator.avatarUrl,
         [],
         new Date(project.creator.createdAt),
         new Date(project.creator.updatedAt),
@@ -593,4 +593,30 @@ export const getTagTypes = async () => {
             new Date(tag.deletedAt),
         );
     });
+};
+
+export const searchUsers = async (search: string): Promise<User[]> => {
+    const response = await axios.get('/user/search', { params: { search } });
+    return response.data.map((user: any) => {
+        return new User(
+            user.uuid,
+            user.name,
+            user.email,
+            user.role,
+            user.avatarUrl,
+            [],
+            new Date(user.createdAt),
+            new Date(user.updatedAt),
+            new Date(user.deletedAt),
+        );
+    });
+};
+
+export const canAddAccessGroup = async (
+    project_uuid: string,
+): Promise<boolean> => {
+    const response = await axios.get('/project/canAddAccessGroup', {
+        params: { uuid: project_uuid },
+    });
+    return response.data;
 };

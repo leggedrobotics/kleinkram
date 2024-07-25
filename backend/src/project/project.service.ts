@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Project from '@common/entities/project/project.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
@@ -13,6 +13,7 @@ import TagType from '@common/entities/tagType/tagType.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 
 @Injectable()
 export class ProjectService {
@@ -28,6 +29,8 @@ export class ProjectService {
         @InjectRepository(TagType)
         private tagTypeRepository: Repository<TagType>,
         private configService: ConfigService,
+        @InjectRepository(ProjectAccessViewEntity)
+        private projectAccessViewRepository: Repository<ProjectAccessViewEntity>,
     ) {
         this.config = this.configService.get('accessConfig');
     }
@@ -163,5 +166,94 @@ export class ProjectService {
 
     async deleteProject(uuid: string): Promise<void> {
         await this.projectRepository.delete(uuid);
+    }
+
+    async canAddAccessGroup(
+        uuid: string,
+        user: JWTUser,
+        rights: AccessGroupRights = AccessGroupRights.WRITE,
+    ): Promise<boolean> {
+        return this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoin('project.project_accesses', 'projectAccesses')
+            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+            .leftJoin('accessGroup.users', 'users')
+            .where('project.uuid = :uuid', { uuid })
+            .andWhere('users.uuid = :user_uuid', { user_uuid: user.uuid })
+            .andWhere('projectAccesses.rights >= :rights', {
+                rights: rights,
+            })
+            .getExists();
+    }
+
+    async addUser(
+        projectUUID: string,
+        userUUID: string,
+        rights: AccessGroupRights,
+    ): Promise<Project> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+            relations: ['project_accesses', 'project_accesses.accessGroup'],
+        });
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+            relations: ['accessGroups'],
+        });
+        const personalAccessGroup = user.accessGroups.find(
+            (accessGroup) => accessGroup.personal,
+        );
+        if (rights === AccessGroupRights.DELETE) {
+            const canDelete = await this.canAddAccessGroup(
+                projectUUID,
+                { uuid: userUUID },
+                AccessGroupRights.DELETE,
+            );
+            if (!canDelete) {
+                throw new ConflictException(
+                    'User cannot grant delete rights without having delete rights himself/herself',
+                );
+            }
+        }
+
+        const existingAccess = await this.projectAccessRepository
+            .createQueryBuilder('projectAccess')
+            .leftJoin('projectAccess.accessGroup', 'accessGroup')
+            .leftJoin('projectAccess.projects', 'projects')
+            .where('projectAccess.projects.uuid = :projectUUID', {
+                projectUUID,
+            })
+            .andWhere('accessGroup.uuid = :accessGroupUUID', {
+                accessGroupUUID: personalAccessGroup.uuid,
+            })
+            .getOne();
+        console.log(existingAccess);
+        console.log(personalAccessGroup);
+        console.log(project);
+        if (existingAccess) {
+            if (existingAccess.rights >= rights) {
+                return project;
+            }
+            existingAccess.rights = rights;
+            await this.projectAccessRepository.save(existingAccess);
+            return this.projectRepository.findOneOrFail({
+                where: { uuid: projectUUID },
+                relations: ['project_accesses', 'project_accesses.accessGroup'],
+            });
+        }
+
+        if (!personalAccessGroup) {
+            throw new ConflictException('User has no personal access group');
+        }
+
+        const projectAccess = this.projectAccessRepository.create({
+            rights: rights,
+            accessGroup: personalAccessGroup,
+            projects: project,
+        });
+        await this.projectAccessRepository.save(projectAccess);
+        return this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+            relations: ['project_accesses', 'project_accesses.accessGroup'],
+        });
     }
 }

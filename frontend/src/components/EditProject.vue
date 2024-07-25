@@ -38,7 +38,7 @@
                 v-if="project"
                 label="Manage Access Rights"
                 color="orange"
-                @click=""
+                @click="openAccessRightsModal"
                 icon="lock"
             />
         </div>
@@ -63,14 +63,16 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getProject } from 'src/services/queries';
 import { deleteProject, updateProject } from 'src/services/mutations';
 import { ref, watch } from 'vue';
-import { Notify } from 'quasar';
+import { Notify, useQuasar } from 'quasar';
 import { Project } from 'src/types/Project';
+import AccessRightsDialog from 'components/AccessRightsDialog.vue';
 
 const props = defineProps<{
     project_uuid: string;
 }>();
 const emit = defineEmits(['project-deleted']);
 const queryClient = useQueryClient();
+const $q = useQuasar();
 
 const projectResponse = useQuery<Project>({
     queryKey: ['project', props.project_uuid],
@@ -153,6 +155,15 @@ async function _deleteProject() {
         queryClient.invalidateQueries(query.queryKey);
     });
     emit('project-deleted');
+}
+
+function openAccessRightsModal() {
+    $q.dialog({
+        component: AccessRightsDialog,
+        componentProps: {
+            project_uuid: props.project_uuid,
+        },
+    });
 }
 </script>
 <style scoped></style>

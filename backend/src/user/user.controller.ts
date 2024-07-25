@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 import { JWTUser } from 'src/auth/paramDecorator';
@@ -36,5 +36,15 @@ export class UserController {
     @AdminOnly()
     async demoteUser(@Body() bd: { email: string }) {
         return this.userService.demoteUser(bd.email);
+    }
+
+    @Get('search')
+    @LoggedIn()
+    async search(
+        @Query('search') search: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        console.log('search', search);
+        return this.userService.search(user, search);
     }
 }
