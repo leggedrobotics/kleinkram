@@ -615,7 +615,7 @@ export const searchUsers = async (search: string): Promise<User[]> => {
 export const canAddAccessGroup = async (
     project_uuid: string,
 ): Promise<boolean> => {
-    const response = await axios.get('/project/canAddAccessGroup', {
+    const response = await axios.get('/access/canAddAccessGroupToProject', {
         params: { uuid: project_uuid },
     });
     return response.data;

@@ -95,24 +95,4 @@ export class ProjectController {
     ) {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
-
-    @Get('canAddAccessGroup')
-    @LoggedIn()
-    async canAddAccessGroup(
-        @Query('uuid') uuid: string,
-        @addJWTUser() user?: JWTUser,
-    ) {
-        return this.projectService.canAddAccessGroup(uuid, user);
-    }
-
-    @Post('addUser')
-    @CanWriteProject()
-    async addUser(
-        @Body('uuid') uuid: string,
-        @Body('userUUID') userUUID: string,
-        @Body('rights') rights: AccessGroupRights,
-        @addJWTUser() user?: JWTUser,
-    ) {
-        return this.projectService.addUser(uuid, userUUID, rights);
-    }
 }

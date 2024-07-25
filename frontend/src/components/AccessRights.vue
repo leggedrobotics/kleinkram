@@ -25,7 +25,7 @@
                 />
             </div>
             <div class="col-2 flex flex-center">
-                <q-btn label="Search" color="primary" @click="refetch" />
+                <q-btn label="Search" color="primary" @click="() => refetch" />
             </div>
             <div class="col-5 flex flex-center">
                 <div class="row" v-for="user in foundUsers">

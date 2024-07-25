@@ -17,6 +17,9 @@ export default class TagType extends BaseEntity {
     name: string;
 
     @Column()
+    description: string;
+
+    @Column()
     datatype: DataType;
 
     @ManyToMany(() => Project, (project) => project.requiredTags)

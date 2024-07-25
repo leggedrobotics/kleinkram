@@ -156,10 +156,28 @@ export const addUsersToProject = async (
     projectUUID: string,
     rights: AccessGroupRights,
 ) => {
-    const response = await axios.post('/project/addUser', {
+    const response = await axios.post('/access/addUserToProject', {
         userUUID: userUUId,
         uuid: projectUUID,
         rights,
+    });
+    return response.data;
+};
+
+export const createAccessGroup = async (name: string) => {
+    const response = await axios.post('/access/createAccessGroup', {
+        name,
+    });
+    return response.data;
+};
+
+export const addUserToAccessGroup = async (
+    userUUID: string,
+    accessGroupUUID: string,
+) => {
+    const response = await axios.post('/access/addUserToAccessGroup', {
+        userUUID,
+        uuid: accessGroupUUID,
     });
     return response.data;
 };

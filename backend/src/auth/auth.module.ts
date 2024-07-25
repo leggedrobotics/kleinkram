@@ -26,6 +26,8 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import MissionAccess from '@common/entities/auth/mission_access.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import { AccessService } from './access.service';
+import { AccessController } from './access.controller';
 
 @Module({
     imports: [
@@ -52,6 +54,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
     ],
     providers: [
         AuthService,
+        AccessService,
         GoogleStrategy,
         UserService,
         ProjectGuardService,
@@ -61,7 +64,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
         LoggedInUserGuard,
         TokenOrUserGuard,
     ],
-    controllers: [AuthController],
+    controllers: [AuthController, AccessController],
     exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
 export class AuthModule {}
