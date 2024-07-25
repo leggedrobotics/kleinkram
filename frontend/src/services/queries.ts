@@ -1,15 +1,16 @@
 import axios from 'src/api/axios';
-import {
-    Action,
-    FileEntity,
-    Project,
-    Queue,
-    Mission,
-    Topic,
-    User,
-    TagType,
-    Tag,
-} from 'src/types/types';
+
+import { ProjectAccess } from 'src/types/ProjectAccess';
+import { AccessGroup } from 'src/types/AccessGroup';
+import { Mission } from 'src/types/Mission';
+import { Project } from 'src/types/Project';
+import { User } from 'src/types/User';
+import { FileEntity } from 'src/types/FileEntity';
+import { Action } from 'src/types/Action';
+import { Tag } from 'src/types/Tag';
+import { TagType } from 'src/types/TagType';
+import { Queue } from 'src/types/Queue';
+import { Topic } from 'src/types/Topic';
 
 export const fetchOverview = async (
     filename: string,
@@ -536,6 +537,30 @@ export const getProject = async (uuid: string): Promise<Project> => {
             new Date(tag.createdAt),
             new Date(tag.updatedAt),
             new Date(tag.deletedAt),
+        );
+    });
+    const projectAccess = project.project_accesses.map((access: any) => {
+        const accessGroup = new AccessGroup(
+            access.accessGroup.uuid,
+            access.accessGroup.name,
+            [],
+            [],
+            [],
+            access.accessGroup.personal,
+            access.accessGroup.inheriting,
+            new Date(access.accessGroup.createdAt),
+            new Date(access.accessGroup.updatedAt),
+            new Date(access.accessGroup.deletedAt),
+        );
+
+        return new ProjectAccess(
+            access.uuid,
+            access.rights,
+            accessGroup,
+            [],
+            new Date(access.createdAt),
+            new Date(access.updatedAt),
+            new Date(access.deletedAt),
         );
     });
     return new Project(

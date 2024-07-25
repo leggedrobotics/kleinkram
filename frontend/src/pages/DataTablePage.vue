@@ -193,12 +193,14 @@ import {
     fetchOverview,
     missionsOfProject,
 } from 'src/services/queries';
-import { FileEntity, Project, Mission } from 'src/types/types';
 import EditMission from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
 import { formatSize } from 'src/services/generalFormatting';
+import { Project } from 'src/types/Project';
+import { Mission } from 'src/types/Mission';
+import { FileEntity } from 'src/types/FileEntity';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();

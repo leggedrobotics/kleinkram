@@ -60,7 +60,13 @@ export class ProjectService {
     async findOne(uuid: string): Promise<Project> {
         return this.projectRepository.findOne({
             where: { uuid },
-            relations: ['creator', 'missions', 'requiredTags'],
+            relations: [
+                'creator',
+                'missions',
+                'requiredTags',
+                'project_accesses',
+                'project_accesses.accessGroup',
+            ],
         });
     }
 

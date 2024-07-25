@@ -33,7 +33,7 @@
                 icon="save"
             />
         </div>
-        <div class="col-2" style="margin-right: 15px">
+        <div class="col-1" style="margin-right: 15px">
             <q-btn
                 v-if="project"
                 label="Delete"
@@ -47,15 +47,29 @@
                 >
             </q-btn>
         </div>
+        <div class="col-2">
+            <q-btn
+                v-if="project"
+                label="Manage Access Rights"
+                color="orange"
+                @click=""
+                icon="lock"
+                :disable="project.missions.length > 0"
+            >
+                <q-tooltip class="bg-accent"
+                    >Only projects without missions can be deleted</q-tooltip
+                >
+            </q-btn>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
-import { Project } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getProject } from 'src/services/queries';
 import { deleteProject, updateProject } from 'src/services/mutations';
 import { ref, watch } from 'vue';
 import { Notify } from 'quasar';
+import { Project } from 'src/types/Project';
 
 const props = defineProps<{
     project_uuid: string;

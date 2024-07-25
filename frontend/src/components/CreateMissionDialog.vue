@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import CreateMission from 'components/CreateMission.vue';
-import { Project } from 'src/types/types';
+import { Project } from 'src/types/Project';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{

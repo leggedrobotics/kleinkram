@@ -92,7 +92,6 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { FileEntity, Project, Mission } from 'src/types/types';
 import {
     allProjects,
     filesOfMission,
@@ -111,6 +110,9 @@ import EditProject from 'components/EditProject.vue';
 import MoveMission from 'components/MoveMission.vue';
 import { FileType } from 'src/enum/FILE_ENUM';
 import EditMission from 'components/EditMission.vue';
+import { Project } from 'src/types/Project';
+import { Mission } from 'src/types/Mission';
+import { FileEntity } from 'src/types/FileEntity';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 type crumb = {

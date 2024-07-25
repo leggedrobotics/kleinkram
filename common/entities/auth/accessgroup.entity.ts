@@ -1,8 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
-import Project from '../project/project.entity';
-import Mission from '../mission/mission.entity';
 import ProjectAccess from './project_access.entity';
 import MissionAccess from './mission_access.entity';
 

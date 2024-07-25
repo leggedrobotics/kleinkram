@@ -140,15 +140,21 @@
 
 <script setup lang="ts">
 import { computed, ref, Ref, watch } from 'vue';
-import { Project, TagType } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { allProjects, getProject, getTagTypes } from 'src/services/queries';
 import { createMission } from 'src/services/mutations';
 import { Notify } from 'quasar';
 import { DataType } from 'src/enum/TAG_TYPES';
+import { Project } from 'src/types/Project';
+import { TagType } from 'src/types/TagType';
 const queryClient = useQueryClient();
 
-const selected_project: Ref<Project | null> = ref(null);
+export const selected_project: Ref<Project | null> = ref(null);
+export const { data: project } = useQuery<Project>({
+    queryKey: computed(() => ['project', selected_project.value?.uuid]),
+    queryFn: () => getProject(selected_project.value?.uuid as string),
+    enabled: computed(() => !!selected_project.value?.uuid),
+});
 const missionName = ref('');
 const ddr_open = ref(false);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
@@ -175,12 +181,6 @@ const { data: tagTypes } = useQuery<TagType[]>({
     queryKey: ['tagTypes'],
     queryFn: getTagTypes,
 });
-const { data: project } = useQuery<Project>({
-    queryKey: computed(() => ['project', selected_project.value?.uuid]),
-    queryFn: () => getProject(selected_project.value?.uuid as string),
-    enabled: computed(() => !!selected_project.value?.uuid),
-});
-
 const availableAdditionalTags: Ref<TagType[]> = computed(() => {
     if (!tagTypes.value) return [];
     if (!project.value) return tagTypes.value;

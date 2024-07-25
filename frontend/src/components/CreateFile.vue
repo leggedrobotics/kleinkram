@@ -109,15 +109,16 @@ import {
     createMission,
     getUploadURL,
 } from 'src/services/mutations';
-import { Project, Mission } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { allProjects, missionsOfProject } from 'src/services/queries';
 import axios from 'axios';
+import { Project } from 'src/types/Project';
+import { Mission } from 'src/types/Mission';
+export const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
-const selected_project: Ref<Project | null> = ref(null);
 const selected_mission: Ref<Mission | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],

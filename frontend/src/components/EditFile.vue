@@ -177,10 +177,11 @@ import {
     missionsOfProject,
 } from 'src/services/queries';
 import { Ref, ref, watch, watchEffect } from 'vue';
-import { FileEntity, Project, Mission } from 'src/types/types';
 import { updateFile } from 'src/services/mutations';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
+import { Project } from 'src/types/Project';
+import { FileEntity } from 'src/types/FileEntity';
 
 const props = defineProps<{
     file_uuid: string;
@@ -262,7 +263,7 @@ watch(
 );
 
 const { mutate: updateFileMutation } = useMutation({
-    mutationFn: (fileData: FileEntity) => updateFile(fileData),
+    mutationFn: (fileData: FileEntity) => updateFile({ file: fileData }),
     onSuccess: function (data, variables, context) {
         // queryClient.invalidateQueries([''])
         Notify.create({
@@ -296,7 +297,7 @@ function _updateMission() {
         editableFile.value.date = convertedDate;
         const noncircularMission = editableFile.value?.mission.clone();
         noncircularMission.project = undefined;
-        noncircularMission.files = undefined;
+        noncircularMission.files = [];
         editableFile.value.mission = noncircularMission;
         updateFileMutation(editableFile.value);
         onDialogOK();

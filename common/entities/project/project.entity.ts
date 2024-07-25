@@ -2,7 +2,6 @@ import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import AccessGroup from '../auth/accessgroup.entity';
 import TagType from '../tagType/tagType.entity';
 import ProjectAccess from '../auth/project_access.entity';
 

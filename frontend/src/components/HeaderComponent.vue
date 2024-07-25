@@ -53,5 +53,6 @@ const main_menu = [
     { title: 'Explorer', icon: 'explore', to: ROUTES.EXPLORER.path },
     { title: 'Upload', icon: 'cloud_upload', to: ROUTES.UPLOAD.path },
     { title: 'Analysis', icon: 'analytics', to: ROUTES.ACTION.path },
+    { title: 'Access Rights', icon: 'lock', to: ROUTES.ACCESSRIGHTS.path },
 ];
 </script>

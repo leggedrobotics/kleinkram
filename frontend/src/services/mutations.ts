@@ -1,6 +1,8 @@
 import axios from 'src/api/axios';
-import { FileEntity, Project, Tag } from 'src/types/types';
 import { DataType } from 'src/enum/TAG_TYPES';
+import { FileEntity } from 'src/types/FileEntity';
+import { Project } from 'src/types/Project';
+import { Tag } from 'src/types/Tag';
 
 export const createProject = async (
     name: string,
@@ -98,7 +100,7 @@ export const createDrive = async (missionUUID: string, driveURL: string) => {
     return response.data;
 };
 
-export const updateFile = async (file: FileEntity) => {
+export const updateFile = async ({ file }: { file: FileEntity }) => {
     const response = await axios.put(`/file/${file.uuid}`, file);
     return response.data;
 };

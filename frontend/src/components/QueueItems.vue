@@ -81,11 +81,12 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { Project, Queue } from 'src/types/types';
 import { currentQueue } from 'src/services/queries';
 import { ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enum/QUEUE_ENUM';
+import { Queue } from 'src/types/Queue';
+import { Project } from 'src/types/Project';
 
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);

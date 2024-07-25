@@ -1,13 +1,11 @@
 import { RouteRecordRaw } from 'vue-router';
 
-
 /**
  * This file defines the routes available within the application
  */
 
 // All routes available within the application
 const ROUTES = {
-
     LOGIN: {
         name: 'Login',
         path: '/login',
@@ -90,22 +88,30 @@ const ROUTES = {
         name: 'Error404',
         path: '/:catchAll(.*)',
         component: () => import('layouts/NoTopNavLayout.vue'),
-        children: [{ path: '', component: () => import('pages/Error404Page.vue') }],
+        children: [
+            { path: '', component: () => import('pages/Error404Page.vue') },
+        ],
     },
 
     USER_PROFILE: {
         name: 'UserProfile',
         path: '/user-profile',
         component: () => import('layouts/MainLayout.vue'),
-        children: [{ path: '', component: () => import('pages/UserProfilePage.vue') }],
+        children: [
+            { path: '', component: () => import('pages/UserProfilePage.vue') },
+        ],
     },
-
+    ACCESSRIGHTS: {
+        name: 'AccessRights',
+        path: '/access-rights',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            { path: '', component: () => import('pages/AccessRightsPage.vue') },
+        ],
+    },
 };
 
 // Routes that can be accessed without being logged in
-export const PUBLIC_ROUTES: RouteRecordRaw[] = [
-    ROUTES.LOGIN,
-    ROUTES.HOME,
-];
+export const PUBLIC_ROUTES: RouteRecordRaw[] = [ROUTES.LOGIN, ROUTES.HOME];
 
 export default ROUTES;
