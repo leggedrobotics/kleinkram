@@ -149,8 +149,8 @@ import { Project } from 'src/types/Project';
 import { TagType } from 'src/types/TagType';
 const queryClient = useQueryClient();
 
-export const selected_project: Ref<Project | null> = ref(null);
-export const { data: project } = useQuery<Project>({
+const selected_project: Ref<Project | null> = ref(null);
+const { data: project } = useQuery<Project>({
     queryKey: computed(() => ['project', selected_project.value?.uuid]),
     queryFn: () => getProject(selected_project.value?.uuid as string),
     enabled: computed(() => !!selected_project.value?.uuid),

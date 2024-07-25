@@ -33,20 +33,6 @@
                 icon="save"
             />
         </div>
-        <div class="col-1" style="margin-right: 15px">
-            <q-btn
-                v-if="project"
-                label="Delete"
-                color="red"
-                @click="_deleteProject"
-                icon="delete"
-                :disable="project.missions.length > 0"
-            >
-                <q-tooltip class="bg-accent"
-                    >Only projects without missions can be deleted</q-tooltip
-                >
-            </q-btn>
-        </div>
         <div class="col-2">
             <q-btn
                 v-if="project"
@@ -54,6 +40,15 @@
                 color="orange"
                 @click=""
                 icon="lock"
+            />
+        </div>
+        <div class="col-1" style="margin-right: 15px">
+            <q-btn
+                v-if="project"
+                label="Delete"
+                color="red"
+                @click="_deleteProject"
+                icon="delete"
                 :disable="project.missions.length > 0"
             >
                 <q-tooltip class="bg-accent"

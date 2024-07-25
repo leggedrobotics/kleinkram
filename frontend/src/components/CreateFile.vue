@@ -105,8 +105,6 @@ import { Notify } from 'quasar';
 import {
     confirmUpload,
     createDrive,
-    createFile,
-    createMission,
     getUploadURL,
 } from 'src/services/mutations';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -114,7 +112,7 @@ import { allProjects, missionsOfProject } from 'src/services/queries';
 import axios from 'axios';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
-export const selected_project: Ref<Project | null> = ref(null);
+const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
