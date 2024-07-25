@@ -15,6 +15,8 @@ import { ProjectGuardService } from '../auth/projectGuard.service';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { UserService } from '../user/user.service';
 import Tag from '@common/entities/tag/tag.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -27,6 +29,8 @@ import Tag from '@common/entities/tag/tag.entity';
             Mission,
             Account,
             Tag,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         QueueModule,
     ],

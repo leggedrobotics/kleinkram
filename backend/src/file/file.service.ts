@@ -1,32 +1,32 @@
-import {Injectable} from '@nestjs/common';
-import {InjectRepository} from '@nestjs/typeorm';
-import {Brackets, Repository} from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
-import {UpdateFile} from './entities/update-file.dto';
+import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import {externalMinio} from '../minioHelper';
+import { externalMinio } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
-import {FileType, UserRole} from '@common/enum';
+import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 
 @Injectable()
 export class FileService {
     constructor(
-        @InjectRepository(FileEntity) private fileRepository: Repository<FileEntity>,
+        @InjectRepository(FileEntity)
+        private fileRepository: Repository<FileEntity>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
-    ) {
-    }
+    ) {}
 
     async findAll(userUUID: string) {
         const user = await this.userRepository.findOneOrFail({
-            where: {uuid: userUUID},
+            where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.fileRepository.find({
@@ -37,10 +37,20 @@ export class FileService {
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoin('mission.project', 'project')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .leftJoin(
+                'projectAccessViewEntity',
+                'projectAccessView',
+                'projectAccessView.projectUUID = project.uuid',
+            )
+            .leftJoin(
+                'missionAccessView',
+                'missionAccessView',
+                'missionAccessView.missionUUID = mission.uuid',
+            )
+            .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
+            .leftJoin('projectAccessGroup.users', 'projectUsers')
+            .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
+            .leftJoin('missionAccessGroup.users', 'missionUsers')
             .where(
                 new Brackets((qb) => {
                     qb.where('projectUsers.uuid = :userUUID', {
@@ -59,7 +69,7 @@ export class FileService {
         userUUID: string,
     ) {
         const user = await this.userRepository.findOneOrFail({
-            where: {uuid: userUUID},
+            where: { uuid: userUUID },
         });
 
         // Start building your query with basic filters
@@ -72,10 +82,20 @@ export class FileService {
 
         if (user.role !== UserRole.ADMIN) {
             query
-                .leftJoin('mission.accessGroups', 'missionAccessGroups')
-                .leftJoin('missionAccessGroups.users', 'missionUsers')
-                .leftJoin('project.accessGroups', 'projectAccessGroups')
-                .leftJoin('projectAccessGroups.users', 'projectUsers')
+                .leftJoin(
+                    'projectAccessViewEntity',
+                    'projectAccessView',
+                    'projectAccessView.projectUUID = project.uuid',
+                )
+                .leftJoin(
+                    'missionAccessView',
+                    'missionAccessView',
+                    'missionAccessView.missionUUID = mission.uuid',
+                )
+                .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
+                .leftJoin('projectAccessGroup.users', 'projectUsers')
+                .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
+                .leftJoin('missionAccessGroup.users', 'missionUsers')
                 .andWhere(
                     new Brackets((qb) => {
                         qb.where('missionUsers.uuid = :userUUID', {
@@ -87,13 +107,13 @@ export class FileService {
                 );
         }
         if (projectName) {
-            query.andWhere('project.name = :projectName', {projectName});
+            query.andWhere('project.name = :projectName', { projectName });
         }
         if (missionName) {
-            query.andWhere('mission.name = :missionName', {missionName});
+            query.andWhere('mission.name = :missionName', { missionName });
         }
         if (topics && topics.length > 0) {
-            query.andWhere('topic.name IN (:...topics)', {topics});
+            query.andWhere('topic.name IN (:...topics)', { topics });
 
             query
                 .groupBy('file.uuid')
@@ -113,7 +133,7 @@ export class FileService {
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
 
-            .where('file.uuid IN (:...fileIds)', {fileIds: fileIdsArray})
+            .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
             .getMany();
     }
 
@@ -129,7 +149,7 @@ export class FileService {
         userUUID: string,
     ) {
         const user = await this.userRepository.findOneOrFail({
-            where: {uuid: userUUID},
+            where: { uuid: userUUID },
         });
         // Start building your query with basic filters
         const query = this.fileRepository
@@ -144,10 +164,20 @@ export class FileService {
 
         if (user.role !== UserRole.ADMIN) {
             query
-                .leftJoin('mission.accessGroups', 'missionAccessGroups')
-                .leftJoin('missionAccessGroups.users', 'missionUsers')
-                .leftJoin('project.accessGroups', 'projectAccessGroups')
-                .leftJoin('projectAccessGroups.users', 'projectUsers')
+                .leftJoin(
+                    'projectAccessViewEntity',
+                    'projectAccessView',
+                    'projectAccessView.projectUUID = project.uuid',
+                )
+                .leftJoin(
+                    'missionAccessView',
+                    'missionAccessView',
+                    'missionAccessView.missionUUID = mission.uuid',
+                )
+                .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
+                .leftJoin('projectAccessGroup.users', 'projectUsers')
+                .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
+                .leftJoin('missionAccessGroup.users', 'missionUsers')
                 .andWhere(
                     new Brackets((qb) => {
                         qb.where('missionUsers.uuid = :userUUID', {
@@ -165,10 +195,10 @@ export class FileService {
             });
         }
         if (projectUUID) {
-            query.andWhere('project.uuid = :projectUUID', {projectUUID});
+            query.andWhere('project.uuid = :projectUUID', { projectUUID });
         }
         if (missionUUID) {
-            query.andWhere('mission.uuid = :missionUUID', {missionUUID});
+            query.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
         if (startDate && endDate) {
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
@@ -178,7 +208,7 @@ export class FileService {
         }
         const splitTopics = topics.split(',');
         if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
-            query.andWhere('topic.name IN (:...splitTopics)', {splitTopics});
+            query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
         }
         query.groupBy('file.uuid');
 
@@ -199,45 +229,45 @@ export class FileService {
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
-            .where('file.uuid IN (:...fileIds)', {fileIds: fileIdsArray})
+            .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
             .getMany();
     }
 
     async findOne(uuid: string) {
         return this.fileRepository.findOne({
-            where: {uuid},
+            where: { uuid },
             relations: ['mission', 'topics', 'mission.project', 'creator'],
         });
     }
 
     async findByFilename(filename: string) {
         return this.fileRepository.findOne({
-            where: {filename},
+            where: { filename },
             relations: ['mission', 'topics', 'mission.project'],
         });
     }
 
     async update(uuid: string, file: UpdateFile) {
-        const db_file = await this.fileRepository.findOne({where: {uuid}});
+        const db_file = await this.fileRepository.findOne({ where: { uuid } });
         db_file.filename = file.filename;
         db_file.date = file.date;
         if (file.mission) {
             db_file.mission = await this.missionRepository.findOne({
-                where: {uuid: file.mission.uuid},
+                where: { uuid: file.mission.uuid },
             });
         }
         if (file.project) {
             db_file.mission.project = await this.projectRepository.findOne({
-                where: {uuid: file.project.uuid},
+                where: { uuid: file.project.uuid },
             });
         }
         await this.fileRepository.save(db_file);
-        return this.fileRepository.findOne({where: {uuid}});
+        return this.fileRepository.findOne({ where: { uuid } });
     }
 
     async generateDownload(uuid: string, expires: boolean) {
         const file = await this.fileRepository.findOneOrFail({
-            where: {uuid},
+            where: { uuid },
             relations: ['mission', 'mission.project'],
         });
 
@@ -247,7 +277,9 @@ export class FileService {
 
         return await externalMinio.presignedUrl(
             'GET',
-            (file.type === FileType.MCAP) ? env.MINIO_MCAP_BUCKET_NAME : env.MINIO_BAG_BUCKET_NAME,
+            file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME,
             `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
         );
@@ -255,7 +287,7 @@ export class FileService {
 
     async generateDownloadForToken(missionUUID: string) {
         const mission = await this.missionRepository.findOneOrFail({
-            where: {uuid: missionUUID},
+            where: { uuid: missionUUID },
             relations: ['files', 'project'],
         });
         const urls = await Promise.all(
@@ -278,7 +310,7 @@ export class FileService {
 
     async findByMission(missionUUID: string) {
         return this.fileRepository.find({
-            where: {mission: {uuid: missionUUID}},
+            where: { mission: { uuid: missionUUID } },
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
         });
     }

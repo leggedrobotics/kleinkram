@@ -14,6 +14,8 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { TagService } from '../tag/tag.service';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -26,6 +28,8 @@ import { TagService } from '../tag/tag.service';
             AccessGroup,
             Tag,
             TagType,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
     ],
     providers: [

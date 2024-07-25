@@ -19,6 +19,8 @@ import { FileGuardService } from '../auth/fileGuard.service';
 import { TagService } from '../tag/tag.service';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -33,6 +35,8 @@ import TagType from '@common/entities/tagType/tagType.entity';
             AccessGroup,
             Tag,
             TagType,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
     ],
     providers: [

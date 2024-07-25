@@ -14,6 +14,8 @@ import Project from '@common/entities/project/project.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import Tag from '@common/entities/tag/tag.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -26,6 +28,8 @@ import Tag from '@common/entities/tag/tag.entity';
             AccessGroup,
             Project,
             Tag,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         BullModule.forRoot({
             redis: {

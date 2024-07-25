@@ -19,18 +19,18 @@ import Mission from '../entities/mission/mission.entity';
             ]),
 })
 export class MissionAccessViewEntity {
-    @ViewColumn()
+    @ViewColumn({ name: 'missionuuid' })
     missionUUID: string;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'useruuid' })
     userUUID: string;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'rights' })
     rights: AccessGroupRights;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'accessgroupuuid' })
     accessGroupUUID: string;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'missionaccessuuid' })
     missionAccessUUID: string;
 }

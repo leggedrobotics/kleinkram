@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import Tag from '@common/entities/tag/tag.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Injectable()
 export class MissionGuardService {
@@ -20,6 +21,8 @@ export class MissionGuardService {
         private projectGuardService: ProjectGuardService,
         @InjectRepository(Tag)
         private tagRepository: Repository<Tag>,
+        @InjectRepository(MissionAccessViewEntity)
+        private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
     async canAccessMission(
         userUUID: string,
@@ -48,18 +51,13 @@ export class MissionGuardService {
         if (canAccessProject) {
             return true;
         }
-        const res = await this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoin('mission.accessGroups', 'accessGroups')
-            .leftJoin('accessGroups.users', 'users')
-            .where('mission.uuid = :uuid', { uuid: missionUUID })
-            .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('accessGroups.rights >= :rights', {
-                rights,
-            })
-            .getMany();
-
-        return res.length > 0;
+        return this.missionAccessView.exists({
+            where: {
+                missionUUID,
+                userUUID,
+                rights: MoreThanOrEqual(rights),
+            },
+        });
     }
 
     async canAccessMissionByName(

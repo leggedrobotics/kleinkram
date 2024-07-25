@@ -28,10 +28,28 @@ export class TopicService {
                 .leftJoin('topic.file', 'file')
                 .leftJoin('file.mission', 'mission')
                 .leftJoin('mission.project', 'project')
-                .leftJoin('project.accessGroups', 'projectAccessGroups')
-                .leftJoin('projectAccessGroups.users', 'projectUsers')
-                .leftJoin('mission.accessGroups', 'missionAccessGroups')
-                .leftJoin('missionAccessGroups.users', 'missionUsers')
+                .leftJoin(
+                    'ProjectAccessViewEntity',
+                    'projectAccessView',
+                    'projectAccessView.projectuuid = project.uuid',
+                )
+                .leftJoin(
+                    'MissionAccessViewEntity',
+                    'missionAccessView',
+                    'missionAccessView.missionuuid = mission.uuid',
+                )
+                .leftJoin(
+                    'AccessGroup',
+                    'projectAccessGroup',
+                    'projectAccessGroup.uuid = projectAccessView.accessgroupuuid',
+                )
+                .leftJoin('projectAccessGroup.users', 'projectUsers')
+                .leftJoin(
+                    'AccessGroup',
+                    'missionAccessGroup',
+                    'missionAccessGroup.uuid = missionAccessView.accessGroupUUID',
+                )
+                .leftJoin('missionAccessGroup.users', 'missionUsers')
                 .where(
                     new Brackets((qb) => {
                         qb.where('projectUsers.uuid = :user', {
@@ -41,8 +59,6 @@ export class TopicService {
                         });
                     }),
                 )
-                .select('DISTINCT topic.name', 'name')
-                .orderBy('name')
                 .getRawMany();
         }
 
@@ -61,17 +77,30 @@ export class TopicService {
             .leftJoin('topic.file', 'file')
             .leftJoin('file.mission', 'mission')
             .leftJoin('mission.project', 'project')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
+            .leftJoin(
+                'ProjectAccessViewEntity',
+                'projectAccessView',
+                'projectAccessView.projectUUID = project.uuid',
+            )
+            .leftJoin(
+                'MissionAccessViewEntity',
+                'missionAccessView',
+                'missionAccessView.missionUUID = mission.uuid',
+            )
+            .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
+            .leftJoin('projectAccessGroup.users', 'projectUsers')
+            .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
+            .leftJoin('missionAccessGroup.users', 'missionUsers')
             .where(
                 new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
+                    qb.where('projectUsers.userUUID = :user', {
                         user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
+                    }).orWhere('missionUsers.userUUID = :user', {
+                        user: userUUID,
+                    });
                 }),
-            );
+            )
+            .getMany();
     }
 
     async create(

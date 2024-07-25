@@ -19,18 +19,18 @@ import Project from '../entities/project/project.entity';
             ]),
 })
 export class ProjectAccessViewEntity {
-    @ViewColumn()
+    @ViewColumn({ name: 'projectuuid' })
     projectUUID: string;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'useruuid' })
     userUUID: string;
 
     @ViewColumn()
     rights: AccessGroupRights;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'accessgroupuuid' })
     accessGroupUUID: string;
 
-    @ViewColumn()
+    @ViewColumn({ name: 'protectaccessuuid' })
     protectAccessUUID: string;
 }
