@@ -124,7 +124,6 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        console.log(accessGroupUUID, userUUID);
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
             relations: ['users'],
@@ -134,5 +133,14 @@ export class AccessService {
         });
         accessGroup.users.push(user);
         return this.accessGroupRepository.save(accessGroup);
+    }
+
+    async searchAccessGroup(search: string, user: JWTUser) {
+        return this.accessGroupRepository
+            .createQueryBuilder('accessGroup')
+            .where('accessGroup.name ILIKE :search', { search: `%${search}%` })
+            .andWhere('accessGroup.inheriting = false')
+            .andWhere('accessGroup.personal = false')
+            .getMany();
     }
 }

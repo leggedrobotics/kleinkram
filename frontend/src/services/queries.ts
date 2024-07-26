@@ -620,3 +620,25 @@ export const canAddAccessGroup = async (
     });
     return response.data;
 };
+
+export const searchAccessGroups = async (
+    search: string,
+): Promise<AccessGroup[]> => {
+    const response = await axios.get('/access/searchAccessGroup', {
+        params: { search },
+    });
+    return response.data.map((group: any) => {
+        return new AccessGroup(
+            group.uuid,
+            group.name,
+            [],
+            [],
+            [],
+            group.personal,
+            group.inheriting,
+            new Date(group.createdAt),
+            new Date(group.updatedAt),
+            new Date(group.deletedAt),
+        );
+    });
+};

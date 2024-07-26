@@ -46,4 +46,13 @@ export class AccessController {
     ) {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
     }
+
+    @Get('searchAccessGroup')
+    @LoggedIn()
+    async search(
+        @Query('search') search: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.searchAccessGroup(search, user);
+    }
 }

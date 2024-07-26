@@ -22,7 +22,7 @@
                 </div>
             </q-form>
             <q-separator style="margin-top: 12px; margin-bottom: 12px" />
-            <q-form>
+            <q-form @submit="() => refetchAccessGroups()">
                 <b>Add Users to Access Group</b>
                 <div class="row">
                     <div class="col-3">
@@ -32,8 +32,30 @@
                             required
                         />
                     </div>
-                    <div class="col-5">
+                    <div class="col-1">
                         <q-btn color="primary" label="Find" type="submit" />
+                    </div>
+                    <div class="col-5">
+                        <q-form>
+                            <div
+                                class="row"
+                                v-for="accessgroup in foundAccessGroups"
+                                style="margin-top: 3px"
+                            >
+                                <div class="col-4 flex flex-center">
+                                    {{ accessgroup.name }}
+                                </div>
+                                <div class="col-2 flex flex-center">
+                                    <q-btn
+                                        label="Select"
+                                        color="primary"
+                                        @click="
+                                            () => selectAccessGroup(accessgroup)
+                                        "
+                                    />
+                                </div>
+                            </div>
+                        </q-form>
                     </div>
                 </div>
             </q-form>
@@ -112,7 +134,11 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery } from '@tanstack/vue-query';
-import { allProjects, searchUsers } from 'src/services/queries';
+import {
+    allProjects,
+    searchAccessGroups,
+    searchUsers,
+} from 'src/services/queries';
 import { Ref, ref } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
@@ -146,6 +172,10 @@ const { mutate: _createAccessGroup } = useMutation({
     },
 });
 
+const selectAccessGroup = (accessGroup: AccessGroup) => {
+    selectedAccessGroup.value = [accessGroup];
+};
+
 const { mutate: addUserMutation } = useMutation({
     mutationFn: (params: { userUUID: string; accessGroupUUID: string }) =>
         addUserToAccessGroup(params.userUUID, params.accessGroupUUID),
@@ -167,6 +197,12 @@ const { data: foundUsers, refetch } = useQuery({
     queryKey: ['users', searchUser.value],
     queryFn: () => searchUsers(searchUser.value),
     enabled: !!searchUser.value,
+});
+
+const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
+    queryKey: ['accessGroups', searchAccessGroup.value],
+    queryFn: () => searchAccessGroups(searchAccessGroup.value),
+    enabled: !!searchAccessGroup.value,
 });
 
 function addUser(user_uuid: string) {
