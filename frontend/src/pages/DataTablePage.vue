@@ -187,12 +187,7 @@
 import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { debounce, QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import {
-    allProjects,
-    allTopicsNames,
-    fetchOverview,
-    missionsOfProject,
-} from 'src/services/queries';
+
 import EditMission from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
@@ -201,6 +196,10 @@ import { formatSize } from 'src/services/generalFormatting';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
+import { allProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
+import { allTopicsNames } from 'src/services/queries/topic';
+import { fetchOverview } from 'src/services/queries/file';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();

@@ -63,8 +63,8 @@ import { ref } from 'vue';
 import { createProject } from 'src/services/mutations';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { getTagTypes } from 'src/services/queries';
 import { TagType } from 'src/types/TagType';
+import { getTagTypes } from 'src/services/queries/tag';
 
 const projectName = ref('');
 const projectDescription = ref('');

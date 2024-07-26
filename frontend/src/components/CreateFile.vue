@@ -108,10 +108,11 @@ import {
     getUploadURL,
 } from 'src/services/mutations';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects, missionsOfProject } from 'src/services/queries';
 import axios from 'axios';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
+import { allProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
 const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);

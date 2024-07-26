@@ -141,12 +141,13 @@
 <script setup lang="ts">
 import { computed, ref, Ref, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects, getProject, getTagTypes } from 'src/services/queries';
 import { createMission } from 'src/services/mutations';
 import { Notify } from 'quasar';
 import { DataType } from 'src/enum/TAG_TYPES';
 import { Project } from 'src/types/Project';
 import { TagType } from 'src/types/TagType';
+import { allProjects, getProject } from 'src/services/queries/project';
+import { getTagTypes } from 'src/services/queries/tag';
 const queryClient = useQueryClient();
 
 const selected_project: Ref<Project | null> = ref(null);

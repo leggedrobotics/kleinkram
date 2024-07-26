@@ -32,11 +32,11 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { actions } from 'src/services/queries';
 import { ref, Ref, watchEffect } from 'vue';
 import { ActionState } from 'src/enum/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
+import { actions } from 'src/services/queries/action';
 
 // list all props of the component
 const props = defineProps<{
