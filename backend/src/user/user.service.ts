@@ -74,7 +74,6 @@ export class UserService {
         if (!search) {
             return [];
         }
-        console.log('search', search);
 
         // Use query builder to perform a search on both 'name' and 'email' fields
         return this.userRepository

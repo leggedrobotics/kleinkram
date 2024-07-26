@@ -67,6 +67,7 @@ export class ProjectService {
                 'requiredTags',
                 'project_accesses',
                 'project_accesses.accessGroup',
+                'project_accesses.accessGroup.users',
             ],
         });
     }

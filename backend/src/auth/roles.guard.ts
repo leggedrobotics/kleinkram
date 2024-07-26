@@ -241,7 +241,6 @@ export class ReadMissionGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const missionUUID = request.query.uuid;
-        console.log('USer', user);
         return this.missionGuardService.canAccessMission(
             user.uuid,
             missionUUID,

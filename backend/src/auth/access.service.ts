@@ -143,4 +143,67 @@ export class AccessService {
             .andWhere('accessGroup.personal = false')
             .getMany();
     }
+
+    async addAccessGroupToProject(
+        projectUUID: string,
+        accessGroupUUID: string,
+        rights: AccessGroupRights,
+        jwtuser: JWTUser,
+    ): Promise<Project> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+            relations: ['project_accesses', 'project_accesses.accessGroup'],
+        });
+        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['users'],
+        });
+
+        if (rights === AccessGroupRights.DELETE) {
+            const canDelete = await this.canAddAccessGroup(
+                projectUUID,
+                { uuid: jwtuser.uuid },
+                AccessGroupRights.DELETE,
+            );
+            if (!canDelete) {
+                throw new ConflictException(
+                    'User cannot grant delete rights without having delete rights himself/herself',
+                );
+            }
+        }
+
+        const existingAccess = await this.projectAccessRepository
+            .createQueryBuilder('projectAccess')
+            .leftJoin('projectAccess.accessGroup', 'accessGroup')
+            .leftJoin('projectAccess.projects', 'projects')
+            .where('projectAccess.projects.uuid = :projectUUID', {
+                projectUUID,
+            })
+            .andWhere('accessGroup.uuid = :accessGroupUUID', {
+                accessGroupUUID,
+            })
+            .getOne();
+        if (existingAccess) {
+            if (existingAccess.rights >= rights) {
+                return project;
+            }
+            existingAccess.rights = rights;
+            await this.projectAccessRepository.save(existingAccess);
+            return this.projectRepository.findOneOrFail({
+                where: { uuid: projectUUID },
+                relations: ['project_accesses', 'project_accesses.accessGroup'],
+            });
+        }
+
+        const projectAccess = this.projectAccessRepository.create({
+            rights: rights,
+            accessGroup: accessGroup,
+            projects: project,
+        });
+        await this.projectAccessRepository.save(projectAccess);
+        return this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+            relations: ['project_accesses', 'project_accesses.accessGroup'],
+        });
+    }
 }

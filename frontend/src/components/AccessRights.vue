@@ -6,7 +6,7 @@
             title="Your Access Rights"
             :rows="project.projectAccesses"
         />
-        <b style="font-size: 30px">Add Users</b>
+        <b style="font-size: 30px">Add Users / Access Groups</b>
         <p v-if="!canAddAccessGroupResponse">
             {{
                 "You cannot add users: This requires access rights at 'Write' level or higher."
@@ -20,26 +20,65 @@
             <div class="col-4">
                 <q-input
                     v-model="search"
-                    label="Search User"
+                    label="Search User / Access Group"
                     @keyup.enter="refetch"
                 />
             </div>
             <div class="col-2 flex flex-center">
                 <q-btn label="Search" color="primary" @click="() => refetch" />
             </div>
-            <div class="col-5 flex flex-center">
+            <div class="col-5">
+                <div class="row">
+                    <b>Individual Users</b>
+                </div>
                 <div class="row" v-for="user in foundUsers">
                     <div class="col-8 flex flex-center">
                         {{ user.name }} - {{ user.email }}
                     </div>
                     <div class="col-2 flex flex-center">
-                        <q-select v-model="rights" :options="options" />
+                        <q-select
+                            v-model="rights[user.uuid]"
+                            :options="options"
+                        />
                     </div>
                     <div class="col-2 flex flex-center">
                         <q-btn
                             label="Add"
                             color="primary"
                             @click="() => mutate(user.uuid)"
+                            :disable="
+                                !rights[user.uuid] ||
+                                rights[user.uuid].value ===
+                                    AccessGroupRights.NONE
+                            "
+                        />
+                    </div>
+                </div>
+                <div class="row">
+                    <b>Access Groups</b>
+                </div>
+                <div class="row" v-for="accessGroup in foundAccessGroups">
+                    <div class="col-8 flex flex-center">
+                        {{ accessGroup.name }}
+                    </div>
+                    <div class="col-2 flex flex-center">
+                        <q-select
+                            v-model="rights[accessGroup.uuid]"
+                            :options="options"
+                        />
+                    </div>
+                    <div class="col-2 flex flex-center">
+                        <q-btn
+                            label="Add"
+                            color="primary"
+                            @click="
+                                () => _addAccessGroupToProject(accessGroup.uuid)
+                            "
+                            :disable="
+                                !rights[accessGroup.uuid] ||
+                                rights[accessGroup.uuid].value ===
+                                    AccessGroupRights.NONE
+                            "
                         />
                     </div>
                 </div>
@@ -54,12 +93,16 @@ import { Project } from 'src/types/Project';
 import {
     canAddAccessGroup,
     getProject,
+    searchAccessGroups,
     searchUsers,
 } from 'src/services/queries';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
-import { ref } from 'vue';
-import { addUsersToProject } from 'src/services/mutations';
+import { computed, Ref, ref, watch } from 'vue';
+import {
+    addAccessGroupToProject,
+    addUsersToProject,
+} from 'src/services/mutations';
 import { Notify } from 'quasar';
 
 const props = defineProps<{
@@ -70,15 +113,45 @@ const projectResponse = useQuery<Project>({
     queryFn: () => getProject(props.project_uuid),
     enabled: !!props.project_uuid,
 });
-const search = ref('');
-const rights = ref({ value: AccessGroupRights.READ, label: 'Read' });
-const project = projectResponse.data;
 
-const { data: foundUsers, refetch } = useQuery({
+const search = ref('');
+const rights: Ref<Record<string, { label: string; value: AccessGroupRights }>> =
+    ref({});
+const project = projectResponse.data;
+watch(
+    () => projectResponse.data,
+    (newValue) => {
+        newValue.value?.projectAccesses.forEach((access) => {
+            if (access.accessGroup.personal) {
+                rights.value[access.accessGroup.users[0].uuid] = {
+                    label: getAccessRightDescription(access.rights),
+                    value: access.rights,
+                };
+            } else {
+                rights.value[access.accessGroup.uuid] = {
+                    label: getAccessRightDescription(access.rights),
+                    value: access.rights,
+                };
+            }
+        });
+    },
+    { deep: true },
+);
+const { data: foundUsers, refetch: refetchUsers } = useQuery({
     queryKey: ['users', search.value],
     queryFn: () => searchUsers(search.value),
     enabled: !!search.value,
 });
+
+const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
+    queryKey: ['accessGroups', search.value],
+    queryFn: () => searchAccessGroups(search.value),
+    enabled: !!search.value,
+});
+const refetch = () => {
+    refetchUsers();
+    refetchAccessGroups();
+};
 const columns = [
     {
         name: 'name',
@@ -100,6 +173,7 @@ const columns = [
 ];
 
 const accessGroupRightsMap = {
+    [AccessGroupRights.NONE]: 'None',
     [AccessGroupRights.READ]: 'Read',
     [AccessGroupRights.CREATE]: 'Create',
     [AccessGroupRights.WRITE]: 'Write',
@@ -115,7 +189,7 @@ const { mutate } = useMutation({
         addUsersToProject(
             userUUID,
             project.value?.uuid as string,
-            rights.value?.value,
+            rights.value[userUUID].value,
         ),
     onSuccess(data, variables, context) {
         Notify.create({
@@ -131,10 +205,33 @@ const { mutate } = useMutation({
     },
 });
 
+const { mutate: _addAccessGroupToProject } = useMutation({
+    mutationFn: (accessGroupUUID: string) =>
+        addAccessGroupToProject(
+            project.value?.uuid as string,
+            accessGroupUUID,
+
+            rights.value[accessGroupUUID].value,
+        ),
+    onSuccess(data, variables, context) {
+        Notify.create({
+            message: 'Access Group Added',
+            color: 'positive',
+        });
+    },
+    onError(error, variables, context) {
+        Notify.create({
+            message: 'Error adding access group: ' + error.message,
+            color: 'negative',
+        });
+    },
+});
+
+const queryKey = computed(() => ['canAddAccessGroup', project.value?.uuid]);
+
 const { data: canAddAccessGroupResponse } = useQuery({
-    queryKey: ['canAddAccessGroup', project.value?.uuid],
+    queryKey: queryKey,
     queryFn: () => canAddAccessGroup(project.value?.uuid),
-    enabled: !!project.value?.uuid,
 });
 function getAccessRightDescription(value: AccessGroupRights): string {
     return accessGroupRightsMap[value] || 'Unknown';

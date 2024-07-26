@@ -142,8 +142,6 @@ export class QueueService {
 
         const urls = await Promise.all(urlPromises);
 
-        console.debug('createPreSignedURLS', urls);
-
         return urls.reduce((acc, { filename, minioURL, uuid }) => {
             acc[filename] = { url: minioURL, uuid };
             return acc;
@@ -151,7 +149,6 @@ export class QueueService {
     }
 
     async confirmUpload(uuid: string) {
-        console.debug('confirmUpload', uuid);
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: uuid },
         });
@@ -159,7 +156,6 @@ export class QueueService {
         queue.state = FileState.PENDING;
         await this.queueRepository.save(queue);
 
-        console.debug('add file to queue', queue.uuid);
         await this.fileProcessingQueue.add('processMinioFile', {
             queueUuid: queue.uuid,
         });

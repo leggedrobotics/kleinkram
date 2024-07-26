@@ -106,7 +106,7 @@
             </div>
             <q-separator style="margin-top: 12px; margin-bottom: 12px" />
             <div>
-                <b>Add Access Group to Projects</b>
+                <b>Add Access Group / Users to Projects</b>
             </div>
             <q-table
                 ref="tableRef"
@@ -124,7 +124,7 @@
                         <q-btn
                             color="primary"
                             label="Edit"
-                            @click="() => editAccess(props.row)"
+                            @click="() => openAccessRightsModal(props.row)"
                         ></q-btn>
                     </q-td>
                 </template>
@@ -146,14 +146,17 @@ import {
     addUserToAccessGroup,
     createAccessGroup,
 } from 'src/services/mutations';
-import { Notify } from 'quasar';
+import { Notify, useQuasar } from 'quasar';
 import { AccessGroup } from 'src/types/AccessGroup';
+import AccessRightsDialog from 'components/AccessRightsDialog.vue';
 
 const name = ref('');
 const searchAccessGroup = ref('');
 const searchUser = ref('');
 const selectedAccessGroup: Ref<AccessGroup[]> = ref([]);
 const selectedProjects: Ref<Project[]> = ref([]);
+const $q = useQuasar();
+
 const { mutate: _createAccessGroup } = useMutation({
     mutationFn: () => createAccessGroup(name.value),
     onSuccess: (data) => {
@@ -204,10 +207,6 @@ const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
     queryFn: () => searchAccessGroups(searchAccessGroup.value),
     enabled: !!searchAccessGroup.value,
 });
-
-function addUser(user_uuid: string) {
-    console.log('Add user:', user_uuid);
-}
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
@@ -276,8 +275,14 @@ const project_columns = [
         align: 'center',
     },
 ];
-function editAccess(row: Project) {
-    console.log('Edit access for project:', row);
+
+function openAccessRightsModal(project: Project) {
+    $q.dialog({
+        component: AccessRightsDialog,
+        componentProps: {
+            project_uuid: project.uuid,
+        },
+    });
 }
 </script>
 

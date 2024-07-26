@@ -544,10 +544,28 @@ export const getProject = async (uuid: string): Promise<Project> => {
         );
     });
     const projectAccess = project.project_accesses.map((access: any) => {
+        const users: User[] = [];
+        if (access.accessGroup.users) {
+            access.accessGroup.users.forEach((user: any) => {
+                users.push(
+                    new User(
+                        user.uuid,
+                        user.name,
+                        user.email,
+                        user.role,
+                        user.avatarUrl,
+                        [],
+                        new Date(user.createdAt),
+                        new Date(user.updatedAt),
+                        new Date(user.deletedAt),
+                    ),
+                );
+            });
+        }
         const accessGroup = new AccessGroup(
             access.accessGroup.uuid,
             access.accessGroup.name,
-            [],
+            users,
             [],
             [],
             access.accessGroup.personal,
@@ -615,6 +633,9 @@ export const searchUsers = async (search: string): Promise<User[]> => {
 export const canAddAccessGroup = async (
     project_uuid: string,
 ): Promise<boolean> => {
+    if (!project_uuid) {
+        return false;
+    }
     const response = await axios.get('/access/canAddAccessGroupToProject', {
         params: { uuid: project_uuid },
     });

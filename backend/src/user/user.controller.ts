@@ -44,7 +44,6 @@ export class UserController {
         @Query('search') search: string,
         @addJWTUser() user?: JWTUser,
     ) {
-        console.log('search', search);
         return this.userService.search(user, search);
     }
 }

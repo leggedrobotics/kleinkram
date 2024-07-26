@@ -55,4 +55,20 @@ export class AccessController {
     ) {
         return this.accessService.searchAccessGroup(search, user);
     }
+
+    @Post('addAccessGroupToProject')
+    @CanWriteProject()
+    async addAccessGroupToProject(
+        @Body('uuid') uuid: string,
+        @Body('accessGroupUUID') accessGroupUUID: string,
+        @Body('rights') rights: AccessGroupRights,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.addAccessGroupToProject(
+            uuid,
+            accessGroupUUID,
+            rights,
+            user,
+        );
+    }
 }
