@@ -33,13 +33,13 @@ export class ActionService {
         return action;
     }
 
-    async list(mission_uuids: string, userUUID: string): Promise<Action[]> {
+    async list(mission_uuid: string, userUUID: string): Promise<Action[]> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.actionRepository.find({
-                where: { mission: { uuid: mission_uuids } },
+                where: { mission: { uuid: mission_uuid } },
                 relations: ['mission', 'mission.project'],
                 order: { createdAt: 'DESC' },
             });
@@ -50,7 +50,7 @@ export class ActionService {
                 .leftJoinAndSelect('action.mission', 'mission')
                 .leftJoinAndSelect('mission.project', 'project')
                 .where('mission.uuid IN (:...uuids)', {
-                    uuids: mission_uuids.split(','),
+                    uuids: mission_uuid.split(','),
                 })
                 .orderBy('action.createdAt', 'DESC'),
             userUUID,

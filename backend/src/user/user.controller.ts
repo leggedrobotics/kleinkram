@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 import { JWTUser } from 'src/auth/paramDecorator';
 import { addJWTUser } from '../auth/paramDecorator';
+import { QueryString } from '../validation/queryDecorators';
 
 @Controller('user')
 export class UserController {
@@ -41,7 +42,7 @@ export class UserController {
     @Get('search')
     @LoggedIn()
     async search(
-        @Query('search') search: string,
+        @QueryString('search') search: string,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.userService.search(user, search);
