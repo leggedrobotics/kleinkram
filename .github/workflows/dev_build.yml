@@ -5,7 +5,7 @@ on:
         branches: ['dev']
 
 jobs:
-    GrandTourBuild:
+    kleinkram_build:
         environment: 'BuildEnv'
         runs-on: ubuntu-latest
 
