@@ -92,11 +92,7 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import {
-    allProjects,
-    filesOfMission,
-    missionsOfProject,
-} from 'src/services/queries';
+
 import { QTable, useQuasar } from 'quasar';
 import { computed, inject, Ref, ref } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
@@ -113,6 +109,9 @@ import EditMission from 'components/EditMission.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
+import { allProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
+import { filesOfMission } from 'src/services/queries/file';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 type crumb = {

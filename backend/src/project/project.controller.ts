@@ -21,6 +21,7 @@ import {
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
 import { AccessGroupRights } from '@common/enum';
+import { QueryString, QueryUUID } from '../validation/queryDecorators';
 
 @Controller('project')
 export class ProjectController {
@@ -34,14 +35,14 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@Query('uuid') uuid: string) {
+    async getProjectById(@QueryUUID('uuid') uuid: string) {
         return this.projectService.findOne(uuid);
     }
 
     @Put('update')
     @CanWriteProject()
     async updateProject(
-        @Query('uuid') uuid: string,
+        @QueryUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ) {
         return this.projectService.update(uuid, dto);
@@ -58,7 +59,7 @@ export class ProjectController {
 
     @Get('byName')
     @CanReadProjectByName()
-    async getProjectByName(@Query('name') name: string) {
+    async getProjectByName(@QueryString('name') name: string) {
         const project = await this.projectService.findOneByName(name);
         if (!project) {
             throw new HttpException('Project not found', 404);
@@ -74,15 +75,15 @@ export class ProjectController {
 
     @Delete('delete')
     @CanDeleteProject()
-    async deleteProject(@Query('uuid') uuid: string) {
+    async deleteProject(@QueryUUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }
 
     @Post('addTagType')
     @CanWriteProject()
     async addTagType(
-        @Query('uuid') uuid: string,
-        @Query('tagTypeUUID') tagTypeUUID: string,
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('tagTypeUUID') tagTypeUUID: string,
     ) {
         return this.projectService.addTagType(uuid, tagTypeUUID);
     }
@@ -90,8 +91,8 @@ export class ProjectController {
     @Post('removeTagType')
     @CanWriteProject()
     async removeTagType(
-        @Query('uuid') uuid: string,
-        @Query('tagTypeUUID') tagTypeUUID: string,
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('tagTypeUUID') tagTypeUUID: string,
     ) {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }

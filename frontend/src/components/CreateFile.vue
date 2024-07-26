@@ -102,16 +102,18 @@
 <script setup lang="ts">
 import { Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
+
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import axios from 'axios';
+import { Project } from 'src/types/Project';
+import { Mission } from 'src/types/Mission';
+import { allProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
 import {
     confirmUpload,
     createDrive,
     getUploadURL,
-} from 'src/services/mutations';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects, missionsOfProject } from 'src/services/queries';
-import axios from 'axios';
-import { Project } from 'src/types/Project';
-import { Mission } from 'src/types/Mission';
+} from 'src/services/mutations/queue';
 const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);

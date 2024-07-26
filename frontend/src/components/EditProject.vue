@@ -60,12 +60,12 @@
 </template>
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getProject } from 'src/services/queries';
-import { deleteProject, updateProject } from 'src/services/mutations';
 import { ref, watch } from 'vue';
 import { Notify, useQuasar } from 'quasar';
 import { Project } from 'src/types/Project';
 import AccessRightsDialog from 'components/AccessRightsDialog.vue';
+import { getProject } from 'src/services/queries/project';
+import { deleteProject, updateProject } from 'src/services/mutations/project';
 
 const props = defineProps<{
     project_uuid: string;

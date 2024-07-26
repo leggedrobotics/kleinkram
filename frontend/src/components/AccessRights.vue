@@ -90,20 +90,22 @@
 <script setup lang="ts">
 import { useMutation, useQuery } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import {
-    canAddAccessGroup,
-    getProject,
-    searchAccessGroups,
-    searchUsers,
-} from 'src/services/queries';
+
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
 import { computed, Ref, ref, watch } from 'vue';
+
+import { Notify } from 'quasar';
+import { getProject } from 'src/services/queries/project';
+import { searchUsers } from 'src/services/queries/user';
+import {
+    canAddAccessGroup,
+    searchAccessGroups,
+} from 'src/services/queries/access';
 import {
     addAccessGroupToProject,
     addUsersToProject,
-} from 'src/services/mutations';
-import { Notify } from 'quasar';
+} from 'src/services/mutations/access';
 
 const props = defineProps<{
     project_uuid: string;

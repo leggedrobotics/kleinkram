@@ -14,7 +14,7 @@ import 'vue-json-pretty/lib/styles.css';
 // print the id of the action mission (extracted from the route)
 import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
-import { actionDetails } from 'src/services/queries';
+import { actionDetails } from 'src/services/queries/action';
 
 const $route = useRoute();
 

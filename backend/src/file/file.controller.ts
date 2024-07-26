@@ -1,6 +1,14 @@
-import {Body, Controller, Delete, Get, Param, Put, Query} from '@nestjs/common';
-import {FileService} from './file.service';
-import {UpdateFile} from './entities/update-file.dto';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Put,
+    Query,
+} from '@nestjs/common';
+import { FileService } from './file.service';
+import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -11,12 +19,20 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import {addJWTUser, JWTUser} from '../auth/paramDecorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import {
+    QueryBoolean,
+    QueryDate,
+    QueryOptionalDate,
+    QueryString,
+    QueryStringArray,
+    QueryUUID,
+} from '../validation/queryDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {
-    }
+    constructor(private readonly fileService: FileService) {}
 
     @Get('all')
     @LoggedIn()
@@ -27,9 +43,9 @@ export class FileController {
     @Get('filteredByNames')
     @LoggedIn()
     async filteredByNames(
-        @Query('projectName') projectName: string,
-        @Query('missionName') missionName: string,
-        @Query('topics') topics: string[],
+        @QueryString('projectName') projectName: string,
+        @QueryString('missionName') missionName: string,
+        @QueryStringArray('topics') topics: string[],
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(
@@ -46,8 +62,8 @@ export class FileController {
         @Query('fileName') fileName: string,
         @Query('projectUUID') projectUUID: string,
         @Query('missionUUID') missionUUID: string,
-        @Query('startDate') startDate: string,
-        @Query('endDate') endDate: string,
+        @QueryOptionalDate('startDate') startDate: Date | undefined,
+        @QueryOptionalDate('endDate') endDate: Date | undefined,
         @Query('topics') topics: string,
         @Query('andOr') andOr: boolean,
         @Query('mcapBag') mcapBag: boolean,
@@ -69,8 +85,8 @@ export class FileController {
     @Get('download')
     @CanReadFile()
     async download(
-        @Query('uuid') uuid: string,
-        @Query('expires') expires: boolean,
+        @QueryUUID('uuid') uuid: string,
+        @QueryBoolean('expires') expires: boolean,
     ) {
         logger.debug('download', uuid, expires);
         return this.fileService.generateDownload(uuid, expires);
@@ -78,32 +94,32 @@ export class FileController {
 
     @Get('downloadWithToken')
     @TokenOrUser()
-    async downloadWithToken(@Query('uuid') uuid: string) {
+    async downloadWithToken(@QueryUUID('uuid') uuid: string) {
         logger.debug('downloadWithToken', uuid);
         return this.fileService.generateDownloadForToken(uuid);
     }
 
     @Get('one')
     @CanReadFile()
-    async getFileById(@Query('uuid') uuid: string) {
+    async getFileById(@QueryUUID('uuid') uuid: string) {
         return this.fileService.findOne(uuid);
     }
 
     @Get('byName')
     @CanReadFileByName()
-    async getFileByName(@Query('name') name: string) {
+    async getFileByName(@QueryString('name') name: string) {
         return this.fileService.findByFilename(name);
     }
 
     @Get('ofMission')
     @CanReadMission()
-    async getFilesOfMission(@Query('uuid') uuid: string) {
+    async getFilesOfMission(@QueryUUID('uuid') uuid: string) {
         return this.fileService.findByMission(uuid);
     }
 
     @Put(':uuid')
     @CanWriteFile()
-    async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
+    async update(@ParamUUID('uuid') uuid: string, @Body() dto: UpdateFile) {
         return this.fileService.update(uuid, dto);
     }
 

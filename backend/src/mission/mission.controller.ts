@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { MissionService } from './mission.service';
 import { CreateMission } from './entities/create-mission.dto';
 import {
@@ -11,11 +19,12 @@ import {
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { QueryString, QueryUUID } from '../validation/queryDecorators';
+import { ParamString } from '../validation/paramDecorators';
 
 @Controller('mission')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) {
-    }
+    constructor(private readonly missionService: MissionService) {}
 
     @Post('create')
     @LoggedIn()
@@ -28,13 +37,13 @@ export class MissionController {
 
     @Get('filtered')
     @CanReadProject()
-    async filteredMissions(@Query('uuid') uuid: string) {
+    async filteredMissions(@QueryUUID('uuid') uuid: string) {
         return this.missionService.findMissionByProject(uuid);
     }
 
     @Get('one')
     @CanReadMission()
-    async getMissionById(@Query('uuid') uuid: string) {
+    async getMissionById(@QueryUUID('uuid') uuid: string) {
         return this.missionService.findOne(uuid);
     }
 
@@ -46,20 +55,20 @@ export class MissionController {
 
     @Get('byName')
     @CanReadMissionByName()
-    async getMissionByName(@Query('name') name: string) {
+    async getMissionByName(@QueryString('name') name: string) {
         return this.missionService.findOneByName(name);
     }
 
     @Get('byUUID')
     @TokenOrUser()
-    async getMissionByUUID(@Query('uuid') uuid: string) {
+    async getMissionByUUID(@QueryUUID('uuid') uuid: string) {
         return this.missionService.findOneByUUID(uuid);
     }
 
     @Get('filteredByProjectName/:projectName')
     @LoggedIn()
     async filteredByProjectName(
-        @Param('projectName') projectName: string,
+        @ParamString('projectName') projectName: string,
         @addJWTUser() user: JWTUser,
     ) {
         return this.missionService.filteredByProjectName(
@@ -77,8 +86,8 @@ export class MissionController {
     @Post('move')
     @CanMoveMission()
     async moveMission(
-        @Query('missionUUID') missionUUID: string,
-        @Query('projectUUID') projectUUID: string,
+        @QueryUUID('missionUUID') missionUUID: string,
+        @QueryUUID('projectUUID') projectUUID: string,
     ) {
         return this.missionService.moveMission(missionUUID, projectUUID);
     }

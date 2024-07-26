@@ -134,21 +134,22 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery } from '@tanstack/vue-query';
-import {
-    allProjects,
-    searchAccessGroups,
-    searchUsers,
-} from 'src/services/queries';
+
+import { searchUsers } from 'src/services/queries/user';
+
 import { Ref, ref } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
-import {
-    addUserToAccessGroup,
-    createAccessGroup,
-} from 'src/services/mutations';
+
 import { Notify, useQuasar } from 'quasar';
 import { AccessGroup } from 'src/types/AccessGroup';
 import AccessRightsDialog from 'components/AccessRightsDialog.vue';
+import { searchAccessGroups } from 'src/services/queries/access';
+import { allProjects } from 'src/services/queries/project';
+import {
+    addUserToAccessGroup,
+    createAccessGroup,
+} from 'src/services/mutations/access';
 
 const name = ref('');
 const searchAccessGroup = ref('');

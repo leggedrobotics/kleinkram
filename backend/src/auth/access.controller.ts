@@ -3,6 +3,12 @@ import { AccessService } from './access.service';
 import { CanWriteProject, LoggedIn } from './roles.decorator';
 import { addJWTUser, JWTUser } from './paramDecorator';
 import { AccessGroupRights } from '@common/enum';
+import {
+    BodyAccessGroupRights,
+    BodyString,
+    BodyUUID,
+} from '../validation/bodyDecorators';
+import { QueryString, QueryUUID } from '../validation/queryDecorators';
 
 @Controller('access')
 export class AccessController {
@@ -11,7 +17,7 @@ export class AccessController {
     @Post('createAccessGroup')
     @LoggedIn()
     async createAccessGroup(
-        @Body('name') name: string,
+        @BodyString('name') name: string,
         @addJWTUser() user: JWTUser,
     ) {
         return this.accessService.createAccessGroup(name, user);
@@ -20,7 +26,7 @@ export class AccessController {
     @Get('canAddAccessGroupToProject')
     @LoggedIn()
     async canAddAccessGroup(
-        @Query('uuid') uuid: string,
+        @QueryUUID('uuid') uuid: string,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.canAddAccessGroup(uuid, user);
@@ -29,9 +35,9 @@ export class AccessController {
     @Post('addUserToProject')
     @CanWriteProject()
     async addUserToProject(
-        @Body('uuid') uuid: string,
-        @Body('userUUID') userUUID: string,
-        @Body('rights') rights: AccessGroupRights,
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('userUUID') userUUID: string,
+        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.addUserToProject(uuid, userUUID, rights);
@@ -40,8 +46,8 @@ export class AccessController {
     @Post('addUserToAccessGroup')
     @LoggedIn() //#Todo write a decorator for this
     async addUserToAccessGroup(
-        @Body('uuid') uuid: string,
-        @Body('userUUID') userUUID: string,
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('userUUID') userUUID: string,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
@@ -50,7 +56,7 @@ export class AccessController {
     @Get('searchAccessGroup')
     @LoggedIn()
     async search(
-        @Query('search') search: string,
+        @QueryString('search') search: string,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.searchAccessGroup(search, user);
@@ -59,9 +65,9 @@ export class AccessController {
     @Post('addAccessGroupToProject')
     @CanWriteProject()
     async addAccessGroupToProject(
-        @Body('uuid') uuid: string,
-        @Body('accessGroupUUID') accessGroupUUID: string,
-        @Body('rights') rights: AccessGroupRights,
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('accessGroupUUID') accessGroupUUID: string,
+        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.addAccessGroupToProject(

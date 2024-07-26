@@ -142,8 +142,8 @@ export class FileService {
         fileName: string,
         projectUUID: string,
         missionUUID: string,
-        startDate: string,
-        endDate: string,
+        startDate: Date,
+        endDate: Date,
         topics: string,
         and_or: boolean,
         mcapBag: boolean,
@@ -180,8 +180,8 @@ export class FileService {
         }
         if (startDate && endDate) {
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+                startDate: startDate,
+                endDate: startDate,
             });
         }
         const splitTopics = topics.split(',');

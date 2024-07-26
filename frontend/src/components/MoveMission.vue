@@ -54,12 +54,12 @@
 </template>
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects } from 'src/services/queries';
 import { ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { moveMission } from 'src/services/mutations';
 import { Mission } from 'src/types/Mission';
 import { Project } from 'src/types/Project';
+import { allProjects } from 'src/services/queries/project';
+import moveMission from 'components/MoveMission.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
