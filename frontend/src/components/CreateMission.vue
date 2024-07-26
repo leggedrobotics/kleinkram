@@ -147,7 +147,8 @@ import { Project } from 'src/types/Project';
 import { TagType } from 'src/types/TagType';
 import { allProjects, getProject } from 'src/services/queries/project';
 import { getTagTypes } from 'src/services/queries/tag';
-import createMission from 'components/CreateMission.vue';
+import { createMission } from 'src/services/mutations/mission';
+
 const queryClient = useQueryClient();
 
 const selected_project: Ref<Project | null> = ref(null);
