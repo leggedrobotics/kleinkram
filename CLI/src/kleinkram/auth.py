@@ -91,7 +91,7 @@ class AuthenticatedClient(httpx.Client):
             self.tokenfile = TokenFile()
             self._load_cookies()
         except:
-            print("Not authenticated. Please run 'GTD login'.")
+            print("Not authenticated. Please run 'klein login'.")
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():
