@@ -118,12 +118,12 @@ import { Ref, ref, watchEffect } from 'vue';
 
 import { useQuery } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { createAnalysis } from 'src/services/mutations';
 import Action from 'components/Actions.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { allProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
+import { createAnalysis } from 'src/services/mutations/action';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);

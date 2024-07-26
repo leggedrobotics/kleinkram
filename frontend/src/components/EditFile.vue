@@ -173,7 +173,6 @@ import {
 } from '@tanstack/vue-query';
 
 import { Ref, ref, watch, watchEffect } from 'vue';
-import { updateFile } from 'src/services/mutations';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
@@ -181,6 +180,7 @@ import { FileEntity } from 'src/types/FileEntity';
 import { fetchFile } from 'src/services/queries/file';
 import { allProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
+import { updateFile } from 'src/services/mutations/file';
 
 const props = defineProps<{
     file_uuid: string;

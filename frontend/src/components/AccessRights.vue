@@ -94,10 +94,7 @@ import { Project } from 'src/types/Project';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
 import { computed, Ref, ref, watch } from 'vue';
-import {
-    addAccessGroupToProject,
-    addUsersToProject,
-} from 'src/services/mutations';
+
 import { Notify } from 'quasar';
 import { getProject } from 'src/services/queries/project';
 import { searchUsers } from 'src/services/queries/user';
@@ -105,6 +102,10 @@ import {
     canAddAccessGroup,
     searchAccessGroups,
 } from 'src/services/queries/access';
+import {
+    addAccessGroupToProject,
+    addUsersToProject,
+} from 'src/services/mutations/access';
 
 const props = defineProps<{
     project_uuid: string;

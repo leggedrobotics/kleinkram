@@ -62,10 +62,10 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import { createTagType } from 'src/services/mutations';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { DataType } from 'src/enum/TAG_TYPES';
+import { createTagType } from 'src/services/mutations/tag';
 
 const tagName = ref('');
 const selectedDataType = ref(DataType.STRING);
