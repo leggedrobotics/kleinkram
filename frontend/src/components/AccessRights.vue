@@ -3,7 +3,7 @@
         <q-table
             v-if="project"
             :columns="columns"
-            title="Your Access Rights"
+            title="Access Rights"
             :rows="project.projectAccesses"
         />
         <b style="font-size: 30px">Add Users / Access Groups</b>
