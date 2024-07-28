@@ -3,7 +3,7 @@
 echo "Start Backend"
 yarn start:dev &
 
-sleep 5
+sleep 10
 cd ../common
 
 if [ "$SEED" = "true" ]; then

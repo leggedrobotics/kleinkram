@@ -1,31 +1,22 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpException,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common';
-import { ProjectService } from './project.service';
-import { CreateProject } from './entities/create-project.dto';
+import {Body, Controller, Delete, Get, HttpException, Post, Put,} from '@nestjs/common';
+import {ProjectService} from './project.service';
+import {CreateProject} from './entities/create-project.dto';
 import {
     AdminOnly,
-    LoggedIn,
+    CanCreateProject,
+    CanDeleteProject,
     CanReadProject,
     CanReadProjectByName,
     CanWriteProject,
-    CanCreateProject,
-    CanDeleteProject,
+    LoggedIn,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
-import { AccessGroupRights } from '@common/enum';
-import { QueryString, QueryUUID } from '../validation/queryDecorators';
+import {QueryString, QueryUUID} from '../validation/queryDecorators';
+import {addJWTUser, JWTUser} from "../auth/paramDecorator";
 
 @Controller('project')
 export class ProjectController {
-    constructor(private readonly projectService: ProjectService) {}
+    constructor(private readonly projectService: ProjectService) {
+    }
 
     @Get()
     @LoggedIn()

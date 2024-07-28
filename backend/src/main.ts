@@ -1,19 +1,13 @@
 import tracer from './tracing';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import {NestFactory} from '@nestjs/core';
+import {AppModule} from './app.module';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
-import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
+import {AuthFlowExceptionRedirectFilter} from './auth/authFlowException';
 
-import {
-    ArgumentsHost,
-    Catch,
-    ExceptionFilter,
-    UnauthorizedException,
-    ValidationPipe,
-} from '@nestjs/common';
+import {ArgumentsHost, Catch, ExceptionFilter, INestApplication, ValidationPipe,} from '@nestjs/common';
 import logger from './logger';
-import { HttpException } from '@nestjs/common/exceptions/http.exception';
+import {HttpException} from '@nestjs/common/exceptions/http.exception';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -40,6 +34,19 @@ export class GlobalErrorFilter implements ExceptionFilter {
     }
 }
 
+function save_endpoints_as_json(app: INestApplication, filename: string) {
+    const server = app.getHttpServer();
+    const endpoints = server._events.request._router.stack
+        .filter((r: any) => r.route)
+        .map((r: any) => ({
+            url: r.route.path,
+            method: r.route.stack[0].method,
+        }));
+
+    const fs = require('fs');
+    fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
+}
+
 async function bootstrap() {
     tracer.start();
 
@@ -64,6 +71,9 @@ async function bootstrap() {
     });
     app.useGlobalFilters(new GlobalErrorFilter());
     await app.listen(3000);
+
+    save_endpoints_as_json(app, '__generated__endpoints.json');
+
 }
 
 bootstrap().catch((err) => {

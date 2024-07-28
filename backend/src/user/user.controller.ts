@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
-import { JWTUser } from 'src/auth/paramDecorator';
+import { JWTUser } from '../auth/paramDecorator';
 import { addJWTUser } from '../auth/paramDecorator';
 import { QueryString } from '../validation/queryDecorators';
 
