@@ -1,4 +1,4 @@
-import { withMermaid } from 'vitepress-plugin-mermaid';
+import {withMermaid} from 'vitepress-plugin-mermaid';
 
 export default withMermaid({
     lang: 'en-US',
@@ -184,6 +184,16 @@ export default withMermaid({
                             link: '/development/migrations/Readme',
                         },
                     ],
+                },
+                {
+                    text: 'Testing',
+                    items: [
+
+                        {
+                            text: 'Run Testsuite',
+                            link: '/development/testing/getting-started',
+                        }
+                    ]
                 }
 
             ],
