@@ -7,6 +7,7 @@ module.exports = {
   moduleNameMapper: {
     '^@common/(.*)$': '<rootDir>/../common/$1',
   },
+  modulePathIgnorePatterns: ["<rootDir>/dist/"],
 };
 
 // set env variables from ../.env
