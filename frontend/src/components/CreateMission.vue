@@ -185,9 +185,12 @@ const { data: tagTypes } = useQuery<TagType[]>({
 });
 const availableAdditionalTags: Ref<TagType[]> = computed(() => {
     if (!tagTypes.value) return [];
-    if (!project.value) return tagTypes.value;
-    const usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
+    let usedTagUUIDs: string[] = [];
+    if (project.value) {
+        usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
+    }
     const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
+    console.log('usedTagUUIDs', usedTagUUIDs);
     return tagTypes.value?.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
