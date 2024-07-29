@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     CanActivate,
     ExecutionContext,
     ForbiddenException,
@@ -36,6 +37,12 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            throw new UnauthorizedException('User not logged in');
+        }
+        if (!request.user.uuid) {
+            throw new BadRequestException('Missing User / UUID');
+        }
         if (request.cookies[CookieNames.CLI_KEY]) {
             // const token = await this.tokenRepository.find();
             const token = await this.tokenRepository.findOne({

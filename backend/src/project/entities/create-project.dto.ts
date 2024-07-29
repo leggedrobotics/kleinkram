@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateProject {
     @IsString()
@@ -9,7 +9,6 @@ export class CreateProject {
     @IsString()
     description: string;
 
-    @IsString({ each: true })
-    @IsNotEmpty({ each: true })
+    @IsArray()
     requiredTags: string[];
 }

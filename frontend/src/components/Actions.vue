@@ -44,12 +44,6 @@ const props = defineProps<{
     mission_uuid: string;
 }>();
 
-// watch for changes in props
-watchEffect(() => {
-    console.log(props.project_uuid);
-    console.log(props.mission_uuid);
-});
-
 const missions = useQuery<Action[]>({
     queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
     queryFn: () => actions(props.project_uuid, props.mission_uuid),
