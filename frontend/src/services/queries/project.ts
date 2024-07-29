@@ -12,7 +12,7 @@ export const allProjects = async () => {
 };
 
 export const getProject = async (uuid: string): Promise<Project> => {
-    const response = await axios.get('/project/one', { params: { u: uuid } });
+    const response = await axios.get('/project/one', { params: { uuid } });
     const project = response.data;
     const creator = new User(
         project.creator.uuid,
