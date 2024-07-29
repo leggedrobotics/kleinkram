@@ -242,17 +242,21 @@ export class FileService {
     }
 
     async update(uuid: string, file: UpdateFile) {
+
+        logger.debug("Updating file with uuid: " + uuid);
+        logger.debug("New file data: " + JSON.stringify(file));
+
         const db_file = await this.fileRepository.findOne({ where: { uuid } });
         db_file.filename = file.filename;
         db_file.date = file.date;
-        if (file.mission) {
+        if (file.mission_uuid) {
             db_file.mission = await this.missionRepository.findOne({
-                where: { uuid: file.mission.uuid },
+                where: { uuid: file.mission_uuid },
             });
         }
-        if (file.project) {
+        if (file.project_uuid) {
             db_file.mission.project = await this.projectRepository.findOne({
-                where: { uuid: file.project.uuid },
+                where: { uuid: file.project_uuid },
             });
         }
         await this.fileRepository.save(db_file);

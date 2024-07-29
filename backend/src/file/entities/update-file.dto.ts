@@ -1,7 +1,9 @@
+import {IsDate, IsOptional, IsString, IsUUID} from "class-validator";
+
 export class UpdateFile {
-    uuid: string;
-    filename: string;
-    mission: { uuid: string };
-    project: { uuid: string };
-    date: Date;
+    @IsUUID() uuid: string;
+    @IsString() filename: string;
+    @IsOptional() @IsUUID() mission_uuid?: string;
+    @IsOptional() @IsUUID() project_uuid?: string;
+    @IsDate() date: Date;
 }
