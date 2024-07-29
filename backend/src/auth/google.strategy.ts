@@ -30,7 +30,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         profile: any,
         callback: VerifyCallback,
     ): Promise<any> {
-
         const { provider } = profile;
 
         // currently only google is supported
@@ -39,14 +38,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             return callback(new AuthFlowException('Invalid provider!'), null);
         }
 
-        const user = await this.authService.validateAndCreateUserByGoogle(profile).catch(
-            (error) => {
-                logger.error('Error while validating and creating user by google', error);
+        const user = await this.authService
+            .validateAndCreateUserByGoogle(profile)
+            .catch((error) => {
+                logger.error(
+                    'Error while validating and creating user by google',
+                    error,
+                );
                 callback(error, null);
                 return;
-            },
-        );
-
+            });
 
         if (!!user) {
             logger.debug(`Login successful for ${user.uuid}`);
@@ -56,7 +57,5 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
         callback(null, null);
         return;
-
-
     }
 }

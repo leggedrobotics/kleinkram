@@ -72,6 +72,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"Authentication successful. You can close this window.")
             return
+        print("here")
 
     def log_message(self, format, *args):
         pass
@@ -137,24 +138,49 @@ class AuthenticatedClient(httpx.Client):
 client = AuthenticatedClient()
 
 
-def login(key: Annotated[str, typer.Option()] = None):
+def login(
+        key: Annotated[str, typer.Option()] = None,
+        open_browser: Annotated[bool, typer.Option()] = True,
+):
     tokenfile = TokenFile()
     if key:
         tokenfile.saveTokens(key)
     else:
-        print("Opening browser for authentication...")
-        webbrowser.open(tokenfile.endpoint + "/auth/google?state=cli")
+        url = tokenfile.endpoint + "/auth/google?state=cli"
 
-        print("Waiting for authentication to complete...")
-        auth_tokens = get_auth_tokens()
+        has_browser = True
+        try:
+            browser_available = webbrowser.get()
+            if not browser_available:
+                raise Exception("No web browser available.")
+        except Exception as e:
+            has_browser = False
 
-        if not auth_tokens:
-            print("Failed to get authentication tokens.")
+        if has_browser and open_browser:
+            webbrowser.open(url)
+            auth_tokens = get_auth_tokens()
+
+            if not auth_tokens:
+                print("Failed to get authentication tokens.")
+                return
+
+            tokenfile.saveTokens(auth_tokens)
+            print("Authentication complete. Tokens saved to ~/.kleinkram.json.")
+
             return
 
-        tokenfile.saveTokens(auth_tokens)
+        print(f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}")
+        print("Enter the authentication token provided after logging in:")
+        manual_auth_token = input("Authentication Token: ")
+        manual_refresh_token = input("Refresh Token: ")
+        if manual_auth_token:
+            tokenfile.saveTokens({AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token})
+            print("Authentication complete. Tokens saved to tokens.json.")
+        else:
+            print("No authentication token provided.")
+        return
 
-        print("Authentication complete. Tokens saved to tokens.json.")
+
 
 
 def endpoint(endpoint: Annotated[str, typer.Argument()]):
