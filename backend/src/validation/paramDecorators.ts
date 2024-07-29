@@ -16,10 +16,9 @@ export const ParamUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.params[data];
-
         const object = plainToInstance(UUIDValidate, { value });
         await validateOrReject(object).catch((errors) => {
-            throw new BadRequestException('Parameter is not a valid UUID');
+            throw new BadRequestException('Parameter is not a valid UUID!');
         });
 
         return value;

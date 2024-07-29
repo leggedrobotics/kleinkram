@@ -48,7 +48,7 @@ export class QueueController {
 
     @Post('confirmUpload')
     @CanCreateQueueByBody()
-    async confirmUpload(@BodyUUID() uuid: string) {
+    async confirmUpload(@BodyUUID('uuid') uuid: string) {
         return this.queueService.confirmUpload(uuid);
     }
 
