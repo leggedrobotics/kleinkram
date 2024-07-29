@@ -1,9 +1,9 @@
 <template>
     <q-card-section>
         <h3 class="text-h6">Create new project</h3>
-        <div class="row justify-between q-gutter-md">
-            <div class="col-9">
-                <q-form @submit="submitNewProject">
+        <q-form @submit="submitNewProject" style="width: 100%">
+            <div class="row justify-between q-gutter-md">
+                <div class="col-9">
                     <div class="row justify-between">
                         <div class="col-3">
                             <q-input
@@ -24,6 +24,7 @@
                                 :rows="4"
                                 outlined
                                 dense
+                                required
                                 clearable
                             />
                         </div>
@@ -45,17 +46,12 @@
                             />
                         </div>
                     </div>
-                </q-form>
+                </div>
+                <div class="col-2">
+                    <q-btn label="Submit" color="primary" type="submit" />
+                </div>
             </div>
-            <div class="col-2">
-                <q-btn
-                    label="Submit"
-                    color="primary"
-                    @click="submitNewProject"
-                    :disable="!projectName"
-                />
-            </div>
-        </div>
+        </q-form>
     </q-card-section>
 </template>
 <script setup lang="ts">
