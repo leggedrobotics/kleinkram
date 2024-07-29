@@ -91,8 +91,8 @@ class AuthenticatedClient(httpx.Client):
         try:
             self.tokenfile = TokenFile()
             self._load_cookies()
-        except:
-            print("Not authenticated. Please run 'klein login'.")
+        except Exception as e:
+            print(f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'.")
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():
@@ -108,7 +108,7 @@ class AuthenticatedClient(httpx.Client):
         if not refresh_token:
             print("No refresh token found. Please login again.")
             raise Exception("No refresh token found.")
-        self.cookies.set(REFRESH_TOKEN, refresh_token,)
+        self.cookies.set(REFRESH_TOKEN, refresh_token, )
         response = self.post(
             "/auth/refresh-token",
         )
@@ -123,7 +123,7 @@ class AuthenticatedClient(httpx.Client):
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )
         if (
-            url == "/auth/refresh-token"
+                url == "/auth/refresh-token"
         ) and response.status_code == 401:
             print("Refresh token expired. Please login again.")
             response.status_code = 403
@@ -181,12 +181,22 @@ def login(
         return
 
 
-
-
-def endpoint(endpoint: Annotated[str, typer.Argument()]):
+def setEndpoint(endpoint: Annotated[str, typer.Argument()]):
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
     tokenfile.writeToFile()
+    print("Endpoint set to: " + endpoint)
+    if tokenfile.endpoint not in tokenfile.tokens:
+        print("No tokens found for this endpoint.")
+
+
+def endpoint():
+    tokenfile = TokenFile()
+    print("Current: " + tokenfile.endpoint)
+    print("Saved Tokens found for:")
+    for _endpoint, _ in tokenfile.tokens.items():
+        print(_endpoint)
+
 
 def setCliKey(key: Annotated[str, typer.Argument()]):
     tokenfile = TokenFile()

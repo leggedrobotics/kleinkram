@@ -11,7 +11,7 @@ from rich.table import Table
 
 from .helper import uploadFiles, expand_and_match
 
-from .auth import login, client, endpoint, setCliKey
+from .auth import login, client, endpoint, setCliKey, setEndpoint
 
 app = typer.Typer()
 projects = typer.Typer(name="projects")
@@ -34,6 +34,7 @@ app.add_typer(tagtypes)
 app.add_typer(tag)
 app.command()(login)
 app.command()(endpoint)
+app.command()(setEndpoint)
 app.command()(setCliKey)
 
 
