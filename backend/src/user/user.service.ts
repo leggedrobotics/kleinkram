@@ -47,8 +47,8 @@ export class UserService {
         });
     }
 
-    async findAll() {
-        return this.userRepository.find();
+    async findAll(skip: number, take: number) {
+        return this.userRepository.find({ skip, take });
     }
 
     async promoteUser(usermail: string) {
@@ -69,7 +69,7 @@ export class UserService {
         return user;
     }
 
-    async search(user: JWTUser, search: string) {
+    async search(user: JWTUser, search: string, skip: number, take: number) {
         // Ensure the search string is not empty or null
         if (!search) {
             return [];
@@ -80,6 +80,8 @@ export class UserService {
             .createQueryBuilder('user')
             .where('user.name ILIKE :search', { search: `%${search}%` })
             .orWhere('user.email ILIKE :search', { search: `%${search}%` })
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 }

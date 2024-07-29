@@ -37,19 +37,21 @@ export class TopicService {
         return distinctNames.map((item) => item.name);
     }
 
-    async findAll(userUUID: string) {
+    async findAll(userUUID: string, skip: number, take: number) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.topicRepository.find();
+            return this.topicRepository.find({ skip, take });
         }
         return addAccessJoinsAndConditions(
             this.topicRepository
                 .createQueryBuilder('topic')
                 .leftJoin('topic.file', 'file')
                 .leftJoin('file.mission', 'mission')
-                .leftJoin('mission.project', 'project'),
+                .leftJoin('mission.project', 'project')
+                .take(take)
+                .skip(skip),
             userUUID,
         ).getMany();
     }

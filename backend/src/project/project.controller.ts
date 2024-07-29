@@ -18,7 +18,12 @@ import {
     CanWriteProject,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { QueryString, QueryUUID } from '../validation/queryDecorators';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('project')

@@ -61,16 +61,24 @@ export class MissionService {
         });
     }
 
-    async findMissionByProject(projectUUID: string): Promise<Mission[]> {
+    async findMissionByProject(
+        projectUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Mission[]> {
         return await this.missionRepository.find({
             where: { project: { uuid: projectUUID } },
             relations: ['project', 'files', 'creator', 'files.creator'],
+            skip,
+            take,
         });
     }
 
     async filteredByProjectName(
         projectName: string,
         userUUID: string,
+        skip: number,
+        take: number,
     ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -98,17 +106,25 @@ export class MissionService {
                     }).orWhere('missionUsers.uuid = :user', { user: userUUID });
                 }),
             )
+            .take(take)
+            .skip(skip)
             .getMany();
     }
 
     // TODO Test!
-    async findAll(userUUID: string): Promise<Mission[]> {
+    async findAll(
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.missionRepository.find({
                 relations: ['project', 'creator'],
+                skip,
+                take,
             });
         }
         return this.missionRepository
@@ -121,6 +137,8 @@ export class MissionService {
             .leftJoin('missionAccessGroups.users', 'missionUsers')
             .where('projectUsers.uuid = :user', { user: userUUID })
             .orWhere('missionUsers.uuid = :user', { user: userUUID })
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 

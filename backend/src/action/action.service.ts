@@ -33,7 +33,12 @@ export class ActionService {
         return action;
     }
 
-    async list(mission_uuid: string, userUUID: string): Promise<Action[]> {
+    async list(
+        mission_uuid: string,
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Action[]> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
@@ -42,6 +47,8 @@ export class ActionService {
                 where: { mission: { uuid: mission_uuid } },
                 relations: ['mission', 'mission.project'],
                 order: { createdAt: 'DESC' },
+                skip,
+                take,
             });
         }
         return addAccessJoinsAndConditions(
@@ -52,6 +59,8 @@ export class ActionService {
                 .where('mission.uuid IN (:...uuids)', {
                     uuids: mission_uuid.split(','),
                 })
+                .skip(skip)
+                .take(take)
                 .orderBy('action.createdAt', 'DESC'),
             userUUID,
         ).getMany();

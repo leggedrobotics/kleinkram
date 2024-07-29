@@ -3,7 +3,11 @@ import { UserService } from './user.service';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
 import { JWTUser } from '../auth/paramDecorator';
 import { addJWTUser } from '../auth/paramDecorator';
-import { QueryString } from '../validation/queryDecorators';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+} from '../validation/queryDecorators';
 
 @Controller('user')
 export class UserController {
@@ -17,8 +21,11 @@ export class UserController {
 
     @Get('all')
     @AdminOnly()
-    async allUsers() {
-        return this.userService.findAll();
+    async allUsers(
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.userService.findAll(skip, take);
     }
 
     @Get('me')
@@ -43,8 +50,10 @@ export class UserController {
     @LoggedIn()
     async search(
         @QueryString('search') search: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.userService.search(user, search);
+        return this.userService.search(user, search, skip, take);
     }
 }

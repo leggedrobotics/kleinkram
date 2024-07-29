@@ -1,6 +1,6 @@
-import {Body, Controller, Delete, Get, Put, Query,} from '@nestjs/common';
-import {FileService} from './file.service';
-import {UpdateFile} from './entities/update-file.dto';
+import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
+import { FileService } from './file.service';
+import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -11,25 +11,31 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import {addJWTUser, JWTUser} from '../auth/paramDecorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
     QueryOptionalDate,
+    QueryOptionalNumber,
+    QuerySkip,
     QueryString,
     QueryStringArray,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import {ParamUUID} from '../validation/paramDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {
-    }
+    constructor(private readonly fileService: FileService) {}
 
     @Get('all')
     @LoggedIn()
-    async allFiles(@addJWTUser() user: JWTUser) {
-        return await this.fileService.findAll(user.uuid);
+    async allFiles(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return await this.fileService.findAll(user.uuid, skip, take);
     }
 
     @Get('filteredByNames')
@@ -38,6 +44,8 @@ export class FileController {
         @QueryString('projectName') projectName: string,
         @QueryString('missionName') missionName: string,
         @QueryStringArray('topics') topics: string[],
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(
@@ -45,6 +53,8 @@ export class FileController {
             missionName,
             topics,
             user.uuid,
+            skip,
+            take,
         );
     }
 
@@ -59,6 +69,8 @@ export class FileController {
         @Query('topics') topics: string,
         @Query('andOr') andOr: boolean,
         @Query('mcapBag') mcapBag: boolean,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
@@ -71,6 +83,8 @@ export class FileController {
             andOr,
             mcapBag,
             user.uuid,
+            skip,
+            take,
         );
     }
 

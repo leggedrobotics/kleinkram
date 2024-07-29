@@ -161,7 +161,12 @@ export class QueueService {
         });
     }
 
-    async active(startDate: Date, userUUID: string) {
+    async active(
+        startDate: Date,
+        userUUID: string,
+        skip: number,
+        take: number,
+    ) {
         const user = await this.userservice.findOneByUUID(userUUID);
         if (user.role === UserRole.ADMIN) {
             return await this.queueRepository.find({
@@ -169,6 +174,8 @@ export class QueueService {
                     updatedAt: MoreThan(startDate),
                 },
                 relations: ['mission', 'mission.project', 'creator'],
+                skip,
+                take,
                 order: {
                     createdAt: 'DESC',
                 },
@@ -182,7 +189,10 @@ export class QueueService {
                 .leftJoinAndSelect('queue.creator', 'creator')
                 .where('queue.updatedAt > :startDate', { startDate }),
             userUUID,
-        ).getMany();
+        )
+            .skip(skip)
+            .take(take)
+            .getMany();
     }
 
     async clear() {

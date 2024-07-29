@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
@@ -11,7 +11,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
-import logger from "../logger";
+import logger from '../logger';
 
 @Injectable()
 export class FileService {
@@ -26,13 +26,15 @@ export class FileService {
         @InjectRepository(User) private userRepository: Repository<User>,
     ) {}
 
-    async findAll(userUUID: string) {
+    async findAll(userUUID: string, skip: number, take: number) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.fileRepository.find({
                 relations: ['mission'],
+                skip,
+                take,
             });
         }
         return this.fileRepository
@@ -61,7 +63,9 @@ export class FileService {
                         userUUID,
                     });
                 }),
-            );
+            )
+            .skip(skip)
+            .take(take);
     }
 
     async findFilteredByNames(
@@ -69,6 +73,8 @@ export class FileService {
         missionName: string,
         topics: string[],
         userUUID: string,
+        skip: number,
+        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -80,7 +86,9 @@ export class FileService {
             .select('file.uuid')
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
-            .leftJoin('mission.project', 'project');
+            .leftJoin('mission.project', 'project')
+            .skip(skip)
+            .take(take);
 
         if (user.role !== UserRole.ADMIN) {
             query
@@ -151,6 +159,8 @@ export class FileService {
         and_or: boolean,
         mcapBag: boolean,
         userUUID: string,
+        skip: number,
+        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -164,7 +174,9 @@ export class FileService {
             .leftJoin('mission.project', 'project')
             .andWhere('file.type = :type', {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
-            });
+            })
+            .skip(skip)
+            .take(take);
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
@@ -173,24 +185,26 @@ export class FileService {
 
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
-            logger.debug("Filtering files by filename: " + fileName);
+            logger.debug('Filtering files by filename: ' + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
         }
 
         if (projectUUID) {
-            logger.debug("Filtering files by projectUUID: " + projectUUID);
+            logger.debug('Filtering files by projectUUID: ' + projectUUID);
             query.andWhere('project.uuid = :projectUUID', { projectUUID });
         }
 
         if (missionUUID) {
-            logger.debug("Filtering files by missionUUID: " + missionUUID);
+            logger.debug('Filtering files by missionUUID: ' + missionUUID);
             query.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
 
         if (startDate && endDate) {
-            logger.debug("Filtering files by date range: " + startDate + " - " + endDate);
+            logger.debug(
+                'Filtering files by date range: ' + startDate + ' - ' + endDate,
+            );
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
                 startDate: startDate,
                 endDate: endDate,
@@ -242,9 +256,8 @@ export class FileService {
     }
 
     async update(uuid: string, file: UpdateFile) {
-
-        logger.debug("Updating file with uuid: " + uuid);
-        logger.debug("New file data: " + JSON.stringify(file));
+        logger.debug('Updating file with uuid: ' + uuid);
+        logger.debug('New file data: ' + JSON.stringify(file));
 
         const db_file = await this.fileRepository.findOne({ where: { uuid } });
         db_file.filename = file.filename;

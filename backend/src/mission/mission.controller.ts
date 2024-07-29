@@ -19,7 +19,12 @@ import {
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
-import { QueryString, QueryUUID } from '../validation/queryDecorators';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
 import { ParamString } from '../validation/paramDecorators';
 
 @Controller('mission')
@@ -37,8 +42,12 @@ export class MissionController {
 
     @Get('filtered')
     @CanReadProject()
-    async filteredMissions(@QueryUUID('uuid') uuid: string) {
-        return this.missionService.findMissionByProject(uuid);
+    async filteredMissions(
+        @QueryUUID('uuid') uuid: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.missionService.findMissionByProject(uuid, skip, take);
     }
 
     @Get('one')
@@ -49,8 +58,12 @@ export class MissionController {
 
     @Get('all')
     @LoggedIn()
-    async allMissions(@addJWTUser() user: JWTUser) {
-        return this.missionService.findAll(user.uuid);
+    async allMissions(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.missionService.findAll(user.uuid, skip, take);
     }
 
     @Get('byName')
@@ -69,11 +82,15 @@ export class MissionController {
     @LoggedIn()
     async filteredByProjectName(
         @ParamString('projectName') projectName: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         return this.missionService.filteredByProjectName(
             projectName,
             user.uuid,
+            skip,
+            take,
         );
     }
 

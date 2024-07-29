@@ -136,7 +136,7 @@ export class TagService {
         await this.tagRepository.delete({ uuid });
     }
 
-    async getAll(): Promise<TagType[]> {
-        return this.tagTypeRepository.find();
+    async getAll(skip: number, take: number): Promise<TagType[]> {
+        return this.tagTypeRepository.find({ skip, take });
     }
 }

@@ -8,7 +8,11 @@ import {
     BodyString,
     BodyUUID,
 } from '../validation/bodyDecorators';
-import { QueryString, QueryUUID } from '../validation/queryDecorators';
+import {
+    QuerySkip,
+    QueryString,
+    QueryUUID,
+} from '../validation/queryDecorators';
 
 @Controller('access')
 export class AccessController {
@@ -57,9 +61,11 @@ export class AccessController {
     @LoggedIn()
     async search(
         @QueryString('search') search: string,
+        @QuerySkip('skip') skip: number,
+        @QuerySkip('take') take: number,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.accessService.searchAccessGroup(search, user);
+        return this.accessService.searchAccessGroup(search, user, skip, take);
     }
 
     @Post('addAccessGroupToProject')
