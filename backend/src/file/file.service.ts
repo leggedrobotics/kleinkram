@@ -11,6 +11,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import logger from "../logger";
 
 @Injectable()
 export class FileService {
@@ -121,7 +122,9 @@ export class FileService {
                 .having('COUNT(file.uuid) = :topicCount', {
                     topicCount: topics.length,
                 });
-        } // Execute the query
+        }
+
+        // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
             return [];
@@ -163,27 +166,37 @@ export class FileService {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
             });
 
+        // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
             query = addAccessJoinsAndConditions(query, userUUID);
         }
+
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
+            logger.debug("Filtering files by filename: " + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
         }
+
         if (projectUUID) {
+            logger.debug("Filtering files by projectUUID: " + projectUUID);
             query.andWhere('project.uuid = :projectUUID', { projectUUID });
         }
+
         if (missionUUID) {
+            logger.debug("Filtering files by missionUUID: " + missionUUID);
             query.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
+
         if (startDate && endDate) {
+            logger.debug("Filtering files by date range: " + startDate + " - " + endDate);
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
                 startDate: startDate,
-                endDate: startDate,
+                endDate: endDate,
             });
         }
+
         const splitTopics = topics.split(',');
         if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
             query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
@@ -195,11 +208,14 @@ export class FileService {
                 topicCount: splitTopics.length,
             });
         }
+
         // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
+            logger.silly('No files found');
             return [];
         }
+
         const fileIdsArray = fileIds.map((file) => file.uuid);
         return await this.fileRepository
             .createQueryBuilder('file')
