@@ -2,6 +2,7 @@ import {
     BadRequestException,
     createParamDecorator,
     ExecutionContext,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import {
     validateOrReject,
@@ -15,12 +16,16 @@ import { AccessGroupRights, DataType } from '@common/enum';
 
 export const BodyUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
+        if (!data) {
+            throw new InternalServerErrorException(
+                'Parameter is missing field in controller',
+            );
+        }
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
-
         const object = plainToInstance(UUIDValidate, { value });
         await validateOrReject(object).catch((errors) => {
-            throw new BadRequestException('Parameter is not a valid UUID');
+            throw new BadRequestException('Body parameter is not a valid UUID');
         });
 
         return value;

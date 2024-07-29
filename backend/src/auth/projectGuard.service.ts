@@ -68,15 +68,12 @@ export class ProjectGuardService {
             return true;
         }
 
-        return await this.accessGroupRepository
+        return this.accessGroupRepository
             .createQueryBuilder('access_group')
             .leftJoin('access_group.users', 'users')
-            .leftJoin('access_group.project_accesses', 'project_accesses')
-            .where('project_accesses.rights >= :rights', {
-                rights: AccessGroupRights.CREATE,
-            })
             .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('access_group.personal = FALSE')
+            .andWhere('access_group.personal = false')
+            .andWhere('access_group.inheriting = true')
             .getExists();
     }
 }
