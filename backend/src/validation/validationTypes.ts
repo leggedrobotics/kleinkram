@@ -30,6 +30,7 @@ export class StringArrayValidate {
 
 export class BooleanValidate {
     @IsBoolean()
+    @Type(() => Boolean)
     value: boolean;
 }
 

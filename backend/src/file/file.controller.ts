@@ -1,14 +1,6 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Put,
-    Query,
-} from '@nestjs/common';
-import { FileService } from './file.service';
-import { UpdateFile } from './entities/update-file.dto';
+import {Body, Controller, Delete, Get, Put, Query,} from '@nestjs/common';
+import {FileService} from './file.service';
+import {UpdateFile} from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -19,20 +11,20 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import {addJWTUser, JWTUser} from '../auth/paramDecorator';
 import {
     QueryBoolean,
-    QueryDate,
     QueryOptionalDate,
     QueryString,
     QueryStringArray,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import {ParamUUID} from '../validation/paramDecorators';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(private readonly fileService: FileService) {
+    }
 
     @Get('all')
     @LoggedIn()
@@ -88,7 +80,7 @@ export class FileController {
         @QueryUUID('uuid') uuid: string,
         @QueryBoolean('expires') expires: boolean,
     ) {
-        logger.debug('download', uuid, expires);
+        logger.debug('download ' + uuid + ': expires=' + expires);
         return this.fileService.generateDownload(uuid, expires);
     }
 

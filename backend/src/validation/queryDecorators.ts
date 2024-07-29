@@ -1,22 +1,13 @@
-import {
-    BadRequestException,
-    createParamDecorator,
-    ExecutionContext,
-} from '@nestjs/common';
-import { validateOrReject } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
-import {
-    BooleanValidate,
-    StringArrayValidate,
-    StringValidate,
-    UUIDValidate,
-} from './validationTypes';
+import {BadRequestException, createParamDecorator, ExecutionContext,} from '@nestjs/common';
+import {validateOrReject} from 'class-validator';
+import {plainToInstance} from 'class-transformer';
+import {BooleanValidate, StringArrayValidate, StringValidate, UUIDValidate,} from './validationTypes';
 
 export const QueryUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
-        const object = plainToInstance(UUIDValidate, { value });
+        const object = plainToInstance(UUIDValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid UUID');
         });
@@ -30,7 +21,7 @@ export const QueryString = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(StringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid String');
         });
@@ -44,7 +35,7 @@ export const QueryStringArray = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringArrayValidate, { value });
+        const object = plainToInstance(StringArrayValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(
                 'Parameter is not a valid String Array',
@@ -59,13 +50,19 @@ export const QueryBoolean = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
-
-        const object = plainToInstance(BooleanValidate, { value });
+        const object = plainToInstance(BooleanValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Boolean');
         });
 
-        return value;
+        // convert type to boolean
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+            if (value.toLowerCase() === 'true') return true;
+            else if (value.toLowerCase() === 'false') return false;
+        }
+
+        throw new BadRequestException('Parameter is not a valid Boolean');
     },
 );
 
@@ -74,7 +71,7 @@ export const QueryDate = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(StringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Date');
         });
@@ -92,7 +89,7 @@ export const QueryOptionalDate = createParamDecorator(
             return;
         }
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(StringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Date');
         });
