@@ -2,8 +2,18 @@
 
   <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
-  <div>
+  <div class="q-mb-md">
     <ExplorerPageBreadcrumbs/>
+
+    <div class="flex justify-between items-center q-mt-md">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Create Project"
+          @click="createNewProject"
+      />
+    </div>
+
   </div>
 
   <q-card class="q-pa-md q-mb-xl" flat bordered>
@@ -62,6 +72,8 @@ import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
 import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/TableHeader.vue";
+import CreateProjectDialog from "components/CreateProjectDialog.vue";
+import {useQuasar} from "quasar";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -71,6 +83,18 @@ const refresh = ref(0);
 watch(search, () => {
   $routerService?.pushToQuery({search: search.value})
   refresh.value++;
+})
+
+const $q = useQuasar();
+
+const createNewProject = () => $q.dialog({
+  title: 'Create new project',
+  component: CreateProjectDialog,
+}).onOk(() => {
+
+  // TODO: set search to new project name....
+  // search.value = 'new project name'
+
 })
 
 
