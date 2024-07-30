@@ -23,8 +23,8 @@
 
         <q-separator/>
 
-        <q-tab-panels v-model="tab">
-          <q-tab-panel name="meta_data" class="q-pa-lg">
+        <q-tab-panels v-model="tab" class="q-pa-lg">
+          <q-tab-panel name="meta_data">
 
             <p style="padding-bottom: 20px">
               Create a new project by providing a name and description. The project name must be globally unique.
