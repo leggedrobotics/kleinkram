@@ -37,9 +37,9 @@ export class FileController {
     @Get('filteredByNames')
     @LoggedIn()
     async filteredByNames(
-        @QueryString('projectName') projectName: string,
-        @QueryString('missionName') missionName: string,
-        @QueryStringArray('topics') topics: string[],
+        @QueryOptionalString('projectName') projectName: string,
+        @QueryOptionalString('missionName') missionName: string,
+        @QueryOptionalString('topics') topics: string,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(

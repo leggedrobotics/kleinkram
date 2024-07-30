@@ -12,6 +12,7 @@ import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
 import { TagService } from '../tag/tag.service';
 import env from '@common/env';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class MissionService {
@@ -83,23 +84,23 @@ export class MissionService {
             });
             return project.missions;
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('project.name = :name', { name: projectName })
-            .andWhere(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-                }),
-            )
-            .getMany();
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator')
+                .where('project.name = :name', { name: projectName })
+                .andWhere(
+                    new Brackets((qb) => {
+                        qb.where('projectUsers.uuid = :user', {
+                            user: userUUID,
+                        }).orWhere('missionUsers.uuid = :user', {
+                            user: userUUID,
+                        });
+                    }),
+                ),
+            userUUID,
+        ).getMany();
     }
 
     // TODO Test!
@@ -112,17 +113,13 @@ export class MissionService {
                 relations: ['project', 'creator'],
             });
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('projectUsers.uuid = :user', { user: userUUID })
-            .orWhere('missionUsers.uuid = :user', { user: userUUID })
-            .getMany();
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator'),
+            userUUID,
+        ).getMany();
     }
 
     async findOneByName(name: string): Promise<Mission> {

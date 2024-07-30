@@ -35,30 +35,38 @@ app.add_typer(tag)
 app.command()(login)
 app.command()(endpoint)
 app.command()(setEndpoint)
-app.command()(setCliKey)
+app.command(hidden=True)(setCliKey)
 
 
 @files.command("list")
 def list_files(
-        project: Annotated[str, typer.Option()] = None,
-        mission: Annotated[str, typer.Option()] = None,
-        topics: Annotated[List[str], typer.Option()] = None,
+        project: Optional[str] = typer.Option(None, help="Name of Project"),
+        mission: Optional[str] = typer.Option(None, help="Name of Mission"),
+        topics: Optional[List[str]] = typer.Option(None, help="Comma separated list of topics")
 ):
     """
     List all files with optional filters for project, mission, or topics.
 
-    Very long description that can span multiple lines and is formatted with Markdown.
-    Even longer ? Lorem ipsum blabalbla keep writing copilot is watching
+    Can list files of a project, mission, or with specific topics (Logical AND).
+    Examples:\n
+        - 'klein files list'\n
+        - 'klein files list --project "Project 1"'\n
+        - 'klein files list --mission "Mission 1"'\n
+        - 'klein files list --topics "/elevation_mapping/semantic_map,/elevation_mapping/elevation_map_raw"'\n
+        - 'klein files list --topics "/elevation_mapping/semantic_map,/elevation_mapping/elevation_map_raw" --mission "Mission A"'
     """
     try:
         url = f"/file/filteredByNames"
+        params = {}
+        if project:
+            params["projectName"] = project
+        if mission:
+            params["missionName"] = mission
+        if topics:
+            params["topics"] = topics
         response = client.get(
             url,
-            params={
-                "projectName": project,
-                "missionName": mission,
-                "topics": topics,
-            },
+            params=params,
         )
         response.raise_for_status()
         data = response.json()
@@ -107,11 +115,12 @@ def list_projects():
 
 @missions.command("list")
 def list_missions(
-        project: Annotated[str, typer.Option()] = None,
-        verbose: Annotated[bool, typer.Option()] = False,
+        project: Optional[str] = typer.Option(None, help="Name of Project"),
+        verbose: Optional[bool] = typer.Option(False, help="Outputs a table with more information"),
 ):
     """
     List all missions with optional filter for project.
+
     """
     try:
         url = "/mission"
@@ -155,27 +164,47 @@ def list_missions(
 @missions.command("byUUID")
 def mission_by_uuid(
         uuid: Annotated[str, typer.Argument()],
+        json: Optional[bool] = typer.Option(False, help="Output as JSON"),
 ):
+    """
+    Get mission name, project name, creator and table of its files given a Mission UUID
+
+    Use the JSON flag to output the full JSON response instead.
+
+    Can be run with API Key or with login.
+    """
     try:
         url = "/mission/byUUID"
         response = client.get(url, params={"uuid": uuid})
         response.raise_for_status()
         data = response.json()
-        print(f"mission: {data['name']}")
-        print(f"Creator: {data['creator']['name']}")
-        table = Table("Filename", "Size", "date")
-        for file in data["files"]:
-            table.add_row(file["filename"], f"{file['size']}", file["date"])
+        if json:
+            print(data)
+        else:
+            print(f"mission: {data['name']}")
+            print(f"Creator: {data['creator']['name']}")
+            print("Project: " + data["project"]["name"])
+            table = Table("Filename", "Size", "date")
+            for file in data["files"]:
+                table.add_row(file["filename"], f"{file['size']}", file["date"])
+            print(table)
     except httpx.HTTPError as e:
         print(f"Failed to fetch missions: {e}")
 
 
 @topics.command("list")
 def topics(
-        file: Annotated[str, typer.Option()] = None,
-        full: Annotated[bool, typer.Option()] = False,
+        file: Annotated[str, typer.Option(help="Name of File")],
+        full: Annotated[bool, typer.Option(help="As a table with additional parameters")] = False,
+        # Todo add mission / project as optional argument as filenames are not unique
 ):
-    """List topics for a file"""
+    """
+    List topics for a file
+
+    Only makes sense with MCAP files as we don't associate topics with BAGs.
+    """
+    if file.endswith(".bag"):
+        print("BAG files generally do not have topics")
     try:
         url = "/file/byName"
         response = client.get(url, params={"name": file})
@@ -201,12 +230,19 @@ def topics(
 
 
 @projects.command("create")
-def create_project(name: Annotated[str, typer.Option()]):
-    """Create a new project"""
+def create_project(
+        name: Annotated[str, typer.Option(help="Name of Project")],
+        description: Annotated[str, typer.Option(help="Description of Project")],
+):
+    """
+    Create a new project
+    """
     try:
         url = "/project/create"
-        response = client.post(url, json={"name": name})
-        response.raise_for_status()
+        response = client.post(url, json={"name": name, "description": description, "requiredTags": []}) # TODO: Add required tags as option
+        if response.status_code >= 400:
+            print(f"Failed to create project: {response.json()["message"]}")
+            return
         print("Project created")
 
     except httpx.HTTPError as e:
@@ -215,13 +251,23 @@ def create_project(name: Annotated[str, typer.Option()]):
 
 @app.command("upload")
 def upload(
-        path: Annotated[str, typer.Option(prompt=True)],
-        project: Annotated[str, typer.Option(prompt=True)],
-        mission: Annotated[str, typer.Option(prompt=True)],
+        path: Annotated[str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")],
+        project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
+        mission: Annotated[str, typer.Option(prompt=True, help="Name of Mission to create")],
 ):
-    """Upload files"""
+    """
+    Upload files matching the path to a mission in a project.
+
+    The mission name must be unique within the project and not yet created.\n
+    Examples:\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1"'\n
+
+    """
     files = expand_and_match(path)
     filenames = list(map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x),files)))
+    if not filenames:
+        print("No files found")
+        return
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
@@ -253,7 +299,7 @@ def upload(
 
         create_mission_url = "/mission/create"
         new_mission = client.post(
-            create_mission_url, json={"name": mission, "projectUUID": project_json["uuid"]}
+            create_mission_url, json={"name": mission, "projectUUID": project_json["uuid"], "tags": []}
         )
         new_mission.raise_for_status()
         new_mission_data = new_mission.json()
@@ -328,7 +374,7 @@ def clear_queue():
         print("Operation cancelled.")
 
 
-@app.command("wipe")
+@app.command("wipe", hidden=True)
 def wipe():
     """Wipe all data"""
     # Prompt the user for confirmation
@@ -368,9 +414,13 @@ def wipe():
         print("Operation cancelled.")
 
 
-@app.command("claim")
+@app.command("claim", hidden=True)
 def claim():
-    """Claim admin rights as the first user"""
+    """
+    Claim admin rights as the first user
+
+    Only works if no other user has claimed admin rights before.
+    """
     response = client.post("/user/claimAdmin")
     response.raise_for_status()
     print("Admin claimed.")

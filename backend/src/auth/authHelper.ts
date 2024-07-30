@@ -25,7 +25,7 @@ export function addAccessJoinsAndConditions(
             'missionUsers',
             'missionAccessView.useruuid = missionUsers.uuid',
         )
-        .where(
+        .andWhere(
             new Brackets((qb) => {
                 qb.where('projectUsers.uuid = :user', {
                     user: userUUID,
