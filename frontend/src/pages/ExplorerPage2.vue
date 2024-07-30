@@ -1,16 +1,19 @@
 <template>
 
-  <h1 class="text-h5">Project Explorer</h1>
+  <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
   <!-- Action Bar and Breadcrumbs -->
   <div>
     <ExplorerPageBreadcrumbs/>
   </div>
 
-
   <q-card class="q-pa-md q-mb-xl" flat bordered>
 
-    <q-card-actions align="right">
+    <q-card-actions class="flex justify-between items-center q-ml-md">
+      <div>
+        <h2 class="text-h5 q-mb-xs">Explore all Projects</h2>
+        <HelpMessage/>
+      </div>
       <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh"/>
     </q-card-actions>
 
@@ -32,6 +35,7 @@ import {inject, ref, watch} from "vue";
 import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
 import RouterService from "src/services/routerService";
+import HelpMessage from "components/HelpMessage.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
