@@ -19,38 +19,36 @@ export type ProjectColumnType = {
 
 const project_columns: Array<ProjectColumnType> = [
     {
-        name: 'Project',
+        name: 'name',
         required: true,
-        label: 'Project',
+        label: 'Project Name',
         align: 'left',
         field: (row: Project) => row.name,
         format: (val: string) => `${val}`,
         sortable: true,
-        style: 'width:  10%; max-width: 10%; min-width: 10%;',
+        style: 'width: 140px',
     },
     {
-        name: 'Description',
+        name: 'description',
         required: true,
         label: 'Description',
         align: 'left',
         field: (row: Project) => row.description || '',
         format: (val: string) => `${val}`,
         sortable: true,
-        style: 'width:  60%; max-width: 60%; min-width: 60%;',
     },
 
     {
-        name: 'Creator',
+        name: 'creator',
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Project) => (row.creator ? row.creator.name : ''),
+        field: (row: Project) => (row.creator ? row.creator?.name : ''),
         format: (val: number) => `${val}`,
         sortable: true,
-        style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
     {
-        name: 'Created',
+        name: 'createdAt',
         required: true,
         label: 'Created',
         align: 'left',
@@ -59,14 +57,12 @@ const project_columns: Array<ProjectColumnType> = [
         sortable: true,
     },
     {
-        name: 'NrOfMissions',
+        name: 'nrOfMissions',
         required: true,
         label: '# Missions',
         align: 'left',
-        field: (row: Project) => row.missions.length,
+        field: (row: Project) => row.missions?.length,
         format: (val: number) => `${val}`,
-        sortable: true,
-        style: 'width: 120px;',
     },
     {
         name: 'projectaction',
@@ -74,9 +70,10 @@ const project_columns: Array<ProjectColumnType> = [
         align: 'center',
     },
 ];
+
 const mission_columns: Array<ProjectColumnType> = [
     {
-        name: 'Mission',
+        name: 'name',
         required: true,
         label: 'Mission',
         align: 'left',
@@ -97,7 +94,7 @@ const mission_columns: Array<ProjectColumnType> = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: Mission) => row.files.length,
+        field: (row: Mission) => row.files?.length,
         format: (val: number) => `${val}`,
         sortable: true,
     },
@@ -110,7 +107,7 @@ const mission_columns: Array<ProjectColumnType> = [
 
 const file_columns: Array<ProjectColumnType> = [
     {
-        name: 'File',
+        name: 'name',
         required: true,
         label: 'File',
         align: 'left',

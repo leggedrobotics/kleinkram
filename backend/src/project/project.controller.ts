@@ -10,7 +10,14 @@ import {
     CanWriteProject,
     LoggedIn,
 } from '../auth/roles.decorator';
-import {QuerySkip, QueryString, QueryTake, QueryUUID,} from '../validation/queryDecorators';
+import {
+    QueryBoolean, QueryProjectSearchParam,
+    QueryProjectSortBy,
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
 import {addJWTUser, JWTUser} from '../auth/paramDecorator';
 
 @Controller('project')
@@ -23,9 +30,12 @@ export class ProjectController {
     async allProjects(
         @addJWTUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number
+        @QueryTake('take') take: number,
+        @QueryProjectSortBy('sortBy') sortBy?: string,
+        @QueryBoolean('descending') descending?: boolean,
+        @QueryProjectSearchParam('searchParams') searchParams?: Map<string, string>,
     ) {
-        return this.projectService.findAll(user, skip, take);
+        return this.projectService.findAll(user, skip, take, sortBy, descending, searchParams);
     }
 
     @Get('one')

@@ -15,20 +15,11 @@
     </q-card-actions>
 
     <q-card-section>
-      <q-input outlined v-model="search" label="Project Name" placeholder="Search for projects..."/>
+      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects..."/>
     </q-card-section>
 
     <q-card-section>
-
-      <Suspense>
-        <ExplorerPageTable :refresh="refresh"/>
-
-        <template #fallback>
-          <ExplorerPageLoadingPreview/>
-        </template>
-
-      </Suspense>
-
+      <ExplorerPageTable :refresh="refresh"/>
     </q-card-section>
 
   </q-card>
@@ -37,13 +28,19 @@
 
 <script setup lang="ts">
 
-import {ref} from "vue";
+import {inject, ref, watch} from "vue";
 import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
-import ExplorerPageLoadingPreview from "components/explorer_page/ExplorerPageLoadingPrview.vue";
+import RouterService from "src/services/routerService";
+
+const $routerService: RouterService | undefined = inject('$routerService');
 
 const search = ref('')
 const refresh = ref(0);
 
+watch(search, () => {
+  $routerService?.pushToQuery({search: search.value})
+  refresh.value++;
+})
 
 </script>

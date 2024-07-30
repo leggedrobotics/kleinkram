@@ -1,10 +1,6 @@
-import {
-    BadRequestException,
-    createParamDecorator,
-    ExecutionContext,
-} from '@nestjs/common';
-import { validateOrReject } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
+import {BadRequestException, createParamDecorator, ExecutionContext,} from '@nestjs/common';
+import {validateOrReject} from 'class-validator';
+import {plainToInstance} from 'class-transformer';
 import {
     BooleanValidate,
     DateStringValidate,
@@ -18,7 +14,7 @@ export const QueryUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
-        const object = plainToInstance(UUIDValidate, { value });
+        const object = plainToInstance(UUIDValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid UUID');
         });
@@ -32,7 +28,7 @@ export const QueryString = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(StringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid String');
         });
@@ -46,7 +42,7 @@ export const QueryStringArray = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringArrayValidate, { value });
+        const object = plainToInstance(StringArrayValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(
                 'Parameter is not a valid String Array',
@@ -61,7 +57,12 @@ export const QueryBoolean = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
-        const object = plainToInstance(BooleanValidate, { value });
+        const object = plainToInstance(BooleanValidate, {value});
+
+        if (value === undefined) {
+            return false;
+        }
+
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Boolean');
         });
@@ -82,7 +83,7 @@ export const QueryDate = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(DateStringValidate, { value });
+        const object = plainToInstance(DateStringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Date');
         });
@@ -100,7 +101,7 @@ export const QueryOptionalDate = createParamDecorator(
             return;
         }
 
-        const object = plainToInstance(DateStringValidate, { value });
+        const object = plainToInstance(DateStringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Date');
         });
@@ -118,7 +119,7 @@ export const QueryOptionalNumber = createParamDecorator(
             return;
         }
 
-        const object = plainToInstance(NumberValidate, { value });
+        const object = plainToInstance(NumberValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
@@ -136,9 +137,9 @@ export const QuerySkip = createParamDecorator(
             return 0;
         }
 
-        const object = plainToInstance(NumberValidate, { value });
+        const object = plainToInstance(NumberValidate, {value});
         await validateOrReject(object).catch((errors) => {
-            throw new BadRequestException('Parameter is not a valid Number');
+            throw new BadRequestException('Parameter skip is not a valid Number');
         });
 
         return value;
@@ -154,9 +155,68 @@ export const QueryTake = createParamDecorator(
             return 100; // default value
         }
 
-        const object = plainToInstance(NumberValidate, { value });
+        const object = plainToInstance(NumberValidate, {value});
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException('Parameter take is not a valid Number');
+        });
+
+        return value;
+    },
+);
+
+export const QueryProjectSortBy = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === "" || value === undefined) {
+            return 'uuid'; // default value
+        }
+
+        // check if value is a valid field
+        const fields = ['uuid', 'name', 'description', 'creator', 'createdAt'];
+
+        if (!fields.includes(value)) {
+            throw new BadRequestException('Parameter is not a valid field');
+        }
+
+        const object = plainToInstance(StringValidate, {value});
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid Number');
+        });
+
+        return value;
+    },
+);
+
+export const QueryProjectSearchParam = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return new Map<string, string>();
+        }
+
+        // check if it is a valid key
+        const validKeys = ['name'];
+        const key = Object.keys(value)[0];
+        if (!validKeys.includes(key)) {
+            throw new BadRequestException('Parameter is not a valid key');
+        }
+
+        // remove empty values
+        Object.keys(value).forEach(key => {
+            if (value[key] === '') {
+                delete value[key];
+            }
+        });
+
+        // check if every value is a string
+        Object.keys(value).forEach(key => {
+            if (typeof value[key] !== 'string') {
+                throw new BadRequestException('Parameter is not a valid value');
+            }
         });
 
         return value;

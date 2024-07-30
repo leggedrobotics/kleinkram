@@ -32,34 +32,64 @@ export class ProjectService {
         this.config = this.configService.get('accessConfig');
     }
 
-    async findAll(user: JWTUser, skip: number, take: number): Promise<Project[]> {
+    async findAll(user: JWTUser, skip: number, take: number, sortBy: string, descending: boolean, searchParams: Map<string, string>): Promise<{
+        projects: Project[]
+        pageSize: number
+        pageCount: number
+        length: number,
+        searchParams?: Map<string, string>
+    }> {
+
+        // convert take and skip to numbers
+        take = Number(take);
+        skip = Number(skip);
+
         logger.debug('Finding all projects as user: ', user.uuid);
         logger.debug("Skip " + skip + " Take " + take);
+
         const db_user = await this.userRepository.findOne({
             where: {uuid: user.uuid},
         });
-        if (db_user.role === UserRole.ADMIN) {
-            return this.projectRepository.find({
-                relations: ['creator', 'missions'],
-                skip,
-                take
-            })
-        }
 
-        return this.projectRepository
+        let baseQuery = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator')
             .leftJoinAndSelect('project.missions', 'missions')
-            .leftJoin('project.project_accesses', 'projectAccesses')
-            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-            .leftJoin('accessGroup.users', 'users')
-            .where('projectAccesses.rights >= :rights', {
-                rights: AccessGroupRights.READ,
-            })
-            .andWhere('users.uuid = :uuid', {uuid: user.uuid})
-            .skip(skip)
-            .take(take)
-            .getMany();
+
+        // if not admin, only show projects that the user has access to
+        if (db_user.role !== UserRole.ADMIN) {
+            baseQuery = baseQuery
+                .leftJoin('project.project_accesses', 'projectAccesses')
+                .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+                .leftJoin('accessGroup.users', 'users')
+                .where('projectAccesses.rights >= :rights', {
+                    rights: AccessGroupRights.READ,
+                })
+                .andWhere('users.uuid = :uuid', {uuid: user.uuid});
+        }
+
+        // add sorting
+        if (sortBy) {
+            console.log("Sorting by " + sortBy + " descending: " + descending);
+            baseQuery = baseQuery.orderBy(`project.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+
+        if (!!searchParams) {
+            console.log("Searching for: " + searchParams);
+            Object.keys(searchParams).forEach((key) => {
+                baseQuery = baseQuery.where(`project.${key} LIKE :${key}`, {
+                    [key]: `%${searchParams[key]}%`,
+                });
+            });
+        }
+
+        const count = await baseQuery.getCount();
+        return {
+            projects: await baseQuery.skip(skip).take(take).getMany(),
+            pageSize: take,
+            pageCount: Math.ceil(count / take),
+            length: count
+        }
 
     }
 
