@@ -8,7 +8,7 @@
   </div>
 
 
-  <q-card class="q-pa-md" flat bordered>
+  <q-card class="q-pa-md q-mb-xl" flat bordered>
 
     <q-card-actions align="right">
       <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh"/>
