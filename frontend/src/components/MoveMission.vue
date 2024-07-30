@@ -59,7 +59,7 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { Mission } from 'src/types/Mission';
 import { Project } from 'src/types/Project';
 import { allProjects } from 'src/services/queries/project';
-import moveMission from 'components/MoveMission.vue';
+import { moveMission } from 'src/services/mutations/mission';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

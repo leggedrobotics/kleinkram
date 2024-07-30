@@ -8,9 +8,10 @@ import { JWTUser } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { UserRole } from '@common/enum';
+import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
 import { TagService } from '../tag/tag.service';
+import env from '@common/env';
 
 @Injectable()
 export class MissionService {
@@ -154,6 +155,12 @@ export class MissionService {
         await moveRunFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
+            env.MINIO_BAG_BUCKET_NAME,
+        );
+        await moveRunFilesInMinio(
+            `${old_project.name}/${mission.name}`,
+            mission.project.name,
+            env.MINIO_MCAP_BUCKET_NAME,
         );
         return this.missionRepository.save(mission);
     }
