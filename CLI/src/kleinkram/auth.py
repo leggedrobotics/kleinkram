@@ -142,6 +142,7 @@ def login(
         key: Annotated[str, typer.Option()] = None,
         open_browser: Annotated[bool, typer.Option()] = True,
 ):
+    """Login"""
     tokenfile = TokenFile()
     if key:
         tokenfile.saveTokens(key)
@@ -182,6 +183,7 @@ def login(
 
 
 def setEndpoint(endpoint: Annotated[str, typer.Argument()]):
+    """Set the current endpoint"""
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
     tokenfile.writeToFile()
@@ -191,6 +193,7 @@ def setEndpoint(endpoint: Annotated[str, typer.Argument()]):
 
 
 def endpoint():
+    """Get the current endpoint"""
     tokenfile = TokenFile()
     print("Current: " + tokenfile.endpoint)
     print("Saved Tokens found for:")
@@ -199,6 +202,7 @@ def endpoint():
 
 
 def setCliKey(key: Annotated[str, typer.Argument()]):
+    """Set the CLI key (Actions Only)"""
     tokenfile = TokenFile()
     if not tokenfile.endpoint in tokenfile.tokens:
         tokenfile.tokens[tokenfile.endpoint] = {}

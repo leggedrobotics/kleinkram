@@ -14,14 +14,14 @@ from .helper import uploadFiles, expand_and_match
 from .auth import login, client, endpoint, setCliKey, setEndpoint
 
 app = typer.Typer()
-projects = typer.Typer(name="projects")
-missions = typer.Typer(name="missions")
-files = typer.Typer(name="files")
-topics = typer.Typer(name="topics")
-queue = typer.Typer(name="queue")
-user = typer.Typer(name="users")
-tagtypes = typer.Typer(name="tagtypes")
-tag = typer.Typer(name="tag")
+projects = typer.Typer(name="projects", help="Project operations")
+missions = typer.Typer(name="missions", help="Mission operations")
+files = typer.Typer(name="files", help="File operations")
+topics = typer.Typer(name="topics", help="Topic operations")
+queue = typer.Typer(name="queue", help="Queue operations")
+user = typer.Typer(name="users", help="User operations")
+tagtypes = typer.Typer(name="tagtypes", help="TagType operations")
+tag = typer.Typer(name="tag", help="Tag operations")
 
 
 app.add_typer(projects)
@@ -46,6 +46,9 @@ def list_files(
 ):
     """
     List all files with optional filters for project, mission, or topics.
+
+    Very long description that can span multiple lines and is formatted with Markdown.
+    Even longer ? Lorem ipsum blabalbla keep writing copilot is watching
     """
     try:
         url = f"/file/filteredByNames"
@@ -172,6 +175,7 @@ def topics(
         file: Annotated[str, typer.Option()] = None,
         full: Annotated[bool, typer.Option()] = False,
 ):
+    """List topics for a file"""
     try:
         url = "/file/byName"
         response = client.get(url, params={"name": file})
@@ -198,6 +202,7 @@ def topics(
 
 @projects.command("create")
 def create_project(name: Annotated[str, typer.Option()]):
+    """Create a new project"""
     try:
         url = "/project/create"
         response = client.post(url, json={"name": name})
@@ -214,6 +219,7 @@ def upload(
         project: Annotated[str, typer.Option(prompt=True)],
         mission: Annotated[str, typer.Option(prompt=True)],
 ):
+    """Upload files"""
     files = expand_and_match(path)
     filenames = list(map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x),files)))
     filepaths = {}
@@ -364,6 +370,7 @@ def wipe():
 
 @app.command("claim")
 def claim():
+    """Claim admin rights as the first user"""
     response = client.post("/user/claimAdmin")
     response.raise_for_status()
     print("Admin claimed.")
@@ -371,6 +378,7 @@ def claim():
 
 @user.command("list")
 def users():
+    """List all users"""
     response = client.get("/user/all")
     response.raise_for_status()
     data = response.json()
@@ -382,6 +390,7 @@ def users():
 
 @user.command("info")
 def user_info():
+    """Get logged in user info"""
     response = client.get("/user/me")
     response.raise_for_status()
     data = response.json()
@@ -390,6 +399,7 @@ def user_info():
 
 @user.command("promote")
 def promote(email: Annotated[str, typer.Option()]):
+    """Promote another user to admin"""
     response = client.post("/user/promote", json={"email": email})
     response.raise_for_status()
     print("User promoted.")
@@ -397,6 +407,7 @@ def promote(email: Annotated[str, typer.Option()]):
 
 @user.command("demote")
 def demote(email: Annotated[str, typer.Option()]):
+    """Demote another user from admin"""
     response = client.post("/user/demote", json={"email": email})
     response.raise_for_status()
     print("User demoted.")
@@ -406,6 +417,7 @@ def demote(email: Annotated[str, typer.Option()]):
 def download(
         missionuuid: Annotated[str, typer.Argument()],
 ):
+    """Download file"""
     try:
         response = client.get("/file/downloadWithToken", params={"uuid": missionuuid})
         response.raise_for_status()
@@ -419,6 +431,7 @@ def addTag(
         tagtypeuuid: Annotated[str, typer.Argument()],
         value: Annotated[str, typer.Argument()],
 ):
+    """Tag a mission"""
     try:
         response = client.post("/tag/addTag", json={"mission": missionuuid, "tagType": tagtypeuuid, "value": value})
         if response.status_code < 400:
@@ -436,6 +449,7 @@ def addTag(
 def tagTypes(
         verbose: Annotated[bool, typer.Option()] = False,
 ):
+    """List all tagtypes"""
     try:
         response = client.get("/tag/all")
         response.raise_for_status()
@@ -456,6 +470,7 @@ def tagTypes(
 def deleteTag(
         taguuid: Annotated[str, typer.Argument()],
 ):
+    """Delete a tag"""
     try:
         response = client.delete("/tag/deleteTag", params={"uuid": taguuid})
         if response.status_code < 400:
