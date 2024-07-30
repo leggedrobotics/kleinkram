@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio } from '../minioHelper';
+import { externalMinio, internalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
@@ -24,17 +24,16 @@ export class FileService {
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private readonly dataSource: DataSource,
     ) {}
 
-    async findAll(userUUID: string, skip: number, take: number) {
+    async findAll(userUUID: string) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.fileRepository.find({
                 relations: ['mission'],
-                skip,
-                take,
             });
         }
         return this.fileRepository
@@ -63,9 +62,7 @@ export class FileService {
                         userUUID,
                     });
                 }),
-            )
-            .skip(skip)
-            .take(take);
+            );
     }
 
     async findFilteredByNames(
@@ -73,8 +70,6 @@ export class FileService {
         missionName: string,
         topics: string[],
         userUUID: string,
-        skip: number,
-        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -86,9 +81,7 @@ export class FileService {
             .select('file.uuid')
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
-            .leftJoin('mission.project', 'project')
-            .skip(skip)
-            .take(take);
+            .leftJoin('mission.project', 'project');
 
         if (user.role !== UserRole.ADMIN) {
             query
@@ -159,8 +152,6 @@ export class FileService {
         and_or: boolean,
         mcapBag: boolean,
         userUUID: string,
-        skip: number,
-        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -174,9 +165,7 @@ export class FileService {
             .leftJoin('mission.project', 'project')
             .andWhere('file.type = :type', {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
-            })
-            .skip(skip)
-            .take(take);
+            });
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
@@ -185,7 +174,7 @@ export class FileService {
 
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
-            logger.debug('Filtering files by filename: ' + fileName);
+            logger.debug("Filtering files by filename: " + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
@@ -259,21 +248,66 @@ export class FileService {
         logger.debug('Updating file with uuid: ' + uuid);
         logger.debug('New file data: ' + JSON.stringify(file));
 
-        const db_file = await this.fileRepository.findOne({ where: { uuid } });
+        const db_file = await this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
+
+        if (!db_file) {
+            throw new Error('File not found');
+        }
+
+        const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        const bucketName =
+            db_file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME;
+
         db_file.filename = file.filename;
         db_file.date = file.date;
+
         if (file.mission_uuid) {
-            db_file.mission = await this.missionRepository.findOne({
+            const newMission = await this.missionRepository.findOne({
                 where: { uuid: file.mission_uuid },
+                relations: ['project'],
             });
+            if (newMission) {
+                db_file.mission = newMission;
+            } else {
+                throw new Error('Mission not found');
+            }
         }
+
         if (file.project_uuid) {
-            db_file.mission.project = await this.projectRepository.findOne({
+            const newProject = await this.projectRepository.findOne({
                 where: { uuid: file.project_uuid },
             });
+            if (newProject) {
+                db_file.mission.project = newProject;
+            } else {
+                throw new Error('Project not found');
+            }
         }
-        await this.fileRepository.save(db_file);
-        return this.fileRepository.findOne({ where: { uuid } });
+
+        const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        if (srcPath !== destPath) {
+            await moveFile(srcPath, destPath, bucketName);
+        }
+        await this.dataSource.transaction(
+            async (transactionalEntityManager) => {
+                await transactionalEntityManager.save(
+                    Project,
+                    db_file.mission.project,
+                );
+                await transactionalEntityManager.save(Mission, db_file.mission);
+                await transactionalEntityManager.save(FileEntity, db_file);
+            },
+        );
+
+        return this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
     }
 
     async generateDownload(uuid: string, expires: boolean) {
