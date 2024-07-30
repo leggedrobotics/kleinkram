@@ -62,26 +62,71 @@
 
     <template v-slot:body-cell-missionaction="props">
       <q-td :props="props">
+
         <q-btn
+            flat
+            round
+            dense
+            icon="more_vert"
+            unelevated
             color="primary"
-            label="Move"
-            style="margin-right: 5px"
-            outline
-        />
-        <q-btn
-            color="primary"
-            label="View"
-            outline
-        />
+            class="cursor-pointer"
+            @click.stop
+        >
+          <q-menu>
+            <q-list>
+              <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
+                <q-item-section>View Files</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Edit Metadata</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Manage Access</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Move</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Delete</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
       </q-td>
     </template>
     <template v-slot:body-cell-fileaction="props">
       <q-td :props="props">
+
         <q-btn
+            flat
+            round
+            dense
+            icon="more_vert"
+            unelevated
             color="primary"
-            label="View"
-            outline
-        ></q-btn>
+            class="cursor-pointer"
+            @click.stop
+        >
+          <q-menu>
+            <q-list>
+              <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
+                <q-item-section>View</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Download</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Move</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Delete</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
       </q-td>
     </template>
   </q-table>
@@ -137,7 +182,6 @@ const loadData = async (props?: any) => {
   // Extract Data Fetching Parameters
   //////////////////////////
 
-
   const page = props?.pagination?.page || route.query.page || DEFAULT_PAGINATION.page;
   const take = props?.pagination?.rowsPerPage || route.query.rowsPerPage || DEFAULT_PAGINATION.rowsPerPage;
   const sortBy = props?.pagination?.sortBy || route.query.sortBy || DEFAULT_SORT.sortBy;
@@ -164,16 +208,13 @@ const loadData = async (props?: any) => {
   // Fetch Data
   //////////////////////////
 
-  // simulate loading; only useful for testing
-  // TODO: we may want to remove this also in development mode
-  if (process.env.NODE_ENV === 'development')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
   let newData = [];
   let rowsNumber = 0;
   if (!!state.value.project_uuid && !state.value.mission_uuid) {
-    newData = await missionsOfProject(state.value.project_uuid)
+    console.log('loading missions: take=' + take + ' skip=' + skip)
+    newData = await missionsOfProject(state.value.project_uuid, take, skip)
     currentDataType.value = DataType.MISSIONS;
+    rowsNumber = 1_000;
   } else if (!!state.value.mission_uuid) {
     newData = await filesOfMission(state.value.mission_uuid)
     currentDataType.value = DataType.FILES;

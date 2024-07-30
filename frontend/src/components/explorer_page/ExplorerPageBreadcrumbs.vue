@@ -37,18 +37,20 @@ const {data: mission} = useQuery({
   enabled: !!state.value?.mission_uuid
 })
 
-const crumbs = ref<any>([])
+const rootCrumb = {
+  name: 'All Projects',
+  uuid: 'projects',
+  click: () => {
+    state.value.project_uuid = undefined
+    state.value.mission_uuid = undefined
+  }
+}
+
+const crumbs = ref<any>([rootCrumb])
+
 watch([project, mission, state], async () => {
 
-  crumbs.value = [
-    {
-      name: 'All Projects',
-      uuid: 'projects',
-      click: () => {
-        state.value.project_uuid = undefined
-        state.value.mission_uuid = undefined
-      }
-    }];
+  crumbs.value = [rootCrumb];
 
   if (state.value.project_uuid)
     crumbs.value.push({

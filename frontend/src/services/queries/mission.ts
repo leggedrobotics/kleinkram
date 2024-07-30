@@ -69,9 +69,15 @@ export const getMission = async (uuid: string): Promise<Mission> => {
 
 export const missionsOfProject = async (
     projectUUID: string,
+    take: number,
+    skip: number,
 ): Promise<Mission[]> => {
     const response = await axios.get(`/mission/filtered`, {
-        params: { uuid: projectUUID },
+        params: {
+            uuid: projectUUID,
+            take,
+            skip
+        },
     });
     const users: Record<string, User> = {};
     return response.data.map((mission: any) => {

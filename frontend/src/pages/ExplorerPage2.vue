@@ -88,15 +88,26 @@ const projectMissionSelectionState = ref<ProjectMissionSelectionState>(
 
 // update URL on state change
 watchEffect(() => {
+
+  const old_url_params = JSON.parse(JSON.stringify(route.query)); // TODO: this is a bit ugly but works
+  delete old_url_params.project_uuid;
+  delete old_url_params.mission_uuid;
+
   if (projectMissionSelectionState.value.project_uuid && projectMissionSelectionState.value?.mission_uuid) {
     $routerService?.routeTo(ROUTES.EXPLORER, {
       project_uuid: projectMissionSelectionState.value.project_uuid,
-      mission_uuid: projectMissionSelectionState.value.mission_uuid
+      mission_uuid: projectMissionSelectionState.value.mission_uuid,
+      ...old_url_params
     })
   } else if (projectMissionSelectionState.value.project_uuid && !projectMissionSelectionState.value?.mission_uuid) {
-    $routerService?.routeTo(ROUTES.EXPLORER, {project_uuid: projectMissionSelectionState.value.project_uuid})
+    $routerService?.routeTo(ROUTES.EXPLORER, {
+      project_uuid: projectMissionSelectionState.value.project_uuid,
+      ...old_url_params
+    })
   } else {
-    $routerService?.routeTo(ROUTES.EXPLORER)
+    $routerService?.routeTo(ROUTES.EXPLORER, {
+      ...old_url_params
+    })
   }
 })
 

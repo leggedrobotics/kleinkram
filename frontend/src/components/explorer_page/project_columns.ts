@@ -45,6 +45,7 @@ const project_columns: Array<ProjectColumnType> = [
         align: 'left',
         field: (row: Project) => (row.creator ? row.creator?.name : ''),
         format: (val: number) => `${val}`,
+        style: 'min-width: 100px',
         sortable: true,
     },
     {
