@@ -26,12 +26,11 @@
 <script setup lang="ts">
 
 import {ref, watch} from "vue";
-import {Project} from "src/types/Project";
-import {Mission} from "src/types/Mission";
 import {LocationQuery, useRoute} from "vue-router";
 import {getProject} from "src/services/queries/project";
 import {getMission} from "src/services/queries/mission";
 import HelpMessage from "components/HelpMessage.vue";
+import {useQuery} from "@tanstack/vue-query";
 
 const route = useRoute()
 
@@ -39,8 +38,18 @@ const isListingProjects = ref(true);
 const isListingMissions = ref(false);
 const isListingFiles = ref(false);
 
-const project = ref<Project | null>(null);
-const mission = ref<Mission | null>(null);
+
+const {data: project, refetch: refetchProject} = useQuery({
+  queryKey: ['project', route.query.project_uuid],
+  queryFn: () => getProject(route.query.project_uuid as string),
+  enabled: !!route.query.project_uuid
+});
+
+const {data: mission, refetch: refetchMission} = useQuery({
+  queryKey: ['mission', route.query.mission_uuid],
+  queryFn: () => getMission(route.query.mission_uuid as string),
+  enabled: !!route.query.mission_uuid
+});
 
 const updateData = async (query: LocationQuery) => {
 
@@ -51,17 +60,17 @@ const updateData = async (query: LocationQuery) => {
     isListingMissions.value = true;
     isListingFiles.value = false;
 
-    project.value = await getProject(query.project_uuid as string);
+    refetchProject()
 
   } else if (query.mission_uuid) {
     isListingProjects.value = false;
     isListingMissions.value = false;
     isListingFiles.value = true;
 
-    mission.value = await getMission(query.mission_uuid as string);
+    refetchMission()
 
     if (!!mission.value?.project?.uuid) {
-      project.value = await getProject(mission.value.project.uuid);
+      refetchProject()
     }
 
   } else {
