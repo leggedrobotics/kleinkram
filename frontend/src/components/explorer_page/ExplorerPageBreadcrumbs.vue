@@ -13,51 +13,59 @@
       </q-breadcrumbs>
     </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
 
-import {useRoute} from "vue-router";
-import {inject, ref, watch} from "vue";
-import ROUTES from "src/router/routes";
-import RouterService from "src/services/routerService";
+import {ref, watch} from "vue";
 import {getProject} from "src/services/queries/project";
 import {getMission} from "src/services/queries/mission";
+import {useQuery} from "@tanstack/vue-query";
 
-const route = useRoute()
-const $routerService: RouterService | undefined = inject('$routerService');
+const state = defineModel<ProjectMissionSelectionState>({required: true});
 
-const crumbs = ref<any>([])
-
-watch(() => route.query, async () => {
-  await updateCrumbs()
+const {data: project} = useQuery({
+  queryKey: ['project', state],
+  queryFn: () => !!state.value?.project_uuid ? getProject(state.value.project_uuid) : undefined,
+  enabled: !!state.value?.project_uuid
 })
 
-const updateCrumbs = async () => {
-  const project_uuid = route.query.project_uuid as string | undefined
-  const mission_uuid = route.query.mission_uuid as string | undefined
+const {data: mission} = useQuery({
+  queryKey: ['mission', state],
+  queryFn: () => !!state.value?.mission_uuid ? getMission(state.value.mission_uuid) : undefined,
+  enabled: !!state.value?.mission_uuid
+})
 
+const crumbs = ref<any>([])
+watch([project, mission, state], async () => {
 
   crumbs.value = [
     {
       name: 'All Projects',
       uuid: 'projects',
-      click: () => $routerService?.routeTo(ROUTES.EXPLORER, {})
-    },
-    project_uuid ? {
-      name: await getProject(project_uuid).then((project) => project.name),
-      uuid: 'missions',
-      click: () => $routerService?.routeTo(ROUTES.EXPLORER, {project_uuid})
-    } : {},
-    mission_uuid ? {
-      name: await getMission(mission_uuid).then((mission) => mission.name),
-      uuid: 'files',
-      click: () => $routerService?.routeTo(ROUTES.EXPLORER, {mission_uuid})
-    } : {}
-  ].filter((crumb: any) => !!crumb.uuid)
-}
+      click: () => {
+        state.value.project_uuid = undefined
+        state.value.mission_uuid = undefined
+      }
+    }];
 
-// initial load
-updateCrumbs()
+  if (state.value.project_uuid)
+    crumbs.value.push({
+      name: project.value?.name, uuid: 'missions',
+      click: () => state.value.mission_uuid = undefined
+    })
+
+
+  if (state.value.mission_uuid)
+    crumbs.value.push({
+      name: mission.value?.name, uuid: 'files',
+      click: () => {
+      }
+    })
+
+
+}, {deep: true})
+
 
 </script>

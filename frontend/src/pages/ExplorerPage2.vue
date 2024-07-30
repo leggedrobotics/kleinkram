@@ -3,7 +3,8 @@
   <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
   <div class="q-mb-md">
-    <ExplorerPageBreadcrumbs/>
+
+    <ExplorerPageBreadcrumbs v-model="projectMissionSelectionState"/>
 
     <div class="flex justify-between items-center q-mt-md">
       <div></div>
@@ -21,7 +22,7 @@
     <q-card-section class="flex justify-between items-center">
 
       <Suspense>
-        <TableHeader/>
+        <TableHeader v-model="projectMissionSelectionState"/>
 
         <template #fallback>
           <div style="width: 550px; height: 67px;">
@@ -45,7 +46,7 @@
 
     <q-card-section>
       <Suspense>
-        <ExplorerPageTable :refresh="refresh"/>
+        <ExplorerPageTable :refresh="refresh" v-model="projectMissionSelectionState"/>
 
         <template #fallback>
           <div style="width: 100%; height: 645px;">
@@ -67,15 +68,45 @@
 
 <script setup lang="ts">
 
-import {inject, ref, watch} from "vue";
+import {inject, ref, watch, watchEffect} from "vue";
 import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
 import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/TableHeader.vue";
 import CreateProjectDialog from "components/CreateProjectDialog.vue";
 import {useQuasar} from "quasar";
+import {useRoute} from "vue-router";
+import ROUTES from "src/router/routes";
 
 const $routerService: RouterService | undefined = inject('$routerService');
+
+const route = useRoute()
+const projectMissionSelectionState = ref<ProjectMissionSelectionState>(
+    {project_uuid: route.query.project_uuid as string, mission_uuid: route.query.mission_uuid as string}
+);
+
+
+// update URL on state change
+watchEffect(() => {
+  if (projectMissionSelectionState.value.project_uuid && projectMissionSelectionState.value?.mission_uuid) {
+    $routerService?.routeTo(ROUTES.EXPLORER, {
+      project_uuid: projectMissionSelectionState.value.project_uuid,
+      mission_uuid: projectMissionSelectionState.value.mission_uuid
+    })
+  } else if (projectMissionSelectionState.value.project_uuid && !projectMissionSelectionState.value?.mission_uuid) {
+    $routerService?.routeTo(ROUTES.EXPLORER, {project_uuid: projectMissionSelectionState.value.project_uuid})
+  } else {
+    $routerService?.routeTo(ROUTES.EXPLORER)
+  }
+})
+
+// update change on URL change
+watchEffect(() => {
+  projectMissionSelectionState.value = {
+    project_uuid: route.query.project_uuid as string,
+    mission_uuid: route.query.mission_uuid as string
+  }
+})
 
 const search = ref('')
 const refresh = ref(0);

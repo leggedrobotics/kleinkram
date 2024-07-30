@@ -110,6 +110,8 @@ const selected = ref([])
 const DEFAULT_SORT = {sortBy: 'name', descending: false}
 const DEFAULT_PAGINATION = {page: 1, rowsPerPage: 10, rowsNumber: 0}
 
+const state = defineModel<ProjectMissionSelectionState>({required: true});
+
 const pagination = ref({
   sortBy: DEFAULT_SORT.sortBy,
   descending: DEFAULT_SORT.descending,
@@ -118,12 +120,13 @@ const pagination = ref({
   rowsNumber: DEFAULT_PAGINATION.rowsNumber
 })
 
+
 // watch on route change
 watch(() => route.query, async (query) => {
   await loadData()
 })
 
-const currentDataType = ref<DataType>(!!route.query.project_uuid ? DataType.MISSIONS : DataType.PROJECTS);
+const currentDataType = ref<DataType>(!!state.value.project_uuid ? DataType.MISSIONS : DataType.PROJECTS);
 const data = ref<any>([]);
 
 // load data based on current URL params and search
@@ -134,8 +137,6 @@ const loadData = async (props?: any) => {
   // Extract Data Fetching Parameters
   //////////////////////////
 
-  const project_uuid = route.query.project_uuid as string;
-  const mission_uuid = route.query.mission_uuid as string;
 
   const page = props?.pagination?.page || route.query.page || DEFAULT_PAGINATION.page;
   const take = props?.pagination?.rowsPerPage || route.query.rowsPerPage || DEFAULT_PAGINATION.rowsPerPage;
@@ -151,8 +152,8 @@ const loadData = async (props?: any) => {
 
   if (Object.keys(props || {}).length !== 0)
     $routerService?.pushToQuery({
-      project_uuid: project_uuid,
-      mission_uuid: mission_uuid,
+      ...state.value.project_uuid ? {project_uuid: state.value.project_uuid} : {},
+      ...state.value.mission_uuid ? {mission_uuid: state.value.mission_uuid} : {},
       page: page,
       rowsPerPage: take,
       sortBy: sortBy,
@@ -170,11 +171,11 @@ const loadData = async (props?: any) => {
 
   let newData = [];
   let rowsNumber = 0;
-  if (!!project_uuid && !mission_uuid) {
-    newData = await missionsOfProject(project_uuid)
+  if (!!state.value.project_uuid && !state.value.mission_uuid) {
+    newData = await missionsOfProject(state.value.project_uuid)
     currentDataType.value = DataType.MISSIONS;
-  } else if (!!mission_uuid) {
-    newData = await filesOfMission(mission_uuid)
+  } else if (!!state.value.mission_uuid) {
+    newData = await filesOfMission(state.value.mission_uuid)
     currentDataType.value = DataType.FILES;
   } else {
     const project_list_response = await allProjects(take, skip, sortBy, descending, searchParams)
@@ -203,14 +204,15 @@ const loadData = async (props?: any) => {
 const onRowClick = async (_: Event, row: any) => {
 
   if (currentDataType.value === DataType.PROJECTS) {
-    $routerService?.routeTo(ROUTES.EXPLORER, {project_uuid: row.uuid})
-    await loadData()
+    state.value.project_uuid = row.uuid
   } else if (currentDataType.value === DataType.MISSIONS) {
-    $routerService?.routeTo(ROUTES.EXPLORER, {mission_uuid: row.uuid, project_uuid: route.query.project_uuid as string})
-    await loadData()
+    state.value.mission_uuid = row.uuid
   } else if (currentDataType.value === DataType.FILES) {
     $routerService?.routeTo(ROUTES.FILE, {uuid: row.uuid})
+    return;
   }
+
+  await loadData()
 
 }
 

@@ -25,44 +25,43 @@
 
 <script setup lang="ts">
 
+const state = defineModel<ProjectMissionSelectionState>({required: true});
+
+
 import {ref, watch} from "vue";
-import {LocationQuery, useRoute} from "vue-router";
 import {getProject} from "src/services/queries/project";
 import {getMission} from "src/services/queries/mission";
 import HelpMessage from "components/HelpMessage.vue";
 import {useQuery} from "@tanstack/vue-query";
 
-const route = useRoute()
 
 const isListingProjects = ref(true);
 const isListingMissions = ref(false);
 const isListingFiles = ref(false);
 
-
 const {data: project, refetch: refetchProject} = useQuery({
-  queryKey: ['project', route.query.project_uuid],
-  queryFn: () => getProject(route.query.project_uuid as string),
-  enabled: !!route.query.project_uuid
+  queryKey: ['project', state],
+  queryFn: () => !!state.value.project_uuid ? getProject(state.value.project_uuid) : undefined,
+  enabled: !!state.value.project_uuid,
 });
 
 const {data: mission, refetch: refetchMission} = useQuery({
-  queryKey: ['mission', route.query.mission_uuid],
-  queryFn: () => getMission(route.query.mission_uuid as string),
-  enabled: !!route.query.mission_uuid
+  queryKey: ['mission', state],
+  queryFn: () => !!state.value.mission_uuid ? getMission(state.value.mission_uuid) : undefined,
+  enabled: !!state.value.mission_uuid
 });
 
-const updateData = async (query: LocationQuery) => {
 
-  await new Promise(resolve => setTimeout(resolve, 1000))
+watch(state, () => {
 
-  if (query.project_uuid && !query.mission_uuid) {
+  if (state.value.project_uuid && !state.value.mission_uuid) {
     isListingProjects.value = false;
     isListingMissions.value = true;
     isListingFiles.value = false;
 
     refetchProject()
 
-  } else if (query.mission_uuid) {
+  } else if (state.value.mission_uuid) {
     isListingProjects.value = false;
     isListingMissions.value = false;
     isListingFiles.value = true;
@@ -78,14 +77,8 @@ const updateData = async (query: LocationQuery) => {
     isListingMissions.value = false;
     isListingFiles.value = false;
   }
-}
 
-watch(() => route.query, async (query) => {
-  await updateData(query)
-})
-
-// initial load
-await updateData(route.query)
+}, {deep: true})
 
 
 </script>
