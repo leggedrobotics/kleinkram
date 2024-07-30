@@ -39,7 +39,6 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
         const request = context.switchToHttp().getRequest();
 
         if (request.cookies[CookieNames.CLI_KEY]) {
-            console.log(request.cookies[CookieNames.CLI_KEY]);
             const token = await this.tokenRepository.findOne({
                 where: {
                     apikey: request.cookies[CookieNames.CLI_KEY],
