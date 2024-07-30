@@ -80,6 +80,15 @@ const ROUTES = {
         path: '/explorer',
         component: () => import('layouts/MainLayout.vue'),
         children: [
+            { path: '', component: () => import('pages/ExplorerPage2.vue') },
+        ],
+    },
+
+    EXPLORER2: {
+        name: 'Explorer_OLD',
+        path: '/explorer_old',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
             { path: '', component: () => import('pages/ExplorerPage.vue') },
         ],
     },
