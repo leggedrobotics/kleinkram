@@ -17,8 +17,12 @@
       <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh"/>
     </q-card-actions>
 
-    <q-card-section>
-      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects..."/>
+    <q-card-section style="padding-top: 10px">
+      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects...">
+        <template v-slot:append>
+          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+        </template>
+      </q-input>
     </q-card-section>
 
     <q-card-section>
