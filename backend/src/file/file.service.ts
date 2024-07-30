@@ -27,7 +27,7 @@ export class FileService {
         private readonly dataSource: DataSource,
     ) {}
 
-    async findAll(userUUID: string) {
+    async findAll(userUUID: string, take: number, skip: number) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -70,6 +70,8 @@ export class FileService {
         missionName: string,
         topics: string[],
         userUUID: string,
+        take: number,
+        skip: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -152,6 +154,8 @@ export class FileService {
         and_or: boolean,
         mcapBag: boolean,
         userUUID: string,
+        take: number,
+        skip: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },

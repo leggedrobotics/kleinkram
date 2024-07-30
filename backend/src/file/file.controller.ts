@@ -35,7 +35,7 @@ export class FileController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
-        return await this.fileService.findAll(user.uuid, skip, take);
+        return await this.fileService.findAll(user.uuid, take, skip);
     }
 
     @Get('filteredByNames')
@@ -53,8 +53,8 @@ export class FileController {
             missionName,
             topics,
             user.uuid,
-            skip,
             take,
+            skip,
         );
     }
 
@@ -83,8 +83,8 @@ export class FileController {
             andOr,
             mcapBag,
             user.uuid,
-            skip,
             take,
+            skip,
         );
     }
 
