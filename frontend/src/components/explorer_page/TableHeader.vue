@@ -15,9 +15,7 @@
 
   <template v-if="isListingFiles">
     <div>
-      <h2 class="text-h5 q-mb-xs">Explore all Files of Mission "{{ mission?.name }}" of Project "{{
-          project?.name
-        }}"</h2>
+      <h2 class="text-h5 q-mb-xs">Explore all Files of Mission "{{ mission?.name }}"</h2>
       <HelpMessage/>
     </div>
   </template>
