@@ -15,6 +15,9 @@ export function getConfig() {
         database: process.env.local_dbname,
         synchronize: false,
         migrations: ['migration/local/migrations/*.ts'],
-        entities: ['../common/entities/**/*.entity{.ts,.js}'],
+        entities: [
+            '../common/entities/**/*.entity{.ts,.js}',
+            '../common/viewEntities/**/*.entity{.ts,.js}',
+        ],
     } as DataSourceOptions;
 }

@@ -15,6 +15,9 @@ export function getConfig() {
         database: process.env.dev_dbname,
         synchronize: false,
         migrations: ['migration/dev/migrations/*.ts'],
-        entities: ['../common/entities/**/*.entity{.ts,.js}'],
+        entities: [
+            '../common/entities/**/*.entity{.ts,.js}',
+            '../common/viewEntities/**/*.entity{.ts,.js}',
+        ],
     } as DataSourceOptions;
 }

@@ -1,6 +1,6 @@
-import {Body, Controller, Delete, Get, Put, Query} from '@nestjs/common';
-import {FileService} from './file.service';
-import {UpdateFile} from './entities/update-file.dto';
+import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
+import { FileService } from './file.service';
+import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -11,22 +11,24 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import {addJWTUser, JWTUser} from '../auth/paramDecorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
+    QueryOptionalBoolean,
     QueryOptionalDate,
     QuerySkip,
+    QueryOptionalString,
+    QueryOptionalUUID,
     QueryString,
     QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import {ParamUUID} from '../validation/paramDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {
-    }
+    constructor(private readonly fileService: FileService) {}
 
     @Get('all')
     @LoggedIn()
@@ -41,9 +43,9 @@ export class FileController {
     @Get('filteredByNames')
     @LoggedIn()
     async filteredByNames(
-        @QueryString('projectName') projectName: string,
-        @QueryString('missionName') missionName: string,
-        @QueryStringArray('topics') topics: string[],
+        @QueryOptionalString('projectName') projectName: string,
+        @QueryOptionalString('missionName') missionName: string,
+        @QueryOptionalString('topics') topics: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -61,9 +63,9 @@ export class FileController {
     @Get('filtered')
     @LoggedIn()
     async filteredFiles(
-        @Query('fileName') fileName: string,
-        @Query('projectUUID') projectUUID: string,
-        @Query('missionUUID') missionUUID: string,
+        @QueryOptionalString('fileName') fileName: string,
+        @QueryOptionalUUID('projectUUID') projectUUID: string,
+        @QueryOptionalUUID('missionUUID') missionUUID: string,
         @QueryOptionalDate('startDate') startDate: Date | undefined,
         @QueryOptionalDate('endDate') endDate: Date | undefined,
         @Query('topics') topics: string,

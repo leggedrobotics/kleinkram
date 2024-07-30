@@ -70,7 +70,7 @@ export class FileService {
     async findFilteredByNames(
         projectName: string,
         missionName: string,
-        topics: string[],
+        topics: string,
         userUUID: string,
         take: number,
         skip: number,
@@ -78,40 +78,21 @@ export class FileService {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
+        let splitTopics = [];
+        if (topics) {
+            splitTopics = topics.split(',');
+        }
 
         // Start building your query with basic filters
-        const query = this.fileRepository
+        let query = this.fileRepository
             .createQueryBuilder('file')
             .select('file.uuid')
+            .distinct(true)
             .leftJoin('file.mission', 'mission')
-            .leftJoin('file.topics', 'topic')
             .leftJoin('mission.project', 'project');
 
         if (user.role !== UserRole.ADMIN) {
-            query
-                .leftJoin(
-                    'projectAccessViewEntity',
-                    'projectAccessView',
-                    'projectAccessView.projectUUID = project.uuid',
-                )
-                .leftJoin(
-                    'missionAccessView',
-                    'missionAccessView',
-                    'missionAccessView.missionUUID = mission.uuid',
-                )
-                .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-                .leftJoin('projectAccessGroup.users', 'projectUsers')
-                .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-                .leftJoin('missionAccessGroup.users', 'missionUsers')
-                .andWhere(
-                    new Brackets((qb) => {
-                        qb.where('missionUsers.uuid = :userUUID', {
-                            userUUID,
-                        }).orWhere('projectUsers.uuid = :userUUID', {
-                            userUUID,
-                        });
-                    }),
-                );
+            query = addAccessJoinsAndConditions(query, userUUID);
         }
         if (projectName) {
             query.andWhere('project.name = :projectName', { projectName });
@@ -119,16 +100,26 @@ export class FileService {
         if (missionName) {
             query.andWhere('mission.name = :missionName', { missionName });
         }
-        if (topics && topics.length > 0) {
-            query.andWhere('topic.name IN (:...topics)', { topics });
-
-            query
-                .groupBy('file.uuid')
-                .having('COUNT(file.uuid) = :topicCount', {
-                    topicCount: topics.length,
+        if (splitTopics && splitTopics.length > 0) {
+            // Define a subquery that selects files associated with all required topics
+            const topicSubquery = this.fileRepository
+                .createQueryBuilder('subfile')
+                .select('subfile.uuid')
+                .leftJoin('subfile.topics', 'subtopic')
+                .where('subtopic.name IN (:...topics)', {
+                    topics: splitTopics,
+                })
+                .groupBy('subfile.uuid')
+                .having('COUNT(subfile.uuid) = :topicCount', {
+                    topicCount: splitTopics.length,
                 });
-        }
 
+            // Use the subquery in the main query
+            query
+                .andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')')
+                .setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
+        }
+        console.log(query.getQueryAndParameters());
         // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
@@ -207,18 +198,23 @@ export class FileService {
             });
         }
 
-        const splitTopics = topics.split(',');
-        if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
-            query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
+        if (topics) {
+            const splitTopics = topics.split(',');
+            if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
+                query.andWhere('topic.name IN (:...splitTopics)', {
+                    splitTopics,
+                });
+            }
+
+            if (and_or) {
+                query.having('COUNT(file.uuid) = :topicCount', {
+                    topicCount: splitTopics.length,
+                });
+            }
         }
+
         query.groupBy('file.uuid');
-
-        if (and_or) {
-            query.having('COUNT(file.uuid) = :topicCount', {
-                topicCount: splitTopics.length,
-            });
-        }
-
+        console.log(query.getSql());
         // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {

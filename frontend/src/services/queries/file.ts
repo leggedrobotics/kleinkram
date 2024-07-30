@@ -18,17 +18,17 @@ export const fetchOverview = async (
     try {
         const formattedStartDate = startDate.toISOString();
         const formattedEndDate = endDate.toISOString();
+        const params: Record<string, string> = {};
+        if (filename) params['fileName'] = filename;
+        if (projectUUID) params['projectUUID'] = projectUUID;
+        if (missionUUID) params['missionUUID'] = missionUUID;
+        if (startDate) params['startDate'] = formattedStartDate;
+        if (endDate) params['endDate'] = formattedEndDate;
+        if (topics && topics.length > 0) params['topics'] = topics.join(',');
+        if (andOr !== undefined) params['andOr'] = andOr.toString();
+        if (mcapBag !== undefined) params['mcapBag'] = mcapBag.toString();
 
-        const queryParams = new URLSearchParams({
-            fileName: filename || '',
-            projectUUID: projectUUID || '',
-            missionUUID: missionUUID || '',
-            startDate: formattedStartDate,
-            endDate: formattedEndDate,
-            topics: topics.join(','),
-            andOr: andOr ? '1' : '',
-            mcapBag: mcapBag ? '1' : '',
-        }).toString();
+        const queryParams = new URLSearchParams(params).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};
         const missions: Record<string, Mission> = {};
