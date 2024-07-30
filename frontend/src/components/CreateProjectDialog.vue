@@ -6,41 +6,71 @@
         <div class="text-h6">Create New Project</div>
       </q-card-section>
 
-      <q-separator/>
+      <q-card-section style="max-height: 50vh; height: 350px; margin: 0; padding: 0" class="scroll">
 
-      <q-card-section style="max-height: 50vh; margin: 20px 0" class="scroll">
+        <q-tabs
+            v-model="tab"
+            dense
+            class="text-grey"
+            align="justify"
+            active-color="primary"
+            narrow-indicator
+        >
+          <q-tab name="meta_data" label="New Project" style="color: #222"/>
+          <q-tab name="tags" label="Configure Tags" style="color: #222"/>
+          <q-tab name="manage_access" label="Manage Access" style="color: #222"/>
+        </q-tabs>
 
-        <p style="padding-bottom: 20px">
-          Create a new project by providing a name and description. The project name must be globally unique.
-        </p>
+        <q-separator/>
 
-        <q-input
-            ref="projectNameInput"
-            v-model="newProjectName"
-            outlined
-            autofocus
-            style="padding-bottom: 30px"
-            label="Project Name"
-            :rules="[
+        <q-tab-panels v-model="tab" class="q-pa-lg">
+          <q-tab-panel name="meta_data">
+
+            <p style="padding-bottom: 20px">
+              Create a new project by providing a name and description. The project name must be globally unique.
+            </p>
+
+            <q-input
+                ref="projectNameInput"
+                v-model="newProjectName"
+                outlined
+                autofocus
+                style="padding-bottom: 30px"
+                label="Project Name"
+                :rules="[
               val => !!val || 'A project name cannot be empty!' ,
               val => !invalidProjectNames.includes(val) || 'A project with that name already exists!'
             ]"
-            @update:model-value="() => {
+                @update:model-value="() => {
               hasValidInput = !!newProjectName && !!newProjectDescription && !invalidProjectNames.includes(newProjectName)
             }"
-        />
+            />
 
-        <q-input
-            v-model="newProjectDescription"
-            outlined
-            autofocus
-            style="padding-bottom: 30px"
-            label="Project Description"
-            :rules="[val => !!val || 'Project Description is required']"
-            @update:model-value="hasValidInput = !!newProjectName && !!newProjectDescription"
-        />
+            <q-input
+                v-model="newProjectDescription"
+                outlined
+                autofocus
+                style="padding-bottom: 30px"
+                label="Project Description"
+                :rules="[val => !!val || 'Project Description is required']"
+                @update:model-value="hasValidInput = !!newProjectName && !!newProjectDescription"
+            />
 
+          </q-tab-panel>
+
+          <q-tab-panel name="tags">
+            <div class="text-h6">Configure Tags</div>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          </q-tab-panel>
+
+          <q-tab-panel name="manage_access">
+            <div class="text-h6">Manage Access</div>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          </q-tab-panel>
+
+        </q-tab-panels>
       </q-card-section>
+
 
       <q-separator/>
 
@@ -66,6 +96,8 @@ const projectNameInput = ref<QInput>()
 const newProjectName = ref('')
 const newProjectDescription = ref('')
 const invalidProjectNames = ref<string[]>([])
+
+const tab = ref('meta_data')
 
 const hasValidInput = ref(false)
 const submitNewProject = async () => {
