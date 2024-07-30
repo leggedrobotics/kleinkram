@@ -241,7 +241,9 @@ def create_project(
         url = "/project/create"
         response = client.post(url, json={"name": name, "description": description, "requiredTags": []}) # TODO: Add required tags as option
         if response.status_code >= 400:
-            print(f"Failed to create project: {response.json()["message"]}")
+            response_json = response.json()
+            response_text = response_json["message"]
+            print(f"Failed to create project: {response_text}")
             return
         print("Project created")
 
