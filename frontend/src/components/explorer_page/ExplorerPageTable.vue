@@ -216,22 +216,35 @@ const loadData = async (props?: any) => {
   // Extract Data Fetching Parameters
   //////////////////////////
 
-  const page = Number(props?.pagination?.page) || Number(route.query.page) || DEFAULT_PAGINATION.page;
+  let page = Number(props?.pagination?.page) || Number(route.query.page) || DEFAULT_PAGINATION.page;
   const take = Number(props?.pagination?.rowsPerPage) || Number(route.query.rowsPerPage) || DEFAULT_PAGINATION.rowsPerPage;
-  const sortBy = props?.pagination?.sortBy || route.query.sortBy || DEFAULT_SORT.sortBy;
-  const descending = (props?.pagination?.descending !== undefined) ? props?.pagination?.descending : (route.query.descending === 'true') || DEFAULT_SORT.descending;
-  const skip = (page - 1) * take
+  let sortBy = props?.pagination?.sortBy || route.query.sortBy || DEFAULT_SORT.sortBy;
+  let descending = (props?.pagination?.descending !== undefined) ? props?.pagination?.descending : (route.query.descending === 'true') || DEFAULT_SORT.descending;
+  let skip = (page - 1) * take
 
   const searchParams = {name: route.query.search as string};
+
+  //////////////////////////
+  // reset state if needed
+  //////////////////////////
+
+  const nextState = (!!state.value.project_uuid && !state.value.mission_uuid) ? DataType.MISSIONS :
+      (!!state.value.mission_uuid) ? DataType.FILES : DataType.PROJECTS;
+
+  if (nextState !== currentDataType.value) {
+    console.log('resetting state since data type changed')
+    skip = 0;
+    page = 1;
+    sortBy = DEFAULT_SORT.sortBy;
+    descending = DEFAULT_SORT.descending;
+  }
 
   //////////////////////////
   // update URL params
   //////////////////////////
 
-  if (Object.keys(props || {}).length !== 0)
+  if (Object.keys(props || {}).length !== 0 || nextState !== currentDataType.value)
     $routerService?.pushToQuery({
-      ...state.value.project_uuid ? {project_uuid: state.value.project_uuid} : {},
-      ...state.value.mission_uuid ? {mission_uuid: state.value.mission_uuid} : {},
       page: page.toString(),
       rowsPerPage: take.toString(),
       sortBy: sortBy,
@@ -247,7 +260,7 @@ const loadData = async (props?: any) => {
     newData = await missionsOfProject(state.value.project_uuid, take + 1, skip)
     currentDataType.value = DataType.MISSIONS;
   } else if (!!state.value.mission_uuid) {
-    newData = await filesOfMission(state.value.mission_uuid)
+    newData = await filesOfMission(state.value.mission_uuid, take + 1, skip)
     currentDataType.value = DataType.FILES;
   } else {
     newData = await allProjects(take + 1, skip, sortBy, descending, searchParams)

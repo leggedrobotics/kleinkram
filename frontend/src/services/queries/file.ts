@@ -187,9 +187,11 @@ export const downloadFile = async (uuid: string, expires: boolean) => {
 
 export const filesOfMission = async (
     missionUUID: string,
+    take: number,
+    skip: number,
 ): Promise<FileEntity[]> => {
     const response = await axios.get('file/ofMission', {
-        params: { uuid: missionUUID },
+        params: { uuid: missionUUID, take, skip },
     });
     if (response.data.length === 0) {
         return [];

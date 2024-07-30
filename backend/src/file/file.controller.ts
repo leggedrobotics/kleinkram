@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
-import { FileService } from './file.service';
-import { UpdateFile } from './entities/update-file.dto';
+import {Body, Controller, Delete, Get, Put, Query} from '@nestjs/common';
+import {FileService} from './file.service';
+import {UpdateFile} from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
@@ -11,22 +11,22 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import {addJWTUser, JWTUser} from '../auth/paramDecorator';
 import {
     QueryBoolean,
     QueryOptionalDate,
-    QueryOptionalNumber,
     QuerySkip,
     QueryString,
     QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import {ParamUUID} from '../validation/paramDecorators';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(private readonly fileService: FileService) {
+    }
 
     @Get('all')
     @LoggedIn()
@@ -119,8 +119,12 @@ export class FileController {
 
     @Get('ofMission')
     @CanReadMission()
-    async getFilesOfMission(@QueryUUID('uuid') uuid: string) {
-        return this.fileService.findByMission(uuid);
+    async getFilesOfMission(
+        @QueryUUID('uuid') uuid: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number
+    ) {
+        return this.fileService.findByMission(uuid, take, skip)
     }
 
     @Put(':uuid')

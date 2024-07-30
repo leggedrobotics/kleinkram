@@ -81,7 +81,6 @@ const mission_columns: Array<ProjectColumnType> = [
         align: 'left',
         field: (row: Mission) => row.name,
         format: (val: string) => `${val}`,
-        sortable: true,
     },
     {
         name: 'Created',
@@ -98,7 +97,6 @@ const mission_columns: Array<ProjectColumnType> = [
         align: 'left',
         field: (row: Mission) => row.files?.length,
         format: (val: number) => `${val}`,
-        sortable: true,
     },
     {
         name: 'missionaction',
@@ -115,7 +113,6 @@ const file_columns: Array<ProjectColumnType> = [
         align: 'left',
         field: (row: FileEntity) => row.filename,
         format: (val: string) => `${val}`,
-        sortable: true,
     },
     {
         name: 'Created',
@@ -132,7 +129,6 @@ const file_columns: Array<ProjectColumnType> = [
         align: 'left',
         field: (row: FileEntity) => row.size,
         format: formatSize,
-        sortable: true,
         sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
             a.size - b.size,
     },

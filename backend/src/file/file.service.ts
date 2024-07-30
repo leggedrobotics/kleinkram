@@ -34,7 +34,9 @@ export class FileService {
         if (user.role === UserRole.ADMIN) {
             return this.fileRepository.find({
                 relations: ['mission'],
-            });
+                skip,
+                take,
+            })
         }
         return this.fileRepository
             .createQueryBuilder('file')
@@ -62,7 +64,7 @@ export class FileService {
                         userUUID,
                     });
                 }),
-            );
+            ).skip(skip).take(take)
     }
 
     async findFilteredByNames(
@@ -141,6 +143,7 @@ export class FileService {
             .leftJoinAndSelect('file.creator', 'creator')
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .skip(skip).take(take)
             .getMany();
     }
 
@@ -231,6 +234,8 @@ export class FileService {
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 
@@ -357,10 +362,12 @@ export class FileService {
         await this.fileRepository.query('DELETE FROM "file"');
     }
 
-    async findByMission(missionUUID: string) {
+    async findByMission(missionUUID: string, take: number, skip: number) {
         return this.fileRepository.find({
             where: { mission: { uuid: missionUUID } },
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
+            take,
+            skip
         });
     }
 }
