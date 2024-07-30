@@ -187,7 +187,7 @@ const onRowClick = async (_: Event, row: any) => {
 }
 
 // initial load
-loadData()
+await loadData()
 
 const props = defineProps({
   refresh: {type: Number, default: 0}
