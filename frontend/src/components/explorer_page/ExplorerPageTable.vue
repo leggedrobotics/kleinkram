@@ -19,6 +19,40 @@
       @request="loadData"
   >
 
+    <template v-slot:pagination="scope">
+
+      <span class="q-table__bottom-item">
+        {{ (scope.pagination.page - 1) * scope.pagination.rowsPerPage }} - {{
+          Math.min(
+              (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage, scope.pagination.rowsNumber)
+        }} of {{
+          (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage < scope.pagination.rowsNumber ? 'many' : scope.pagination.rowsNumber
+        }}
+      </span>
+
+
+      <q-btn
+          icon="chevron_left"
+          color="grey-8"
+          round
+          dense
+          flat
+          :disable="scope.isFirstPage"
+          @click="scope.prevPage"
+      />
+
+      <q-btn
+          icon="chevron_right"
+          color="grey-8"
+          round
+          dense
+          flat
+          :disable="scope.isLastPage"
+          @click="scope.nextPage"
+      />
+
+    </template>
+
     <template v-slot:loading>
       <q-inner-loading showing color="primary"/>
     </template>
@@ -153,16 +187,16 @@ const isLoading = ref(true);
 const selected = ref([])
 
 const DEFAULT_SORT = {sortBy: 'name', descending: false}
-const DEFAULT_PAGINATION = {page: 1, rowsPerPage: 10, rowsNumber: 0}
+const DEFAULT_PAGINATION = {page: 1, rowsPerPage: 10}
 
 const state = defineModel<ProjectMissionSelectionState>({required: true});
 
 const pagination = ref({
   sortBy: DEFAULT_SORT.sortBy,
   descending: DEFAULT_SORT.descending,
-  page: DEFAULT_PAGINATION.page,
-  rowsPerPage: DEFAULT_PAGINATION.rowsPerPage,
-  rowsNumber: DEFAULT_PAGINATION.rowsNumber
+  page: Number(route.query.page) || DEFAULT_PAGINATION.page,
+  rowsPerPage: Number(route.query.rowsPerPage) || DEFAULT_PAGINATION.rowsPerPage,
+  rowsNumber: Number(route.query.rowsPerPage) + 1 || DEFAULT_PAGINATION.rowsPerPage + 1
 })
 
 
@@ -182,8 +216,8 @@ const loadData = async (props?: any) => {
   // Extract Data Fetching Parameters
   //////////////////////////
 
-  const page = props?.pagination?.page || route.query.page || DEFAULT_PAGINATION.page;
-  const take = props?.pagination?.rowsPerPage || route.query.rowsPerPage || DEFAULT_PAGINATION.rowsPerPage;
+  const page = Number(props?.pagination?.page) || Number(route.query.page) || DEFAULT_PAGINATION.page;
+  const take = Number(props?.pagination?.rowsPerPage) || Number(route.query.rowsPerPage) || DEFAULT_PAGINATION.rowsPerPage;
   const sortBy = props?.pagination?.sortBy || route.query.sortBy || DEFAULT_SORT.sortBy;
   const descending = (props?.pagination?.descending !== undefined) ? props?.pagination?.descending : (route.query.descending === 'true') || DEFAULT_SORT.descending;
   const skip = (page - 1) * take
@@ -198,8 +232,8 @@ const loadData = async (props?: any) => {
     $routerService?.pushToQuery({
       ...state.value.project_uuid ? {project_uuid: state.value.project_uuid} : {},
       ...state.value.mission_uuid ? {mission_uuid: state.value.mission_uuid} : {},
-      page: page,
-      rowsPerPage: take,
+      page: page.toString(),
+      rowsPerPage: take.toString(),
       sortBy: sortBy,
       descending: descending
     })
@@ -209,19 +243,14 @@ const loadData = async (props?: any) => {
   //////////////////////////
 
   let newData = [];
-  let rowsNumber = 0;
   if (!!state.value.project_uuid && !state.value.mission_uuid) {
-    console.log('loading missions: take=' + take + ' skip=' + skip)
-    newData = await missionsOfProject(state.value.project_uuid, take, skip)
+    newData = await missionsOfProject(state.value.project_uuid, take + 1, skip)
     currentDataType.value = DataType.MISSIONS;
-    rowsNumber = 1_000;
   } else if (!!state.value.mission_uuid) {
     newData = await filesOfMission(state.value.mission_uuid)
     currentDataType.value = DataType.FILES;
   } else {
-    const project_list_response = await allProjects(take, skip, sortBy, descending, searchParams)
-    newData = project_list_response.projects
-    rowsNumber = project_list_response.length;
+    newData = await allProjects(take + 1, skip, sortBy, descending, searchParams)
     currentDataType.value = DataType.PROJECTS;
   }
 
@@ -229,14 +258,23 @@ const loadData = async (props?: any) => {
   // Update Data and Pagination
   //////////////////////////
 
+  // check if there is a next page
+  const hasNextPage = newData.length > take;
+  newData = newData.slice(0, take)
+
+  if (hasNextPage) {
+    pagination.value.rowsNumber = (page * take) + 1
+  } else {
+    pagination.value.rowsNumber = ((page - 1) * take) + newData.length
+  }
+
   data.value = data.value || []; // initialize if null
-  data.value.splice(0, data.value.length, ...newData);
+  data.value.splice(0, data.value.length, ...newData)
 
   pagination.value.page = page
   pagination.value.rowsPerPage = take
   pagination.value.sortBy = sortBy
   pagination.value.descending = descending
-  pagination.value.rowsNumber = rowsNumber
 
   isLoading.value = false;
 }

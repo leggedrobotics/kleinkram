@@ -32,13 +32,7 @@ export class ProjectService {
         this.config = this.configService.get('accessConfig');
     }
 
-    async findAll(user: JWTUser, skip: number, take: number, sortBy: string, descending: boolean, searchParams: Map<string, string>): Promise<{
-        projects: Project[]
-        pageSize: number
-        pageCount: number
-        length: number,
-        searchParams?: Map<string, string>
-    }> {
+    async findAll(user: JWTUser, skip: number, take: number, sortBy: string, descending: boolean, searchParams: Map<string, string>): Promise<Project[]> {
 
         // convert take and skip to numbers
         take = Number(take);
@@ -83,14 +77,7 @@ export class ProjectService {
             });
         }
 
-        const count = await baseQuery.getCount();
-        return {
-            projects: await baseQuery.skip(skip).take(take).getMany(),
-            pageSize: take,
-            pageCount: Math.ceil(count / take),
-            length: count
-        }
-
+        return await baseQuery.skip(skip).take(take).getMany();
     }
 
     async findOne(uuid: string): Promise<Project> {
