@@ -37,14 +37,8 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            throw new UnauthorizedException('User not logged in');
-        }
-        if (!request.user.uuid) {
-            throw new BadRequestException('Missing User / UUID');
-        }
+
         if (request.cookies[CookieNames.CLI_KEY]) {
-            // const token = await this.tokenRepository.find();
             const token = await this.tokenRepository.findOne({
                 where: {
                     apikey: request.cookies[CookieNames.CLI_KEY],
@@ -56,6 +50,16 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                 throw new ForbiddenException('Invalid key');
             }
         } else {
+            await super.canActivate(context);
+            const user = request.user;
+            if (!user) {
+                throw new UnauthorizedException('User not logged in');
+            }
+            if (!user.uuid) {
+                throw new BadRequestException('Missing User / UUID');
+            }
+            console.log(request.user.uuid);
+            console.log(request.query.uuid);
             const canAccess = await this.missionGuardService.canAccessMission(
                 request.user.uuid,
                 request.query.uuid,
@@ -63,7 +67,6 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
             if (!canAccess) {
                 throw new ForbiddenException('User does not have access');
             }
-            await super.canActivate(context);
         }
         return true;
     }

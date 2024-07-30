@@ -61,7 +61,10 @@ export class MissionController {
 
     @Get('byUUID')
     @TokenOrUser()
-    async getMissionByUUID(@QueryUUID('uuid') uuid: string) {
+    async getMissionByUUID(
+        @QueryUUID('uuid') uuid: string,
+        @addJWTUser() user: JWTUser,
+    ) {
         return this.missionService.findOneByUUID(uuid);
     }
 
