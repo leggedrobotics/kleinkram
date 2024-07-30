@@ -45,6 +45,12 @@ async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
 }
 
 // Function to copy an object within the bucket
+/**
+ * Copy an object within the bucket
+ * @param bucketName - Name of the bucket
+ * @param srcName - Name of the source object within the bucket
+ * @param destName - Name of the destination object within the bucket name
+ */
 async function copyObject(bucketName, srcName, destName) {
     return new Promise((resolve, reject) => {
         internalMinio.copyObject(
@@ -76,6 +82,19 @@ async function removeObject(bucketName, objectName): Promise<void> {
     });
 }
 
+export async function moveFile(
+    srcPath: string,
+    destPath: string,
+    bucketName: string,
+) {
+    try {
+        await copyObject(bucketName, srcPath, destPath);
+        await removeObject(bucketName, srcPath);
+    } catch (err) {
+        console.error('Error moving file:', err);
+    }
+}
+
 //* srcPath: Project1/Run1
 //* destPath: Project2/Run1
 export async function moveRunFilesInMinio(srcPath, destProject) {
@@ -89,12 +108,11 @@ export async function moveRunFilesInMinio(srcPath, destProject) {
             objects.map(async (obj) => {
                 const filename = obj.name.split('/').slice(2).join('/');
                 const destName = `${destProject}/${mission}/${filename}`;
-                await copyObject(
-                    process.env.MINIO_BAG_BUCKET_NAME,
+                await moveFile(
                     obj.name,
                     destName,
+                    process.env.MINIO_BAG_BUCKET_NAME,
                 );
-                await removeObject(process.env.MINIO_BAG_BUCKET_NAME, obj.name);
             }),
         );
     } catch (err) {

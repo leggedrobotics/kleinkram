@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio } from '../minioHelper';
+import { externalMinio, internalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
-import logger from "../logger";
+import logger from '../logger';
 
 @Injectable()
 export class FileService {
@@ -24,6 +24,7 @@ export class FileService {
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private readonly dataSource: DataSource,
     ) {}
 
     async findAll(userUUID: string) {
@@ -173,24 +174,26 @@ export class FileService {
 
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
-            logger.debug("Filtering files by filename: " + fileName);
+            logger.debug('Filtering files by filename: ' + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
         }
 
         if (projectUUID) {
-            logger.debug("Filtering files by projectUUID: " + projectUUID);
+            logger.debug('Filtering files by projectUUID: ' + projectUUID);
             query.andWhere('project.uuid = :projectUUID', { projectUUID });
         }
 
         if (missionUUID) {
-            logger.debug("Filtering files by missionUUID: " + missionUUID);
+            logger.debug('Filtering files by missionUUID: ' + missionUUID);
             query.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
 
         if (startDate && endDate) {
-            logger.debug("Filtering files by date range: " + startDate + " - " + endDate);
+            logger.debug(
+                'Filtering files by date range: ' + startDate + ' - ' + endDate,
+            );
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
                 startDate: startDate,
                 endDate: endDate,
@@ -242,25 +245,69 @@ export class FileService {
     }
 
     async update(uuid: string, file: UpdateFile) {
+        logger.debug('Updating file with uuid: ' + uuid);
+        logger.debug('New file data: ' + JSON.stringify(file));
 
-        logger.debug("Updating file with uuid: " + uuid);
-        logger.debug("New file data: " + JSON.stringify(file));
+        const db_file = await this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
 
-        const db_file = await this.fileRepository.findOne({ where: { uuid } });
+        if (!db_file) {
+            throw new Error('File not found');
+        }
+
+        const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        const bucketName =
+            db_file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME;
+
         db_file.filename = file.filename;
         db_file.date = file.date;
+
         if (file.mission_uuid) {
-            db_file.mission = await this.missionRepository.findOne({
+            const newMission = await this.missionRepository.findOne({
                 where: { uuid: file.mission_uuid },
+                relations: ['project'],
             });
+            if (newMission) {
+                db_file.mission = newMission;
+            } else {
+                throw new Error('Mission not found');
+            }
         }
+
         if (file.project_uuid) {
-            db_file.mission.project = await this.projectRepository.findOne({
+            const newProject = await this.projectRepository.findOne({
                 where: { uuid: file.project_uuid },
             });
+            if (newProject) {
+                db_file.mission.project = newProject;
+            } else {
+                throw new Error('Project not found');
+            }
         }
-        await this.fileRepository.save(db_file);
-        return this.fileRepository.findOne({ where: { uuid } });
+
+        const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        if (srcPath !== destPath) {
+            await moveFile(srcPath, destPath, bucketName);
+        }
+        await this.dataSource.transaction(
+            async (transactionalEntityManager) => {
+                await transactionalEntityManager.save(
+                    Project,
+                    db_file.mission.project,
+                );
+                await transactionalEntityManager.save(Mission, db_file.mission);
+                await transactionalEntityManager.save(FileEntity, db_file);
+            },
+        );
+
+        return this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
     }
 
     async generateDownload(uuid: string, expires: boolean) {
