@@ -6,7 +6,9 @@ import {TagType} from 'src/types/TagType';
 import {AccessGroup} from 'src/types/AccessGroup';
 import {ProjectAccess} from 'src/types/ProjectAccess';
 
-export const allProjects = async (take: number, skip: number, sortBy: string, descending: boolean, searchParams: Map<string, string>) => {
+export const allProjects = async (take: number, skip: number, sortBy: string, descending: boolean, searchParams: {
+    name: string
+}) => {
     const response = await axios.get('/project'
         , {
             params: {
