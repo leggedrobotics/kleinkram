@@ -60,13 +60,14 @@ const project_columns: Array<ProjectColumnType> = [
         name: 'nrOfMissions',
         required: true,
         label: '# Missions',
-        align: 'left',
+        align: 'right',
+        style: 'min-width: 100px',
         field: (row: Project) => row.missions?.length,
         format: (val: number) => `${val}`,
     },
     {
         name: 'projectaction',
-        label: 'Action',
+        label: '',
         align: 'center',
     },
 ];

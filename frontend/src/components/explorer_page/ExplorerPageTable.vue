@@ -25,13 +25,41 @@
 
     <template v-slot:body-cell-projectaction="props">
       <q-td :props="props">
+
         <q-btn
+            flat
+            round
+            dense
+            icon="more_vert"
+            unelevated
             color="primary"
-            label="View"
-            outline
-        ></q-btn>
+            class="cursor-pointer"
+            @click.stop
+        >
+          <q-menu>
+            <q-list>
+              <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
+                <q-item-section>View Missions</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Edit Metadata</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Configure Tags</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Manage Access</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple disabled>
+                <q-item-section>Delete</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
       </q-td>
     </template>
+
     <template v-slot:body-cell-missionaction="props">
       <q-td :props="props">
         <q-btn
