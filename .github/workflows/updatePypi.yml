@@ -32,7 +32,6 @@ jobs:
             - name: Modify version for dev release
               if: github.ref == 'refs/heads/dev'
               run: |
-                cd CLI
                 python .github/scripts/addDevToPyPiRelease.py
 
             - name: Build package

@@ -208,7 +208,7 @@ def topics(
     """
     List topics for a file
 
-    Only makes sense with MCAP files as we don't associate topics with BAGs.
+    Only makes sense with MCAP files as we don't associate topics with BAGs as that would be redundant.
     """
     if file.endswith(".bag"):
         print("BAG files generally do not have topics")
