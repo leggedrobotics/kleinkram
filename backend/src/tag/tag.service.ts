@@ -76,6 +76,7 @@ export class TagService {
                 );
             case DataType.STRING:
             case DataType.LOCATION:
+            case DataType.LINK:
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
