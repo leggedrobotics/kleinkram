@@ -47,6 +47,15 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
+class DelayPipe {
+    constructor(private delay: number) {}
+
+    async transform(value: any) {
+        await new Promise((resolve) => setTimeout(resolve, this.delay));
+        return value;
+    }
+}
+
 async function bootstrap() {
     tracer.start();
 
@@ -70,6 +79,9 @@ async function bootstrap() {
         optionsSuccessStatus: 204,
     });
     app.useGlobalFilters(new GlobalErrorFilter());
+
+    app.useGlobalPipes(new DelayPipe(0))
+
     await app.listen(3000);
 
     save_endpoints_as_json(app, '__generated__endpoints.json');

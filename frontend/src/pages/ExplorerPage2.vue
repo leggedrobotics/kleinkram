@@ -4,14 +4,32 @@
 
   <div class="q-mb-md">
 
-    <ExplorerPageBreadcrumbs v-model="projectMissionSelectionState"/>
+    <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
 
-    <div class="flex justify-between items-center q-mt-md">
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingProjects">
       <div></div>
       <q-btn
           color="primary"
           label="Create Project"
           @click="createNewProject"
+      />
+    </div>
+
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingMissions">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Create Mission"
+          @click="createNewMission"
+      />
+    </div>
+
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingFiles">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Upload File"
+          @click="() => $q.notify('Not implemented yet! Use upload page instead.')"
       />
     </div>
 
@@ -22,7 +40,7 @@
     <q-card-section class="flex justify-between items-center">
 
       <Suspense>
-        <TableHeader v-model="projectMissionSelectionState"/>
+        <TableHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
 
         <template #fallback>
           <div style="width: 550px; height: 67px;">
@@ -37,16 +55,24 @@
     </q-card-section>
 
     <q-card-section style="padding-top: 10px">
-      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects...">
-        <template v-slot:append>
-          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+      <Suspense>
+        <TableSearchHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"
+                           v-model:search="search" v-model:file_type_filter="file_type_filter"/>
+
+        <template #fallback>
+          <div style="width: 550px; height: 67px;">
+            <q-skeleton class="q-mr-md q-mb-sm q-mt-sm" style="width: 300px; height: 20px"/>
+            <q-skeleton class="q-mr-md" style="width: 200px; height: 18px"/>
+          </div>
         </template>
-      </q-input>
+
+      </Suspense>
+
     </q-card-section>
 
     <q-card-section>
       <Suspense>
-        <ExplorerPageTable :refresh="refresh" v-model="projectMissionSelectionState"/>
+        <ExplorerPageTable :refresh="refresh" v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
 
         <template #fallback>
           <div style="width: 100%; height: 645px;">
@@ -77,14 +103,19 @@ import CreateProjectDialog from "components/CreateProjectDialog.vue";
 import {useQuasar} from "quasar";
 import {useRoute} from "vue-router";
 import ROUTES from "src/router/routes";
+import CreateMissionDialog from "components/CreateMissionDialog.vue";
+import TableSearchHeader from "components/explorer_page/TableSearchHeader.vue";
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $routerService: RouterService | undefined = inject('$routerService')
 
 const route = useRoute()
-const projectMissionSelectionState = ref<ProjectMissionSelectionState>(
-    {project_uuid: route.query.project_uuid as string, mission_uuid: route.query.mission_uuid as string}
-);
 
+const project_uuid = ref<string | undefined>(undefined);
+const mission_uuid = ref<string | undefined>(undefined);
+
+const isListingMissions = ref(false);
+const isListingProjects = ref(false);
+const isListingFiles = ref(false);
 
 // update URL on state change
 watchEffect(() => {
@@ -93,39 +124,59 @@ watchEffect(() => {
   delete old_url_params.project_uuid;
   delete old_url_params.mission_uuid;
 
-  if (projectMissionSelectionState.value.project_uuid && projectMissionSelectionState.value?.mission_uuid) {
+  if (project_uuid.value && mission_uuid.value) {
     $routerService?.routeTo(ROUTES.EXPLORER, {
-      project_uuid: projectMissionSelectionState.value.project_uuid,
-      mission_uuid: projectMissionSelectionState.value.mission_uuid,
+      project_uuid: project_uuid.value,
+      mission_uuid: mission_uuid.value,
       ...old_url_params
     })
-  } else if (projectMissionSelectionState.value.project_uuid && !projectMissionSelectionState.value?.mission_uuid) {
+
+    isListingProjects.value = false;
+    isListingMissions.value = false;
+    isListingFiles.value = true;
+
+  } else if (project_uuid.value && !mission_uuid.value) {
     $routerService?.routeTo(ROUTES.EXPLORER, {
-      project_uuid: projectMissionSelectionState.value.project_uuid,
+      project_uuid: project_uuid.value,
       ...old_url_params
     })
+
+    isListingProjects.value = false;
+    isListingMissions.value = true;
+    isListingFiles.value = false;
+
   } else {
     $routerService?.routeTo(ROUTES.EXPLORER, {
       ...old_url_params
     })
-  }
-})
 
-// update change on URL change
-watchEffect(() => {
-  projectMissionSelectionState.value = {
-    project_uuid: route.query.project_uuid as string,
-    mission_uuid: route.query.mission_uuid as string
+    isListingProjects.value = true;
+    isListingMissions.value = false;
+    isListingFiles.value = false;
+
   }
 })
 
 const search = ref('')
+
+// update change on URL change
+watchEffect(() => {
+  project_uuid.value = route.query.project_uuid as string;
+  mission_uuid.value = route.query.mission_uuid as string
+})
+
+const file_type_filter = ref(route.query.file_type_filter as string || 'All')
 const refresh = ref(0);
 
 watch(search, () => {
   $routerService?.pushToQuery({search: search.value})
   refresh.value++;
 })
+
+watch(file_type_filter, () => {
+  $routerService?.pushToQuery({file_type_filter: file_type_filter.value})
+  refresh.value++;
+});
 
 const $q = useQuasar();
 
@@ -136,6 +187,18 @@ const createNewProject = () => $q.dialog({
 
   // TODO: set search to new project name....
   // search.value = 'new project name'
+
+})
+
+const createNewMission = () => $q.dialog({
+  title: 'Create new mission',
+  component: CreateMissionDialog,
+  componentProps: {
+    project_uuid: project_uuid.value
+  },
+}).onOk(() => {
+
+  // ...
 
 })
 

@@ -118,7 +118,7 @@
               <q-item clickable v-ripple disabled>
                 <q-item-section>Manage Access</q-item-section>
               </q-item>
-              <q-item clickable v-ripple disabled>
+              <q-item clickable v-ripple @click="moveMission(props.row)">
                 <q-item-section>Move</q-item-section>
               </q-item>
               <q-item clickable v-ripple disabled>
@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 
-import {QTable} from "quasar";
+import {QTable, useQuasar} from "quasar";
 import {inject, ref, watch} from "vue";
 import {allProjects} from "src/services/queries/project";
 import {missionsOfProject} from "src/services/queries/mission";
@@ -179,6 +179,9 @@ import {filesOfMission} from "src/services/queries/file";
 import ROUTES from "src/router/routes";
 import {useRoute} from "vue-router";
 import {DataType, getColumns} from "components/explorer_page/project_columns";
+import MoveMission from "components/MoveMission.vue";
+import {FileType} from "src/enum/FILE_ENUM";
+import {FileEntity} from "src/types/FileEntity";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const route = useRoute()
@@ -189,7 +192,8 @@ const selected = ref([])
 const DEFAULT_SORT = {sortBy: 'name', descending: false}
 const DEFAULT_PAGINATION = {page: 1, rowsPerPage: 10}
 
-const state = defineModel<ProjectMissionSelectionState>({required: true});
+const project_uuid = defineModel('project_uuid')
+const mission_uuid = defineModel('mission_uuid')
 
 const pagination = ref({
   sortBy: DEFAULT_SORT.sortBy,
@@ -205,7 +209,7 @@ watch(() => route.query, async (query) => {
   await loadData()
 })
 
-const currentDataType = ref<DataType>(!!state.value.project_uuid ? DataType.MISSIONS : DataType.PROJECTS);
+const currentDataType = ref<DataType>(!!project_uuid.value ? DataType.MISSIONS : DataType.PROJECTS);
 const data = ref<any>([]);
 
 // load data based on current URL params and search
@@ -223,13 +227,14 @@ const loadData = async (props?: any) => {
   let skip = (page - 1) * take
 
   const searchParams = {name: route.query.search as string};
+  let search = route.query.search as string;
 
   //////////////////////////
   // reset state if needed
   //////////////////////////
 
-  const nextState = (!!state.value.project_uuid && !state.value.mission_uuid) ? DataType.MISSIONS :
-      (!!state.value.mission_uuid) ? DataType.FILES : DataType.PROJECTS;
+  const nextState = (!!project_uuid.value && !mission_uuid.value) ? DataType.MISSIONS :
+      (!!mission_uuid.value) ? DataType.FILES : DataType.PROJECTS;
 
   if (nextState !== currentDataType.value) {
     console.log('resetting state since data type changed')
@@ -237,6 +242,7 @@ const loadData = async (props?: any) => {
     page = 1;
     sortBy = DEFAULT_SORT.sortBy;
     descending = DEFAULT_SORT.descending;
+    search = '';
   }
 
   //////////////////////////
@@ -248,19 +254,34 @@ const loadData = async (props?: any) => {
       page: page.toString(),
       rowsPerPage: take.toString(),
       sortBy: sortBy,
-      descending: descending
+      descending: descending,
+      search: search,
     })
+
 
   //////////////////////////
   // Fetch Data
   //////////////////////////
 
   let newData = [];
-  if (!!state.value.project_uuid && !state.value.mission_uuid) {
-    newData = await missionsOfProject(state.value.project_uuid, take + 1, skip)
+  if (!!project_uuid.value && !mission_uuid.value) {
+    newData = await missionsOfProject(project_uuid.value as string, take + 1, skip)
     currentDataType.value = DataType.MISSIONS;
-  } else if (!!state.value.mission_uuid) {
-    newData = await filesOfMission(state.value.mission_uuid, take + 1, skip)
+  } else if (!!mission_uuid.value) {
+    newData = await filesOfMission(mission_uuid.value as string, take + 1, skip)
+
+    // filter for file type
+    if (route.query.file_type_filter === 'MCAP') {
+      newData = newData.filter((f: FileEntity) => f.type === FileType.MCAP)
+    } else if (route.query.file_type_filter === 'BAG') {
+      newData = newData.filter((f: FileEntity) => f.type === FileType.BAG)
+    }
+
+    // filter for filename
+    if (route.query.search) {
+      newData = newData.filter((f: FileEntity) => f.filename.toLowerCase().includes(route.query.search as string))
+    }
+
     currentDataType.value = DataType.FILES;
   } else {
     newData = await allProjects(take + 1, skip, sortBy, descending, searchParams)
@@ -295,16 +316,16 @@ const loadData = async (props?: any) => {
 
 const onRowClick = async (_: Event, row: any) => {
 
+  isLoading.value = true;
+
   if (currentDataType.value === DataType.PROJECTS) {
-    state.value.project_uuid = row.uuid
+    project_uuid.value = row.uuid
   } else if (currentDataType.value === DataType.MISSIONS) {
-    state.value.mission_uuid = row.uuid
+    mission_uuid.value = row.uuid
   } else if (currentDataType.value === DataType.FILES) {
     $routerService?.routeTo(ROUTES.FILE, {uuid: row.uuid})
     return;
   }
-
-  await loadData()
 
 }
 
@@ -318,5 +339,18 @@ const props = defineProps({
 watch(() => props.refresh, async () => {
   await loadData()
 })
+
+const $q = useQuasar()
+
+const moveMission = (mission: any) => {
+  $q.dialog({
+    title: 'Move mission',
+    component: MoveMission,
+    persistent: false,
+    style: 'max-width: 1500px',
+    componentProps: {mission: mission},
+  });
+}
+
 
 </script>

@@ -1,38 +1,55 @@
 <template>
   <template v-if="isListingProjects">
     <div>
-      <h2 class="text-h5 q-mb-xs">Explore all Projects</h2>
-      <HelpMessage/>
+      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects...">
+        <template v-slot:append>
+          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+        </template>
+      </q-input>
     </div>
   </template>
 
   <template v-if="isListingMissions">
     <div>
-      <h2 class="text-h5 q-mb-xs">Explore all Missions of Project "{{ project?.name }}"</h2>
-      <HelpMessage/>
+      <q-input debounce="300" outlined v-model="search" label="Mission Name" placeholder="Search for missions...">
+        <template v-slot:append>
+          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+        </template>
+      </q-input>
     </div>
   </template>
 
   <template v-if="isListingFiles">
     <div>
-      <h2 class="text-h5 q-mb-xs">Explore all Files of Mission "{{ mission?.name }}"</h2>
-      <HelpMessage/>
+      <q-input debounce="300" outlined v-model="search" label="File Name" placeholder="Search for files...">
+        <template v-slot:append>
+          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+        </template>
+      </q-input>
+
+      <br/>
+
+      <q-select
+          v-model="file_type_filter"
+          :options="['All', 'MCAP', 'BAG']"
+          label="File Type"
+          outlined
+          dense
+      />
+
     </div>
   </template>
 </template>
 
 <script setup lang="ts">
 
-import {useProjectQuery} from "src/queries/projectQuery";
 import {ref, watch} from "vue";
-import HelpMessage from "components/HelpMessage.vue";
-import {useMissionQuery} from "src/queries/missionQuery";
+
+const search = defineModel<string>('search')
+const file_type_filter = defineModel<string>('file_type_filter')
 
 const project_uuid = defineModel<string | undefined>('project_uuid')
 const mission_uuid = defineModel<string | undefined>('mission_uuid')
-
-const {data: project, refetch: refetchProject} = useProjectQuery(project_uuid);
-const {data: mission, refetch: refetchMission} = useMissionQuery(mission_uuid);
 
 const isListingProjects = ref(project_uuid.value === undefined && mission_uuid.value === undefined)
 const isListingMissions = ref(project_uuid.value && mission_uuid.value === undefined)
@@ -44,27 +61,16 @@ watch([mission_uuid, project_uuid], () => {
     isListingProjects.value = false;
     isListingMissions.value = true;
     isListingFiles.value = false;
-
-    refetchProject()
-
   } else if (mission_uuid.value) {
     isListingProjects.value = false;
     isListingMissions.value = false;
     isListingFiles.value = true;
-
-    refetchMission()
-
-    if (!!mission.value?.project?.uuid) {
-      refetchProject()
-    }
-
   } else {
     isListingProjects.value = true;
     isListingMissions.value = false;
     isListingFiles.value = false;
   }
 
-}, {deep: true})
-
+})
 
 </script>
