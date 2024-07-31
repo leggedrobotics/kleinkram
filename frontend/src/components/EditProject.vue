@@ -51,8 +51,8 @@
                 icon="delete"
                 :disable="project.missions.length > 0"
             >
-                <q-tooltip class="bg-accent"
-                    >Only projects without missions can be deleted</q-tooltip
+                <q-tooltip class="bg-accent" v-if="project.missions.length > 0">
+                    Only projects without missions can be deleted</q-tooltip
                 >
             </q-btn>
         </div>

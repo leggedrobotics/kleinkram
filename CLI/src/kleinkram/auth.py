@@ -3,6 +3,8 @@ import os
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Optional
+
 from typing_extensions import Annotated
 
 from pathlib import Path
@@ -92,7 +94,9 @@ class AuthenticatedClient(httpx.Client):
             self.tokenfile = TokenFile()
             self._load_cookies()
         except Exception as e:
-            print(f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'.")
+            print(
+                f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'."
+            )
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():
@@ -108,7 +112,10 @@ class AuthenticatedClient(httpx.Client):
         if not refresh_token:
             print("No refresh token found. Please login again.")
             raise Exception("No refresh token found.")
-        self.cookies.set(REFRESH_TOKEN, refresh_token, )
+        self.cookies.set(
+            REFRESH_TOKEN,
+            refresh_token,
+        )
         response = self.post(
             "/auth/refresh-token",
         )
@@ -122,16 +129,16 @@ class AuthenticatedClient(httpx.Client):
         response = super().request(
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )
-        if (
-                url == "/auth/refresh-token"
-        ) and response.status_code == 401:
+        if (url == "/auth/refresh-token") and response.status_code == 401:
             print("Refresh token expired. Please login again.")
             response.status_code = 403
             exit(1)
         if response.status_code == 401:
             print("Token expired, refreshing token...")
             self.refresh_token()
-            response = super().request(method, self.tokenfile.endpoint + url, *args, **kwargs)
+            response = super().request(
+                method, self.tokenfile.endpoint + url, *args, **kwargs
+            )
         return response
 
 
@@ -139,9 +146,15 @@ client = AuthenticatedClient()
 
 
 def login(
-        key: Annotated[str, typer.Option()] = None,
-        open_browser: Annotated[bool, typer.Option()] = True,
+    key: Optional[str] = typer.Option(None, help="CLI Key", hidden=True),
+    open_browser: Optional[bool] = typer.Option(
+        True, help="Open browser for authentication"
+    ),
 ):
+    """
+    Login into the currently set endpoint.\n
+    By default, it will open the browser for authentication. On machines without a browser, you can manually open the URL provided and paste the tokens back.
+    """
     tokenfile = TokenFile()
     if key:
         tokenfile.saveTokens(key)
@@ -169,19 +182,34 @@ def login(
 
             return
 
-        print(f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}")
+        print(
+            f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}"
+        )
         print("Enter the authentication token provided after logging in:")
         manual_auth_token = input("Authentication Token: ")
         manual_refresh_token = input("Refresh Token: ")
         if manual_auth_token:
-            tokenfile.saveTokens({AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token})
+            tokenfile.saveTokens(
+                {AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token}
+            )
             print("Authentication complete. Tokens saved to tokens.json.")
         else:
             print("No authentication token provided.")
         return
 
 
-def setEndpoint(endpoint: Annotated[str, typer.Argument()]):
+def setEndpoint(
+    endpoint: Optional[str] = typer.Argument(None, help="API endpoint to use")
+):
+    """
+    Set the current endpoint
+
+    Use this command to switch between different API endpoints.\n
+    Standard endpoints are:\n
+    - http://localhost:3000\n
+    - https://api.datasets.leggedrobotics.com\n
+    - https://api.datasets.dev.leggedrobotics.com
+    """
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
     tokenfile.writeToFile()
@@ -191,14 +219,25 @@ def setEndpoint(endpoint: Annotated[str, typer.Argument()]):
 
 
 def endpoint():
+    """
+    Get the current endpoint
+
+    Also displays all endpoints with saved tokens.
+    """
     tokenfile = TokenFile()
     print("Current: " + tokenfile.endpoint)
     print("Saved Tokens found for:")
     for _endpoint, _ in tokenfile.tokens.items():
-        print(_endpoint)
+        print("- " + _endpoint)
 
 
-def setCliKey(key: Annotated[str, typer.Argument()]):
+def setCliKey(key: Annotated[str, typer.Argument(help="CLI Key")]):
+    """
+    Set the CLI key (Actions Only)
+
+    Same as login with the --key option.
+    Should never be used by the user, only in docker containers launched from within Kleinkram.
+    """
     tokenfile = TokenFile()
     if not tokenfile.endpoint in tokenfile.tokens:
         tokenfile.tokens[tokenfile.endpoint] = {}

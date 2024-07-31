@@ -8,9 +8,11 @@ import { JWTUser } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { UserRole } from '@common/enum';
+import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
 import { TagService } from '../tag/tag.service';
+import env from '@common/env';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class MissionService {
@@ -90,23 +92,23 @@ export class MissionService {
             });
             return project.missions;
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('project.name = :name', { name: projectName })
-            .andWhere(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-                }),
-            )
-            .take(take)
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator')
+                .where('project.name = :name', { name: projectName })
+                .andWhere(
+                    new Brackets((qb) => {
+                        qb.where('projectUsers.uuid = :user', {
+                            user: userUUID,
+                        }).orWhere('missionUsers.uuid = :user', {
+                            user: userUUID,
+                        });
+                    }),
+                ),
+            userUUID,
+        ).take(take)
             .skip(skip)
             .getMany();
     }
@@ -127,17 +129,13 @@ export class MissionService {
                 take,
             });
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('projectUsers.uuid = :user', { user: userUUID })
-            .orWhere('missionUsers.uuid = :user', { user: userUUID })
-            .skip(skip)
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator'),
+            userUUID,
+        ).skip(skip)
             .take(take)
             .getMany();
     }
@@ -172,6 +170,12 @@ export class MissionService {
         await moveRunFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
+            env.MINIO_BAG_BUCKET_NAME,
+        );
+        await moveRunFilesInMinio(
+            `${old_project.name}/${mission.name}`,
+            mission.project.name,
+            env.MINIO_MCAP_BUCKET_NAME,
         );
         return this.missionRepository.save(mission);
     }

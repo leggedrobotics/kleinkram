@@ -29,6 +29,12 @@ jobs:
               run: |
                   echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/kleinkram/consts.py
 
+            - name: Modify version for dev release
+              if: github.ref == 'refs/heads/dev'
+              run: |
+                pip install tomlkit
+                python .github/scripts/addDevToPyPiRelease.py
+
             - name: Build package
               run: |
                   cd CLI

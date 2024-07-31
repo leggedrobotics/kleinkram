@@ -14,9 +14,12 @@ import {
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
+    QueryOptionalBoolean,
     QueryOptionalDate,
     QueryOptionalNumber,
     QuerySkip,
+    QueryOptionalString,
+    QueryOptionalUUID,
     QueryString,
     QueryStringArray,
     QueryTake,
@@ -41,9 +44,9 @@ export class FileController {
     @Get('filteredByNames')
     @LoggedIn()
     async filteredByNames(
-        @QueryString('projectName') projectName: string,
-        @QueryString('missionName') missionName: string,
-        @QueryStringArray('topics') topics: string[],
+        @QueryOptionalString('projectName') projectName: string,
+        @QueryOptionalString('missionName') missionName: string,
+        @QueryOptionalString('topics') topics: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -61,14 +64,14 @@ export class FileController {
     @Get('filtered')
     @LoggedIn()
     async filteredFiles(
-        @Query('fileName') fileName: string,
-        @Query('projectUUID') projectUUID: string,
-        @Query('missionUUID') missionUUID: string,
+        @QueryOptionalString('fileName') fileName: string,
+        @QueryOptionalUUID('projectUUID') projectUUID: string,
+        @QueryOptionalUUID('missionUUID') missionUUID: string,
         @QueryOptionalDate('startDate') startDate: Date | undefined,
         @QueryOptionalDate('endDate') endDate: Date | undefined,
-        @Query('topics') topics: string,
-        @Query('andOr') andOr: boolean,
-        @Query('mcapBag') mcapBag: boolean,
+        @QueryOptionalString('topics') topics: string,
+        @QueryOptionalBoolean('andOr') andOr: boolean,
+        @QueryOptionalBoolean('mcapBag') mcapBag: boolean,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,

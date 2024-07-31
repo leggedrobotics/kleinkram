@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio } from '../minioHelper';
+import { externalMinio, internalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { FileType, UserRole } from '@common/enum';
@@ -24,6 +24,7 @@ export class FileService {
         private projectRepository: Repository<Project>,
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        private readonly dataSource: DataSource,
     ) {}
 
     async findAll(userUUID: string, skip: number, take: number) {
@@ -71,7 +72,7 @@ export class FileService {
     async findFilteredByNames(
         projectName: string,
         missionName: string,
-        topics: string[],
+        topics: string,
         userUUID: string,
         skip: number,
         take: number,
@@ -79,42 +80,23 @@ export class FileService {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
+        let splitTopics = [];
+        if (topics) {
+            splitTopics = topics.split(',');
+        }
 
         // Start building your query with basic filters
-        const query = this.fileRepository
+        let query = this.fileRepository
             .createQueryBuilder('file')
             .select('file.uuid')
+            .distinct(true)
             .leftJoin('file.mission', 'mission')
-            .leftJoin('file.topics', 'topic')
             .leftJoin('mission.project', 'project')
             .skip(skip)
             .take(take);
 
         if (user.role !== UserRole.ADMIN) {
-            query
-                .leftJoin(
-                    'projectAccessViewEntity',
-                    'projectAccessView',
-                    'projectAccessView.projectUUID = project.uuid',
-                )
-                .leftJoin(
-                    'missionAccessView',
-                    'missionAccessView',
-                    'missionAccessView.missionUUID = mission.uuid',
-                )
-                .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-                .leftJoin('projectAccessGroup.users', 'projectUsers')
-                .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-                .leftJoin('missionAccessGroup.users', 'missionUsers')
-                .andWhere(
-                    new Brackets((qb) => {
-                        qb.where('missionUsers.uuid = :userUUID', {
-                            userUUID,
-                        }).orWhere('projectUsers.uuid = :userUUID', {
-                            userUUID,
-                        });
-                    }),
-                );
+            query = addAccessJoinsAndConditions(query, userUUID);
         }
         if (projectName) {
             query.andWhere('project.name = :projectName', { projectName });
@@ -122,16 +104,26 @@ export class FileService {
         if (missionName) {
             query.andWhere('mission.name = :missionName', { missionName });
         }
-        if (topics && topics.length > 0) {
-            query.andWhere('topic.name IN (:...topics)', { topics });
-
-            query
-                .groupBy('file.uuid')
-                .having('COUNT(file.uuid) = :topicCount', {
-                    topicCount: topics.length,
+        if (splitTopics && splitTopics.length > 0) {
+            // Define a subquery that selects files associated with all required topics
+            const topicSubquery = this.fileRepository
+                .createQueryBuilder('subfile')
+                .select('subfile.uuid')
+                .leftJoin('subfile.topics', 'subtopic')
+                .where('subtopic.name IN (:...topics)', {
+                    topics: splitTopics,
+                })
+                .groupBy('subfile.uuid')
+                .having('COUNT(subfile.uuid) = :topicCount', {
+                    topicCount: splitTopics.length,
                 });
-        }
 
+            // Use the subquery in the main query
+            query
+                .andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')')
+                .setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
+        }
+        console.log(query.getQueryAndParameters());
         // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
@@ -211,18 +203,23 @@ export class FileService {
             });
         }
 
-        const splitTopics = topics.split(',');
-        if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
-            query.andWhere('topic.name IN (:...splitTopics)', { splitTopics });
+        if (topics) {
+            const splitTopics = topics.split(',');
+            if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
+                query.andWhere('topic.name IN (:...splitTopics)', {
+                    splitTopics,
+                });
+            }
+
+            if (and_or) {
+                query.having('COUNT(file.uuid) = :topicCount', {
+                    topicCount: splitTopics.length,
+                });
+            }
         }
+
         query.groupBy('file.uuid');
-
-        if (and_or) {
-            query.having('COUNT(file.uuid) = :topicCount', {
-                topicCount: splitTopics.length,
-            });
-        }
-
+        console.log(query.getSql());
         // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
@@ -259,21 +256,66 @@ export class FileService {
         logger.debug('Updating file with uuid: ' + uuid);
         logger.debug('New file data: ' + JSON.stringify(file));
 
-        const db_file = await this.fileRepository.findOne({ where: { uuid } });
+        const db_file = await this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
+
+        if (!db_file) {
+            throw new Error('File not found');
+        }
+
+        const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        const bucketName =
+            db_file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME;
+
         db_file.filename = file.filename;
         db_file.date = file.date;
+
         if (file.mission_uuid) {
-            db_file.mission = await this.missionRepository.findOne({
+            const newMission = await this.missionRepository.findOne({
                 where: { uuid: file.mission_uuid },
+                relations: ['project'],
             });
+            if (newMission) {
+                db_file.mission = newMission;
+            } else {
+                throw new Error('Mission not found');
+            }
         }
+
         if (file.project_uuid) {
-            db_file.mission.project = await this.projectRepository.findOne({
+            const newProject = await this.projectRepository.findOne({
                 where: { uuid: file.project_uuid },
             });
+            if (newProject) {
+                db_file.mission.project = newProject;
+            } else {
+                throw new Error('Project not found');
+            }
         }
-        await this.fileRepository.save(db_file);
-        return this.fileRepository.findOne({ where: { uuid } });
+
+        const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
+        if (srcPath !== destPath) {
+            await moveFile(srcPath, destPath, bucketName);
+        }
+        await this.dataSource.transaction(
+            async (transactionalEntityManager) => {
+                await transactionalEntityManager.save(
+                    Project,
+                    db_file.mission.project,
+                );
+                await transactionalEntityManager.save(Mission, db_file.mission);
+                await transactionalEntityManager.save(FileEntity, db_file);
+            },
+        );
+
+        return this.fileRepository.findOne({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
     }
 
     async generateDownload(uuid: string, expires: boolean) {
