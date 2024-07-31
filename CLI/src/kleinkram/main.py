@@ -40,9 +40,11 @@ app.command(hidden=True)(setCliKey)
 
 @files.command("list")
 def list_files(
-        project: Optional[str] = typer.Option(None, help="Name of Project"),
-        mission: Optional[str] = typer.Option(None, help="Name of Mission"),
-        topics: Optional[List[str]] = typer.Option(None, help="Comma separated list of topics")
+    project: Optional[str] = typer.Option(None, help="Name of Project"),
+    mission: Optional[str] = typer.Option(None, help="Name of Mission"),
+    topics: Optional[List[str]] = typer.Option(
+        None, help="Comma separated list of topics"
+    ),
 ):
     """
     List all files with optional filters for project, mission, or topics.
@@ -115,12 +117,13 @@ def list_projects():
 
 @missions.command("list")
 def list_missions(
-        project: Optional[str] = typer.Option(None, help="Name of Project"),
-        verbose: Optional[bool] = typer.Option(False, help="Outputs a table with more information"),
+    project: Optional[str] = typer.Option(None, help="Name of Project"),
+    verbose: Optional[bool] = typer.Option(
+        False, help="Outputs a table with more information"
+    ),
 ):
     """
     List all missions with optional filter for project.
-
     """
     try:
         url = "/mission"
@@ -141,7 +144,9 @@ def list_missions(
         print("missions by Project:")
         if not verbose:
             for project_uuid, missions in missions_by_project_uuid.items():
-                print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
+                print(
+                    f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}"
+                )
                 for mission in missions:
                     print(f"  - {mission['name']}")
         else:
@@ -163,8 +168,8 @@ def list_missions(
 
 @missions.command("byUUID")
 def mission_by_uuid(
-        uuid: Annotated[str, typer.Argument()],
-        json: Optional[bool] = typer.Option(False, help="Output as JSON"),
+    uuid: Annotated[str, typer.Argument()],
+    json: Optional[bool] = typer.Option(False, help="Output as JSON"),
 ):
     """
     Get mission name, project name, creator and table of its files given a Mission UUID
@@ -194,9 +199,11 @@ def mission_by_uuid(
 
 @topics.command("list")
 def topics(
-        file: Annotated[str, typer.Option(help="Name of File")],
-        full: Annotated[bool, typer.Option(help="As a table with additional parameters")] = False,
-        # Todo add mission / project as optional argument as filenames are not unique
+    file: Annotated[str, typer.Option(help="Name of File")],
+    full: Annotated[
+        bool, typer.Option(help="As a table with additional parameters")
+    ] = False,
+    # Todo add mission / project as optional argument as filenames are not unique
 ):
     """
     List topics for a file
@@ -231,15 +238,17 @@ def topics(
 
 @projects.command("create")
 def create_project(
-        name: Annotated[str, typer.Option(help="Name of Project")],
-        description: Annotated[str, typer.Option(help="Description of Project")],
+    name: Annotated[str, typer.Option(help="Name of Project")],
+    description: Annotated[str, typer.Option(help="Description of Project")],
 ):
     """
     Create a new project
     """
     try:
         url = "/project/create"
-        response = client.post(url, json={"name": name, "description": description, "requiredTags": []}) # TODO: Add required tags as option
+        response = client.post(
+            url, json={"name": name, "description": description, "requiredTags": []}
+        )  # TODO: Add required tags as option
         if response.status_code >= 400:
             response_json = response.json()
             response_text = response_json["message"]
@@ -253,9 +262,13 @@ def create_project(
 
 @app.command("upload")
 def upload(
-        path: Annotated[str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")],
-        project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
-        mission: Annotated[str, typer.Option(prompt=True, help="Name of Mission to create")],
+    path: Annotated[
+        str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+    ],
+    project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
+    mission: Annotated[
+        str, typer.Option(prompt=True, help="Name of Mission to create")
+    ],
 ):
     """
     Upload files matching the path to a mission in a project.
@@ -266,7 +279,9 @@ def upload(
 
     """
     files = expand_and_match(path)
-    filenames = list(map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x),files)))
+    filenames = list(
+        map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
+    )
     if not filenames:
         print("No files found")
         return
@@ -301,7 +316,8 @@ def upload(
 
         create_mission_url = "/mission/create"
         new_mission = client.post(
-            create_mission_url, json={"name": mission, "projectUUID": project_json["uuid"], "tags": []}
+            create_mission_url,
+            json={"name": mission, "projectUUID": project_json["uuid"], "tags": []},
         )
         new_mission.raise_for_status()
         new_mission_data = new_mission.json()
@@ -467,7 +483,7 @@ def demote(email: Annotated[str, typer.Option()]):
 
 @files.command("download")
 def download(
-        missionuuid: Annotated[str, typer.Argument()],
+    missionuuid: Annotated[str, typer.Argument()],
 ):
     """Download file"""
     try:
@@ -477,15 +493,19 @@ def download(
     except:
         print("Failed to download file")
 
-@missions.command('tag')
+
+@missions.command("tag")
 def addTag(
-        missionuuid: Annotated[str, typer.Argument()],
-        tagtypeuuid: Annotated[str, typer.Argument()],
-        value: Annotated[str, typer.Argument()],
+    missionuuid: Annotated[str, typer.Argument()],
+    tagtypeuuid: Annotated[str, typer.Argument()],
+    value: Annotated[str, typer.Argument()],
 ):
     """Tag a mission"""
     try:
-        response = client.post("/tag/addTag", json={"mission": missionuuid, "tagType": tagtypeuuid, "value": value})
+        response = client.post(
+            "/tag/addTag",
+            json={"mission": missionuuid, "tagType": tagtypeuuid, "value": value},
+        )
         if response.status_code < 400:
             print("Tagged mission")
         else:
@@ -497,9 +517,9 @@ def addTag(
         sys.exit(1)
 
 
-@tagtypes.command('list')
+@tagtypes.command("list")
 def tagTypes(
-        verbose: Annotated[bool, typer.Option()] = False,
+    verbose: Annotated[bool, typer.Option()] = False,
 ):
     """List all tagtypes"""
     try:
@@ -507,7 +527,7 @@ def tagTypes(
         response.raise_for_status()
         data = response.json()
         if verbose:
-            table = Table("UUID","Name", "Datatype")
+            table = Table("UUID", "Name", "Datatype")
             for tagtype in data:
                 table.add_row(tagtype["uuid"], tagtype["name"], tagtype["datatype"])
         else:
@@ -518,9 +538,10 @@ def tagTypes(
     except:
         print("Failed to fetch tagtypes")
 
-@tag.command('delete')
+
+@tag.command("delete")
 def deleteTag(
-        taguuid: Annotated[str, typer.Argument()],
+    taguuid: Annotated[str, typer.Argument()],
 ):
     """Delete a tag"""
     try:
@@ -531,8 +552,7 @@ def deleteTag(
             print(response)
             print("Failed to delete tag")
     except:
-        print("Failed to delete tag"
-)
+        print("Failed to delete tag")
 
 
 if __name__ == "__main__":

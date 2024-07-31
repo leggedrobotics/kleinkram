@@ -49,5 +49,4 @@ import { useRoute } from 'vue-router';
 
 const $route = useRoute();
 const { error_msg, error_state } = $route.query;
-console.error(error_state, error_msg);
 </script>
