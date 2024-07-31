@@ -16,6 +16,7 @@ import {
     QueryBoolean,
     QueryOptionalBoolean,
     QueryOptionalDate,
+    QueryOptionalNumber,
     QuerySkip,
     QueryOptionalString,
     QueryOptionalUUID,

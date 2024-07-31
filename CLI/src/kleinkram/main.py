@@ -203,12 +203,12 @@ def topics(
     full: Annotated[
         bool, typer.Option(help="As a table with additional parameters")
     ] = False,
-    # Todo add mission / project as optional argument as filenames are not unique
+    # Todo add mission / project as optional argument as filenames are not unique or handle multiple files
 ):
     """
     List topics for a file
 
-    Only makes sense with MCAP files as we don't associate topics with BAGs.
+    Only makes sense with MCAP files as we don't associate topics with BAGs as that would be redundant.
     """
     if file.endswith(".bag"):
         print("BAG files generally do not have topics")
@@ -244,6 +244,7 @@ def create_project(
     """
     Create a new project
     """
+    # Todo add required tags as option.
     try:
         url = "/project/create"
         response = client.post(
