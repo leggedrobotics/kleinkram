@@ -63,16 +63,24 @@ export class MissionService {
         });
     }
 
-    async findMissionByProject(projectUUID: string): Promise<Mission[]> {
+    async findMissionByProject(
+        projectUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Mission[]> {
         return await this.missionRepository.find({
             where: { project: { uuid: projectUUID } },
             relations: ['project', 'files', 'creator', 'files.creator'],
+            skip,
+            take,
         });
     }
 
     async filteredByProjectName(
         projectName: string,
         userUUID: string,
+        skip: number,
+        take: number,
     ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -100,17 +108,25 @@ export class MissionService {
                     }),
                 ),
             userUUID,
-        ).getMany();
+        ).take(take)
+            .skip(skip)
+            .getMany();
     }
 
     // TODO Test!
-    async findAll(userUUID: string): Promise<Mission[]> {
+    async findAll(
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.missionRepository.find({
                 relations: ['project', 'creator'],
+                skip,
+                take,
             });
         }
         return addAccessJoinsAndConditions(
@@ -119,7 +135,9 @@ export class MissionService {
                 .leftJoinAndSelect('mission.project', 'project')
                 .leftJoinAndSelect('mission.creator', 'creator'),
             userUUID,
-        ).getMany();
+        ).skip(skip)
+            .take(take)
+            .getMany();
     }
 
     async findOneByName(name: string): Promise<Mission> {

@@ -11,7 +11,7 @@ import {
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import { BodyUUID } from '../validation/bodyDecorators';
-import { QueryDate } from '../validation/queryDecorators';
+import { QueryDate, QuerySkip, QueryTake } from '../validation/queryDecorators';
 
 @Controller('queue')
 export class QueueController {
@@ -56,11 +56,13 @@ export class QueueController {
     @LoggedIn()
     async active(
         @QueryDate('startDate') startDate: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         const date = new Date(startDate);
 
-        return this.queueService.active(date, user.uuid);
+        return this.queueService.active(date, user.uuid, skip, take);
     }
 
     @Delete('clear')

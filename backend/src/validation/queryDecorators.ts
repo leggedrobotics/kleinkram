@@ -7,6 +7,8 @@ import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import {
     BooleanValidate,
+    DateStringValidate,
+    NumberValidate,
     StringArrayValidate,
     StringValidate,
     UUIDValidate,
@@ -155,7 +157,7 @@ export const QueryDate = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(DateStringValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
@@ -175,11 +177,65 @@ export const QueryOptionalDate = createParamDecorator(
             return;
         }
 
-        const object = plainToInstance(StringValidate, { value });
+        const object = plainToInstance(DateStringValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
             );
+        });
+
+        return value;
+    },
+);
+
+export const QueryOptionalNumber = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return;
+        }
+
+        const object = plainToInstance(NumberValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException('Parameter is not a valid Number');
+        });
+
+        return value;
+    },
+);
+
+export const QuerySkip = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return 0;
+        }
+
+        const object = plainToInstance(NumberValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException('Parameter is not a valid Number');
+        });
+
+        return value;
+    },
+);
+
+export const QueryTake = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return 100; // default value
+        }
+
+        const object = plainToInstance(NumberValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException('Parameter is not a valid Number');
         });
 
         return value;

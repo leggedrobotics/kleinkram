@@ -1,19 +1,18 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {ConflictException, Injectable} from '@nestjs/common';
 import Project from '@common/entities/project/project.entity';
-import { In, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CreateProject } from './entities/create-project.dto';
+import {Repository} from 'typeorm';
+import {InjectRepository} from '@nestjs/typeorm';
+import {CreateProject} from './entities/create-project.dto';
 import logger from '../logger';
-import { JWTUser } from '../auth/paramDecorator';
+import {JWTUser} from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
-import { UserService } from '../user/user.service';
+import {UserService} from '../user/user.service';
 
-import { AccessGroupRights, UserRole } from '@common/enum';
+import {AccessGroupRights, UserRole} from '@common/enum';
 import TagType from '@common/entities/tagType/tagType.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
-import { ConfigService } from '@nestjs/config';
-import { AccessGroupConfig } from '../app.module';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import {ConfigService} from '@nestjs/config';
+import {AccessGroupConfig} from '../app.module';
 
 @Injectable()
 export class ProjectService {
@@ -33,15 +32,18 @@ export class ProjectService {
         this.config = this.configService.get('accessConfig');
     }
 
-    async findAll(user: JWTUser): Promise<Project[]> {
+    async findAll(user: JWTUser, skip: number, take: number): Promise<Project[]> {
         logger.debug('Finding all projects as user: ', user.uuid);
+        logger.debug("Skip " + skip + " Take " + take);
         const db_user = await this.userRepository.findOne({
-            where: { uuid: user.uuid },
+            where: {uuid: user.uuid},
         });
         if (db_user.role === UserRole.ADMIN) {
             return this.projectRepository.find({
                 relations: ['creator', 'missions'],
-            });
+                skip,
+                take
+            })
         }
 
         return this.projectRepository
@@ -54,13 +56,16 @@ export class ProjectService {
             .where('projectAccesses.rights >= :rights', {
                 rights: AccessGroupRights.READ,
             })
-            .andWhere('users.uuid = :uuid', { uuid: user.uuid })
+            .andWhere('users.uuid = :uuid', {uuid: user.uuid})
+            .skip(skip)
+            .take(take)
             .getMany();
+
     }
 
     async findOne(uuid: string): Promise<Project> {
         return this.projectRepository.findOne({
-            where: { uuid },
+            where: {uuid},
             relations: [
                 'creator',
                 'missions',
@@ -73,12 +78,12 @@ export class ProjectService {
     }
 
     async findOneByName(name: string): Promise<Project> {
-        return this.projectRepository.findOne({ where: { name } });
+        return this.projectRepository.findOne({where: {name}});
     }
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
         const exists = await this.projectRepository.exists({
-            where: { name: project.name },
+            where: {name: project.name},
         });
         if (exists) {
             throw new ConflictException(
@@ -92,7 +97,7 @@ export class ProjectService {
         const tagTypes = await Promise.all(
             project.requiredTags.map((tag) => {
                 return this.tagTypeRepository.findOneOrFail({
-                    where: { uuid: tag },
+                    where: {uuid: tag},
                 });
             }),
         );
@@ -120,7 +125,7 @@ export class ProjectService {
             }),
         );
         return this.projectRepository.findOneOrFail({
-            where: { uuid: savedProject.uuid },
+            where: {uuid: savedProject.uuid},
             relations: ['creator', 'project_accesses'],
         });
     }
@@ -130,15 +135,15 @@ export class ProjectService {
         project: { name: string; description: string },
     ): Promise<Project> {
         await this.projectRepository.update(uuid, project);
-        return this.projectRepository.findOne({ where: { uuid } });
+        return this.projectRepository.findOne({where: {uuid}});
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
-            where: { uuid },
+            where: {uuid},
         });
         const tagType = await this.tagTypeRepository.findOneOrFail({
-            where: { uuid: tagTypeUUID },
+            where: {uuid: tagTypeUUID},
         });
         project.requiredTags.push(tagType);
         return this.projectRepository.save(project);
@@ -146,7 +151,7 @@ export class ProjectService {
 
     async removeTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
-            where: { uuid },
+            where: {uuid},
         });
         project.requiredTags = project.requiredTags.filter(
             (tagType) => tagType.uuid !== tagTypeUUID,

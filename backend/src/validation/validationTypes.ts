@@ -4,6 +4,7 @@ import {
     IsBoolean,
     IsDateString,
     IsNotEmpty,
+    IsNumber,
     IsString,
     IsUUID,
 } from 'class-validator';
@@ -39,4 +40,11 @@ export class DateStringValidate {
     @IsNotEmpty()
     @Type(() => Date)
     value: Date;
+}
+
+export class NumberValidate {
+    @IsNumber()
+    @IsNotEmpty()
+    @Type(() => Number)
+    value: Number;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
@@ -27,13 +27,15 @@ export class FileService {
         private readonly dataSource: DataSource,
     ) {}
 
-    async findAll(userUUID: string) {
+    async findAll(userUUID: string, skip: number, take: number) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
             return this.fileRepository.find({
                 relations: ['mission'],
+                skip,
+                take,
             });
         }
         return this.fileRepository
@@ -62,7 +64,9 @@ export class FileService {
                         userUUID,
                     });
                 }),
-            );
+            )
+            .skip(skip)
+            .take(take);
     }
 
     async findFilteredByNames(
@@ -70,6 +74,8 @@ export class FileService {
         missionName: string,
         topics: string,
         userUUID: string,
+        skip: number,
+        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -85,7 +91,9 @@ export class FileService {
             .select('file.uuid')
             .distinct(true)
             .leftJoin('file.mission', 'mission')
-            .leftJoin('mission.project', 'project');
+            .leftJoin('mission.project', 'project')
+            .skip(skip)
+            .take(take);
 
         if (user.role !== UserRole.ADMIN) {
             query = addAccessJoinsAndConditions(query, userUUID);
@@ -143,6 +151,8 @@ export class FileService {
         and_or: boolean,
         mcapBag: boolean,
         userUUID: string,
+        skip: number,
+        take: number,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -156,7 +166,9 @@ export class FileService {
             .leftJoin('mission.project', 'project')
             .andWhere('file.type = :type', {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
-            });
+            })
+            .skip(skip)
+            .take(take);
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {

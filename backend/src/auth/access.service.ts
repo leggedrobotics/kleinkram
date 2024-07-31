@@ -135,12 +135,19 @@ export class AccessService {
         return this.accessGroupRepository.save(accessGroup);
     }
 
-    async searchAccessGroup(search: string, user: JWTUser) {
+    async searchAccessGroup(
+        search: string,
+        user: JWTUser,
+        skip: number,
+        take: number,
+    ) {
         return this.accessGroupRepository
             .createQueryBuilder('accessGroup')
             .where('accessGroup.name ILIKE :search', { search: `%${search}%` })
             .andWhere('accessGroup.inheriting = false')
             .andWhere('accessGroup.personal = false')
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 

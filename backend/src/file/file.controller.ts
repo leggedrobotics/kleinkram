@@ -16,10 +16,13 @@ import {
     QueryBoolean,
     QueryOptionalBoolean,
     QueryOptionalDate,
+    QueryOptionalNumber,
+    QuerySkip,
     QueryOptionalString,
     QueryOptionalUUID,
     QueryString,
     QueryStringArray,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
@@ -30,8 +33,12 @@ export class FileController {
 
     @Get('all')
     @LoggedIn()
-    async allFiles(@addJWTUser() user: JWTUser) {
-        return await this.fileService.findAll(user.uuid);
+    async allFiles(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return await this.fileService.findAll(user.uuid, skip, take);
     }
 
     @Get('filteredByNames')
@@ -40,6 +47,8 @@ export class FileController {
         @QueryOptionalString('projectName') projectName: string,
         @QueryOptionalString('missionName') missionName: string,
         @QueryOptionalString('topics') topics: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(
@@ -47,6 +56,8 @@ export class FileController {
             missionName,
             topics,
             user.uuid,
+            skip,
+            take,
         );
     }
 
@@ -61,6 +72,8 @@ export class FileController {
         @QueryOptionalString('topics') topics: string,
         @QueryOptionalBoolean('andOr') andOr: boolean,
         @QueryOptionalBoolean('mcapBag') mcapBag: boolean,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
@@ -73,6 +86,8 @@ export class FileController {
             andOr,
             mcapBag,
             user.uuid,
+            skip,
+            take,
         );
     }
 
