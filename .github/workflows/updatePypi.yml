@@ -33,7 +33,13 @@ jobs:
               if: github.ref == 'refs/heads/dev'
               run: |
                 cd CLI
-                python -c "import tomlkit, datetime; with open('pyproject.toml', 'r') as file: data = tomlkit.load(file); data['project']['version'] = data['project']['version'] + '-dev' + datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S'); with open('pyproject.toml', 'w') as file: tomlkit.dump(data, file)"
+                python -c "import tomlkit, datetime; \
+                file_path = 'pyproject.toml'; \
+                with open(file_path, 'r') as file: \
+                  data = tomlkit.load(file); \
+                  data['project']['version'] += '-dev' + datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S'); \
+                with open(file_path, 'w') as file: \
+                tomlkit.dump(data, file)"
 
             - name: Build package
               run: |
