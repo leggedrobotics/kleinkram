@@ -56,7 +56,9 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
                         pbar.update(100)  # Update progress for each file
                         client.post("/queue/confirmUpload", json={"uuid": uuid})
                     else:
-                        print(f"Failed to upload {filename}. HTTP status: {response.status_code}")
+                        print(
+                            f"Failed to upload {filename}. HTTP status: {response.status_code}"
+                        )
             _queue.task_done()
         except queue.Empty:
             break

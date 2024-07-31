@@ -94,7 +94,9 @@ class AuthenticatedClient(httpx.Client):
             self.tokenfile = TokenFile()
             self._load_cookies()
         except Exception as e:
-            print(f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'.")
+            print(
+                f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'."
+            )
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():
@@ -110,7 +112,10 @@ class AuthenticatedClient(httpx.Client):
         if not refresh_token:
             print("No refresh token found. Please login again.")
             raise Exception("No refresh token found.")
-        self.cookies.set(REFRESH_TOKEN, refresh_token, )
+        self.cookies.set(
+            REFRESH_TOKEN,
+            refresh_token,
+        )
         response = self.post(
             "/auth/refresh-token",
         )
@@ -124,16 +129,16 @@ class AuthenticatedClient(httpx.Client):
         response = super().request(
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )
-        if (
-                url == "/auth/refresh-token"
-        ) and response.status_code == 401:
+        if (url == "/auth/refresh-token") and response.status_code == 401:
             print("Refresh token expired. Please login again.")
             response.status_code = 403
             exit(1)
         if response.status_code == 401:
             print("Token expired, refreshing token...")
             self.refresh_token()
-            response = super().request(method, self.tokenfile.endpoint + url, *args, **kwargs)
+            response = super().request(
+                method, self.tokenfile.endpoint + url, *args, **kwargs
+            )
         return response
 
 
@@ -141,8 +146,10 @@ client = AuthenticatedClient()
 
 
 def login(
-        key: Optional[str] = typer.Option(None, help="CLI Key", hidden=True),
-        open_browser: Optional[bool] = typer.Option(True, help="Open browser for authentication"),
+    key: Optional[str] = typer.Option(None, help="CLI Key", hidden=True),
+    open_browser: Optional[bool] = typer.Option(
+        True, help="Open browser for authentication"
+    ),
 ):
     """
     Login into the currently set endpoint.\n
@@ -175,12 +182,16 @@ def login(
 
             return
 
-        print(f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}")
+        print(
+            f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}"
+        )
         print("Enter the authentication token provided after logging in:")
         manual_auth_token = input("Authentication Token: ")
         manual_refresh_token = input("Refresh Token: ")
         if manual_auth_token:
-            tokenfile.saveTokens({AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token})
+            tokenfile.saveTokens(
+                {AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token}
+            )
             print("Authentication complete. Tokens saved to tokens.json.")
         else:
             print("No authentication token provided.")
@@ -188,7 +199,7 @@ def login(
 
 
 def setEndpoint(
-        endpoint: Optional[str] = typer.Argument(None, help="API endpoint to use")
+    endpoint: Optional[str] = typer.Argument(None, help="API endpoint to use")
 ):
     """
     Set the current endpoint
@@ -220,9 +231,7 @@ def endpoint():
         print("- " + _endpoint)
 
 
-def setCliKey(
-        key: Annotated[str, typer.Argument(help="CLI Key")]
-):
+def setCliKey(key: Annotated[str, typer.Argument(help="CLI Key")]):
     """
     Set the CLI key (Actions Only)
 
