@@ -211,7 +211,7 @@ const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => allProjects(500, 0, 'name'),
 });
 
 const pagination = ref({

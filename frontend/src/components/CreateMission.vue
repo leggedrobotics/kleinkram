@@ -161,7 +161,7 @@ const missionName = ref('');
 const ddr_open = ref(false);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => allProjects(500, 0, 'name'),
 });
 const DataType_InputType = {
     [DataType.STRING]: 'text',

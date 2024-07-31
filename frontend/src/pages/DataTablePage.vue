@@ -217,7 +217,7 @@ const selected_project: Ref<Project | null> = ref(null);
 const dd_open = ref(false);
 const projectsReturn = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => allProjects(500, 0, 'name', false),
 });
 const projects = projectsReturn.data;
 

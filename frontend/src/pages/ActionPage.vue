@@ -133,7 +133,7 @@ const selected_mission: Ref<Mission | null> = ref(null);
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => allProjects(500, 0, 'name'),
 });
 
 const { data: missions, refetch } = useQuery({

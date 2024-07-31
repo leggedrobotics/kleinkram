@@ -1,29 +1,37 @@
 import axios from 'src/api/axios';
-import {Project} from 'src/types/Project';
-import {User} from 'src/types/User';
-import {Mission} from 'src/types/Mission';
-import {TagType} from 'src/types/TagType';
-import {AccessGroup} from 'src/types/AccessGroup';
-import {ProjectAccess} from 'src/types/ProjectAccess';
+import { Project } from 'src/types/Project';
+import { User } from 'src/types/User';
+import { Mission } from 'src/types/Mission';
+import { TagType } from 'src/types/TagType';
+import { AccessGroup } from 'src/types/AccessGroup';
+import { ProjectAccess } from 'src/types/ProjectAccess';
 
-export const allProjects = async (take: number, skip: number, sortBy: string, descending: boolean, searchParams: {
-    name: string
-}) => {
-    const response = await axios.get('/project'
-        , {
-            params: {
-                take,
-                skip,
-                sortBy,
-                descending,
-                searchParams
-            },
-        });
+export const allProjects = async (
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending: boolean = false,
+    searchParams?: {
+        name: string;
+    },
+) => {
+    const params: Record<string, any> = {
+        take,
+        skip,
+        sortBy,
+        descending,
+    };
+    if (searchParams && searchParams.name) {
+        params['searchParams'] = searchParams;
+    }
+    const response = await axios.get('/project', {
+        params,
+    });
     return response.data;
 };
 
 export const getProject = async (uuid: string): Promise<Project> => {
-    const response = await axios.get('/project/one', {params: {uuid}});
+    const response = await axios.get('/project/one', { params: { uuid } });
     const project = response.data;
     const creator = new User(
         project.creator.uuid,

@@ -14,14 +14,11 @@ import {
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
-    QueryOptionalBoolean,
     QueryOptionalDate,
-    QueryOptionalNumber,
     QuerySkip,
     QueryOptionalString,
     QueryOptionalUUID,
     QueryString,
-    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
@@ -125,9 +122,9 @@ export class FileController {
     async getFilesOfMission(
         @QueryUUID('uuid') uuid: string,
         @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number
+        @QueryTake('take') take: number,
     ) {
-        return this.fileService.findByMission(uuid, take, skip)
+        return this.fileService.findByMission(uuid, take, skip);
     }
 
     @Put(':uuid')
