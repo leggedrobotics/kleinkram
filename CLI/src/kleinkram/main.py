@@ -124,7 +124,6 @@ def list_missions(
 ):
     """
     List all missions with optional filter for project.
-
     """
     try:
         url = "/mission"
