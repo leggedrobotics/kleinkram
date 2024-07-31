@@ -177,7 +177,7 @@ import {missionsOfProject} from "src/services/queries/mission";
 import RouterService from "src/services/routerService";
 import {filesOfMission} from "src/services/queries/file";
 import ROUTES from "src/router/routes";
-import {useRoute} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import {DataType, getColumns} from "components/explorer_page/project_columns";
 import MoveMission from "components/MoveMission.vue";
 import {FileType} from "src/enum/FILE_ENUM";
@@ -205,12 +205,14 @@ const pagination = ref({
 
 
 // watch on route change
-watch(() => route.query, async (query) => {
+watch(() => route.query, async () => {
   await loadData()
 })
 
 const currentDataType = ref<DataType>(!!project_uuid.value ? DataType.MISSIONS : DataType.PROJECTS);
 const data = ref<any>([]);
+
+const router = useRouter()
 
 // load data based on current URL params and search
 const loadData = async (props?: any) => {
@@ -237,19 +239,27 @@ const loadData = async (props?: any) => {
       (!!mission_uuid.value) ? DataType.FILES : DataType.PROJECTS;
 
   if (nextState !== currentDataType.value) {
-    console.log('resetting state since data type changed')
-    skip = 0;
-    page = 1;
-    sortBy = DEFAULT_SORT.sortBy;
-    descending = DEFAULT_SORT.descending;
-    search = '';
+
+    await router.replace({
+      query: {
+        project_uuid: project_uuid.value as string,
+        mission_uuid: mission_uuid.value as string,
+        page: 1,
+        skip: 0,
+        sortBy: DEFAULT_SORT.sortBy,
+        descending: DEFAULT_SORT.descending.toString(),
+        search: null,
+        file_type_filter: route.query.file_type_filter as string || 'MCAP'
+      }
+    })
+
   }
 
   //////////////////////////
   // update URL params
   //////////////////////////
 
-  if (Object.keys(props || {}).length !== 0 || nextState !== currentDataType.value)
+  if (Object.keys(props || {}).length !== 0)
     $routerService?.pushToQuery({
       page: page.toString(),
       rowsPerPage: take.toString(),

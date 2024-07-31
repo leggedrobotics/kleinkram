@@ -101,7 +101,7 @@ import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/TableHeader.vue";
 import CreateProjectDialog from "components/CreateProjectDialog.vue";
 import {useQuasar} from "quasar";
-import {useRoute} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import ROUTES from "src/router/routes";
 import CreateMissionDialog from "components/CreateMissionDialog.vue";
 import TableSearchHeader from "components/explorer_page/TableSearchHeader.vue";
@@ -158,18 +158,22 @@ watchEffect(() => {
 })
 
 const search = ref('')
+const file_type_filter = ref('MCAP')
 
 // update change on URL change
 watchEffect(() => {
   project_uuid.value = route.query.project_uuid as string;
   mission_uuid.value = route.query.mission_uuid as string
+  search.value = route.query.search as string || ''
+  file_type_filter.value = route.query.file_type_filter as string || 'MCAP'
 })
 
-const file_type_filter = ref(route.query.file_type_filter as string || 'All')
 const refresh = ref(0);
 
-watch(search, () => {
-  $routerService?.pushToQuery({search: search.value})
+const router = useRouter()
+
+watch(search, async () => {
+  await router.push({query: {...route.query, search: search.value}})
   refresh.value++;
 })
 
