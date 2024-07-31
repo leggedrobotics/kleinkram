@@ -33,7 +33,7 @@
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 import { ref, Ref, watchEffect } from 'vue';
-import { ActionState } from 'src/enum/QUEUE_ENUM';
+import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
 import { actions } from 'src/services/queries/action';

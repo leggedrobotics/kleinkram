@@ -63,7 +63,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { Notify, useQuasar } from 'quasar';
 import { Project } from 'src/types/Project';
-import AccessRightsDialog from 'components/dialog/AccessRightsDialog.vue';
+import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { getProject } from 'src/services/queries/project';
 import { deleteProject, updateProject } from 'src/services/mutations/project';
 

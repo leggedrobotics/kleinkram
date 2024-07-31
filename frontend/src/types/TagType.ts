@@ -1,4 +1,4 @@
-import { DataType } from 'src/enum/TAG_TYPES';
+import { DataType } from 'src/enums/TAG_TYPES';
 import { BaseEntity } from 'src/types/BaseEntity';
 
 export class TagType extends BaseEntity {

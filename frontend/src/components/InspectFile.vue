@@ -101,7 +101,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
 import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
-import { FileType } from 'src/enum/FILE_ENUM';
+import { FileType } from 'src/enums/FILE_ENUM';
 import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import { FileEntity } from 'src/types/FileEntity';

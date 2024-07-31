@@ -1,4 +1,4 @@
-import ROLE from 'src/enum/USER_ROLES';
+import ROLE from 'src/enums/USER_ROLES';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Project } from 'src/types/Project';
 

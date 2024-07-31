@@ -1,4 +1,4 @@
-import { FileState } from 'src/enum/QUEUE_ENUM';
+import { FileState } from 'src/enums/QUEUE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';

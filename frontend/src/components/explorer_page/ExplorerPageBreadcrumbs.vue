@@ -26,8 +26,9 @@
 <script setup lang="ts">
 
 import {ref, watch, watchEffect} from "vue";
-import {useProjectQuery} from "src/queries/projectQuery";
-import {useMissionQuery} from "src/queries/missionQuery";
+
+import {useToggle} from "src/hooks/utils";
+import {useMissionQuery, useProjectQuery} from "src/hooks/customQueryHooks";
 
 const project_uuid = defineModel<string | undefined>('project_uuid')
 const mission_uuid = defineModel<string | undefined>('mission_uuid')
@@ -35,16 +36,10 @@ const mission_uuid = defineModel<string | undefined>('mission_uuid')
 const {data: project, refetch: refetchProject} = useProjectQuery(project_uuid);
 const {data: mission, refetch: refetchMission} = useMissionQuery(mission_uuid);
 
+const isLoading = useToggle([project_uuid, mission_uuid], [project, mission], false)
+
 watch(project_uuid, () => refetchProject())
 watch(mission_uuid, () => refetchMission())
-
-const isLoading = ref(false)
-watch([project_uuid, mission_uuid], () => {
-  isLoading.value = true
-})
-watch([project, mission], () => {
-  isLoading.value = false
-})
 
 const crumbs = ref<any>([])
 

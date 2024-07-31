@@ -17,7 +17,7 @@ export type ProjectColumnType = {
 };
 
 
-const project_columns: Array<ProjectColumnType> = [
+const explorer_page_table_columns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -149,7 +149,7 @@ export enum DataType {
 export const getColumns = (type: DataType): Array<ProjectColumnType> => {
     switch (type) {
         case DataType.PROJECTS:
-            return project_columns;
+            return explorer_page_table_columns;
         case DataType.MISSIONS:
             return mission_columns;
         case DataType.FILES:

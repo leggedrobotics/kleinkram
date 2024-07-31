@@ -1,4 +1,4 @@
-import { DataType } from 'src/enum/TAG_TYPES';
+import { DataType } from 'src/enums/TAG_TYPES';
 import { formatDate } from 'src/services/dateFormating';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { TagType } from 'src/types/TagType';

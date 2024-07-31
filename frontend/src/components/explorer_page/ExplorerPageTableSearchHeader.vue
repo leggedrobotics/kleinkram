@@ -43,7 +43,8 @@
 
 <script setup lang="ts">
 
-import {ref, watch} from "vue";
+
+import {useDisplayType} from "src/hooks/utils";
 
 const search = defineModel<string>('search')
 const file_type_filter = defineModel<string>('file_type_filter')
@@ -51,26 +52,6 @@ const file_type_filter = defineModel<string>('file_type_filter')
 const project_uuid = defineModel<string | undefined>('project_uuid')
 const mission_uuid = defineModel<string | undefined>('mission_uuid')
 
-const isListingProjects = ref(project_uuid.value === undefined && mission_uuid.value === undefined)
-const isListingMissions = ref(project_uuid.value && mission_uuid.value === undefined)
-const isListingFiles = ref(!!mission_uuid.value)
-
-watch([mission_uuid, project_uuid], () => {
-
-  if (project_uuid.value && !mission_uuid.value) {
-    isListingProjects.value = false;
-    isListingMissions.value = true;
-    isListingFiles.value = false;
-  } else if (mission_uuid.value) {
-    isListingProjects.value = false;
-    isListingMissions.value = false;
-    isListingFiles.value = true;
-  } else {
-    isListingProjects.value = true;
-    isListingMissions.value = false;
-    isListingFiles.value = false;
-  }
-
-})
+const {isListingProjects, isListingMissions, isListingFiles} = useDisplayType(project_uuid, mission_uuid)
 
 </script>

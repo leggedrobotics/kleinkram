@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { DataType } from 'src/enum/TAG_TYPES';
+import { DataType } from 'src/enums/TAG_TYPES';
 import { Tag } from 'src/types/Tag';
 
 export const removeTag = async (tagUUID: string) => {

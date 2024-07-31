@@ -92,7 +92,7 @@ import { useMutation, useQuery } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
 
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { computed, Ref, ref, watch } from 'vue';
 
 import { Notify } from 'quasar';

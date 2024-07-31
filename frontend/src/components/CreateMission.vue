@@ -142,7 +142,7 @@
 import { computed, ref, Ref, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { DataType } from 'src/enum/TAG_TYPES';
+import { DataType } from 'src/enums/TAG_TYPES';
 import { Project } from 'src/types/Project';
 import { TagType } from 'src/types/TagType';
 import { allProjects, getProject } from 'src/services/queries/project';

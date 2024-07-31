@@ -178,9 +178,9 @@ import RouterService from "src/services/routerService";
 import {filesOfMission} from "src/services/queries/file";
 import ROUTES from "src/router/routes";
 import {useRoute, useRouter} from "vue-router";
-import {DataType, getColumns} from "components/explorer_page/project_columns";
+import {DataType, getColumns} from "components/explorer_page/explorer_page_table_columns";
 import MoveMission from "components/MoveMission.vue";
-import {FileType} from "src/enum/FILE_ENUM";
+import {FileType} from "src/enums/FILE_ENUM";
 import {FileEntity} from "src/types/FileEntity";
 
 const $routerService: RouterService | undefined = inject('$routerService');

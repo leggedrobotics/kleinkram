@@ -1,425 +1,201 @@
 <template>
 
-  <h1 class="text-h5">Project Explorer</h1>
+  <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
-  <ExplorerPageBreadcrumbs :crumbs="crumbs" @navigate="navigate"/>
+  <div class="q-mb-md">
 
-  <div class="q-my-md">
-    <q-btn
-        color="primary"
-        @click="create"
-        :label="'Create ' + crumbs[crumbs.length - 1].type"
-    />
-  </div>
+    <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
 
-  <q-card class="q-pa-md" flat bordered>
-
-    <div class="float-right">
-      <q-btn outline @click="refresh" color="grey-8" icon="refresh"/>
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingProjects">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Create Project"
+          @click="createNewProject"
+      />
     </div>
 
-    <EditProject
-        v-if="column_index === 1"
-        :project_uuid="crumbs[crumbs.length - 1].uuid"
-        @project-deleted="projectDeleted"
-    />
-    <EditMission
-        v-if="column_index === 2"
-        :mission_uuid="crumbs[crumbs.length - 1].uuid"
-    />
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingMissions">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Create Mission"
+          @click="createNewMission"
+      />
+    </div>
 
-    <h3 class="text-h6" style="margin-top: 0">{{ crumbs[crumbs.length - 1].name }}</h3>
+    <div class="flex justify-between items-center q-mt-md" v-if="isListingFiles">
+      <div></div>
+      <q-btn
+          color="primary"
+          label="Upload File"
+          @click="() => $q.notify('Not implemented yet! Use upload page instead.')"
+      />
+    </div>
 
-    <q-separator/>
+  </div>
 
-    <QTable
-        ref="tableRef"
-        v-model:pagination="pagination"
-        v-model:selected="selected"
-        :rows="currentData"
-        :columns="columns[column_index]"
-        row-key="uuid"
-        :loading="loading"
-        binary-state-sort
-        wrap-cells
-        separator="none"
-        selection="multiple"
-        @row-click="onRowClick"
-    >
-      <template v-slot:body-cell-projectaction="props">
-        <q-td :props="props">
-          <q-btn
-              color="primary"
-              label="View"
-              outline
-              @click="() => view_project(props.row)"
-          ></q-btn>
-        </q-td>
-      </template>
-      <template v-slot:body-cell-missionaction="props">
-        <q-td :props="props">
-          <q-btn
-              color="primary"
-              label="Move"
-              style="margin-right: 5px"
-              @click="() => move(props.row)"
-          />
-          <q-btn
-              color="primary"
-              label="View"
-              @click="() => view_mission(props.row)"
-          />
-        </q-td>
-      </template>
-      <template v-slot:body-cell-fileaction="props">
-        <q-td :props="props">
-          <q-btn
-              color="primary"
-              label="View"
-              @click="() => view_file(props.row)"
-          ></q-btn>
-        </q-td>
-      </template>
-    </QTable>
+  <q-card class="q-pa-md q-mb-xl" flat bordered>
+
+    <q-card-section class="flex justify-between items-center">
+
+      <Suspense>
+        <TableHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+
+        <template #fallback>
+          <div style="width: 550px; height: 67px;">
+            <q-skeleton class="q-mr-md q-mb-sm q-mt-sm" style="width: 300px; height: 20px"/>
+            <q-skeleton class="q-mr-md" style="width: 200px; height: 18px"/>
+          </div>
+        </template>
+
+      </Suspense>
+
+      <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh"/>
+    </q-card-section>
+
+    <q-card-section style="padding-top: 10px">
+      <Suspense>
+        <TableSearchHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"
+                           v-model:search="search" v-model:file_type_filter="file_type_filter"/>
+
+        <template #fallback>
+          <div style="width: 550px; height: 67px;">
+            <q-skeleton class="q-mr-md q-mb-sm q-mt-sm" style="width: 300px; height: 20px"/>
+            <q-skeleton class="q-mr-md" style="width: 200px; height: 18px"/>
+          </div>
+        </template>
+
+      </Suspense>
+
+    </q-card-section>
+
+    <q-card-section>
+      <Suspense>
+        <ExplorerPageTable :refresh="refresh" v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+
+        <template #fallback>
+          <div style="width: 100%; height: 645px;">
+            <q-skeleton class="q-mr-md q-mb-sm q-mt-sm" style="width: 100%; height: 40px"/>
+
+            <div v-for="i in 20" :key="i" class="q-mt-sm">
+              <q-skeleton class="q-mr-md q-mb-sm" style="width: 100%; height: 20px; opacity: 0.5"/>
+            </div>
+
+          </div>
+        </template>
+
+      </Suspense>
+    </q-card-section>
+
   </q-card>
+
 </template>
+
 <script setup lang="ts">
-import {useQuery} from '@tanstack/vue-query';
 
-import {QTable, useQuasar} from 'quasar';
-import {computed, inject, Ref, ref} from 'vue';
-import {formatDate} from 'src/services/dateFormating';
-import {formatSize} from 'src/services/generalFormatting';
-import RouterService from 'src/services/routerService';
-import ROUTES from 'src/router/routes';
-import CreateProjectDialog from 'components/dialog/CreateProjectDialog.vue';
-import CreateMissionDialog from 'components/dialog/CreateMissionDialog.vue';
-import CreateFileDialog from 'components/dialog/CreateFileDialog.vue';
-import EditProject from 'components/EditProject.vue';
-import MoveMission from 'components/MoveMission.vue';
-import {FileType} from 'src/enum/FILE_ENUM';
-import EditMission from 'components/EditMission.vue';
-import {Project} from 'src/types/Project';
-import {Mission} from 'src/types/Mission';
-import {FileEntity} from 'src/types/FileEntity';
-import {allProjects} from 'src/services/queries/project';
-import {missionsOfProject} from 'src/services/queries/mission';
-import {filesOfMission} from 'src/services/queries/file';
-import {useRoute} from "vue-router";
+import {inject, ref, watch, watchEffect} from "vue";
+import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
+import RouterService from "src/services/routerService";
+import TableHeader from "components/explorer_page/ExplorerPageTableHeader.vue";
+import CreateProjectDialog from "src/dialogs/CreateProjectDialog.vue";
+import {useQuasar} from "quasar";
+import {useRoute, useRouter} from "vue-router";
+import ROUTES from "src/router/routes";
+import CreateMissionDialog from "src/dialogs/CreateMissionDialog.vue";
+import TableSearchHeader from "components/explorer_page/ExplorerPageTableSearchHeader.vue";
+import {conditionalWatch, useDisplayType} from "src/hooks/utils";
 
-const $routerService: RouterService | undefined = inject('$routerService');
-
+const $routerService: RouterService | undefined = inject('$routerService')
 const route = useRoute()
-const project_uuid = route?.query.project_uuid as string;
-const mission_uuid = route?.query.mission_uuid as string;
-console.log('project_uuid', project_uuid);
-console.log('mission_uuid', mission_uuid);
+
+const project_uuid = ref<string | undefined>(undefined);
+const mission_uuid = ref<string | undefined>(undefined);
+
+const {isListingProjects, isListingMissions, isListingFiles} = useDisplayType(project_uuid, mission_uuid);
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+// update the URL on navigation between project, mission and files view
+//////////////////////////////////////////////////////////////////////////////////////////
+
+conditionalWatch(isListingFiles, () => {
+  $routerService?.routeTo(ROUTES.EXPLORER, {
+    project_uuid: project_uuid.value,
+    mission_uuid: mission_uuid.value,
+    ...JSON.parse(JSON.stringify(route.query))
+  })
+})
+
+conditionalWatch(isListingProjects, () => {
+  $routerService?.routeTo(ROUTES.EXPLORER, {
+    project_uuid: undefined,
+    mission_uuid: undefined,
+    ...JSON.parse(JSON.stringify(route.query))
+  })
+});
+
+conditionalWatch(isListingMissions, () => {
+  $routerService?.routeTo(ROUTES.EXPLORER, {
+    project_uuid: project_uuid.value,
+    mission_uuid: undefined,
+    ...JSON.parse(JSON.stringify(route.query))
+  })
+});
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 
-const crumbs: Ref<CrumbType[]> = ref([
-  {name: 'All', entity: undefined, type: 'Projects', uuid: ''},
-]);
+const search = ref('')
+const file_type_filter = ref('MCAP')
 
+// update change on URL change
+watchEffect(() => {
+  project_uuid.value = route.query.project_uuid as string;
+  mission_uuid.value = route.query.mission_uuid as string
+  search.value = route.query.search as string || ''
+  file_type_filter.value = route.query.file_type_filter as string || 'MCAP'
+})
 
-const mcap_bag = ref(true);
-const column_index = ref(0);
+const refresh = ref(0);
 
-const onRowClick = (evt, row) => {
-  view_project(row);
-}
+const router = useRouter()
 
-const missionsQueryKey = computed(() => [
-  'missions',
-  crumbs.value[crumbs.value.length - 1].uuid,
-]);
+watch(search, async () => {
+  await router.push({query: {...route.query, search: search.value}})
+  refresh.value++;
+})
 
-const filesQueryKey = computed(() => [
-  'files',
-  crumbs.value[crumbs.value.length - 1].uuid,
-]);
-const missionsQueryEnabled = computed(
-    () => crumbs.value[crumbs.value.length - 1].type === 'Missions',
-);
-const filesQueryEnabled = computed(
-    () => crumbs.value[crumbs.value.length - 1].type === 'Files',
-);
+watch(file_type_filter, () => {
+  $routerService?.pushToQuery({file_type_filter: file_type_filter.value})
+  refresh.value++;
+});
+
 const $q = useQuasar();
 
-const projectsReturn = useQuery<Project[]>({
-  queryKey: ['projects'],
-  queryFn: allProjects,
-});
+const createNewProject = () => $q.dialog({
+  title: 'Create new project',
+  component: CreateProjectDialog,
+}).onOk(() => {
 
-const missionsReturn = useQuery({
-  queryKey: missionsQueryKey,
-  queryFn: () =>
-      missionsOfProject(crumbs.value[crumbs.value.length - 1].uuid),
-  enabled: missionsQueryEnabled,
-});
+  // TODO: set search to new project name....
+  // search.value = 'new project name'
 
-const filesReturn = useQuery({
-  queryKey: filesQueryKey,
-  queryFn: () => filesOfMission(crumbs.value[crumbs.value.length - 1].uuid),
-  enabled: filesQueryEnabled,
-});
+})
 
-function projectDeleted() {
-  column_index.value = 0;
-  crumbs.value = [
-    {name: 'All', entity: undefined, type: 'Projects', uuid: ''},
-  ];
-}
-
-const currentData = computed(() => {
-  if (column_index.value === 0) {
-    return projectsReturn.data?.value || [];
-  } else if (column_index.value === 1) {
-    return missionsReturn.data?.value || [];
-  } else if (column_index.value === 2) {
-    return (
-        filesReturn.data?.value?.filter((file) => {
-          return (
-              file.type ===
-              (mcap_bag.value ? FileType.MCAP : FileType.BAG)
-          );
-        }) || []
-    );
-  }
-  return [];
-});
-const loading = projectsReturn.isLoading;
-const selected = ref([]);
-
-const pagination = ref({
-  sortBy: 'name',
-  descending: false,
-  page: 1,
-  rowsPerPage: 10,
-});
-
-const project_columns = [
-  {
-    name: 'Project',
-    required: true,
-    label: 'Project',
-    align: 'left',
-    field: (row: Project) => row.name,
-    format: (val: string) => `${val}`,
-    sortable: true,
-    style: 'width:  10%; max-width: 10%; min-width: 10%;',
+const createNewMission = () => $q.dialog({
+  title: 'Create new mission',
+  component: CreateMissionDialog,
+  componentProps: {
+    project_uuid: project_uuid.value
   },
-  {
-    name: 'Description',
-    required: true,
-    label: 'Description',
-    align: 'left',
-    field: (row: Project) => row.description || '',
-    format: (val: string) => `${val}`,
-    sortable: true,
-    style: 'width:  60%; max-width: 60%; min-width: 60%;',
-  },
+}).onOk(() => {
 
-  {
-    name: 'Creator',
-    required: true,
-    label: 'Creator',
-    align: 'left',
-    field: (row: Project) => (row.creator ? row.creator.name : ''),
-    format: (val: number) => `${val}`,
-    sortable: true,
-    style: 'width:  10%; max-width: 10%; min-width: 10%;',
-  },
-  {
-    name: 'Created',
-    required: true,
-    label: 'Created',
-    align: 'left',
-    field: (row: Project) => row.createdAt,
-    format: (val: string) => formatDate(new Date(val)),
-    sortable: true,
-  },
-  {
-    name: 'NrOfMissions',
-    required: true,
-    label: '# Missions',
-    align: 'left',
-    field: (row: Project) => row.missions.length,
-    format: (val: number) => `${val}`,
-    sortable: true,
-    style: 'width: 120px;',
-  },
-  {
-    name: 'projectaction',
-    label: 'Action',
-    align: 'center',
-  },
-];
-const mission_columns = [
-  {
-    name: 'Mission',
-    required: true,
-    label: 'Mission',
-    align: 'left',
-    field: (row: Mission) => row.name,
-    format: (val: string) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'Created',
-    required: true,
-    label: 'Created',
-    align: 'left',
-    field: (row: Mission) => row.createdAt,
-    format: (val: string) => formatDate(new Date(val)),
-  },
-  {
-    name: 'NrOfFiles',
-    required: true,
-    label: 'Nr of Files',
-    align: 'left',
-    field: (row: Mission) => row.files.length,
-    format: (val: number) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'missionaction',
-    label: 'Action',
-    align: 'center',
-  },
-];
+  // ...
 
-const file_columns = [
-  {
-    name: 'File',
-    required: true,
-    label: 'File',
-    align: 'left',
-    field: (row: FileEntity) => row.filename,
-    format: (val: string) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'Created',
-    required: true,
-    label: 'Created',
-    align: 'left',
-    field: (row: FileEntity) => row.date,
-    format: (val: string) => formatDate(new Date(val)),
-  },
-  {
-    name: 'Size',
-    required: true,
-    label: 'Size',
-    align: 'left',
-    field: (row: FileEntity) => row.size,
-    format: formatSize,
-    sortable: true,
-    sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
-        a.size - b.size,
-  },
-  {
-    name: 'fileaction',
-    required: true,
-    label: 'Action',
-    align: 'center',
-  },
-];
-const columns = [project_columns, mission_columns, file_columns];
+})
 
-function view_project(project: Project) {
-
-  console.log('view_project', project);
-
-  // update URL param with project.uuid
-  $routerService?.routeTo(ROUTES.EXPLORER, {project_uuid: project.uuid});
-
-  crumbs.value.push({
-    name: project.name,
-    entity: project,
-    type: 'Missions',
-    uuid: project.uuid,
-  });
-  missionsReturn.refetch();
-  column_index.value = 1;
-}
-
-function view_mission(mission: Mission) {
-
-  // update URL param with mission.uuid
-  $routerService?.routeTo(ROUTES.EXPLORER, {mission_uuid: mission.uuid});
-
-  crumbs.value.push({
-    name: mission.name,
-    uuid: mission.uuid,
-    type: 'Files',
-    entity: mission,
-  });
-  filesReturn.refetch();
-  column_index.value = 2;
-}
-
-function view_file(file: FileEntity) {
-  $routerService?.routeTo(ROUTES.FILE, {uuid: file.uuid});
-}
-
-function navigate(crumb: CrumbType) {
-  const index = crumbs.value.findIndex((c) => c.uuid === crumb.uuid);
-  crumbs.value = crumbs.value.slice(0, index + 1);
-  column_index.value = index;
-
-  console.log('navigate', crumb);
-
-}
-
-function create() {
-  if (column_index.value === 0) {
-
-    $q.dialog({
-      title: 'Create new project',
-      component: CreateProjectDialog,
-    });
-
-  } else if (column_index.value === 1) {
-    $q.dialog({
-      title: 'Create new mission',
-      component: CreateMissionDialog,
-      style: 'max-width: 1500px',
-      componentProps: {
-        project: crumbs.value[crumbs.value.length - 1].entity,
-      },
-    });
-  } else if (column_index.value === 2) {
-    $q.dialog({
-      title: 'Create new file',
-      component: CreateFileDialog,
-      persistent: false,
-      style: 'max-width: 1500px',
-      componentProps: {
-        mission: crumbs.value[crumbs.value.length - 1].entity,
-      },
-    });
-  }
-}
-
-function refresh() {
-  if (column_index.value === 0) {
-    projectsReturn.refetch();
-  } else if (column_index.value === 1) {
-    missionsReturn.refetch();
-  } else if (column_index.value === 2) {
-    filesReturn.refetch();
-  }
-}
-
-function move(mission: Mission) {
-  $q.dialog({
-    title: 'Move mission',
-    component: MoveMission,
-    persistent: false,
-    style: 'max-width: 1500px',
-    componentProps: {mission: mission},
-  });
-}
 
 </script>
