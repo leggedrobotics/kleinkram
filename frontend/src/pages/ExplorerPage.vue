@@ -4,10 +4,9 @@
 
   <div class="q-mb-md">
 
-    <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
 
-    <div class="flex justify-between items-center q-mt-md" v-if="isListingProjects">
-      <div></div>
+    <div class="flex justify-between q-mv-md" v-if="isListingProjects">
+      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
       <q-btn
           color="primary"
           label="Create Project"
@@ -15,25 +14,73 @@
       />
     </div>
 
-    <div class="flex justify-between items-center q-mt-md" v-if="isListingMissions">
-      <div></div>
-      <q-btn
-          color="primary"
-          label="Create Mission"
-          @click="createNewMission"
-      />
+    <div class="flex justify-between q-mv-md" v-if="isListingMissions">
+      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+      <div>
+
+        <q-btn
+            class="q-mr-md"
+            color="primary"
+            outline
+            label="Manage Access"
+            @click="manageProjectAccess"
+        >
+          <q-tooltip :delay="600">
+            Manage how can access this project.
+          </q-tooltip>
+        </q-btn>
+
+        <q-btn
+            color="primary"
+            label="Create Mission"
+            @click="createNewMission"
+        />
+
+      </div>
+
     </div>
 
-    <div class="flex justify-between items-center q-mt-md" v-if="isListingFiles">
-      <div></div>
-      <q-btn
-          color="primary"
-          label="Upload File"
-          @click="() => $q.notify('Not implemented yet! Use upload page instead.')"
-      />
+    <div class="flex justify-between q-mv-md" v-if="isListingFiles">
+      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+
+      <div>
+
+        <q-btn
+            class="q-mr-md"
+            color="primary"
+            outline
+            label="Move Mission"
+            @click="moveMissionToDifferentProject">
+
+          <q-tooltip :delay="600">
+            Move the mission to a different project.
+          </q-tooltip>
+
+        </q-btn>
+
+        <q-btn
+            color="primary"
+            label="Upload File"
+            @click="() => $q.notify('Not implemented yet! Use upload page instead.')"
+        />
+      </div>
     </div>
 
   </div>
+
+  <q-card class="q-pa-md q-mb-md" flat bordered v-if="isListingMissions">
+    <q-card-section class="container">
+
+      <h2 class="text-h5" style="font-weight: bold">
+        {{ project?.name }}
+      </h2>
+
+      <span>
+        {{ project?.description }}
+      </span>
+
+    </q-card-section>
+  </q-card>
 
   <q-card class="q-pa-md q-mb-xl" flat bordered>
 
@@ -109,6 +156,9 @@ import ROUTES from "src/router/routes";
 import CreateMissionDialog from "src/dialogs/CreateMissionDialog.vue";
 import TableSearchHeader from "components/explorer_page/ExplorerPageTableSearchHeader.vue";
 import {conditionalWatch, useDisplayType} from "src/hooks/utils";
+import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
+import MoveMissionDialog from "src/dialogs/MoveMissionDialog.vue";
+import {useProjectQuery} from "src/hooks/customQueryHooks";
 
 const $routerService: RouterService | undefined = inject('$routerService')
 const route = useRoute()
@@ -150,6 +200,7 @@ conditionalWatch(isListingMissions, () => {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+const {data: project} = useProjectQuery(project_uuid)
 
 const search = ref('')
 const file_type_filter = ref('MCAP')
@@ -182,10 +233,7 @@ const createNewProject = () => $q.dialog({
   title: 'Create new project',
   component: CreateProjectDialog,
 }).onOk(() => {
-
-  // TODO: set search to new project name....
-  // search.value = 'new project name'
-
+  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
 })
 
 const createNewMission = () => $q.dialog({
@@ -195,9 +243,27 @@ const createNewMission = () => $q.dialog({
     project_uuid: project_uuid.value
   },
 }).onOk(() => {
+  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
+})
 
-  // ...
+const manageProjectAccess = () => $q.dialog({
+  title: 'Manage Access',
+  component: AccessRightsDialog,
+  componentProps: {
+    project_uuid: project_uuid.value
+  },
+}).onOk(() => {
+  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
+})
 
+const moveMissionToDifferentProject = () => $q.dialog({
+  title: 'Move Mission',
+  component: MoveMissionDialog,
+  componentProps: {
+    mission: mission_uuid.value
+  },
+}).onOk(() => {
+  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
 })
 
 

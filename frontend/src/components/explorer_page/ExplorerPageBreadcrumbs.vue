@@ -1,5 +1,5 @@
 <template>
-  <div class="row q-mb-md">
+  <div class="row q-mt-md">
     <div>
       <q-breadcrumbs>
         <q-breadcrumbs-el

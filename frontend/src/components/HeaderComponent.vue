@@ -48,9 +48,8 @@ import ROUTES from 'src/router/routes';
 import ProfileComponent from 'components/ProfileComponent.vue';
 
 const main_menu = [
-  {title: 'Home', icon: 'home', to: ROUTES.HOME.path},
-  {title: 'Datatable', icon: 'table_chart', to: ROUTES.DATATABLE.path},
-  {title: 'Explorer', icon: 'explore', to: ROUTES.EXPLORER.path},
+  {title: 'Explorer', icon: 'table_chart', to: ROUTES.EXPLORER.path},
+  {title: 'Datatable', icon: 'table_rows', to: ROUTES.DATATABLE.path},
   {title: 'Upload', icon: 'cloud_upload', to: ROUTES.UPLOAD.path},
   {title: 'Analysis', icon: 'analytics', to: ROUTES.ACTION.path},
   {title: 'Access Rights', icon: 'lock', to: ROUTES.ACCESSRIGHTS.path},

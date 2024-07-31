@@ -70,7 +70,7 @@
             class="cursor-pointer"
             @click.stop
         >
-          <q-menu>
+          <q-menu auto-close>
             <q-list>
               <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
                 <q-item-section>View Missions</q-item-section>
@@ -81,7 +81,7 @@
               <q-item clickable v-ripple disabled>
                 <q-item-section>Configure Tags</q-item-section>
               </q-item>
-              <q-item clickable v-ripple disabled>
+              <q-item clickable v-ripple @click="() => manageAccessRights(props.row.uuid)">
                 <q-item-section>Manage Access</q-item-section>
               </q-item>
               <q-item clickable v-ripple disabled>
@@ -107,7 +107,7 @@
             class="cursor-pointer"
             @click.stop
         >
-          <q-menu>
+          <q-menu auto-close>
             <q-list>
               <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
                 <q-item-section>View Files</q-item-section>
@@ -143,7 +143,7 @@
             class="cursor-pointer"
             @click.stop
         >
-          <q-menu>
+          <q-menu auto-close>
             <q-list>
               <q-item clickable v-ripple @click="(e) => onRowClick(e, props.row)">
                 <q-item-section>View</q-item-section>
@@ -179,9 +179,10 @@ import {filesOfMission} from "src/services/queries/file";
 import ROUTES from "src/router/routes";
 import {useRoute, useRouter} from "vue-router";
 import {DataType, getColumns} from "components/explorer_page/explorer_page_table_columns";
-import MoveMission from "components/MoveMission.vue";
+import MoveMission from "src/dialogs/MoveMissionDialog.vue";
 import {FileType} from "src/enums/FILE_ENUM";
 import {FileEntity} from "src/types/FileEntity";
+import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const route = useRoute()
@@ -362,5 +363,13 @@ const moveMission = (mission: any) => {
   });
 }
 
+const manageAccessRights = (project_uuid: string) => {
+  $q.dialog({
+    component: AccessRightsDialog,
+    componentProps: {
+      project_uuid: project_uuid,
+    },
+  });
+}
 
 </script>

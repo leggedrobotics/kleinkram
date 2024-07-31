@@ -93,7 +93,7 @@
 
       <q-card-actions align="right">
         <q-btn flat label="Close" color="red" v-close-popup/>
-        <q-btn label="Create Project" color="primary" v-close-popup @click="submitNewProject"
+        <q-btn label="Create Project" color="primary" @click="submitNewProject"
                :disable="!hasValidInput"/>
       </q-card-actions>
 
@@ -107,7 +107,7 @@ import {ref} from "vue";
 import {createProject} from "src/services/mutations/project";
 import {AxiosError} from "axios";
 
-const {dialogRef} = useDialogPluginComponent();
+const {dialogRef, onDialogOK} = useDialogPluginComponent();
 
 const projectNameInput = ref<QInput>()
 const newProjectName = ref('')
@@ -137,6 +137,8 @@ const submitNewProject = async () => {
     dialogRef.value?.show()
 
   });
+
+  onDialogOK()
 
 }
 
