@@ -203,7 +203,7 @@ def topics(
     full: Annotated[
         bool, typer.Option(help="As a table with additional parameters")
     ] = False,
-    # Todo add mission / project as optional argument as filenames are not unique
+    # Todo add mission / project as optional argument as filenames are not unique or handle multiple files
 ):
     """
     List topics for a file
