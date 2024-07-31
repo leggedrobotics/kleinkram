@@ -125,25 +125,25 @@ const {isListingProjects, isListingMissions, isListingFiles} = useDisplayType(pr
 
 conditionalWatch(isListingFiles, () => {
   $routerService?.routeTo(ROUTES.EXPLORER, {
+    ...JSON.parse(JSON.stringify(route.query)),
     project_uuid: project_uuid.value,
-    mission_uuid: mission_uuid.value,
-    ...JSON.parse(JSON.stringify(route.query))
+    mission_uuid: mission_uuid.value
   })
 })
 
 conditionalWatch(isListingProjects, () => {
   $routerService?.routeTo(ROUTES.EXPLORER, {
+    ...JSON.parse(JSON.stringify(route.query)),
     project_uuid: undefined,
-    mission_uuid: undefined,
-    ...JSON.parse(JSON.stringify(route.query))
+    mission_uuid: undefined
   })
 });
 
 conditionalWatch(isListingMissions, () => {
   $routerService?.routeTo(ROUTES.EXPLORER, {
+    ...JSON.parse(JSON.stringify(route.query)),
     project_uuid: project_uuid.value,
-    mission_uuid: undefined,
-    ...JSON.parse(JSON.stringify(route.query))
+    mission_uuid: undefined
   })
 });
 
