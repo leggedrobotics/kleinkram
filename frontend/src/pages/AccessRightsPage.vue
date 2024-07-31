@@ -143,7 +143,7 @@ import { Project } from 'src/types/Project';
 
 import { Notify, useQuasar } from 'quasar';
 import { AccessGroup } from 'src/types/AccessGroup';
-import AccessRightsDialog from 'components/AccessRightsDialog.vue';
+import AccessRightsDialog from 'components/dialog/AccessRightsDialog.vue';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { allProjects } from 'src/services/queries/project';
 import {

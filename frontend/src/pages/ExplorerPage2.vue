@@ -99,11 +99,11 @@ import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
 import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/TableHeader.vue";
-import CreateProjectDialog from "components/CreateProjectDialog.vue";
+import CreateProjectDialog from "components/dialog/CreateProjectDialog.vue";
 import {useQuasar} from "quasar";
 import {useRoute, useRouter} from "vue-router";
 import ROUTES from "src/router/routes";
-import CreateMissionDialog from "components/CreateMissionDialog.vue";
+import CreateMissionDialog from "components/dialog/CreateMissionDialog.vue";
 import TableSearchHeader from "components/explorer_page/TableSearchHeader.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService')
