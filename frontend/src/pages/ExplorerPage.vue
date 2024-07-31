@@ -7,11 +7,13 @@
 
     <div class="flex justify-between q-mv-md" v-if="isListingProjects">
       <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
-      <q-btn
-          color="primary"
-          label="Create Project"
-          @click="createNewProject"
-      />
+      <div>
+        <q-btn
+            color="primary"
+            label="Create Project"
+            @click="createNewProject"
+        />
+      </div>
     </div>
 
     <div class="flex justify-between q-mv-md" v-if="isListingMissions">
