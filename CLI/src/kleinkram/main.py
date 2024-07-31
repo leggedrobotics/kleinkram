@@ -244,7 +244,7 @@ def create_project(
     """
     Create a new project
     """
-    #Todo add required tags as option
+    #Todo add required tags as option.
     try:
         url = "/project/create"
         response = client.post(
