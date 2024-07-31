@@ -6,7 +6,7 @@
         <div class="text-h6">Create New Project</div>
       </q-card-section>
 
-      <q-card-section style="max-height: 50vh; height: 350px; margin: 0; padding: 0" class="scroll">
+      <q-card-section style="max-height: 50vh; height: 420px; margin: 0; padding: 0" class="scroll">
 
         <q-tabs
             v-model="tab"
@@ -26,8 +26,9 @@
         <q-tab-panels v-model="tab" class="q-pa-lg">
           <q-tab-panel name="meta_data">
 
-            <p style="padding-bottom: 20px">
-              Create a new project by providing a name and description. The project name must be globally unique.
+            <p>
+              Create a new project by providing a name and description. The project name must be globally unique,
+              additionally you must provide a brief description of the project.
             </p>
 
             <q-input
@@ -36,7 +37,7 @@
                 outlined
                 autofocus
                 style="padding-bottom: 30px"
-                label="Project Name"
+                label="Project Name *"
                 :rules="[
               val => !!val || 'A project name cannot be empty!' ,
               val => !invalidProjectNames.includes(val) || 'A project with that name already exists!'
@@ -48,10 +49,10 @@
 
             <q-input
                 v-model="newProjectDescription"
+                type="textarea"
                 outlined
-                autofocus
-                style="padding-bottom: 30px"
-                label="Project Description"
+                style="padding-bottom: 10px"
+                label="Project Description *"
                 :rules="[val => !!val || 'Project Description is required']"
                 @update:model-value="hasValidInput = !!newProjectName && !!newProjectDescription"
             />
@@ -60,12 +61,28 @@
 
           <q-tab-panel name="tags">
             <div class="text-h6">Configure Tags</div>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            Tags can be used to enforce the addition of certain metadata to every mission of the project.
+            Tags could be for example the name of the robot, the location of the mission, etc.
+
+            <q-skeleton v-if="true" style="height: 200px; margin-top: 20px">
+              <div class="q-pa-md">
+                Comming soon...
+              </div>
+            </q-skeleton>
+
           </q-tab-panel>
 
           <q-tab-panel name="manage_access">
             <div class="text-h6">Manage Access</div>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            By default all user of the organization can view your project. External users cannot.
+            <br/>
+            You can add groups or individual users to your project to give them access to it.
+
+            <q-skeleton v-if="true" style="height: 200px; margin-top: 20px">
+              <div class="q-pa-md">
+                Comming soon...
+              </div>
+            </q-skeleton>
           </q-tab-panel>
 
         </q-tab-panels>
@@ -124,5 +141,3 @@ const submitNewProject = async () => {
 }
 
 </script>
-
-<style scoped></style>

@@ -45,3 +45,7 @@ q-page {
 body:has(.q-dialog__backdrop) .transparent-on-open-dialog {
   opacity: 0.6;
 }
+
+textarea {
+  resize: none !important;
+}
