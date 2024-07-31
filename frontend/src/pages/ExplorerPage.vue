@@ -52,7 +52,7 @@
       </Suspense>
 
       <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh">
-        <q-tooltip delay="600"> Refetch the Data </q-tooltip>
+        <q-tooltip :delay="600"> Refetch the Data</q-tooltip>
       </q-btn>
 
     </q-card-section>
