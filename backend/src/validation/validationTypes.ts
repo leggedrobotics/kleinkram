@@ -30,13 +30,11 @@ export class StringArrayValidate {
 }
 
 export class BooleanValidate {
-    @IsBoolean()
     @Type(() => Boolean)
     value: boolean;
 }
 
 export class DateStringValidate {
-    @IsDateString()
     @IsNotEmpty()
     @Type(() => Date)
     value: Date;

@@ -229,7 +229,7 @@ watch(
 );
 const projectsReturn = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => allProjects(500, 0, 'name'),
 });
 const projects = projectsReturn.data;
 

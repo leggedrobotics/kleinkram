@@ -6,8 +6,27 @@ import { TagType } from 'src/types/TagType';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 
-export const allProjects = async () => {
-    const response = await axios.get('/project');
+export const allProjects = async (
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending: boolean = false,
+    searchParams?: {
+        name: string;
+    },
+) => {
+    const params: Record<string, any> = {
+        take,
+        skip,
+        sortBy,
+        descending,
+    };
+    if (searchParams && searchParams.name) {
+        params['searchParams'] = searchParams;
+    }
+    const response = await axios.get('/project', {
+        params,
+    });
     return response.data;
 };
 

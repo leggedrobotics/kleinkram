@@ -108,7 +108,8 @@ export class MissionService {
                     }),
                 ),
             userUUID,
-        ).take(take)
+        )
+            .take(take)
             .skip(skip)
             .getMany();
     }
@@ -135,7 +136,8 @@ export class MissionService {
                 .leftJoinAndSelect('mission.project', 'project')
                 .leftJoinAndSelect('mission.creator', 'creator'),
             userUUID,
-        ).skip(skip)
+        )
+            .skip(skip)
             .take(take)
             .getMany();
     }

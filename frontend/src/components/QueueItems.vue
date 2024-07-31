@@ -83,7 +83,7 @@ import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 import { ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { FileLocation, FileState } from 'src/enum/QUEUE_ENUM';
+import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
 import { Project } from 'src/types/Project';
 import { currentQueue } from 'src/services/queries/queue';

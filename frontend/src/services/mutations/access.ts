@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { AccessGroupRights } from 'src/enum/ACCESS_RIGHTS';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export const addUsersToProject = async (
     userUUId: string,

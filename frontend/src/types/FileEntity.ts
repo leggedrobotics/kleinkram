@@ -1,4 +1,4 @@
-import { FileType } from 'src/enum/FILE_ENUM';
+import { FileType } from 'src/enums/FILE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';

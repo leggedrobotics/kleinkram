@@ -23,9 +23,9 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { DataType } from 'src/enum/TAG_TYPES';
+import { DataType } from 'src/enums/TAG_TYPES';
 import { Notify, useQuasar } from 'quasar';
-import AddTagDialog from 'components/AddTagDialog.vue';
+import AddTagDialog from 'src/dialogs/AddTagDialog.vue';
 import { Mission } from 'src/types/Mission';
 import { Tag } from 'src/types/Tag';
 import { getMission } from 'src/services/queries/mission';

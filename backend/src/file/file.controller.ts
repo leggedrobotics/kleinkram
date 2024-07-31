@@ -14,14 +14,11 @@ import {
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
-    QueryOptionalBoolean,
     QueryOptionalDate,
-    QueryOptionalNumber,
     QuerySkip,
     QueryOptionalString,
     QueryOptionalUUID,
     QueryString,
-    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
@@ -38,7 +35,7 @@ export class FileController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
-        return await this.fileService.findAll(user.uuid, skip, take);
+        return await this.fileService.findAll(user.uuid, take, skip);
     }
 
     @Get('filteredByNames')
@@ -56,8 +53,8 @@ export class FileController {
             missionName,
             topics,
             user.uuid,
-            skip,
             take,
+            skip,
         );
     }
 
@@ -69,9 +66,9 @@ export class FileController {
         @QueryOptionalUUID('missionUUID') missionUUID: string,
         @QueryOptionalDate('startDate') startDate: Date | undefined,
         @QueryOptionalDate('endDate') endDate: Date | undefined,
-        @QueryOptionalString('topics') topics: string,
-        @QueryOptionalBoolean('andOr') andOr: boolean,
-        @QueryOptionalBoolean('mcapBag') mcapBag: boolean,
+        @Query('topics') topics: string,
+        @Query('andOr') andOr: boolean,
+        @Query('mcapBag') mcapBag: boolean,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -86,8 +83,8 @@ export class FileController {
             andOr,
             mcapBag,
             user.uuid,
-            skip,
             take,
+            skip,
         );
     }
 
@@ -122,8 +119,12 @@ export class FileController {
 
     @Get('ofMission')
     @CanReadMission()
-    async getFilesOfMission(@QueryUUID('uuid') uuid: string) {
-        return this.fileService.findByMission(uuid);
+    async getFilesOfMission(
+        @QueryUUID('uuid') uuid: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.fileService.findByMission(uuid, take, skip);
     }
 
     @Put(':uuid')

@@ -168,6 +168,65 @@ export const QueryDate = createParamDecorator(
     },
 );
 
+export const QueryProjectSortBy = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === '' || value === undefined) {
+            return 'uuid'; // default value
+        }
+
+        // check if value is a valid field
+        const fields = ['uuid', 'name', 'description', 'creator', 'createdAt'];
+
+        if (!fields.includes(value)) {
+            throw new BadRequestException('Parameter is not a valid field');
+        }
+
+        const object = plainToInstance(StringValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException('Parameter is not a valid Number');
+        });
+
+        return value;
+    },
+);
+
+export const QueryProjectSearchParam = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return new Map<string, string>();
+        }
+
+        // check if it is a valid key
+        const validKeys = ['name'];
+        const key = Object.keys(value)[0];
+        if (!validKeys.includes(key)) {
+            throw new BadRequestException('Parameter is not a valid key');
+        }
+
+        // remove empty values
+        Object.keys(value).forEach((key) => {
+            if (value[key] === '') {
+                delete value[key];
+            }
+        });
+
+        // check if every value is a string
+        Object.keys(value).forEach((key) => {
+            if (typeof value[key] !== 'string') {
+                throw new BadRequestException('Parameter is not a valid value');
+            }
+        });
+
+        return value;
+    },
+);
+
 export const QueryOptionalDate = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -176,7 +235,6 @@ export const QueryOptionalDate = createParamDecorator(
         if (value === undefined) {
             return;
         }
-
         const object = plainToInstance(DateStringValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(

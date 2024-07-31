@@ -1,4 +1,4 @@
-import { ActionState } from 'src/enum/QUEUE_ENUM';
+import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 
