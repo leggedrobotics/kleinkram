@@ -6,7 +6,6 @@
             v-for="crumb in crumbs"
             :key="crumb.uuid"
             :label="crumb.name"
-            clickable
             @click="crumb.click"
         >
         </q-breadcrumbs-el>
@@ -69,3 +68,14 @@ watchEffect(() => {
 
 
 </script>
+
+<style scoped>
+.q-breadcrumbs__el {
+  cursor: pointer;
+}
+
+.q-breadcrumbs--last .q-breadcrumbs__el,
+.q-breadcrumbs__separator {
+  cursor: default;
+}
+</style>
