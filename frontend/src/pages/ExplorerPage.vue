@@ -22,6 +22,18 @@
 
         <q-btn
             class="q-mr-md"
+            color="red"
+            outline
+            label="Delete Project"
+            @click="deleteProjectDialog"
+        >
+          <q-tooltip :delay="600">
+            Delete the project (only if no missions are present).
+          </q-tooltip>
+        </q-btn>
+
+        <q-btn
+            class="q-mr-md"
             color="primary"
             outline
             label="Manage Access"
@@ -152,7 +164,7 @@ import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadc
 import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/ExplorerPageTableHeader.vue";
 import CreateProjectDialog from "src/dialogs/CreateProjectDialog.vue";
-import {useQuasar} from "quasar";
+import {Notify, useQuasar} from "quasar";
 import {useRoute, useRouter} from "vue-router";
 import ROUTES from "src/router/routes";
 import CreateMissionDialog from "src/dialogs/CreateMissionDialog.vue";
@@ -161,6 +173,8 @@ import {conditionalWatch, useDisplayType} from "src/hooks/utils";
 import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
 import MoveMissionDialog from "src/dialogs/MoveMissionDialog.vue";
 import {useProjectQuery} from "src/hooks/customQueryHooks";
+import {deleteProject} from "src/services/mutations/project";
+import {useQueryClient} from "@tanstack/vue-query";
 
 const $routerService: RouterService | undefined = inject('$routerService')
 const route = useRoute()
@@ -202,7 +216,10 @@ conditionalWatch(isListingMissions, () => {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-const {data: project} = useProjectQuery(project_uuid)
+const {data: project, isFetching, isFetched} = useProjectQuery(project_uuid)
+watch(project, () => console.log('project', project.value))
+watch(isFetching, () => console.log('isFetching', isFetching.value, project.value))
+watch(isFetched, () => console.log('isFetched', isFetched.value, project.value))
 
 const search = ref('')
 const file_type_filter = ref('MCAP')
@@ -248,6 +265,7 @@ const createNewMission = () => $q.dialog({
   refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
 })
 
+
 const manageProjectAccess = () => $q.dialog({
   title: 'Manage Access',
   component: AccessRightsDialog,
@@ -267,6 +285,47 @@ const moveMissionToDifferentProject = () => $q.dialog({
 }).onOk(() => {
   refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
 })
+
+const queryClient = useQueryClient()
+const deleteProjectDialog = () => {
+
+  const project_uuid_val = project_uuid.value
+  if (!project_uuid_val) return;
+
+
+  $q.dialog({
+    title: 'Delete Project',
+    message: 'Are you sure you want to delete this project?',
+    ok: {
+      label: 'Yes',
+      color: 'negative',
+    },
+    cancel: {
+      label: 'No',
+      color: 'primary',
+    },
+  }).onOk(async () => {
+
+    // navigate back to the projects view
+    $routerService?.routeTo(ROUTES.EXPLORER, {
+      ...JSON.parse(JSON.stringify(route.query)),
+      project_uuid: undefined,
+      mission_uuid: undefined
+    })
+
+    await deleteProject(project_uuid_val).catch(
+        (e) => Notify.create({message: e.message, color: 'negative'})
+    )
+    // invalidate queries
+    await queryClient.invalidateQueries({queryKey: ['projects']})
+    await queryClient.invalidateQueries({queryKey: ['project', project_uuid]})
+
+    // TODO: remove the following line
+    refresh.value++;
+
+  })
+
+}
 
 
 </script>

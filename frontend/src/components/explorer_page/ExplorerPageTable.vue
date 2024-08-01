@@ -84,7 +84,7 @@
               <q-item clickable v-ripple @click="() => manageAccessRights(props.row.uuid)">
                 <q-item-section>Manage Access</q-item-section>
               </q-item>
-              <q-item clickable v-ripple disabled>
+              <q-item clickable v-ripple @click="() => deleteProjectDialog(props.row.uuid)">
                 <q-item-section>Delete</q-item-section>
               </q-item>
             </q-list>
@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 
-import {QTable, useQuasar} from "quasar";
+import {Notify, QTable, useQuasar} from "quasar";
 import {inject, ref, watch} from "vue";
 import {allProjects} from "src/services/queries/project";
 import {missionsOfProject} from "src/services/queries/mission";
@@ -183,6 +183,8 @@ import MoveMission from "src/dialogs/MoveMissionDialog.vue";
 import {FileType} from "src/enums/FILE_ENUM";
 import {FileEntity} from "src/types/FileEntity";
 import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
+import {deleteProject} from "src/services/mutations/project";
+import {useQueryClient} from "@tanstack/vue-query";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const route = useRoute()
@@ -352,6 +354,7 @@ watch(() => props.refresh, async () => {
 })
 
 const $q = useQuasar()
+const queryClient = useQueryClient();
 
 const moveMission = (mission: any) => {
   $q.dialog({
@@ -370,6 +373,36 @@ const manageAccessRights = (project_uuid: string) => {
       project_uuid: project_uuid,
     },
   });
+}
+
+const deleteProjectDialog = (project_uuid: string) => {
+
+  $q.dialog({
+    title: 'Delete Project',
+    message: 'Are you sure you want to delete this project?',
+    ok: {
+      label: 'Yes',
+      color: 'negative',
+    },
+    cancel: {
+      label: 'No',
+      color: 'primary',
+    },
+  }).onOk(async () => {
+
+    await deleteProject(project_uuid).catch(
+        (e) => Notify.create({message: e.message, color: 'negative'})
+    )
+
+    // invalidate queries
+    await queryClient.invalidateQueries({queryKey: ['projects']})
+    await queryClient.invalidateQueries({queryKey: ['project', project_uuid]})
+
+    // TODO: remove the following line
+    await loadData()
+
+  })
+
 }
 
 </script>

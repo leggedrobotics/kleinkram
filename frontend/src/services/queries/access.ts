@@ -10,6 +10,7 @@ export const canAddAccessGroup = async (
     const response = await axios.get('/access/canAddAccessGroupToProject', {
         params: { uuid: project_uuid },
     });
+
     return response.data;
 };
 
