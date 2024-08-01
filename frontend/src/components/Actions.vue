@@ -46,7 +46,7 @@ const props = defineProps<{
 
 const missions = useQuery<Action[]>({
     queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
-    queryFn: () => actions(props.project_uuid, props.mission_uuid),
+    queryFn: () => actions(props.mission_uuid),
     refetchInterval: 1000,
 });
 
