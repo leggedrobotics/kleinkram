@@ -20,15 +20,6 @@
       @row-click="onRowClick"
   >
 
-    <template v-slot:pagination>
-      <CustomPagination
-          :page="pagination.page"
-          :rows-per-page="pagination.rowsPerPage"
-          :nrFetched="pagination.nrFetched"
-          @update:page="setPage"
-      />
-
-    </template>
 
     <template v-slot:loading>
       <q-inner-loading showing color="primary"/>
@@ -82,7 +73,6 @@ import ROUTES from "src/router/routes";
 import {file_columns} from "components/explorer_page/explorer_page_table_columns";
 import {QueryHandler} from "src/services/URLHandler";
 import {useQuery} from "@tanstack/vue-query";
-import CustomPagination from "components/explorer_page/CustomPagination.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -101,8 +91,7 @@ const pagination = computed(() => {
   return {
     page: props.url_handler.page,
     rowsPerPage: props.url_handler.take,
-    nrFetched: props.url_handler.nr_fetched,
-    rowsNumber: props.url_handler?.take * (props.url_handler?.page + 1)
+    rowsNumber: props.url_handler?.rowsNumber
   }
 })
 
@@ -117,20 +106,23 @@ const queryKey = computed(() => ['files', props.url_handler.mission_uuid, props.
 
 
 
-const {data, isLoading} = useQuery({
+const {data: rawData, isLoading} = useQuery({
   queryKey: queryKey,
   queryFn: ()=>filesOfMission(
       props.url_handler.mission_uuid as string,
-      props.url_handler?.take + 1,
+      props.url_handler?.take,
       props.url_handler?.skip,
       props.url_handler.file_type,
       props.url_handler?.search_params.name,
   )
 })
+const data = computed(()=>rawData.value? rawData.value[0]: [])
+const total = computed(()=>rawData.value? rawData.value[1]: 0)
 
-watch(()=>data.value, ()=>{
+
+watch(()=>total.value, ()=>{
   if(data.value){
-    props.url_handler.nr_fetched = data.value.length
+    props.url_handler.rowsNumber = total.value
   }})
 
 

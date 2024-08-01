@@ -368,7 +368,7 @@ export class FileService {
       skip: number,
       filename?: string,
       fileType?: FileType,
-    ) {
+    ):Promise<[FileEntity[], number]> {
         const where: Record<string, any> = { mission: { uuid: missionUUID } };
         if (filename) {
             where.filename = ILike(`%${filename}%`);
@@ -376,7 +376,7 @@ export class FileService {
         if (fileType) {
             where.type = fileType;
         }
-        return this.fileRepository.find({
+        return this.fileRepository.findAndCount({
             where,
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
             take,

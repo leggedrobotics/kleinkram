@@ -20,7 +20,7 @@ export class QueryHandler {
 	project_uuid?: string;
 	search_params: typeof DEFAULT_SEARCH;
 	file_type?: FileType;
-	nr_fetched: number;
+	rowsNumber: number;
 
 	constructor(
 		page: number = DEFAULT_PAGINATION.page,
@@ -40,7 +40,7 @@ export class QueryHandler {
 		this.mission_uuid = mission_uuid;
 		this.search_params = search_params || DEFAULT_SEARCH;
 		this.file_type = file_type || DEFAULT_FILE_TYPE;
-		this.nr_fetched = take + 1
+		this.rowsNumber = 0
 	}
 
 	get skip() {
@@ -125,7 +125,7 @@ export class QueryHandler {
 		return {
 			search_params: this.search_params,
 			skip: this.skip,
-			take: this.take + 1,
+			take: this.take,
 			sortBy: this.sortBy,
 			descending: this.descending
 		};

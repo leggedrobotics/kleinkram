@@ -70,7 +70,7 @@ export class MissionService {
         search?: string,
         descending?: boolean,
         sortBy?: string,
-    ): Promise<Mission[]> {
+    ): Promise<[Mission[], number]> {
         const query = this.missionRepository.createQueryBuilder('mission')
           .leftJoinAndSelect('mission.project', 'project')
           .leftJoinAndSelect('mission.creator', 'creator')
@@ -86,7 +86,7 @@ export class MissionService {
         if(sortBy) {
             query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
         }
-        return query.getMany();
+        return query.getManyAndCount();
 
     }
 

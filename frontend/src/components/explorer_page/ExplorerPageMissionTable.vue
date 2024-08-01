@@ -18,16 +18,6 @@
       @row-click="onRowClick"
   >
 
-    <template v-slot:pagination="scope">
-      <CustomPagination
-          :page="scope.pagination.page"
-          :rows-per-page="scope.pagination.rowsPerPage"
-          :rows-number="scope.pagination.rowsNumber"
-          @update:page="scope.setPagination"
-      />
-
-    </template>
-
     <template v-slot:loading>
       <q-inner-loading showing color="primary"/>
     </template>
@@ -82,7 +72,6 @@ import { mission_columns} from "components/explorer_page/explorer_page_table_col
 import MoveMission from "src/dialogs/MoveMissionDialog.vue";
 import {QueryHandler} from "src/services/URLHandler";
 import {useQuery} from "@tanstack/vue-query";
-import CustomPagination from "components/explorer_page/CustomPagination.vue";
 
 const props = defineProps({
   url_handler: {
@@ -91,14 +80,23 @@ const props = defineProps({
   }
 })
 
+const pagination = computed(() => {
+  return {
+    page: props.url_handler.page,
+    rowsPerPage: props.url_handler.take,
+    rowsNumber: props.url_handler?.rowsNumber
+  }
+})
+
+
 const selected = ref([])
 const queryKey = computed(() => ['missions', props.url_handler.project_uuid, props.url_handler?.queryKey])
 
-const {data, isLoading} = useQuery({
+const {data: rawData, isLoading} = useQuery({
   queryKey: queryKey,
   queryFn: ()=>missionsOfProject(
       props.url_handler.project_uuid as string,
-      props.url_handler?.take + 1,
+      props.url_handler?.take,
       props.url_handler?.skip,
       props.url_handler?.sortBy,
       props.url_handler?.descending,
@@ -106,11 +104,14 @@ const {data, isLoading} = useQuery({
   )
 })
 
-watch(()=>data.value, ()=>{
+
+const data = computed(()=>rawData.value? rawData.value[0]: [])
+const total = computed(()=>rawData.value? rawData.value[1]: 0)
+
+watch(()=>total.value, ()=>{
   if(data.value){
-    props.url_handler.nr_fetched = data.value.length
-  }
-})
+    props.url_handler.rowsNumber = total.value
+  }})
 
 
 const onRowClick = async (_: Event, row: any) => {

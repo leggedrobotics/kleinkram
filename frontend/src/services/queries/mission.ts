@@ -76,7 +76,7 @@ export const missionsOfProject = async (
     searchParams?: {
         name: string;
     },
-    ): Promise<Mission[]> => {
+    ): Promise<[Mission[], number]> => {
     const params: Record<string, any> = {
         uuid: projectUUID,
         take,
@@ -90,8 +90,13 @@ export const missionsOfProject = async (
     const response = await axios.get(`/mission/filtered`, {
         params
     });
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        return [[], 0];
+    }
     const users: Record<string, User> = {};
-    return response.data.map((mission: any) => {
+    const res = data.map((mission: any) => {
         const project = new Project(
             mission.project.uuid,
             mission.project.name,
@@ -162,4 +167,5 @@ export const missionsOfProject = async (
         });
         return missionEntity;
     });
+    return [res, total];
 };

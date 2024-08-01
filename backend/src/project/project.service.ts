@@ -39,7 +39,7 @@ export class ProjectService {
         sortBy: string,
         descending: boolean,
         searchParams: Map<string, string>,
-    ): Promise<Project[]> {
+    ): Promise<[Project[], number]> {
         // convert take and skip to numbers
         take = Number(take);
         skip = Number(skip);
@@ -86,7 +86,7 @@ export class ProjectService {
             });
         }
 
-        return await baseQuery.skip(skip).take(take).getMany();
+        return baseQuery.skip(skip).take(take).getManyAndCount();
     }
 
     async findOne(uuid: string): Promise<Project> {

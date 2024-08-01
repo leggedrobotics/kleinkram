@@ -2,31 +2,22 @@
 
 
   <q-table
+      v-if="!isLoading"
       flat bordered
-      ref="tableRef"
-      :pagination="url_handler.pagination"
+      :pagination="pagination2"
       v-model:selected="selected"
-      :rows="data"
+      :rows-per-page-options="[1,2,3, 10, 20, 50, 100]"
+      :rows="rawData? rawData[0]: []"
       :columns="explorer_page_table_columns as any"
       row-key="uuid"
       :loading="isLoading"
-      binary-state-sort
       wrap-cells
       virtual-scroll
       separator="none"
       selection="multiple"
       @row-click="onRowClick"
+      @request="onRequest"
   >
-
-    <template v-slot:pagination="scope">
-      <CustomPagination
-          :page="scope.pagination.page"
-          :rows-per-page="scope.pagination.rowsPerPage"
-          :rows-number="scope.pagination.rowsNumber"
-          @update:page="scope.setPagination"
-      />
-
-    </template>
 
     <template v-slot:loading>
       <q-inner-loading showing color="primary"/>
@@ -82,7 +73,6 @@ import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
 import {QueryHandler} from "src/services/URLHandler";
 import {useQuery} from "@tanstack/vue-query";
 import {filteredProjects} from "src/services/queries/project";
-import CustomPagination from "components/explorer_page/CustomPagination.vue";
 
 const $q = useQuasar()
 
@@ -92,24 +82,52 @@ const props = defineProps({
     required: true
   }
 })
+function onRequest({pagination, filter, getCellValue, sorting}: any) {
+  console.log('pagination', pagination)
+  pagination2.value.rowsPerPage = pagination.rowsPerPage
+}
+
+
+
+// const pagination = ref({
+//     page: props.url_handler.page,
+//     rowsPerPage: props.url_handler.take,
+//     rowsNumber: props.url_handler?.rowsNumber,
+//     sortBy: props.url_handler.sortBy,
+//     descending: props.url_handler.descending,
+//   }
+// )
 
 const queryKey = computed(() => ['projects', props.url_handler?.queryKey])
 const selected = ref([])
 
-const {data, isLoading} = useQuery({
+const {data: rawData, isLoading} = useQuery({
   queryKey: queryKey,
   queryFn: ()=>filteredProjects(
-      props.url_handler?.take + 1,
+      props.url_handler?.take,
       props.url_handler?.skip,
       props.url_handler?.sortBy,
       props.url_handler?.descending,
       props.url_handler?.search_params,
   ),
+
 })
 
-watch(()=>data.value, ()=>{
+const data = computed(()=>rawData.value? rawData.value[0]: [])
+const total = computed(()=>rawData.value? rawData.value[1]: 0)
+
+const pagination2 = ref({
+  sortBy: 'desc',
+  descending: false,
+  page: 1,
+  rowsPerPage: 3,
+  rowsNumber: 0
+})
+
+watch(()=>total.value, ()=>{
   if(data.value){
-    props.url_handler.nr_fetched = data.value.length
+    props.url_handler.rowsNumber = total.value
+    pagination2.value.rowsNumber = total.value
   }})
 
 const onRowClick = async (_: Event, row: any) => {

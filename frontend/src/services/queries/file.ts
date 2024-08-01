@@ -192,45 +192,47 @@ export const filesOfMission = async (
     skip: number,
     fileType?: FileType,
     filename?: string,
-): Promise<FileEntity[]> => {
+): Promise<[FileEntity[], number]> => {
     const params: Record<string, string|number> = { uuid: missionUUID, take, skip };
     if (fileType) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
     const response = await axios.get('file/ofMission', {
         params,
     });
-    if (response.data.length === 0) {
-        return [];
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        return [[], 0];
     }
     const users: Record<string, User> = {};
     let missionCreator: User | undefined =
-        users[response.data[0].mission.creator.uuid];
+        users[data[0].mission.creator.uuid];
     if (!missionCreator) {
         missionCreator = new User(
-            response.data[0].mission.creator.uuid,
-            response.data[0].mission.creator.name,
-            response.data[0].mission.creator.email,
-            response.data[0].mission.creator.role,
-            response.data[0].mission.creator.avatarUrl,
+            data[0].mission.creator.uuid,
+            data[0].mission.creator.name,
+            data[0].mission.creator.email,
+            data[0].mission.creator.role,
+            data[0].mission.creator.avatarUrl,
             [],
-            new Date(response.data[0].mission.creator.createdAt),
-            new Date(response.data[0].mission.creator.updatedAt),
-            new Date(response.data[0].mission.creator.deletedAt),
+            new Date(data[0].mission.creator.createdAt),
+            new Date(data[0].mission.creator.updatedAt),
+            new Date(data[0].mission.creator.deletedAt),
         );
-        users[response.data[0].mission.creator.uuid] = missionCreator;
+        users[data[0].mission.creator.uuid] = missionCreator;
     }
     const mission = new Mission(
         missionUUID,
-        response.data[0].mission.name,
+        data[0].mission.name,
         undefined,
         [],
         [],
         missionCreator,
-        new Date(response.data[0].mission.createdAt),
-        new Date(response.data[0].mission.updatedAt),
-        new Date(response.data[0].mission.deletedAt),
+        new Date(data[0].mission.createdAt),
+        new Date(data[0].mission.updatedAt),
+        new Date(data[0].mission.deletedAt),
     );
-    return response.data.map((file: any) => {
+    const res = data.map((file: any) => {
         let fileCreator: User | undefined = users[file.creator.uuid];
         if (!fileCreator) {
             fileCreator = new User(
@@ -274,4 +276,5 @@ export const filesOfMission = async (
         mission.files.push(newFile);
         return newFile;
     });
+    return [res, total];
 };
