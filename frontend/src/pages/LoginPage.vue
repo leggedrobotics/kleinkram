@@ -15,7 +15,6 @@
                     rounded
                     size="md"
                     label="Sign in with Google"
-                    no-caps
                     class="full-width"
                     @click="login()"
                 ></q-btn>

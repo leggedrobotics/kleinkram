@@ -7,7 +7,7 @@
             :key="crumb.uuid"
             @click="crumb.click"
         >
-          <q-btn flat v-if="!isLastCrumb(crumb)" style="padding: 4px 8px" no-caps>
+          <q-btn flat v-if="!isLastCrumb(crumb)" style="padding: 4px 8px">
             {{ crumb.name }}
           </q-btn>
 
