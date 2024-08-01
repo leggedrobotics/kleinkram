@@ -59,9 +59,7 @@ export class QueueService {
             where: { uuid: driveCreate.missionUUID },
         });
         const creator = await this.userservice.findOneByUUID(user.uuid);
-        console.log(driveCreate)
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
-        console.log(fileId)
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,

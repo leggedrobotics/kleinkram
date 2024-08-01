@@ -4,7 +4,7 @@
   <q-table
       flat bordered
       ref="tableRef"
-      :pagination="url_handler.pagination"
+      :pagination="pagination"
       v-model:selected="selected"
       :rows="data"
       :columns="mission_columns as any"
@@ -19,35 +19,11 @@
   >
 
     <template v-slot:pagination="scope">
-
-      <span class="q-table__bottom-item">
-        {{ (scope.pagination.page - 1) * scope.pagination.rowsPerPage }} - {{
-          Math.min(
-              (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage, scope.pagination.rowsNumber)
-        }} of {{
-          (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage < scope.pagination.rowsNumber ? 'many' : scope.pagination.rowsNumber
-        }}
-      </span>
-
-
-      <q-btn
-          icon="chevron_left"
-          color="grey-8"
-          round
-          dense
-          flat
-          :disable="scope.isFirstPage"
-          @click="scope.prevPage"
-      />
-
-      <q-btn
-          icon="chevron_right"
-          color="grey-8"
-          round
-          dense
-          flat
-          :disable="scope.isLastPage"
-          @click="scope.nextPage"
+      <CustomPagination
+          :page="scope.pagination.page"
+          :rows-per-page="scope.pagination.rowsPerPage"
+          :rows-number="scope.pagination.rowsNumber"
+          @update:page="scope.setPagination"
       />
 
     </template>
@@ -106,6 +82,7 @@ import { mission_columns} from "components/explorer_page/explorer_page_table_col
 import MoveMission from "src/dialogs/MoveMissionDialog.vue";
 import {QueryHandler} from "src/services/URLHandler";
 import {useQuery} from "@tanstack/vue-query";
+import CustomPagination from "components/explorer_page/CustomPagination.vue";
 
 const props = defineProps({
   url_handler: {
@@ -121,7 +98,7 @@ const {data, isLoading} = useQuery({
   queryKey: queryKey,
   queryFn: ()=>missionsOfProject(
       props.url_handler.project_uuid as string,
-      props.url_handler?.take,
+      props.url_handler?.take + 1,
       props.url_handler?.skip,
       props.url_handler?.sortBy,
       props.url_handler?.descending,
@@ -131,7 +108,7 @@ const {data, isLoading} = useQuery({
 
 watch(()=>data.value, ()=>{
   if(data.value){
-    props.url_handler.hasNextPage = data.value.length > props.url_handler.take
+    props.url_handler.nr_fetched = data.value.length
   }
 })
 

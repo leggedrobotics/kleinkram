@@ -4,7 +4,9 @@
   <q-table
       flat bordered
       ref="tableRef"
-      :pagination="url_handler.pagination"
+      :pagination="pagination"
+      :rows-per-page-options="[2, 10, 20, 50, 100]"
+      @update:pagination="setPagination"
       v-model:selected="selected"
       :rows="data"
       :columns="file_columns as any"
@@ -18,36 +20,12 @@
       @row-click="onRowClick"
   >
 
-    <template v-slot:pagination="scope">
-
-      <span class="q-table__bottom-item">
-        {{ (scope.pagination.page - 1) * scope.pagination.rowsPerPage }} - {{
-          Math.min(
-              (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage, scope.pagination.rowsNumber)
-        }} of {{
-          (scope.pagination.page - 1) * scope.pagination.rowsPerPage + scope.pagination.rowsPerPage < scope.pagination.rowsNumber ? 'many' : scope.pagination.rowsNumber
-        }}
-      </span>
-
-
-      <q-btn
-          icon="chevron_left"
-          color="grey-8"
-          round
-          dense
-          flat
-          :disable="scope.isFirstPage"
-          @click="scope.prevPage"
-      />
-
-      <q-btn
-          icon="chevron_right"
-          color="grey-8"
-          round
-          dense
-          flat
-          :disable="scope.isLastPage"
-          @click="scope.nextPage"
+    <template v-slot:pagination>
+      <CustomPagination
+          :page="pagination.page"
+          :rows-per-page="pagination.rowsPerPage"
+          :nrFetched="pagination.nrFetched"
+          @update:page="setPage"
       />
 
     </template>
@@ -104,6 +82,7 @@ import ROUTES from "src/router/routes";
 import {file_columns} from "components/explorer_page/explorer_page_table_columns";
 import {QueryHandler} from "src/services/URLHandler";
 import {useQuery} from "@tanstack/vue-query";
+import CustomPagination from "components/explorer_page/CustomPagination.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -114,14 +93,35 @@ const props = defineProps({
   }
 })
 
+function setPagination(pagination: any){
+  props.url_handler.take = pagination.rowsPerPage
+}
+
+const pagination = computed(() => {
+  return {
+    page: props.url_handler.page,
+    rowsPerPage: props.url_handler.take,
+    nrFetched: props.url_handler.nr_fetched,
+    rowsNumber: props.url_handler?.take * (props.url_handler?.page + 1)
+  }
+})
+
+function setPage(page:number){
+  props.url_handler?.setPage(page)
+}
+
+
+
 const selected = ref([])
 const queryKey = computed(() => ['files', props.url_handler.mission_uuid, props.url_handler?.queryKey, props.url_handler.file_type])
+
+
 
 const {data, isLoading} = useQuery({
   queryKey: queryKey,
   queryFn: ()=>filesOfMission(
       props.url_handler.mission_uuid as string,
-      props.url_handler?.take,
+      props.url_handler?.take + 1,
       props.url_handler?.skip,
       props.url_handler.file_type,
       props.url_handler?.search_params.name,
@@ -130,7 +130,7 @@ const {data, isLoading} = useQuery({
 
 watch(()=>data.value, ()=>{
   if(data.value){
-    props.url_handler.hasNextPage = data.value.length > props.url_handler.take
+    props.url_handler.nr_fetched = data.value.length
   }})
 
 

@@ -20,7 +20,7 @@ export class QueryHandler {
 	project_uuid?: string;
 	search_params: typeof DEFAULT_SEARCH;
 	file_type?: FileType;
-	hasNextPage: boolean = true;
+	nr_fetched: number;
 
 	constructor(
 		page: number = DEFAULT_PAGINATION.page,
@@ -40,6 +40,7 @@ export class QueryHandler {
 		this.mission_uuid = mission_uuid;
 		this.search_params = search_params || DEFAULT_SEARCH;
 		this.file_type = file_type || DEFAULT_FILE_TYPE;
+		this.nr_fetched = take + 1
 	}
 
 	get skip() {
@@ -124,24 +125,12 @@ export class QueryHandler {
 		return {
 			search_params: this.search_params,
 			skip: this.skip,
-			take: this.take,
+			take: this.take + 1,
 			sortBy: this.sortBy,
 			descending: this.descending
 		};
 	}
 
-	/**
-	 * Relevant for the pagination component
-	 */
-	get pagination(){
-		return {
-			page: this.page,
-			rowsPerPage: this.take,
-			rowsNumber: this.hasNextPage ? this.take * this.page + 1 : this.take * this.page,
-			sortBy: this.sortBy,
-			descending: this.descending,
-		};
-	}
 }
 
 
