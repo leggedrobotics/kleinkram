@@ -1,7 +1,7 @@
 <template>
   <q-header bordered class="bg-white text-grey-9">
     <q-toolbar>
-      <q-btn flat dense round icon="menu" v-show="$q.screen.lt.md">
+      <q-btn flat dense round icon="sym_o_menu" v-show="$q.screen.lt.md">
         <q-menu auto-close style="width: 280px">
           <q-list>
             <q-item
@@ -11,7 +11,7 @@
                 :to="item.to"
             >
               <q-item-section avatar>
-                <q-icon :name="item.icon"/>
+                <q-icon :name="item.icon" style="font-weight: bold"/>
               </q-item-section>
               <q-item-section>
                 <q-item-label>{{ item.title }}</q-item-label>
@@ -21,12 +21,13 @@
         </q-menu>
       </q-btn>
 
-        <q-toolbar-title shrink style="margin-right: 30px" class="cursor-pointer" @click="$router.push('/')">
-          Kleinkram
-        </q-toolbar-title>
+      <q-toolbar-title shrink style="margin-right: 30px; font-weight: 500" class="cursor-pointer" @click="$router.push('/')">
+        Kleinkram
+      </q-toolbar-title>
 
       <q-tabs v-show="$q.screen.gt.sm" inline-label>
         <q-route-tab
+            no-caps
             v-for="item in main_menu"
             :key="item.title"
             :label="item.title"
@@ -48,10 +49,10 @@ import ROUTES from 'src/router/routes';
 import ProfileComponent from 'components/ProfileComponent.vue';
 
 const main_menu = [
-  {title: 'Explorer', icon: 'table_chart', to: ROUTES.EXPLORER.path},
-  {title: 'Datatable', icon: 'table_rows', to: ROUTES.DATATABLE.path},
-  {title: 'Upload', icon: 'cloud_upload', to: ROUTES.UPLOAD.path},
-  {title: 'Analysis', icon: 'analytics', to: ROUTES.ACTION.path},
-  {title: 'Access Rights', icon: 'lock', to: ROUTES.ACCESSRIGHTS.path},
+  {title: 'Explorer', icon: 'sym_o_table_chart', to: ROUTES.EXPLORER.path},
+  {title: 'Datatable', icon: 'sym_o_table_rows_narrow', to: ROUTES.DATATABLE.path},
+  {title: 'Upload', icon: 'sym_o_upload', to: ROUTES.UPLOAD.path},
+  {title: 'Actions', icon: 'sym_o_analytics', to: ROUTES.ACTION.path},
+  {title: 'Access Rights', icon: 'sym_o_lock', to: ROUTES.ACCESSRIGHTS.path},
 ];
 </script>

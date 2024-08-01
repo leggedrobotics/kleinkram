@@ -1,13 +1,13 @@
 <template>
   <q-btn
-      class="q-mr-md"
       color="primary"
       outline
-      label="Move Mission"
+      icon="sym_o_move_down"
+      label="Move"
       @click="moveMissionToDifferentProject">
 
-    <q-tooltip :delay="600">
-      Move the mission to a different project.
+    <q-tooltip>
+      Move the Mission another Project
     </q-tooltip>
 
   </q-btn>

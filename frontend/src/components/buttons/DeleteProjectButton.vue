@@ -1,14 +1,13 @@
 <template>
 
   <q-btn
-      class="q-mr-md"
       color="red"
       outline
-      label="Delete Project"
+      icon="sym_o_delete"
       @click="deleteProjectDialog"
   >
-    <q-tooltip :delay="600">
-      Delete the project (only if no missions are present).
+    <q-tooltip>
+      Delete the Project
     </q-tooltip>
   </q-btn>
 

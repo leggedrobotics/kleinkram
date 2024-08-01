@@ -30,7 +30,7 @@
                 label="Save"
                 color="primary"
                 @click="save"
-                icon="save"
+                icon="sym_o_save"
             />
         </div>
         <div class="col-2">
@@ -39,7 +39,7 @@
                 label="Manage Access Rights"
                 color="orange"
                 @click="openAccessRightsModal"
-                icon="lock"
+                icon="sym_o_lock"
             />
         </div>
         <div class="col-1" style="margin-right: 15px">
@@ -48,7 +48,7 @@
                 label="Delete"
                 color="red"
                 @click="_deleteProject"
-                icon="delete"
+                icon="sym_o_delete"
                 :disable="project.missions.length > 0"
             >
                 <q-tooltip class="bg-accent" v-if="project.missions.length > 0">

@@ -1,13 +1,13 @@
 <template>
   <q-btn
-      class="q-mr-md"
       color="primary"
       outline
-      label="Manage Access"
+      icon="sym_o_lock"
+      label="Access Rights"
       @click="manageProjectAccess"
   >
-    <q-tooltip :delay="600">
-      Manage how can access this project.
+    <q-tooltip>
+      Manage Access to the Project
     </q-tooltip>
   </q-btn>
 </template>

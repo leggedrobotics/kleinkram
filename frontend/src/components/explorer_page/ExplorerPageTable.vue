@@ -32,7 +32,7 @@
 
 
       <q-btn
-          icon="chevron_left"
+          icon="sym_o_chevron_left"
           color="grey-8"
           round
           dense
@@ -42,7 +42,7 @@
       />
 
       <q-btn
-          icon="chevron_right"
+          icon="sym_o_chevron_right"
           color="grey-8"
           round
           dense
@@ -64,7 +64,7 @@
             flat
             round
             dense
-            icon="more_vert"
+            icon="sym_o_more_vert"
             unelevated
             color="primary"
             class="cursor-pointer"
@@ -101,7 +101,7 @@
             flat
             round
             dense
-            icon="more_vert"
+            icon="sym_o_more_vert"
             unelevated
             color="primary"
             class="cursor-pointer"
@@ -137,7 +137,7 @@
             flat
             round
             dense
-            icon="more_vert"
+            icon="sym_o_more_vert"
             unelevated
             color="primary"
             class="cursor-pointer"

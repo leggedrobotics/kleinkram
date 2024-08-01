@@ -70,10 +70,10 @@
                             style="min-width: 300px"
                         >
                             <template v-slot:prepend>
-                                <q-icon name="attach_file" />
+                                <q-icon name="sym_o_attach_file" />
                             </template>
                             <template v-slot:append>
-                                <q-icon name="cancel" @click="files = []" />
+                                <q-icon name="sym_o_cancel" @click="files = []" />
                             </template>
                         </q-file>
                     </div>

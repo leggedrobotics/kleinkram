@@ -7,7 +7,7 @@
 
         <q-banner inline-actions class="text-white bg-red" style="margin: 10px 0">
           <template v-slot:avatar>
-            <q-icon name="warning" color="white"/>
+            <q-icon name="sym_o_warning" color="white" style="font-weight: bold; font-size: 36px; padding: 2px"/>
           </template>
           This app is in active development. Data will be reset without notice!
         </q-banner>

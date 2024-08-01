@@ -3,7 +3,7 @@
     <div>
       <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects...">
         <template v-slot:append>
-          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
         </template>
       </q-input>
     </div>
@@ -13,7 +13,7 @@
     <div>
       <q-input debounce="300" outlined v-model="search" label="Mission Name" placeholder="Search for missions...">
         <template v-slot:append>
-          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
         </template>
       </q-input>
     </div>
@@ -23,7 +23,7 @@
     <div>
       <q-input debounce="300" outlined v-model="search" label="File Name" placeholder="Search for files...">
         <template v-slot:append>
-          <q-icon name="close" @click="search = ''" class="cursor-pointer"/>
+          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
         </template>
       </q-input>
 

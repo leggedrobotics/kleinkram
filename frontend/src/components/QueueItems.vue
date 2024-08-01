@@ -8,7 +8,7 @@
                     hint="File Processing since: "
                 >
                     <template v-slot:prepend>
-                        <q-icon name="event" class="cursor-pointer">
+                        <q-icon name="sym_o_event" class="cursor-pointer">
                             <q-popup-proxy
                                 cover
                                 transition-show="scale"
@@ -29,7 +29,7 @@
                     </template>
 
                     <template v-slot:append>
-                        <q-icon name="access_time" class="cursor-pointer">
+                        <q-icon name="sym_o_access_time" class="cursor-pointer">
                             <q-popup-proxy
                                 cover
                                 transition-show="scale"

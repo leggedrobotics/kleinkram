@@ -1,5 +1,26 @@
 <template>
-  <q-card class="q-pa-md q-mt-xl q-mb-md" flat bordered>
+
+  <div class="q-mb-md q-mt-xl">
+    <div class="flex justify-between q-mv-md">
+
+      <div></div>
+
+      <ButtonGroup >
+        <q-btn outline color="primary" icon="sym_o_edit" label="Edit File" disable>
+          <q-tooltip> Edit File </q-tooltip>
+        </q-btn>
+        <q-btn color="primary" icon="sym_o_download" label="Edit File" disable>
+          <q-tooltip> Edit File </q-tooltip>
+        </q-btn>
+        <q-btn icon="sym_o_more_horiz" outline disabled>
+          <q-tooltip> More Actions </q-tooltip>
+        </q-btn>
+      </ButtonGroup>
+
+    </div>
+  </div>
+
+  <q-card class="q-pa-md q-mb-md" flat bordered>
     <q-card-section>
       <div class="text-h4 q-mb-md">File: {{ data?.filename }}</div>
       <q-separator class="q-mt-md" />
@@ -49,7 +70,7 @@
             <q-btn
                 flat
                 label="Download"
-                icon="cloud_download"
+                icon="sym_o_download"
                 @click="_downloadFile"
                 class="full-width"
             ></q-btn>
@@ -58,7 +79,7 @@
             <q-btn
                 flat
                 label="Copy public link"
-                icon="content_copy"
+                icon="sym_o_content_copy"
                 @click="_copyLink"
                 class="full-width"
             ></q-btn>
@@ -93,7 +114,7 @@
       <q-btn
           v-else
           label="Got to Mcap"
-          icon="turn_slight_right"
+          icon="sym_o_turn_slight_right"
           @click="redirectToMcap"
       >
       </q-btn>
@@ -110,6 +131,11 @@ import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import {FileEntity} from 'src/types/FileEntity';
 import {downloadFile, fetchFile, filesOfMission,} from 'src/services/queries/file';
+import ButtonGroup from "components/ButtonGroup.vue";
+import DeleteProjectButton from "components/buttons/DeleteProjectButton.vue";
+import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
+import ManageProjectAccessButton from "components/buttons/ManageProjectAccessButton.vue";
+import MoveMissionButton from "components/buttons/MoveMissionButton.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
