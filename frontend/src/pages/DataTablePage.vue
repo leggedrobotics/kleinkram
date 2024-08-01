@@ -1,6 +1,8 @@
 <template>
-    <q-card class="q-pa-md" flat bordered>
-        <div class="row q-gutter-sm">
+  <q-card class="q-pa-md q-mt-xl q-mb-md" flat bordered>
+    <q-card-section>
+
+    <div class="row q-gutter-sm">
             <div class="col-12 col-md-2">
                 <q-btn-dropdown
                     v-model="dd_open"
@@ -148,18 +150,21 @@
             </div>
         </div>
 
-        <q-separator class="q-ma-md" />
-        <QTable
+    </q-card-section>
+    <q-card-section>
+        <q-table
+            flat bordered
+            separator="none"
             ref="tableRef"
             v-model:pagination="pagination"
             v-model:selected="selected"
-            title="Datasets"
             :rows="data"
             :columns="columns"
             row-key="uuid"
             :loading="loading"
             binary-state-sort
             selection="multiple"
+            @row-click="onRowClick"
         >
             <template v-slot:body-cell-action="props">
                 <q-td :props="props">
@@ -180,8 +185,9 @@
                     ></q-btn>
                 </q-td>
             </template>
-        </QTable>
-    </q-card>
+        </q-table>
+    </q-card-section>
+  </q-card>
 </template>
 <script setup lang="ts">
 import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
@@ -387,5 +393,12 @@ function openQDialog(file: FileEntity): void {
         },
     });
 }
+
+const onRowClick =  (_: Event, row: any) => {
+  $routerService?.routeTo(ROUTES.FILE, {
+    uuid: row.uuid,
+  })
+};
+
 </script>
 <style scoped></style>

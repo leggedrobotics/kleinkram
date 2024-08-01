@@ -4,8 +4,8 @@ body {
   overflow-y: scroll;
 }
 
-.q-layout--standard {
-  background-color: rgb(245 245 245);
+.q-layout--standard, .q-table thead {
+  background-color: whitesmoke;
 }
 
 q-page {
