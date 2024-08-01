@@ -1,13 +1,22 @@
 <template>
-  <div class="row q-mt-md">
+  <div class="row">
     <div>
       <q-breadcrumbs>
         <q-breadcrumbs-el
             v-for="crumb in crumbs"
             :key="crumb.uuid"
-            :label="crumb.name"
             @click="crumb.click"
         >
+          <q-btn flat v-if="!isLastCrumb(crumb)" style="padding: 4px 8px" no-caps>
+            {{ crumb.name }}
+          </q-btn>
+
+          <template v-else>
+            <span style="padding: 8px; cursor: default">
+              {{ crumb.name }}
+            </span>
+          </template>
+
         </q-breadcrumbs-el>
 
         <template v-if="isLoading">
@@ -66,16 +75,9 @@ watchEffect(() => {
   ]
 });
 
+const isLastCrumb = (crumb: any) => {
+  const idx = crumbs.value.findIndex((c: any) => c.uuid === crumb.uuid)
+  return idx === crumbs.value.length - 1;
+}
 
 </script>
-
-<style scoped>
-.q-breadcrumbs__el {
-  cursor: pointer;
-}
-
-.q-breadcrumbs--last .q-breadcrumbs__el,
-.q-breadcrumbs__separator {
-  cursor: default;
-}
-</style>
