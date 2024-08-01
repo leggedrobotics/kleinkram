@@ -3,83 +3,19 @@
   <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
   <div class="q-mb-md">
-
-
-    <div class="flex justify-between q-mv-md" v-if="isListingProjects">
+    <div class="flex justify-between q-mv-md">
       <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
-      <div>
-        <q-btn
-            color="primary"
-            label="Create Project"
-            @click="createNewProject"
-        />
+
+      <div v-if="isListingMissions">
+        <DeleteProjectButton @onSuccessfulDelete="onProjectDeletion" :project_uuid="project_uuid"/>
+        <ManageProjectAccessButton :project_uuid="project_uuid"/>
       </div>
-    </div>
 
-    <div class="flex justify-between q-mv-md" v-if="isListingMissions">
-      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
-      <div>
-
-        <q-btn
-            class="q-mr-md"
-            color="red"
-            outline
-            label="Delete Project"
-            @click="deleteProjectDialog"
-        >
-          <q-tooltip :delay="600">
-            Delete the project (only if no missions are present).
-          </q-tooltip>
-        </q-btn>
-
-        <q-btn
-            class="q-mr-md"
-            color="primary"
-            outline
-            label="Manage Access"
-            @click="manageProjectAccess"
-        >
-          <q-tooltip :delay="600">
-            Manage how can access this project.
-          </q-tooltip>
-        </q-btn>
-
-        <q-btn
-            color="primary"
-            label="Create Mission"
-            @click="createNewMission"
-        />
-
+      <div v-if="isListingFiles">
+        <MoveMissionButton :mission_uuid="mission_uuid"/>
       </div>
 
     </div>
-
-    <div class="flex justify-between q-mv-md" v-if="isListingFiles">
-      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
-
-      <div>
-
-        <q-btn
-            class="q-mr-md"
-            color="primary"
-            outline
-            label="Move Mission"
-            @click="moveMissionToDifferentProject">
-
-          <q-tooltip :delay="600">
-            Move the mission to a different project.
-          </q-tooltip>
-
-        </q-btn>
-
-        <q-btn
-            color="primary"
-            label="Upload File"
-            @click="() => $q.notify('Not implemented yet! Use upload page instead.')"
-        />
-      </div>
-    </div>
-
   </div>
 
   <q-card class="q-pa-md q-mb-md" flat bordered v-if="isListingMissions">
@@ -112,9 +48,17 @@
 
       </Suspense>
 
-      <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh">
-        <q-tooltip :delay="600"> Refetch the Data</q-tooltip>
-      </q-btn>
+      <div>
+
+        <q-btn outline @click="() => refresh++" color="grey-8" icon="refresh" class="q-mr-md">
+          <q-tooltip :delay="600"> Refetch the Data</q-tooltip>
+        </q-btn>
+
+        <CreateMissionButton :project_uuid="project_uuid" v-if="isListingMissions"/>
+        <CreateProjectButton v-if="isListingProjects"/>
+        <UploadFileButton v-if="isListingFiles"/>
+
+      </div>
 
     </q-card-section>
 
@@ -163,18 +107,17 @@ import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
 import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/ExplorerPageTableHeader.vue";
-import CreateProjectDialog from "src/dialogs/CreateProjectDialog.vue";
-import {Notify, useQuasar} from "quasar";
 import {useRoute, useRouter} from "vue-router";
 import ROUTES from "src/router/routes";
-import CreateMissionDialog from "src/dialogs/CreateMissionDialog.vue";
 import TableSearchHeader from "components/explorer_page/ExplorerPageTableSearchHeader.vue";
 import {conditionalWatch, useDisplayType} from "src/hooks/utils";
-import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
-import MoveMissionDialog from "src/dialogs/MoveMissionDialog.vue";
 import {useProjectQuery} from "src/hooks/customQueryHooks";
-import {deleteProject} from "src/services/mutations/project";
-import {useQueryClient} from "@tanstack/vue-query";
+import CreateMissionButton from "components/buttons/CreateMissionButton.vue";
+import CreateProjectButton from "components/buttons/CreateProjectButton.vue";
+import UploadFileButton from "components/buttons/UploadFileButton.vue";
+import DeleteProjectButton from "components/buttons/DeleteProjectButton.vue";
+import ManageProjectAccessButton from "components/buttons/ManageProjectAccessButton.vue";
+import MoveMissionButton from "components/buttons/MoveMissionButton.vue";
 
 const $routerService: RouterService | undefined = inject('$routerService')
 const route = useRoute()
@@ -246,86 +189,17 @@ watch(file_type_filter, () => {
   refresh.value++;
 });
 
-const $q = useQuasar();
 
-const createNewProject = () => $q.dialog({
-  title: 'Create new project',
-  component: CreateProjectDialog,
-}).onOk(() => {
-  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
-})
-
-const createNewMission = () => $q.dialog({
-  title: 'Create new mission',
-  component: CreateMissionDialog,
-  componentProps: {
-    project_uuid: project_uuid.value
-  },
-}).onOk(() => {
-  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
-})
-
-
-const manageProjectAccess = () => $q.dialog({
-  title: 'Manage Access',
-  component: AccessRightsDialog,
-  componentProps: {
-    project_uuid: project_uuid.value
-  },
-}).onOk(() => {
-  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
-})
-
-const moveMissionToDifferentProject = () => $q.dialog({
-  title: 'Move Mission',
-  component: MoveMissionDialog,
-  componentProps: {
-    mission: mission_uuid.value
-  },
-}).onOk(() => {
-  refresh.value++; // TODO: useQuery in ExplorerPageTable.vue and then use cache invalidation instead of refresh
-})
-
-const queryClient = useQueryClient()
-const deleteProjectDialog = () => {
-
-  const project_uuid_val = project_uuid.value
-  if (!project_uuid_val) return;
-
-
-  $q.dialog({
-    title: 'Delete Project',
-    message: 'Are you sure you want to delete this project?',
-    ok: {
-      label: 'Yes',
-      color: 'negative',
-    },
-    cancel: {
-      label: 'No',
-      color: 'primary',
-    },
-  }).onOk(async () => {
-
-    // navigate back to the projects view
-    $routerService?.routeTo(ROUTES.EXPLORER, {
-      ...JSON.parse(JSON.stringify(route.query)),
-      project_uuid: undefined,
-      mission_uuid: undefined
-    })
-
-    await deleteProject(project_uuid_val).catch(
-        (e) => Notify.create({message: e.message, color: 'negative'})
-    )
-    // invalidate queries
-    await queryClient.invalidateQueries({queryKey: ['projects']})
-    await queryClient.invalidateQueries({queryKey: ['project', project_uuid]})
-
-    // TODO: remove the following line
-    refresh.value++;
-
+const onProjectDeletion = () => {
+  // navigate back to the projects view
+  $routerService?.routeTo(ROUTES.EXPLORER, {
+    ...JSON.parse(JSON.stringify(route.query)),
+    project_uuid: undefined,
+    mission_uuid: undefined
   })
 
+  // TODO: remove the following line
+  refresh.value++;
 }
-
 
 </script>

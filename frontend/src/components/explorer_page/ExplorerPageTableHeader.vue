@@ -1,33 +1,31 @@
 <template>
-  <template v-if="isListingProjects">
-    <div>
+  <div>
+
+    <template v-if="isListingProjects">
       <h2 class="text-h5 q-mb-xs">Explore all Projects</h2>
       <HelpMessage
           text="You can only see projects on which you have at least view access on project level."
           link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
       />
-    </div>
-  </template>
+    </template>
 
-  <template v-if="isListingMissions">
-    <div>
+    <template v-if="isListingMissions">
       <h2 class="text-h6 q-mb-xs">Explore all Missions of Project</h2>
       <HelpMessage
           text="You can only see missions on which you have at least view access on project level or mission level."
           link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
       />
-    </div>
-  </template>
+    </template>
 
-  <template v-if="isListingFiles">
-    <div>
+    <template v-if="isListingFiles">
       <h2 class="text-h6 q-mb-xs">Explore all Files of Mission</h2>
       <HelpMessage
           text="You can only see files of missions you have access to."
           link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
       />
-    </div>
-  </template>
+    </template>
+
+  </div>
 </template>
 
 <script setup lang="ts">

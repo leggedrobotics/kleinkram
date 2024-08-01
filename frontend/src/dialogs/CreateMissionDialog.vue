@@ -24,14 +24,6 @@ import {ref, watch} from "vue";
 const {dialogRef, onDialogCancel} = useDialogPluginComponent();
 
 const {project_uuid} = defineProps<{ project_uuid: string }>()
-console.log(project_uuid)
 const {data: project, isFetched} = useProjectQuery(ref(project_uuid));
 
-watch([project, isFetched], () => {
-  console.log(project)
-  console.log(isFetched)
-})
-
 </script>
-
-<style scoped></style>
