@@ -6,7 +6,7 @@ import { TagType } from 'src/types/TagType';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 
-export const allProjects = async (
+export const filteredProjects = async (
     take: number,
     skip: number,
     sortBy: string,
@@ -14,7 +14,7 @@ export const allProjects = async (
     searchParams?: {
         name: string;
     },
-) => {
+):Promise<Project[]> => {
     const params: Record<string, any> = {
         take,
         skip,

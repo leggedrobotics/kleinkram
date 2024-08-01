@@ -145,7 +145,7 @@ import { Notify, useQuasar } from 'quasar';
 import { AccessGroup } from 'src/types/AccessGroup';
 import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { searchAccessGroups } from 'src/services/queries/access';
-import { allProjects } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import {
     addUserToAccessGroup,
     createAccessGroup,
@@ -211,7 +211,7 @@ const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name'),
 });
 
 const pagination = ref({

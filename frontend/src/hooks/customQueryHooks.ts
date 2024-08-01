@@ -3,7 +3,7 @@ import {useQuery, UseQueryReturnType} from "@tanstack/vue-query";
 import {Mission} from "src/types/Mission";
 import {getMission} from "src/services/queries/mission";
 import {Project} from "src/types/Project";
-import {getProject} from "src/services/queries/project";
+import {filteredProjects, getProject} from "src/services/queries/project";
 
 export const useMissionQuery = (mission_uuid: Ref<string | undefined>): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
@@ -20,3 +20,18 @@ export const useProjectQuery = (project_uuid: Ref<string | undefined>): UseQuery
     })
 }
 
+
+export const useAllProjectsQuery = (
+  take: number,
+  skip: number,
+  sortBy: string,
+  descending: boolean = false,
+  searchParams?: {
+      name: string;
+  },
+) => {
+    return useQuery<Project[], Error>({
+        queryKey: ['projects', {take, skip, sortBy, descending, searchParams}],
+        queryFn: () => filteredProjects(take, skip, sortBy, descending, searchParams),
+    });
+}

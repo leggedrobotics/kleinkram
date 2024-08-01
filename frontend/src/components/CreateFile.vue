@@ -107,7 +107,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import axios from 'axios';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
-import { allProjects } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import {
     confirmUpload,
@@ -122,7 +122,7 @@ const files = ref<File[]>([]);
 const selected_mission: Ref<Mission | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const queryClient = useQueryClient();
 

@@ -17,7 +17,7 @@ export type ProjectColumnType = {
 };
 
 
-const explorer_page_table_columns: Array<ProjectColumnType> = [
+export const explorer_page_table_columns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -73,7 +73,7 @@ const explorer_page_table_columns: Array<ProjectColumnType> = [
     },
 ];
 
-const mission_columns: Array<ProjectColumnType> = [
+export const mission_columns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -105,7 +105,7 @@ const mission_columns: Array<ProjectColumnType> = [
     },
 ];
 
-const file_columns: Array<ProjectColumnType> = [
+export const file_columns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -139,20 +139,3 @@ const file_columns: Array<ProjectColumnType> = [
         align: 'center',
     },
 ];
-
-export enum DataType {
-    PROJECTS = 'projects',
-    MISSIONS = 'missions',
-    FILES = 'files'
-}
-
-export const getColumns = (type: DataType): Array<ProjectColumnType> => {
-    switch (type) {
-        case DataType.PROJECTS:
-            return explorer_page_table_columns;
-        case DataType.MISSIONS:
-            return mission_columns;
-        case DataType.FILES:
-            return file_columns;
-    }
-}

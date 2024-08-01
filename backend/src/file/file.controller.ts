@@ -23,6 +23,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import {FileType} from "@common/enum";
 
 @Controller('file')
 export class FileController {
@@ -123,8 +124,10 @@ export class FileController {
         @QueryUUID('uuid') uuid: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+        @QueryOptionalString('filename') filename: string,
+        @QueryOptionalString('fileType') fileType: FileType,
     ) {
-        return this.fileService.findByMission(uuid, take, skip);
+        return this.fileService.findByMission(uuid, take, skip, filename, fileType);
     }
 
     @Put(':uuid')

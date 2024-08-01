@@ -71,13 +71,24 @@ export const missionsOfProject = async (
     projectUUID: string,
     take: number,
     skip: number,
-): Promise<Mission[]> => {
+    sortBy: string,
+    descending: boolean = false,
+    searchParams?: {
+        name: string;
+    },
+    ): Promise<Mission[]> => {
+    const params: Record<string, any> = {
+        uuid: projectUUID,
+        take,
+        skip,
+        sortBy,
+        descending,
+    };
+    if (searchParams && searchParams.name) {
+        params['search'] = searchParams.name;
+    }
     const response = await axios.get(`/mission/filtered`, {
-        params: {
-            uuid: projectUUID,
-            take,
-            skip
-        },
+        params
     });
     const users: Record<string, User> = {};
     return response.data.map((mission: any) => {

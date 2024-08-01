@@ -4,6 +4,7 @@ import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
 import { Topic } from 'src/types/Topic';
+import {FileType} from "src/enums/FILE_ENUM";
 
 export const fetchOverview = async (
     filename: string,
@@ -189,9 +190,14 @@ export const filesOfMission = async (
     missionUUID: string,
     take: number,
     skip: number,
+    fileType?: FileType,
+    filename?: string,
 ): Promise<FileEntity[]> => {
+    const params: Record<string, string|number> = { uuid: missionUUID, take, skip };
+    if (fileType) params['fileType'] = fileType;
+    if (filename) params['filename'] = filename;
     const response = await axios.get('file/ofMission', {
-        params: { uuid: missionUUID, take, skip },
+        params,
     });
     if (response.data.length === 0) {
         return [];

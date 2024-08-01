@@ -196,7 +196,7 @@ import { formatSize } from 'src/services/generalFormatting';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
-import { allProjects } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
@@ -217,7 +217,7 @@ const selected_project: Ref<Project | null> = ref(null);
 const dd_open = ref(false);
 const projectsReturn = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name', false),
+    queryFn: () => filteredProjects(500, 0, 'name', false),
 });
 const projects = projectsReturn.data;
 
@@ -226,7 +226,7 @@ const selected_mission: Ref<Mission | null> = ref(null);
 
 const { data: missions, refetch } = useQuery({
     queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || '', 500, 0),
     enabled: !!selected_project.value?.uuid,
 });
 

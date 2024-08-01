@@ -121,7 +121,7 @@ import { Notify } from 'quasar';
 import Action from 'components/Actions.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
-import { allProjects } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
 
@@ -133,7 +133,7 @@ const selected_mission: Ref<Mission | null> = ref(null);
 
 const { data } = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name'),
 });
 
 const { data: missions, refetch } = useQuery({

@@ -1,10 +1,12 @@
 <template>
-    <div class="q-pa-md">
-        <h1 class="text-h4">User Profile</h1>
-        <Suspense>
-            <vue-json-pretty :data="data" />
-        </Suspense>
-    </div>
+  <div class="q-pa-md">
+    <h1 class="text-h4">
+      User Profile
+    </h1>
+    <Suspense>
+      <vue-json-pretty :data="data" />
+    </Suspense>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import {Brackets, DataSource, ILike, Repository} from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -362,9 +362,22 @@ export class FileService {
         await this.fileRepository.query('DELETE FROM "file"');
     }
 
-    async findByMission(missionUUID: string, take: number, skip: number) {
+    async findByMission(
+      missionUUID: string,
+      take: number,
+      skip: number,
+      filename?: string,
+      fileType?: FileType,
+    ) {
+        const where: Record<string, any> = { mission: { uuid: missionUUID } };
+        if (filename) {
+            where.filename = ILike(`%${filename}%`);
+        }
+        if (fileType) {
+            where.type = fileType;
+        }
         return this.fileRepository.find({
-            where: { mission: { uuid: missionUUID } },
+            where,
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
             take,
             skip

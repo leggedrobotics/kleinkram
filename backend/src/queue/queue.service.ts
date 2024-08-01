@@ -15,9 +15,9 @@ import { UserService } from '../user/user.service';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 function extractFileIdFromUrl(url: string): string | null {
-    // Define the regex patterns for file and folder IDs
-    const filePattern = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-    const folderPattern = /\/drive\/folders\/([a-zA-Z0-9_-]+)/;
+    // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
+    const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
+    const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
 
     // Test the URL against the file pattern
     let match = url.match(filePattern);
@@ -34,6 +34,7 @@ function extractFileIdFromUrl(url: string): string | null {
     // Return null if no match is found
     return null;
 }
+
 
 @Injectable()
 export class QueueService {
@@ -58,8 +59,9 @@ export class QueueService {
             where: { uuid: driveCreate.missionUUID },
         });
         const creator = await this.userservice.findOneByUUID(user.uuid);
-
+        console.log(driveCreate)
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
+        console.log(fileId)
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,
