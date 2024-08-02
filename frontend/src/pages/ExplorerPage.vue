@@ -5,25 +5,13 @@
   <div class="q-mb-md">
     <div class="flex justify-between q-mv-md" >
       <ExplorerPageBreadcrumbs :url_handler="handler"/>
-      <ButtonGroup v-if="handler.isListingProjects">
-
-        <ManageProjectAccessButton :project_uuid="project_uuid"/>
-        <q-btn outline color="primary" icon="sym_o_sell" label="Metadata">
-          <q-tooltip> Manage Metadata Tags</q-tooltip>
-        </q-btn>
-        <DeleteProjectButton @onSuccessfulDelete="onProjectDeletion" :project_uuid="project_uuid"/>
-        <q-btn icon="sym_o_more_horiz" outline disabled>
-          <q-tooltip> More Actions</q-tooltip>
-        </q-btn>
-
-      </ButtonGroup>
 
       <ButtonGroup v-if="handler.isListingMissions">
         <ManageProjectAccessButton :project_uuid="project_uuid"/>
         <q-btn outline color="primary" icon="sym_o_sell" label="Metadata">
           <q-tooltip> Manage Metadata Tags</q-tooltip>
         </q-btn>
-        <DeleteProjectButton @onSuccessfulDelete="onProjectDeletion" :project_uuid="project_uuid"/>
+        <DeleteProjectButton :project_uuid="project_uuid"/>
         <q-btn icon="sym_o_more_horiz" outline disabled>
           <q-tooltip> More Actions</q-tooltip>
         </q-btn>
@@ -232,52 +220,5 @@ function getComponent(){
   return ExplorerPageProjectTable
 }
 
-const $q = useQuasar();
-
-const createNewProject = () => $q.dialog({
-  title: 'Create new project',
-  component: CreateProjectDialog,
-}).onOk(() => {
-})
-
-const createNewMission = () => $q.dialog({
-  title: 'Create new mission',
-  component: CreateMissionDialog,
-  componentProps: {
-    project_uuid: handler.value.project_uuid
-  },
-}).onOk(() => {
-})
-
-const manageProjectAccess = () => $q.dialog({
-  title: 'Manage Access',
-  component: AccessRightsDialog,
-  componentProps: {
-    project_uuid: handler.value.project_uuid
-  },
-}).onOk(() => {
-})
-
-const moveMissionToDifferentProject = () => $q.dialog({
-  title: 'Move Mission',
-  component: MoveMissionDialog,
-  componentProps: {
-    mission: handler.value.mission_uuid
-  },
-}).onOk(() => {
-})
-
-
-const onProjectDeletion = () => {
-  // navigate back to the projects view
-  $routerService?.routeTo(ROUTES.EXPLORER, {
-    ...JSON.parse(JSON.stringify(route.query)),
-    project_uuid: undefined,
-    mission_uuid: undefined
-  })
-
-  // TODO: remove the following line
-  refresh.value++;
-}
 
 </script>
