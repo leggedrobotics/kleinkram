@@ -1,13 +1,14 @@
 import axios from 'src/api/axios';
-import { Action } from 'src/types/Action';
+import {Action} from 'src/types/Action';
 
-export const actions = async (projectUUID: string, missionUUIDs: string) => {
+export const actions = async (missionUUID: string) => {
     const params = {
-        project_uuid: projectUUID,
-        mission_uuids: missionUUIDs,
+        mission_uuid: missionUUID,
+        take: 100,
+        skip: 0
     };
 
-    const response = await axios.get('/action/list', { params });
+    const response = await axios.get('/action/list', {params});
     return response.data.map((res: any) => {
         return new Action(
             res.uuid,
@@ -26,7 +27,7 @@ export const actionDetails = async (action_uuid: string) => {
         uuid: action_uuid,
     };
 
-    const response = await axios.get('/action/details', { params });
+    const response = await axios.get('/action/details', {params});
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),

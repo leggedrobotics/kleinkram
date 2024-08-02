@@ -138,7 +138,7 @@ const { data } = useQuery<Project[]>({
 
 const { data: missions, refetch } = useQuery({
     queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
+    queryFn: () => missionsOfProject(selected_project.value?.uuid || '', 100, 0),
     enabled: !!selected_project.value?.uuid,
 });
 

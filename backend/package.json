@@ -13,7 +13,7 @@
         "start:debug": "nest start --debug --watch",
         "start:prod": "node dist/main",
         "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-        "test": "jest --runInBand",
+        "test": "jest --runInBand --detectOpenHandles --forceExit",
         "test:verbose": "jest --silent=false",
         "typeorm": "typeorm-ts-node-commonjs"
     },

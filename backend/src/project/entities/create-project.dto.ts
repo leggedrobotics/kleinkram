@@ -10,5 +10,5 @@ export class CreateProject {
     description: string;
 
     @IsArray()
-    requiredTags: string[];
+    requiredTags?: string[];
 }

@@ -6,7 +6,7 @@ import User from "@common/entities/user/user.entity";
 import Account from "@common/entities/auth/account.entity";
 import {Providers, UserRole} from "@common/enum";
 
-export const appDataSource = new DataSource({
+export const db = new DataSource({
     type: 'postgres',
     host: 'localhost',
     port: parseInt(process.env.DB_PORT, 10),
@@ -24,8 +24,7 @@ export const appDataSource = new DataSource({
 
 export const clearAllData = async () => {
     try {
-        const entities = appDataSource.entityMetadatas;
-        const tableNames = entities.map((entity) => `"${entity.tableName}"`).join(", ");
+        const entities = db.entityMetadatas;
 
         // filter out the tables that should not be cleared (e.g. views)
         const tablesToClear = entities
@@ -33,25 +32,31 @@ export const clearAllData = async () => {
             .filter((entity) => !entity.tableName.includes('view'))
             .map((entity) => `"${entity.tableName}"`).join(", ");
 
-        await appDataSource.query(`TRUNCATE ${tablesToClear} CASCADE;`);
+        await db.query(`TRUNCATE ${tablesToClear} CASCADE;`);
     } catch (error) {
         throw new Error(`ERROR: Cleaning test database: ${error}`);
     }
 }
 
-export const mock_db_user = async (username: string, email: string, role: UserRole = undefined) => {
+export const mock_db_user = async (email: string, username: string = 'Test User', role: UserRole = undefined): Promise<string> => {
 
     // read config from access_config.json
     const fs = require('fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
-    const accessGroupRepository = appDataSource.getRepository(AccessGroup);
+    const accessGroupRepository = db.getRepository(AccessGroup);
     await create_access_groups(accessGroupRepository, config);
 
-    const userRepository = appDataSource.getRepository(User);
-    const accountRepository = appDataSource.getRepository(Account);
+    const userRepository = db.getRepository(User);
+    const accountRepository = db.getRepository(Account);
+
+    // hash the email to create a unique oauthID
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256');
+    hash.update(email);
+    const oauthID = hash.digest('hex');
 
     await create_new_user(config, userRepository, accountRepository, accessGroupRepository, {
-        oauthID: '123',
+        oauthID,
         provider: Providers.GOOGLE,
         email: email,
         username: username,
@@ -64,9 +69,17 @@ export const mock_db_user = async (username: string, email: string, role: UserRo
         await userRepository.save(user);
     }
 
+    return (await userRepository.findOne({where: {email: email}})).uuid;
+
 }
 
 export const get_jwt_token = async (user: User) => {
     const jwt = require('jsonwebtoken');
-    return jwt.sign({user: user.uuid}, process.env.JWT_SECRET);
+    return jwt.sign({uuid: user.uuid}, process.env.JWT_SECRET);
+}
+
+
+export const get_user_from_db = async (uuid: string) => {
+    const userRepository = db.getRepository(User);
+    return await userRepository.findOneOrFail({where: {uuid: uuid}});
 }

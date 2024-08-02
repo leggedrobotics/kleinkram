@@ -29,7 +29,7 @@
             flat
             round
             dense
-            icon="more_vert"
+            icon="sym_o_more_vert"
             unelevated
             color="primary"
             class="cursor-pointer"

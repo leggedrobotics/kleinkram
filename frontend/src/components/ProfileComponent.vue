@@ -1,56 +1,65 @@
 <script setup lang="ts">
-import { getUser, isAuthenticated, logout } from 'src/services/auth';
+import {getUser, isAuthenticated, logout} from 'src/services/auth';
 import ROUTES from 'src/router/routes';
-import { useRouter } from 'vue-router';
+import {useRouter} from 'vue-router';
 
 const is_authenticated = await isAuthenticated();
 const user = await getUser();
 
 const $router = useRouter();
 const navigateTo = (path: string) => {
-    $router.push(path);
+  $router.push(path);
 };
 
 </script>
 
 <template>
 
-    <q-tabs>
-        <q-route-tab :to="ROUTES.LOGIN.path" v-if="!is_authenticated"> Sign in</q-route-tab>
+  <q-tabs>
+    <q-route-tab :to="ROUTES.LOGIN.path" v-if="!is_authenticated"> Sign in</q-route-tab>
 
-        <div class="q-gutter-sm row items-center no-wrap" v-else>
-            <q-btn round flat>
-                <q-avatar size="32px" v-if="!!user['avatarUrl'] && user['avatarUrl'] !== ''">
-                    <img :src="user['avatarUrl']" referrerpolicy="no-referrer" alt="avatar">
-                </q-avatar>
+    <div class="q-gutter-sm row items-center no-wrap" v-else>
 
-                <q-avatar size="36px" v-else>
-                    <q-icon name="account_circle" />
-                </q-avatar>
+      <q-btn href="https://docs.datasets.leggedrobotics.com/usage/getting-started.html" round flat target="_blank" icon="sym_o_help">
 
-                <q-menu auto-close style="width: 280px">
-                    <q-list>
-                        <q-item clickable v-close-popup @click="navigateTo(ROUTES.USER_PROFILE.path)">
-                            <q-item-section avatar></q-item-section>
-                            <q-item-section>
-                                <q-item-section>{{ user['name'] }}</q-item-section>
-                            </q-item-section>
-                        </q-item>
-                        <q-item clickable @click="logout">
-                            <q-item-section avatar>
-                                <q-icon name="logout" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>Sign out</q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-menu>
+        <q-tooltip>
+          Support
+        </q-tooltip>
 
-            </q-btn>
-        </div>
+      </q-btn>
 
-    </q-tabs>
+      <q-btn round flat>
+        <q-avatar size="32px" v-if="!!user['avatarUrl'] && user['avatarUrl'] !== ''">
+          <img :src="user['avatarUrl']" referrerpolicy="no-referrer" alt="avatar">
+        </q-avatar>
+
+        <q-avatar size="36px" v-else>
+          <q-icon name="sym_o_account_circle"/>
+        </q-avatar>
+
+        <q-menu auto-close style="width: 280px">
+          <q-list>
+            <q-item clickable v-close-popup @click="navigateTo(ROUTES.USER_PROFILE.path)">
+              <q-item-section avatar></q-item-section>
+              <q-item-section>
+                <q-item-section>{{ user['name'] }}</q-item-section>
+              </q-item-section>
+            </q-item>
+            <q-item clickable @click="logout">
+              <q-item-section avatar>
+                <q-icon name="sym_o_logout"/>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Sign out</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+
+      </q-btn>
+    </div>
+
+  </q-tabs>
 
 </template>
 

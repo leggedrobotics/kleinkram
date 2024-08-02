@@ -174,6 +174,7 @@ const DataType_InputType = {
 const props = defineProps<{
     project?: Project;
 }>();
+
 const tagValues: Ref<Record<string, string>> = ref({});
 
 if (props.project) {
