@@ -21,6 +21,6 @@ export default route(() => {
         // Leave this as is and make changes in quasar.conf.js instead!
         // quasar.conf.js -> build -> vueRouterMode
         // quasar.conf.js -> build -> publicPath
-        history: createWebHashHistory('/'),
+        history: createWebHistory('/'),
     });
 });

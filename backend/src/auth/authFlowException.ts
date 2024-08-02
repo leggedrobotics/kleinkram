@@ -14,7 +14,7 @@ export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         logger.debug(`Redirecting to login with error: ${exception.message}`);
-        const redirect_url = `${process.env.FRONTEND_URL}/#/login?error_state=auth_flow_failed&error_msg=${exception.message}`;
+        const redirect_url = `${process.env.FRONTEND_URL}/login?error_state=auth_flow_failed&error_msg=${exception.message}`;
         return response.redirect(302, redirect_url);
     }
 }
