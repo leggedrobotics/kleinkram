@@ -65,7 +65,7 @@ watchEffect(() => {
         props.url_handler?.setMissionUUID( undefined)
       }
     },
-    ...(project.value ? [{
+    ...(project.value && !!project_uuid.value ? [{
       name: project.value.name,
       uuid: project.value.uuid,
       click: () => {
@@ -73,7 +73,7 @@ watchEffect(() => {
         props.url_handler.setMissionUUID(undefined)
       }
     }] : []),
-    ...(mission.value ? [{
+    ...(mission.value && !!mission_uuid.value ? [{
       name: mission.value.name,
       uuid: mission.value.uuid,
     }] : [])
