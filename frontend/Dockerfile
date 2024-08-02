@@ -24,6 +24,9 @@ RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") &
 # Production stage
 FROM nginx:alpine as production-stage
 
+# copy the nginx configuration file to the container
+COPY ./frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
 COPY --from=build-stage /app/dist/spa /usr/share/nginx/html
 
 EXPOSE 80
