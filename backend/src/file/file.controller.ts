@@ -21,6 +21,8 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
+    QueryOptional,
+    QueryOptionalRecord,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import {FileType} from "@common/enum";
@@ -45,6 +47,7 @@ export class FileController {
         @QueryOptionalString('projectName') projectName: string,
         @QueryOptionalString('missionName') missionName: string,
         @QueryOptionalString('topics') topics: string,
+        @QueryOptionalRecord('tags') tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -56,6 +59,7 @@ export class FileController {
             user.uuid,
             take,
             skip,
+            tags,
         );
     }
 
