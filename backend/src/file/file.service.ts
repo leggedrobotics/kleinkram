@@ -110,7 +110,6 @@ export class FileService {
                 .leftJoin('mission.tags', 'tag')
                 .leftJoin('tag.tagType', 'tagtype');
             for (const [key, value] of Object.entries(tags)) {
-                console.log(key, value);
                 query.andWhere('tagtype.name = :tagName', { tagName: key });
                 query.andWhere(
                     new Brackets((qb) => {
@@ -146,8 +145,6 @@ export class FileService {
             .leftJoinAndSelect('file.creator', 'creator')
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-            .skip(skip)
-            .take(take)
             .getMany();
     }
 
