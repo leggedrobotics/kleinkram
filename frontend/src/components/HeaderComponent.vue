@@ -5,10 +5,10 @@
         <q-menu auto-close style="width: 280px">
           <q-list>
             <q-item
-                v-for="item in main_menu"
-                :key="item.title"
-                clickable
-                :to="item.to"
+              v-for="item in main_menu"
+              :key="item.title"
+              clickable
+              :to="item.to"
             >
               <q-item-section avatar>
                 <q-icon :name="item.icon" style="font-weight: bold"/>
@@ -36,9 +36,9 @@
         />
       </q-tabs>
 
-      <q-space/>
+      <q-space />
       <Suspense>
-        <ProfileComponent/>
+        <ProfileComponent />
       </Suspense>
     </q-toolbar>
   </q-header>

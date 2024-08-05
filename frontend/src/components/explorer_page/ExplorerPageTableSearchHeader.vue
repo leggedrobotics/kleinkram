@@ -1,57 +1,78 @@
 <template>
-  <template v-if="isListingProjects">
     <div>
-      <q-input debounce="300" outlined v-model="search" label="Project Name" placeholder="Search for projects...">
-        <template v-slot:append>
-          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
+      <q-input
+        v-model="search"
+        debounce="300"
+        outlined
+        :label="type + ' Name'"
+        :placeholder="`Search for ${type}...`"
+      >
+        <template #append>
+          <q-icon
+            name="sym_o_close"
+            class="cursor-pointer"
+            @click="search = ''"
+          />
         </template>
       </q-input>
-    </div>
-  </template>
-
-  <template v-if="isListingMissions">
-    <div>
-      <q-input debounce="300" outlined v-model="search" label="Mission Name" placeholder="Search for missions...">
-        <template v-slot:append>
-          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
-        </template>
-      </q-input>
-    </div>
-  </template>
-
-  <template v-if="isListingFiles">
-    <div>
-      <q-input debounce="300" outlined v-model="search" label="File Name" placeholder="Search for files...">
-        <template v-slot:append>
-          <q-icon name="sym_o_close" @click="search = ''" class="cursor-pointer"/>
-        </template>
-      </q-input>
-
-      <br/>
+      <br v-if="url_handler.isListingFiles">
 
       <q-select
-          v-model="file_type_filter"
-          :options="['All', 'MCAP', 'BAG']"
-          label="File Type"
-          outlined
-          dense
+        v-if="url_handler.isListingFiles"
+        v-model="_filetype"
+        :options="[FileType.BAG, FileType.MCAP]"
+        label="File Type"
+        outlined
+        dense
       />
-
     </div>
-  </template>
 </template>
 
 <script setup lang="ts">
 
 
-import {useDisplayType} from "src/hooks/utils";
 
-const search = defineModel<string>('search')
-const file_type_filter = defineModel<string>('file_type_filter')
+import {QueryHandler} from "src/services/URLHandler";
+import {FileType} from "src/enums/FILE_ENUM";
+import {computed} from "vue";
 
-const project_uuid = defineModel<string | undefined>('project_uuid')
-const mission_uuid = defineModel<string | undefined>('mission_uuid')
 
-const {isListingProjects, isListingMissions, isListingFiles} = useDisplayType(project_uuid, mission_uuid)
+const props = defineProps({
+  url_handler: {
+    type: QueryHandler,
+    required: true
+  }
+})
+
+const search = computed({
+  get: () => props.url_handler.search_params.name,
+  set: (value: string) => {
+    props.url_handler?.setSearch({name: value})
+  }
+})
+
+const _filetype = computed({
+  get: (): FileType => props.url_handler.file_type || FileType.BAG,
+  set: (value: FileType) => {
+    props.url_handler?.setFileType(value)
+  }
+})
+
+const type = computed(()=>
+{
+  if(props.url_handler.isListingProjects)
+  {
+    return "Project"
+  }
+  else if(props.url_handler.isListingMissions)
+  {
+    return "Mission"
+  }
+  else if(props.url_handler.isListingFiles)
+  {
+    return "File"
+  }
+})
+
 
 </script>

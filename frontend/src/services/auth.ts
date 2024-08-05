@@ -1,21 +1,44 @@
 import axios from 'src/api/axios';
 import ENV from 'src/env';
 import ROUTES from 'src/router/routes';
+import {useQuery} from "@tanstack/vue-query";
+import {getMe} from "src/services/queries/user";
+import {User} from "src/types/User";
 
 
-export const isAuthenticated = () =>
-    axios
-        .get('/user/me')
-        .then(() => true)
-        .catch(() => false);
+let userCache: User | null = null;
+let isFetchingUser = false;
+let userFetchPromise: Promise<User | null> | null = null;
 
-export const getUser = () =>
-    axios.get('/user/me')
-        .then((response) => response.data)
-        .catch(() => null);
+export const getUser = () => {
+    if (userCache !== null) {
+        return Promise.resolve(userCache);
+    }
+    if (isFetchingUser) {
+        return userFetchPromise;
+    }
+    isFetchingUser = true;
+    userFetchPromise = getMe()
+      .then(userData => {
+          userCache = userData;
+          isFetchingUser = false;
+          return userData;
+      })
+      .catch(() => {
+          isFetchingUser = false;
+          return null;
+      });
+    return userFetchPromise;
+};
 
-
+export const isAuthenticated = async () => {
+    const user = await getUser();
+    return user !== null;
+};
 export function logout() {
+    userCache = null;
+    isFetchingUser = false;
+    userFetchPromise = null;
     return new Promise((resolve, reject) => {
         axios
             .post('/auth/logout')

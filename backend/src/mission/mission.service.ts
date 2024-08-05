@@ -67,13 +67,27 @@ export class MissionService {
         projectUUID: string,
         skip: number,
         take: number,
-    ): Promise<Mission[]> {
-        return await this.missionRepository.find({
-            where: { project: { uuid: projectUUID } },
-            relations: ['project', 'files', 'creator', 'files.creator'],
-            skip,
-            take,
-        });
+        search?: string,
+        descending?: boolean,
+        sortBy?: string,
+    ): Promise<[Mission[], number]> {
+        const query = this.missionRepository.createQueryBuilder('mission')
+          .leftJoinAndSelect('mission.project', 'project')
+          .leftJoinAndSelect('mission.creator', 'creator')
+          .leftJoinAndSelect('mission.files', 'files')
+          .leftJoinAndSelect('files.creator', 'fileCreator')
+          .where('project.uuid = :projectUUID', { projectUUID })
+          .take(take)
+          .skip(skip);
+
+        if (search) {
+            query.andWhere('mission.name ILIKE :search', {search: `%${search}%`});
+        }
+        if(sortBy) {
+            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        return query.getManyAndCount();
+
     }
 
     async filteredByProjectName(

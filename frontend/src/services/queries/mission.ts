@@ -69,18 +69,37 @@ export const getMission = async (uuid: string): Promise<Mission> => {
 
 export const missionsOfProject = async (
     projectUUID: string,
-    take: number,
-    skip: number,
-): Promise<Mission[]> => {
+    take: number = 100,
+    skip: number = 0,
+    sortBy: string = 'createdAt',
+    descending: boolean = false,
+    searchParams?: {
+        name: string;
+    },
+): Promise<[Mission[], number]> => {
+    if (!projectUUID) {
+        return [[], 0];
+    }
+    const params: Record<string, any> = {
+        uuid: projectUUID,
+        take,
+        skip,
+        sortBy,
+        descending,
+    };
+    if (searchParams && searchParams.name) {
+        params['search'] = searchParams.name;
+    }
     const response = await axios.get(`/mission/filtered`, {
-        params: {
-            uuid: projectUUID,
-            take,
-            skip
-        },
+        params,
     });
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        return [[], 0];
+    }
     const users: Record<string, User> = {};
-    return response.data.map((mission: any) => {
+    const res = data.map((mission: any) => {
         const project = new Project(
             mission.project.uuid,
             mission.project.name,
@@ -151,4 +170,5 @@ export const missionsOfProject = async (
         });
         return missionEntity;
     });
+    return [res, total];
 };

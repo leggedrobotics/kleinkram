@@ -21,8 +21,11 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
+    QueryOptional,
+    QueryOptionalRecord,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import {FileType} from "@common/enum";
 
 @Controller('file')
 export class FileController {
@@ -44,6 +47,7 @@ export class FileController {
         @QueryOptionalString('projectName') projectName: string,
         @QueryOptionalString('missionName') missionName: string,
         @QueryOptionalString('topics') topics: string,
+        @QueryOptionalRecord('tags') tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -55,6 +59,7 @@ export class FileController {
             user.uuid,
             take,
             skip,
+            tags,
         );
     }
 
@@ -123,8 +128,10 @@ export class FileController {
         @QueryUUID('uuid') uuid: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+        @QueryOptionalString('filename') filename: string,
+        @QueryOptionalString('fileType') fileType: FileType,
     ) {
-        return this.fileService.findByMission(uuid, take, skip);
+        return this.fileService.findByMission(uuid, take, skip, filename, fileType);
     }
 
     @Put(':uuid')

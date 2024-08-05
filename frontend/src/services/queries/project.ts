@@ -6,7 +6,7 @@ import { TagType } from 'src/types/TagType';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 
-export const allProjects = async (
+export const filteredProjects = async (
     take: number,
     skip: number,
     sortBy: string,
@@ -14,7 +14,7 @@ export const allProjects = async (
     searchParams?: {
         name: string;
     },
-) => {
+):Promise<[Project[], number]> => {
     const params: Record<string, any> = {
         take,
         skip,
@@ -27,7 +27,46 @@ export const allProjects = async (
     const response = await axios.get('/project', {
         params,
     });
-    return response.data;
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        return [[], 0];
+    }
+    const res = data.map((project: any) => {
+        return new Project(
+            project.uuid,
+            project.name,
+            project.description,
+            project.missions.map((mission: any) => new Mission(
+                    mission.uuid,
+                    mission.name,
+                    undefined,
+                    [],
+                    [],
+                    undefined,
+                    new Date(mission.createdAt),
+                    new Date(mission.updatedAt),
+                    new Date(mission.deletedAt),
+                )),
+            new User(
+                project.creator.uuid,
+                project.creator.name,
+                project.creator.email,
+                project.creator.role,
+                project.creator.avatarUrl,
+                [],
+                new Date(project.creator.createdAt),
+                new Date(project.creator.updatedAt),
+                new Date(project.creator.deletedAt),
+            ),
+            [],
+            [],
+            new Date(project.createdAt),
+            new Date(project.updatedAt),
+            new Date(project.deletedAt),
+        );
+    })
+    return [res, total];
 };
 
 export const getProject = async (uuid: string): Promise<Project> => {

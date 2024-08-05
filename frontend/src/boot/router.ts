@@ -2,6 +2,8 @@ import {boot} from 'quasar/wrappers';
 import {Router} from 'vue-router';
 import {isAuthenticated} from 'src/services/auth';
 import ROUTES, {PUBLIC_ROUTES} from 'src/router/routes';
+import {useQuery} from "@tanstack/vue-query";
+import {getMe} from "src/services/queries/user";
 
 let routerInstance: Router;
 
@@ -16,9 +18,12 @@ export default boot(({router}) => {
         }
 
         // check if the user is authenticated, if not redirect to login page
-        const authenticated = await isAuthenticated();
-        if (!authenticated && to.path !== ROUTES.LOGIN.path) {
+        const auth = await isAuthenticated();
+        if (!auth && to.path !== ROUTES.LOGIN.path) {
             return ROUTES.LOGIN.path;
+        }
+        if(auth && to.path === ROUTES.LOGIN.path) {
+            return ROUTES.HOME.path;
         }
 
     });

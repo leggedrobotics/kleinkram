@@ -167,15 +167,15 @@
 <script setup lang="ts">
 import {useMutation, useQuery, useQueryClient,} from '@tanstack/vue-query';
 
-import {Ref, ref, watch} from 'vue';
-import {Notify, useDialogPluginComponent} from 'quasar';
-import {formatDate, parseDate} from 'src/services/dateFormating';
-import {Project} from 'src/types/Project';
-import {FileEntity} from 'src/types/FileEntity';
-import {fetchFile} from 'src/services/queries/file';
-import {allProjects} from 'src/services/queries/project';
-import {missionsOfProject} from 'src/services/queries/mission';
-import {updateFile} from 'src/services/mutations/file';
+import { Ref, ref, watch, watchEffect } from 'vue';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { formatDate, parseDate } from 'src/services/dateFormating';
+import { Project } from 'src/types/Project';
+import { FileEntity } from 'src/types/FileEntity';
+import { fetchFile } from 'src/services/queries/file';
+import { filteredProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
+import { updateFile } from 'src/services/mutations/file';
 
 const props = defineProps<{
   file_uuid: string;
@@ -224,7 +224,7 @@ watch(
 );
 const projectsReturn = useQuery<Project[]>({
   queryKey: ['projects'],
-  queryFn: () => allProjects(500, 0, 'name'),
+  queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const projects = projectsReturn.data;
 

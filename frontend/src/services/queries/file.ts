@@ -4,36 +4,40 @@ import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
 import { Topic } from 'src/types/Topic';
+import { FileType } from 'src/enums/FILE_ENUM';
 
 export const fetchOverview = async (
     filename: string,
-    projectUUID: string | undefined,
-    missionUUID: string | undefined,
-    startDate: Date,
-    endDate: Date,
-    topics: string[],
-    andOr: boolean,
-    mcapBag: boolean,
-): Promise<Mission[]> => {
+    projectUUID?: string,
+    missionUUID?: string,
+    startDate?: Date,
+    endDate?: Date,
+    topics?: string[],
+    andOr?: boolean,
+    mcapBag?: boolean,
+    take?: number,
+    skip?: number,
+): Promise<[FileEntity[], number]> => {
     try {
-        const formattedStartDate = startDate.toISOString();
-        const formattedEndDate = endDate.toISOString();
         const params: Record<string, string> = {};
         if (filename) params['fileName'] = filename;
         if (projectUUID) params['projectUUID'] = projectUUID;
         if (missionUUID) params['missionUUID'] = missionUUID;
-        if (startDate) params['startDate'] = formattedStartDate;
-        if (endDate) params['endDate'] = formattedEndDate;
+        if (startDate) params['startDate'] = startDate.toISOString();
+        if (endDate) params['endDate'] = endDate.toISOString();
         if (topics && topics.length > 0) params['topics'] = topics.join(',');
         if (andOr !== undefined) params['andOr'] = andOr.toString();
         if (mcapBag !== undefined) params['mcapBag'] = mcapBag.toString();
-
+        if (take) params['take'] = take.toString();
+        if (skip) params['skip'] = skip.toString();
         const queryParams = new URLSearchParams(params).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};
         const missions: Record<string, Mission> = {};
         const response = await axios.get(`/file/filtered?${queryParams}`);
-        return response.data.map((file: any) => {
+        const data = response.data[0];
+        const total = response.data[1];
+        const res: FileEntity[] = data.map((file: any): FileEntity => {
             const project_uuid: string = file.mission.project.uuid;
             let project: Project | undefined = projects[project_uuid];
             if (!project) {
@@ -96,6 +100,7 @@ export const fetchOverview = async (
             mission.files.push(newFile);
             return newFile;
         });
+        return [res, total];
     } catch (error) {
         console.error('Error fetching overview:', error);
         throw error; // Rethrow or handle as appropriate
@@ -189,42 +194,53 @@ export const filesOfMission = async (
     missionUUID: string,
     take: number,
     skip: number,
-): Promise<FileEntity[]> => {
+    fileType?: FileType,
+    filename?: string,
+): Promise<[FileEntity[], number]> => {
+    const params: Record<string, string | number> = {
+        uuid: missionUUID,
+        take,
+        skip,
+    };
+    if (fileType) params['fileType'] = fileType;
+    if (filename) params['filename'] = filename;
     const response = await axios.get('file/ofMission', {
-        params: { uuid: missionUUID, take, skip },
+        params,
     });
-    if (response.data.length === 0) {
-        return [];
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        console.log('nothing found');
+        return [[], 0];
     }
     const users: Record<string, User> = {};
-    let missionCreator: User | undefined =
-        users[response.data[0].mission.creator.uuid];
+    let missionCreator: User | undefined = users[data[0].mission.creator.uuid];
     if (!missionCreator) {
         missionCreator = new User(
-            response.data[0].mission.creator.uuid,
-            response.data[0].mission.creator.name,
-            response.data[0].mission.creator.email,
-            response.data[0].mission.creator.role,
-            response.data[0].mission.creator.avatarUrl,
+            data[0].mission.creator.uuid,
+            data[0].mission.creator.name,
+            data[0].mission.creator.email,
+            data[0].mission.creator.role,
+            data[0].mission.creator.avatarUrl,
             [],
-            new Date(response.data[0].mission.creator.createdAt),
-            new Date(response.data[0].mission.creator.updatedAt),
-            new Date(response.data[0].mission.creator.deletedAt),
+            new Date(data[0].mission.creator.createdAt),
+            new Date(data[0].mission.creator.updatedAt),
+            new Date(data[0].mission.creator.deletedAt),
         );
-        users[response.data[0].mission.creator.uuid] = missionCreator;
+        users[data[0].mission.creator.uuid] = missionCreator;
     }
     const mission = new Mission(
         missionUUID,
-        response.data[0].mission.name,
+        data[0].mission.name,
         undefined,
         [],
         [],
         missionCreator,
-        new Date(response.data[0].mission.createdAt),
-        new Date(response.data[0].mission.updatedAt),
-        new Date(response.data[0].mission.deletedAt),
+        new Date(data[0].mission.createdAt),
+        new Date(data[0].mission.updatedAt),
+        new Date(data[0].mission.deletedAt),
     );
-    return response.data.map((file: any) => {
+    const res = data.map((file: any) => {
         let fileCreator: User | undefined = users[file.creator.uuid];
         if (!fileCreator) {
             fileCreator = new User(
@@ -268,4 +284,6 @@ export const filesOfMission = async (
         mission.files.push(newFile);
         return newFile;
     });
+    console.log('returing total', total);
+    return [res, total];
 };

@@ -299,3 +299,29 @@ export const QueryTake = createParamDecorator(
         return value;
     },
 );
+
+export const QueryOptional = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return;
+        }
+
+        return value;
+    },
+);
+
+export const QueryOptionalRecord = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+
+        if (value === undefined) {
+            return;
+        }
+
+        return JSON.parse(value.replace(/'/g, '"'));
+    },
+);

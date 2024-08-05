@@ -1,10 +1,13 @@
 <template>
-    <q-layout view="lHh lpr lFf" style="position: absolute">
-        <q-page-container>
-            <router-view />
-        </q-page-container>
-        <FooterComponent />
-    </q-layout>
+  <q-layout
+    view="lHh lpr lFf"
+    style="position: absolute"
+  >
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+    <FooterComponent />
+  </q-layout>
 </template>
 
 <script setup lang="ts">

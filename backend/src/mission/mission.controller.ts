@@ -20,6 +20,8 @@ import {
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
+    QueryOptionalBoolean,
+    QueryOptionalString,
     QuerySkip,
     QueryString,
     QueryTake,
@@ -44,10 +46,14 @@ export class MissionController {
     @CanReadProject()
     async filteredMissions(
         @QueryUUID('uuid') uuid: string,
+        @QueryOptionalString('search') search: string,
+        @QueryOptionalBoolean('descending') descending: boolean,
+        @QueryOptionalString('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+
     ) {
-        return this.missionService.findMissionByProject(uuid, skip, take);
+        return this.missionService.findMissionByProject(uuid, skip, take, search, descending, sortBy);
     }
 
     @Get('one')

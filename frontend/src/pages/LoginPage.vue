@@ -8,17 +8,18 @@
                 <div class="text-grey-8">Sign in below to access your data</div>
             </q-card-section>
 
-            <q-card-section>
-                <q-btn
-                    style="border-radius: 8px"
-                    color="dark"
-                    rounded
-                    size="md"
-                    label="Sign in with Google"
-                    class="full-width"
-                    @click="login()"
-                ></q-btn>
-            </q-card-section>
+      <q-card-section>
+        <q-btn
+          style="border-radius: 8px"
+          color="dark"
+          rounded
+          size="md"
+          label="Sign in with Google"
+
+          class="full-width"
+          @click="login()"
+        />
+      </q-card-section>
 
             <q-card-section
                 class="text-center"

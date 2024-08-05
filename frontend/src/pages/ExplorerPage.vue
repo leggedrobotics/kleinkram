@@ -3,21 +3,21 @@
   <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Project Explorer</h1>
 
   <div class="q-mb-md">
-    <div class="flex justify-between q-mv-md">
-      <ExplorerPageBreadcrumbs v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+    <div class="flex justify-between q-mv-md" >
+      <ExplorerPageBreadcrumbs :url_handler="handler"/>
 
-      <ButtonGroup v-if="isListingMissions">
+      <ButtonGroup v-if="handler.isListingMissions">
         <ManageProjectAccessButton :project_uuid="project_uuid"/>
         <q-btn outline color="primary" icon="sym_o_sell" label="Metadata">
           <q-tooltip> Manage Metadata Tags</q-tooltip>
         </q-btn>
-        <DeleteProjectButton @onSuccessfulDelete="onProjectDeletion" :project_uuid="project_uuid"/>
+        <DeleteProjectButton :project_uuid="project_uuid"/>
         <q-btn icon="sym_o_more_horiz" outline disabled>
           <q-tooltip> More Actions</q-tooltip>
         </q-btn>
       </ButtonGroup>
 
-      <ButtonGroup v-if="isListingFiles">
+      <ButtonGroup v-if="handler.isListingFiles">
         <q-btn color="primary" outline icon="sym_o_lock" label="Access Rights">
           <q-tooltip>
             Manage Access to the Project
@@ -36,16 +36,16 @@
     </div>
   </div>
 
-  <q-card class="q-pa-md q-mb-md" flat bordered v-if="isListingMissions">
+  <q-card class="q-pa-md q-mb-md" flat bordered v-if="handler.isListingMissions">
 
 
     <q-card-section class="flex justify-between items-center">
 
       <div>
-        <h2 class="text-h5" style="font-weight: bold">
-          {{ project?.name }}
-        </h2>
-        <span>
+      <h2 class="text-h5" style="font-weight: bold">
+        {{ project?.name }}
+      </h2>
+      <span>
         {{ project?.description }}
       </span>
 
@@ -60,7 +60,7 @@
     </q-card-section>
   </q-card>
 
-  <q-card class="q-pa-md q-mb-md" flat bordered v-if="isListingFiles">
+  <q-card class="q-pa-md q-mb-md" flat bordered v-if="handler.isListingFiles">
 
 
     <q-card-section class="flex justify-between items-center">
@@ -91,11 +91,10 @@
   </q-card>
 
   <q-card class="q-pa-md q-mb-xl" flat bordered>
-
     <q-card-section class="flex justify-between items-center">
-
       <Suspense>
-        <TableHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+
+        <TableHeader :url_handler="handler" v-if="handler"/>
 
         <template #fallback>
           <div style="width: 550px; height: 67px;">
@@ -103,18 +102,17 @@
             <q-skeleton class="q-mr-md" style="width: 200px; height: 18px"/>
           </div>
         </template>
-
       </Suspense>
 
       <ButtonGroup>
 
-        <q-btn outline @click="() => refresh++" color="grey-8" icon="sym_o_refresh">
+        <q-btn outline @click="() => refresh()" color="grey-8" icon="sym_o_refresh">
           <q-tooltip> Refetch the Data</q-tooltip>
         </q-btn>
 
-        <CreateMissionButton :project_uuid="project_uuid" v-if="isListingMissions"/>
-        <CreateProjectButton v-if="isListingProjects"/>
-        <UploadFileButton v-if="isListingFiles"/>
+        <CreateMissionButton :project_uuid="project_uuid" v-if="handler.isListingMissions"/>
+        <CreateProjectButton v-if="handler.isListingProjects"/>
+        <UploadFileButton v-if="handler.isListingFiles"/>
 
       </ButtonGroup>
 
@@ -122,8 +120,8 @@
 
     <q-card-section style="padding-top: 10px">
       <Suspense>
-        <TableSearchHeader v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"
-                           v-model:search="search" v-model:file_type_filter="file_type_filter"/>
+
+        <TableSearchHeader :url_handler="handler" v-if="handler"/>
 
         <template #fallback>
           <div style="width: 550px; height: 67px;">
@@ -131,14 +129,13 @@
             <q-skeleton class="q-mr-md" style="width: 200px; height: 18px"/>
           </div>
         </template>
-
       </Suspense>
-
     </q-card-section>
 
     <q-card-section>
       <Suspense>
-        <ExplorerPageTable :refresh="refresh" v-model:project_uuid="project_uuid" v-model:mission_uuid="mission_uuid"/>
+
+        <Component :is="getComponent()" :url_handler="handler" v-if="handler" />
 
         <template #fallback>
           <div style="width: 100%; height: 645px;">
@@ -160,103 +157,71 @@
 
 <script setup lang="ts">
 
-import {inject, ref, watch, watchEffect} from "vue";
-import ExplorerPageTable from "components/explorer_page/ExplorerPageTable.vue";
+import {computed, Ref, ref} from "vue";
 import ExplorerPageBreadcrumbs from "components/explorer_page/ExplorerPageBreadcrumbs.vue";
-import RouterService from "src/services/routerService";
 import TableHeader from "components/explorer_page/ExplorerPageTableHeader.vue";
-import {useRoute, useRouter} from "vue-router";
-import ROUTES from "src/router/routes";
+import CreateProjectDialog from "src/dialogs/CreateProjectDialog.vue";
+import {useQuasar} from "quasar";
+import { useRouter} from "vue-router";
+import CreateMissionDialog from "src/dialogs/CreateMissionDialog.vue";
 import TableSearchHeader from "components/explorer_page/ExplorerPageTableSearchHeader.vue";
-import {conditionalWatch, useDisplayType} from "src/hooks/utils";
+import AccessRightsDialog from "src/dialogs/AccessRightsDialog.vue";
+import MoveMissionDialog from "src/dialogs/MoveMissionDialog.vue";
 import {useMissionQuery, useProjectQuery} from "src/hooks/customQueryHooks";
+import {QueryURLHandler} from "src/services/URLHandler";
+import {useQueryClient} from "@tanstack/vue-query";
+import ExplorerPageMissionTable from "components/explorer_page/ExplorerPageMissionTable.vue";
+import ExplorerPageProjectTable from "components/explorer_page/ExplorerPageProjectTable.vue";
+import ExplorerPageFilesTable from "components/explorer_page/ExplorerPageFilesTable.vue";
+import MoveMissionButton from "components/buttons/MoveMissionButton.vue";
+import ButtonGroup from "components/ButtonGroup.vue";
+import ManageProjectAccessButton from "components/buttons/ManageProjectAccessButton.vue";
+import DeleteProjectButton from "components/buttons/DeleteProjectButton.vue";
 import CreateMissionButton from "components/buttons/CreateMissionButton.vue";
 import CreateProjectButton from "components/buttons/CreateProjectButton.vue";
 import UploadFileButton from "components/buttons/UploadFileButton.vue";
-import DeleteProjectButton from "components/buttons/DeleteProjectButton.vue";
-import ManageProjectAccessButton from "components/buttons/ManageProjectAccessButton.vue";
-import MoveMissionButton from "components/buttons/MoveMissionButton.vue";
-import ButtonGroup from "components/ButtonGroup.vue";
+const queryClient = useQueryClient();
 
-const $routerService: RouterService | undefined = inject('$routerService')
-const route = useRoute()
+const router = useRouter()
 
-const project_uuid = ref<string | undefined>(undefined);
-const mission_uuid = ref<string | undefined>(undefined);
+const handler: Ref<QueryURLHandler> = ref(new QueryURLHandler()) as unknown as Ref<QueryURLHandler>;
+handler.value.setRouter(router)
 
-const {isListingProjects, isListingMissions, isListingFiles} = useDisplayType(project_uuid, mission_uuid);
-
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-// update the URL on navigation between project, mission and files view
-//////////////////////////////////////////////////////////////////////////////////////////
-
-conditionalWatch(isListingFiles, () => {
-  $routerService?.routeTo(ROUTES.EXPLORER, {
-    ...JSON.parse(JSON.stringify(route.query)),
-    project_uuid: project_uuid.value,
-    mission_uuid: mission_uuid.value
-  })
-})
-
-conditionalWatch(isListingProjects, () => {
-  $routerService?.routeTo(ROUTES.EXPLORER, {
-    ...JSON.parse(JSON.stringify(route.query)),
-    project_uuid: undefined,
-    mission_uuid: undefined
-  })
-});
-
-conditionalWatch(isListingMissions, () => {
-  $routerService?.routeTo(ROUTES.EXPLORER, {
-    ...JSON.parse(JSON.stringify(route.query)),
-    project_uuid: project_uuid.value,
-    mission_uuid: undefined
-  })
-});
-
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
+const project_uuid = computed(() => handler.value.project_uuid)
+const mission_uuid = computed(() => handler.value.mission_uuid)
 
 const {data: project} = useProjectQuery(project_uuid)
 const {data: mission} = useMissionQuery(mission_uuid)
 
-const search = ref('')
-const file_type_filter = ref('MCAP')
-
-// update change on URL change
-watchEffect(() => {
-  project_uuid.value = route.query.project_uuid as string;
-  mission_uuid.value = route.query.mission_uuid as string
-  search.value = route.query.search as string || ''
-  file_type_filter.value = route.query.file_type_filter as string || 'MCAP'
-})
-
-const refresh = ref(0);
-
-const router = useRouter()
-
-watch(search, async () => {
-  await router.push({query: {...route.query, search: search.value}})
-  refresh.value++;
-})
-
-watch(file_type_filter, () => {
-  $routerService?.pushToQuery({file_type_filter: file_type_filter.value})
-  refresh.value++;
-});
-
-
-const onProjectDeletion = () => {
-  // navigate back to the projects view
-  $routerService?.routeTo(ROUTES.EXPLORER, {
-    ...JSON.parse(JSON.stringify(route.query)),
-    project_uuid: undefined,
-    mission_uuid: undefined
-  })
-
-  // TODO: remove the following line
-  refresh.value++;
+function refresh(){
+  if(handler.value.isListingProjects){
+    queryClient.invalidateQueries({
+      queryKey: ['projects']
+    })
+  }
+  if(handler.value.isListingMissions){
+    queryClient.invalidateQueries({
+      queryKey: ['missions', handler.value.project_uuid]
+    })
+  }
+  if(handler.value.isListingFiles) {
+    queryClient.invalidateQueries({
+      queryKey: ['files', handler.value.mission_uuid]
+    })
+  }
 }
+
+function getComponent(){
+  if(handler.value.isListingProjects){
+    return ExplorerPageProjectTable
+  }else if(handler.value.isListingMissions){
+    return ExplorerPageMissionTable
+  }else if(handler.value.isListingFiles){
+    return ExplorerPageFilesTable
+  }
+  console.log('No component found')
+  return ExplorerPageProjectTable
+}
+
 
 </script>

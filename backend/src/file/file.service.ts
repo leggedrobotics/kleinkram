@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -12,6 +12,7 @@ import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
 import logger from '../logger';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Injectable()
 export class FileService {
@@ -36,35 +37,17 @@ export class FileService {
                 relations: ['mission'],
                 skip,
                 take,
-            })
+            });
         }
-        return this.fileRepository
-            .createQueryBuilder('file')
-            .leftJoinAndSelect('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
-            .leftJoin(
-                'projectAccessViewEntity',
-                'projectAccessView',
-                'projectAccessView.projectUUID = project.uuid',
-            )
-            .leftJoin(
-                'missionAccessView',
-                'missionAccessView',
-                'missionAccessView.missionUUID = mission.uuid',
-            )
-            .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-            .leftJoin('projectAccessGroup.users', 'projectUsers')
-            .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-            .leftJoin('missionAccessGroup.users', 'missionUsers')
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :userUUID', {
-                        userUUID,
-                    }).orWhere('missionUsers.uuid = :userUUID', {
-                        userUUID,
-                    });
-                }),
-            ).skip(skip).take(take)
+        return addAccessJoinsAndConditions(
+            this.fileRepository
+                .createQueryBuilder('file')
+                .leftJoinAndSelect('file.mission', 'mission')
+                .leftJoin('mission.project', 'project')
+                .skip(skip)
+                .take(take),
+            userUUID,
+        ).getMany();
     }
 
     async findFilteredByNames(
@@ -74,6 +57,7 @@ export class FileService {
         userUUID: string,
         take: number,
         skip: number,
+        tags: Record<string, any>,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -121,8 +105,33 @@ export class FileService {
                 .andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')')
                 .setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
         }
-        console.log(query.getQueryAndParameters());
-        // Execute the query
+        if (tags) {
+            query
+                .leftJoin('mission.tags', 'tag')
+                .leftJoin('tag.tagType', 'tagtype');
+            for (const [key, value] of Object.entries(tags)) {
+                query.andWhere('tagtype.name = :tagName', { tagName: key });
+                query.andWhere(
+                    new Brackets((qb) => {
+                        if (typeof value === 'string') {
+                            qb.where('tag.STRING = :value', { value }).orWhere(
+                                'tag.LOCATION = :value',
+                                { value },
+                            );
+                            if (new Date(value).toString() !== 'Invalid Date') {
+                                qb.orWhere('tag.DATE = :value', { value });
+                            }
+                        }
+                        if (typeof value === 'number') {
+                            qb.where('tag.NUMBER = :value', { value });
+                        }
+                        if (typeof value === 'boolean') {
+                            qb.where('tag.BOOLEAN = :value', { value });
+                        }
+                    }),
+                );
+            }
+        } // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
             return [];
@@ -136,7 +145,6 @@ export class FileService {
             .leftJoinAndSelect('file.creator', 'creator')
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-            .skip(skip).take(take)
             .getMany();
     }
 
@@ -176,7 +184,7 @@ export class FileService {
 
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
-            logger.debug("Filtering files by filename: " + fileName);
+            logger.debug('Filtering files by filename: ' + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
@@ -218,25 +226,23 @@ export class FileService {
         }
 
         query.groupBy('file.uuid');
-        console.log(query.getSql());
         // Execute the query
-        const fileIds = await query.getMany();
+        const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
             logger.silly('No files found');
             return [];
         }
 
         const fileIdsArray = fileIds.map((file) => file.uuid);
-        return await this.fileRepository
+        const res = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-            .skip(skip)
-            .take(take)
             .getMany();
+        return [res, count];
     }
 
     async findOne(uuid: string) {
@@ -362,12 +368,25 @@ export class FileService {
         await this.fileRepository.query('DELETE FROM "file"');
     }
 
-    async findByMission(missionUUID: string, take: number, skip: number) {
-        return this.fileRepository.find({
-            where: { mission: { uuid: missionUUID } },
+    async findByMission(
+        missionUUID: string,
+        take: number,
+        skip: number,
+        filename?: string,
+        fileType?: FileType,
+    ): Promise<[FileEntity[], number]> {
+        const where: Record<string, any> = { mission: { uuid: missionUUID } };
+        if (filename) {
+            where.filename = ILike(`%${filename}%`);
+        }
+        if (fileType) {
+            where.type = fileType;
+        }
+        return this.fileRepository.findAndCount({
+            where,
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
             take,
-            skip
+            skip,
         });
     }
 }

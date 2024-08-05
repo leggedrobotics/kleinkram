@@ -145,7 +145,7 @@ import { Notify } from 'quasar';
 import { DataType } from 'src/enums/TAG_TYPES';
 import { Project } from 'src/types/Project';
 import { TagType } from 'src/types/TagType';
-import { allProjects, getProject } from 'src/services/queries/project';
+import { filteredProjects, getProject } from 'src/services/queries/project';
 import { getTagTypes } from 'src/services/queries/tag';
 import { createMission } from 'src/services/mutations/mission';
 
@@ -159,9 +159,16 @@ const { data: project } = useQuery<Project>({
 });
 const missionName = ref('');
 const ddr_open = ref(false);
-const { isLoading, isError, data, error } = useQuery<Project[]>({
+
+const { data: _data, error } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name'),
+});
+const data = computed(() => {
+    if (_data && _data.value) {
+        return _data.value[0];
+    }
+    return [];
 });
 const DataType_InputType = {
     [DataType.STRING]: 'text',

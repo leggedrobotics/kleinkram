@@ -58,7 +58,7 @@ import { ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { Mission } from 'src/types/Mission';
 import { Project } from 'src/types/Project';
-import { allProjects } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import { moveMission } from 'src/services/mutations/mission';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -71,7 +71,7 @@ const queryClient = useQueryClient();
 
 const projectsReturn = useQuery<Project[]>({
     queryKey: ['projects'],
-    queryFn: () => allProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const projects = projectsReturn.data || [];
 
