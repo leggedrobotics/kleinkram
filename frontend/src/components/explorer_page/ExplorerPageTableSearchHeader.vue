@@ -9,7 +9,7 @@
       >
         <template #append>
           <q-icon
-            name="close"
+            name="sym_o_close"
             class="cursor-pointer"
             @click="search = ''"
           />

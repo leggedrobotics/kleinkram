@@ -1,9 +1,6 @@
 <template>
-  <q-layout
-    view="lHh lpr lFf"
-    style="position: absolute"
-  >
-    <HeaderComponent />
+  <q-layout view="lHh lpr lFf" style="position: absolute">
+    <HeaderComponent/>
 
     <q-page-container class="transparent-on-open-dialog">
       <main>
@@ -14,9 +11,9 @@
         >
           <template #avatar>
             <q-icon
-              name="warning"
+              name="sym_o_warning"
               color="white"
-            />
+            style="font-weight: bold; font-size: 36px; padding: 2px"/>
           </template>
           This app is in active development. Data will be reset without notice!
         </q-banner>

@@ -1,14 +1,23 @@
 <template>
-  <div class="row q-mt-md">
+  <div class="row">
     <div>
       <q-breadcrumbs>
         <q-breadcrumbs-el
-          v-for="crumb in crumbs"
-          :key="crumb.uuid"
-          :label="crumb.name"
-          clickable
-          @click="crumb.click"
-        />
+            v-for="crumb in crumbs"
+            :key="crumb.uuid"
+            @click="crumb.click"
+        >
+          <q-btn flat v-if="!isLastCrumb(crumb)" style="padding: 4px 8px">
+            {{ crumb.name }}
+          </q-btn>
+
+          <template v-else>
+            <span style="padding: 8px; cursor: default">
+              {{ crumb.name }}
+            </span>
+          </template>
+
+        </q-breadcrumbs-el>
 
         <template v-if="projectLoading || missionLoading">
           <q-breadcrumbs-el>
@@ -56,7 +65,7 @@ watchEffect(() => {
         props.url_handler?.setMissionUUID( undefined)
       }
     },
-    ...(project.value ? [{
+    ...(project.value && !!project_uuid.value ? [{
       name: project.value.name,
       uuid: project.value.uuid,
       click: () => {
@@ -64,12 +73,16 @@ watchEffect(() => {
         props.url_handler.setMissionUUID(undefined)
       }
     }] : []),
-    ...(mission.value ? [{
+    ...(mission.value && !!mission_uuid.value ? [{
       name: mission.value.name,
       uuid: mission.value.uuid,
     }] : [])
   ]
 });
 
+const isLastCrumb = (crumb: any) => {
+  const idx = crumbs.value.findIndex((c: any) => c.uuid === crumb.uuid)
+  return idx === crumbs.value.length - 1;
+}
 
 </script>

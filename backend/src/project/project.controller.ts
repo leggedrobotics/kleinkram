@@ -1,6 +1,14 @@
-import {Body, Controller, Delete, Get, HttpException, Post, Put,} from '@nestjs/common';
-import {ProjectService} from './project.service';
-import {CreateProject} from './entities/create-project.dto';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpException,
+    Post,
+    Put,
+} from '@nestjs/common';
+import { ProjectService } from './project.service';
+import { CreateProject } from './entities/create-project.dto';
 import {
     AdminOnly,
     CanCreateProject,
@@ -11,19 +19,21 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import {
-    QueryBoolean, QueryProjectSearchParam,
+    QueryBoolean,
+    QueryOptional,
+    QueryOptionalBoolean,
+    QueryProjectSearchParam,
     QueryProjectSortBy,
     QuerySkip,
     QueryString,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import {addJWTUser, JWTUser} from '../auth/paramDecorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('project')
 export class ProjectController {
-    constructor(private readonly projectService: ProjectService) {
-    }
+    constructor(private readonly projectService: ProjectService) {}
 
     @Get()
     @LoggedIn()
@@ -32,10 +42,18 @@ export class ProjectController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryProjectSortBy('sortBy') sortBy?: string,
-        @QueryBoolean('descending') descending?: boolean,
-        @QueryProjectSearchParam('searchParams') searchParams?: Map<string, string>,
+        @QueryOptionalBoolean('descending') descending?: boolean,
+        @QueryProjectSearchParam('searchParams')
+        searchParams?: Map<string, string>,
     ) {
-        return this.projectService.findAll(user, skip, take, sortBy, descending, searchParams);
+        return this.projectService.findAll(
+            user,
+            skip,
+            take,
+            sortBy,
+            descending,
+            searchParams,
+        );
     }
 
     @Get('one')

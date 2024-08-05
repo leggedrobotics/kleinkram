@@ -15,7 +15,7 @@
             </q-chip>
         </div>
         <div class="col-1 q-pa-md">
-            <q-btn color="primary" icon="add" @click="openAddTag">
+            <q-btn color="primary" icon="sym_o_add" @click="openAddTag">
                 Add Tag
             </q-btn>
         </div>
@@ -38,11 +38,11 @@ const props = defineProps<{
 }>();
 
 const icons = {
-    [DataType.STRING]: 'description',
-    [DataType.NUMBER]: '123',
-    [DataType.BOOLEAN]: 'check',
-    [DataType.DATE]: 'event',
-    [DataType.LOCATION]: 'place',
+    [DataType.STRING]: 'sym_o_description',
+    [DataType.NUMBER]: 'sym_o_123',
+    [DataType.BOOLEAN]: 'sym_o_check',
+    [DataType.DATE]: 'sym_o_event',
+    [DataType.LOCATION]: 'sym_o_place',
 };
 
 const { data } = useQuery<Mission>({

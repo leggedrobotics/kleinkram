@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import {Column, Entity, ManyToMany, ManyToOne, OneToMany} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
@@ -7,16 +7,22 @@ import ProjectAccess from '../auth/project_access.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
-    @Column({ unique: true })
+    @Column({unique: true})
     name: string;
 
     @OneToMany(() => Mission, (mission) => mission.project)
     missions: Mission[];
 
-    @OneToMany(() => ProjectAccess, (project_access) => project_access.projects)
+    @OneToMany(
+        () => ProjectAccess,
+        (project_access) => project_access.projects,
+        {
+            cascade: true,
+            eager: true,
+        })
     project_accesses: ProjectAccess[];
 
-    @Column({ nullable: true })
+    @Column({nullable: true})
     description: string;
 
     @ManyToOne(() => User, (user) => user.projects)
