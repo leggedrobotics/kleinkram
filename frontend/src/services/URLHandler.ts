@@ -296,3 +296,14 @@ export class QueryURLHandler extends QueryHandler {
         this.internal_update = false;
     }
 }
+
+export type TableRequest = {
+    filter?: any;
+    pagination: {
+        page: number;
+        rowsPerPage: number;
+        sortBy: string;
+        descending: boolean;
+    };
+    getCellValue: any;
+};

@@ -112,7 +112,7 @@
                 ref="tableRef"
                 v-model:pagination="pagination"
                 title="Projects"
-                :rows="data"
+                :rows="projects"
                 :columns="project_columns"
                 style="margin-top: 8px"
                 selection="multiple"
@@ -137,7 +137,7 @@ import { useMutation, useQuery } from '@tanstack/vue-query';
 
 import { searchUsers } from 'src/services/queries/user';
 
-import { Ref, ref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 
@@ -209,10 +209,11 @@ const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
     enabled: !!searchAccessGroup.value,
 });
 
-const { data } = useQuery<Project[]>({
+const { data: _projects } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
+const projects = computed(() => (_projects.value ? _projects.value[0] : []));
 
 const pagination = ref({
     sortBy: 'name',

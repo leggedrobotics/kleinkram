@@ -67,7 +67,7 @@ import RouterService from 'src/services/routerService';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 
 const $routerService: RouterService | undefined = inject('$routerService');
@@ -79,16 +79,7 @@ const props = defineProps({
     },
 });
 
-function setPagination(update: {
-    filter?: any;
-    pagination: {
-        page: number;
-        rowsPerPage: number;
-        sortBy: string;
-        descending: boolean;
-    };
-    getCellValue: any;
-}) {
+function setPagination(update: TableRequest) {
     props.url_handler?.setPage(update.pagination.page);
     props.url_handler?.setTake(update.pagination.rowsPerPage);
 }
