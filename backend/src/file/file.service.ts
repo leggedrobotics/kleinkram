@@ -12,6 +12,7 @@ import { FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
 import logger from '../logger';
+import Tag from '@common/entities/tag/tag.entity';
 
 @Injectable()
 export class FileService {
@@ -36,35 +37,17 @@ export class FileService {
                 relations: ['mission'],
                 skip,
                 take,
-            })
+            });
         }
-        return this.fileRepository
-            .createQueryBuilder('file')
-            .leftJoinAndSelect('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
-            .leftJoin(
-                'projectAccessViewEntity',
-                'projectAccessView',
-                'projectAccessView.projectUUID = project.uuid',
-            )
-            .leftJoin(
-                'missionAccessView',
-                'missionAccessView',
-                'missionAccessView.missionUUID = mission.uuid',
-            )
-            .leftJoin('projectAccessView.accessGroup', 'projectAccessGroup')
-            .leftJoin('projectAccessGroup.users', 'projectUsers')
-            .leftJoin('missionAccessView.accessGroup', 'missionAccessGroup')
-            .leftJoin('missionAccessGroup.users', 'missionUsers')
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :userUUID', {
-                        userUUID,
-                    }).orWhere('missionUsers.uuid = :userUUID', {
-                        userUUID,
-                    });
-                }),
-            ).skip(skip).take(take)
+        return addAccessJoinsAndConditions(
+            this.fileRepository
+                .createQueryBuilder('file')
+                .leftJoinAndSelect('file.mission', 'mission')
+                .leftJoin('mission.project', 'project')
+                .skip(skip)
+                .take(take),
+            userUUID,
+        ).getMany();
     }
 
     async findFilteredByNames(
@@ -74,6 +57,7 @@ export class FileService {
         userUUID: string,
         take: number,
         skip: number,
+        tags: Record<string, any>,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -121,6 +105,34 @@ export class FileService {
                 .andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')')
                 .setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
         }
+        if (tags) {
+            query
+                .leftJoin('mission.tags', 'tag')
+                .leftJoin('tag.tagType', 'tagtype');
+            for (const [key, value] of Object.entries(tags)) {
+                console.log(key, value);
+                query.andWhere('tagtype.name = :tagName', { tagName: key });
+                query.andWhere(
+                    new Brackets((qb) => {
+                        if (typeof value === 'string') {
+                            qb.where('tag.STRING = :value', { value }).orWhere(
+                                'tag.LOCATION = :value',
+                                { value },
+                            );
+                            if (new Date(value).toString() !== 'Invalid Date') {
+                                qb.orWhere('tag.DATE = :value', { value });
+                            }
+                        }
+                        if (typeof value === 'number') {
+                            qb.where('tag.NUMBER = :value', { value });
+                        }
+                        if (typeof value === 'boolean') {
+                            qb.where('tag.BOOLEAN = :value', { value });
+                        }
+                    }),
+                );
+            }
+        }
         console.log(query.getQueryAndParameters());
         // Execute the query
         const fileIds = await query.getMany();
@@ -136,7 +148,8 @@ export class FileService {
             .leftJoinAndSelect('file.creator', 'creator')
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-            .skip(skip).take(take)
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 
@@ -176,7 +189,7 @@ export class FileService {
 
         // Apply filters for fileName, projectUUID, and date
         if (fileName) {
-            logger.debug("Filtering files by filename: " + fileName);
+            logger.debug('Filtering files by filename: ' + fileName);
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
@@ -367,7 +380,7 @@ export class FileService {
             where: { mission: { uuid: missionUUID } },
             relations: ['mission', 'topics', 'creator', 'mission.creator'],
             take,
-            skip
+            skip,
         });
     }
 }

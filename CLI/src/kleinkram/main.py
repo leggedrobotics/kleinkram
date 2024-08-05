@@ -42,9 +42,10 @@ app.command(hidden=True)(setCliKey)
 def list_files(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
     mission: Optional[str] = typer.Option(None, help="Name of Mission"),
-    topics: Optional[List[str]] = typer.Option(
+    topics: Optional[str] = typer.Option(
         None, help="Comma separated list of topics"
     ),
+    tags: Optional[str] = typer.Option(None, help="Comma separated list of tagtype:tagvalue pairs")
 ):
     """
     List all files with optional filters for project, mission, or topics.
@@ -66,6 +67,11 @@ def list_files(
             params["missionName"] = mission
         if topics:
             params["topics"] = topics
+        if tags:
+            params["tags"] = {}
+            for tag in tags.split(","):
+                tagtype, tagvalue = tag.split("§")
+                params['tags'][tagtype] = tagvalue
         response = client.get(
             url,
             params=params,
