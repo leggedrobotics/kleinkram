@@ -159,9 +159,16 @@ const { data: project } = useQuery<Project>({
 });
 const missionName = ref('');
 const ddr_open = ref(false);
-const { isLoading, isError, data, error } = useQuery<Project[]>({
+
+const { data: _data, error } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
+});
+const data = computed(() => {
+    if (_data && _data.value) {
+        return _data.value[0];
+    }
+    return [];
 });
 const DataType_InputType = {
     [DataType.STRING]: 'text',

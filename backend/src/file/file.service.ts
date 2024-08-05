@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {Brackets, DataSource, ILike, Repository} from 'typeorm';
+import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -132,9 +132,7 @@ export class FileService {
                     }),
                 );
             }
-        }
-        console.log(query.getQueryAndParameters());
-        // Execute the query
+        } // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
             return [];
@@ -231,25 +229,23 @@ export class FileService {
         }
 
         query.groupBy('file.uuid');
-        console.log(query.getSql());
         // Execute the query
-        const fileIds = await query.getMany();
+        const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
             logger.silly('No files found');
             return [];
         }
 
         const fileIdsArray = fileIds.map((file) => file.uuid);
-        return await this.fileRepository
+        const res = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
-            .skip(skip)
-            .take(take)
             .getMany();
+        return [res, count];
     }
 
     async findOne(uuid: string) {
@@ -376,12 +372,12 @@ export class FileService {
     }
 
     async findByMission(
-      missionUUID: string,
-      take: number,
-      skip: number,
-      filename?: string,
-      fileType?: FileType,
-    ):Promise<[FileEntity[], number]> {
+        missionUUID: string,
+        take: number,
+        skip: number,
+        filename?: string,
+        fileType?: FileType,
+    ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = { mission: { uuid: missionUUID } };
         if (filename) {
             where.filename = ILike(`%${filename}%`);
