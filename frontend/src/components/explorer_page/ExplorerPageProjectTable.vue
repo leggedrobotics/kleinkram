@@ -5,7 +5,7 @@
         bordered
         v-model:pagination="pagination"
         v-model:selected="selected"
-        :rows-per-page-options="[1, 10, 20, 50, 100]"
+        :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
         :columns="explorer_page_table_columns as any"
         row-key="uuid"
