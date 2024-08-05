@@ -73,7 +73,7 @@ import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { mission_columns } from 'components/explorer_page/explorer_page_table_columns';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 
 const props = defineProps({
@@ -83,16 +83,7 @@ const props = defineProps({
     },
 });
 
-function setPagination(update: {
-    filter?: any;
-    pagination: {
-        page: number;
-        rowsPerPage: number;
-        sortBy: string;
-        descending: boolean;
-    };
-    getCellValue: any;
-}) {
+function setPagination(update: TableRequest) {
     props.url_handler?.setPage(update.pagination.page);
     props.url_handler?.setTake(update.pagination.rowsPerPage);
 }

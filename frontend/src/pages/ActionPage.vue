@@ -29,7 +29,7 @@
                         >
                             <q-list>
                                 <q-item
-                                    v-for="project in data"
+                                    v-for="project in projects"
                                     :key="project.uuid"
                                     clickable
                                     @click="
@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, ref, watchEffect } from 'vue';
+import { computed, Ref, ref, watchEffect } from 'vue';
 
 import { useQuery } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
@@ -131,16 +131,20 @@ const dropdownNewFileMission = ref(false);
 const selected_project: Ref<Project | null> = ref(null);
 const selected_mission: Ref<Mission | null> = ref(null);
 
-const { data } = useQuery<Project[]>({
+const { data: _projects } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
+const projects = computed(() => (_projects.value ? _projects.value[0] : []));
 
-const { data: missions, refetch } = useQuery({
+const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProject(selected_project.value?.uuid || '', 100, 0),
+    queryFn: () =>
+        missionsOfProject(selected_project.value?.uuid || '', 100, 0),
     enabled: !!selected_project.value?.uuid,
 });
+
+const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 watchEffect(() => {
     if (selected_project.value?.uuid) {

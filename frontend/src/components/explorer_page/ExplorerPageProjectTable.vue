@@ -73,7 +73,7 @@ import { QTable, useQuasar } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
 import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
 
@@ -86,16 +86,7 @@ const props = defineProps({
     },
 });
 
-function setPagination(update: {
-    filter?: any;
-    pagination: {
-        page: number;
-        rowsPerPage: number;
-        sortBy: string;
-        descending: boolean;
-    };
-    getCellValue: any;
-}) {
+function setPagination(update: TableRequest) {
     props.url_handler?.setPage(update.pagination.page);
     props.url_handler?.setTake(update.pagination.rowsPerPage);
 }
@@ -104,8 +95,8 @@ const pagination = computed(() => {
         page: props.url_handler.page,
         rowsPerPage: props.url_handler.take,
         rowsNumber: props.url_handler?.rowsNumber,
-        sortBy: 'name',
-        descending: false,
+        sortBy: props.url_handler?.sortBy,
+        descending: props.url_handler?.descending,
     };
 });
 
