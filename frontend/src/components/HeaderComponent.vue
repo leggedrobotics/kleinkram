@@ -27,12 +27,12 @@
 
       <q-tabs v-show="$q.screen.gt.sm" inline-label>
         <q-route-tab
-          no-caps
-          v-for="item in main_menu"
-          :key="item.title"
-          :label="item.title"
-          :to="item.to"
-          :icon="item.icon"
+            no-caps
+            v-for="item in main_menu"
+            :key="item.title"
+            :label="item.title"
+            :to="item.to"
+            :icon="item.icon"
         />
       </q-tabs>
 

@@ -209,14 +209,14 @@ import EditMission from 'components/EditFile.vue';
 import {dateMask, formatDate, parseDate} from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
-import { formatSize } from 'src/services/generalFormatting';
-import { Project } from 'src/types/Project';
-import { Mission } from 'src/types/Mission';
-import { FileEntity } from 'src/types/FileEntity';
-import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
-import { allTopicsNames } from 'src/services/queries/topic';
-import { fetchOverview } from 'src/services/queries/file';
+import {formatSize} from 'src/services/generalFormatting';
+import {Project} from 'src/types/Project';
+import {Mission} from 'src/types/Mission';
+import {FileEntity} from 'src/types/FileEntity';
+import {filteredProjects} from 'src/services/queries/project';
+import {missionsOfProject} from 'src/services/queries/mission';
+import {allTopicsNames} from 'src/services/queries/topic';
+import {fetchOverview} from 'src/services/queries/file';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
@@ -413,4 +413,3 @@ const onRowClick = (_: Event, row: any) => {
 };
 
 </script>
-<style scoped></style>

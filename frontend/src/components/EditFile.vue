@@ -223,8 +223,8 @@ watch(
     },
 );
 const projectsReturn = useQuery<Project[]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
+  queryKey: ['projects'],
+  queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const projects = projectsReturn.data;
 

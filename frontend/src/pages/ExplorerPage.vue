@@ -147,11 +147,14 @@
 
           </div>
         </template>
+
       </Suspense>
     </q-card-section>
 
   </q-card>
+
 </template>
+
 <script setup lang="ts">
 
 import {computed, Ref, ref} from "vue";
