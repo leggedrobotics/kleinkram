@@ -4,7 +4,55 @@ body {
   overflow-y: scroll;
 }
 
+.q-layout--standard, .q-table thead {
+  background-color: whitesmoke;
+}
+
 q-page {
   // that's a bit ugly, but it is necessary to avoid unwanted scrollbars
   min-height: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .q-page-container {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (min-width: 600px) {
+  .q-page-container {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .q-page-container {
+    margin-left: 25px;
+    margin-right: 25px;
+  }
+}
+
+/////////////////////////////////////////////////////////////////
+// Custom Background Coverage for Dialogs
+/////////////////////////////////////////////////////////////////
+
+.q-dialog__backdrop {
+  background-color: rgba(32, 33, 36, 0.4);
+}
+
+body:has(.q-dialog__backdrop) .transparent-on-open-dialog {
+  opacity: 0.6;
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+textarea {
+  resize: none !important;
+}
+
+.q-btn {
+  text-transform: none
 }

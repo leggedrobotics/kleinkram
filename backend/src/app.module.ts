@@ -3,8 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import env from './env';
-import configuration from './config';
+import configuration from '@common/typeorm_config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './topic/topic.module';
 import { MissionModule } from './mission/mission.module';
@@ -13,12 +12,16 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { ActionModule } from './action/actionModule';
+import env from '@common/env';
+import { TagModule } from './tag/tag.module';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import access_config from '../access_config.json';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [configuration],
+            load: [configuration, () => ({ accessConfig: access_config })],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -48,6 +51,12 @@ import { ActionModule } from './action/actionModule';
         AuthModule,
         PassportModule,
         ActionModule,
+        TagModule,
     ],
 })
 export class AppModule {}
+
+export type AccessGroupConfig = {
+    emails: [{ email: string; access_groups: string[] }];
+    access_groups: [{ name: string; uuid: string; rights: number }];
+};

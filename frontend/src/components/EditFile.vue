@@ -1,11 +1,11 @@
 <template>
-    <q-dialog ref="dialogRef" persistent style="max-width: 1500px">
+    <q-dialog ref="dialogRef" style="max-width: 1500px">
         <q-card
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 300px; max-width: 1500px"
         >
             <q-card-section>
-                <h4>Edit file {{ isLoading ? '...' : data?.name }}</h4>
+                <h4>Edit file {{ isLoading ? '...' : data?.filename }}</h4>
                 <q-form v-if="editableFile">
                     <div class="row items-center justify-between q-gutter-md">
                         <div class="col-5">
@@ -50,7 +50,7 @@
                         <div class="col-1">
                             <q-btn-dropdown
                                 v-model="dd_open_2"
-                                :label="editableFile.mission.name || 'Mission'"
+                                :label="editableFile?.mission.name || 'Mission'"
                                 outlined
                                 dense
                                 clearable
@@ -80,7 +80,7 @@
                                 <q-input filled v-model="dateTime">
                                     <template v-slot:prepend>
                                         <q-icon
-                                            name="event"
+                                            name="sym_o_event"
                                             class="cursor-pointer"
                                         >
                                             <q-popup-proxy
@@ -90,7 +90,7 @@
                                             >
                                                 <q-date
                                                     v-model="dateTime"
-                                                    mask="YYYY-MM-DD HH:mm"
+                                                    mask="DD.MM.YYYY HH:mm"
                                                 >
                                                     <div
                                                         class="row items-center justify-end"
@@ -109,7 +109,7 @@
 
                                     <template v-slot:append>
                                         <q-icon
-                                            name="access_time"
+                                            name="sym_o_access_time"
                                             class="cursor-pointer"
                                         >
                                             <q-popup-proxy
@@ -119,7 +119,7 @@
                                             >
                                                 <q-time
                                                     v-model="dateTime"
-                                                    mask="YYYY-MM-DD HH:mm"
+                                                    mask="DD.MM.YYYY HH:mm"
                                                     format24h
                                                 >
                                                     <div
@@ -165,22 +165,18 @@
     </q-dialog>
 </template>
 <script setup lang="ts">
-import {
-    Query,
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from '@tanstack/vue-query';
-import {
-    allProjects,
-    fetchFile,
-    missionsOfProject,
-} from 'src/services/queries';
-import { Ref, ref, watch, watchEffect } from 'vue';
-import { FileEntity, Project, Mission } from 'src/types/types';
-import { updateFile } from 'src/services/mutations';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
+import { Project } from 'src/types/Project';
+import { FileEntity } from 'src/types/FileEntity';
+import { fetchFile } from 'src/services/queries/file';
+import { filteredProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
+import { updateFile } from 'src/services/mutations/file';
+import { Mission } from 'src/types/Mission';
 
 const props = defineProps<{
     file_uuid: string;
@@ -205,12 +201,13 @@ const editableFile: Ref<FileEntity | null> = ref(null);
 watch(
     () => data.value,
     (newValue) => {
-        selected_project.value = newValue?.mission.project;
+        if (!newValue) return;
+        selected_project.value = newValue?.mission?.project;
         if (newValue?.date && data.value) {
             editableFile.value = new FileEntity(
                 newValue.uuid,
                 newValue.filename,
-                newValue.mission.clone(),
+                newValue.mission?.clone() as Mission,
                 newValue.creator,
                 newValue.date,
                 [],
@@ -227,17 +224,20 @@ watch(
         immediate: true, // Mission the watcher immediately on component mount
     },
 );
-const projectsReturn = useQuery<Project[]>({
+const projectsReturn = useQuery<[Project[], number]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => filteredProjects(500, 0, 'name'),
 });
-const projects = projectsReturn.data;
+const projects = computed(() =>
+    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+);
 
-const { data: missions, refetch } = useQuery({
+const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: ['missions', selected_project.value?.uuid],
     queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
+const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 watch(
     () => selected_project.value,
@@ -248,7 +248,7 @@ watch(
                     editableFile.value &&
                     missions.value?.length !== undefined &&
                     missions.value?.length > 0 &&
-                    editableFile.value?.mission.project.uuid !==
+                    editableFile.value?.mission?.project?.uuid !==
                         selected_project.value?.uuid
                 ) {
                     editableFile.value.mission = missions.value[0];
@@ -262,9 +262,8 @@ watch(
 );
 
 const { mutate: updateFileMutation } = useMutation({
-    mutationFn: (fileData: FileEntity) => updateFile(fileData),
+    mutationFn: (fileData: FileEntity) => updateFile({ file: fileData }),
     onSuccess: function (data, variables, context) {
-        // queryClient.invalidateQueries([''])
         Notify.create({
             group: false,
             message: 'File updated',
@@ -276,9 +275,15 @@ const { mutate: updateFileMutation } = useMutation({
         const cache = queryClient.getQueryCache();
         const filtered = cache
             .getAll()
-            .filter((query) => query.queryKey[0] === 'Filtered Files');
+            .filter(
+                (query) =>
+                    query.queryKey[0] === 'Filtered Files' ||
+                    (query.queryKey[0] === 'file' &&
+                        query.queryKey[1] === props.file_uuid),
+            );
+
         filtered.forEach((query) => {
-            queryClient.invalidateQueries(query.queryKey);
+            queryClient.invalidateQueries({ queryKey: query.queryKey });
         });
     },
     onError(error, variables, context) {
@@ -294,9 +299,10 @@ function _updateMission() {
         !isNaN(convertedDate.getTime())
     ) {
         editableFile.value.date = convertedDate;
-        const noncircularMission = editableFile.value?.mission.clone();
+        const noncircularMission =
+            editableFile.value?.mission?.clone() as Mission;
         noncircularMission.project = undefined;
-        noncircularMission.files = undefined;
+        noncircularMission.files = [];
         editableFile.value.mission = noncircularMission;
         updateFileMutation(editableFile.value);
         onDialogOK();

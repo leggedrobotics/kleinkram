@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
@@ -6,21 +6,28 @@ import { AuthController } from './auth.controller';
 import { UserService } from '../user/user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import User from '../user/entities/user.entity';
-import env from '../env';
 import { JwtStrategy } from './jwt.strategy';
 import {
     AdminOnlyGuard,
     LoggedInUserGuard,
     TokenOrUserGuard,
 } from './roles.guard';
-import Apikey from './entities/apikey.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import Account from './entities/account.entity';
-import Project from '../project/entities/project.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import User from '@common/entities/user/user.entity';
+import Account from '@common/entities/auth/account.entity';
+import Project from '@common/entities/project/project.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import env from '@common/env';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
-import Mission from '../mission/entities/mission.entity';
+import Tag from '@common/entities/tag/tag.entity';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import MissionAccess from '@common/entities/auth/mission_access.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import { AccessService } from './access.service';
+import { AccessController } from './access.controller';
 
 @Module({
     imports: [
@@ -31,6 +38,11 @@ import Mission from '../mission/entities/mission.entity';
             Account,
             Project,
             Mission,
+            Tag,
+            ProjectAccess,
+            MissionAccess,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
@@ -42,6 +54,7 @@ import Mission from '../mission/entities/mission.entity';
     ],
     providers: [
         AuthService,
+        AccessService,
         GoogleStrategy,
         UserService,
         ProjectGuardService,
@@ -51,7 +64,7 @@ import Mission from '../mission/entities/mission.entity';
         LoggedInUserGuard,
         TokenOrUserGuard,
     ],
-    controllers: [AuthController],
+    controllers: [AuthController, AccessController],
     exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
 })
 export class AuthModule {}

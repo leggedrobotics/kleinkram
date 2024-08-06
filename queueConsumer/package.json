@@ -3,12 +3,13 @@
     "version": "1.0.0",
     "scripts": {
         "start": "nest start",
-        "start:dev": "nest start --watch",
+        "start:dev": "nest start --watch --preserveWatchOutput",
         "start:prod": "node dist/main",
         "build": "nest build"
     },
     "dependencies": {
         "@mcap/core": "^2.1.1",
+        "@mcap/nodejs": "^1.0.0",
         "@mcap/support": "^1.0.0",
         "@nestjs/bull": "^10.1.1",
         "@nestjs/common": "10.3.7",

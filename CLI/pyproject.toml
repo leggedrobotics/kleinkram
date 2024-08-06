@@ -3,12 +3,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ETH_GTD_cli"
-version = "0.0.109"
+name = "kleinkram"
+version = "0.0.121"
 authors = [
   { name="Johann Schwabe", email="jschwab@ethz.ch" },
 ]
-description = "A CLI for the ETH project Grand Tour"
+description = "A CLI for the ETH project kleinkram"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
@@ -23,8 +23,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/leggedrobotics/GrandTourDatasets"
-Issues = "https://github.com/leggedrobotics/GrandTourDatasets/issues"
+Homepage = "https://github.com/leggedrobotics/kleinkram"
+Issues = "https://github.com/leggedrobotics/kleinkram/issues"
 
 [project.scripts]
-GTD = 'ETH_GTD_cli.main:app'
+klein = 'kleinkram.main:app'

@@ -1,11 +1,11 @@
 ---
 layout: home
 
-title: Bagestry
+title: Kleinkram
 titleTemplate: A structured bag and mcap storage solution
 
 hero:
-  name: Bagestry
+  name: Kleinkram
   text: Robotics Systems Lab
   tagline: A structured bag and mcap storage solution
   actions:

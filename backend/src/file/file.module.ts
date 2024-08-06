@@ -2,32 +2,41 @@ import { Module } from '@nestjs/common';
 import { FileService } from './file.service';
 import { FileController } from './file.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import File from './entities/file.entity';
+import FileEntity from '@common/entities/file/file.entity';
 import { TopicService } from '../topic/topic.service';
-import Topic from '../topic/entities/topic.entity';
-import Mission from '../mission/entities/mission.entity';
-import Project from '../project/entities/project.entity';
-import User from '../user/entities/user.entity';
-import Apikey from '../auth/entities/apikey.entity';
+import Topic from '@common/entities/topic/topic.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+import User from '@common/entities/user/user.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 import { MissionService } from '../mission/mission.service';
 import { UserService } from '../user/user.service';
-import Account from '../auth/entities/account.entity';
+import Account from '@common/entities/auth/account.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
-import AccessGroup from '../auth/entities/accessgroup.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ProjectGuardService } from '../auth/projectGuard.service';
 import { FileGuardService } from '../auth/fileGuard.service';
+import { TagService } from '../tag/tag.service';
+import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tagType.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             Mission,
-            File,
+            FileEntity,
             Topic,
             Project,
             User,
             Apikey,
             Account,
             AccessGroup,
+            Tag,
+            TagType,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
     ],
     providers: [
@@ -38,6 +47,7 @@ import { FileGuardService } from '../auth/fileGuard.service';
         MissionGuardService,
         ProjectGuardService,
         FileGuardService,
+        TagService,
     ],
     controllers: [FileController],
     exports: [FileService],

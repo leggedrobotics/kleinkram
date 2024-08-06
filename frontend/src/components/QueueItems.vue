@@ -8,7 +8,7 @@
                     hint="File Processing since: "
                 >
                     <template v-slot:prepend>
-                        <q-icon name="event" class="cursor-pointer">
+                        <q-icon name="sym_o_event" class="cursor-pointer">
                             <q-popup-proxy
                                 cover
                                 transition-show="scale"
@@ -29,7 +29,7 @@
                     </template>
 
                     <template v-slot:append>
-                        <q-icon name="access_time" class="cursor-pointer">
+                        <q-icon name="sym_o_access_time" class="cursor-pointer">
                             <q-popup-proxy
                                 cover
                                 transition-show="scale"
@@ -65,6 +65,7 @@
                 row-key="uuid"
                 :loading="loading"
                 binary-state-sort
+                @rowClick="rowClick"
             >
                 <template v-slot:body-cell-Status="props">
                     <q-td :props="props">
@@ -81,11 +82,18 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { Project, Queue } from 'src/types/types';
-import { currentQueue } from 'src/services/queries';
-import { ref, Ref } from 'vue';
+import { inject, ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { FileLocation, FileState } from 'src/enum/QUEUE_ENUM';
+import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
+import { Queue } from 'src/types/Queue';
+import { Project } from 'src/types/Project';
+import { currentQueue } from 'src/services/queries/queue';
+import { FileEntity } from 'src/types/FileEntity';
+import { findOneByNameAndMission } from 'src/services/queries/file';
+import ROUTES from 'src/router/routes';
+import RouterService from 'src/services/routerService';
+
+const $routerService: RouterService | undefined = inject('$routerService');
 
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
@@ -104,6 +112,19 @@ const queue = useQuery<Project[]>({
 });
 
 const data = queue.data;
+
+function rowClick(event: any, row: Queue) {
+    if (
+        row.filename.endsWith('.bag') ||
+        (row.filename.endsWith('.mcap') && row.state == FileState.DONE)
+    ) {
+        findOneByNameAndMission(row.filename, row.mission.uuid).then(
+            (file: FileEntity) => {
+                $routerService?.routeTo(ROUTES.FILE, { uuid: file.uuid });
+            },
+        );
+    }
+}
 
 const columns = [
     {

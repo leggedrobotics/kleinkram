@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# generated files
+__generated__endpoints.json
+
 # Logs
 logs
 *.log

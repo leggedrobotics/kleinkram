@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import User from '../user/entities/user.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import Project from '../project/entities/project.entity';
-import { AccessGroupRights, UserRole } from '../enum';
+import { MoreThanOrEqual, Repository } from 'typeorm';
+import User from '@common/entities/user/user.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Project from '@common/entities/project/project.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 
 @Injectable()
 export class ProjectGuardService {
@@ -17,6 +18,8 @@ export class ProjectGuardService {
         private accessGroupRepository: Repository<AccessGroup>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
+        @InjectRepository(ProjectAccessViewEntity)
+        private projectAccessView: Repository<ProjectAccessViewEntity>,
     ) {}
 
     async canAccessProject(
@@ -33,17 +36,13 @@ export class ProjectGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const res = await this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoin('project.accessGroups', 'accessGroups')
-            .leftJoin('accessGroups.users', 'users')
-            .where('project.uuid = :uuid', { uuid: projectUUID })
-            .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('accessGroups.rights >= :rights', {
-                rights,
-            })
-            .getMany();
-        return res.length > 0;
+        return this.projectAccessView.exists({
+            where: {
+                projectUUID,
+                userUUID,
+                rights: MoreThanOrEqual(rights),
+            },
+        });
     }
 
     async canAccessProjectByName(
@@ -69,15 +68,12 @@ export class ProjectGuardService {
             return true;
         }
 
-        const canCreate = await this.accessGroupRepository
+        return this.accessGroupRepository
             .createQueryBuilder('access_group')
             .leftJoin('access_group.users', 'users')
-            .where('access_group.rights >= :rights', {
-                rights: AccessGroupRights.CREATE,
-            })
             .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('access_group.personal = FALSE')
-            .getCount();
-        return canCreate > 0;
+            .andWhere('access_group.personal = false')
+            .andWhere('access_group.inheriting = true')
+            .getExists();
     }
 }

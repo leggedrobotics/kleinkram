@@ -1,19 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import QueueEntity from './entities/queue.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import { QueueService } from './queue.service';
 import { QueueController } from './queue.controller';
 import { BullModule } from '@nestjs/bull';
-import Mission from '../mission/entities/mission.entity';
-import User from '../user/entities/user.entity';
-import Apikey from '../auth/entities/apikey.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import User from '@common/entities/user/user.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 import { UserService } from '../user/user.service';
-import Account from '../auth/entities/account.entity';
-import { MissionService } from '../mission/mission.service';
-import AccessGroup from '../auth/entities/accessgroup.entity';
-import Project from '../project/entities/project.entity';
+import Account from '@common/entities/auth/account.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Project from '@common/entities/project/project.entity';
 import { MissionGuardService } from '../auth/missionGuard.service';
 import { ProjectGuardService } from '../auth/projectGuard.service';
+import Tag from '@common/entities/tag/tag.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -25,6 +27,9 @@ import { ProjectGuardService } from '../auth/projectGuard.service';
             Account,
             AccessGroup,
             Project,
+            Tag,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         BullModule.forRoot({
             redis: {

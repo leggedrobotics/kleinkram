@@ -1,0 +1,59 @@
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { TagService } from './tag.service';
+import { DataType } from '@common/enum';
+import { CanAddTag, CanDeleteTag, LoggedIn } from '../auth/roles.decorator';
+import {
+    BodyDataType,
+    BodyNotNull,
+    BodyString,
+    BodyUUID,
+} from '../validation/bodyDecorators';
+import { QuerySkip, QueryTake, QueryUUID } from '../validation/queryDecorators';
+
+@Controller('tag')
+export class TagController {
+    constructor(private readonly tagService: TagService) {}
+
+    @Post('create')
+    @LoggedIn()
+    async createTagType(
+        @BodyString('name') name: string,
+        @BodyDataType('type') type: DataType,
+    ) {
+        return this.tagService.create(name, type);
+    }
+
+    @Post('addTag')
+    @CanAddTag()
+    async addTag(
+        @BodyUUID('mission') mission: string,
+        @BodyUUID('tagType') tagType: string,
+        @BodyNotNull('value') value: string | number | boolean,
+    ) {
+        return this.tagService.addTagType(mission, tagType, value);
+    }
+
+    @Post('addTags')
+    @CanAddTag()
+    async addTags(
+        @BodyUUID('uuid') uuid: string,
+        @BodyNotNull('tags') tags: Record<string, string>,
+    ) {
+        return this.tagService.addTags(uuid, tags);
+    }
+
+    @Delete('deleteTag')
+    @CanDeleteTag()
+    async deleteTag(@QueryUUID('uuid') uuid: string) {
+        return this.tagService.deleteTag(uuid);
+    }
+
+    @Get('all')
+    @LoggedIn()
+    async getAll(
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.tagService.getAll(skip, take);
+    }
+}

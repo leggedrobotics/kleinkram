@@ -1,24 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import QueueEntity from './entities/queue.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
-import Mission from '../mission/entities/mission.entity';
-import { FileLocation, FileState, UserRole } from '../enum';
+import Mission from '@common/entities/mission/mission.entity';
+import { FileLocation, FileState, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import env from '../env';
+import env from '@common/env';
 import { externalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
-import User from '../user/entities/user.entity';
-import Account from '../auth/entities/account.entity';
 import { UserService } from '../user/user.service';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 function extractFileIdFromUrl(url: string): string | null {
-    // Define the regex patterns for file and folder IDs
-    const filePattern = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-    const folderPattern = /\/drive\/folders\/([a-zA-Z0-9_-]+)/;
+    // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
+    const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
+    const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
 
     // Test the URL against the file pattern
     let match = url.match(filePattern);
@@ -36,6 +35,7 @@ function extractFileIdFromUrl(url: string): string | null {
     return null;
 }
 
+
 @Injectable()
 export class QueueService {
     constructor(
@@ -49,7 +49,7 @@ export class QueueService {
     ) {}
 
     async addActionQueue(mission_action_id: string) {
-        await this.actionQueue.add('processActionFile', {
+        await this.actionQueue.add('actionProcessQueue', {
             mission_action_id: mission_action_id,
         });
     }
@@ -59,7 +59,6 @@ export class QueueService {
             where: { uuid: driveCreate.missionUUID },
         });
         const creator = await this.userservice.findOneByUUID(user.uuid);
-
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         const newQueue = this.queueRepository.create({
             filename: fileId,
@@ -127,7 +126,7 @@ export class QueueService {
                 const newQueue = this.queueRepository.create({
                     filename,
                     identifier: location,
-                    state: FileState.AWAITING_UPLOAD,
+                    state: FileState.UPLOADING,
                     location: FileLocation.MINIO,
                     mission,
                     creator,
@@ -143,8 +142,6 @@ export class QueueService {
 
         const urls = await Promise.all(urlPromises);
 
-        console.debug('createPreSignedURLS', urls);
-
         return urls.reduce((acc, { filename, minioURL, uuid }) => {
             acc[filename] = { url: minioURL, uuid };
             return acc;
@@ -152,7 +149,6 @@ export class QueueService {
     }
 
     async confirmUpload(uuid: string) {
-        console.debug('confirmUpload', uuid);
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: uuid },
         });
@@ -160,13 +156,17 @@ export class QueueService {
         queue.state = FileState.PENDING;
         await this.queueRepository.save(queue);
 
-        console.debug('add file to queue', queue.uuid);
         await this.fileProcessingQueue.add('processMinioFile', {
             queueUuid: queue.uuid,
         });
     }
 
-    async active(startDate: Date, userUUID: string) {
+    async active(
+        startDate: Date,
+        userUUID: string,
+        skip: number,
+        take: number,
+    ) {
         const user = await this.userservice.findOneByUUID(userUUID);
         if (user.role === UserRole.ADMIN) {
             return await this.queueRepository.find({
@@ -174,28 +174,24 @@ export class QueueService {
                     updatedAt: MoreThan(startDate),
                 },
                 relations: ['mission', 'mission.project', 'creator'],
+                skip,
+                take,
                 order: {
                     createdAt: 'DESC',
                 },
             });
         }
-        return this.queueRepository
-            .createQueryBuilder('queue')
-            .leftJoinAndSelect('queue.mission', 'mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('queue.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('queue.updatedAt > :startDate', { startDate })
-            .where(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-                }),
-            )
+        return addAccessJoinsAndConditions(
+            this.queueRepository
+                .createQueryBuilder('queue')
+                .leftJoinAndSelect('queue.mission', 'mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('queue.creator', 'creator')
+                .where('queue.updatedAt > :startDate', { startDate }),
+            userUUID,
+        )
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 

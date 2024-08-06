@@ -9,6 +9,9 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
+import { BodyUUID } from '../validation/bodyDecorators';
+import { QueryDate, QuerySkip, QueryTake } from '../validation/queryDecorators';
 
 @Controller('queue')
 export class QueueController {
@@ -32,7 +35,7 @@ export class QueueController {
     @Post('createPreSignedURLS')
     @CanWriteMissionByBody()
     async create(
-        @Body() body: { filenames: string[]; missionUUID: string },
+        @Body() body: CreatePreSignedURLSDto,
         @addJWTUser() user: JWTUser,
     ) {
         logger.debug('createPreSignedURLS', body.filenames, body.missionUUID);
@@ -45,23 +48,21 @@ export class QueueController {
 
     @Post('confirmUpload')
     @CanCreateQueueByBody()
-    async confirmUpload(@Body() body: { uuid: string }) {
-        return this.queueService.confirmUpload(body.uuid);
+    async confirmUpload(@BodyUUID('uuid') uuid: string) {
+        return this.queueService.confirmUpload(uuid);
     }
 
     @Get('active')
     @LoggedIn()
     async active(
-        @Query('startDate') startDate: string,
+        @QueryDate('startDate') startDate: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         const date = new Date(startDate);
-        // Additional validation to handle invalid dates could be placed here
-        if (isNaN(date.getTime())) {
-            // Check if date is valid
-            throw new Error('Invalid date format');
-        }
-        return this.queueService.active(date, user.uuid);
+
+        return this.queueService.active(date, user.uuid, skip, take);
     }
 
     @Delete('clear')

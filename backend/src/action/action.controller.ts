@@ -13,6 +13,7 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { QuerySkip, QueryUUID } from '../validation/queryDecorators';
 
 @Controller('action')
 export class ActionController {
@@ -34,13 +35,18 @@ export class ActionController {
 
     @Get('list')
     @LoggedIn()
-    async list(@Query() dto: ActionQuery, @addJWTUser() user: JWTUser) {
-        return this.actionService.list(dto.mission_uuids, user.uuid);
+    async list(
+        @Query() dto: ActionQuery,
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QuerySkip('take') take: number,
+    ) {
+        return this.actionService.list(dto.mission_uuid, user.uuid, skip, take);
     }
 
     @Get('details')
     @CanReadAction()
-    async details(@Query('uuid') uuid: string) {
+    async details(@QueryUUID('uuid') uuid: string) {
         return this.actionService.details(uuid);
     }
 

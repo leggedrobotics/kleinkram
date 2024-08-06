@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import User from '../user/entities/user.entity';
-import AccessGroup from './entities/accessgroup.entity';
-import { AccessGroupRights, UserRole } from '../enum';
-import Mission from '../mission/entities/mission.entity';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import User from '@common/entities/user/user.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { AccessGroupRights, UserRole } from '@common/enum';
+import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
+import Tag from '@common/entities/tag/tag.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Injectable()
 export class MissionGuardService {
@@ -17,6 +19,10 @@ export class MissionGuardService {
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         private projectGuardService: ProjectGuardService,
+        @InjectRepository(Tag)
+        private tagRepository: Repository<Tag>,
+        @InjectRepository(MissionAccessViewEntity)
+        private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
     async canAccessMission(
         userUUID: string,
@@ -45,18 +51,13 @@ export class MissionGuardService {
         if (canAccessProject) {
             return true;
         }
-        const res = await this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoin('mission.accessGroups', 'accessGroups')
-            .leftJoin('accessGroups.users', 'users')
-            .where('mission.uuid = :uuid', { uuid: missionUUID })
-            .andWhere('users.uuid = :user', { user: user.uuid })
-            .andWhere('accessGroups.rights >= :rights', {
-                rights,
-            })
-            .getMany();
-
-        return res.length > 0;
+        return this.missionAccessView.exists({
+            where: {
+                missionUUID,
+                userUUID,
+                rights: MoreThanOrEqual(rights),
+            },
+        });
     }
 
     async canAccessMissionByName(
@@ -67,6 +68,36 @@ export class MissionGuardService {
         const mission = await this.missionRepository.findOne({
             where: { name: missionName },
         });
+        if (!mission) {
+            return true;
+        }
         return this.canAccessMission(userUUID, mission.uuid, rights);
+    }
+
+    async canTagMission(
+        userUUID: string,
+        tagUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const user = await this.userRepository.findOne({
+            where: { uuid: userUUID },
+        });
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        const tag = await this.tagRepository.findOne({
+            where: { uuid: tagUUID },
+            relations: ['mission'],
+        });
+
+        // All interactions with tags except READ are considered WRITE on the mission
+        let accessRights = AccessGroupRights.READ;
+        if (rights !== AccessGroupRights.READ) {
+            accessRights = AccessGroupRights.WRITE;
+        }
+        return this.canAccessMission(userUUID, tag.mission.uuid, accessRights);
     }
 }

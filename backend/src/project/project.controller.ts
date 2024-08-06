@@ -6,20 +6,30 @@ import {
     HttpException,
     Post,
     Put,
-    Query,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import {
     AdminOnly,
-    LoggedIn,
+    CanCreateProject,
+    CanDeleteProject,
     CanReadProject,
     CanReadProjectByName,
     CanWriteProject,
-    CanCreateProject,
-    CanDeleteProject,
+    LoggedIn,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from 'src/auth/paramDecorator';
+import {
+    QueryBoolean,
+    QueryOptional,
+    QueryOptionalBoolean,
+    QueryProjectSearchParam,
+    QueryProjectSortBy,
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 
 @Controller('project')
 export class ProjectController {
@@ -27,20 +37,35 @@ export class ProjectController {
 
     @Get()
     @LoggedIn()
-    async allProjects(@addJWTUser() user?: JWTUser) {
-        return this.projectService.findAll(user);
+    async allProjects(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @QueryProjectSortBy('sortBy') sortBy?: string,
+        @QueryOptionalBoolean('descending') descending?: boolean,
+        @QueryProjectSearchParam('searchParams')
+        searchParams?: Map<string, string>,
+    ) {
+        return this.projectService.findAll(
+            user,
+            skip,
+            take,
+            sortBy,
+            descending,
+            searchParams,
+        );
     }
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@Query('uuid') uuid: string) {
+    async getProjectById(@QueryUUID('uuid') uuid: string) {
         return this.projectService.findOne(uuid);
     }
 
     @Put('update')
     @CanWriteProject()
     async updateProject(
-        @Query('uuid') uuid: string,
+        @QueryUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ) {
         return this.projectService.update(uuid, dto);
@@ -57,7 +82,7 @@ export class ProjectController {
 
     @Get('byName')
     @CanReadProjectByName()
-    async getProjectByName(@Query('name') name: string) {
+    async getProjectByName(@QueryString('name') name: string) {
         const project = await this.projectService.findOneByName(name);
         if (!project) {
             throw new HttpException('Project not found', 404);
@@ -73,7 +98,25 @@ export class ProjectController {
 
     @Delete('delete')
     @CanDeleteProject()
-    async deleteProject(@Query('uuid') uuid: string) {
+    async deleteProject(@QueryUUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
+    }
+
+    @Post('addTagType')
+    @CanWriteProject()
+    async addTagType(
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('tagTypeUUID') tagTypeUUID: string,
+    ) {
+        return this.projectService.addTagType(uuid, tagTypeUUID);
+    }
+
+    @Post('removeTagType')
+    @CanWriteProject()
+    async removeTagType(
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('tagTypeUUID') tagTypeUUID: string,
+    ) {
+        return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
 }

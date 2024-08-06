@@ -1,8 +1,55 @@
 <template>
-    <q-card>
+    <div class="q-mb-md q-mt-xl">
+        <div class="flex justify-between q-mv-md">
+            <div />
+
+            <ButtonGroup>
+                <q-btn
+                    outline
+                    color="primary"
+                    icon="sym_o_edit"
+                    label="Edit File"
+                    @click="editFile"
+                >
+                    <q-tooltip> Edit File </q-tooltip>
+                </q-btn>
+                <q-btn
+                    color="primary"
+                    icon="sym_o_download"
+                    label="Download"
+                    @click="_downloadFile"
+                >
+                    <q-tooltip> Download File </q-tooltip>
+                </q-btn>
+                <q-btn
+                    outline
+                    icon="sym_o_more_vert"
+                    color="primary"
+                    class="cursor-pointer"
+                    @click.stop
+                >
+                    <q-menu auto-close>
+                        <q-list>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="(e) => _copyLink()"
+                            >
+                                <q-item-section
+                                    >Copy public link</q-item-section
+                                >
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </ButtonGroup>
+        </div>
+    </div>
+
+    <q-card class="q-pa-md q-mb-md" flat bordered>
         <q-card-section>
-            <div class="text-h4 q-mb-md">{{ data?.filename }}</div>
-            <q-separator class="q-my-xs q-mb-md"></q-separator>
+            <div class="text-h4 q-mb-md">File: {{ data?.filename }}</div>
+            <q-separator class="q-mt-md" />
             <div class="q-gutter-md q-mt-xs">
                 <div class="row items-start">
                     <div class="col-2">
@@ -45,51 +92,39 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-1">
-                        <q-btn
-                            flat
-                            label="Download"
-                            icon="cloud_download"
-                            @click="_downloadFile"
-                            class="full-width"
-                        ></q-btn>
-                    </div>
-                    <div class="col-2">
-                        <q-btn
-                            flat
-                            label="Copy public link"
-                            icon="content_copy"
-                            @click="_copyLink"
-                            class="full-width"
-                        ></q-btn>
-                    </div>
                 </div>
             </div>
         </q-card-section>
+    </q-card>
 
+    <q-card class="q-pa-md q-mb-xl" flat bordered>
         <q-card-section>
             <q-input
                 v-model="filterKey"
                 filled
                 placeholder="Search"
                 class="q-mb-md"
+                v-if="data?.type === FileType.MCAP"
             />
-            <QTable
+            <q-table
+                flat
+                bordered
+                separator="none"
                 v-if="data?.type === FileType.MCAP"
                 ref="tableoniRef"
                 v-model:pagination="pagination"
-                title="Topics"
                 :rows="data?.topics"
                 :columns="columns"
                 row-key="uuid"
+                selection="multiple"
                 :loading="isLoading"
                 :filter="filterKey"
             >
-            </QTable>
+            </q-table>
             <q-btn
                 v-else
                 label="Got to Mcap"
-                icon="turn_slight_right"
+                icon="sym_o_turn_slight_right"
                 @click="redirectToMcap"
             >
             </q-btn>
@@ -98,15 +133,27 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { downloadFile, fetchFile, filesOfMission } from 'src/services/queries';
-import { FileEntity, Mission } from 'src/types/types';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
-import { copyToClipboard, Notify, QTable } from 'quasar';
-import { FileType } from 'src/enum/FILE_ENUM';
+import { computed, inject, Ref, ref } from 'vue';
+import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
+import { FileType } from 'src/enums/FILE_ENUM';
 import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
+import { FileEntity } from 'src/types/FileEntity';
+import {
+    downloadFile,
+    fetchFile,
+    filesOfMission,
+} from 'src/services/queries/file';
+import ButtonGroup from 'components/ButtonGroup.vue';
+import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
+import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
+import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
+import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
+import EditFile from 'components/EditFile.vue';
+
 const $routerService: RouterService | undefined = inject('$routerService');
+const $q = useQuasar();
 
 const props = defineProps<{
     uuid: string;
@@ -121,15 +168,18 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryFn: () => fetchFile(file_uuid.value),
 });
 
-const missionUUID = computed(() => data.value?.mission.uuid);
+const missionUUID = computed(() => data.value?.mission?.uuid);
 
-const { data: filesReturn, refetch } = useQuery({
+const { data: _filesReturn, refetch } = useQuery({
     queryKey: ['files', missionUUID.value],
-    queryFn: () => filesOfMission(missionUUID.value || ''),
+    queryFn: () => filesOfMission(missionUUID.value || '', 100, 0),
     enabled() {
         return !!missionUUID.value;
     },
 });
+const filesReturn = computed(() =>
+    _filesReturn.value ? _filesReturn.value[0] : [],
+);
 
 const columns = [
     {
@@ -155,8 +205,9 @@ const columns = [
 ];
 
 const downloadURL = ref<string>('');
+
 async function _downloadFile() {
-    const res = await downloadFile(props.file_uuid, true);
+    const res = await downloadFile(props.uuid, true);
     const a = document.createElement('a');
     a.href = res;
     a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
@@ -175,7 +226,7 @@ async function redirectToMcap() {
 }
 
 async function _copyLink() {
-    const res = await downloadFile(props.file_uuid, false);
+    const res = await downloadFile(props.uuid, false);
     await copyToClipboard(res);
     Notify.create({
         group: false,
@@ -183,6 +234,16 @@ async function _copyLink() {
         color: 'positive',
         position: 'top-right',
         timeout: 2000,
+    });
+}
+
+function editFile() {
+    $q.dialog({
+        component: EditFile,
+        componentProps: {
+            file_uuid: props.uuid,
+        },
+        persistent: true,
     });
 }
 

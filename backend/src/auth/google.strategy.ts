@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { AuthService } from './auth.service';
-import env from '../env';
 import e from 'express';
-import User from '../user/entities/user.entity';
+import logger from '../logger';
+import { AuthFlowException } from './authFlowException';
+import env from '@common/env';
+import { Providers } from '@common/enum';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -26,10 +28,34 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         accessToken: string,
         refreshToken: string,
         profile: any,
-        done: VerifyCallback,
+        callback: VerifyCallback,
     ): Promise<any> {
-        const user: User =
-            await this.authService.validateAndCreateUserByGoogle(profile);
-        done(null, user);
+        const { provider } = profile;
+
+        // currently only google is supported
+        if (provider !== Providers.GOOGLE) {
+            logger.error('Invalid provider, expected google but got', provider);
+            return callback(new AuthFlowException('Invalid provider!'), null);
+        }
+
+        const user = await this.authService
+            .validateAndCreateUserByGoogle(profile)
+            .catch((error) => {
+                logger.error(
+                    'Error while validating and creating user by google',
+                    error,
+                );
+                callback(error, null);
+                return;
+            });
+
+        if (!!user) {
+            logger.debug(`Login successful for ${user.uuid}`);
+            callback(null, user);
+            return;
+        }
+
+        callback(null, null);
+        return;
     }
 }

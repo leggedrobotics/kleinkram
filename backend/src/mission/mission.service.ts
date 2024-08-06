@@ -1,14 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import Mission from './entities/mission.entity';
-import { Repository, Brackets } from 'typeorm';
+import Mission from '@common/entities/mission/mission.entity';
+import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
-import Project from '../project/entities/project.entity';
+import Project from '@common/entities/project/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
-import User from '../user/entities/user.entity';
+import User from '@common/entities/user/user.entity';
 import { moveRunFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { UserRole } from '../enum';
+import { FileType, UserRole } from '@common/enum';
+import Tag from '@common/entities/tag/tag.entity';
+import { TagService } from '../tag/tag.service';
+import env from '@common/env';
+import { addAccessJoinsAndConditions } from '../auth/authHelper';
 
 @Injectable()
 export class MissionService {
@@ -19,41 +23,78 @@ export class MissionService {
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private userservice: UserService,
+        private tagservice: TagService,
     ) {}
 
-    async create(createRun: CreateMission, user: JWTUser): Promise<Mission> {
+    async create(
+        createMission: CreateMission,
+        user: JWTUser,
+    ): Promise<Mission> {
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: createRun.projectUUID },
+            where: { uuid: createMission.projectUUID },
         });
         const mission = this.missionRepository.create({
-            name: createRun.name,
+            name: createMission.name,
             project: project,
             creator,
         });
-        const newRun = await this.missionRepository.save(mission);
+        const newMission = await this.missionRepository.save(mission);
+        await Promise.all(
+            Object.entries(createMission.tags).map(
+                async ([tagTypeUUID, value]) => {
+                    return this.tagservice.addTagType(
+                        newMission.uuid,
+                        tagTypeUUID,
+                        value,
+                    );
+                },
+            ),
+        );
         return this.missionRepository.findOneOrFail({
-            where: { uuid: newRun.uuid },
+            where: { uuid: newMission.uuid },
         });
     }
 
     async findOne(uuid: string): Promise<Mission> {
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'files', 'creator'],
+            relations: ['project', 'files', 'creator', 'tags', 'tags.tagType'],
         });
     }
 
-    async findMissionByProject(projectUUID: string): Promise<Mission[]> {
-        return await this.missionRepository.find({
-            where: { project: { uuid: projectUUID } },
-            relations: ['project', 'files', 'creator', 'files.creator'],
-        });
+    async findMissionByProject(
+        projectUUID: string,
+        skip: number,
+        take: number,
+        search?: string,
+        descending?: boolean,
+        sortBy?: string,
+    ): Promise<[Mission[], number]> {
+        const query = this.missionRepository.createQueryBuilder('mission')
+          .leftJoinAndSelect('mission.project', 'project')
+          .leftJoinAndSelect('mission.creator', 'creator')
+          .leftJoinAndSelect('mission.files', 'files')
+          .leftJoinAndSelect('files.creator', 'fileCreator')
+          .where('project.uuid = :projectUUID', { projectUUID })
+          .take(take)
+          .skip(skip);
+
+        if (search) {
+            query.andWhere('mission.name ILIKE :search', {search: `%${search}%`});
+        }
+        if(sortBy) {
+            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        return query.getManyAndCount();
+
     }
 
     async filteredByProjectName(
         projectName: string,
         userUUID: string,
+        skip: number,
+        take: number,
     ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -65,42 +106,53 @@ export class MissionService {
             });
             return project.missions;
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('project.name = :name', { name: projectName })
-            .andWhere(
-                new Brackets((qb) => {
-                    qb.where('projectUsers.uuid = :user', {
-                        user: userUUID,
-                    }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-                }),
-            )
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator')
+                .where('project.name = :name', { name: projectName })
+                .andWhere(
+                    new Brackets((qb) => {
+                        qb.where('projectUsers.uuid = :user', {
+                            user: userUUID,
+                        }).orWhere('missionUsers.uuid = :user', {
+                            user: userUUID,
+                        });
+                    }),
+                ),
+            userUUID,
+        )
+            .take(take)
+            .skip(skip)
             .getMany();
     }
 
     // TODO Test!
-    async findAll(userUUID: string): Promise<Mission[]> {
+    async findAll(
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<Mission[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.missionRepository.find({ relations: ['project'] });
+            return this.missionRepository.find({
+                relations: ['project', 'creator'],
+                skip,
+                take,
+            });
         }
-        return this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoin('project.accessGroups', 'projectAccessGroups')
-            .leftJoin('projectAccessGroups.users', 'projectUsers')
-            .leftJoin('mission.accessGroups', 'missionAccessGroups')
-            .leftJoin('missionAccessGroups.users', 'missionUsers')
-            .where('projectUsers.uuid = :user', { user: userUUID })
-            .orWhere('missionUsers.uuid = :user', { user: userUUID })
+        return addAccessJoinsAndConditions(
+            this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator'),
+            userUUID,
+        )
+            .skip(skip)
+            .take(take)
             .getMany();
     }
 
@@ -134,6 +186,12 @@ export class MissionService {
         await moveRunFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
+            env.MINIO_BAG_BUCKET_NAME,
+        );
+        await moveRunFilesInMinio(
+            `${old_project.name}/${mission.name}`,
+            mission.project.name,
+            env.MINIO_MCAP_BUCKET_NAME,
         );
         return this.missionRepository.save(mission);
     }

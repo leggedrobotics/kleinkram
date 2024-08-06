@@ -1,0 +1,24 @@
+import {Column, Entity, ManyToOne} from 'typeorm';
+import BaseEntity from '../base-entity.entity';
+import {AccessGroupRights} from '../../enum';
+import AccessGroup from './accessgroup.entity';
+import Project from '../project/project.entity';
+
+@Entity()
+export default class ProjectAccess extends BaseEntity {
+    @Column()
+    rights: AccessGroupRights;
+
+    @ManyToOne(() => AccessGroup, (group) => group.project_accesses)
+    accessGroup: AccessGroup;
+
+    @ManyToOne(
+        () => Project,
+        (project) => project.project_accesses,
+        {
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        }
+    )
+    projects: Project;
+}

@@ -30,38 +30,49 @@
                 label="Save"
                 color="primary"
                 @click="save"
-                icon="save"
+                icon="sym_o_save"
             />
         </div>
-        <div class="col-2" style="margin-right: 15px">
+        <div class="col-2">
+            <q-btn
+                v-if="project"
+                label="Manage Access Rights"
+                color="orange"
+                @click="openAccessRightsModal"
+                icon="sym_o_lock"
+            />
+        </div>
+        <div class="col-1" style="margin-right: 15px">
             <q-btn
                 v-if="project"
                 label="Delete"
                 color="red"
                 @click="_deleteProject"
-                icon="delete"
+                icon="sym_o_delete"
                 :disable="project.missions.length > 0"
             >
-                <q-tooltip class="bg-accent"
-                    >Only projects without missions can be deleted</q-tooltip
+                <q-tooltip class="bg-accent" v-if="project.missions.length > 0">
+                    Only projects without missions can be deleted</q-tooltip
                 >
             </q-btn>
         </div>
     </div>
 </template>
 <script setup lang="ts">
-import { Project } from 'src/types/types';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getProject } from 'src/services/queries';
-import { deleteProject, updateProject } from 'src/services/mutations';
 import { ref, watch } from 'vue';
-import { Notify } from 'quasar';
+import { Notify, useQuasar } from 'quasar';
+import { Project } from 'src/types/Project';
+import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
+import { getProject } from 'src/services/queries/project';
+import { deleteProject, updateProject } from 'src/services/mutations/project';
 
 const props = defineProps<{
     project_uuid: string;
 }>();
 const emit = defineEmits(['project-deleted']);
 const queryClient = useQueryClient();
+const $q = useQuasar();
 
 const projectResponse = useQuery<Project>({
     queryKey: ['project', props.project_uuid],
@@ -144,6 +155,15 @@ async function _deleteProject() {
         queryClient.invalidateQueries(query.queryKey);
     });
     emit('project-deleted');
+}
+
+function openAccessRightsModal() {
+    $q.dialog({
+        component: AccessRightsDialog,
+        componentProps: {
+            project_uuid: props.project_uuid,
+        },
+    });
 }
 </script>
 <style scoped></style>

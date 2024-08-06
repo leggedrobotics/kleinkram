@@ -32,11 +32,11 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { Action } from 'src/types/types';
-import { actions } from 'src/services/queries';
 import { ref, Ref, watchEffect } from 'vue';
-import { ActionState } from 'src/enum/QUEUE_ENUM';
+import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
+import { Action } from 'src/types/Action';
+import { actions } from 'src/services/queries/action';
 
 // list all props of the component
 const props = defineProps<{
@@ -44,15 +44,9 @@ const props = defineProps<{
     mission_uuid: string;
 }>();
 
-// watch for changes in props
-watchEffect(() => {
-    console.log(props.project_uuid);
-    console.log(props.mission_uuid);
-});
-
 const missions = useQuery<Action[]>({
     queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
-    queryFn: () => actions(props.project_uuid, props.mission_uuid),
+    queryFn: () => actions(props.mission_uuid),
     refetchInterval: 1000,
 });
 

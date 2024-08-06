@@ -2,7 +2,7 @@
     "name": "frontend",
     "version": "0.2.0",
     "description": "Data storage of ROS bags",
-    "productName": "Bagistry",
+    "productName": "Kleinkram",
     "author": "Johann Schwabe <johann@schwabe.dev>",
     "private": true,
     "scripts": {
@@ -11,7 +11,7 @@
         "build": "sh ./create_build_info.sh && quasar build"
     },
     "dependencies": {
-        "@quasar/extras": "^1.16.4",
+        "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.24.1",
         "axios": "^1.6.7",
         "date-fns": "^3.3.1",
@@ -28,7 +28,7 @@
         "typescript": "^4.5.4"
     },
     "engines": {
-        "node": "^21 || ^20 || ^18 || ^16",
+        "node": "^21 || ^20 || ^18 || ^16 || ^22",
         "npm": ">= 6.13.4",
         "yarn": ">= 1.21.1"
     }

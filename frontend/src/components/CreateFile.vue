@@ -70,10 +70,13 @@
                             style="min-width: 300px"
                         >
                             <template v-slot:prepend>
-                                <q-icon name="attach_file" />
+                                <q-icon name="sym_o_attach_file" />
                             </template>
                             <template v-slot:append>
-                                <q-icon name="cancel" @click="files = []" />
+                                <q-icon
+                                    name="sym_o_cancel"
+                                    @click="files = []"
+                                />
                             </template>
                         </q-file>
                     </div>
@@ -100,28 +103,35 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { Ref, ref, watchEffect } from 'vue';
+import { computed, Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
+
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import axios from 'axios';
+import { Project } from 'src/types/Project';
+import { Mission } from 'src/types/Mission';
+import { filteredProjects } from 'src/services/queries/project';
+import { missionsOfProject } from 'src/services/queries/mission';
 import {
     confirmUpload,
     createDrive,
-    createFile,
-    createMission,
     getUploadURL,
-} from 'src/services/mutations';
-import { Project, Mission } from 'src/types/types';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { allProjects, missionsOfProject } from 'src/services/queries';
-import axios from 'axios';
+} from 'src/services/mutations/queue';
+const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
-const selected_project: Ref<Project | null> = ref(null);
 const selected_mission: Ref<Mission | null> = ref(null);
-const { isLoading, isError, data, error } = useQuery<Project[]>({
+const { data: _data, error } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
-    queryFn: allProjects,
+    queryFn: () => filteredProjects(500, 0, 'name'),
+});
+const data = computed(() => {
+    if (_data && _data.value) {
+        return _data.value[0];
+    }
+    return [];
 });
 const queryClient = useQueryClient();
 
@@ -136,10 +146,16 @@ if (props.mission && props.mission.project) {
     selected_mission.value = props.mission;
 }
 
-const { data: missions, refetch } = useQuery({
+const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: ['missions', selected_project.value?.uuid],
     queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
+});
+const missions = computed(() => {
+    if (_missions && _missions.value) {
+        return _missions.value[0];
+    }
+    return [];
 });
 
 watchEffect(() => {
