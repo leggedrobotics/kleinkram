@@ -33,7 +33,7 @@ export class AccessController {
         @QueryUUID('uuid') uuid: string,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.accessService.canAddAccessGroup(uuid, user);
+        return this.accessService.canModifyAccessGroup(uuid, user);
     }
 
     @Post('addUserToProject')
@@ -42,9 +42,14 @@ export class AccessController {
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
         @BodyAccessGroupRights('rights') rights: AccessGroupRights,
-        @addJWTUser() user?: JWTUser,
+        @addJWTUser() requestUser?: JWTUser,
     ) {
-        return this.accessService.addUserToProject(uuid, userUUID, rights);
+        return this.accessService.addUserToProject(
+            uuid,
+            userUUID,
+            rights,
+            requestUser,
+        );
     }
 
     @Post('addUserToAccessGroup')

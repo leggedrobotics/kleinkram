@@ -35,7 +35,7 @@ export class AccessService {
         });
         return this.accessGroupRepository.save(new_group);
     }
-    async canAddAccessGroup(
+    async canModifyAccessGroup(
         uuid: string,
         user: JWTUser,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
@@ -57,29 +57,28 @@ export class AccessService {
         projectUUID: string,
         userUUID: string,
         rights: AccessGroupRights,
+        user: JWTUser,
     ): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
         });
-        const user = await this.userRepository.findOneOrFail({
+        const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
             relations: ['accessGroups'],
         });
-        const personalAccessGroup = user.accessGroups.find(
+        const personalAccessGroup = dbuser.accessGroups.find(
             (accessGroup) => accessGroup.personal,
         );
-        if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canAddAccessGroup(
-                projectUUID,
-                { uuid: userUUID },
-                AccessGroupRights.DELETE,
+        const canUpdate = await this.canModifyAccessGroup(
+            projectUUID,
+            user,
+            rights,
+        );
+        if (rights === AccessGroupRights.DELETE && !canUpdate) {
+            throw new ConflictException(
+                'User cannot grant delete rights without having delete rights himself/herself',
             );
-            if (!canDelete) {
-                throw new ConflictException(
-                    'User cannot grant delete rights without having delete rights himself/herself',
-                );
-            }
         }
 
         const existingAccess = await this.projectAccessRepository
@@ -94,8 +93,10 @@ export class AccessService {
             })
             .getOne();
         if (existingAccess) {
-            if (existingAccess.rights >= rights) {
-                return project;
+            if (existingAccess.rights >= rights && !canUpdate) {
+                throw new ConflictException(
+                    'User cannot decrease rights without having the same rights himself/herself',
+                );
             }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
@@ -167,7 +168,7 @@ export class AccessService {
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canAddAccessGroup(
+            const canDelete = await this.canModifyAccessGroup(
                 projectUUID,
                 { uuid: jwtuser.uuid },
                 AccessGroupRights.DELETE,
