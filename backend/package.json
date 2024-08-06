@@ -21,7 +21,7 @@
         "@google-cloud/local-auth": "^3.0.1",
         "@mcap/browser": "^1.0.0",
         "@mcap/core": "^2.1.0",
-        "@mcap/support": "^1.0.0",
+        "@mcap/support": "^1.0.1",
         "@nestjs/bull": "^10.1.1",
         "@nestjs/common": "^10.0.0",
         "@nestjs/config": "^3.2.0",
