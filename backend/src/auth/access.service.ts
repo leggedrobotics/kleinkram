@@ -3,10 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
 import { Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
 import { JWTUser } from './paramDecorator';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Injectable()
@@ -67,14 +66,18 @@ export class AccessService {
             where: { uuid: userUUID },
             relations: ['accessGroups'],
         });
+
+        const modifyingUser = await this.userRepository.findOneOrFail({
+            where: { uuid: user.uuid },
+            relations: ['accessGroups'],
+        });
+
         const personalAccessGroup = dbuser.accessGroups.find(
             (accessGroup) => accessGroup.personal,
         );
-        const canUpdate = await this.canModifyAccessGroup(
-            projectUUID,
-            user,
-            rights,
-        );
+        const canUpdate =
+            (await this.canModifyAccessGroup(projectUUID, user, rights)) ||
+            modifyingUser.role === UserRole.ADMIN;
         if (rights === AccessGroupRights.DELETE && !canUpdate) {
             throw new ConflictException(
                 'User cannot grant delete rights without having delete rights himself/herself',

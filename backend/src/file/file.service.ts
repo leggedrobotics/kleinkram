@@ -387,4 +387,11 @@ export class FileService {
             skip,
         });
     }
+
+    async findOneByName(missionUUID: string, name: string) {
+        return this.fileRepository.findOne({
+            where: { mission: { uuid: missionUUID }, filename: name },
+            relations: ['creator'],
+        });
+    }
 }

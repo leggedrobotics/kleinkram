@@ -25,7 +25,7 @@ import {
     QueryOptionalRecord,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
-import {FileType} from "@common/enum";
+import { FileType } from '@common/enum';
 
 @Controller('file')
 export class FileController {
@@ -131,7 +131,13 @@ export class FileController {
         @QueryOptionalString('filename') filename: string,
         @QueryOptionalString('fileType') fileType: FileType,
     ) {
-        return this.fileService.findByMission(uuid, take, skip, filename, fileType);
+        return this.fileService.findByMission(
+            uuid,
+            take,
+            skip,
+            filename,
+            fileType,
+        );
     }
 
     @Put(':uuid')
@@ -144,5 +150,14 @@ export class FileController {
     @AdminOnly()
     async clear() {
         return this.fileService.clear();
+    }
+
+    @Get('oneByName')
+    @CanReadMission()
+    async getOneFileByName(
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('filename') name: string,
+    ) {
+        return this.fileService.findOneByName(uuid, name);
     }
 }

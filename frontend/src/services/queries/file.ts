@@ -287,3 +287,41 @@ export const filesOfMission = async (
     console.log('returing total', total);
     return [res, total];
 };
+
+export const findOneByNameAndMission = async (
+    filename: string,
+    missionUUID: string,
+): Promise<FileEntity> => {
+    const response = await axios.get('file/oneByName', {
+        params: {
+            filename,
+            uuid: missionUUID,
+        },
+    });
+    const file = response.data;
+    const creator = new User(
+        file.creator.uuid,
+        file.creator.name,
+        file.creator.email,
+        file.creator.role,
+        file.creator.avatarUrl,
+        [],
+        new Date(file.creator.createdAt),
+        new Date(file.creator.updatedAt),
+        new Date(file.creator.deletedAt),
+    );
+
+    return new FileEntity(
+        file.uuid,
+        file.filename,
+        null,
+        creator,
+        new Date(file.date),
+        [],
+        file.size,
+        file.type,
+        new Date(file.createdAt),
+        new Date(file.updatedAt),
+        new Date(file.deletedAt),
+    );
+};
