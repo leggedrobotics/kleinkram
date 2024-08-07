@@ -15,6 +15,7 @@ export const fetchOverview = async (
     topics?: string[],
     andOr?: boolean,
     mcapBag?: boolean,
+    tag?: Record<string, any>,
     take?: number,
     skip?: number,
 ): Promise<[FileEntity[], number]> => {
@@ -28,6 +29,7 @@ export const fetchOverview = async (
         if (topics && topics.length > 0) params['topics'] = topics.join(',');
         if (andOr !== undefined) params['andOr'] = andOr.toString();
         if (mcapBag !== undefined) params['mcapBag'] = mcapBag.toString();
+        if (tag) params['tags'] = JSON.stringify(tag);
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();
         const queryParams = new URLSearchParams(params).toString();

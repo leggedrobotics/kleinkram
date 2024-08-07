@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, In, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -8,11 +8,12 @@ import Mission from '@common/entities/mission/mission.entity';
 import { externalMinio, internalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
-import { FileType, UserRole } from '@common/enum';
+import { DataType, FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tagType.entity';
 
 @Injectable()
 export class FileService {
@@ -26,6 +27,8 @@ export class FileService {
         @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private readonly dataSource: DataSource,
+        @InjectRepository(TagType)
+        private tagTypeRepository: Repository<TagType>,
     ) {}
 
     async findAll(userUUID: string, take: number, skip: number) {
@@ -157,6 +160,7 @@ export class FileService {
         topics: string,
         and_or: boolean,
         mcapBag: boolean,
+        tags: Record<string, any>,
         userUUID: string,
         take: number,
         skip: number,
@@ -224,8 +228,87 @@ export class FileService {
                 });
             }
         }
+        if (tags) {
+            query
+                .leftJoin('mission.tags', 'tag')
+                .leftJoin('tag.tagType', 'tagtype');
+            await Promise.all(
+                Object.keys(tags).map(async (key, idx) => {
+                    const tagtype = await this.tagTypeRepository.findOneOrFail({
+                        where: { uuid: key },
+                    });
 
+                    const subqueryname = 'tagsubquery' + idx;
+                    query.innerJoin(
+                        (qb) => {
+                            let subquery = qb
+                                .from(Tag, 'tag')
+                                .leftJoin('tag.tagType', 'tagtype')
+                                .select('mission.uuid')
+                                .leftJoin('tag.mission', 'mission')
+                                .andWhere('tagtype.uuid = :tagtype' + idx, {
+                                    ['tagtype' + idx]: key,
+                                });
+
+                            switch (tagtype.datatype) {
+                                case DataType.BOOLEAN:
+                                    subquery = subquery.andWhere(
+                                        'tag.BOOLEAN = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
+                                    break;
+                                case DataType.DATE:
+                                    subquery = subquery.andWhere(
+                                        'tag.DATE = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
+                                    break;
+                                case DataType.LOCATION:
+                                    subquery = subquery.andWhere(
+                                        'tag.LOCATION = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
+                                    break;
+                                case DataType.NUMBER:
+                                    subquery = subquery.andWhere(
+                                        'tag.NUMBER = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
+                                    break;
+                                case DataType.STRING:
+                                case DataType.LINK:
+                                    subquery = subquery.andWhere(
+                                        'tag.STRING = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
+                                    break;
+                            }
+                            console.log(
+                                'Subquery: \n',
+                                subquery.getQueryAndParameters(),
+                            );
+                            return subquery;
+                        },
+                        subqueryname,
+                        'mission.uuid = ' + subqueryname + '.mission_uuid',
+                    );
+
+                    // query.andWhere('mission.uuid IN ' + subqueryname);
+                }),
+            );
+        }
         query.groupBy('file.uuid');
+
         // Execute the query
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {

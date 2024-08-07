@@ -112,7 +112,7 @@
 
                 <div class="col-12 col-md-3">
                     <div class="row">
-                        <div class="col-10">
+                        <div class="col-8">
                             <q-select
                                 v-model="selectedTopics"
                                 label="Select Topics"
@@ -153,6 +153,16 @@
                                     Display only Bag / MCAP Files.
                                 </q-tooltip>
                             </q-toggle>
+                        </div>
+                        <div class="col-2">
+                            <q-btn
+                                outline
+                                text-color="black"
+                                label="Tag "
+                                color="primary"
+                                icon="sym_o_filter_list"
+                                @click="openTagFilterDialog"
+                            />
                         </div>
                     </div>
                 </div>
@@ -247,6 +257,7 @@ import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
 import { useRouter } from 'vue-router';
 import { QueryHandler, QueryURLHandler } from 'src/services/URLHandler';
+import TagFilter from 'src/dialogs/TagFilter.vue';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
@@ -308,6 +319,7 @@ const selectedTopics = ref([]);
 
 const and_or = ref(false);
 const mcap_bag = ref(true);
+const tagFilter = ref({});
 
 const start = new Date(0);
 const end = new Date();
@@ -359,6 +371,7 @@ const queryKeyFiles = computed(() => [
     endDate,
     selectedTopics,
     and_or,
+    tagFilter,
     mcap_bag,
     handler.value.queryKey,
 ]);
@@ -375,6 +388,7 @@ const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
             selectedTopics.value || [],
             and_or.value,
             mcap_bag.value,
+            tagFilter.value,
             handler.value.take,
             handler.value.skip,
         ),
@@ -480,6 +494,18 @@ function openQDialog(file: FileEntity): void {
         componentProps: {
             file_uuid: file.uuid,
         },
+    });
+}
+
+function openTagFilterDialog() {
+    $q.dialog({
+        title: 'Filter by Tags',
+        component: TagFilter,
+        componentProps: {
+            tagValues: tagFilter.value,
+        },
+    }).onOk((_tagFilter) => {
+        tagFilter.value = _tagFilter;
     });
 }
 
