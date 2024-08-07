@@ -5,7 +5,6 @@ scheduled by the API. The QueingService is responsible for offloading heavy proc
 
 For more information see the [QueingService Documentation](./queuingService/README.md)
 
-
 The Queue Processor also uses NestJS & TypeORM. But with `@nestjs/bull` for Queuing. The Documentation can be
 found [here](https://docs.nestjs.com/techniques/queues).
 

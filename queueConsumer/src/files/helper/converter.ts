@@ -1,24 +1,28 @@
-import {loadDecompressHandlers} from '@mcap/support';
-import {McapIndexedReader} from '@mcap/core';
+import { loadDecompressHandlers } from '@mcap/support';
+import { McapIndexedReader } from '@mcap/core';
 
-import {promisify} from 'util';
-import {exec} from 'child_process';
-import {traceWrapper} from '../../tracing';
+import { promisify } from 'util';
+import { exec } from 'child_process';
+import { traceWrapper } from '../../tracing';
 import logger from '../../logger';
-import {open} from 'fs/promises';
-import {FileHandleReadable} from '@mcap/nodejs';
-import {uploadFile} from "./minioHelper";
-import env from "@common/env";
+import { open } from 'fs/promises';
+import { FileHandleReadable } from '@mcap/nodejs';
+import { uploadFile } from './minioHelper';
+import env from '@common/env';
 
 const execPromisify = promisify(exec);
 
-
-export async function convertToMcapAndSave(tmp_file_name: string, full_pathname: string): Promise<boolean> {
+export async function convertToMcapAndSave(
+    tmp_file_name: string,
+    full_pathname: string,
+): Promise<boolean> {
     return await traceWrapper(async () => {
         const tmp_file_name_mcap = tmp_file_name.replace('.bag', '.mcap');
         const full_pathname_mcap = full_pathname.replace('.bag', '.mcap');
 
-        logger.debug(`Converting file ${tmp_file_name} from bag to mcap ${tmp_file_name_mcap}`);
+        logger.debug(
+            `Converting file ${tmp_file_name} from bag to mcap ${tmp_file_name_mcap}`,
+        );
         await convert(tmp_file_name, tmp_file_name_mcap);
         logger.debug('File converted successfully');
 
@@ -26,22 +30,19 @@ export async function convertToMcapAndSave(tmp_file_name: string, full_pathname:
             env.MINIO_MCAP_BUCKET_NAME,
             full_pathname_mcap,
             tmp_file_name_mcap,
-        )
-
+        );
     }, 'processFile')();
 }
 
-export const convert = (
-    infile: string,
-    outfile: string,
-): Promise<boolean> => traceWrapper(async (): Promise<boolean> => {
-    await execPromisify(`mcap convert ${infile} ${outfile}`);
-    return true;
-}, 'MCAP Conversion')();
+export const convert = (infile: string, outfile: string): Promise<boolean> =>
+    traceWrapper(async (): Promise<boolean> => {
+        await execPromisify(`mcap convert ${infile} ${outfile}`);
+        return true;
+    }, 'MCAP Conversion')();
 
-
-export async function mcapMetaInfo(mcap_tmp_file_name: string):
-    Promise<{ topics: Record<string, unknown>[], date: Date, size: number }> {
+export async function mcapMetaInfo(
+    mcap_tmp_file_name: string,
+): Promise<{ topics: Record<string, unknown>[]; date: Date; size: number }> {
     const decompressHandlers = await loadDecompressHandlers();
     const fileHandle = await open(mcap_tmp_file_name, 'r');
 

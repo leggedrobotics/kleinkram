@@ -8,7 +8,7 @@ The access control is based on groups. Each user can be a member of multiple gro
 `AccessGroupRights`. The `AccessGroupRights` defines the rights of the group.
 
 | AccessGroupRights | Value |
-|-------------------|-------|
+| ----------------- | ----- |
 | READ              | 0     |
 | CREATE            | 10    |
 | WRITE             | 20    |
@@ -33,22 +33,20 @@ These default groups can be configured in the configuration file: `backend/acces
 
 ```json
 {
-  "emails": [
-    {
-      "email": "leggedrobotics.com",
-      "access_groups": [
-        "00000000-0000-0000-0000-000000000000"
-      ]
-    }
-  ],
-  "access_groups": [
-    {
-      "name": "Leggedrobotics",
-      "uuid": "00000000-0000-0000-0000-000000000000",
-      // read only
-      "rights": 0
-    }
-  ]
+    "emails": [
+        {
+            "email": "leggedrobotics.com",
+            "access_groups": ["00000000-0000-0000-0000-000000000000"]
+        }
+    ],
+    "access_groups": [
+        {
+            "name": "Leggedrobotics",
+            "uuid": "00000000-0000-0000-0000-000000000000",
+            // read only
+            "rights": 0
+        }
+    ]
 }
 ```
 

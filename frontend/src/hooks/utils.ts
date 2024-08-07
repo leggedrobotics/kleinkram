@@ -1,4 +1,4 @@
-import {ref, Ref, watch, WatchOptions} from "vue";
+import { ref, Ref, watch, WatchOptions } from 'vue';
 
 /**
  * This function returns a set of boolean refs that represent the current display type.
@@ -13,14 +13,19 @@ import {ref, Ref, watch, WatchOptions} from "vue";
  * @returns a set of boolean refs that represent the current display type
  *
  */
-export const useDisplayType = (project_uuid: Ref<string | undefined>, mission_uuid: Ref<string | undefined>) => {
-
-    const isListingProjects = ref<boolean | undefined>(project_uuid.value === undefined && mission_uuid.value === undefined)
-    const isListingMissions = ref<boolean | undefined>(!!project_uuid.value && mission_uuid.value === undefined)
-    const isListingFiles = ref<boolean | undefined>(!!mission_uuid.value)
+export const useDisplayType = (
+    project_uuid: Ref<string | undefined>,
+    mission_uuid: Ref<string | undefined>,
+) => {
+    const isListingProjects = ref<boolean | undefined>(
+        project_uuid.value === undefined && mission_uuid.value === undefined,
+    );
+    const isListingMissions = ref<boolean | undefined>(
+        !!project_uuid.value && mission_uuid.value === undefined,
+    );
+    const isListingFiles = ref<boolean | undefined>(!!mission_uuid.value);
 
     watch([mission_uuid, project_uuid], () => {
-
         if (project_uuid.value && !mission_uuid.value) {
             isListingProjects.value = false;
             isListingMissions.value = true;
@@ -34,12 +39,10 @@ export const useDisplayType = (project_uuid: Ref<string | undefined>, mission_uu
             isListingMissions.value = false;
             isListingFiles.value = false;
         }
+    });
 
-    })
-
-    return {isListingProjects, isListingMissions, isListingFiles}
-
-}
+    return { isListingProjects, isListingMissions, isListingFiles };
+};
 /**
  * This function returns a boolean ref that gets set to true if any of the set_refs
  * change and set to false on any of the resets_refs change.
@@ -49,19 +52,22 @@ export const useDisplayType = (project_uuid: Ref<string | undefined>, mission_uu
  * @param initial_state initial value of the state ref
  *
  */
-export const useToggle = (set_refs: Ref<any>[], resets_refs: Ref<any>[], initial_state = false): Ref<boolean> => {
-    const state = ref(initial_state)
+export const useToggle = (
+    set_refs: Ref<any>[],
+    resets_refs: Ref<any>[],
+    initial_state = false,
+): Ref<boolean> => {
+    const state = ref(initial_state);
 
     watch(set_refs, () => {
-        state.value = true
-    })
+        state.value = true;
+    });
     watch(resets_refs, () => {
-        state.value = false
-    })
+        state.value = false;
+    });
 
-    return state
-}
-
+    return state;
+};
 
 /**
  * This functions works as a conditional watch, it will only call the callback if the ref has changed to true.
@@ -74,9 +80,13 @@ export const useToggle = (set_refs: Ref<any>[], resets_refs: Ref<any>[], initial
 export const conditionalWatch = (
     ref: Ref<boolean | undefined>,
     cb: () => void,
-    options?: WatchOptions | undefined
+    options?: WatchOptions | undefined,
 ) => {
-    watch(ref, () => {
-        (!!ref.value) && cb()
-    }, options)
-}
+    watch(
+        ref,
+        () => {
+            !!ref.value && cb();
+        },
+        options,
+    );
+};

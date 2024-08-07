@@ -1,21 +1,23 @@
-import {Project} from "src/types/Project";
-import {formatDate} from "src/services/dateFormating";
-import {Mission} from "src/types/Mission";
-import {FileEntity} from "src/types/FileEntity";
-import {formatSize} from "src/services/generalFormatting";
+import { Project } from 'src/types/Project';
+import { formatDate } from 'src/services/dateFormating';
+import { Mission } from 'src/types/Mission';
+import { FileEntity } from 'src/types/FileEntity';
+import { formatSize } from 'src/services/generalFormatting';
 
 export type ProjectColumnType = {
     name: string;
     required?: boolean;
     label: string;
     align: string;
-    field?: ((row: Project) => any) | ((row: Mission) => any) | ((row: FileEntity) => any);
+    field?:
+        | ((row: Project) => any)
+        | ((row: Mission) => any)
+        | ((row: FileEntity) => any);
     format?: ((val: string) => string) | ((val: number) => string);
     sortable?: boolean;
     style?: string;
     sort?: (_a: string, _b: string, a: FileEntity, b: FileEntity) => number;
 };
-
 
 export const explorer_page_table_columns: Array<ProjectColumnType> = [
     {

@@ -1,9 +1,13 @@
-import {db, clearAllData, get_jwt_token, mock_db_user} from "./utils/database_utils";
-import User from "@common/entities/user/user.entity";
-import {UserRole} from "@common/enum";
+import {
+    db,
+    clearAllData,
+    get_jwt_token,
+    mock_db_user,
+} from './utils/database_utils';
+import User from '@common/entities/user/user.entity';
+import { UserRole } from '@common/enum';
 
 describe('Test Suite Utils', () => {
-
     beforeAll(async () => {
         await db.initialize();
         await clearAllData();
@@ -11,12 +15,11 @@ describe('Test Suite Utils', () => {
 
     beforeEach(clearAllData);
     afterAll(() => {
-        console.log('Destroying appDataSource \'Test Suite Utils\'');
-        db.destroy()
+        console.log("Destroying appDataSource 'Test Suite Utils'");
+        db.destroy();
     });
 
     test('test if clearAllData works', async () => {
-
         // Insert some data
         const user = new User();
         user.name = 'John Doe';
@@ -35,12 +38,9 @@ describe('Test Suite Utils', () => {
         // Check if the data was cleared
         const usersAfterClear = await db.getRepository(User).find();
         expect(usersAfterClear.length).toBe(0);
-
     });
 
-
     test('Create User with Valid Token', async () => {
-
         await mock_db_user('test-01@leggedrobotics.com');
 
         const userRepository = db.getRepository(User);
@@ -66,12 +66,11 @@ describe('Test Suite Utils', () => {
         const res2 = await fetch(`http://localhost:3000/user/me`, {
             method: 'GET',
             headers: {
-                'cookie': `authtoken=${await get_jwt_token(users[0])}`
+                cookie: `authtoken=${await get_jwt_token(users[0])}`,
             },
-            credentials: "include"
+            credentials: 'include',
         });
 
         expect(res2.status).toBe(200);
-
     });
 });

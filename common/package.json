@@ -1,19 +1,19 @@
 {
-  "name": "common",
-  "version": "0.2.0",
-  "scripts": {
-    "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
-    "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
-  },
-  "dependencies": {
-    "@faker-js/faker": "^8.4.1",
-    "pg": "^8.12.0",
-    "ts-node": "^10.9.2",
-    "typeorm": "^0.3.20",
-    "typeorm-seeding": "^1.6.1"
-  },
-  "devDependencies": {
-    "@types/node": "22.1.0",
-    "typescript": "5.4.4"
-  }
+    "name": "common",
+    "version": "0.2.0",
+    "scripts": {
+        "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
+        "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
+    },
+    "dependencies": {
+        "@faker-js/faker": "^8.4.1",
+        "pg": "^8.12.0",
+        "ts-node": "^10.9.2",
+        "typeorm": "^0.3.20",
+        "typeorm-seeding": "^1.6.1"
+    },
+    "devDependencies": {
+        "@types/node": "22.1.0",
+        "typescript": "5.4.4"
+    }
 }

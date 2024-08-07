@@ -1,16 +1,16 @@
-import {Injectable, OnModuleInit} from '@nestjs/common';
-import {JwtService} from '@nestjs/jwt';
-import {JwtPayload} from 'jsonwebtoken';
-import {InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from 'jsonwebtoken';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import logger from '../logger';
-import {AuthFlowException} from './authFlowException';
+import { AuthFlowException } from './authFlowException';
 import Account from '@common/entities/auth/account.entity';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import {CookieNames, Providers, UserRole,} from '@common/enum';
-import {ConfigService} from '@nestjs/config';
-import {AccessGroupConfig} from '../app.module';
+import { CookieNames, Providers, UserRole } from '@common/enum';
+import { ConfigService } from '@nestjs/config';
+import { AccessGroupConfig } from '../app.module';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -34,11 +34,11 @@ export class AuthService implements OnModuleInit {
     }
 
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
-        const {id, emails, displayName, photos} = profile;
+        const { id, emails, displayName, photos } = profile;
         const email = emails[0].value;
 
         const account = await this.accountRepository.findOne({
-            where: {oauthID: id, provider: Providers.GOOGLE},
+            where: { oauthID: id, provider: Providers.GOOGLE },
             relations: ['user'],
         });
 
@@ -95,24 +95,31 @@ export class AuthService implements OnModuleInit {
         username: string,
         picture: string,
     ) {
-
-        return create_new_user(this.config, this.userRepository, this.accountRepository, this.accessGroupRepository, {
-            oauthID,
-            provider,
-            email,
-            username,
-            picture
-        })
-
+        return create_new_user(
+            this.config,
+            this.userRepository,
+            this.accountRepository,
+            this.accessGroupRepository,
+            {
+                oauthID,
+                provider,
+                email,
+                username,
+                picture,
+            },
+        );
     }
 }
 
-export const create_access_groups = async (accessGroupRepository, config: AccessGroupConfig) => {
+export const create_access_groups = async (
+    accessGroupRepository,
+    config: AccessGroupConfig,
+) => {
     // Read access_config/*.json and create access groups
     await Promise.all(
         config.access_groups.map(async (group) => {
             const db_group = await accessGroupRepository.findOne({
-                where: {uuid: group.uuid},
+                where: { uuid: group.uuid },
             });
             if (!db_group) {
                 const new_group = accessGroupRepository.create({
@@ -125,18 +132,23 @@ export const create_access_groups = async (accessGroupRepository, config: Access
             }
         }),
     );
-}
+};
 
-export const create_new_user = async (config, userRepository, accountRepository, accessGroupRepository, options: {
-    oauthID: string,
-    provider: Providers,
-    email: string,
-    username: string,
-    picture: string,
-}) => {
-
+export const create_new_user = async (
+    config,
+    userRepository,
+    accountRepository,
+    accessGroupRepository,
+    options: {
+        oauthID: string;
+        provider: Providers;
+        email: string;
+        username: string;
+        picture: string;
+    },
+) => {
     const existing_user = await userRepository.findOne({
-        where: {email: options.email},
+        where: { email: options.email },
         relations: ['account'],
     });
 
@@ -158,9 +170,7 @@ export const create_new_user = async (config, userRepository, accountRepository,
             `Linking account ${account} to existing user ${existing_user.uuid}`,
         );
         account.user = existing_user;
-        return accountRepository
-            .save(account)
-            .then(() => existing_user);
+        return accountRepository.save(account).then(() => existing_user);
     }
 
     logger.debug(`Creating new user with email ${options.email}`);
@@ -190,7 +200,7 @@ export const create_new_user = async (config, userRepository, accountRepository,
         if (user.email?.endsWith(config.email)) {
             config.access_groups?.forEach(async (uuid) => {
                 const group = await accessGroupRepository.findOne({
-                    where: {uuid},
+                    where: { uuid },
                 });
                 if (group) {
                     user.accessGroups.push(group);
@@ -201,8 +211,7 @@ export const create_new_user = async (config, userRepository, accountRepository,
 
     const new_user = await userRepository.save(user);
     return userRepository.findOneOrFail({
-        where: {uuid: new_user.uuid},
+        where: { uuid: new_user.uuid },
         relations: ['account'],
     });
-
-}
+};

@@ -1,5 +1,5 @@
 {
-  "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
-  "entryFile": "queueConsumer/src/main"
+    "collection": "@nestjs/schematics",
+    "sourceRoot": "src",
+    "entryFile": "queueConsumer/src/main"
 }

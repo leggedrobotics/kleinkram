@@ -51,9 +51,15 @@ export class MissionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-
     ) {
-        return this.missionService.findMissionByProject(uuid, skip, take, search, descending, sortBy);
+        return this.missionService.findMissionByProject(
+            uuid,
+            skip,
+            take,
+            search,
+            descending,
+            sortBy,
+        );
     }
 
     @Get('one')

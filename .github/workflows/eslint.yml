@@ -1,26 +1,26 @@
 on:
-  push:
-    branches: ['main', 'dev']
+    push:
+        branches: ['main', 'dev']
 
 jobs:
     eslint:
-      runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@v4
-        - name: Use Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: '22'
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
 
-        - name: Install prettier
-          run: yarn add prettier
+            - name: Install prettier
+              run: yarn add prettier
 
-        - name: Run prettier
-          run: yarn prettier:check
+            - name: Run prettier
+              run: yarn prettier:check
 
-        # for eslint we may need to install the dependencies
-        - name: Install dependencies
-          run: yarn install --immutable
-        - name: Run ESLint
-          run: yarn lint
+            # for eslint we may need to install the dependencies
+            - name: Install dependencies
+              run: yarn install --immutable
+            - name: Run ESLint
+              run: yarn lint

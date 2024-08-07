@@ -14,7 +14,7 @@ export const filteredProjects = async (
     searchParams?: {
         name: string;
     },
-):Promise<[Project[], number]> => {
+): Promise<[Project[], number]> => {
     const params: Record<string, any> = {
         take,
         skip,
@@ -37,17 +37,20 @@ export const filteredProjects = async (
             project.uuid,
             project.name,
             project.description,
-            project.missions.map((mission: any) => new Mission(
-                    mission.uuid,
-                    mission.name,
-                    undefined,
-                    [],
-                    [],
-                    undefined,
-                    new Date(mission.createdAt),
-                    new Date(mission.updatedAt),
-                    new Date(mission.deletedAt),
-                )),
+            project.missions.map(
+                (mission: any) =>
+                    new Mission(
+                        mission.uuid,
+                        mission.name,
+                        undefined,
+                        [],
+                        [],
+                        undefined,
+                        new Date(mission.createdAt),
+                        new Date(mission.updatedAt),
+                        new Date(mission.deletedAt),
+                    ),
+            ),
             new User(
                 project.creator.uuid,
                 project.creator.name,
@@ -65,7 +68,7 @@ export const filteredProjects = async (
             new Date(project.updatedAt),
             new Date(project.deletedAt),
         );
-    })
+    });
     return [res, total];
 };
 

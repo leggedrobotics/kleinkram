@@ -1,5 +1,5 @@
-import {faker} from '@faker-js/faker';
-import {FileType} from "./enum";
+import { faker } from '@faker-js/faker';
+import { FileType } from './enum';
 
 /**
  * A modified faker implementation that provides
@@ -121,7 +121,7 @@ const ros_topic_names = [
     '/costmap',
     '/costmap_updates',
     '/trajectory',
-    '/trajectory_updates'
+    '/trajectory_updates',
 ];
 
 const ros_topic_types = [
@@ -164,16 +164,10 @@ const ros_topic_types = [
     'geometry_msgs/PoseArray',
     'nav_msgs/OccupancyGrid',
     'map_msgs/OccupancyGridUpdate',
-    'trajectory_msgs/JointTrajectory'
+    'trajectory_msgs/JointTrajectory',
 ];
 
-
-const devices = [
-    'jetson',
-    'npc',
-    'lpc',
-    'opc'
-];
+const devices = ['jetson', 'npc', 'lpc', 'opc'];
 
 const extendedFaker = faker as ExtendedFaker;
 
@@ -182,7 +176,8 @@ extendedFaker.ros = {
     topic: () => faker.helpers.arrayElement(ros_topic_names),
     topicType: () => faker.helpers.arrayElement(ros_topic_types),
     fileType: () => faker.helpers.arrayElement([FileType.BAG, FileType.MCAP]),
-    fileName: (type: FileType) => `${faker.date.past().getTime()}_${faker.helpers.arrayElement(devices)}.${type.toLowerCase()}`
+    fileName: (type: FileType) =>
+        `${faker.date.past().getTime()}_${faker.helpers.arrayElement(devices)}.${type.toLowerCase()}`,
 };
 
 extendedFaker.mission = {
@@ -197,14 +192,14 @@ extendedFaker.mission = {
             'Mission',
             'Quest',
             'Operation',
-            'Journey'
+            'Journey',
         ];
 
         const date = faker.date.future().getDate();
         const event = faker.helpers.arrayElement(events);
 
         return `${event} ${date}`;
-    }
+    },
 };
 
 extendedFaker.project = {
@@ -221,7 +216,7 @@ extendedFaker.project = {
             'Future',
             'Synth',
             'Mech',
-            'Exo'
+            'Exo',
         ];
 
         const suffixes = [
@@ -236,7 +231,7 @@ extendedFaker.project = {
             'Space',
             'Net',
             'Sys',
-            'Link'
+            'Link',
         ];
 
         const prefix = faker.helpers.arrayElement(prefixes);
@@ -244,7 +239,7 @@ extendedFaker.project = {
 
         // Combine prefix and suffix to create a project name
         return `${prefix}${suffix}`;
-    }
-}
+    },
+};
 
-export {extendedFaker};
+export { extendedFaker };

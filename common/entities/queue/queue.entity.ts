@@ -1,8 +1,8 @@
 import BaseEntity from '../base-entity.entity';
-import {FileLocation, FileState} from '../../enum';
+import { FileLocation, FileState } from '../../enum';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import {Column, Entity, ManyToOne} from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 
 @Entity()
 export default class QueueEntity extends BaseEntity {
@@ -29,7 +29,7 @@ export default class QueueEntity extends BaseEntity {
     })
     location: FileLocation;
 
-    @Column({nullable: true, default: null})
+    @Column({ nullable: true, default: null })
     processingDuration: number;
 
     @ManyToOne(() => User, (user) => user.queues)

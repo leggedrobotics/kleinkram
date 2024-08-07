@@ -1,13 +1,19 @@
 import tracer from './tracing';
-import {NestFactory} from '@nestjs/core';
-import {AppModule} from './app.module';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
-import {AuthFlowExceptionRedirectFilter} from './auth/authFlowException';
+import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
-import {ArgumentsHost, Catch, ExceptionFilter, INestApplication, ValidationPipe,} from '@nestjs/common';
+import {
+    ArgumentsHost,
+    Catch,
+    ExceptionFilter,
+    INestApplication,
+    ValidationPipe,
+} from '@nestjs/common';
 import logger from './logger';
-import {HttpException} from '@nestjs/common/exceptions/http.exception';
+import { HttpException } from '@nestjs/common/exceptions/http.exception';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -80,12 +86,11 @@ async function bootstrap() {
     });
     app.useGlobalFilters(new GlobalErrorFilter());
 
-    app.useGlobalPipes(new DelayPipe(0))
+    app.useGlobalPipes(new DelayPipe(0));
 
     await app.listen(3000);
 
     save_endpoints_as_json(app, '__generated__endpoints.json');
-
 }
 
 bootstrap().catch((err) => {

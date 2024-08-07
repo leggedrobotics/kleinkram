@@ -20,11 +20,9 @@
         "target": "ES2022",
         "module": "commonjs",
         "moduleResolution": "node",
-      "paths": {
-        "@common/*": [
-          "../common/*"
-        ]
-      }
+        "paths": {
+            "@common/*": ["../common/*"]
+        }
     },
     "rules": {
         "no-console": [true, "warning"]

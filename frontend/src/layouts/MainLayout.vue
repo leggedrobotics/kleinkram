@@ -1,29 +1,35 @@
 <template>
-  <q-layout view="lHh lpr lFf" style="position: absolute">
-    <HeaderComponent/>
+    <q-layout view="lHh lpr lFf" style="position: absolute">
+        <HeaderComponent />
 
-    <q-page-container class="transparent-on-open-dialog">
-      <main>
-        <q-banner
-          inline-actions
-          class="text-white bg-red"
-          style="margin: 10px 0"
-        >
-          <template #avatar>
-            <q-icon
-              name="sym_o_warning"
-              color="white"
-            style="font-weight: bold; font-size: 36px; padding: 2px"/>
-          </template>
-          This app is in active development. Data will be reset without notice!
-        </q-banner>
+        <q-page-container class="transparent-on-open-dialog">
+            <main>
+                <q-banner
+                    inline-actions
+                    class="text-white bg-red"
+                    style="margin: 10px 0"
+                >
+                    <template #avatar>
+                        <q-icon
+                            name="sym_o_warning"
+                            color="white"
+                            style="
+                                font-weight: bold;
+                                font-size: 36px;
+                                padding: 2px;
+                            "
+                        />
+                    </template>
+                    This app is in active development. Data will be reset
+                    without notice!
+                </q-banner>
 
-        <router-view />
-      </main>
-    </q-page-container>
+                <router-view />
+            </main>
+        </q-page-container>
 
-    <FooterComponent />
-  </q-layout>
+        <FooterComponent />
+    </q-layout>
 </template>
 
 <script setup lang="ts">
