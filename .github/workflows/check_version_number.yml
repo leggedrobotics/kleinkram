@@ -1,0 +1,38 @@
+name: check-version-number
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  check-version-number:
+    name: check-version-number
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '22'
+
+      - name: Load Version of Latest Release
+        id: check
+        uses: EndBug/version-check@v1
+        with:
+          file-name: ./package.json
+          file-url: https://github.com/leggedrobotics/kleinkram/blob/main/package.json
+          static-checking: localIsNew
+
+      - name: Validate Version Number by calling grunt validateVersions
+        run: |
+          yarn install --immutable
+          yarn run validateVersions
+        working-directory: .
+
+      - name: Log when unchanged
+        if: steps.check.outputs.changed != 'true'
+        run: exit 1
