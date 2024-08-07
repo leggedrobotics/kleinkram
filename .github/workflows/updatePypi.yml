@@ -13,7 +13,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: Set up Python
               uses: actions/setup-python@v5
@@ -41,7 +41,7 @@ jobs:
                   python -m build
 
             - name: Publish to PyPI
-              uses: pypa/gh-action-pypi-publish@v1.4.2
+              uses: pypa/gh-action-pypi-publish@v1.9.0
               with:
                   user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
