@@ -13,7 +13,7 @@
     "dependencies": {
         "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.24.1",
-        "axios": "^1.6.7",
+        "axios": "^1.7.3",
         "date-fns": "^3.3.1",
         "jwt-decode": "^4.0.0",
         "quasar": "^2.8.0",
