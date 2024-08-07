@@ -17,6 +17,9 @@ export const canAddAccessGroup = async (
 export const searchAccessGroups = async (
     search: string,
 ): Promise<AccessGroup[]> => {
+    if (!search) {
+        return [];
+    }
     const response = await axios.get('/access/searchAccessGroup', {
         params: { search },
     });

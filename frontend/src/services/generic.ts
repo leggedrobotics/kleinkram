@@ -1,4 +1,5 @@
 import { DataType } from 'src/enums/TAG_TYPES';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -17,4 +18,12 @@ export const icon = (type: DataType) => {
         case DataType.ANY:
             return 'sym_o_help';
     }
+};
+
+export const accessGroupRightsMap = {
+    [AccessGroupRights.NONE]: 'None',
+    [AccessGroupRights.READ]: 'Read',
+    [AccessGroupRights.CREATE]: 'Create',
+    [AccessGroupRights.WRITE]: 'Write',
+    [AccessGroupRights.DELETE]: 'Delete',
 };

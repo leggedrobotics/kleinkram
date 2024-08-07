@@ -1,6 +1,6 @@
 <template>
     <q-dialog ref="dialogRef">
-        <q-card style="width: 95%; max-width: 800px">
+        <q-card style="width: 95%; max-width: 1200px">
             <q-card-section>
                 <div class="text-h6">Create New Project</div>
             </q-card-section>
@@ -152,18 +152,13 @@
 
                     <q-tab-panel name="manage_access">
                         <div class="text-h6">Manage Access</div>
-                        By default all user of the organization can view your
-                        project. External users cannot.
-                        <br />
-                        You can add groups or individual users to your project
-                        to give them access to it.
-
-                        <q-skeleton
-                            v-if="true"
-                            style="height: 200px; margin-top: 20px"
-                        >
-                            <div class="q-pa-md">Comming soon...</div>
-                        </q-skeleton>
+                        <ModifyAccessGroups
+                            :existing-rights="{}"
+                            @add-access-group-to-project="
+                                addAccessGroupToProject
+                            "
+                            @add-users-to-project="addUserToProject"
+                        />
                     </q-tab-panel>
                 </q-tab-panels>
             </q-card-section>
@@ -193,6 +188,8 @@ import { getFilteredTagTypes } from 'src/services/queries/tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
 import { icon } from 'src/services/generic';
+import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -217,6 +214,24 @@ const { data: tags } = useQuery({
         return getFilteredTagTypes(tagSearch.value, selectedDataType.value);
     },
 });
+
+const usersToAdd = ref<{ userUUID: string; rights: AccessGroupRights }[]>([]);
+const accessGroupsToAdd = ref<
+    { accessGroupUUID: string; rights: AccessGroupRights }[]
+>([]);
+
+function addUserToProject(newUser: {
+    userUUID: string;
+    rights: AccessGroupRights;
+}) {
+    usersToAdd.value.push(newUser);
+}
+function addAccessGroupToProject(newAccessGroup: {
+    accessGroupUUID: string;
+    rights: AccessGroupRights;
+}) {
+    accessGroupsToAdd.value.push(newAccessGroup);
+}
 
 const hasValidInput = ref(false);
 const submitNewProject = async () => {
