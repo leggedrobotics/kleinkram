@@ -21,7 +21,7 @@ jobs:
 
       - name: Validate Version Number by calling grunt validateVersions
         run: |
-          yarn install --immutable
+          yarn install --immutable --ignore-scripts
           yarn run validateVersions
         working-directory: .
 
