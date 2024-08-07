@@ -175,6 +175,7 @@ services:
             - webnet
 
     docs:
+        image: rslethz/grandtour-datasets:docs-latest
         build:
             context: docs/.
             dockerfile: local-dev.Dockerfile
