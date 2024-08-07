@@ -1,4 +1,4 @@
-FROM node:21-alpine
+FROM node:22-alpine
 
 COPY ./backend/package.json /usr/src/app/backend/
 COPY ./backend/yarn.lock /usr/src/app/backend/
