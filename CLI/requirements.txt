@@ -1,5 +1,5 @@
 httpx~=0.27.0
-requests~=2.31.0
+requests~=2.32.3
 typer~=0.12.3
 typing_extensions~=4.12.2
 rich~=13.7.1
