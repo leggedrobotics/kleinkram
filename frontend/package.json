@@ -17,7 +17,7 @@
         "date-fns": "^3.3.1",
         "jwt-decode": "^4.0.0",
         "quasar": "^2.8.0",
-        "vue": "^3.4.18",
+        "vue": "^3.4.35",
         "vue-json-pretty": "^2.4.0",
         "vue-router": "^4.4.2"
     },
