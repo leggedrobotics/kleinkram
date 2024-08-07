@@ -8,7 +8,12 @@ import {
     BodyString,
     BodyUUID,
 } from '../validation/bodyDecorators';
-import { QuerySkip, QueryTake, QueryUUID } from '../validation/queryDecorators';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
 
 @Controller('tag')
 export class TagController {
@@ -55,5 +60,15 @@ export class TagController {
         @QueryTake('take') take: number,
     ) {
         return this.tagService.getAll(skip, take);
+    }
+
+    @Get('filtered')
+    @LoggedIn()
+    async getFiltered(
+        @QueryString('name') name: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
+        return this.tagService.getFiltered(name, skip, take);
     }
 }

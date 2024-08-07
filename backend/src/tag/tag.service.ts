@@ -5,7 +5,7 @@ import {
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/enum';
@@ -139,5 +139,17 @@ export class TagService {
 
     async getAll(skip: number, take: number): Promise<TagType[]> {
         return this.tagTypeRepository.find({ skip, take });
+    }
+
+    async getFiltered(
+        name: string,
+        skip: number,
+        take: number,
+    ): Promise<TagType[]> {
+        return this.tagTypeRepository.find({
+            where: { name: ILike(`%${name}%`) },
+            skip,
+            take,
+        });
     }
 }
