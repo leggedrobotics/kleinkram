@@ -11,12 +11,13 @@ jobs:
         - name: Use Node.js
           uses: actions/setup-node@v4
           with:
-            node-version: '20'
-        - name: Install dependencies
-          run: yarn install
-
-        - name: Run ESLint
-          run: yarn lint
+            node-version: '22'
 
         - name: Run prettier
-          run: prettier --check .
+          run: yarn prettier:check
+
+        # for eslint we may need to install the dependencies
+        - name: Install dependencies
+          run: yarn install
+        - name: Run ESLint
+          run: yarn lint

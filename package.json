@@ -9,6 +9,7 @@
     "start": "docker compose up --build -d",
     "lint": "eslint . --fix",
     "prettier": "prettier --write .",
+    "prettier:check": "prettier --check .",
     "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines )"
   },
   "devDependencies": {
