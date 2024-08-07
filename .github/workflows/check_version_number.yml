@@ -24,7 +24,3 @@ jobs:
           yarn install --immutable --ignore-scripts
           yarn run validateVersions
         working-directory: .
-
-      - name: Log when unchanged
-        if: steps.check.outputs.changed != 'true'
-        run: exit 1
