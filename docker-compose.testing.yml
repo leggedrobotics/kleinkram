@@ -108,8 +108,8 @@ services:
                   path: ./queueConsumer
                   target: /usr/src/queueConsumer
                   ignore:
-                    - node_modules/
-                    - dist/
+                      - node_modules/
+                      - dist/
         env_file:
             - .env
         networks:
@@ -179,7 +179,7 @@ services:
             context: docs/.
             dockerfile: local-dev.Dockerfile
         ports:
-            - "4000:4000"
+            - '4000:4000'
         volumes:
             - ./docs:/app/src
             - vitepress_dist:/app/src/.vitepress/dist

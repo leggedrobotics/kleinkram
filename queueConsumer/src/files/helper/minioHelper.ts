@@ -17,34 +17,36 @@ const minio: Client = new Client({
 export async function uploadFile(
     bucketName: string,
     fileName: string,
-    tmp_file_path: string
+    tmp_file_path: string,
 ) {
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        await minio.fPutObject(bucketName, fileName, tmp_file_path)
+        await minio.fPutObject(bucketName, fileName, tmp_file_path);
         logger.debug('File uploaded to Minio in parts');
         return true;
     }, 'uploadFile')();
 }
 
-export async function downloadMinioFile(bucketName: string, fileName: string, tmp_file_name: string): Promise<boolean> {
+export async function downloadMinioFile(
+    bucketName: string,
+    fileName: string,
+    tmp_file_name: string,
+): Promise<boolean> {
     return await traceWrapper(async (): Promise<boolean> => {
-            logger.debug('Downloading file from Minio...');
-            const fileStream = await minio.getObject(bucketName, fileName);
-            const writeStream = fs.createWriteStream(tmp_file_name);
-            fileStream.pipe(writeStream);
-            return new Promise((resolve, reject) => {
-                writeStream.on('finish', () => {
-                    logger.debug('File downloaded from Minio');
-                    resolve(true);
-                });
-                writeStream.on('error', (err) => {
-                    reject(err);
-                });
+        logger.debug('Downloading file from Minio...');
+        const fileStream = await minio.getObject(bucketName, fileName);
+        const writeStream = fs.createWriteStream(tmp_file_name);
+        fileStream.pipe(writeStream);
+        return new Promise((resolve, reject) => {
+            writeStream.on('finish', () => {
+                logger.debug('File downloaded from Minio');
+                resolve(true);
             });
-
-        },
-        'downloadMinioFile')();
+            writeStream.on('error', (err) => {
+                reject(err);
+            });
+        });
+    }, 'downloadMinioFile')();
 }
 
 export async function deleteMinioFile(

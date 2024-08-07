@@ -1,4 +1,4 @@
-import {IsDate, IsOptional, IsString, IsUUID} from "class-validator";
+import { IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateFile {
     @IsUUID() uuid: string;

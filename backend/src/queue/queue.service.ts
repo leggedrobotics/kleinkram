@@ -35,7 +35,6 @@ function extractFileIdFromUrl(url: string): string | null {
     return null;
 }
 
-
 @Injectable()
 export class QueueService {
     constructor(

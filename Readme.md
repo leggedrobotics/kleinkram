@@ -5,10 +5,10 @@ way to store and retrieve bags and mcaps. Bagestry is developed by the Robotics 
 
 ## Features
 
-- **Simple**: Bagestry is designed to be simple to use and easy to understand.
-- **Efficient**: Bagestry is designed to be efficient in terms of storage and retrieval.
-- **Structured**: Bagestry is designed to be structured in terms of storage and retrieval.
-- **ROS1 and ROS2**: Bagestry is designed to work with both ROS1 and ROS2.
+-   **Simple**: Bagestry is designed to be simple to use and easy to understand.
+-   **Efficient**: Bagestry is designed to be efficient in terms of storage and retrieval.
+-   **Structured**: Bagestry is designed to be structured in terms of storage and retrieval.
+-   **ROS1 and ROS2**: Bagestry is designed to work with both ROS1 and ROS2.
 
 ## Getting Started
 

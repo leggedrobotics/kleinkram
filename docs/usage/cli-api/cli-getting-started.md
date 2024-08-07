@@ -3,5 +3,5 @@
 This guide will help you get started with the CLI.
 
 ::: danger Not Yet Documented
-Not yet documented...  :( --> Will follow soon :)
+Not yet documented... :( --> Will follow soon :)
 :::

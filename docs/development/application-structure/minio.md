@@ -6,7 +6,7 @@ directly uploaded to & downloaded from Minio.
 
 In minio are two buckets:
 
-- one for `.bag` files, and
-- one for `.mcap` files.
+-   one for `.bag` files, and
+-   one for `.mcap` files.
 
 The files are grouped by their `project` and `mission`.

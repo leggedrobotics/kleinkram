@@ -32,8 +32,8 @@ jobs:
             - name: Modify version for dev release
               if: github.ref == 'refs/heads/dev'
               run: |
-                pip install tomlkit
-                python .github/scripts/addDevToPyPiRelease.py
+                  pip install tomlkit
+                  python .github/scripts/addDevToPyPiRelease.py
 
             - name: Build package
               run: |

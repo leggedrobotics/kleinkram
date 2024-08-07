@@ -17,7 +17,7 @@ axiosInstance.interceptors.response.use(
             await axios.post(
                 `${env.ENDPOINT}/auth/refresh-token`,
                 {},
-                {withCredentials: true},
+                { withCredentials: true },
             );
             return axios(originalRequest);
         }
@@ -25,6 +25,5 @@ axiosInstance.interceptors.response.use(
         return Promise.reject(error);
     },
 );
-
 
 export default axiosInstance;

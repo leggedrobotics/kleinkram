@@ -20,20 +20,20 @@ directory contains the source code for the application.
 
 ### Configuration Files
 
-- `package.json` - Contains the dependencies and scripts for the application.
-- `tsconfig.json` - Contains the configuration for the TypeScript compiler.
-- `Dockerfile` - Contains the instructions to build the Docker image for the application.
+-   `package.json` - Contains the dependencies and scripts for the application.
+-   `tsconfig.json` - Contains the configuration for the TypeScript compiler.
+-   `Dockerfile` - Contains the instructions to build the Docker image for the application.
 
 ### Source Code
 
 The Source Code is structured into modules. Each module handles the logic for an entity. Each module is structured
 identically:
 
-- `module` - The module contains the configuration for the module.
-- `controller` - The controller handles the incoming requests and outgoing responses.
-- `service` - The service handles the business logic.
-- `entities/` - The class definition for the entity. Defines the fields in the database. Can also contain .dto files for
-  the data transfer objects.
+-   `module` - The module contains the configuration for the module.
+-   `controller` - The controller handles the incoming requests and outgoing responses.
+-   `service` - The service handles the business logic.
+-   `entities/` - The class definition for the entity. Defines the fields in the database. Can also contain .dto files for
+    the data transfer objects.
 
 Each entity should inherit from the `BaseEntity` class. This class adds basic fields
 like `uuid`, `createdAt`, `deletedAt`, and `updatedAt`.

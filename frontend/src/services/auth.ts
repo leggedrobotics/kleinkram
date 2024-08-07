@@ -1,10 +1,9 @@
 import axios from 'src/api/axios';
 import ENV from 'src/env';
 import ROUTES from 'src/router/routes';
-import {useQuery} from "@tanstack/vue-query";
-import {getMe} from "src/services/queries/user";
-import {User} from "src/types/User";
-
+import { useQuery } from '@tanstack/vue-query';
+import { getMe } from 'src/services/queries/user';
+import { User } from 'src/types/User';
 
 let userCache: User | null = null;
 let isFetchingUser = false;
@@ -19,15 +18,15 @@ export const getUser = () => {
     }
     isFetchingUser = true;
     userFetchPromise = getMe()
-      .then(userData => {
-          userCache = userData;
-          isFetchingUser = false;
-          return userData;
-      })
-      .catch(() => {
-          isFetchingUser = false;
-          return null;
-      });
+        .then((userData) => {
+            userCache = userData;
+            isFetchingUser = false;
+            return userData;
+        })
+        .catch(() => {
+            isFetchingUser = false;
+            return null;
+        });
     return userFetchPromise;
 };
 
@@ -43,15 +42,12 @@ export function logout() {
         axios
             .post('/auth/logout')
             .then(() => {
-
                 // reload the page to clear the cache
                 window.location.reload();
-
             })
             .catch(() => reject(false));
     });
 }
-
 
 export const login = () => {
     window.location.href = `${ENV.ENDPOINT}/auth/google`;

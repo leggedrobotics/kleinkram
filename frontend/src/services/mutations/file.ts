@@ -1,7 +1,7 @@
-import {FileEntity} from 'src/types/FileEntity';
+import { FileEntity } from 'src/types/FileEntity';
 import axios from 'src/api/axios';
 
-export const updateFile = async ({file}: { file: FileEntity }) => {
+export const updateFile = async ({ file }: { file: FileEntity }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
         filename: file.filename,

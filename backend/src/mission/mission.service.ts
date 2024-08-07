@@ -71,23 +71,25 @@ export class MissionService {
         descending?: boolean,
         sortBy?: string,
     ): Promise<[Mission[], number]> {
-        const query = this.missionRepository.createQueryBuilder('mission')
-          .leftJoinAndSelect('mission.project', 'project')
-          .leftJoinAndSelect('mission.creator', 'creator')
-          .leftJoinAndSelect('mission.files', 'files')
-          .leftJoinAndSelect('files.creator', 'fileCreator')
-          .where('project.uuid = :projectUUID', { projectUUID })
-          .take(take)
-          .skip(skip);
+        const query = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .leftJoinAndSelect('mission.files', 'files')
+            .leftJoinAndSelect('files.creator', 'fileCreator')
+            .where('project.uuid = :projectUUID', { projectUUID })
+            .take(take)
+            .skip(skip);
 
         if (search) {
-            query.andWhere('mission.name ILIKE :search', {search: `%${search}%`});
+            query.andWhere('mission.name ILIKE :search', {
+                search: `%${search}%`,
+            });
         }
-        if(sortBy) {
+        if (sortBy) {
             query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
         }
         return query.getManyAndCount();
-
     }
 
     async filteredByProjectName(

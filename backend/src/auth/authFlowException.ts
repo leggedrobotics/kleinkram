@@ -1,4 +1,9 @@
-import { ArgumentsHost, Catch, ExceptionFilter, UnauthorizedException } from '@nestjs/common';
+import {
+    ArgumentsHost,
+    Catch,
+    ExceptionFilter,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import logger from '../logger';
 

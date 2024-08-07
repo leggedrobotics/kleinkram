@@ -16,8 +16,7 @@ export class ActionGuardService {
         private actionRepository: Repository<Action>,
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
-    ) {
-    }
+    ) {}
 
     async canAccessAction(
         userUUID: string,
