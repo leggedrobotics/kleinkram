@@ -19,7 +19,7 @@
         "quasar": "^2.8.0",
         "vue": "^3.4.18",
         "vue-json-pretty": "^2.4.0",
-        "vue-router": "^4.0.12"
+        "vue-router": "^4.4.2"
     },
     "devDependencies": {
         "@quasar/app-vite": "1.7.3",
