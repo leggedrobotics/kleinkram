@@ -236,8 +236,9 @@ describe('Access Control', () => {
         );
         expect(res.status).toBe(200);
         const project_list = await res.json();
-        expect(project_list.length).toBe(10);
-        project_list.forEach((project) => {
+        console.log(project_list);
+        expect(project_list[0].length).toBe(10);
+        project_list[0]?.forEach((project) => {
             expect(project_uuids.includes(project.uuid)).toBe(true);
         });
     });
@@ -376,7 +377,7 @@ describe('Access Control', () => {
         );
         expect(res.status).toBe(200);
         const project_list = await res.json();
-        expect(project_list.length).toBe(0);
+        expect(project_list[0].length).toBe(0);
     });
 
     test('internal user have read only access by default', async () => {
