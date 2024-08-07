@@ -19,14 +19,6 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Load Version of Latest Release
-        id: check
-        uses: EndBug/version-check@v1
-        with:
-          file-name: ./package.json
-          file-url: https://github.com/leggedrobotics/kleinkram/blob/main/package.json
-          static-checking: localIsNew
-
       - name: Validate Version Number by calling grunt validateVersions
         run: |
           yarn install --immutable
