@@ -39,7 +39,7 @@
         "rxjs": "7.8.1",
         "typeorm": "^0.3.20",
         "util": "^0.12.5",
-        "winston": "3.10.0",
+        "winston": "3.13.1",
         "winston-loki": "^6.0.7"
     },
     "devDependencies": {
