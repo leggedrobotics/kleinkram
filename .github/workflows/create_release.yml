@@ -23,7 +23,7 @@ jobs:
               id: check # This will be the reference for getting the outputs.
               uses: EndBug/version-check@v2
               with:
-                  file-name: ./package.json
+                  file-name: package.json
                   file-url: ::before
                   static-checking: localIsNew
 
