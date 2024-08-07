@@ -12,7 +12,7 @@
         "@mcap/nodejs": "^1.0.0",
         "@mcap/support": "^1.0.0",
         "@nestjs/bull": "^10.1.1",
-        "@nestjs/common": "10.3.7",
+        "@nestjs/common": "10.3.10",
         "@nestjs/config": "^3.2.2",
         "@nestjs/core": "10.3.7",
         "@nestjs/platform-express": "^10.0.0",
