@@ -12,8 +12,8 @@ import {
     INestApplication,
     ValidationPipe,
 } from '@nestjs/common';
-import logger from './logger';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
+import logger, { NestLoggerWrapper } from './logger';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -65,7 +65,9 @@ class DelayPipe {
 async function bootstrap() {
     tracer.start();
 
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+        logger: new NestLoggerWrapper(),
+    });
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
     app.useGlobalPipes(

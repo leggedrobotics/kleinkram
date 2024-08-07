@@ -1,5 +1,6 @@
 import winston, { format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
+import { Injectable, LoggerService } from '@nestjs/common';
 
 const messageOnly = winston.format.printf(({ level, message }) => {
     return `[${level.toUpperCase()}]: ${message}`;
@@ -23,5 +24,32 @@ const logger = winston.createLogger({
         }),
     ],
 });
+
+@Injectable()
+export class NestLoggerWrapper implements LoggerService {
+    log(message: any, ...optionalParams: any[]) {
+        logger.info(message, ...optionalParams);
+    }
+
+    fatal(message: any, ...optionalParams: any[]) {
+        logger.error(message, ...optionalParams);
+    }
+
+    error(message: any, ...optionalParams: any[]) {
+        logger.error(message, ...optionalParams);
+    }
+
+    warn(message: any, ...optionalParams: any[]) {
+        logger.warn(message, ...optionalParams);
+    }
+
+    debug?(message: any, ...optionalParams: any[]) {
+        logger.debug(message, ...optionalParams);
+    }
+
+    verbose?(message: any, ...optionalParams: any[]) {
+        logger.verbose(message, ...optionalParams);
+    }
+}
 
 export default logger as winston.Logger;
