@@ -3,7 +3,7 @@ import {withMermaid} from 'vitepress-plugin-mermaid';
 export default withMermaid({
     lang: 'en-US',
 
-    title: 'Bagestry',
+    title: 'Kleinkram',
     description: 'A structured bag and mcap dataset storage.',
     titleTemplate: ':title - Custom Suffix',
 
