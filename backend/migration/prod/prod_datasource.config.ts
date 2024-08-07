@@ -8,7 +8,7 @@ export function getConfig() {
     return {
         type: 'postgres',
         host: process.env.prod_dbhost,
-        port: parseInt(process.env.prod_dbport, 10),
+        port: parseInt(process.env.prod_port, 10),
         ssl: process.env.prod_ssl === 'true',
         username: process.env.prod_dbuser,
         password: process.env.prod_dbpassword,

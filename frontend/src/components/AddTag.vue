@@ -2,7 +2,7 @@
     <div class="row flex-center flex">
         <h4>Add Tags</h4>
     </div>
-    <q-form @submit="save">
+    <q-form @submit="() => save()">
         <div class="row">
             <div class="col-3">
                 <q-btn-dropdown label="Add another tag">
