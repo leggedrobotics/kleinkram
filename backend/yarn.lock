@@ -783,10 +783,10 @@
     heap-js "^2.2.0"
     tslib "^2.5.0"
 
-"@mcap/support@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/@mcap/support/-/support-1.0.0.tgz"
-  integrity sha512-j905tf/JmyRDeLjyvtha5cFcP5cqwN1yC82xs9holEke2nsl2mEJeglxKiZr/ftmOyP34LEmy/sHBjBdCjbAOw==
+"@mcap/support@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.1.tgz#595fa108f36ef95565f6adba13be7458bf40705a"
+  integrity sha512-fsZb7//3fG06OKnN+qcs9wdW1sZrpKHU8i2G0ZW/Sj8skkqw6Y6aVqf2hOthJ/e/kChydcsJrNoB4XhvlUhW7w==
   dependencies:
     "@foxglove/wasm-bz2" "^0.1.1"
     "@foxglove/wasm-lz4" "^1.0.2"
