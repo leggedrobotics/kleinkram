@@ -1,4 +1,4 @@
-FROM node:21-alpine
+FROM node:22-alpine
 
 COPY ./backend/package.json /usr/src/app/backend/
 COPY ./backend/yarn.lock /usr/src/app/backend/
@@ -6,10 +6,10 @@ COPY ./common/package.json /usr/src/app/common/
 COPY ./common/yarn.lock /usr/src/app/common/
 
 WORKDIR /usr/src/app/backend
-RUN yarn
+RUN yarn --immutable
 
 WORKDIR /usr/src/app/common
-RUN yarn
+RUN yarn --immutable
 
 # copy the rest of the files
 COPY ./backend /usr/src/app/backend

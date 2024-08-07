@@ -1,4 +1,4 @@
-import { BucketItem, Client } from 'minio';
+import {BucketItem, Client} from 'minio';
 import env from '@common/env';
 
 export const externalMinio: Client = new Client({
@@ -27,6 +27,7 @@ export async function uploadToMinio(response: any, originalname: string) {
         env.MINIO_BAG_BUCKET_NAME,
         filename,
         response.data,
+        undefined,
         {
             'Content-Type': 'application/octet-stream',
         },
