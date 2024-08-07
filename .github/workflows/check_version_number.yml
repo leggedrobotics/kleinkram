@@ -1,26 +1,25 @@
 name: check-version-number
 
 on:
-  pull_request:
-    branches:
-      - main
+    pull_request:
+        branches:
+            - main
 
 jobs:
+    check-version-number:
+        name: check-version-number
+        runs-on: ubuntu-latest
 
-  check-version-number:
-    name: check-version-number
-    runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+            - uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '22'
 
-      - uses: actions/setup-node@v2-beta
-        with:
-          node-version: '22'
-
-      - name: Validate Version Number by calling grunt validateVersions
-        run: |
-          yarn install --immutable --ignore-scripts
-          yarn run validateVersions
-        working-directory: .
+            - name: Validate Version Number by calling grunt validateVersions
+              run: |
+                  yarn install --immutable --ignore-scripts
+                  yarn run validateVersions
+              working-directory: .
