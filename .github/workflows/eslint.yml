@@ -13,7 +13,7 @@ jobs:
           with:
             node-version: '22'
 
-        - name: Install prettier at version specified in yarn.lock
+        - name: Install prettier
           run: yarn add prettier
 
         - name: Run prettier
