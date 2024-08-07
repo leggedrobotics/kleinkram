@@ -13,11 +13,14 @@ jobs:
           with:
             node-version: '22'
 
+        - name: Install prettier at version specified in yarn.lock
+          run: yarn add prettier
+
         - name: Run prettier
           run: yarn prettier:check
 
         # for eslint we may need to install the dependencies
         - name: Install dependencies
-          run: yarn install
+          run: yarn install --immutable
         - name: Run ESLint
           run: yarn lint

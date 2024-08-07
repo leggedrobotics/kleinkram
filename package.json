@@ -13,11 +13,11 @@
     "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines )"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "eslint": "9.8.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-vue": "^9.27.0",
-    "prettier": "^3.3.3",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0"
+    "prettier": "^3.3.3"
   }
 }
