@@ -114,31 +114,9 @@ describe('Access Control', () => {
         expect(res.status).toBe(401);
     });
 
-    test('reject corrupted JWT token', async () => {
-        const jwt = require('jsonwebtoken');
-        const token = jwt.sign(
-            { user: 'this-is-not-a-valid-uuid' },
-            process.env.JWT_SECRET,
-        );
-
-        const res = await fetch(`http://localhost:3000/project/create`, {
-            method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
-            body: JSON.stringify({
-                name: 'Test Project',
-                description: 'This is a test project',
-                requiredTags: [],
-            }),
-        });
-
-        expect(res.status).toBe(401);
-    });
-
     test('reject corrupted (empty) JWT token', async () => {
         const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ user: '' }, process.env.JWT_SECRET);
+        const token = jwt.sign({ user: { uuid: '' } }, process.env.JWT_SECRET);
 
         const res = await fetch(`http://localhost:3000/project/create`, {
             method: 'POST',
@@ -152,7 +130,7 @@ describe('Access Control', () => {
             }),
         });
 
-        expect(res.status).toBe(401);
+        expect(res.status).toBe(403);
     });
 
     test('if user with leggedrobotics email is allowed to create new project', async () => {

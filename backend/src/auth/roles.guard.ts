@@ -18,6 +18,7 @@ import { MissionGuardService } from './missionGuard.service';
 import { FileGuardService } from './fileGuard.service';
 import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
+import logger from '../logger';
 @Injectable()
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
@@ -226,7 +227,7 @@ export class CreateProjectGuard extends AuthGuard('jwt') {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         await super.canActivate(context); // Ensure the user is authenticated first
         const request = context.switchToHttp().getRequest();
-        if (!request.user) {
+        if (!request?.user?.uuid) {
             return false;
         }
         const user = request.user;
