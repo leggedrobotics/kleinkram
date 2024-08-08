@@ -1,15 +1,14 @@
-import os
-import threading
 import glob
+import os
+import queue
+import threading
+from typing import Dict
 
 import httpx
 import tqdm
 from rich import print
-import queue
 
-from typing import Dict
-
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 
 def expand_and_match(path_pattern):
@@ -54,6 +53,7 @@ def uploadFile(_queue: queue.Queue, paths: Dict[str, str], pbar: tqdm):
                     response = cli.put(url, content=f, headers=headers)
                     if response.status_code == 200:
                         pbar.update(100)  # Update progress for each file
+                        client = AuthenticatedClient()
                         client.post("/queue/confirmUpload", json={"uuid": uuid})
                     else:
                         print(

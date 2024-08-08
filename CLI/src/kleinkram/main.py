@@ -10,7 +10,8 @@ from typer.core import TyperGroup
 from typer.models import Context
 from typing_extensions import Annotated
 
-from kleinkram.auth.auth import login, endpoint, setEndpoint, setCliKey, client
+from kleinkram.api_client import AuthenticatedClient
+from kleinkram.auth.auth import login, endpoint, setEndpoint, setCliKey, logout
 from kleinkram.file.file import file
 from kleinkram.mission.mission import mission
 from kleinkram.project.project import project
@@ -71,6 +72,7 @@ app.add_typer(user, rich_help_panel=Panel.Commands)
 app.add_typer(tag, rich_help_panel=Panel.Commands)
 
 app.command(rich_help_panel=Panel.CoreCommands)(login)
+app.command(rich_help_panel=Panel.CoreCommands)(logout)
 app.command(rich_help_panel=Panel.AdditionalCommands)(endpoint)
 app.command(rich_help_panel=Panel.AdditionalCommands)(setEndpoint)
 app.command(hidden=True)(setCliKey)
@@ -112,6 +114,8 @@ def upload(
             filepaths[path.split("/")[-1]] = path
             print(f"  - {path}")
     try:
+        client = AuthenticatedClient()
+
         get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
         if project_response.status_code >= 400:
@@ -168,6 +172,7 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the queue? (y/n)")
     if confirmation.lower() == "y":
+        client = AuthenticatedClient()
         response = client.delete("/queue/clear")
         response.raise_for_status()
         print("Queue cleared.")
@@ -181,6 +186,7 @@ def list_queue():
     try:
         url = "/queue/active"
         startDate = datetime.now().date() - timedelta(days=1)
+        client = AuthenticatedClient()
         response = client.get(url, params={"startDate": startDate})
         response.raise_for_status()
         data = response.json()
@@ -213,6 +219,7 @@ def wipe():
             print("Operation cancelled.")
             return
 
+        client = AuthenticatedClient()
         response_queue = client.delete("/queue/clear")
         response_file = client.delete("/file/clear")
         response_analysis = client.delete("/analysis/clear")
@@ -247,6 +254,8 @@ def claim():
 
     Only works if no other user has claimed admin rights before.
     """
+
+    client = AuthenticatedClient()
     response = client.post("/user/claimAdmin")
     response.raise_for_status()
     print("Admin claimed.")

@@ -3,9 +3,10 @@ from typing import Annotated, Optional
 
 import httpx
 import typer
+from rich.console import Console
 from rich.table import Table
 
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 mission = typer.Typer(
     name="mission",
@@ -23,6 +24,7 @@ def addTag(
 ):
     """Tag a mission"""
     try:
+        client = AuthenticatedClient()
         response = client.post(
             "/tag/addTag",
             json={"mission": missionuuid, "tagType": tagtypeuuid, "value": value},
@@ -54,6 +56,8 @@ def list_missions(
             url += f"/filteredByProjectName/{project}"
         else:
             url += "/all"
+            client = AuthenticatedClient()
+
         response = client.get(url)
         response.raise_for_status()
         data = response.json()
@@ -103,6 +107,7 @@ def mission_by_uuid(
     """
     try:
         url = "/mission/byUUID"
+        client = AuthenticatedClient()
         response = client.get(url, params={"uuid": uuid})
         response.raise_for_status()
         data = response.json()
@@ -115,6 +120,7 @@ def mission_by_uuid(
             table = Table("Filename", "Size", "date")
             for file in data["files"]:
                 table.add_row(file["filename"], f"{file['size']}", file["date"])
-            print(table)
+            console = Console()
+            console.print(table)
     except httpx.HTTPError as e:
         print(f"Failed to fetch missions: {e}")

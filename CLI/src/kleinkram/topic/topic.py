@@ -4,7 +4,7 @@ import httpx
 import typer
 from rich.table import Table
 
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 topic = typer.Typer(
     name="topic",
@@ -31,6 +31,7 @@ def topics(
         print("BAG files generally do not have topics")
     try:
         url = "/file/byName"
+        client = AuthenticatedClient()
         response = client.get(url, params={"name": file})
         response.raise_for_status()
         data = response.json()

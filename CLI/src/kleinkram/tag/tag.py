@@ -3,7 +3,7 @@ from typing import Annotated
 import typer
 from rich.table import Table
 
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 tag = typer.Typer(name="tag", help="Tag operations")
 
@@ -14,6 +14,7 @@ def tagTypes(
 ):
     """List all tagtypes"""
     try:
+        client = AuthenticatedClient()
         response = client.get("/tag/all")
         response.raise_for_status()
         data = response.json()
@@ -36,6 +37,7 @@ def deleteTag(
 ):
     """Delete a tag"""
     try:
+        client = AuthenticatedClient()
         response = client.delete("/tag/deleteTag", params={"uuid": taguuid})
         if response.status_code < 400:
             print("Deleted tag")

@@ -3,7 +3,7 @@ from typing import Optional, Annotated
 import httpx
 import typer
 
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 file = typer.Typer(
     name="file",
@@ -47,6 +47,8 @@ def list_files(
             for tag in tags.split(","):
                 tagtype, tagvalue = tag.split("§")
                 params["tags"][tagtype] = tagvalue
+
+        client = AuthenticatedClient()
         response = client.get(
             url,
             params=params,
@@ -85,6 +87,7 @@ def download(
 ):
     """Download file"""
     try:
+        client = AuthenticatedClient()
         response = client.get("/file/downloadWithToken", params={"uuid": missionuuid})
         response.raise_for_status()
         print(response.json())
@@ -98,6 +101,7 @@ def clear_queue():
     # Prompt the user for confirmation
     confirmation = typer.prompt("Are you sure you want to clear the Files? (y/n)")
     if confirmation.lower() == "y":
+        client = AuthenticatedClient()
         response = client.delete("/file/clear")
         response.raise_for_status()
         print("Files cleared.")

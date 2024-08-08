@@ -3,7 +3,7 @@ from typing import Annotated
 import httpx
 import typer
 
-from kleinkram.auth.auth import client
+from kleinkram.api_client import AuthenticatedClient
 
 project = typer.Typer(
     name="project",
@@ -19,6 +19,7 @@ def list_projects():
     List all projects.
     """
     try:
+        client = AuthenticatedClient()
         response = client.get("/project")
         response.raise_for_status()
         projects = response.json()[0]
@@ -41,6 +42,7 @@ def create_project(
     # Todo add required tags as option.
     try:
         url = "/project/create"
+        client = AuthenticatedClient()
         response = client.post(
             url, json={"name": name, "description": description, "requiredTags": []}
         )  # TODO: Add required tags as option
