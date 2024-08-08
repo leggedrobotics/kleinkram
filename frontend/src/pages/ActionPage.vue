@@ -1,18 +1,8 @@
 <template>
-    <q-page class="flex">
-        <div class="q-pa-md">
-            <div class="text-h4">Mission Analysis</div>
-            <p>
-                <i>Actions</i> allows you to perform automated action, tests and
-                checks on a project or mission level. Actions works similar to
-                GitHub Actions or GitLab CI/CD pipelines. The action is
-                performed in a docker container, which gets executed on the
-                server. All you have to do is to specify the docker image, which
-                contains the action code. The action code will be executed in
-                the docker container, the results will be stored, and can be
-                viewed via Webinterface.
-            </p>
+    <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Mission Analysis</h1>
 
+    <q-card class="q-pa-md q-mb-md" flat bordered>
+        <q-card-section>
             <h3 class="text-h6">Submit new Mission Analysis</h3>
 
             <!-- Select a project and mission, on which the anylsis will be performed -->
@@ -93,7 +83,10 @@
                     </div>
                 </div>
             </q-form>
-
+        </q-card-section>
+    </q-card>
+    <q-card class="q-pa-md q-mb-xl" flat bordered>
+        <q-card-section>
             <template v-if="selected_project && selected_mission">
                 <Action
                     :project_uuid="selected_project?.uuid"
@@ -101,14 +94,12 @@
                 ></Action>
             </template>
             <template v-else>
-                <q-card class="q-pa-sm q-ma-lg text-center">
-                    <div class="text">
-                        Please select a project and a mission to...
-                    </div>
-                </q-card>
+                <div class="text">
+                    Please select a project and a mission to...
+                </div>
             </template>
-        </div>
-    </q-page>
+        </q-card-section>
+    </q-card>
 </template>
 
 <script setup lang="ts">

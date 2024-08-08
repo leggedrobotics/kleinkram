@@ -23,9 +23,9 @@
                                 "
                             >
                                 <q-item-section>
-                                    <q-item-label>{{
-                                        project.name
-                                    }}</q-item-label>
+                                    <q-item-label
+                                        >{{ project.name }}
+                                    </q-item-label>
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -52,9 +52,9 @@
                                 "
                             >
                                 <q-item-section>
-                                    <q-item-label>{{
-                                        mission.name
-                                    }}</q-item-label>
+                                    <q-item-label
+                                        >{{ mission.name }}
+                                    </q-item-label>
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -208,8 +208,8 @@
                                         @click="() => openQDialog(props.row)"
                                     >
                                         <q-item-section
-                                            >Edit File</q-item-section
-                                        >
+                                            >Edit File
+                                        </q-item-section>
                                     </q-item>
                                     <q-item
                                         clickable
@@ -223,13 +223,13 @@
                                         "
                                     >
                                         <q-item-section
-                                            >View File</q-item-section
-                                        >
+                                            >View File
+                                        </q-item-section>
                                     </q-item>
                                     <q-item clickable v-ripple disable>
                                         <q-item-section
-                                            >Delete File</q-item-section
-                                        >
+                                            >Delete File
+                                        </q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
@@ -241,8 +241,8 @@
     </q-card>
 </template>
 <script setup lang="ts">
-import { computed, inject, Ref, ref, watch, watchEffect } from 'vue';
-import { debounce, QTable, useQuasar } from 'quasar';
+import { computed, inject, Ref, ref, watch } from 'vue';
+import { QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 
 import EditMission from 'components/EditFile.vue';
@@ -258,8 +258,9 @@ import { missionsOfProject } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
 import { useRouter } from 'vue-router';
-import { QueryHandler, QueryURLHandler } from 'src/services/URLHandler';
+import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
+
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
