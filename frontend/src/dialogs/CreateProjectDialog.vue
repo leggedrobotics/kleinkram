@@ -6,7 +6,7 @@
             </q-card-section>
 
             <q-card-section
-                style="max-height: 50vh; height: 420px; margin: 0; padding: 0"
+                style="max-height: 60vh; height: 700px; margin: 0; padding: 0"
                 class="scroll"
             >
                 <q-tabs
@@ -152,7 +152,12 @@
 
                     <q-tab-panel name="manage_access">
                         <div class="text-h6">Manage Access</div>
-                        <q-table :columns="AccessRightsColumns" />
+                        <q-table
+                            :columns="AccessRightsColumns"
+                            :rows="accessRightsRows"
+                            hide-pagination
+                            style="margin-top: 6px"
+                        />
                         <ModifyAccessGroups
                             :existing-rights="{}"
                             @add-access-group-to-project="
@@ -181,23 +186,20 @@
 
 <script setup lang="ts">
 import { QInput, useDialogPluginComponent } from 'quasar';
-import { computed, ref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getFilteredTagTypes } from 'src/services/queries/tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
-import {
-    AccessRightsColumns,
-    getAccessRightDescription,
-    icon,
-} from 'src/services/generic';
+import { getAccessRightDescription, icon } from 'src/services/generic';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { ProjectAccess } from 'src/types/ProjectAccess';
+import { TagType } from 'src/types/TagType';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const queryClient = useQueryClient();
 
 const projectNameInput = ref<QInput>();
 const newProjectName = ref('');
@@ -207,7 +209,7 @@ const invalidProjectNames = ref<string[]>([]);
 const tab = ref('meta_data');
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
-const selected = ref([]);
+const selected: Ref<TagType[]> = ref([]);
 
 const queryKey = computed(() => [
     'tags',
@@ -233,6 +235,20 @@ function addUserToProject(newUser: {
     rights: AccessGroupRights;
     name: string;
 }) {
+    const previousRights = usersToAdd.value.findIndex(
+        (user) => user.userUUID === newUser.userUUID,
+    );
+
+    if (previousRights !== -1) {
+        if (newUser.rights === AccessGroupRights.NONE) {
+            usersToAdd.value.splice(previousRights, 1);
+        }
+        usersToAdd.value[previousRights].rights = newUser.rights;
+        return;
+    }
+    if (newUser.rights === AccessGroupRights.NONE) {
+        return;
+    }
     usersToAdd.value.push(newUser);
 }
 function addAccessGroupToProject(newAccessGroup: {
@@ -240,6 +256,20 @@ function addAccessGroupToProject(newAccessGroup: {
     rights: AccessGroupRights;
     name: string;
 }) {
+    const previousRights = accessGroupsToAdd.value.findIndex(
+        (group) => group.accessGroupUUID === newAccessGroup.accessGroupUUID,
+    );
+
+    if (previousRights !== -1) {
+        if (newAccessGroup.rights === AccessGroupRights.NONE) {
+            accessGroupsToAdd.value.splice(previousRights, 1);
+        }
+        accessGroupsToAdd.value[previousRights].rights = newAccessGroup.rights;
+        return;
+    }
+    if (newAccessGroup.rights === AccessGroupRights.NONE) {
+        return;
+    }
     accessGroupsToAdd.value.push(newAccessGroup);
 }
 
@@ -248,21 +278,26 @@ const submitNewProject = async () => {
     await createProject(
         newProjectName.value,
         newProjectDescription.value,
-        [],
-    ).catch((error: AxiosError<{ message: string; statusCode: number }>) => {
-        if (
-            error.code == 'ERR_BAD_REQUEST' &&
-            error.response?.data.message.includes(
-                'Project with that name already exists',
-            )
-        ) {
-            invalidProjectNames.value.push(newProjectName.value);
-            projectNameInput.value?.getNativeElement().focus();
-        }
+        selected.value.map((tag) => tag.uuid),
+        accessRightsRows.value,
+    )
+        .catch((error: AxiosError<{ message: string; statusCode: number }>) => {
+            if (
+                error.code == 'ERR_BAD_REQUEST' &&
+                error.response?.data.message.includes(
+                    'Project with that name already exists',
+                )
+            ) {
+                invalidProjectNames.value.push(newProjectName.value);
+                projectNameInput.value?.getNativeElement().focus();
+            }
 
-        // abort the close of the dialog
-        dialogRef.value?.show();
-    });
+            // abort the close of the dialog
+            dialogRef.value?.show();
+        })
+        .then(() => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        });
 
     onDialogOK();
 };
@@ -270,4 +305,24 @@ const submitNewProject = async () => {
 const accessRightsRows = computed(() => {
     return [...usersToAdd.value, ...accessGroupsToAdd.value];
 });
+
+const AccessRightsColumns = [
+    {
+        name: 'name',
+        required: true,
+        label: 'Name',
+        align: 'left',
+        field: (row: { name: string; rights: AccessGroupRights }) => row.name,
+        sortable: true,
+    },
+    {
+        name: 'rights',
+        required: true,
+        label: 'Rights',
+        align: 'left',
+        field: (row: { name: string; rights: AccessGroupRights }) =>
+            `${getAccessRightDescription(row.rights)} (${row.rights})`,
+        sortable: true,
+    },
+];
 </script>

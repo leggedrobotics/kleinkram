@@ -33,10 +33,7 @@ import { computed, Ref, ref, watch } from 'vue';
 import { getProject } from 'src/services/queries/project';
 import { canAddAccessGroup } from 'src/services/queries/access';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
-import {
-    AccessRightsColumns,
-    getAccessRightDescription,
-} from 'src/services/generic';
+import { getAccessRightDescription } from 'src/services/generic';
 import {
     addAccessGroupToProject,
     addUsersToProject,
@@ -129,6 +126,26 @@ const { mutate: _addUserToProject } = useMutation({
         });
     },
 });
+
+const AccessRightsColumns = [
+    {
+        name: 'name',
+        required: true,
+        label: 'Name',
+        align: 'left',
+        field: (row: ProjectAccess) => row.accessGroup.name,
+        sortable: true,
+    },
+    {
+        name: 'rights',
+        required: true,
+        label: 'Rights',
+        align: 'left',
+        field: (row: ProjectAccess) =>
+            `${getAccessRightDescription(row.rights)} (${row.rights})`,
+        sortable: true,
+    },
+];
 </script>
 
 <style scoped></style>

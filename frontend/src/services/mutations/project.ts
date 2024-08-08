@@ -1,15 +1,21 @@
 import axios from 'src/api/axios';
 import { Project } from 'src/types/Project';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export const createProject = async (
     name: string,
     description: string,
     requiredTags: string[],
+    accessGroups: (
+        | { accessGroupUUID: string; rights: AccessGroupRights }
+        | { userUUID: string; rights: AccessGroupRights }
+    )[],
 ) => {
     const response = await axios.post('/project/create', {
         name,
         description,
         requiredTags,
+        accessGroups,
     });
     return response.data;
 };

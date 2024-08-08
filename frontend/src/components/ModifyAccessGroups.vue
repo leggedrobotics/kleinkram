@@ -30,10 +30,7 @@
                 label="Update"
                 color="primary"
                 @click="() => addUserToProject(user.uuid, user.name)"
-                :disable="
-                    !rights[user.uuid] ||
-                    rights[user.uuid].value === AccessGroupRights.NONE
-                "
+                :disable="!rights[user.uuid]"
             />
         </div>
     </div>
@@ -58,10 +55,7 @@
                             accessGroup.name,
                         )
                 "
-                :disable="
-                    !rights[accessGroup.uuid] ||
-                    rights[accessGroup.uuid].value === AccessGroupRights.NONE
-                "
+                :disable="!rights[accessGroup.uuid]"
             />
         </div>
     </div>

@@ -13,6 +13,7 @@ import TagType from '@common/entities/tagType/tagType.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Injectable()
 export class ProjectService {
@@ -27,6 +28,8 @@ export class ProjectService {
         private projectAccessRepository: Repository<ProjectAccess>,
         @InjectRepository(TagType)
         private tagTypeRepository: Repository<TagType>,
+        @InjectRepository(AccessGroup)
+        private accessGroupRepository: Repository<AccessGroup>,
         private configService: ConfigService,
     ) {
         this.config = this.configService.get('accessConfig');
@@ -146,6 +149,35 @@ export class ProjectService {
                 const projectAccess = this.projectAccessRepository.create({
                     rights,
                     accessGroup,
+                    projects: savedProject,
+                });
+                return this.projectAccessRepository.save(projectAccess);
+            }),
+        );
+        await Promise.all(
+            project.accessGroups.map(async (accessGroup) => {
+                let accessGroupDB;
+                if ('accessGroupUUID' in accessGroup) {
+                    accessGroupDB =
+                        await this.accessGroupRepository.findOneOrFail({
+                            where: { uuid: accessGroup.accessGroupUUID },
+                        });
+                } else if ('userUUID' in accessGroup) {
+                    accessGroupDB =
+                        await this.accessGroupRepository.findOneOrFail({
+                            where: {
+                                users: [{ uuid: accessGroup.userUUID }],
+                                personal: true,
+                            },
+                        });
+                } else {
+                    throw new ConflictException(
+                        'Neither accessGroupUUID nor userUUID is present in accessGroup',
+                    );
+                }
+                const projectAccess = this.projectAccessRepository.create({
+                    rights: accessGroup.rights,
+                    accessGroup: accessGroupDB,
                     projects: savedProject,
                 });
                 return this.projectAccessRepository.save(projectAccess);

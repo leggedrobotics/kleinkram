@@ -32,23 +32,3 @@ export const accessGroupRightsMap = {
 export function getAccessRightDescription(value: AccessGroupRights): string {
     return accessGroupRightsMap[value] || 'Unknown';
 }
-
-export const AccessRightsColumns = [
-    {
-        name: 'name',
-        required: true,
-        label: 'Name',
-        align: 'left',
-        field: (row: ProjectAccess) => row.accessGroup.name,
-        sortable: true,
-    },
-    {
-        name: 'rights',
-        required: true,
-        label: 'Rights',
-        align: 'left',
-        field: (row: ProjectAccess) =>
-            `${getAccessRightDescription(row.rights)} (${row.rights})`,
-        sortable: true,
-    },
-];
