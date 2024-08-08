@@ -16,7 +16,7 @@
         "axios": "^1.7.3",
         "date-fns": "^3.6.0",
         "jwt-decode": "^4.0.0",
-        "quasar": "^2.8.0",
+        "quasar": "^2.16.8",
         "vue": "^3.4.18",
         "vue-json-pretty": "^2.4.0",
         "vue-router": "^4.4.3"

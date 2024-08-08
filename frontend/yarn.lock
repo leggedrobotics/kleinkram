@@ -1944,10 +1944,10 @@ qs@6.11.0:
   dependencies:
     side-channel "^1.0.4"
 
-quasar@^2.8.0:
-  version "2.14.5"
-  resolved "https://registry.npmjs.org/quasar/-/quasar-2.14.5.tgz"
-  integrity sha512-N+iRYoby09P9l+R5nKfA0tCPXdXJJHCPifjP8CkL/JASX5yHEjuwh7KoNiWzYLZPbsYXVuQKqwtDy0qXuXTv2g==
+quasar@^2.16.8:
+  version "2.16.8"
+  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.16.8.tgz#8faa9db2def36d4797c971f8d88428c98fa51846"
+  integrity sha512-vxWKXoMEzxNw208W1hANsPzvPg4RKGuhNgwX4US4Uqwy6uKAXhxnyU9Yh4J1lXGzX2z+3hnV98DaQ5wYSioxtQ==
 
 queue-microtask@^1.2.2:
   version "1.2.3"
