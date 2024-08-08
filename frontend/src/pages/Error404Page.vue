@@ -14,7 +14,7 @@
                 <div class="text-grey-8">
                     Do you want to go back?
                     <a
-                        href=""
+                        href="/"
                         class="text-dark text-weight-bold"
                         style="text-decoration: none"
                         >Back to Home.</a
