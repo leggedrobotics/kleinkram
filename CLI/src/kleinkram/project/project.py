@@ -21,7 +21,7 @@ def list_projects():
     try:
         response = client.get("/project")
         response.raise_for_status()
-        projects = response.json()
+        projects = response.json()[0]
         print("Projects:")
         for _project in projects:
             print(f"- {_project['name']}")
