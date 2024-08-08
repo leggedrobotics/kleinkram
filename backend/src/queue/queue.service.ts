@@ -140,7 +140,6 @@ export class QueueService {
         );
 
         const urls = await Promise.all(urlPromises);
-
         return urls.reduce((acc, { filename, minioURL, uuid }) => {
             acc[filename] = { url: minioURL, uuid };
             return acc;

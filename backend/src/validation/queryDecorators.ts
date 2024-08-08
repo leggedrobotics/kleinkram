@@ -157,6 +157,10 @@ export const QueryDate = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
+        if (value === undefined) {
+            return new Date(0);
+        }
+
         const object = plainToInstance(DateStringValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(

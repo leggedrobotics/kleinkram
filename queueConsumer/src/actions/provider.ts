@@ -107,11 +107,11 @@ export class ActionQueueProcessor
         action.state = ActionState.PROCESSING;
         await this.actionRepository.save(action);
 
-        const newToken = this.apikeyRepository.create({
+        const newAPIkey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             apikeytype: KeyTypes.CONTAINER,
         });
-        const apikey = await this.apikeyRepository.save(newToken);
+        const apikey = await this.apikeyRepository.save(newAPIkey);
 
         const env_variables: ContainerEnv = {
             APIKEY: apikey.apikey,

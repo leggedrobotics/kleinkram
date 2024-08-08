@@ -13,7 +13,7 @@ export default class Apikey extends BaseEntity {
     @Column()
     apikeytype: KeyTypes;
 
-    @ManyToOne(() => Mission, (mission) => mission.tokens)
+    @ManyToOne(() => Mission, (mission) => mission.api_keys)
     mission: Mission;
 
     @OneToOne(() => Action)

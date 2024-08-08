@@ -31,7 +31,7 @@
                 <div class="text-grey-8">
                     Don't want to sign in?
                     <a
-                        href=""
+                        href="/"
                         class="text-dark text-weight-bold"
                         style="text-decoration: none"
                         >Back to Home.</a
