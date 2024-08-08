@@ -9,6 +9,7 @@ import {
     BodyUUID,
 } from '../validation/bodyDecorators';
 import {
+    QueryOptionalString,
     QuerySkip,
     QueryString,
     QueryTake,
@@ -65,10 +66,11 @@ export class TagController {
     @Get('filtered')
     @LoggedIn()
     async getFiltered(
-        @QueryString('name') name: string,
+        @QueryOptionalString('name') name: string,
+        @QueryOptionalString('type') type: DataType,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
-        return this.tagService.getFiltered(name, skip, take);
+        return this.tagService.getFiltered(name, type, skip, take);
     }
 }

@@ -6,10 +6,11 @@
                     <q-btn-dropdown
                         v-model="dd_open_projects"
                         :label="selected_project?.name || 'Filter by Project'"
-                        outlined
+                        outline
                         dense
                         clearable
                         class="full-width"
+                        style="height: 100%"
                     >
                         <q-list>
                             <q-item
@@ -34,10 +35,11 @@
                     <q-btn-dropdown
                         v-model="dd_open_missions"
                         :label="selected_mission?.name || 'Filter by Mission'"
-                        outlined
+                        outline
                         dense
                         clearable
                         class="full-width"
+                        style="height: 100%"
                     >
                         <q-list>
                             <q-item
