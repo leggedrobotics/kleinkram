@@ -53,7 +53,7 @@ const $route = useRoute();
 const $router = useRouter();
 const { error_msg, error_state } = $route.query;
 
-const { data: me } = useQuery({
+const { data: me, error } = useQuery({
     queryKey: ['me'],
     queryFn: getMe,
     staleTime: 100,
@@ -61,9 +61,9 @@ const { data: me } = useQuery({
 });
 
 watch(
-    () => me,
-    (newVal) => {
-        if (newVal) {
+    [me, error],
+    ([me, error]) => {
+        if (!!me?.uuid && !error) {
             $router.push('/');
         }
     },
