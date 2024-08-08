@@ -25,7 +25,7 @@ export default class Mission extends BaseEntity {
     @ManyToOne(() => User, (user) => user.missions)
     creator: User;
 
-    @OneToMany(() => Apikey, (token) => token.mission)
+    @OneToMany(() => Apikey, (api_key) => api_key.mission)
     api_keys: Apikey[];
 
     @OneToMany(() => MissionAccess, (mission_access) => mission_access.missions)
