@@ -91,7 +91,7 @@ export class AuthController {
                 maxAge: 30 * 24 * 60 * 60 * 1000,
             },
         );
-        res.redirect(`${env.FRONTEND_URL}/#/landing`);
+        res.redirect(`${env.FRONTEND_URL}/landing`);
     }
 
     @Get('validate-token')

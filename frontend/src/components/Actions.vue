@@ -20,7 +20,7 @@
 
             <template v-slot:body-cell-Details="props">
                 <q-td :props="props">
-                    <a :href="'#/action/' + props.row.uuid">
+                    <a :href="'action/' + props.row.uuid">
                         <q-btn color="primary" label="Details"></q-btn>
                     </a>
                 </q-td>
