@@ -9,7 +9,7 @@ import queue
 
 from typing import Dict
 
-from .auth import client
+from kleinkram.auth.auth import client
 
 
 def expand_and_match(path_pattern):

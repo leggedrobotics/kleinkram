@@ -3,17 +3,18 @@ import os
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
-
-from typing_extensions import Annotated
-
 from pathlib import Path
+from typing import Optional
 
 import httpx
 import typer
+from rich.console import Console
+from rich.panel import Panel
+from typing_extensions import Annotated
+
+from kleinkram.consts import API_URL
 
 app = typer.Typer()
-from .consts import API_URL
 
 TOKEN_FILE = Path(os.path.expanduser("~/.kleinkram.json"))
 REFRESH_TOKEN = "refreshtoken"
@@ -90,13 +91,25 @@ def get_auth_tokens():
 class AuthenticatedClient(httpx.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         try:
             self.tokenfile = TokenFile()
             self._load_cookies()
         except Exception as e:
-            print(
-                f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'."
+
+            console = Console()
+            msg = f"You are not authenticated on endpoint '{self.tokenfile.endpoint}'. Please run 'klein login' to authenticate."
+
+            panel = Panel(
+                msg,
+                title="Not Authenticated",
+                style="yellow",
+                padding=(1, 2),
+                highlight=True,
             )
+            print()
+            console.print(panel)
+            print()
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():
