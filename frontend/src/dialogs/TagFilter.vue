@@ -19,6 +19,8 @@
                         :columns="columns"
                         row-key="uuid"
                         wrap-cells
+                        flat
+                        bordered
                         @rowClick="tagTypeSelected"
                         :filter="tagtype"
                     />
@@ -86,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
+import { QTable, useDialogPluginComponent } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { TagType } from 'src/types/TagType';

@@ -2,6 +2,9 @@ import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 
 export const searchUsers = async (search: string): Promise<User[]> => {
+    if (!search) {
+        return [];
+    }
     const response = await axios.get('/user/search', { params: { search } });
     return response.data.map((user: any) => {
         return new User(
@@ -19,7 +22,6 @@ export const searchUsers = async (search: string): Promise<User[]> => {
 };
 
 export const getMe = async (): Promise<User> => {
-    console.log('getMe');
     const response = await axios.get('/user/me');
     const user = response.data;
     return new User(

@@ -5,7 +5,7 @@ import {
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { FindOperator, ILike, Repository } from 'typeorm';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/enum';
@@ -142,12 +142,20 @@ export class TagService {
     }
 
     async getFiltered(
-        name: string,
+        name: string | undefined,
+        type: DataType | undefined,
         skip: number,
         take: number,
     ): Promise<TagType[]> {
+        const where: Record<string, FindOperator<string> | DataType> = {};
+        if (name) {
+            where['name'] = ILike(`%${name}%`);
+        }
+        if (type) {
+            where['datatype'] = type;
+        }
         return this.tagTypeRepository.find({
-            where: { name: ILike(`%${name}%`) },
+            where,
             skip,
             take,
         });

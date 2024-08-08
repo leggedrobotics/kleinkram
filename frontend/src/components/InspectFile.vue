@@ -110,6 +110,7 @@
                 flat
                 bordered
                 separator="none"
+                v-model:selected="selected"
                 v-if="data?.type === FileType.MCAP"
                 ref="tableoniRef"
                 v-model:pagination="pagination"
@@ -158,6 +159,7 @@ const $q = useQuasar();
 const props = defineProps<{
     uuid: string;
 }>();
+const selected = ref([]);
 
 const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');

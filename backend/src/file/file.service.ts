@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, In, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio, internalMinio, moveFile } from '../minioHelper';
+import { externalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
@@ -353,6 +353,16 @@ export class FileService {
 
         if (!db_file) {
             throw new Error('File not found');
+        }
+
+        // validate if file ending hasn't changed
+        if (db_file.type === FileType.MCAP && file.filename.endsWith('.bag')) {
+            throw new BadRequestException('File ending cannot be changed.');
+        } else if (
+            db_file.type === FileType.BAG &&
+            file.filename.endsWith('.mcap')
+        ) {
+            throw new BadRequestException('File ending cannot be changed.');
         }
 
         const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;

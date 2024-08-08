@@ -40,12 +40,16 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
         const request = context.switchToHttp().getRequest();
 
         if (request.cookies[CookieNames.CLI_KEY]) {
-            const token = await this.tokenRepository.findOne({
-                where: {
-                    apikey: request.cookies[CookieNames.CLI_KEY],
-                },
-                relations: ['mission'],
-            });
+            const token = await this.tokenRepository
+                .findOneOrFail({
+                    where: {
+                        apikey: request.cookies[CookieNames.CLI_KEY],
+                    },
+                    relations: ['mission'],
+                })
+                .catch(() => {
+                    throw new ForbiddenException('Invalid key');
+                });
 
             if (request.query.uuid != token.mission.uuid) {
                 throw new ForbiddenException('Invalid key');

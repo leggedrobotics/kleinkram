@@ -44,8 +44,29 @@
 
 <script setup lang="ts">
 import { login } from 'src/services/auth';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { useQuery } from '@tanstack/vue-query';
+import { getMe } from 'src/services/queries/user';
+import { watch } from 'vue';
 
 const $route = useRoute();
+const $router = useRouter();
 const { error_msg, error_state } = $route.query;
+
+const { data: me, error } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    staleTime: 100,
+    refetchInterval: 5000,
+});
+
+watch(
+    [me, error],
+    ([me, error]) => {
+        if (!!me?.uuid && !error) {
+            $router.push('/');
+        }
+    },
+    { immediate: true },
+);
 </script>

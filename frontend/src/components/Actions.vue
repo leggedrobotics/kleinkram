@@ -3,11 +3,15 @@
         <q-table
             ref="tableRef"
             v-model:pagination="pagination"
-            title="Actions"
             :rows="data"
             :columns="columns"
             row-key="uuid"
             :loading="loading"
+            @row-click="
+                (_, row) => router.push(ROUTES.ACTION.path + '/' + row.uuid)
+            "
+            flat
+            bordered
             binary-state-sort
         >
             <template v-slot:body-cell-Status="props">
@@ -20,9 +24,36 @@
 
             <template v-slot:body-cell-Details="props">
                 <q-td :props="props">
-                    <a :href="'action/' + props.row.uuid">
-                        <q-btn color="primary" label="Details"></q-btn>
-                    </a>
+                    <q-btn
+                        flat
+                        round
+                        dense
+                        icon="sym_o_more_vert"
+                        unelevated
+                        color="primary"
+                        class="cursor-pointer"
+                        @click.stop
+                    >
+                        <q-menu auto-close>
+                            <q-list>
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    @click="
+                                        router.push(
+                                            ROUTES.ACTION.path +
+                                                '/' +
+                                                props.row.uuid,
+                                        )
+                                    "
+                                >
+                                    <q-item-section
+                                        >View Details</q-item-section
+                                    >
+                                </q-item>
+                            </q-list>
+                        </q-menu>
+                    </q-btn>
                 </q-td>
             </template>
         </q-table>
@@ -32,11 +63,15 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { ref, Ref, watchEffect } from 'vue';
+import { ref, Ref } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
 import { actions } from 'src/services/queries/action';
+import { useRouter } from 'vue-router';
+import ROUTES from 'src/router/routes';
+
+const router = useRouter();
 
 // list all props of the component
 const props = defineProps<{
@@ -94,7 +129,7 @@ const columns = [
     },
     {
         name: 'Details',
-        label: 'Details',
+        label: '',
         align: 'left',
         field: 'uuid',
         sortable: false,

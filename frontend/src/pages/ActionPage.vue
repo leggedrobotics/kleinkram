@@ -1,18 +1,8 @@
 <template>
-    <q-page class="flex">
-        <div class="q-pa-md">
-            <div class="text-h4">Mission Analysis</div>
-            <p>
-                <i>Actions</i> allows you to perform automated action, tests and
-                checks on a project or mission level. Actions works similar to
-                GitHub Actions or GitLab CI/CD pipelines. The action is
-                performed in a docker container, which gets executed on the
-                server. All you have to do is to specify the docker image, which
-                contains the action code. The action code will be executed in
-                the docker container, the results will be stored, and can be
-                viewed via Webinterface.
-            </p>
+    <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Mission Analysis</h1>
 
+    <q-card class="q-pa-md q-mb-md" flat bordered>
+        <q-card-section>
             <h3 class="text-h6">Submit new Mission Analysis</h3>
 
             <!-- Select a project and mission, on which the anylsis will be performed -->
@@ -33,8 +23,7 @@
                                     :key="project.uuid"
                                     clickable
                                     @click="
-                                        selected_project = project;
-                                        dropdownNewFileProject = false;
+                                        handler.setProjectUUID(project.uuid)
                                     "
                                 >
                                     <q-item-section>
@@ -61,8 +50,7 @@
                                     :key="mission.uuid"
                                     clickable
                                     @click="
-                                        selected_mission = mission;
-                                        dropdownNewFileMission = false;
+                                        handler.setMissionUUID(mission.uuid)
                                     "
                                 >
                                     <q-item-section>
@@ -95,7 +83,10 @@
                     </div>
                 </div>
             </q-form>
-
+        </q-card-section>
+    </q-card>
+    <q-card class="q-pa-md q-mb-xl" flat bordered>
+        <q-card-section>
             <template v-if="selected_project && selected_mission">
                 <Action
                     :project_uuid="selected_project?.uuid"
@@ -103,14 +94,12 @@
                 ></Action>
             </template>
             <template v-else>
-                <q-card class="q-pa-sm q-ma-lg text-center">
-                    <div class="text">
-                        Please select a project and a mission to...
-                    </div>
-                </q-card>
+                <div class="text">
+                    Please select a project and a mission to...
+                </div>
             </template>
-        </div>
-    </q-page>
+        </q-card-section>
+    </q-card>
 </template>
 
 <script setup lang="ts">
@@ -124,26 +113,49 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
+import { QueryURLHandler } from 'src/services/URLHandler';
+import { useRouter } from 'vue-router';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
-const selected_project: Ref<Project | null> = ref(null);
-const selected_mission: Ref<Mission | null> = ref(null);
 
-const { data: _projects } = useQuery<[Project[], number]>({
+const router = useRouter();
+const handler: Ref<QueryURLHandler> = ref(
+    new QueryURLHandler(),
+) as unknown as Ref<QueryURLHandler>;
+handler.value.setRouter(router);
+
+const selected_project = computed(() =>
+    projects.value.find(
+        (project: Project) => project.uuid === handler.value.project_uuid,
+    ),
+);
+
+const selected_mission = computed(() =>
+    missions.value.find(
+        (mission: Mission) => mission.uuid === handler.value.mission_uuid,
+    ),
+);
+
+// Fetch projects
+const projectsReturn = useQuery<[Project[], number]>({
     queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name', false),
 });
-const projects = computed(() => (_projects.value ? _projects.value[0] : []));
+const projects = computed(() =>
+    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+);
 
+// Fetch missions
+const queryKeyMissions = computed(() => [
+    'missions',
+    handler.value.project_uuid,
+]);
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
-    queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () =>
-        missionsOfProject(selected_project.value?.uuid || '', 100, 0),
-    enabled: !!selected_project.value?.uuid,
+    queryKey: queryKeyMissions,
+    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
 });
-
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 watchEffect(() => {

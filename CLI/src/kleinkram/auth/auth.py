@@ -3,17 +3,15 @@ import os
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from typing import Optional
 
+import typer
 from typing_extensions import Annotated
 
-from pathlib import Path
-
-import httpx
-import typer
+from kleinkram.consts import API_URL
 
 app = typer.Typer()
-from .consts import API_URL
 
 TOKEN_FILE = Path(os.path.expanduser("~/.kleinkram.json"))
 REFRESH_TOKEN = "refreshtoken"
@@ -87,62 +85,14 @@ def get_auth_tokens():
     return httpd.tokens
 
 
-class AuthenticatedClient(httpx.Client):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        try:
-            self.tokenfile = TokenFile()
-            self._load_cookies()
-        except Exception as e:
-            print(
-                f"{self.tokenfile.endpoint} is not authenticated. Please run 'klein login'."
-            )
-
-    def _load_cookies(self):
-        if self.tokenfile.isCliToken():
-            self.cookies.set(CLI_KEY, self.tokenfile.getCLIToken())
-        else:
-            self.cookies.set(AUTH_TOKEN, self.tokenfile.getAuthToken())
-
-    def refresh_token(self):
-        if self.tokenfile.isCliToken():
-            print("CLI key cannot be refreshed.")
-            return
-        refresh_token = self.tokenfile.getRefreshToken()
-        if not refresh_token:
-            print("No refresh token found. Please login again.")
-            raise Exception("No refresh token found.")
-        self.cookies.set(
-            REFRESH_TOKEN,
-            refresh_token,
-        )
-        response = self.post(
-            "/auth/refresh-token",
-        )
-        response.raise_for_status()
-        new_access_token = response.cookies.get(AUTH_TOKEN)
-        new_tokens = {AUTH_TOKEN: new_access_token, REFRESH_TOKEN: refresh_token}
-        self.tokenfile.saveTokens(new_tokens)
-        self.cookies.set(AUTH_TOKEN, new_access_token)
-
-    def request(self, method, url, *args, **kwargs):
-        response = super().request(
-            method, self.tokenfile.endpoint + url, *args, **kwargs
-        )
-        if (url == "/auth/refresh-token") and response.status_code == 401:
-            print("Refresh token expired. Please login again.")
-            response.status_code = 403
-            exit(1)
-        if response.status_code == 401:
-            print("Token expired, refreshing token...")
-            self.refresh_token()
-            response = super().request(
-                method, self.tokenfile.endpoint + url, *args, **kwargs
-            )
-        return response
-
-
-client = AuthenticatedClient()
+def logout():
+    """
+    Logout from the currently set endpoint.
+    """
+    tokenfile = TokenFile()
+    tokenfile.tokens[tokenfile.endpoint] = {}
+    tokenfile.writeToFile()
+    print("Logged out.")
 
 
 def login(
@@ -157,7 +107,10 @@ def login(
     """
     tokenfile = TokenFile()
     if key:
-        tokenfile.saveTokens(key)
+        token = {}
+        token[CLI_KEY] = key
+        tokenfile.saveTokens(token)
+
     else:
         url = tokenfile.endpoint + "/auth/google?state=cli"
 

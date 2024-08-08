@@ -4,4 +4,6 @@ export enum DataType {
     BOOLEAN = 'BOOLEAN',
     DATE = 'DATE',
     LOCATION = 'LOCATION',
+    LINK = 'LINK',
+    ANY = 'ANY',
 }
