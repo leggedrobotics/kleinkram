@@ -54,8 +54,7 @@ class TokenFile:
             json.dump(res, token_file)
 
     def saveTokens(self, tokens):
-        self.tokens[self.endpoint][CLI_KEY] = {}
-        self.tokens[self.endpoint][CLI_KEY] = tokens
+        self.tokens[self.endpoint] = tokens
         self.writeToFile()
 
 
@@ -108,7 +107,9 @@ def login(
     """
     tokenfile = TokenFile()
     if key:
-        tokenfile.saveTokens(key)
+        token = {}
+        token[CLI_KEY] = key
+        tokenfile.saveTokens(token)
 
     else:
         url = tokenfile.endpoint + "/auth/google?state=cli"
