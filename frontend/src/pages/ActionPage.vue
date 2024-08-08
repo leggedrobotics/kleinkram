@@ -33,8 +33,7 @@
                                     :key="project.uuid"
                                     clickable
                                     @click="
-                                        selected_project = project;
-                                        dropdownNewFileProject = false;
+                                        handler.setProjectUUID(project.uuid)
                                     "
                                 >
                                     <q-item-section>
@@ -61,8 +60,7 @@
                                     :key="mission.uuid"
                                     clickable
                                     @click="
-                                        selected_mission = mission;
-                                        dropdownNewFileMission = false;
+                                        handler.setMissionUUID(mission.uuid)
                                     "
                                 >
                                     <q-item-section>
@@ -124,26 +122,49 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
+import { QueryURLHandler } from 'src/services/URLHandler';
+import { useRouter } from 'vue-router';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
-const selected_project: Ref<Project | null> = ref(null);
-const selected_mission: Ref<Mission | null> = ref(null);
 
-const { data: _projects } = useQuery<[Project[], number]>({
+const router = useRouter();
+const handler: Ref<QueryURLHandler> = ref(
+    new QueryURLHandler(),
+) as unknown as Ref<QueryURLHandler>;
+handler.value.setRouter(router);
+
+const selected_project = computed(() =>
+    projects.value.find(
+        (project: Project) => project.uuid === handler.value.project_uuid,
+    ),
+);
+
+const selected_mission = computed(() =>
+    missions.value.find(
+        (mission: Mission) => mission.uuid === handler.value.mission_uuid,
+    ),
+);
+
+// Fetch projects
+const projectsReturn = useQuery<[Project[], number]>({
     queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
+    queryFn: () => filteredProjects(500, 0, 'name', false),
 });
-const projects = computed(() => (_projects.value ? _projects.value[0] : []));
+const projects = computed(() =>
+    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+);
 
+// Fetch missions
+const queryKeyMissions = computed(() => [
+    'missions',
+    handler.value.project_uuid,
+]);
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
-    queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () =>
-        missionsOfProject(selected_project.value?.uuid || '', 100, 0),
-    enabled: !!selected_project.value?.uuid,
+    queryKey: queryKeyMissions,
+    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
 });
-
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 watchEffect(() => {
