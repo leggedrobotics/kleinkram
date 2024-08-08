@@ -28,7 +28,7 @@
                     icon="sym_o_lock"
                     label="Access Rights"
                 >
-                    <q-tooltip> Manage Access to the Project </q-tooltip>
+                    <q-tooltip> Manage Access to the Project</q-tooltip>
                 </q-btn>
                 <MoveMissionButton :mission_uuid="mission_uuid" />
                 <q-btn
@@ -36,6 +36,15 @@
                     color="primary"
                     icon="sym_o_analytics"
                     label="Actions"
+                    @click="
+                        router.push({
+                            path: ROUTES.ACTION.path,
+                            query: {
+                                project_uuid: project_uuid,
+                                mission_uuid: mission_uuid,
+                            },
+                        })
+                    "
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
@@ -188,13 +197,8 @@
 import { computed, Ref, ref } from 'vue';
 import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
-import CreateProjectDialog from 'src/dialogs/CreateProjectDialog.vue';
-import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
-import CreateMissionDialog from 'src/dialogs/CreateMissionDialog.vue';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
-import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
-import MoveMissionDialog from 'src/dialogs/MoveMissionDialog.vue';
 import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
 import { QueryURLHandler } from 'src/services/URLHandler';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -208,6 +212,8 @@ import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
 import CreateMissionButton from 'components/buttons/CreateMissionButton.vue';
 import CreateProjectButton from 'components/buttons/CreateProjectButton.vue';
 import UploadFileButton from 'components/buttons/UploadFileButton.vue';
+import ROUTES from 'src/router/routes';
+
 const queryClient = useQueryClient();
 
 const router = useRouter();
