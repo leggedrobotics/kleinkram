@@ -4,6 +4,8 @@
             v-if="project"
             :columns="AccessRightsColumns"
             title="Access Rights"
+            flat
+            bordered
             :rows="project.projectAccesses"
         />
         <br />
@@ -38,7 +40,7 @@ import {
     addAccessGroupToProject,
     addUsersToProject,
 } from 'src/services/mutations/access';
-import { Notify } from 'quasar';
+import { Notify, QTable } from 'quasar';
 
 const props = defineProps<{
     project_uuid: string;

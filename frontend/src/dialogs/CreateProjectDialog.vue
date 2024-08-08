@@ -156,6 +156,8 @@
                             :columns="AccessRightsColumns"
                             :rows="accessRightsRows"
                             hide-pagination
+                            flat
+                            bordered
                             style="margin-top: 6px"
                         />
                         <ModifyAccessGroups

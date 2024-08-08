@@ -63,6 +63,8 @@
                 :rows="data"
                 :columns="columns"
                 row-key="uuid"
+                flat
+                bordered
                 :loading="loading"
                 binary-state-sort
                 @rowClick="rowClick"

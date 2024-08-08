@@ -8,6 +8,8 @@
             :columns="columns"
             row-key="uuid"
             :loading="loading"
+            flat
+            bordered
             binary-state-sort
         >
             <template v-slot:body-cell-Status="props">
