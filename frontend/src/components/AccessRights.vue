@@ -2,7 +2,7 @@
     <div style="margin: 10px">
         <q-table
             v-if="project"
-            :columns="columns"
+            :columns="AccessRightsColumns"
             title="Access Rights"
             :rows="project.projectAccesses"
         />
@@ -33,7 +33,10 @@ import { computed, Ref, ref, watch } from 'vue';
 import { getProject } from 'src/services/queries/project';
 import { canAddAccessGroup } from 'src/services/queries/access';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
-import { accessGroupRightsMap } from 'src/services/generic';
+import {
+    AccessRightsColumns,
+    getAccessRightDescription,
+} from 'src/services/generic';
 import {
     addAccessGroupToProject,
     addUsersToProject,
@@ -79,30 +82,6 @@ watch(
     },
     { deep: true, immediate: true },
 );
-
-const columns = [
-    {
-        name: 'name',
-        required: true,
-        label: 'Name',
-        align: 'left',
-        field: (row: ProjectAccess) => row.accessGroup.name,
-        sortable: true,
-    },
-    {
-        name: 'rights',
-        required: true,
-        label: 'Rights',
-        align: 'left',
-        field: (row: ProjectAccess) =>
-            `${getAccessRightDescription(row.rights)} (${row.rights})`,
-        sortable: true,
-    },
-];
-
-function getAccessRightDescription(value: AccessGroupRights): string {
-    return accessGroupRightsMap[value] || 'Unknown';
-}
 
 const { mutate: _addAccessGroupToProject } = useMutation({
     //Todo query devalidation

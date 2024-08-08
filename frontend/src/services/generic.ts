@@ -1,5 +1,6 @@
 import { DataType } from 'src/enums/TAG_TYPES';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { ProjectAccess } from 'src/types/ProjectAccess';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -27,3 +28,27 @@ export const accessGroupRightsMap = {
     [AccessGroupRights.WRITE]: 'Write',
     [AccessGroupRights.DELETE]: 'Delete',
 };
+
+export function getAccessRightDescription(value: AccessGroupRights): string {
+    return accessGroupRightsMap[value] || 'Unknown';
+}
+
+export const AccessRightsColumns = [
+    {
+        name: 'name',
+        required: true,
+        label: 'Name',
+        align: 'left',
+        field: (row: ProjectAccess) => row.accessGroup.name,
+        sortable: true,
+    },
+    {
+        name: 'rights',
+        required: true,
+        label: 'Rights',
+        align: 'left',
+        field: (row: ProjectAccess) =>
+            `${getAccessRightDescription(row.rights)} (${row.rights})`,
+        sortable: true,
+    },
+];

@@ -152,6 +152,7 @@
 
                     <q-tab-panel name="manage_access">
                         <div class="text-h6">Manage Access</div>
+                        <q-table :columns="AccessRightsColumns" />
                         <ModifyAccessGroups
                             :existing-rights="{}"
                             @add-access-group-to-project="
@@ -187,9 +188,14 @@ import { useQuery } from '@tanstack/vue-query';
 import { getFilteredTagTypes } from 'src/services/queries/tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
-import { icon } from 'src/services/generic';
+import {
+    AccessRightsColumns,
+    getAccessRightDescription,
+    icon,
+} from 'src/services/generic';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { ProjectAccess } from 'src/types/ProjectAccess';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -215,20 +221,24 @@ const { data: tags } = useQuery({
     },
 });
 
-const usersToAdd = ref<{ userUUID: string; rights: AccessGroupRights }[]>([]);
+const usersToAdd = ref<
+    { userUUID: string; rights: AccessGroupRights; name: string }[]
+>([]);
 const accessGroupsToAdd = ref<
-    { accessGroupUUID: string; rights: AccessGroupRights }[]
+    { accessGroupUUID: string; rights: AccessGroupRights; name: string }[]
 >([]);
 
 function addUserToProject(newUser: {
     userUUID: string;
     rights: AccessGroupRights;
+    name: string;
 }) {
     usersToAdd.value.push(newUser);
 }
 function addAccessGroupToProject(newAccessGroup: {
     accessGroupUUID: string;
     rights: AccessGroupRights;
+    name: string;
 }) {
     accessGroupsToAdd.value.push(newAccessGroup);
 }
@@ -256,4 +266,8 @@ const submitNewProject = async () => {
 
     onDialogOK();
 };
+
+const accessRightsRows = computed(() => {
+    return [...usersToAdd.value, ...accessGroupsToAdd.value];
+});
 </script>

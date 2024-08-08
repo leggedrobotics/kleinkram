@@ -29,7 +29,7 @@
             <q-btn
                 label="Update"
                 color="primary"
-                @click="() => addUserToProject(user.uuid)"
+                @click="() => addUserToProject(user.uuid, user.name)"
                 :disable="
                     !rights[user.uuid] ||
                     rights[user.uuid].value === AccessGroupRights.NONE
@@ -51,7 +51,13 @@
             <q-btn
                 label="Update"
                 color="primary"
-                @click="() => addAccessGroupToProject(accessGroup.uuid)"
+                @click="
+                    () =>
+                        addAccessGroupToProject(
+                            accessGroup.uuid,
+                            accessGroup.name,
+                        )
+                "
                 :disable="
                     !rights[accessGroup.uuid] ||
                     rights[accessGroup.uuid].value === AccessGroupRights.NONE
@@ -94,17 +100,19 @@ const { data: foundAccessGroups } = useQuery({
     queryFn: () => searchAccessGroups(search.value),
 });
 
-function addAccessGroupToProject(accessGroupUUID: string) {
+function addAccessGroupToProject(accessGroupUUID: string, name: string) {
     emit('addAccessGroupToProject', {
         accessGroupUUID,
         rights: rights.value[accessGroupUUID].value,
+        name,
     });
 }
 
-function addUserToProject(userUUID: string) {
+function addUserToProject(userUUID: string, name: string) {
     emit('addUsersToProject', {
         userUUID,
         rights: rights.value[userUUID].value,
+        name,
     });
 }
 </script>
