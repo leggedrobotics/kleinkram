@@ -16,7 +16,7 @@
             binary-state-sort
             @request="setPagination"
         >
-            <template v-slot:body-cell-Status="props">
+            <template v-slot:body-cell-state="props">
                 <q-td :props="props">
                     <template
                         v-if="
@@ -136,6 +136,7 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
             props.handler.sortBy,
             props.handler.descending,
         ),
+    staleTime: 0,
     refetchInterval: 1000,
 });
 

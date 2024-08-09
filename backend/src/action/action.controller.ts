@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    ConflictException,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ActionService } from './action.service';
 import { ActionQuery, SubmitAction } from './entities/submit_action.dto';
 import { QueueService } from '../queue/queue.service';
@@ -29,9 +37,11 @@ export class ActionController {
         @Body() dto: SubmitAction,
         @addJWTUser() user: JWTUser,
     ) {
-        // TODO: validate input: similar to the frontend, we should validate the input
-        //  to ensure that the user has provided the necessary information to create a new project.
-
+        if (!dto.docker_image.startsWith('rslethz/')) {
+            throw new ConflictException(
+                'Docker image must start with rslethz/',
+            );
+        }
         const action = await this.actionService.submit(dto, user);
         await this.queueService.addActionQueue(action.uuid);
         return action.uuid;

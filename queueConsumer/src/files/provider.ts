@@ -257,21 +257,6 @@ export class FileProcessor implements OnModuleInit {
         );
         const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
 
-        // check if file already exists with either bag or mcap extension
-        const file_count = await this.fileRepository.count({
-            where: {
-                filename: Like(
-                    `%${
-                        originalFileName.split('.').slice(0, -1).join('.') // strip extension
-                    }`,
-                ),
-            },
-        });
-
-        if (file_count > 0)
-            throw new Error(
-                `File ${originalFileName} already exists in database; skipping...`,
-            );
         let tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
@@ -477,14 +462,34 @@ export class FileProcessor implements OnModuleInit {
                     file.name.endsWith('.mcap') ||
                     file.mimeType === 'application/vnd.google-apps.folder'
                 ) {
-                    const newQueue = this.queueRepository.create({
-                        filename: file.name,
-                        identifier: file.id,
-                        state: FileState.PENDING,
-                        location: FileLocation.DRIVE,
-                        mission: queue.mission,
-                        creator: queue.creator,
+                    const exists = await this.queueRepository.exists({
+                        where: {
+                            filename: file.name,
+                            mission: { uuid: queue.mission.uuid },
+                        },
                     });
+                    let newQueue: QueueEntity;
+                    if (exists) {
+                        newQueue = this.queueRepository.create({
+                            filename: file.name,
+                            identifier: file.id,
+                            state: FileState.ERROR,
+                            location: FileLocation.DRIVE,
+                            mission: queue.mission,
+                            creator: queue.creator,
+                        });
+                        await this.queueRepository.save(newQueue);
+                        return;
+                    } else {
+                        newQueue = this.queueRepository.create({
+                            filename: file.name,
+                            identifier: file.id,
+                            state: FileState.PENDING,
+                            location: FileLocation.DRIVE,
+                            mission: queue.mission,
+                            creator: queue.creator,
+                        });
+                    }
                     await this.queueRepository.save(newQueue);
 
                     await this.fileQueue.add('processDriveFile', {

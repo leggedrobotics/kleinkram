@@ -20,6 +20,7 @@ export class QueueController {
     @Post('createdrive')
     @CanWriteMissionByBody()
     async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
+        console.log('here');
         return this.queueService.createDrive(body, user);
     }
 

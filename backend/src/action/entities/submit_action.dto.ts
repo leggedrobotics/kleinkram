@@ -3,7 +3,7 @@ import { IsString, IsUUID } from 'class-validator';
 export class SubmitAction {
     @IsUUID()
     missionUUID: string;
-    @IsString()
+    @IsString({})
     docker_image: string;
 }
 

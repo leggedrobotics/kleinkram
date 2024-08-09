@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, MoreThan, Repository } from 'typeorm';
@@ -59,6 +59,16 @@ export class QueueService {
         });
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
+        const exists = await this.queueRepository.exists({
+            where: {
+                identifier: fileId,
+                mission: { uuid: mission.uuid },
+            },
+        });
+        if (exists) {
+            console.log('File already exists in queue');
+            throw new ConflictException('File already exists in queue');
+        }
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,
@@ -104,7 +114,10 @@ export class QueueService {
         const unique = await Promise.all(
             processedFilenames.map(async (filename) => {
                 const count = await this.queueRepository.count({
-                    where: { identifier: filename.location },
+                    where: {
+                        filename: filename.filename,
+                        mission: { uuid: mission.uuid },
+                    },
                 });
                 return count <= 0;
             }),
