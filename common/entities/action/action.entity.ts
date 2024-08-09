@@ -40,6 +40,9 @@ export default class Action extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     logs: ContainerLog[];
 
+    @Column({ nullable: true })
+    exit_code: number;
+
     @OneToOne(() => Apikey)
     @JoinColumn()
     key: Apikey;

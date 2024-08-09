@@ -71,8 +71,12 @@ export class ActionQueueProcessor
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.mission_action_id },
         });
-        action.state = ActionState.DONE;
-        await this.actionRepository.save(action);
+
+        // set state to done if it is not already set to failed
+        if (action.state !== ActionState.FAILED) {
+            action.state = ActionState.DONE;
+            await this.actionRepository.save(action);
+        }
     }
 
     @OnQueueFailed()
@@ -156,7 +160,17 @@ export class ActionQueueProcessor
 
         // wait for the container to stop
         await container.wait();
-        logger.info('Container stopped');
+        const container_details_after = await container.inspect();
+
+        logger.info(
+            `Container ${container.id} exited with code ${container_details_after.State.ExitCode}`,
+        );
+
+        const exit_code = Number(container_details_after.State.ExitCode);
+        action.state_cause = `Container exited with code ${exit_code}`;
+        action.state = exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
+        action.exit_code = exit_code;
+        await this.actionRepository.save(action);
 
         // expire the apikey
         // TODO: check if that really invalidates the token!!!

@@ -18,3 +18,5 @@ klein file download $MISSION_UUID
 
 # wait forever
 # tail -f /dev/null
+
+exit 0
