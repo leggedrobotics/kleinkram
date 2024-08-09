@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Project from '@common/entities/project/project.entity';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
@@ -14,6 +14,9 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { moveMissionFilesInMinio } from '../minioHelper';
+import { db } from '../../tests/utils/database_utils';
+import env from '@common/env';
 
 @Injectable()
 export class ProjectService {
@@ -31,6 +34,7 @@ export class ProjectService {
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
         private configService: ConfigService,
+        private readonly dataSource: DataSource,
     ) {
         this.config = this.configService.get('accessConfig');
     }
@@ -111,7 +115,7 @@ export class ProjectService {
 
     async create(project: CreateProject, user: JWTUser): Promise<Project> {
         const exists = await this.projectRepository.exists({
-            where: { name: project.name },
+            where: { name: ILike(project.name) },
         });
         if (exists) {
             throw new ConflictException(
@@ -135,56 +139,27 @@ export class ProjectService {
             creator: creator,
             requiredTags: tagTypes,
         });
-        const savedProject = await this.projectRepository.save(newProject);
-        await Promise.all(
-            access_groups_default.map(async (accessGroup) => {
-                let rights = AccessGroupRights.WRITE;
-                if (accessGroup.inheriting) {
-                    rights = this.config.access_groups.find((group) => {
-                        return group.uuid === accessGroup.uuid;
-                    }).rights;
-                } else if (accessGroup.personal) {
-                    rights = AccessGroupRights.DELETE;
-                }
-                const projectAccess = this.projectAccessRepository.create({
-                    rights,
-                    accessGroup,
-                    projects: savedProject,
-                });
-                return this.projectAccessRepository.save(projectAccess);
-            }),
-        );
-        await Promise.all(
-            project.accessGroups.map(async (accessGroup) => {
-                let accessGroupDB;
-                if ('accessGroupUUID' in accessGroup) {
-                    accessGroupDB =
-                        await this.accessGroupRepository.findOneOrFail({
-                            where: { uuid: accessGroup.accessGroupUUID },
-                        });
-                } else if ('userUUID' in accessGroup) {
-                    accessGroupDB =
-                        await this.accessGroupRepository.findOneOrFail({
-                            where: {
-                                users: [{ uuid: accessGroup.userUUID }],
-                                personal: true,
-                            },
-                        });
-                } else {
-                    throw new ConflictException(
-                        'Neither accessGroupUUID nor userUUID is present in accessGroup',
+        const transactedProject = await this.dataSource.transaction(
+            async (manager) => {
+                const savedProject = await manager.save(Project, newProject);
+                await this.createDefaultAccessGroups(
+                    manager,
+                    access_groups_default,
+                    savedProject,
+                );
+
+                if (project.accessGroups) {
+                    await this.createSpecifiedAccessGroups(
+                        manager,
+                        project.accessGroups,
+                        savedProject,
                     );
                 }
-                const projectAccess = this.projectAccessRepository.create({
-                    rights: accessGroup.rights,
-                    accessGroup: accessGroupDB,
-                    projects: savedProject,
-                });
-                return this.projectAccessRepository.save(projectAccess);
-            }),
+                return savedProject;
+            },
         );
         return this.projectRepository.findOneOrFail({
-            where: { uuid: savedProject.uuid },
+            where: { uuid: transactedProject.uuid },
             relations: ['creator', 'project_accesses'],
         });
     }
@@ -193,7 +168,39 @@ export class ProjectService {
         uuid: string,
         project: { name: string; description: string },
     ): Promise<Project> {
-        await this.projectRepository.update(uuid, project);
+        const db_project = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['missions'],
+        });
+        const exists = await this.projectRepository.exists({
+            where: { name: ILike(project.name) },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Project with that name already exists',
+            );
+        }
+        if (db_project.name !== project.name) {
+            await Promise.all(
+                db_project.missions.map(async (mission) => {
+                    await moveMissionFilesInMinio(
+                        `${db_project.name}/${mission.name}`,
+                        `${project.name}`,
+                        env.MINIO_BAG_BUCKET_NAME,
+                    );
+                    await moveMissionFilesInMinio(
+                        `${db_project.name}/${mission.name}`,
+                        `${project.name}`,
+                        env.MINIO_MCAP_BUCKET_NAME,
+                    );
+                }),
+            );
+        }
+        console.log('updating: ', project.name, project.description);
+        await this.projectRepository.update(uuid, {
+            name: project.name,
+            description: project.description,
+        });
         return this.projectRepository.findOne({ where: { uuid } });
     }
 
@@ -238,5 +245,75 @@ export class ProjectService {
         }
 
         await this.projectRepository.delete(uuid);
+    }
+
+    async createDefaultAccessGroups(
+        manager: EntityManager,
+        accessGroups: AccessGroup[],
+        project: Project,
+    ) {
+        return await Promise.all(
+            accessGroups.map(async (accessGroup) => {
+                let rights = AccessGroupRights.WRITE;
+                if (accessGroup.inheriting) {
+                    rights = this.config.access_groups.find((group) => {
+                        return group.uuid === accessGroup.uuid;
+                    }).rights;
+                } else if (accessGroup.personal) {
+                    rights = AccessGroupRights.DELETE;
+                }
+                const projectAccess = this.projectAccessRepository.create({
+                    rights,
+                    accessGroup,
+                    projects: project,
+                });
+                return manager.save(ProjectAccess, projectAccess);
+            }),
+        );
+    }
+
+    async createSpecifiedAccessGroups(
+        manager: EntityManager,
+        accessGroups: (
+            | { accessGroupUUID: string; rights: AccessGroupRights }
+            | { userUUID: string; rights: AccessGroupRights }
+        )[],
+        project: Project,
+    ) {
+        return await Promise.all(
+            accessGroups.map(async (accessGroup) => {
+                let accessGroupDB: AccessGroup;
+                if ('accessGroupUUID' in accessGroup) {
+                    accessGroupDB =
+                        await this.accessGroupRepository.findOneOrFail({
+                            where: {
+                                uuid: accessGroup.accessGroupUUID,
+                            },
+                        });
+                } else if ('userUUID' in accessGroup) {
+                    accessGroupDB =
+                        await this.accessGroupRepository.findOneOrFail({
+                            where: {
+                                users: [
+                                    {
+                                        uuid: accessGroup.userUUID,
+                                    },
+                                ],
+                                personal: true,
+                            },
+                        });
+                } else {
+                    throw new ConflictException(
+                        'Neither accessGroupUUID nor userUUID is present in accessGroup',
+                    );
+                }
+                const projectAccess = this.projectAccessRepository.create({
+                    rights: accessGroup.rights,
+                    accessGroup: accessGroupDB,
+                    projects: project,
+                });
+                return manager.save(ProjectAccess, projectAccess);
+            }),
+        );
     }
 }

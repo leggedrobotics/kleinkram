@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';

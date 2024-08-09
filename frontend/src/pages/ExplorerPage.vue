@@ -73,7 +73,12 @@
             </div>
 
             <div class="flex column q-mb-auto">
-                <q-btn disabled outline icon="sym_o_edit" label="Edit Project">
+                <q-btn
+                    outline
+                    icon="sym_o_edit"
+                    label="Edit Project"
+                    @click="openEditProject"
+                >
                     <q-tooltip> Edit Project</q-tooltip>
                 </q-btn>
             </div>
@@ -101,7 +106,7 @@
             </div>
 
             <div class="flex column q-mb-auto">
-                <q-btn disabled outline icon="sym_o_edit" label="Edit Mission">
+                <q-btn outline icon="sym_o_edit" label="Edit Mission" disable>
                     <q-tooltip> Edit Mission</q-tooltip>
                 </q-btn>
             </div>
@@ -213,6 +218,9 @@ import CreateMissionButton from 'components/buttons/CreateMissionButton.vue';
 import CreateProjectButton from 'components/buttons/CreateProjectButton.vue';
 import UploadFileButton from 'components/buttons/UploadFileButton.vue';
 import ROUTES from 'src/router/routes';
+import { useQuasar } from 'quasar';
+import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
+const $q = useQuasar();
 
 const queryClient = useQueryClient();
 
@@ -257,5 +265,14 @@ function getComponent() {
     }
     console.log('No component found');
     return ExplorerPageProjectTable;
+}
+
+function openEditProject() {
+    $q.dialog({
+        component: EditProjectDialog,
+        componentProps: {
+            project_uuid: project_uuid.value,
+        },
+    });
 }
 </script>
