@@ -1,5 +1,62 @@
 <template>
-    <h1 class="text-h4 q-mt-xl" style="font-weight: 500">Mission Analysis</h1>
+    <h1 class="text-h4 q-mt-xl" style="font-weight: 500">
+        Verify Mission Data using Actions
+    </h1>
+
+    <div class="q-mb-md">
+        <div class="flex justify-between q-mv-md">
+            <div></div>
+
+            <ButtonGroup>
+                <q-btn-dropdown
+                    v-model="dropdownNewFileProject"
+                    :label="selected_project?.name || 'Select a Project'"
+                    flat
+                    class="q-uploader--bordered"
+                    clearable
+                    required
+                >
+                    <q-list>
+                        <q-item
+                            v-for="project in projects"
+                            :key="project.uuid"
+                            clickable
+                            @click="handler.setProjectUUID(project.uuid)"
+                        >
+                            <q-item-section>
+                                <q-item-label>
+                                    {{ project.name }}
+                                </q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-btn-dropdown>
+                <q-btn-dropdown
+                    v-model="dropdownNewFileMission"
+                    :label="selected_mission?.name || 'Select a Mission'"
+                    class="q-uploader--bordered"
+                    flat
+                    clearable
+                    required
+                >
+                    <q-list>
+                        <q-item
+                            v-for="mission in missions"
+                            :key="mission.uuid"
+                            clickable
+                            @click="handler.setMissionUUID(mission.uuid)"
+                        >
+                            <q-item-section>
+                                <q-item-label>
+                                    {{ mission.name }}
+                                </q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-btn-dropdown>
+            </ButtonGroup>
+        </div>
+    </div>
 
     <q-card class="q-pa-md q-mb-md" flat bordered>
         <q-card-section>
@@ -7,77 +64,21 @@
 
             <!-- Select a project and mission, on which the anylsis will be performed -->
             <q-form @submit.prevent="submitAnalysis">
-                <div class="row items-center justify-between q-gutter-md">
-                    <div class="col-1">
-                        <q-btn-dropdown
-                            v-model="dropdownNewFileProject"
-                            :label="selected_project?.name || 'Project'"
-                            outlined
-                            dense
-                            clearable
-                            required
-                        >
-                            <q-list>
-                                <q-item
-                                    v-for="project in projects"
-                                    :key="project.uuid"
-                                    clickable
-                                    @click="
-                                        handler.setProjectUUID(project.uuid)
-                                    "
-                                >
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ project.name }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                    <div class="col-1">
-                        <q-btn-dropdown
-                            v-model="dropdownNewFileMission"
-                            :label="selected_mission?.name || 'Mission'"
-                            outlined
-                            dense
-                            clearable
-                            required
-                        >
-                            <q-list>
-                                <q-item
-                                    v-for="mission in missions"
-                                    :key="mission.uuid"
-                                    clickable
-                                    @click="
-                                        handler.setMissionUUID(mission.uuid)
-                                    "
-                                >
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ mission.name }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                    <div class="col-5">
-                        <div class="row">
-                            <q-input
-                                v-model="image_name"
-                                outlined
-                                dense
-                                clearable
-                                label="Docker Image"
-                                hint="e.g., rslethz/action:latest"
-                            />
-                        </div>
-                    </div>
-                    <div class="col-1">
+                <div class="flex column">
+                    <q-input
+                        v-model="image_name"
+                        outlined
+                        dense
+                        class="q-mb-sm"
+                        clearable
+                        label="Docker Image"
+                        hint="e.g., rslethz/action:latest"
+                    />
+                    <div class="flex justify-end">
                         <q-btn
-                            label="Submit"
+                            label="Submit Action"
                             color="primary"
+                            outline
                             @click="submitAnalysis"
                         />
                     </div>
@@ -88,10 +89,10 @@
     <q-card class="q-pa-md q-mb-xl" flat bordered>
         <q-card-section>
             <template v-if="selected_project && selected_mission">
-                <Action
+                <ActionsTable
                     :project_uuid="selected_project?.uuid"
                     :mission_uuid="selected_mission?.uuid"
-                ></Action>
+                ></ActionsTable>
             </template>
             <template v-else>
                 <div class="text">
@@ -107,7 +108,7 @@ import { computed, Ref, ref, watchEffect } from 'vue';
 
 import { useQuery } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import Action from 'components/Actions.vue';
+import ActionsTable from 'components/Actions.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
@@ -115,6 +116,7 @@ import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
 import { QueryURLHandler } from 'src/services/URLHandler';
 import { useRouter } from 'vue-router';
+import ButtonGroup from 'components/ButtonGroup.vue';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);

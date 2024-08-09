@@ -16,9 +16,34 @@
         >
             <template v-slot:body-cell-Status="props">
                 <q-td :props="props">
-                    <q-badge :color="getColor(props.row.state)">
-                        {{ props.row.state }}
-                    </q-badge>
+                    <template
+                        v-if="
+                            props.row.state === ActionState.PROCESSING ||
+                            props.row.state === ActionState.PENDING
+                        "
+                    >
+                        <q-skeleton
+                            class="q-pa-none q-ma-none"
+                            style="background: none; margin-left: -3px"
+                            ;
+                        >
+                            <q-badge
+                                :color="getColor(props.row.state)"
+                                class="q-pa-sm"
+                            >
+                                {{ props.row.state }}
+                            </q-badge>
+                        </q-skeleton>
+                    </template>
+
+                    <template v-else>
+                        <q-badge
+                            :color="getColor(props.row.state)"
+                            class="q-pa-sm"
+                        >
+                            {{ props.row.state }}
+                        </q-badge>
+                    </template>
                 </q-td>
             </template>
 
@@ -48,8 +73,19 @@
                                     "
                                 >
                                     <q-item-section
-                                        >View Details</q-item-section
-                                    >
+                                        >View Details
+                                    </q-item-section>
+                                </q-item>
+
+                                <q-item clickable v-ripple disabled>
+                                    <q-item-section
+                                        >Cancel Action
+                                    </q-item-section>
+                                </q-item>
+                                <q-item clickable v-ripple disabled>
+                                    <q-item-section
+                                        >Delete Action
+                                    </q-item-section>
                                 </q-item>
                             </q-list>
                         </q-menu>
@@ -63,13 +99,18 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { ref, Ref } from 'vue';
+import { ref, Ref, watch } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
-import { actions } from 'src/services/queries/action';
+import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
+import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
+import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
+import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
+import ButtonGroup from 'components/ButtonGroup.vue';
+import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 
 const router = useRouter();
 
@@ -79,10 +120,14 @@ const props = defineProps<{
     mission_uuid: string;
 }>();
 
-const missions = useQuery<Action[]>({
+const actions = useQuery<Action[]>({
     queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
-    queryFn: () => actions(props.mission_uuid),
+    queryFn: () => getActions(props.mission_uuid),
     refetchInterval: 1000,
+});
+
+watch(actions.data, () => {
+    console.log(actions.data.value);
 });
 
 const tableRef: Ref<QTable | null> = ref(null);
@@ -94,9 +139,25 @@ const pagination = ref({
     rowsPerPage: 10,
 });
 
-const data = missions.data;
+const data = actions.data;
 
 const columns = [
+    {
+        name: 'Status',
+        label: 'Status',
+        align: 'left',
+        field: 'state',
+        sortable: true,
+        style: 'width: 100px',
+    },
+
+    {
+        name: 'Docker Image',
+        label: 'Docker Image',
+        align: 'left',
+        sortable: true,
+        field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
+    },
     {
         name: 'Last Update',
         label: 'Last Update',
@@ -114,17 +175,10 @@ const columns = [
             row.createdAt ? formatDate(row.createdAt, true) : 'N/A',
     },
     {
-        name: 'Docker Image',
-        label: 'Docker Image',
+        name: 'user',
+        label: 'Submitted By',
         align: 'left',
-        sortable: true,
-        field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
-    },
-    {
-        name: 'Status',
-        label: 'Status',
-        align: 'left',
-        field: 'state',
+        field: (row: Action) => row?.createdBy?.name || 'N/A',
         sortable: true,
     },
     {

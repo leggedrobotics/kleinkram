@@ -1,10 +1,6 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
-import {
-    ActionQuery,
-    SubmitAction,
-    ActionDetailsQuery,
-} from './entities/submit_action.dto';
+import { ActionQuery, SubmitAction } from './entities/submit_action.dto';
 import { QueueService } from '../queue/queue.service';
 import {
     AdminOnly,
@@ -24,13 +20,16 @@ export class ActionController {
 
     @Post('submit')
     @CanCreateAction()
-    async createActionRun(@Body() dto: SubmitAction) {
+    async createActionRun(
+        @Body() dto: SubmitAction,
+        @addJWTUser() user: JWTUser,
+    ) {
         // TODO: validate input: similar to the frontend, we should validate the input
-        // to ensure that the user has provided the necessary information to create a new project.
+        //  to ensure that the user has provided the necessary information to create a new project.
 
-        // TODO: generate UUID for the mission, return that to the frontend for tracking
-        const action = await this.actionService.submit(dto);
+        const action = await this.actionService.submit(dto, user);
         await this.queueService.addActionQueue(action.uuid);
+        return action.uuid;
     }
 
     @Get('list')

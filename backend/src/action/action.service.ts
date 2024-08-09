@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubmitAction } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { JWTUser } from '../auth/paramDecorator';
 
 @Injectable()
 export class ActionService {
@@ -16,9 +17,10 @@ export class ActionService {
         private userRepository: Repository<User>,
     ) {}
 
-    async submit(data: SubmitAction): Promise<Action> {
+    async submit(data: SubmitAction, user: JWTUser): Promise<Action> {
         let action = this.actionRepository.create({
             mission: { uuid: data.missionUUID },
+            createdBy: { uuid: user.uuid },
             state: ActionState.PENDING,
             docker_image: data.docker_image,
         });
@@ -45,7 +47,7 @@ export class ActionService {
         if (user.role === UserRole.ADMIN) {
             return this.actionRepository.find({
                 where: { mission: { uuid: mission_uuid } },
-                relations: ['mission', 'mission.project'],
+                relations: ['mission', 'mission.project', 'createdBy'],
                 order: { createdAt: 'DESC' },
                 skip,
                 take,
@@ -63,13 +65,15 @@ export class ActionService {
                 .take(take)
                 .orderBy('action.createdAt', 'DESC'),
             userUUID,
-        ).getMany();
+        )
+            .leftJoinAndSelect('action.createdBy', 'createdBy')
+            .getMany();
     }
 
     async details(action_uuid: string) {
-        return await this.actionRepository.findOne({
+        return await this.actionRepository.findOneOrFail({
             where: { uuid: action_uuid },
-            relations: ['mission', 'mission.project'],
+            relations: ['mission', 'mission.project', 'createdBy'],
         });
     }
 
