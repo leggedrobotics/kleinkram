@@ -66,7 +66,6 @@ export class ProjectController {
         @QueryUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ) {
-        console.log(dto);
         return this.projectService.update(uuid, dto);
     }
 

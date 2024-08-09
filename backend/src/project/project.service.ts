@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Project from '@common/entities/project/project.entity';
-import { DataSource, EntityManager, ILike, Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
@@ -173,7 +173,7 @@ export class ProjectService {
             relations: ['missions'],
         });
         const exists = await this.projectRepository.exists({
-            where: { name: ILike(project.name) },
+            where: { name: ILike(project.name), uuid: Not(uuid) },
         });
         if (exists) {
             throw new ConflictException(

@@ -58,7 +58,7 @@ import { deleteProject, updateProject } from 'src/services/mutations/project';
 const props = defineProps<{
     project_uuid: string;
 }>();
-const emit = defineEmits(['project-deleted']);
+const emit = defineEmits(['close']);
 const queryClient = useQueryClient();
 
 const projectName = ref('');
@@ -126,6 +126,7 @@ async function save() {
             filtered.forEach((query) => {
                 queryClient.invalidateQueries({ queryKey: query.queryKey });
             });
+            emit('close');
         } catch (e) {
             if (
                 e.response.data.message ===
