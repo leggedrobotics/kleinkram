@@ -11,7 +11,6 @@ export const getActions = async (missionUUID: string) => {
 
     const response = await axios.get('/action/list', { params });
     return response.data.map((res: any) => {
-        console.log(res);
         const user = new User(
             res.createdBy.uuid,
             res.createdBy.name,
@@ -30,7 +29,9 @@ export const getActions = async (missionUUID: string) => {
             new Date(res.updatedAt),
             new Date(res.deletedAt),
             res.state,
+            res.state_cause,
             res.docker_image,
+            res.docker_image_sha,
             null,
             user,
         );
@@ -43,7 +44,6 @@ export const actionDetails = async (action_uuid: string) => {
     };
 
     const response = await axios.get('/action/details', { params });
-    console.log(response);
     const user = new User(
         response.data.createdBy.uuid,
         response.data.createdBy.name,
@@ -62,7 +62,9 @@ export const actionDetails = async (action_uuid: string) => {
         new Date(response.data.updatedAt),
         new Date(response.data.deletedAt),
         response.data.state,
+        response.data.state_cause,
         response.data.docker_image,
+        response.data.docker_image_sha,
         null,
         user,
         response.data.logs,

@@ -25,6 +25,15 @@ export default class Action extends BaseEntity {
     @Column()
     docker_image: string;
 
+    @Column({ nullable: true })
+    docker_image_sha: string;
+
+    @Column({ nullable: true })
+    container_id: string;
+
+    @Column({ nullable: true })
+    executionStartedAt: Date;
+
     @ManyToOne(() => Mission, (mission) => mission.actions)
     mission: Mission;
 

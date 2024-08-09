@@ -43,7 +43,7 @@ export type ContainerOptions = {
     environment?: ContainerEnv;
 };
 
-export const dockerDaemonErrorHandling = (error: Error) => {
+export const dockerDaemonErrorHandler = (error: Error) => {
     logger.error(error.message);
     return null;
 };
@@ -185,7 +185,7 @@ export class ContainerScheduler {
         setTimeout(async () => {
             if (
                 !container ||
-                !(await container.inspect().catch(dockerDaemonErrorHandling))
+                !(await container.inspect().catch(dockerDaemonErrorHandler))
             ) {
                 throw new Error(
                     `Container ${container.id} not found, cannot stop it.`,
@@ -193,7 +193,7 @@ export class ContainerScheduler {
             }
 
             if (
-                !(await container.inspect().catch(dockerDaemonErrorHandling))
+                !(await container.inspect().catch(dockerDaemonErrorHandler))
                     ?.State.Running
             ) {
                 logger.debug(
@@ -202,7 +202,7 @@ export class ContainerScheduler {
                 return;
             }
 
-            await container.stop().catch(dockerDaemonErrorHandling);
+            await container.stop().catch(dockerDaemonErrorHandler);
             logger.info(
                 `Runtime limit reached. Stopping container ${container.id}...`,
             );
@@ -211,10 +211,10 @@ export class ContainerScheduler {
             // otherwise kill it
             setTimeout(async () => {
                 if (
-                    (await container.inspect().catch(dockerDaemonErrorHandling))
+                    (await container.inspect().catch(dockerDaemonErrorHandler))
                         ?.State.Running
                 ) {
-                    await container.kill().catch(dockerDaemonErrorHandling);
+                    await container.kill().catch(dockerDaemonErrorHandler);
                     logger.info(
                         `Container ${container.id} killed after reaching runtime limit.`,
                     );
@@ -222,7 +222,7 @@ export class ContainerScheduler {
             }, 10_000);
 
             // remove the container after stopping
-            await container.remove().catch(dockerDaemonErrorHandling);
+            await container.remove().catch(dockerDaemonErrorHandler);
         }, container_options.limits.max_runtime);
 
         container.wait().then(() => {
@@ -262,7 +262,7 @@ export class ContainerScheduler {
             (
                 await this.docker
                     .listContainers({ all: true })
-                    .catch(dockerDaemonErrorHandling)
+                    .catch(dockerDaemonErrorHandler)
             )?.filter((container: Dockerode.ContainerInfo) =>
                 container.Names[0].startsWith(
                     `/${ContainerScheduler.CONTAINER_PREFIX}`,
@@ -361,21 +361,17 @@ export class ContainerScheduler {
         await this.docker
             .getContainer(container_id)
             .kill()
-            .catch(dockerDaemonErrorHandling);
+            .catch(dockerDaemonErrorHandler);
         await this.docker
             .getContainer(container_id)
             .remove({ v: true })
-            .catch(dockerDaemonErrorHandling);
+            .catch(dockerDaemonErrorHandler);
     }
 
     private parseContainerLogLine(
         line: string,
         sanitize_callback?: (str: string) => string,
-    ): {
-        timestamp: string;
-        message: string;
-        type: 'stdout' | 'stderr';
-    } {
+    ): ContainerLog {
         // remove all non-printable characters
         line = line.replace(/[\x00-\x1F\x7F]/u, '');
 
@@ -405,8 +401,9 @@ export class ContainerScheduler {
      * If the container is still running, the function will not return until the container stops.
      *
      * @param container - The container to get logs from
-     * @param action
+     * @param action - The action object to attach the logs to
      * @param sanitize_callback - A callback function to sanitize the log messages
+     * @param liveStreaming - If true, the logs will be saved regularly during the extraction
      *
      */
     @tracing()
@@ -414,6 +411,7 @@ export class ContainerScheduler {
         container: Dockerode.Container,
         action: Action,
         sanitize_callback?: (str: string) => string,
+        liveStreaming: boolean = true,
     ): Promise<ContainerLog[]> {
         const logs: ContainerLog[] = [];
 
@@ -434,9 +432,21 @@ export class ContainerScheduler {
                 timestamps: true,
             });
 
+            // if enabled, we save the logs regularly during the extraction
+            // this allows to stream logs of running containers in "realtime"
+            // to the user
+            let intervalLogSever = null;
+            if (liveStreaming) {
+                intervalLogSever = setInterval(async () => {
+                    action.logs = logs;
+                    await this.actionRepository.save(action);
+                }, 1_000);
+            }
+
             stream.on('data', (chunk: Buffer) => {
-                const logLines = chunk.toString().split('\n');
-                logLines
+                chunk
+                    .toString()
+                    .split('\n')
                     .map((line) => line.trim())
                     .filter((line) => line !== '')
                     .forEach((line) => {
@@ -446,14 +456,7 @@ export class ContainerScheduler {
                                 sanitize_callback,
                             );
 
-                            logs.push({
-                                timestamp: log_entry.timestamp,
-                                message: log_entry.message,
-                                type: line.startsWith('[stderr]')
-                                    ? 'stderr'
-                                    : 'stdout',
-                            });
-
+                            logs.push(log_entry);
                             logger.silly(log_entry.message, {
                                 container_id: container.id,
                             });
@@ -467,10 +470,12 @@ export class ContainerScheduler {
             });
 
             stream.on('end', () => {
+                intervalLogSever?.unref();
                 resolve(logs);
             });
 
             stream.on('error', (error) => {
+                intervalLogSever?.unref();
                 reject(error);
             });
         });

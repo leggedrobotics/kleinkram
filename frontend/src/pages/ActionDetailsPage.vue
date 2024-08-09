@@ -1,17 +1,19 @@
 <template>
-    <div class="q-pa-md">
-        <div class="text-h4">Mission Details Page</div>
-    </div>
-
-    <q-card class="q-pa-md q-mb-md" flat bordered>
+    <q-card class="q-pa-md q-mb-md q-mt-xl" flat bordered>
         <q-card-section class="flex column">
-            <h2 class="text-h6">Action Logs</h2>
+            <h2 class="text-h6">Action Details</h2>
 
             <div class="flex justify-start">
                 <span style="font-weight: bold" class="q-pr-sm">
                     Docker Image:
                 </span>
-                <span>{{ data?.docker_image }}</span>
+                <span
+                    >{{ data?.docker_image }}
+
+                    <template v-if="data?.docker_image_sha !== ''">
+                        ({{ data?.docker_image_sha }})
+                    </template>
+                </span>
             </div>
 
             <div class="flex justify-start">
@@ -26,9 +28,16 @@
                 <span>{{ data?.state }}</span>
             </div>
 
+            <div class="flex justify-start" v-if="data?.state_cause != ''">
+                <span style="font-weight: bold" class="q-pr-sm">
+                    Status Reason:
+                </span>
+                <span>{{ data?.state_cause }}</span>
+            </div>
+
             <div class="flex justify-start">
                 <span style="font-weight: bold" class="q-pr-sm">
-                    Created At:
+                    Submitted At:
                 </span>
                 <span>{{ data?.createdAt }}</span>
             </div>
@@ -42,7 +51,7 @@
         </q-card-section>
     </q-card>
 
-    <q-card class="q-pa-md q-mb-md" flat bordered>
+    <q-card class="q-pa-md q-mb-md q-mb-xl" flat bordered>
         <q-card-section class="flex column">
             <h2 class="text-h6">Action Logs</h2>
 

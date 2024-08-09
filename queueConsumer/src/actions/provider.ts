@@ -14,7 +14,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, KeyTypes } from '@common/enum';
 import Action from '@common/entities/action/action.entity';
-import { ContainerEnv, ContainerScheduler } from './container_scheduler';
+import {
+    ContainerEnv,
+    ContainerScheduler,
+    dockerDaemonErrorHandler,
+} from './container_scheduler';
 import Apikey from '@common/entities/auth/apikey.entity';
 
 @Processor('action-queue')
@@ -126,6 +130,20 @@ export class ActionQueueProcessor
             limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
             environment: env_variables,
         });
+
+        // save start parameters to action object
+        const container_id = container.id;
+
+        const container_details = await container
+            .inspect()
+            .catch(dockerDaemonErrorHandler);
+        const image_sha = container_details?.Image;
+
+        // update the action with additional information
+        action.executionStartedAt = new Date(container_details.Created);
+        action.container_id = container_id;
+        action.docker_image_sha = image_sha;
+        await this.actionRepository.save(action);
 
         const sanitize = (str: string) => {
             return str.replace(apikey.apikey, '***');
