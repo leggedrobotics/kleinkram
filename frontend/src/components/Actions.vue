@@ -25,7 +25,6 @@
                         <q-skeleton
                             class="q-pa-none q-ma-none"
                             style="background: none; margin-left: -3px"
-                            ;
                         >
                             <q-badge
                                 :color="getColor(props.row.state)"

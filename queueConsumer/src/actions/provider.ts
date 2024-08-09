@@ -123,7 +123,7 @@ export class ActionQueueProcessor
         const container = await this.start_container({
             docker_image: action.docker_image,
             uuid,
-            limits: { max_runtime: 10 * 1_000 }, // 60 seconds
+            limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
             environment: env_variables,
         });
 

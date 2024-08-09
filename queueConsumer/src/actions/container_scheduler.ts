@@ -26,7 +26,7 @@ export type ContainerLimits = {
 };
 
 const defaultContainerLimitations: ContainerLimits = {
-    max_runtime: 10_000,
+    max_runtime: 3600_000, // 1 hour
     memory_limit: 1073741824, // memory limit in bytes
     cpu_limit: 1000000000, // CPU limit in nano CPUs
     disk_quota: 10737418240,
@@ -45,7 +45,6 @@ export type ContainerOptions = {
 
 export const dockerDaemonErrorHandling = (error: Error) => {
     logger.error(error.message);
-    logger.error(error.stack);
     return null;
 };
 
@@ -318,14 +317,7 @@ export class ContainerScheduler {
                 logger.warn(
                     `Container ${container.Id} has no corresponding action, killing it.`,
                 );
-                await this.docker
-                    .getContainer(container.Id)
-                    .kill()
-                    .catch(dockerDaemonErrorHandling);
-                await this.docker
-                    .getContainer(container.Id)
-                    .remove()
-                    .catch(dockerDaemonErrorHandling);
+                await this.killAndRemoveContainer(container.Id);
                 continue;
             }
 
@@ -340,14 +332,7 @@ export class ContainerScheduler {
                     logger.info(
                         `Container for action ${action.uuid} is older than 24 hours, killing it.`,
                     );
-                    await this.docker
-                        .getContainer(container.Id)
-                        .kill()
-                        .catch(dockerDaemonErrorHandling);
-                    await this.docker
-                        .getContainer(container.Id)
-                        .remove()
-                        .catch(dockerDaemonErrorHandling);
+                    await this.killAndRemoveContainer(container.Id);
 
                     action.state = ActionState.FAILED;
                     action.state_cause =
@@ -360,19 +345,57 @@ export class ContainerScheduler {
             logger.info(
                 `Container for completed action ${action.uuid} found, killing it.`,
             );
-            await this.docker
-                .getContainer(container.Id)
-                .kill()
-                .catch(dockerDaemonErrorHandling);
-            await this.docker
-                .getContainer(container.Id)
-                .remove()
-                .catch(dockerDaemonErrorHandling);
 
-            action.state = ActionState.FAILED;
-            action.state_cause = 'Container killed: action completed';
-            await this.actionRepository.save(action);
+            await this.killAndRemoveContainer(container.Id);
+
+            if (action.state === ActionState.PENDING) {
+                action.state = ActionState.FAILED;
+                action.state_cause =
+                    'Container killed: action has never started';
+                await this.actionRepository.save(action);
+            }
         }
+    }
+
+    private async killAndRemoveContainer(container_id: string) {
+        await this.docker
+            .getContainer(container_id)
+            .kill()
+            .catch(dockerDaemonErrorHandling);
+        await this.docker
+            .getContainer(container_id)
+            .remove({ v: true })
+            .catch(dockerDaemonErrorHandling);
+    }
+
+    private parseContainerLogLine(
+        line: string,
+        sanitize_callback?: (str: string) => string,
+    ): {
+        timestamp: string;
+        message: string;
+        type: 'stdout' | 'stderr';
+    } {
+        // remove all non-printable characters
+        line = line.replace(/[\x00-\x1F\x7F]/u, '');
+
+        const date_start_idx = line.indexOf('20');
+        let date_end_idx = line.indexOf(' ', date_start_idx);
+        date_end_idx = date_end_idx === -1 ? line.length : date_end_idx;
+
+        const date_str = line.substring(date_start_idx, date_end_idx);
+        const timestamp = new Date(date_str).toISOString();
+
+        let message = line.substring(date_end_idx);
+        if (sanitize_callback && message != '') {
+            message = sanitize_callback(message);
+        }
+
+        return {
+            timestamp: timestamp,
+            message: message,
+            type: line.startsWith('[stderr]') ? 'stderr' : 'stdout',
+        };
     }
 
     /**
@@ -413,27 +436,34 @@ export class ContainerScheduler {
 
             stream.on('data', (chunk: Buffer) => {
                 const logLines = chunk.toString().split('\n');
-                logLines.forEach((line) => {
-                    if (line.trim() !== '') {
-                        const timestamp = line.split(' ')[0].split('+')[1];
-                        let message = line.split(' ').slice(1).join(' ');
+                logLines
+                    .map((line) => line.trim())
+                    .filter((line) => line !== '')
+                    .forEach((line) => {
+                        try {
+                            const log_entry = this.parseContainerLogLine(
+                                line,
+                                sanitize_callback,
+                            );
 
-                        if (sanitize_callback) {
-                            message = sanitize_callback(message);
+                            logs.push({
+                                timestamp: log_entry.timestamp,
+                                message: log_entry.message,
+                                type: line.startsWith('[stderr]')
+                                    ? 'stderr'
+                                    : 'stdout',
+                            });
+
+                            logger.silly(log_entry.message, {
+                                container_id: container.id,
+                            });
+                            container_logger.info(
+                                `[${log_entry.timestamp}] ${log_entry.message}`,
+                            );
+                        } catch {
+                            logger.error(`Failed to parse log line: '${line}'`);
                         }
-
-                        logger.silly(message, { container_id: container.id });
-                        container_logger.info(message);
-
-                        logs.push({
-                            timestamp: timestamp,
-                            message: message,
-                            type: line.startsWith('[stderr]')
-                                ? 'stderr'
-                                : 'stdout',
-                        });
-                    }
-                });
+                    });
             });
 
             stream.on('end', () => {
