@@ -8,9 +8,12 @@ type ContainerLog = {
     message: string;
     type: 'stdout' | 'stderr';
 };
+
 export class Action extends BaseEntity {
     state: ActionState;
+    state_cause: string;
     docker_image: string;
+    docker_image_sha: string;
     createdBy: User;
 
     mission: Mission | null;
@@ -22,7 +25,9 @@ export class Action extends BaseEntity {
         updatedAt: Date | null,
         deletedAt: Date | null,
         state: ActionState,
+        state_cause: string,
         docker_image: string,
+        docker_image_sha: string,
         mission: Mission | null,
         createdBy: User,
         logs: ContainerLog[] | null = null,
@@ -30,9 +35,11 @@ export class Action extends BaseEntity {
         super(uuid, createdAt, updatedAt, deletedAt);
 
         this.state = state;
+        this.state_cause = state_cause || '';
         this.docker_image = docker_image;
         this.mission = mission;
         this.logs = logs;
+        this.docker_image_sha = docker_image_sha || '';
         this.createdBy = createdBy;
     }
 }

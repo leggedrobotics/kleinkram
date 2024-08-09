@@ -125,10 +125,6 @@ const actions = useQuery<Action[]>({
     refetchInterval: 1000,
 });
 
-watch(actions.data, () => {
-    console.log(actions.data.value);
-});
-
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 const pagination = ref({
@@ -157,6 +153,15 @@ const columns = [
         sortable: true,
         field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
     },
+
+    {
+        name: 'reason',
+        label: 'State Reason',
+        align: 'left',
+        sortable: true,
+        field: (row: Action) => (row.state_cause ? row.state_cause : ''),
+    },
+
     {
         name: 'Last Update',
         label: 'Last Update',
