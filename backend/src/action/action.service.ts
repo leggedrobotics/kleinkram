@@ -40,12 +40,12 @@ export class ActionService {
         userUUID: string,
         skip: number,
         take: number,
-    ): Promise<Action[]> {
+    ): Promise<[Action[], number]> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.actionRepository.find({
+            return this.actionRepository.findAndCount({
                 where: { mission: { uuid: mission_uuid } },
                 relations: ['mission', 'mission.project', 'createdBy'],
                 order: { createdAt: 'DESC' },
@@ -67,7 +67,7 @@ export class ActionService {
             userUUID,
         )
             .leftJoinAndSelect('action.createdBy', 'createdBy')
-            .getMany();
+            .getManyAndCount();
     }
 
     async details(action_uuid: string) {
