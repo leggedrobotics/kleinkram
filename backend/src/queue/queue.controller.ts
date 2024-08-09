@@ -64,10 +64,4 @@ export class QueueController {
 
         return this.queueService.active(date, user.uuid, skip, take);
     }
-
-    @Delete('clear')
-    @AdminOnly()
-    async clear() {
-        return this.queueService.clear();
-    }
 }

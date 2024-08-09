@@ -76,8 +76,4 @@ export class ActionService {
             relations: ['mission', 'mission.project', 'createdBy'],
         });
     }
-
-    async clear() {
-        return await this.actionRepository.query('DELETE FROM "action"');
-    }
 }

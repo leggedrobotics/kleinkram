@@ -109,12 +109,6 @@ export class MissionController {
         );
     }
 
-    @Delete('clear')
-    @AdminOnly()
-    async clearMissions() {
-        return this.missionService.clearMissions();
-    }
-
     @Post('move')
     @CanMoveMission()
     async moveMission(

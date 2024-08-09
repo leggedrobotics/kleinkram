@@ -192,8 +192,4 @@ export class QueueService {
             .take(take)
             .getMany();
     }
-
-    async clear() {
-        return await this.queueRepository.query('DELETE FROM "queue_entity"');
-    }
 }

@@ -48,10 +48,4 @@ export class ActionController {
     async details(@QueryUUID('uuid') uuid: string) {
         return this.actionService.details(uuid);
     }
-
-    @Delete('clear')
-    @AdminOnly()
-    async clear() {
-        return this.actionService.clear();
-    }
 }

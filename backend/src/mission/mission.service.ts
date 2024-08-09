@@ -169,10 +169,6 @@ export class MissionService {
         });
     }
 
-    async clearMissions(): Promise<void> {
-        await this.missionRepository.query('DELETE FROM "mission"');
-    }
-
     async moveMission(
         missionUUID: string,
         projectUUID: string,

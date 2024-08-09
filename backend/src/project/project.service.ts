@@ -225,10 +225,6 @@ export class ProjectService {
         return this.projectRepository.save(project);
     }
 
-    async clearProjects(): Promise<void> {
-        await this.projectRepository.query('DELETE FROM "project"');
-    }
-
     async deleteProject(uuid: string): Promise<void> {
         // count missions of project
         const project = await this.projectRepository.findOneOrFail({
