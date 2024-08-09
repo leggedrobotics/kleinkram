@@ -120,7 +120,7 @@ const router = useRouter();
 const props = defineProps<{
     handler: QueryHandler;
 }>();
-
+props.handler.setSort('updatedAt');
 const actionKey = computed(() => [
     'action_mission',
     props.handler.mission_uuid,
@@ -133,6 +133,8 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
             props.handler.mission_uuid as string,
             props.handler.take,
             props.handler.skip,
+            props.handler.sortBy,
+            props.handler.descending,
         ),
     refetchInterval: 1000,
 });
@@ -168,7 +170,7 @@ watch(
 );
 const columns = [
     {
-        name: 'Status',
+        name: 'state',
         label: 'Status',
         align: 'left',
         field: 'state',
@@ -177,7 +179,7 @@ const columns = [
     },
 
     {
-        name: 'Docker Image',
+        name: 'docker_image',
         label: 'Docker Image',
         align: 'left',
         sortable: true,
@@ -185,7 +187,7 @@ const columns = [
     },
 
     {
-        name: 'reason',
+        name: 'state_cause',
         label: 'State Reason',
         align: 'left',
         sortable: true,
@@ -193,7 +195,7 @@ const columns = [
     },
 
     {
-        name: 'Last Update',
+        name: 'updatedAt',
         label: 'Last Update',
         align: 'left',
         sortable: true,
@@ -201,7 +203,7 @@ const columns = [
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
     },
     {
-        name: 'Creation Date',
+        name: 'createdAt',
         label: 'Creation Date',
         align: 'left',
         sortable: true,
@@ -213,7 +215,7 @@ const columns = [
         label: 'Submitted By',
         align: 'left',
         field: (row: Action) => row?.createdBy?.name || 'N/A',
-        sortable: true,
+        sortable: false,
     },
     {
         name: 'Details',

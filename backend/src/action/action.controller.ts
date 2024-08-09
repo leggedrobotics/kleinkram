@@ -9,7 +9,12 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
-import { QuerySkip, QueryUUID } from '../validation/queryDecorators';
+import {
+    QueryOptionalBoolean,
+    QueryOptionalString,
+    QuerySkip,
+    QueryUUID,
+} from '../validation/queryDecorators';
 
 @Controller('action')
 export class ActionController {
@@ -39,8 +44,17 @@ export class ActionController {
         @addJWTUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
+        @QueryOptionalString('sortBy') sortBy: string,
+        @QueryOptionalBoolean('descending') descending: boolean,
     ) {
-        return this.actionService.list(dto.mission_uuid, user.uuid, skip, take);
+        return this.actionService.list(
+            dto.mission_uuid,
+            user.uuid,
+            skip,
+            take,
+            sortBy,
+            descending,
+        );
     }
 
     @Get('details')

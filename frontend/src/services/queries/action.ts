@@ -6,11 +6,15 @@ export const getActions = async (
     missionUUID: string,
     take: number,
     skip: number,
+    sortBy: string,
+    descending: boolean,
 ): Promise<[Action[], number]> => {
     const params = {
         mission_uuid: missionUUID,
         take,
         skip,
+        sortBy,
+        descending,
     };
 
     const response = await axios.get('/action/list', { params });

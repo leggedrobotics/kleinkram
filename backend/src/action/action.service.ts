@@ -40,6 +40,8 @@ export class ActionService {
         userUUID: string,
         skip: number,
         take: number,
+        sortBy: string,
+        descending: boolean,
     ): Promise<[Action[], number]> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
@@ -48,7 +50,7 @@ export class ActionService {
             return this.actionRepository.findAndCount({
                 where: { mission: { uuid: mission_uuid } },
                 relations: ['mission', 'mission.project', 'createdBy'],
-                order: { createdAt: 'DESC' },
+                order: { [sortBy]: descending ? 'DESC' : 'ASC' },
                 skip,
                 take,
             });
@@ -63,7 +65,7 @@ export class ActionService {
                 })
                 .skip(skip)
                 .take(take)
-                .orderBy('action.createdAt', 'DESC'),
+                .orderBy('action.' + sortBy, descending ? 'DESC' : 'ASC'),
             userUUID,
         )
             .leftJoinAndSelect('action.createdBy', 'createdBy')
