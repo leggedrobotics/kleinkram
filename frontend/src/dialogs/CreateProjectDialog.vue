@@ -188,7 +188,7 @@
 
 <script setup lang="ts">
 import { QInput, useDialogPluginComponent } from 'quasar';
-import { computed, Ref, ref } from 'vue';
+import { computed, nextTick, Ref, ref } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -283,6 +283,10 @@ const submitNewProject = async () => {
         selected.value.map((tag) => tag.uuid),
         accessRightsRows.value,
     )
+        .then(() => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            onDialogOK();
+        })
         .catch((error: AxiosError<{ message: string; statusCode: number }>) => {
             if (
                 error.code == 'ERR_BAD_REQUEST' &&
@@ -296,12 +300,7 @@ const submitNewProject = async () => {
 
             // abort the close of the dialog
             dialogRef.value?.show();
-        })
-        .then(() => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
         });
-
-    onDialogOK();
 };
 
 const accessRightsRows = computed(() => {

@@ -13,9 +13,10 @@
 <script setup lang="ts">
 import MoveMissionDialog from 'src/dialogs/MoveMissionDialog.vue';
 import { useQuasar } from 'quasar';
+import { Mission } from 'src/types/Mission';
 
-const { mission_uuid } = defineProps({
-    mission_uuid: String,
+const { mission } = defineProps({
+    mission: Mission,
 });
 
 const $q = useQuasar();
@@ -25,7 +26,7 @@ const moveMissionToDifferentProject = () =>
         title: 'Move Mission',
         component: MoveMissionDialog,
         componentProps: {
-            mission: mission_uuid,
+            mission,
         },
     });
 </script>

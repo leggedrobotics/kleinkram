@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
@@ -356,13 +360,9 @@ export class FileService {
         }
 
         // validate if file ending hasn't changed
-        if (db_file.type === FileType.MCAP && file.filename.endsWith('.bag')) {
-            throw new BadRequestException('File ending cannot be changed.');
-        } else if (
-            db_file.type === FileType.BAG &&
-            file.filename.endsWith('.mcap')
-        ) {
-            throw new BadRequestException('File ending cannot be changed.');
+        const fileEnding = db_file.type === FileType.MCAP ? '.mcap' : '.bag';
+        if (!file.filename.endsWith(fileEnding)) {
+            throw new BadRequestException('File ending must not be changed');
         }
 
         const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
@@ -398,19 +398,27 @@ export class FileService {
         }
 
         const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
-        if (srcPath !== destPath) {
-            await moveFile(srcPath, destPath, bucketName);
-        }
-        await this.dataSource.transaction(
-            async (transactionalEntityManager) => {
+
+        await this.dataSource
+            .transaction(async (transactionalEntityManager) => {
                 await transactionalEntityManager.save(
                     Project,
                     db_file.mission.project,
                 );
                 await transactionalEntityManager.save(Mission, db_file.mission);
                 await transactionalEntityManager.save(FileEntity, db_file);
-            },
-        );
+                if (srcPath !== destPath) {
+                    await moveFile(srcPath, destPath, bucketName);
+                }
+            })
+            .catch((err) => {
+                if (err.code === '23505') {
+                    throw new ConflictException(
+                        'File with this name already exists in the mission',
+                    );
+                }
+                throw err;
+            });
 
         return this.fileRepository.findOne({
             where: { uuid },

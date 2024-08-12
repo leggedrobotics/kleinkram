@@ -54,7 +54,7 @@
 </template>
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { Mission } from 'src/types/Mission';
 import { Project } from 'src/types/Project';
@@ -69,11 +69,11 @@ const props = defineProps<{
 
 const queryClient = useQueryClient();
 
-const projectsReturn = useQuery<Project[]>({
+const { data } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
-const projects = projectsReturn.data || [];
+const projects = computed(() => (data.value ? data.value[0] : []));
 
 const selected_project = ref<Project | null>(props.mission?.project || null);
 

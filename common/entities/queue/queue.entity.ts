@@ -15,7 +15,7 @@ export default class QueueEntity extends BaseEntity {
     @Column({
         type: 'enum',
         enum: FileState,
-        default: 'PENDING',
+        default: FileState.AWAITING_UPLOAD,
     })
     state: FileState;
 

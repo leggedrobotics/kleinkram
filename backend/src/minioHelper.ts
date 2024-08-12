@@ -1,5 +1,6 @@
 import { BucketItem, Client } from 'minio';
 import env from '@common/env';
+import { FileType } from '@common/enum';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -103,8 +104,6 @@ export async function moveMissionFilesInMinio(
     destProject: string,
     bucketName: string,
 ) {
-    console.log('src', srcPath);
-    console.log('dest', destProject);
     try {
         const objects = await listObjects(bucketName, srcPath);
         const mission = srcPath.split('/')[1];
@@ -118,4 +117,12 @@ export async function moveMissionFilesInMinio(
     } catch (err) {
         console.error('Error moving files:', err);
     }
+}
+
+export async function getInfoFromMinio(fileType: FileType, location: string) {
+    const bucketName =
+        fileType === FileType.BAG
+            ? env.MINIO_BAG_BUCKET_NAME
+            : env.MINIO_MCAP_BUCKET_NAME;
+    return internalMinio.statObject(bucketName, location);
 }

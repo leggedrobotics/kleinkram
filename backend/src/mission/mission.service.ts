@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
 import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -175,12 +175,19 @@ export class MissionService {
     ): Promise<Mission> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['project'],
+            relations: ['project', 'files'],
         });
         const old_project = mission.project;
-        mission.project = await this.projectRepository.findOneOrFail({
+        const newProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
+            relations: ['missions'],
         });
+        if (newProject.missions.find((m) => m.name === mission.name)) {
+            throw new ConflictException(
+                'Mission with this name already exists in the project',
+            );
+        }
+        mission.project = newProject;
         await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,

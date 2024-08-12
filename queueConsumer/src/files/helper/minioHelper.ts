@@ -3,6 +3,7 @@ import env from '@common/env';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
+import { FileType } from '@common/enum';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -76,4 +77,12 @@ export async function copyMinioFile(
             },
         );
     });
+}
+
+export async function getInfoFromMinio(fileType: FileType, location: string) {
+    const bucketName =
+        fileType === FileType.BAG
+            ? env.MINIO_BAG_BUCKET_NAME
+            : env.MINIO_MCAP_BUCKET_NAME;
+    return minio.statObject(bucketName, location);
 }
