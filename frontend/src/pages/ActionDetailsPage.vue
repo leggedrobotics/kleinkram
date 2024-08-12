@@ -48,6 +48,20 @@
                 </span>
                 <span>{{ data?.updatedAt }}</span>
             </div>
+
+            <div class="flex justify-start">
+                <span style="font-weight: bold" class="q-pr-sm">
+                    Runner CPU Model:
+                </span>
+                <span>{{ data?.runner_cpu_model }}</span>
+            </div>
+
+            <div class="flex justify-start">
+                <span style="font-weight: bold" class="q-pr-sm">
+                    Runner Hostname:
+                </span>
+                <span>{{ data?.runner_hostname }}</span>
+            </div>
         </q-card-section>
     </q-card>
 
@@ -76,10 +90,11 @@ import 'vue-json-pretty/lib/styles.css';
 import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
+import { Action } from 'src/types/Action';
 
 const $route = useRoute();
 
-const { data } = useQuery({
+const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
 });

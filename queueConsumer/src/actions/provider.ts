@@ -20,6 +20,7 @@ import {
     dockerDaemonErrorHandler,
 } from './container_scheduler';
 import Apikey from '@common/entities/auth/apikey.entity';
+import * as os from 'node:os';
 
 @Processor('action-queue')
 @Injectable()
@@ -143,10 +144,16 @@ export class ActionQueueProcessor
             .catch(dockerDaemonErrorHandler);
         const image_sha = container_details?.Image;
 
+        // capture runner information
+        const CPU_model = os.cpus()[0].model;
+        const hostname = container_details?.Config?.Hostname;
+
         // update the action with additional information
         action.executionStartedAt = new Date(container_details.Created);
         action.container_id = container_id;
         action.docker_image_sha = image_sha;
+        action.runner_hostname = hostname;
+        action.runner_cpu_model = CPU_model;
         await this.actionRepository.save(action);
 
         const sanitize = (str: string) => {

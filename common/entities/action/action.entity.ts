@@ -34,6 +34,12 @@ export default class Action extends BaseEntity {
     @Column({ nullable: true })
     executionStartedAt: Date;
 
+    @Column({ nullable: true })
+    runner_hostname: string;
+
+    @Column({ nullable: true })
+    runner_cpu_model: string;
+
     @ManyToOne(() => Mission, (mission) => mission.actions)
     mission: Mission;
 

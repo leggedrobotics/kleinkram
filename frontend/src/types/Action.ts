@@ -19,6 +19,9 @@ export class Action extends BaseEntity {
     mission: Mission | null;
     logs: ContainerLog[] | null;
 
+    runner_hostname: string | null;
+    runner_cpu_model: string | null;
+
     constructor(
         uuid: string,
         createdAt: Date | null,
@@ -31,6 +34,8 @@ export class Action extends BaseEntity {
         mission: Mission | null,
         createdBy: User,
         logs: ContainerLog[] | null = null,
+        runner_hostname: string | null = null,
+        runner_cpu_model: string | null = null,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
 
@@ -41,5 +46,7 @@ export class Action extends BaseEntity {
         this.logs = logs;
         this.docker_image_sha = docker_image_sha || '';
         this.createdBy = createdBy;
+        this.runner_hostname = runner_hostname;
+        this.runner_cpu_model = runner_cpu_model;
     }
 }

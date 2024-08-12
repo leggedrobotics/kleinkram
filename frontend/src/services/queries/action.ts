@@ -80,5 +80,7 @@ export const actionDetails = async (action_uuid: string) => {
         null,
         user,
         response.data.logs,
+        response.data.runner_hostname,
+        response.data.runner_cpu_model,
     );
 };
