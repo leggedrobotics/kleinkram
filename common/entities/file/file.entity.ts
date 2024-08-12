@@ -28,4 +28,7 @@ export default class FileEntity extends BaseEntity {
 
     @Column()
     type: FileType;
+
+    @Column()
+    tentative: boolean;
 }

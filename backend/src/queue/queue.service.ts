@@ -4,15 +4,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
-import { FileLocation, FileState, UserRole } from '@common/enum';
+import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '@common/env';
-import { externalMinio } from '../minioHelper';
+import { externalMinio, getInfoFromMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import FileEntity from '@common/entities/file/file.entity';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -42,6 +43,8 @@ export class QueueService {
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
+        @InjectRepository(FileEntity)
+        private fileRepository: Repository<FileEntity>,
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
         private userservice: UserService,
@@ -59,20 +62,11 @@ export class QueueService {
         });
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
-        const exists = await this.queueRepository.exists({
-            where: {
-                identifier: fileId,
-                mission: { uuid: mission.uuid },
-            },
-        });
-        if (exists) {
-            console.log('File already exists in queue');
-            throw new ConflictException('File already exists in queue');
-        }
+
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,
-            state: FileState.PENDING,
+            state: FileState.AWAITING_PROCESSING,
             location: FileLocation.DRIVE,
             mission,
             creator,
@@ -105,31 +99,25 @@ export class QueueService {
             relations: ['project'],
         });
 
-        let processedFilenames = filteredFilenames.map((filename) => {
-            return {
-                filename,
-                location: `${mission.project.name}/${mission.name}/${filename}`,
-            };
-        });
-        const unique = await Promise.all(
-            processedFilenames.map(async (filename) => {
-                const count = await this.queueRepository.count({
-                    where: {
-                        filename: filename.filename,
-                        mission: { uuid: mission.uuid },
-                    },
-                });
-                return count <= 0;
-            }),
-        );
-        processedFilenames = processedFilenames.filter(
-            (_, index) => unique[index],
-        );
         const expiry = 2 * 60 * 60;
-        const urlPromises = processedFilenames.map(
-            async ({ filename, location }) => {
+        const urlPromises = filenames.map(async (filename) => {
+            const fileType = filename.endsWith('.bag')
+                ? FileType.BAG
+                : FileType.MCAP;
+            const location = `${mission.project.name}/${mission.name}/${filename}`;
+            const tentativeFile = this.fileRepository.create({
+                date: new Date(),
+                size: 0,
+                filename,
+                mission,
+                creator,
+                type: fileType,
+                tentative: true,
+            });
+            try {
+                await this.fileRepository.save(tentativeFile);
                 const minioURL = await externalMinio.presignedPutObject(
-                    filename.endsWith('.bag')
+                    fileType === FileType.BAG
                         ? env.MINIO_BAG_BUCKET_NAME
                         : env.MINIO_MCAP_BUCKET_NAME,
                     location,
@@ -138,7 +126,7 @@ export class QueueService {
                 const newQueue = this.queueRepository.create({
                     filename,
                     identifier: location,
-                    state: FileState.UPLOADING,
+                    state: FileState.AWAITING_UPLOAD,
                     location: FileLocation.MINIO,
                     mission,
                     creator,
@@ -149,12 +137,19 @@ export class QueueService {
                     minioURL,
                     uuid: newQueue.uuid,
                 };
-            },
-        );
+            } catch (error) {
+                return {
+                    filename,
+                    minioURL: null,
+                    uuid: null,
+                    error: 'Non-unique filename',
+                };
+            }
+        });
 
         const urls = await Promise.all(urlPromises);
-        return urls.reduce((acc, { filename, minioURL, uuid }) => {
-            acc[filename] = { url: minioURL, uuid };
+        return urls.reduce((acc, { filename, minioURL, uuid, error }) => {
+            acc[filename] = { url: minioURL, uuid, error };
             return acc;
         }, {});
     }
@@ -162,9 +157,30 @@ export class QueueService {
     async confirmUpload(uuid: string) {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: uuid },
+            relations: ['mission', 'mission.project'],
         });
 
-        queue.state = FileState.PENDING;
+        if (queue.state !== FileState.AWAITING_UPLOAD) {
+            throw new ConflictException('File is not in uploading state');
+        }
+
+        const fileInfo = await getInfoFromMinio(
+            queue.filename.endsWith('.bag') ? FileType.BAG : FileType.MCAP,
+            `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`,
+        );
+
+        const file = await this.fileRepository.findOneOrFail({
+            where: {
+                filename: queue.filename,
+                mission: { uuid: queue.mission.uuid },
+            },
+        });
+
+        file.tentative = false;
+        file.size = fileInfo.size;
+        await this.fileRepository.save(file);
+
+        queue.state = FileState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);
 
         await this.fileProcessingQueue.add('processMinioFile', {

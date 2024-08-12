@@ -72,7 +72,12 @@
                 <template v-slot:body-cell-Status="props">
                     <q-td :props="props">
                         <q-badge :color="getColor(props.row.state)">
-                            {{ props.row.state }}
+                            <q-tooltip>
+                                {{
+                                    getDetailedFileState(props.row.state)
+                                }}</q-tooltip
+                            >
+                            {{ getSimpleFileStateName(props.row.state) }}
                         </q-badge>
                     </q-td>
                 </template>
@@ -119,7 +124,7 @@ function rowClick(event: any, row: Queue) {
     console.log(row);
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
-    const isCompleted = row.state === FileState.DONE;
+    const isCompleted = row.state === FileState.COMPLETED;
     if (isFile && isCompleted) {
         findOneByNameAndMission(row.filename, row.mission.uuid).then(
             (file: FileEntity) => {
@@ -186,20 +191,71 @@ const columns = [
 
 function getColor(state: FileState) {
     switch (state) {
-        case FileState.DONE:
+        case FileState.COMPLETED:
             return 'green';
         case FileState.ERROR:
             return 'red';
-        case FileState.PENDING:
+        case FileState.AWAITING_PROCESSING:
             return 'yellow';
+        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case FileState.UPLOADING:
+        case FileState.DOWNLOADING:
         case FileState.PROCESSING:
             return 'blue';
         case FileState.AWAITING_UPLOAD:
             return 'purple';
-        case FileState.CORRUPTED_FILE:
+        case FileState.CORRUPTED:
             return 'orange';
+
         default:
             return 'grey'; // Default color for unknown states
+    }
+}
+
+function getSimpleFileStateName(state: FileState) {
+    switch (state) {
+        case FileState.COMPLETED:
+            return 'Completed';
+        case FileState.ERROR:
+            return 'Error';
+        case FileState.AWAITING_PROCESSING:
+            return 'Awaiting Processing';
+        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case FileState.UPLOADING:
+        case FileState.DOWNLOADING:
+        case FileState.PROCESSING:
+            return 'Processing';
+        case FileState.AWAITING_UPLOAD:
+            return 'Awaiting Upload';
+        case FileState.CORRUPTED:
+            return 'Corrupted';
+        default:
+            return 'Unknown'; // Default color for unknown states
+    }
+}
+
+function getDetailedFileState(state: FileState) {
+    switch (state) {
+        case FileState.COMPLETED:
+            return 'File has been processed and is ready for download';
+        case FileState.ERROR:
+            return 'An error occurred during processing';
+        case FileState.AWAITING_PROCESSING:
+            return 'File is awaiting processing';
+        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
+            return 'File is being converted and topics are being extracted';
+        case FileState.UPLOADING:
+            return 'File is being uploaded';
+        case FileState.PROCESSING:
+            return 'File is being processed';
+        case FileState.AWAITING_UPLOAD:
+            return 'File is awaiting upload';
+        case FileState.CORRUPTED:
+            return 'File is corrupted';
+        case FileState.DOWNLOADING:
+            return 'File is being downloaded';
+        default:
+            return 'Unknown'; // Default color for unknown states
     }
 }
 </script>
