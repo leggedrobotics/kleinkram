@@ -454,11 +454,6 @@ export class FileService {
         return urls;
     }
 
-    async clear() {
-        await this.topicRepository.query('DELETE FROM "topic"');
-        await this.fileRepository.query('DELETE FROM "file"');
-    }
-
     async findByMission(
         missionUUID: string,
         take: number,

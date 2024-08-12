@@ -94,16 +94,3 @@ def download(
     except:
         print("Failed to download file")
 
-
-@file.command("clear")
-def clear_queue():
-    """Clear queue"""
-    # Prompt the user for confirmation
-    confirmation = typer.prompt("Are you sure you want to clear the Files? (y/n)")
-    if confirmation.lower() == "y":
-        client = AuthenticatedClient()
-        response = client.delete("/file/clear")
-        response.raise_for_status()
-        print("Files cleared.")
-    else:
-        print("Operation cancelled.")

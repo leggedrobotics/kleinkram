@@ -166,20 +166,6 @@ def upload(
         print(e)
 
 
-@queue.command("clear")
-def clear_queue():
-    """Clear queue"""
-    # Prompt the user for confirmation
-    confirmation = typer.prompt("Are you sure you want to clear the queue? (y/n)")
-    if confirmation.lower() == "y":
-        client = AuthenticatedClient()
-        response = client.delete("/queue/clear")
-        response.raise_for_status()
-        print("Queue cleared.")
-    else:
-        print("Operation cancelled.")
-
-
 @queue.command("list")
 def list_queue():
     """List current Queue entities"""
@@ -204,47 +190,6 @@ def list_queue():
 
     except httpx.HTTPError as e:
         print(e)
-
-
-@app.command("wipe", hidden=True)
-def wipe():
-    """Wipe all data"""
-    # Prompt the user for confirmation
-    confirmation = typer.prompt("Are you sure you want to wipe all data? (y/n)")
-    if confirmation.lower() == "y":
-        second_confirmation = typer.prompt(
-            "This action is irreversible. Are you really sure? (y/n)"
-        )
-        if second_confirmation.lower() != "y":
-            print("Operation cancelled.")
-            return
-
-        client = AuthenticatedClient()
-        response_queue = client.delete("/queue/clear")
-        response_file = client.delete("/file/clear")
-        response_analysis = client.delete("/analysis/clear")
-        response_mission = client.delete("/mission/clear")
-        response_project = client.delete("/project/clear")
-
-        if response_queue.status_code >= 400:
-            print("Failed to clear queue.")
-            print(response_queue.text)
-        elif response_file.status_code >= 400:
-            print("Failed to clear files.")
-            print(response_file.text)
-        elif response_analysis.status_code >= 400:
-            print("Failed to clear analysis.")
-            print(response_analysis.text)
-        elif response_mission.status_code >= 400:
-            print("Failed to clear missions.")
-            print(response_mission.text)
-        elif response_project.status_code >= 400:
-            print("Failed to clear projects.")
-            print(response_project.text)
-        else:
-            print("Data wiped.")
-    else:
-        print("Operation cancelled.")
 
 
 @app.command("claim", hidden=True)

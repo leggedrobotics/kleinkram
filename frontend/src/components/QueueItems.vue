@@ -116,10 +116,11 @@ const queue = useQuery<Project[]>({
 const data = queue.data;
 
 function rowClick(event: any, row: Queue) {
-    if (
-        row.filename.endsWith('.bag') ||
-        (row.filename.endsWith('.mcap') && row.state == FileState.DONE)
-    ) {
+    console.log(row);
+    const isFile =
+        row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
+    const isCompleted = row.state === FileState.DONE;
+    if (isFile && isCompleted) {
         findOneByNameAndMission(row.filename, row.mission.uuid).then(
             (file: FileEntity) => {
                 $routerService?.routeTo(ROUTES.FILE, { uuid: file.uuid });

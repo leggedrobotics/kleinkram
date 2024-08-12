@@ -2,15 +2,26 @@ import axios from 'src/api/axios';
 import { Action } from 'src/types/Action';
 import { User } from 'src/types/User';
 
-export const getActions = async (missionUUID: string) => {
+export const getActions = async (
+    missionUUID: string,
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending: boolean,
+): Promise<[Action[], number]> => {
     const params = {
         mission_uuid: missionUUID,
-        take: 100,
-        skip: 0,
+        take,
+        skip,
+        sortBy,
+        descending,
     };
 
     const response = await axios.get('/action/list', { params });
-    return response.data.map((res: any) => {
+    if (response.data.length < 2) {
+        return [[], 0];
+    }
+    const resi = response.data[0].map((res: any) => {
         const user = new User(
             res.createdBy.uuid,
             res.createdBy.name,
@@ -36,6 +47,7 @@ export const getActions = async (missionUUID: string) => {
             user,
         );
     });
+    return [resi, response.data[1]];
 };
 
 export const actionDetails = async (action_uuid: string) => {

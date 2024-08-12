@@ -89,10 +89,7 @@
     <q-card class="q-pa-md q-mb-xl" flat bordered>
         <q-card-section>
             <template v-if="selected_project && selected_mission">
-                <ActionsTable
-                    :project_uuid="selected_project?.uuid"
-                    :mission_uuid="selected_mission?.uuid"
-                ></ActionsTable>
+                <ActionsTable :handler="handler"></ActionsTable>
             </template>
             <template v-else>
                 <div class="text">
@@ -154,17 +151,11 @@ const queryKeyMissions = computed(() => [
     'missions',
     handler.value.project_uuid,
 ]);
-const { data: _missions, refetch } = useQuery<[Mission[], number]>({
+const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
     queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
-
-watchEffect(() => {
-    if (selected_project.value?.uuid) {
-        refetch();
-    }
-});
 
 const submitAnalysis = () => {
     console.log(

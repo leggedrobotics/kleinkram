@@ -5,6 +5,7 @@
             v-model:pagination="pagination"
             :rows="data"
             :columns="columns"
+            :rows-per-page-options="[10, 20, 50, 100]"
             row-key="uuid"
             :loading="loading"
             @row-click="
@@ -13,8 +14,9 @@
             flat
             bordered
             binary-state-sort
+            @request="setPagination"
         >
-            <template v-slot:body-cell-Status="props">
+            <template v-slot:body-cell-state="props">
                 <q-td :props="props">
                     <template
                         v-if="
@@ -98,7 +100,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
@@ -110,35 +112,66 @@ import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessBut
 import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
+import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 
 const router = useRouter();
 
 // list all props of the component
 const props = defineProps<{
-    project_uuid: string;
-    mission_uuid: string;
+    handler: QueryHandler;
 }>();
-
-const actions = useQuery<Action[]>({
-    queryKey: ['action_mission', props.project_uuid, props.mission_uuid],
-    queryFn: () => getActions(props.mission_uuid),
+props.handler.setSort('updatedAt');
+const actionKey = computed(() => [
+    'action_mission',
+    props.handler.mission_uuid,
+    props.handler.queryKey,
+]);
+const { data: rawData, isLoading } = useQuery<[Action[], number]>({
+    queryKey: actionKey,
+    queryFn: () =>
+        getActions(
+            props.handler.mission_uuid as string,
+            props.handler.take,
+            props.handler.skip,
+            props.handler.sortBy,
+            props.handler.descending,
+        ),
+    staleTime: 0,
     refetchInterval: 1000,
 });
 
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
-const pagination = ref({
-    sortBy: 'name',
-    descending: false,
-    page: 1,
-    rowsPerPage: 10,
+function setPagination(update: TableRequest) {
+    props.handler?.setPage(update.pagination.page);
+    props.handler?.setTake(update.pagination.rowsPerPage);
+    props.handler?.setSort(update.pagination.sortBy);
+    props.handler?.setDescending(update.pagination.descending);
+}
+const pagination = computed(() => {
+    return {
+        page: props.handler.page,
+        rowsPerPage: props.handler.take,
+        rowsNumber: props.handler?.rowsNumber,
+        sortBy: props.handler?.sortBy,
+        descending: props.handler?.descending,
+    };
 });
 
-const data = actions.data;
-
+const data = computed(() => (rawData.value ? rawData.value[0] : []));
+const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+watch(
+    () => total.value,
+    () => {
+        if (data.value && !isLoading.value) {
+            props.handler.rowsNumber = total.value;
+        }
+    },
+    { immediate: true },
+);
 const columns = [
     {
-        name: 'Status',
+        name: 'state',
         label: 'Status',
         align: 'left',
         field: 'state',
@@ -147,7 +180,7 @@ const columns = [
     },
 
     {
-        name: 'Docker Image',
+        name: 'docker_image',
         label: 'Docker Image',
         align: 'left',
         sortable: true,
@@ -155,7 +188,7 @@ const columns = [
     },
 
     {
-        name: 'reason',
+        name: 'state_cause',
         label: 'State Reason',
         align: 'left',
         sortable: true,
@@ -163,7 +196,7 @@ const columns = [
     },
 
     {
-        name: 'Last Update',
+        name: 'updatedAt',
         label: 'Last Update',
         align: 'left',
         sortable: true,
@@ -171,7 +204,7 @@ const columns = [
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
     },
     {
-        name: 'Creation Date',
+        name: 'createdAt',
         label: 'Creation Date',
         align: 'left',
         sortable: true,
@@ -183,7 +216,7 @@ const columns = [
         label: 'Submitted By',
         align: 'left',
         field: (row: Action) => row?.createdBy?.name || 'N/A',
-        sortable: true,
+        sortable: false,
     },
     {
         name: 'Details',

@@ -97,12 +97,14 @@ export async function moveFile(
 }
 
 //* srcPath: Project1/Run1
-//* destPath: Project2/Run1
-export async function moveRunFilesInMinio(
+//* destPath: Project2
+export async function moveMissionFilesInMinio(
     srcPath: string,
     destProject: string,
     bucketName: string,
 ) {
+    console.log('src', srcPath);
+    console.log('dest', destProject);
     try {
         const objects = await listObjects(bucketName, srcPath);
         const mission = srcPath.split('/')[1];

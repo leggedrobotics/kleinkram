@@ -89,6 +89,8 @@ const props = defineProps({
 function setPagination(update: TableRequest) {
     props.url_handler?.setPage(update.pagination.page);
     props.url_handler?.setTake(update.pagination.rowsPerPage);
+    props.url_handler?.setSort(update.pagination.sortBy);
+    props.url_handler?.setDescending(update.pagination.descending);
 }
 const pagination = computed(() => {
     return {
@@ -125,6 +127,7 @@ watch(
             props.url_handler.rowsNumber = total.value;
         }
     },
+    { immediate: true },
 );
 const onRowClick = async (_: Event, row: any) => {
     props.url_handler?.setProjectUUID(row.uuid);

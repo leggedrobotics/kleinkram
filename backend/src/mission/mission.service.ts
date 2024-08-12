@@ -6,7 +6,7 @@ import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
 import { JWTUser } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
-import { moveRunFilesInMinio } from '../minioHelper';
+import { moveMissionFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
 import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
@@ -169,10 +169,6 @@ export class MissionService {
         });
     }
 
-    async clearMissions(): Promise<void> {
-        await this.missionRepository.query('DELETE FROM "mission"');
-    }
-
     async moveMission(
         missionUUID: string,
         projectUUID: string,
@@ -185,12 +181,12 @@ export class MissionService {
         mission.project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
         });
-        await moveRunFilesInMinio(
+        await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
             env.MINIO_BAG_BUCKET_NAME,
         );
-        await moveRunFilesInMinio(
+        await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
             env.MINIO_MCAP_BUCKET_NAME,
