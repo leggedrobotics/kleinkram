@@ -35,6 +35,9 @@ export default class Action extends BaseEntity {
     executionStartedAt: Date;
 
     @Column({ nullable: true })
+    executionEndedAt: Date;
+
+    @Column({ nullable: true })
     runner_hostname: string;
 
     @Column({ nullable: true })

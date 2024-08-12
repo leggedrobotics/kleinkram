@@ -74,8 +74,16 @@ export class ActionQueueProcessor
         });
 
         // set state to done if it is not already set to failed
+        let isActionDirty = false;
+        if (!!action.executionEndedAt) {
+            action.executionEndedAt = new Date();
+            isActionDirty = true;
+        }
         if (action.state !== ActionState.FAILED) {
             action.state = ActionState.DONE;
+            isActionDirty = true;
+        }
+        if (isActionDirty) {
             await this.actionRepository.save(action);
         }
     }
@@ -177,6 +185,7 @@ export class ActionQueueProcessor
         action.state_cause = `Container exited with code ${exit_code}`;
         action.state = exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
         action.exit_code = exit_code;
+        action.executionEndedAt = new Date();
         await this.actionRepository.save(action);
 
         // expire the apikey

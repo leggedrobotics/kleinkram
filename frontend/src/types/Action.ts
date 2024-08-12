@@ -22,6 +22,9 @@ export class Action extends BaseEntity {
     runner_hostname: string | null;
     runner_cpu_model: string | null;
 
+    executionStartedAt: Date | null;
+    executionEndedAt: Date | null;
+
     constructor(
         uuid: string,
         createdAt: Date | null,
@@ -36,6 +39,8 @@ export class Action extends BaseEntity {
         logs: ContainerLog[] | null = null,
         runner_hostname: string | null = null,
         runner_cpu_model: string | null = null,
+        executionStartedAt: string | null = null,
+        executionEndedAt: string | null = null,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
 
@@ -48,5 +53,25 @@ export class Action extends BaseEntity {
         this.createdBy = createdBy;
         this.runner_hostname = runner_hostname;
         this.runner_cpu_model = runner_cpu_model;
+        this.executionStartedAt = executionStartedAt
+            ? new Date(executionStartedAt)
+            : null;
+        this.executionEndedAt = executionEndedAt
+            ? new Date(executionEndedAt)
+            : null;
+    }
+
+    public getRuntimeInMS(): number {
+        console.log('getRuntime');
+        console.log(this.executionStartedAt);
+        console.log(this.executionEndedAt);
+
+        if (!this.executionStartedAt || !this.executionEndedAt) {
+            return 0;
+        }
+
+        return (
+            this.executionEndedAt.getTime() - this.executionStartedAt.getTime()
+        );
     }
 }

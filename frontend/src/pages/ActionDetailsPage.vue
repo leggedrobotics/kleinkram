@@ -62,6 +62,14 @@
                 </span>
                 <span>{{ data?.runner_hostname }}</span>
             </div>
+
+            <div
+                class="flex justify-start"
+                v-if="data && data?.getRuntimeInMS() != 0"
+            >
+                <span style="font-weight: bold" class="q-pr-sm"> Runtime </span>
+                <span>{{ data?.getRuntimeInMS() / 1000 }} seconds</span>
+            </div>
         </q-card-section>
     </q-card>
 
