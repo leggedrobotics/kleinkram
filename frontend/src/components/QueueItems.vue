@@ -121,7 +121,6 @@ const queue = useQuery<Project[]>({
 const data = queue.data;
 
 function rowClick(event: any, row: Queue) {
-    console.log(row);
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
     const isCompleted = row.state === FileState.COMPLETED;

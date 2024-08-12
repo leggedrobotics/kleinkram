@@ -219,6 +219,7 @@ export class QueueService {
         )
             .skip(skip)
             .take(take)
+            .orderBy('queue.createdAt', 'DESC')
             .getMany();
     }
 }
