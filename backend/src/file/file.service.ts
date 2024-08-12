@@ -360,13 +360,9 @@ export class FileService {
         }
 
         // validate if file ending hasn't changed
-        if (db_file.type === FileType.MCAP && file.filename.endsWith('.bag')) {
-            throw new BadRequestException('File ending cannot be changed.');
-        } else if (
-            db_file.type === FileType.BAG &&
-            file.filename.endsWith('.mcap')
-        ) {
-            throw new BadRequestException('File ending cannot be changed.');
+        const fileEnding = db_file.type === FileType.MCAP ? '.mcap' : '.bag';
+        if (!file.filename.endsWith(fileEnding)) {
+            throw new BadRequestException('File ending must not be changed');
         }
 
         const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
