@@ -125,12 +125,10 @@ def login(
             auth_tokens = get_auth_tokens()
 
             if not auth_tokens:
-                print("Failed to get authentication tokens.")
-                return
+                raise Exception("Failed to get authentication tokens.")
 
             tokenfile.saveTokens(auth_tokens)
             print("Authentication complete. Tokens saved to ~/.kleinkram.json.")
-
             return
 
         print(
@@ -145,8 +143,7 @@ def login(
             )
             print("Authentication complete. Tokens saved to tokens.json.")
         else:
-            print("No authentication token provided.")
-        return
+            raise ValueError("Failed to get authentication tokens.")
 
 
 def setCliKey(key: Annotated[str, typer.Argument(help="CLI Key")]):

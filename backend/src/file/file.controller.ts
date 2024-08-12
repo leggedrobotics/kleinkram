@@ -108,7 +108,7 @@ export class FileController {
     @Get('downloadWithToken')
     @TokenOrUser()
     async downloadWithToken(@QueryUUID('uuid') uuid: string) {
-        logger.debug('downloadWithToken', uuid);
+        logger.debug('downloadWithTo' + 'ken', uuid);
         return this.fileService.generateDownloadForToken(uuid);
     }
 

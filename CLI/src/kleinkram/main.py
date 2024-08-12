@@ -1,13 +1,12 @@
 import os
-import typing
 from datetime import datetime, timedelta
 from enum import Enum
 
 import httpx
+import pkg_resources
 import typer
 from rich import print
 from rich.table import Table
-from typer import Typer
 from typer.core import TyperGroup
 from typer.models import Context
 from typing_extensions import Annotated
@@ -15,6 +14,7 @@ from typing_extensions import Annotated
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.auth.auth import login, setCliKey, logout
 from kleinkram.endpoint.endpoint import endpoint
+from kleinkram.error_handling import ErrorHandledTyper, AccessDeniedException
 from kleinkram.file.file import file
 from kleinkram.mission.mission import mission
 from kleinkram.project.project import project
@@ -25,39 +25,18 @@ from kleinkram.user.user import user
 from .helper import uploadFiles, expand_and_match
 
 
-class Panel(str, Enum):
+class CommandPanel(str, Enum):
     CoreCommands = "CORE COMMANDS"
     Commands = "COMMANDS"
     AdditionalCommands = "ADDITIONAL COMMANDS"
 
 
-ExceptionType = "typing.Type[Exception]"
-ErrorHandlingCallback = typing.Callable[[Exception], int]
-
-
-class ErrorHandledTyper(Typer):
-    error_handlers: typing.Dict[ExceptionType, ErrorHandlingCallback] = {}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def error_handler(self, exc: ExceptionType):
-        def decorator(f: ErrorHandlingCallback):
-            self.error_handlers[exc] = f
-            return f
-
-        return decorator
-
-    def __call__(self, *args, **kwargs):
-        try:
-            super(ErrorHandledTyper, self).__call__(*args, **kwargs)
-
-        except Exception as e:
-
-            # exit with error code 1 if no error handler is defined
-            if type(e) not in self.error_handlers:
-                typer.secho(e, fg=typer.colors.RED)
-                exit(1)
+def version_callback(value: bool):
+    if value:
+        typer.echo(
+            f"CLI Version: {pkg_resources.get_distribution('kleinkram').version}"
+        )
+        raise typer.Exit()
 
 
 class OrderCommands(TyperGroup):
@@ -68,7 +47,7 @@ class OrderCommands(TyperGroup):
     """
 
     def list_commands(self, _ctx: Context) -> list[str]:
-        order = list(Panel)
+        order = list(CommandPanel)
         grouped_commands = {
             name: getattr(command, "rich_help_panel")
             for name, command in sorted(self.commands.items())
@@ -94,27 +73,42 @@ app = ErrorHandledTyper(
     cls=OrderCommands,
 )
 
-app.add_typer(project, rich_help_panel=Panel.Commands)
-app.add_typer(mission, rich_help_panel=Panel.Commands)
 
-app.add_typer(topic, rich_help_panel=Panel.Commands)
-app.add_typer(file, rich_help_panel=Panel.Commands)
-app.add_typer(queue, rich_help_panel=Panel.Commands)
-app.add_typer(user, rich_help_panel=Panel.Commands)
-app.add_typer(tag, rich_help_panel=Panel.Commands)
-app.add_typer(endpoint, rich_help_panel=Panel.AdditionalCommands)
+@app.callback()
+def version(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Print the version and exit",
+    )
+):
+    pass
 
-app.command(rich_help_panel=Panel.CoreCommands)(login)
-app.command(rich_help_panel=Panel.CoreCommands)(logout)
+
+app.add_typer(project, rich_help_panel=CommandPanel.Commands)
+app.add_typer(mission, rich_help_panel=CommandPanel.Commands)
+
+app.add_typer(topic, rich_help_panel=CommandPanel.Commands)
+app.add_typer(file, rich_help_panel=CommandPanel.Commands)
+app.add_typer(queue, rich_help_panel=CommandPanel.Commands)
+app.add_typer(user, rich_help_panel=CommandPanel.Commands)
+app.add_typer(tag, rich_help_panel=CommandPanel.Commands)
+app.add_typer(endpoint, rich_help_panel=CommandPanel.AdditionalCommands)
+
+app.command(rich_help_panel=CommandPanel.AdditionalCommands)(login)
+app.command(rich_help_panel=CommandPanel.AdditionalCommands)(logout)
 app.command(hidden=True)(setCliKey)
 
 
-@app.command("download", rich_help_panel=Panel.CoreCommands)
+@app.command("download", rich_help_panel=CommandPanel.CoreCommands)
 def download():
     raise NotImplementedError("Not implemented yet.")
 
 
-@app.command("upload", rich_help_panel=Panel.CoreCommands)
+@app.command("upload", rich_help_panel=CommandPanel.CoreCommands)
 def upload(
     path: Annotated[
         str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
@@ -137,24 +131,33 @@ def upload(
         map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
     )
     if not filenames:
-        print("No files found")
-        return
+        raise ValueError("No files found matching the given path.")
+
+    print(
+        f"Uploading the following files to mission '{mission}' in project '{project}':"
+    )
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
             filepaths[path.split("/")[-1]] = path
-            print(f"  - {path}")
+            typer.secho(f" - {path}", fg=typer.colors.RESET)
+
     try:
         client = AuthenticatedClient()
 
         get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
         if project_response.status_code >= 400:
-            print(f"Failed to fetch project: {project_response.text}")
-            return
+
+            raise AccessDeniedException(
+                f"The project '{project}' does not exist or you do not have access to it.\n"
+                f"Consider using the following command to create a project: 'klein project create'\n",
+                f"{project_response.json()['message']} ({project_response.status_code})",
+            )
+
         project_json = project_response.json()
         if not project_json["uuid"]:
-            print(f"Project not found: {project}")
+            print(f"Project not found: '{project}'")
             return
 
         get_mission_url = "/mission/byName"
@@ -163,12 +166,11 @@ def upload(
         if mission_response.content:
             mission_json = mission_response.json()
             if mission_json["uuid"]:
-                print(
-                    f"mission: {mission_json['uuid']} already exists. Delete it or select another name."
+                raise ValueError(
+                    f"Mission {mission_json['name']} ({mission_json['uuid']}) already exists. Delete it or select "
+                    f"another name."
                 )
-                return
-            print(f"Something failed, should not happen")
-            return
+            raise Exception(f"Something failed, should not happen")
 
         create_mission_url = "/mission/create"
         new_mission = client.post(
@@ -189,7 +191,9 @@ def upload(
         presigned_urls = response_2.json()
         for file in filenames:
             if not file in presigned_urls.keys():
-                print("Could not upload File '" + file + "'. Is the filename unique? ")
+                raise Exception(
+                    "Could not upload File '" + file + "'. Is the filename unique? "
+                )
         if len(presigned_urls) > 0:
             uploadFiles(presigned_urls, filepaths, 4)
 

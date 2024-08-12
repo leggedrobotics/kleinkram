@@ -1,8 +1,12 @@
 import httpx
-from rich.console import Console
-from rich.panel import Panel
 
 from kleinkram.auth.auth import TokenFile, CLI_KEY, AUTH_TOKEN, REFRESH_TOKEN
+
+
+class NotAuthenticatedException(Exception):
+
+    def __init__(self, endpoint: str):
+        self.message = f"You are not authenticated on endpoint '{endpoint}'. Please run 'klein login' to authenticate."
 
 
 class AuthenticatedClient(httpx.Client):
@@ -12,21 +16,8 @@ class AuthenticatedClient(httpx.Client):
         try:
             self.tokenfile = TokenFile()
             self._load_cookies()
-        except Exception as e:
-
-            console = Console()
-            msg = f"You are not authenticated on endpoint '{self.tokenfile.endpoint}'. Please run 'klein login' to authenticate."
-
-            panel = Panel(
-                msg,
-                title="Not Authenticated",
-                style="yellow",
-                padding=(1, 2),
-                highlight=True,
-            )
-            print()
-            console.print(panel)
-            print()
+        except Exception:
+            raise NotAuthenticatedException(self.tokenfile.endpoint)
 
     def _load_cookies(self):
         if self.tokenfile.isCliToken():

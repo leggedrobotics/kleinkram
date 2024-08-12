@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
@@ -8,6 +8,7 @@ import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import Tag from '@common/entities/tag/tag.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class MissionGuardService {
@@ -24,12 +25,17 @@ export class MissionGuardService {
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
+
     async canAccessMission(
         userUUID: string,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        const user = await this.userRepository.findOne({
+        if (isUUID(userUUID) === false || isUUID(missionUUID) === false) {
+            return false;
+        }
+
+        const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (!user) {
@@ -38,7 +44,7 @@ export class MissionGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const mission = await this.missionRepository.findOne({
+        const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
         });
