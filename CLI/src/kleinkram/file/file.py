@@ -93,4 +93,3 @@ def download(
         print(response.json())
     except:
         print("Failed to download file")
-
