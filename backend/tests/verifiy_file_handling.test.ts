@@ -11,6 +11,7 @@ import {
 } from './utils/api_calls';
 import * as fs from 'node:fs';
 import QueueEntity from '@common/entities/queue/queue.entity';
+import { FileState } from '@common/enum';
 
 describe('Verify File Handling', () => {
     beforeAll(async () => {
@@ -118,7 +119,8 @@ describe('Verify File Handling', () => {
             if (
                 active.find(
                     (x: QueueEntity) =>
-                        x.uuid === json[filename].uuid && x.state === 'DONE',
+                        x.uuid === json[filename].uuid &&
+                        x.state === FileState.COMPLETED,
                 )
             ) {
                 break;
