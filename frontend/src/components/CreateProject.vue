@@ -78,9 +78,9 @@ const submitNewProject = async () => {
             projectName.value,
             projectDescription.value,
             selectedTags.value,
+            [],
         );
     } catch (error) {
-        console.log(error);
         Notify.create({
             message: `Error creating project: ${error?.response?.data?.message || error.message}`,
             color: 'negative',
