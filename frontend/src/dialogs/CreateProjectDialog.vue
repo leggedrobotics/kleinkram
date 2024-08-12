@@ -188,7 +188,7 @@
 
 <script setup lang="ts">
 import { QInput, useDialogPluginComponent } from 'quasar';
-import { computed, Ref, ref } from 'vue';
+import { computed, nextTick, Ref, ref } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';

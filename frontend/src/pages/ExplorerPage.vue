@@ -30,7 +30,7 @@
                 >
                     <q-tooltip> Manage Access to the Project</q-tooltip>
                 </q-btn>
-                <MoveMissionButton :mission_uuid="mission_uuid" />
+                <MoveMissionButton v-if="mission" :mission="mission" />
                 <q-btn
                     outline
                     color="primary"
