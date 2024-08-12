@@ -1,8 +1,8 @@
 <template>
     <q-card class="q-pa-md q-mt-xl q-mb-md" flat bordered>
         <q-card-section>
-            <div class="row q-gutter-sm">
-                <div class="col-12 col-md-2">
+            <div class="row">
+                <div class="col-12 col-md-2 q-pa-xs">
                     <q-btn-dropdown
                         v-model="dd_open_projects"
                         :label="selected_project?.name || 'Filter by Project'"
@@ -31,7 +31,7 @@
                         </q-list>
                     </q-btn-dropdown>
                 </div>
-                <div class="col-12 col-md-2">
+                <div class="col-12 col-md-2 q-pa-xs">
                     <q-btn-dropdown
                         v-model="dd_open_missions"
                         :label="selected_mission?.name || 'Filter by Mission'"
@@ -61,7 +61,7 @@
                     </q-btn-dropdown>
                 </div>
 
-                <div class="col-12 col-md-1">
+                <div class="col-12 col-md-1 q-pa-xs">
                     <q-input
                         v-model="filter"
                         outlined
@@ -73,14 +73,13 @@
                     />
                 </div>
 
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2 q-pa-xs">
                     <q-input
                         filled
                         v-model="dateTimeString"
                         dense
                         outlined
                         clearable
-                        class="full-width"
                         placeholder="Select Date Range"
                     >
                         <template v-slot:prepend>
@@ -112,9 +111,9 @@
                     </q-input>
                 </div>
 
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-5 q-pa-xs">
                     <div class="row">
-                        <div class="col-8">
+                        <div class="col-6">
                             <q-select
                                 v-model="selectedTopics"
                                 label="Select Topics"
@@ -129,7 +128,7 @@
                                 class="full-width"
                             />
                         </div>
-                        <div class="col-2 flex justify-right">
+                        <div class="col-2 flex justify-right q-pa-xs">
                             <q-toggle
                                 style="padding-left: 5px"
                                 v-model="and_or"
@@ -156,14 +155,23 @@
                                 </q-tooltip>
                             </q-toggle>
                         </div>
-                        <div class="col-2">
+                        <div class="col-2 q-pa-xs">
                             <q-btn
                                 outline
                                 text-color="black"
-                                label="Tag "
                                 color="primary"
+                                label="Tags"
                                 icon="sym_o_filter_list"
                                 @click="openTagFilterDialog"
+                            />
+                        </div>
+                        <div class="col-2 q-pa-xs">
+                            <q-btn
+                                outline
+                                text-color="black"
+                                label="Reset"
+                                icon="sym_o_clear"
+                                @click="resetFilter"
                             />
                         </div>
                     </div>
@@ -406,6 +414,7 @@ watch(
             handler.value.rowsNumber = total.value;
         }
     },
+    { immediate: true },
 );
 
 const columns = [
@@ -517,4 +526,14 @@ const onRowClick = (_: Event, row: any) => {
         uuid: row.uuid,
     });
 };
+
+function resetFilter() {
+    handler.value.setProjectUUID(undefined);
+    handler.value.setMissionUUID(undefined);
+    handler.value.setSearch({ name: '' });
+    selectedTopics.value = [];
+    and_or.value = false;
+    mcap_bag.value = true;
+    tagFilter.value = [];
+}
 </script>

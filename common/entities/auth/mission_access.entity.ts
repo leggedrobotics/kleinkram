@@ -13,5 +13,5 @@ export default class MissionAccess extends BaseEntity {
     accessGroup: AccessGroup;
 
     @ManyToOne(() => Mission, (mission) => mission.mission_accesses)
-    missions: Mission;
+    mission: Mission;
 }

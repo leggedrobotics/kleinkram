@@ -7,6 +7,7 @@ import User from '../user/user.entity';
 import Apikey from '../auth/apikey.entity';
 import Tag from '../tag/tag.entity';
 import MissionAccess from '../auth/mission_access.entity';
+import Action from '../action/action.entity';
 
 @Entity()
 export default class Mission extends BaseEntity {
@@ -19,6 +20,9 @@ export default class Mission extends BaseEntity {
     @OneToMany(() => FileEntity, (file) => file.mission)
     files: FileEntity[];
 
+    @OneToMany(() => Action, (action) => action.mission)
+    actions: Action[];
+
     @OneToMany(() => QueueEntity, (queue) => queue.mission)
     queues: QueueEntity[];
 
@@ -28,7 +32,7 @@ export default class Mission extends BaseEntity {
     @OneToMany(() => Apikey, (api_key) => api_key.mission)
     api_keys: Apikey[];
 
-    @OneToMany(() => MissionAccess, (mission_access) => mission_access.missions)
+    @OneToMany(() => MissionAccess, (mission_access) => mission_access.mission)
     mission_accesses: MissionAccess[];
 
     @OneToMany(() => Tag, (tag) => tag.mission)

@@ -15,6 +15,7 @@ import QueueEntity from '../queue/queue.entity';
 import { UserRole } from '../../enum';
 import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
+import Action from '../action/action.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -48,6 +49,9 @@ export default class User extends BaseEntity {
 
     @OneToMany(() => QueueEntity, (queue) => queue.creator)
     queues: QueueEntity[];
+
+    @OneToMany(() => Action, (action) => action.mission)
+    submittedActions: Action[];
 
     @OneToMany(() => Tag, (tag) => tag.creator)
     tags: Tag[];

@@ -14,8 +14,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, KeyTypes } from '@common/enum';
 import Action from '@common/entities/action/action.entity';
-import { ContainerEnv, ContainerScheduler } from './container_scheduler';
+import {
+    ContainerEnv,
+    ContainerScheduler,
+    dockerDaemonErrorHandler,
+} from './container_scheduler';
 import Apikey from '@common/entities/auth/apikey.entity';
+import * as os from 'node:os';
 
 @Processor('action-queue')
 @Injectable()
@@ -67,8 +72,12 @@ export class ActionQueueProcessor
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.mission_action_id },
         });
-        action.state = ActionState.DONE;
-        await this.actionRepository.save(action);
+
+        // set state to done if it is not already set to failed
+        if (action.state !== ActionState.FAILED) {
+            action.state = ActionState.DONE;
+            await this.actionRepository.save(action);
+        }
     }
 
     @OnQueueFailed()
@@ -123,9 +132,29 @@ export class ActionQueueProcessor
         const container = await this.start_container({
             docker_image: action.docker_image,
             uuid,
-            limits: { max_runtime: 10 * 1_000 }, // 60 seconds
+            limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
             environment: env_variables,
         });
+
+        // save start parameters to action object
+        const container_id = container.id;
+
+        const container_details = await container
+            .inspect()
+            .catch(dockerDaemonErrorHandler);
+        const image_sha = container_details?.Image;
+
+        // capture runner information
+        const CPU_model = os.cpus()[0].model;
+        const hostname = container_details?.Config?.Hostname;
+
+        // update the action with additional information
+        action.executionStartedAt = new Date(container_details.Created);
+        action.container_id = container_id;
+        action.docker_image_sha = image_sha;
+        action.runner_hostname = hostname;
+        action.runner_cpu_model = CPU_model;
+        await this.actionRepository.save(action);
 
         const sanitize = (str: string) => {
             return str.replace(apikey.apikey, '***');
@@ -138,7 +167,17 @@ export class ActionQueueProcessor
 
         // wait for the container to stop
         await container.wait();
-        logger.info('Container stopped');
+        const container_details_after = await container.inspect();
+
+        logger.info(
+            `Container ${container.id} exited with code ${container_details_after.State.ExitCode}`,
+        );
+
+        const exit_code = Number(container_details_after.State.ExitCode);
+        action.state_cause = `Container exited with code ${exit_code}`;
+        action.state = exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
+        action.exit_code = exit_code;
+        await this.actionRepository.save(action);
 
         // expire the apikey
         // TODO: check if that really invalidates the token!!!

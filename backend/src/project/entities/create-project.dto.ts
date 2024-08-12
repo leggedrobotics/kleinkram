@@ -11,6 +11,7 @@ export class CreateProject {
     description: string;
 
     @IsArray()
+    @IsOptional()
     requiredTags?: string[];
 
     @IsOptional()

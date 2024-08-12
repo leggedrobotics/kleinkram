@@ -86,13 +86,15 @@ const props = defineProps({
 function setPagination(update: TableRequest) {
     props.url_handler?.setPage(update.pagination.page);
     props.url_handler?.setTake(update.pagination.rowsPerPage);
+    props.url_handler?.setSort(update.pagination.sortBy);
+    props.url_handler?.setDescending(update.pagination.descending);
 }
 const pagination = computed(() => {
     return {
         page: props.url_handler.page,
         rowsPerPage: props.url_handler.take,
         rowsNumber: props.url_handler?.rowsNumber,
-        sortBy: 'name',
+        sortBy: props.url_handler?.sortBy,
         descending: false,
     };
 });
@@ -127,6 +129,7 @@ watch(
             props.url_handler.rowsNumber = total.value;
         }
     },
+    { immediate: true },
 );
 const onRowClick = async (_: Event, row: any) => {
     props.url_handler?.setMissionUUID(row.uuid);

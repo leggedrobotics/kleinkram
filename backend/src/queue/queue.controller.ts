@@ -20,6 +20,7 @@ export class QueueController {
     @Post('createdrive')
     @CanWriteMissionByBody()
     async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
+        console.log('here');
         return this.queueService.createDrive(body, user);
     }
 
@@ -63,11 +64,5 @@ export class QueueController {
         const date = new Date(startDate);
 
         return this.queueService.active(date, user.uuid, skip, take);
-    }
-
-    @Delete('clear')
-    @AdminOnly()
-    async clear() {
-        return this.queueService.clear();
     }
 }

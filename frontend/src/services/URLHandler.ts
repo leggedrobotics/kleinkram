@@ -65,13 +65,17 @@ export class QueryHandler {
     }
 
     setSort(sortBy: string) {
-        this.sortBy = sortBy;
-        this.resetPagination();
+        if (this.sortBy !== sortBy) {
+            this.sortBy = sortBy;
+            this.resetPagination();
+        }
     }
 
     setDescending(descending: boolean) {
-        this.descending = descending;
-        this.resetPagination();
+        if (this.descending !== descending) {
+            this.descending = descending;
+            this.resetPagination();
+        }
     }
 
     setProjectUUID(project_uuid: string | undefined) {
@@ -88,8 +92,10 @@ export class QueryHandler {
     }
 
     setSearch(search_params: { name: string }) {
-        this.search_params = search_params;
-        this.resetPagination();
+        if (this.search_params.name !== search_params.name) {
+            this.search_params = search_params;
+            this.resetPagination();
+        }
     }
 
     setFileType(file_type: FileType) {

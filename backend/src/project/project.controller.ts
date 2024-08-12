@@ -88,12 +88,6 @@ export class ProjectController {
         return project;
     }
 
-    @Delete('clear')
-    @AdminOnly()
-    async clearProjects() {
-        return this.projectService.clearProjects();
-    }
-
     @Delete('delete')
     @CanDeleteProject()
     async deleteProject(@QueryUUID('uuid') uuid: string) {

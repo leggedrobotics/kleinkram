@@ -1,30 +1,41 @@
 <template>
-    <div class="row justify-start">
-        <div class="col-2" style="margin-right: 15px">
-            <q-input
-                v-if="project"
-                v-model="project.name"
-                label="Name"
-                outlined
-                dense
-                clearable
-                required
-            />
-        </div>
-        <div class="col-2" style="margin-right: 15px">
-            <q-input
-                v-if="project"
-                v-model="project.description"
-                label="Description"
-                type="textarea"
-                autogrow
-                :rows="4"
-                outlined
-                dense
-                clearable
-            />
-        </div>
-        <div class="col-1" style="margin-right: 15px">
+    <h4>Edit Project</h4>
+    <div>
+        <q-input
+            ref="projectNameInput"
+            v-model="projectName"
+            outlined
+            autofocus
+            style="padding-bottom: 30px"
+            label="Project Name *"
+            :rules="[
+                (val) => !!val || 'A project name cannot be empty!',
+                (val) =>
+                    !invalidProjectNames.includes(val) ||
+                    'A project with that name already exists!',
+            ]"
+            @update:model-value="
+                () => {
+                    hasValidInput =
+                        !!projectName &&
+                        !!projectDescription &&
+                        !invalidProjectNames.includes(projectName);
+                }
+            "
+        />
+
+        <q-input
+            v-model="projectDescription"
+            type="textarea"
+            outlined
+            style="padding-bottom: 10px"
+            label="Project Description *"
+            :rules="[(val) => !!val || 'Project Description is required']"
+            @update:model-value="
+                hasValidInput = !!projectName && !!projectDescription
+            "
+        />
+        <div class="flex justify-end">
             <q-btn
                 v-if="project"
                 label="Save"
@@ -33,35 +44,12 @@
                 icon="sym_o_save"
             />
         </div>
-        <div class="col-2">
-            <q-btn
-                v-if="project"
-                label="Manage Access Rights"
-                color="orange"
-                @click="openAccessRightsModal"
-                icon="sym_o_lock"
-            />
-        </div>
-        <div class="col-1" style="margin-right: 15px">
-            <q-btn
-                v-if="project"
-                label="Delete"
-                color="red"
-                @click="_deleteProject"
-                icon="sym_o_delete"
-                :disable="project.missions.length > 0"
-            >
-                <q-tooltip class="bg-accent" v-if="project.missions.length > 0">
-                    Only projects without missions can be deleted</q-tooltip
-                >
-            </q-btn>
-        </div>
     </div>
 </template>
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { ref, watch } from 'vue';
-import { Notify, useQuasar } from 'quasar';
+import { computed, Ref, ref, watch } from 'vue';
+import { Notify, QInput, useQuasar } from 'quasar';
 import { Project } from 'src/types/Project';
 import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { getProject } from 'src/services/queries/project';
@@ -70,100 +58,97 @@ import { deleteProject, updateProject } from 'src/services/mutations/project';
 const props = defineProps<{
     project_uuid: string;
 }>();
-const emit = defineEmits(['project-deleted']);
+const emit = defineEmits(['close']);
 const queryClient = useQueryClient();
-const $q = useQuasar();
 
+const projectName = ref('');
+const projectDescription = ref('');
+const hasValidInput = ref(false);
+
+const invalidProjectNames: Ref<string[]> = ref([]);
+
+const key = computed(() => ['project', props.project_uuid]);
 const projectResponse = useQuery<Project>({
-    queryKey: ['project', props.project_uuid],
+    queryKey: key,
     queryFn: () => getProject(props.project_uuid),
-    enabled: !!props.project_uuid,
 });
-const project = ref<Project | undefined>(undefined);
+const project = computed(() => projectResponse.data.value);
 watch(
-    () => projectResponse.data,
-    (newValue) => {
-        if (newValue) {
-            project.value = newValue.value?.clone();
+    () => project.value,
+    (newVale: Project | undefined) => {
+        if (newVale) {
+            projectName.value = newVale?.name;
+            projectDescription.value = newVale?.description;
         }
     },
-    { deep: true },
+    { immediate: true },
 );
-
 async function save() {
+    if (
+        projectName.value === project.value?.name &&
+        projectDescription.value === project.value?.description
+    ) {
+        return;
+    }
     if (
         project.value?.uuid &&
         project.value?.name &&
         project.value?.description
     ) {
+        const noti = Notify.create({
+            group: false,
+            message: `Updating project ${project.value?.name}`,
+            color: 'info',
+            spinner: true,
+            timeout: 0,
+            position: 'top-right',
+        });
         try {
-            project.value = await updateProject(
+            await updateProject(
                 project.value?.uuid,
-                project.value?.name,
-                project.value?.description,
+                projectName.value.trim(),
+                projectDescription.value,
             );
-            Notify.create({
+            noti({
                 message: `Project ${project.value?.name} updated`,
                 color: 'positive',
                 spinner: false,
                 timeout: 3000,
-                position: 'top-right',
             });
             const cache = queryClient.getQueryCache();
             const filtered = cache
                 .getAll()
-                .filter((query) => query.queryKey[0] === 'projects');
+                .filter(
+                    (query) =>
+                        query.queryKey[0] === 'projects' ||
+                        query.queryKey[0] === 'project',
+                );
             filtered.forEach((query) => {
-                queryClient.invalidateQueries(query.queryKey);
+                queryClient.invalidateQueries({ queryKey: query.queryKey });
             });
+            emit('close');
         } catch (e) {
-            Notify.create({
-                message: `Error updating project ${project.value?.name}`,
-                color: 'negative',
-                spinner: false,
-                timeout: 3000,
-                position: 'top-right',
-            });
+            if (
+                e.response.data.message ===
+                'Project with that name already exists'
+            ) {
+                invalidProjectNames.value.push(projectName.value);
+                noti({
+                    message: `Error updating project ${project.value?.name}: Project with that name already exists`,
+                    color: 'negative',
+                    spinner: false,
+                    timeout: 3000,
+                });
+            } else {
+                noti({
+                    message: `Error updating project ${project.value?.name}`,
+                    color: 'negative',
+                    spinner: false,
+                    timeout: 3000,
+                });
+            }
         }
     }
-}
-
-async function _deleteProject() {
-    try {
-        await deleteProject(props.project_uuid);
-        Notify.create({
-            message: `Project ${project.value?.name} deleted`,
-            color: 'positive',
-            spinner: false,
-            timeout: 3000,
-            position: 'top-right',
-        });
-    } catch (e) {
-        Notify.create({
-            message: `Error deleting project ${project.value?.name}`,
-            color: 'negative',
-            spinner: false,
-            timeout: 3000,
-            position: 'top-right',
-        });
-    }
-    const cache = queryClient.getQueryCache();
-    const filtered = cache
-        .getAll()
-        .filter((query) => query.queryKey[0] === 'projects');
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries(query.queryKey);
-    });
-    emit('project-deleted');
-}
-
-function openAccessRightsModal() {
-    $q.dialog({
-        component: AccessRightsDialog,
-        componentProps: {
-            project_uuid: props.project_uuid,
-        },
-    });
 }
 </script>
 <style scoped></style>

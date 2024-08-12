@@ -148,12 +148,6 @@ export class FileController {
         return this.fileService.update(uuid, dto);
     }
 
-    @Delete('clear')
-    @AdminOnly()
-    async clear() {
-        return this.fileService.clear();
-    }
-
     @Get('oneByName')
     @CanReadMission()
     async getOneFileByName(
