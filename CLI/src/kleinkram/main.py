@@ -1,4 +1,5 @@
 import os
+import typing
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -6,12 +7,14 @@ import httpx
 import typer
 from rich import print
 from rich.table import Table
+from typer import Typer
 from typer.core import TyperGroup
 from typer.models import Context
 from typing_extensions import Annotated
 
 from kleinkram.api_client import AuthenticatedClient
-from kleinkram.auth.auth import login, endpoint, setEndpoint, setCliKey, logout
+from kleinkram.auth.auth import login, setCliKey, logout
+from kleinkram.endpoint.endpoint import endpoint
 from kleinkram.file.file import file
 from kleinkram.mission.mission import mission
 from kleinkram.project.project import project
@@ -26,6 +29,35 @@ class Panel(str, Enum):
     CoreCommands = "CORE COMMANDS"
     Commands = "COMMANDS"
     AdditionalCommands = "ADDITIONAL COMMANDS"
+
+
+ExceptionType = "typing.Type[Exception]"
+ErrorHandlingCallback = typing.Callable[[Exception], int]
+
+
+class ErrorHandledTyper(Typer):
+    error_handlers: typing.Dict[ExceptionType, ErrorHandlingCallback] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def error_handler(self, exc: ExceptionType):
+        def decorator(f: ErrorHandlingCallback):
+            self.error_handlers[exc] = f
+            return f
+
+        return decorator
+
+    def __call__(self, *args, **kwargs):
+        try:
+            super(ErrorHandledTyper, self).__call__(*args, **kwargs)
+
+        except Exception as e:
+
+            # exit with error code 1 if no error handler is defined
+            if type(e) not in self.error_handlers:
+                typer.secho(e, fg=typer.colors.RED)
+                exit(1)
 
 
 class OrderCommands(TyperGroup):
@@ -56,7 +88,7 @@ class OrderCommands(TyperGroup):
         ] + sorted(ungrouped_command_names)
 
 
-app = typer.Typer(
+app = ErrorHandledTyper(
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
     cls=OrderCommands,
@@ -70,11 +102,10 @@ app.add_typer(file, rich_help_panel=Panel.Commands)
 app.add_typer(queue, rich_help_panel=Panel.Commands)
 app.add_typer(user, rich_help_panel=Panel.Commands)
 app.add_typer(tag, rich_help_panel=Panel.Commands)
+app.add_typer(endpoint, rich_help_panel=Panel.AdditionalCommands)
 
 app.command(rich_help_panel=Panel.CoreCommands)(login)
 app.command(rich_help_panel=Panel.CoreCommands)(logout)
-app.command(rich_help_panel=Panel.AdditionalCommands)(endpoint)
-app.command(rich_help_panel=Panel.AdditionalCommands)(setEndpoint)
 app.command(hidden=True)(setCliKey)
 
 
