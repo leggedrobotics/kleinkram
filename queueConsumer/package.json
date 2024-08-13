@@ -43,7 +43,7 @@
         "winston-loki": "^6.0.7"
     },
     "devDependencies": {
-        "@nestjs/cli": "^10.0.0",
+        "@nestjs/cli": "^10.4.4",
         "@types/dockerode": "^3.3.29",
         "@types/node": "20.12.6",
         "typescript": "5.4.4"
