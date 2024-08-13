@@ -16,6 +16,7 @@
         "axios": "^1.7.3",
         "date-fns": "^3.6.0",
         "jwt-decode": "^4.0.0",
+        "postcss": "^8.1.0",
         "quasar": "^2.16.8",
         "vue": "^3.4.37",
         "vue-json-pretty": "^2.4.0",
@@ -24,7 +25,7 @@
     "devDependencies": {
         "@quasar/app-vite": "1.7.3",
         "@types/node": "^22.2.0",
-        "autoprefixer": "^10.4.2",
+        "autoprefixer": "^10.4.20",
         "typescript": "^5.5.4"
     },
     "engines": {
