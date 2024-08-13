@@ -22,5 +22,8 @@ jobs:
               run: docker compose -f docker-compose.testing.yml build
 
             - name: launch_stack
-              run: docker compose -f docker-compose.testing.yml up -d && yarn test
               working-directory: ./backend
+              run: |
+                  docker compose -f ../docker-compose.testing.yml up -d
+                  sleep 30
+                  yarn test
