@@ -25,5 +25,5 @@ jobs:
               working-directory: ./backend
               run: |
                   docker compose -f ../docker-compose.testing.yml up -d
-                  sleep 30
+                  sleep 120
                   yarn test
