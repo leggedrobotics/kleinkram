@@ -66,9 +66,9 @@ const main_menu = [
     { title: 'Upload', icon: 'sym_o_upload', to: ROUTES.UPLOAD.path },
     { title: 'Actions', icon: 'sym_o_analytics', to: ROUTES.ACTION.path },
     {
-        title: 'Access Rights',
+        title: 'Access Groups',
         icon: 'sym_o_lock',
-        to: ROUTES.ACCESSRIGHTS.path,
+        to: ROUTES.ACCESS_GROUPS.path,
     },
 ];
 </script>
