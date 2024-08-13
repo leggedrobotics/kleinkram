@@ -2,12 +2,14 @@ import { define } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
 import { UserRole } from '../../enum';
 import { extendedFaker } from '../../faker_extended';
+import AccessGroup from '../../entities/auth/accessgroup.entity';
 
 export type UserContext = {
     firstName: string;
     lastName: string;
     mail: string;
     role: UserRole;
+    default_group_ids: string[];
 };
 
 define(User, (_, context: Partial<UserContext> = {}) => {
@@ -25,6 +27,14 @@ define(User, (_, context: Partial<UserContext> = {}) => {
     user.role = role;
     user.avatarUrl = extendedFaker.image.avatarGitHub();
     user.uuid = extendedFaker.string.uuid();
+
+    if (context.default_group_ids) {
+        user.accessGroups = context.default_group_ids.map((id) => {
+            const accessGroup = new AccessGroup();
+            accessGroup.uuid = id;
+            return accessGroup;
+        });
+    }
 
     return user;
 });
