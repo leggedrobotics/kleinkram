@@ -233,6 +233,18 @@ const submitNewFile = async () => {
                     });
                     return;
                 }
+                if (urls[filename]['error'] !== undefined) {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: ${urls[filename]['error']}`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'top-right',
+                        timeout: 30000,
+                        closeBtn: true,
+                    });
+                    return;
+                }
                 const uploadURL = urls[filename]['url'];
 
                 // Use axios to upload the file

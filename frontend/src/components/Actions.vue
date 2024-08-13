@@ -120,7 +120,8 @@ const router = useRouter();
 const props = defineProps<{
     handler: QueryHandler;
 }>();
-props.handler.setSort('updatedAt');
+props.handler.setSort('createdAt');
+props.handler.setDescending(true);
 const actionKey = computed(() => [
     'action_mission',
     props.handler.mission_uuid,

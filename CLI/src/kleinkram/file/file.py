@@ -1,9 +1,12 @@
+import os
 from typing import Optional, Annotated
 
 import httpx
+import requests
 import typer
 
 from kleinkram.api_client import AuthenticatedClient
+from kleinkram.error_handling import AccessDeniedException
 
 file = typer.Typer(
     name="file",
@@ -79,17 +82,4 @@ def list_files(
 
     except httpx.HTTPError as e:
         print(f"Failed to fetch missions: {e}")
-
-
-@file.command("download")
-def download(
-    missionuuid: Annotated[str, typer.Argument()],
-):
-    """Download file"""
-    try:
-        client = AuthenticatedClient()
-        response = client.get("/file/downloadWithToken", params={"uuid": missionuuid})
-        response.raise_for_status()
-        print(response.json())
-    except:
-        print("Failed to download file")
+        raise e

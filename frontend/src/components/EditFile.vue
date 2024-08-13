@@ -288,6 +288,14 @@ const { mutate: updateFileMutation } = useMutation({
     },
     onError(error, variables, context) {
         console.log(error);
+        Notify.create({
+            group: false,
+            message: 'Error updating file: ' + error.response.data.message,
+            color: 'negative',
+            spinner: false,
+            position: 'top-right',
+            timeout: 3000,
+        });
     },
 });
 

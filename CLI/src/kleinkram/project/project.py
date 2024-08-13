@@ -55,3 +55,4 @@ def create_project(
 
     except httpx.HTTPError as e:
         print(f"Failed to create project: {e}")
+        raise e

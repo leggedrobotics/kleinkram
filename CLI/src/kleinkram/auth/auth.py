@@ -11,8 +11,6 @@ from typing_extensions import Annotated
 
 from kleinkram.consts import API_URL
 
-app = typer.Typer()
-
 TOKEN_FILE = Path(os.path.expanduser("~/.kleinkram.json"))
 REFRESH_TOKEN = "refreshtoken"
 AUTH_TOKEN = "authtoken"
@@ -127,12 +125,10 @@ def login(
             auth_tokens = get_auth_tokens()
 
             if not auth_tokens:
-                print("Failed to get authentication tokens.")
-                return
+                raise Exception("Failed to get authentication tokens.")
 
             tokenfile.saveTokens(auth_tokens)
             print("Authentication complete. Tokens saved to ~/.kleinkram.json.")
-
             return
 
         print(
@@ -147,41 +143,7 @@ def login(
             )
             print("Authentication complete. Tokens saved to tokens.json.")
         else:
-            print("No authentication token provided.")
-        return
-
-
-def setEndpoint(
-    endpoint: Optional[str] = typer.Argument(None, help="API endpoint to use")
-):
-    """
-    Set the current endpoint
-
-    Use this command to switch between different API endpoints.\n
-    Standard endpoints are:\n
-    - http://localhost:3000\n
-    - https://api.datasets.leggedrobotics.com\n
-    - https://api.datasets.dev.leggedrobotics.com
-    """
-    tokenfile = TokenFile()
-    tokenfile.endpoint = endpoint
-    tokenfile.writeToFile()
-    print("Endpoint set to: " + endpoint)
-    if tokenfile.endpoint not in tokenfile.tokens:
-        print("No tokens found for this endpoint.")
-
-
-def endpoint():
-    """
-    Get the current endpoint
-
-    Also displays all endpoints with saved tokens.
-    """
-    tokenfile = TokenFile()
-    print("Current: " + tokenfile.endpoint)
-    print("Saved Tokens found for:")
-    for _endpoint, _ in tokenfile.tokens.items():
-        print("- " + _endpoint)
+            raise ValueError("Failed to get authentication tokens.")
 
 
 def setCliKey(key: Annotated[str, typer.Argument(help="CLI Key")]):

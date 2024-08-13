@@ -12,26 +12,17 @@ import env from '@common/env';
 
 const execPromisify = promisify(exec);
 
-export async function convertToMcapAndSave(
-    tmp_file_name: string,
-    full_pathname: string,
-): Promise<boolean> {
+export async function convertToMcap(tmp_file_name: string): Promise<string> {
     return await traceWrapper(async () => {
         const tmp_file_name_mcap = tmp_file_name.replace('.bag', '.mcap');
-        const full_pathname_mcap = full_pathname.replace('.bag', '.mcap');
 
         logger.debug(
             `Converting file ${tmp_file_name} from bag to mcap ${tmp_file_name_mcap}`,
         );
         await convert(tmp_file_name, tmp_file_name_mcap);
         logger.debug('File converted successfully');
-
-        return await uploadFile(
-            env.MINIO_MCAP_BUCKET_NAME,
-            full_pathname_mcap,
-            tmp_file_name_mcap,
-        );
-    }, 'processFile')();
+        return tmp_file_name_mcap;
+    }, 'convertToMcap')();
 }
 
 export const convert = (infile: string, outfile: string): Promise<boolean> =>

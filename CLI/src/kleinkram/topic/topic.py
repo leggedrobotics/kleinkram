@@ -52,3 +52,4 @@ def topics(
 
     except httpx.HTTPError as e:
         print(f"Failed")
+        raise e
