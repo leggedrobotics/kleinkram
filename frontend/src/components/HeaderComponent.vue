@@ -1,8 +1,8 @@
 <template>
-    <q-header bordered class="bg-white text-grey-9">
-        <q-toolbar>
+    <q-header bordered class="bg-white text-grey-8">
+        <q-toolbar style="height: 56px">
             <q-btn flat dense round icon="sym_o_menu" v-show="$q.screen.lt.md">
-                <q-menu auto-close style="width: 280px">
+                <q-menu auto-close style="width: 280px; height: 56px">
                     <q-list>
                         <q-item
                             v-for="item in main_menu"
@@ -26,11 +26,28 @@
 
             <q-toolbar-title
                 shrink
-                style="margin-right: 30px; font-weight: 500"
-                class="cursor-pointer"
+                class="cursor-pointer flex row q-mr-xl"
+                style="height: 56px"
                 @click="$router.push('/')"
             >
-                Kleinkram
+                <div style="height: 56px">
+                    <img src="logoRSL.png" style="height: 28px; margin: 14px" />
+                </div>
+                <div class="flex column justify-center" style="height: 56px">
+                    <span
+                        style="
+                            margin-right: 30px;
+                            font-weight: 600;
+                            font-size: 16px;
+                            line-height: 18px;
+                        "
+                    >
+                        Kleinkram
+                    </span>
+                    <span style="font-size: 10px; line-height: 12px"
+                        >by Robotics Systems Lab</span
+                    >
+                </div>
             </q-toolbar-title>
 
             <q-tabs v-show="$q.screen.gt.sm" inline-label>

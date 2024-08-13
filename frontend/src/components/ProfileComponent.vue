@@ -15,18 +15,78 @@ const navigateTo = (path: string) => {
 <template>
     <q-tabs>
         <q-route-tab :to="ROUTES.LOGIN.path" v-if="!is_authenticated">
-            Sign in</q-route-tab
-        >
+            Sign in
+        </q-route-tab>
 
-        <div class="q-gutter-sm row items-center no-wrap" v-else>
+        <div class="flex row justify-end" v-else>
+            <q-btn flat color="white" class="q-mr-lg">
+                <div
+                    style="
+                        background-color: rgb(54 122 199);
+                        margin: 0 1px 0 0;
+                        height: 36px;
+                    "
+                >
+                    <q-icon
+                        name="sym_o_add"
+                        class="q-mx-xs"
+                        style="height: 36px"
+                    />
+                    <span class="q-mr-md"> New </span>
+                </div>
+                <q-icon
+                    style="background-color: rgb(54 122 199); height: 36px"
+                    name="sym_o_arrow_drop_down"
+                    class="q-my-sm"
+                />
+
+                <q-menu auto-close style="width: 280px">
+                    <q-list>
+                        <q-item clickable disable>
+                            <q-item-section avatar>
+                                <q-icon name="sym_o_sell" />
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label>Create New Tag Type</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                        <q-item clickable disable>
+                            <q-item-section avatar>
+                                <q-icon name="sym_o_tactic" />
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label>Create New Project</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                        <q-item clickable disable>
+                            <q-item-section avatar>
+                                <q-icon name="sym_o_explore" />
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label>Create New Mission</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                        <q-item clickable disable>
+                            <q-item-section avatar>
+                                <q-icon name="sym_o_note_add" />
+                            </q-item-section>
+                            <q-item-section>
+                                <q-item-label>Upload New File</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
+
             <q-btn
                 href="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
                 round
                 flat
+                color="grey-8"
                 target="_blank"
                 icon="sym_o_help"
             >
-                <q-tooltip> Support </q-tooltip>
+                <q-tooltip> Support</q-tooltip>
             </q-btn>
 
             <q-btn round flat>
@@ -54,9 +114,9 @@ const navigateTo = (path: string) => {
                         >
                             <q-item-section avatar></q-item-section>
                             <q-item-section>
-                                <q-item-section>{{
-                                    user['name']
-                                }}</q-item-section>
+                                <q-item-section
+                                    >{{ user['name'] }}
+                                </q-item-section>
                             </q-item-section>
                         </q-item>
                         <q-item clickable @click="logout">
