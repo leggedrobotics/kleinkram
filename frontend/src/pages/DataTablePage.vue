@@ -191,7 +191,6 @@
                 :columns="columns"
                 row-key="uuid"
                 :loading="loading"
-                binary-state-sort
                 selection="multiple"
                 @row-click="onRowClick"
                 @request="setPagination"
@@ -277,7 +276,7 @@ const router = useRouter();
 const tableRef: Ref<QTable | null> = ref(null);
 
 const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
+    new QueryURLHandler(undefined, 0, 20, 'file.filename', false),
 ) as unknown as Ref<QueryURLHandler>;
 handler.value.setRouter(router);
 
@@ -354,8 +353,8 @@ const pagination = computed(() => {
         page: handler.value.page,
         rowsPerPage: handler.value.take,
         rowsNumber: handler.value?.rowsNumber,
-        sortBy: 'name',
-        descending: false,
+        sortBy: handler.value.sortBy,
+        descending: handler.value.descending,
     };
 });
 
@@ -369,8 +368,13 @@ function setPagination(update: {
     };
     getCellValue: any;
 }) {
-    handler.value.setTake(update.pagination.rowsPerPage);
+    console.log(update.pagination);
     handler.value.setPage(update.pagination.page);
+    handler.value.setTake(update.pagination.rowsPerPage);
+    handler.value.setSort(
+        update.pagination.sortBy || handler.value.default_sort,
+    );
+    handler.value.setDescending(update.pagination.descending);
 }
 
 const queryKeyFiles = computed(() => [
@@ -402,6 +406,8 @@ const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
             tagFilter.value,
             handler.value.take,
             handler.value.skip,
+            handler.value.sortBy,
+            handler.value.descending,
         ),
 });
 const data = computed(() => (_data.value ? _data.value[0] : []));
@@ -419,27 +425,27 @@ watch(
 
 const columns = [
     {
-        name: 'Project',
+        name: 'project.name',
         required: true,
         label: 'Project',
         align: 'left',
         field: (row: FileEntity) => row.mission?.project?.name,
         format: (val: string) => `${val}`,
-        sortable: true,
+        sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
     {
-        name: 'Mission',
+        name: 'mission.name',
         required: true,
         label: 'Mission',
         align: 'left',
         field: (row: FileEntity) => row.mission?.name,
         format: (val: string) => `${val}`,
-        sortable: true,
+        sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
-        name: 'File',
+        name: 'file.filename',
         required: true,
         label: 'File',
         align: 'left',
@@ -449,7 +455,7 @@ const columns = [
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
     },
     {
-        name: 'Date',
+        name: 'file.date',
         required: true,
         label: 'Recoring Date',
         align: 'left',
@@ -458,7 +464,7 @@ const columns = [
         sortable: true,
     },
     {
-        name: 'Creation Date',
+        name: 'file.createdAt',
         required: true,
         label: 'Creation Date',
         align: 'left',
@@ -473,19 +479,17 @@ const columns = [
         align: 'left',
         field: (row: FileEntity) => row.creator.name,
         format: (val: string) => `${val}`,
-        sortable: true,
+        sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
-        name: 'Size',
+        name: 'file.size',
         required: true,
         label: 'Size',
         align: 'left',
         field: (row: FileEntity) => row.size,
         format: formatSize,
         sortable: true,
-        sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
-            a.size - b.size,
     },
     {
         name: 'action',
@@ -531,6 +535,7 @@ function resetFilter() {
     handler.value.setProjectUUID(undefined);
     handler.value.setMissionUUID(undefined);
     handler.value.setSearch({ name: '' });
+    filter.value = '';
     selectedTopics.value = [];
     and_or.value = false;
     mcap_bag.value = true;

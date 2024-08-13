@@ -18,6 +18,8 @@ export const fetchOverview = async (
     tag?: Record<string, any>,
     take?: number,
     skip?: number,
+    sort?: string,
+    desc?: boolean,
 ): Promise<[FileEntity[], number]> => {
     try {
         const params: Record<string, string> = {};
@@ -32,6 +34,8 @@ export const fetchOverview = async (
         if (tag) params['tags'] = JSON.stringify(tag);
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();
+        if (sort) params['sort'] = sort;
+        if (desc !== undefined) params['desc'] = desc.toString();
         const queryParams = new URLSearchParams(params).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};

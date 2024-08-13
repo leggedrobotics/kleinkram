@@ -21,6 +21,7 @@ export class QueryHandler {
     search_params: typeof DEFAULT_SEARCH;
     file_type?: FileType;
     rowsNumber: number;
+    default_sort: string;
 
     constructor(
         page: number = DEFAULT_PAGINATION.page,
@@ -35,6 +36,7 @@ export class QueryHandler {
         this.page = page;
         this.take = take;
         this.sortBy = sortBy;
+        this.default_sort = sortBy;
         this.descending = descending;
         this.project_uuid = project_uuid;
         this.mission_uuid = mission_uuid;
@@ -249,7 +251,7 @@ export class QueryURLHandler extends QueryHandler {
             this.take = parseInt(route.query.rowsPerPage as string);
         else this.take = DEFAULT_PAGINATION.rowsPerPage;
         if (route.query.sortBy) this.sortBy = route.query.sortBy as string;
-        else this.sortBy = DEFAULT_SORT.sortBy;
+        else this.sortBy = this.default_sort;
         if (route.query.descending)
             this.descending = route.query.descending === 'true';
         else this.descending = DEFAULT_SORT.descending;

@@ -23,6 +23,7 @@ import {
     QueryUUID,
     QueryOptional,
     QueryOptionalRecord,
+    QueryOptionalBoolean,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
@@ -77,6 +78,8 @@ export class FileController {
         @QueryOptionalString('tags') tags: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+        @QueryOptionalString('sort') sort: string,
+        @QueryOptionalBoolean('desc') desc: boolean,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
@@ -92,6 +95,8 @@ export class FileController {
             user.uuid,
             take,
             skip,
+            sort,
+            desc,
         );
     }
 

@@ -168,10 +168,14 @@ export class FileService {
         userUUID: string,
         take: number,
         skip: number,
+        sort: string,
+        desc: boolean,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
+        // const sortColumn = `file.${sort || 'date'}`;
+        const sortOrder = desc ? 'DESC' : 'ASC';
         // Start building your query with basic filters
         let query = this.fileRepository
             .createQueryBuilder('file')
@@ -182,8 +186,9 @@ export class FileService {
             .andWhere('file.type = :type', {
                 type: mcapBag ? FileType.MCAP : FileType.BAG,
             })
-            .skip(skip)
-            .take(take);
+            .offset(skip)
+            .limit(take)
+            .orderBy(sort, sortOrder);
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
@@ -297,10 +302,7 @@ export class FileService {
                                     );
                                     break;
                             }
-                            console.log(
-                                'Subquery: \n',
-                                subquery.getQueryAndParameters(),
-                            );
+
                             return subquery;
                         },
                         subqueryname,
@@ -312,7 +314,6 @@ export class FileService {
             );
         }
         query.groupBy('file.uuid');
-
         // Execute the query
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
@@ -328,6 +329,7 @@ export class FileService {
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .orderBy(sort, sortOrder)
             .getMany();
         return [res, count];
     }
