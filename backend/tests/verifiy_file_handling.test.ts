@@ -8,10 +8,8 @@ import {
 import {
     create_mission_using_post,
     create_project_using_post,
+    upload_file,
 } from './utils/api_calls';
-import * as fs from 'node:fs';
-import QueueEntity from '@common/entities/queue/queue.entity';
-import { FileState } from '@common/enum';
 
 describe('Verify File Handling', () => {
     beforeAll(async () => {
@@ -51,85 +49,9 @@ describe('Verify File Handling', () => {
             user,
         );
         expect(mission_uuid).toBeDefined();
+        const file_hash = await upload_file(user, filename, mission_uuid);
 
-        // http://localhost:3000/queue/createPreSignedURLS
-        const res = await fetch(
-            `http://localhost:3000/queue/createPreSignedURLS`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
-                },
-                body: JSON.stringify({
-                    filenames: [filename],
-                    missionUUID: mission_uuid,
-                }),
-            },
-        );
-
-        expect(res.status).toBe(201);
-        const json = await res.json();
-        console.log(json);
-        const upload_url = json[filename].url;
-        expect(upload_url).toBeDefined();
-
-        // open file from fixtures
-        const file = fs.readFileSync(`./tests/fixtures/${filename}`);
-        const file_hash = await crypto.subtle.digest('SHA-256', file.buffer);
-
-        // upload file
-        const upload_res = await fetch(upload_url, {
-            method: 'PUT',
-            body: file,
-        });
-
-        expect(upload_res.status).toBe(200);
-
-        // confirm upload
-        // http://localhost:3000/queue/confirmUpload
-        const res_confirm = await fetch(
-            `http://localhost:3000/queue/confirmUpload`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
-                },
-                body: JSON.stringify({
-                    uuid: json[filename].uuid,
-                }),
-            },
-        );
-        expect(res_confirm.status).toBe(201);
-
-        while (true) {
-            const res_active = await fetch(
-                `http://localhost:3000/queue/active`,
-                {
-                    method: 'GET',
-                    headers: {
-                        cookie: `authtoken=${await get_jwt_token(user)}`,
-                    },
-                },
-            );
-
-            expect(res_active.status).toBe(200);
-            const active = await res_active.json();
-            if (
-                active.find(
-                    (x: QueueEntity) =>
-                        x.uuid === json[filename].uuid &&
-                        x.state === FileState.COMPLETED,
-                )
-            ) {
-                break;
-            }
-
-            await new Promise((r) => setTimeout(r, 1000));
-        }
-
-        // get file uuid by calling /ile/oneByName
+        // get file uuid by calling /file/oneByName
         const res_oneByName = await fetch(
             `http://localhost:3000/file/byName?name=${filename}`,
             {
@@ -167,5 +89,5 @@ describe('Verify File Handling', () => {
         );
 
         expect(download_file_hash).toEqual(file_hash);
-    });
+    }, 10_000);
 });

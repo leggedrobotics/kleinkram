@@ -43,7 +43,9 @@ export default class Action extends BaseEntity {
     @Column({ nullable: true })
     runner_cpu_model: string;
 
-    @ManyToOne(() => Mission, (mission) => mission.actions)
+    @ManyToOne(() => Mission, (mission) => mission.actions, {
+        onDelete: 'CASCADE',
+    })
     mission: Mission;
 
     @Column({ type: 'json', nullable: true })
