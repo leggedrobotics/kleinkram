@@ -83,9 +83,15 @@
                 class="flex justify-start q-pb-xs"
                 style="font-family: monospace; color: #222222; font-size: 0.8em"
             >
-                <span class="q-pr-sm">{{ log.timestamp }}</span>
-                <span class="q-pr-sm"> [{{ log.type }}] </span>
-                <span>{{ log.message.replaceAll(' ', '\u00a0') }}</span>
+                <span class="q-pr-sm" style="user-select: none">{{
+                    log.timestamp
+                }}</span>
+                <span class="q-pr-sm" style="user-select: none">
+                    [{{ log.type }}]
+                </span>
+                <span style="margin-left: -250px; padding-left: 250px">
+                    {{ log.message.replaceAll(' ', '\u00a0') }}
+                </span>
             </div>
         </q-card-section>
     </q-card>
