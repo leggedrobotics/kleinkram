@@ -64,7 +64,7 @@ describe('Verify Action', () => {
                 },
                 body: JSON.stringify({
                     missionUUID: mission_uuid,
-                    docker_image: 'rslethz/action:latest',
+                    docker_image: 'rslethz/action:file-hash-latest',
                 }),
             },
         );
@@ -100,10 +100,12 @@ describe('Verify Action', () => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
+        const file_hash_str = Buffer.from(file_hash).toString('hex');
+
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message);
         const contains_file = messages.some((message) =>
-            message.includes('test_small.mcap'),
+            message.includes(file_hash_str),
         );
         expect(contains_file).toBeTruthy();
 
