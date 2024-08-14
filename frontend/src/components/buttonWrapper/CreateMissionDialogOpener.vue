@@ -1,14 +1,14 @@
 <template>
-    <q-btn color="primary" label="Create Mission" @click="createNewMission" />
+    <div @click="createNewMission">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">
 import CreateMissionDialog from 'src/dialogs/CreateMissionDialog.vue';
 import { useQuasar } from 'quasar';
 
-const { project_uuid } = defineProps({
-    project_uuid: String,
-});
+const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
 
 const $q = useQuasar();
 

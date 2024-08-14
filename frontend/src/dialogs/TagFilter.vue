@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data"
+                        :rows="data || []"
                         :columns="columns"
                         row-key="uuid"
                         wrap-cells
@@ -31,12 +31,12 @@
                 v-for="tagTypeUUID in Object.keys(tagValues)"
             >
                 <div class="col-2">
-                    {{ tagLookup[tagTypeUUID]?.name }}
+                    {{ tagValues[tagTypeUUID].name }}
                 </div>
                 <div class="col-2" v-if="tagLookup[tagTypeUUID]">
                     <q-input
                         v-if="tagLookup[tagTypeUUID].type !== DataType.BOOLEAN"
-                        v-model="tagValues[tagTypeUUID]"
+                        v-model="tagValues[tagTypeUUID].value"
                         label="Enter Filter Value"
                         outlined
                         dense
@@ -50,7 +50,7 @@
                     />
                     <q-toggle
                         v-if="tagLookup[tagTypeUUID].type === DataType.BOOLEAN"
-                        v-model="tagValues[tagTypeUUID]"
+                        v-model="tagValues[tagTypeUUID].value"
                         :label="
                             tagValues[tagTypeUUID] === undefined
                                 ? '-'
@@ -79,7 +79,7 @@
                     <q-btn
                         label="Apply"
                         color="primary"
-                        @click="() => onDialogOK(tagValues)"
+                        @click="() => onDialogOK(convertedTagValues)"
                     />
                 </div>
             </div>
@@ -98,28 +98,54 @@ import { DataType } from 'src/enums/TAG_TYPES';
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
 const props = defineProps<{
-    tagValues?: Record<string, any>;
+    tagValues?: Record<string, { value: any; name: string }>;
 }>();
 
 const tagtype = ref<string>('');
-const tagValues = ref<Record<string, any>>(props.tagValues || {});
+const tagValues = ref<Record<string, any>>({ ...props.tagValues } || {});
 
 const convertedTagValues = computed(() => {
     const converted: Record<string, any> = {};
     Object.keys(tagValues.value).forEach((key) => {
         const tagType = tagLookup.value[key];
+
         switch (tagType.type) {
             case DataType.BOOLEAN:
-                converted[key] = tagValues.value[key] === 'true';
+                if (!(tagValues.value[key].value in ['true', 'false'])) {
+                    break;
+                }
+                converted[key] = {
+                    value: tagValues.value[key].value === 'true',
+                    name: tagValues.value[key].name,
+                };
+
                 break;
             case DataType.NUMBER:
-                converted[key] = parseFloat(tagValues.value[key]);
+                if (isNaN(parseFloat(tagValues.value[key].value))) {
+                    break;
+                }
+                converted[key] = {
+                    value: parseFloat(tagValues.value[key].value),
+                    name: tagValues.value[key].name,
+                };
                 break;
             case DataType.DATE:
-                converted[key] = new Date(tagValues.value[key]);
+                if (!tagValues.value[key].value) {
+                    break;
+                }
+                converted[key] = {
+                    value: new Date(tagValues.value[key].value),
+                    name: tagValues.value[key].name,
+                };
                 break;
             default:
-                converted[key] = tagValues.value[key];
+                if (!tagValues.value[key].value) {
+                    break;
+                }
+                converted[key] = {
+                    value: tagValues.value[key].value,
+                    name: tagValues.value[key].name,
+                };
         }
     });
     return converted;
@@ -148,7 +174,7 @@ const DataType_InputType = {
 
 function tagTypeSelected(event: any, row: TagType) {
     if (!tagValues.value.hasOwnProperty(row.uuid)) {
-        tagValues.value[row.uuid] = null;
+        tagValues.value[row.uuid] = { value: undefined, name: row.name };
     }
 }
 

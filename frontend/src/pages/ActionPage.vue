@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, watchEffect } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useQuery } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
@@ -111,19 +111,14 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
-import { QueryURLHandler } from 'src/services/URLHandler';
-import { useRouter } from 'vue-router';
 import ButtonGroup from 'components/ButtonGroup.vue';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const image_name = ref('');
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 
-const router = useRouter();
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const selected_project = computed(() =>
     projects.value.find(

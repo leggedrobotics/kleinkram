@@ -4,7 +4,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { Brackets, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 
 @Injectable()
 export class TopicService {
@@ -25,7 +25,7 @@ export class TopicService {
         if (user.role === UserRole.ADMIN) {
             distinctNames = await baseQuery.getRawMany();
         } else {
-            distinctNames = await addAccessJoinsAndConditions(
+            distinctNames = await addAccessConstraints(
                 baseQuery
                     .leftJoin('topic.file', 'file')
                     .leftJoin('file.mission', 'mission')
@@ -44,7 +44,7 @@ export class TopicService {
         if (user.role === UserRole.ADMIN) {
             return this.topicRepository.find({ skip, take });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.topicRepository
                 .createQueryBuilder('topic')
                 .leftJoin('topic.file', 'file')

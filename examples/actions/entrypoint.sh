@@ -9,14 +9,17 @@ echo ""
 # print rocket emoji
 echo "🚀 Rocket"
 
-klein setendpoint http://localhost:3000
+klein endpoint set http://localhost:3000
 klein login --key $APIKEY
 klein mission byUUID $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
-klein file download $MISSION_UUID
+mkdir data
+klein mission download $MISSION_UUID ./data
 
-# wait forever
-# tail -f /dev/null
+echo ""
+echo "List files of mission with UUID $MISSION_UUID"
+cd ./data || exit 1
+ls -la
 
 exit 0

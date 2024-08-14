@@ -1,9 +1,9 @@
 <template>
     <q-page>
         <div class="q-pa-md">
-            <div class="text-h4">Access Rights</div>
+            <div class="text-h4">Access Groups</div>
             <p>
-                Access Rights allows you to manage the access rights of the
+                Access Groups allows you to manage the access rights of the
                 users and blablabla lorem ipsum dolor sit amet.
             </p>
             <q-form @submit="() => _createAccessGroup()">

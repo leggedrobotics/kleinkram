@@ -15,7 +15,11 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <DeleteProjectButton :project_uuid="project_uuid" />
+                <DeleteProjectDialogOpener :project_uuid="project_uuid">
+                    <q-btn color="red" outline icon="sym_o_delete">
+                        <q-tooltip> Delete the Project</q-tooltip>
+                    </q-btn>
+                </DeleteProjectDialogOpener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>
                     <q-tooltip> More Actions</q-tooltip>
                 </q-btn>
@@ -73,14 +77,11 @@
             </div>
 
             <div class="flex column q-mb-auto">
-                <q-btn
-                    outline
-                    icon="sym_o_edit"
-                    label="Edit Project"
-                    @click="openEditProject"
-                >
-                    <q-tooltip> Edit Project</q-tooltip>
-                </q-btn>
+                <EditProjectDialogOpener :project_uuid="project_uuid">
+                    <q-btn outline icon="sym_o_edit" label="Edit Project">
+                        <q-tooltip> Edit Project</q-tooltip>
+                    </q-btn>
+                </EditProjectDialogOpener>
             </div>
         </q-card-section>
     </q-card>
@@ -145,9 +146,16 @@
                 <CreateMissionButton
                     :project_uuid="project_uuid"
                     v-if="handler.isListingMissions"
-                />
-                <CreateProjectButton v-if="handler.isListingProjects" />
-                <UploadFileButton v-if="handler.isListingFiles" />
+                >
+                    <q-btn color="primary" label="Create Mission" />
+                </CreateMissionButton>
+                <CreateProjectButton v-if="handler.isListingProjects">
+                    <q-btn color="primary" label="Create Project" />
+                </CreateProjectButton>
+
+                <CreateFileDialogOpener v-if="handler.isListingFiles">
+                    <q-btn color="primary" label="Upload File" />
+                </CreateFileDialogOpener>
             </ButtonGroup>
         </q-card-section>
 
@@ -199,13 +207,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref } from 'vue';
+import { computed } from 'vue';
 import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
-import { useRouter } from 'vue-router';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
-import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
-import { QueryURLHandler } from 'src/services/URLHandler';
+import {
+    useHandler,
+    useMissionQuery,
+    useProjectQuery,
+} from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
@@ -213,23 +223,15 @@ import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTa
 import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
-import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
-import CreateMissionButton from 'components/buttons/CreateMissionButton.vue';
-import CreateProjectButton from 'components/buttons/CreateProjectButton.vue';
-import UploadFileButton from 'components/buttons/UploadFileButton.vue';
+import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
+import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
-import { useQuasar } from 'quasar';
-import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
-const $q = useQuasar();
+import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
+import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
+import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 
 const queryClient = useQueryClient();
-
-const router = useRouter();
-
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
@@ -265,14 +267,5 @@ function getComponent() {
     }
     console.log('No component found');
     return ExplorerPageProjectTable;
-}
-
-function openEditProject() {
-    $q.dialog({
-        component: EditProjectDialog,
-        componentProps: {
-            project_uuid: project_uuid.value,
-        },
-    });
 }
 </script>

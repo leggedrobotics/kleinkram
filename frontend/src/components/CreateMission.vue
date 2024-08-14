@@ -160,13 +160,13 @@ const { data: project } = useQuery<Project>({
 const missionName = ref('');
 const ddr_open = ref(false);
 
-const { data: _data, error } = useQuery<[Project[], number]>({
+const { data: projects, error } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const data = computed(() => {
-    if (_data && _data.value) {
-        return _data.value[0];
+    if (projects && projects.value) {
+        return projects.value[0];
     }
     return [];
 });

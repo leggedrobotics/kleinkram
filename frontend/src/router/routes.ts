@@ -144,15 +144,15 @@ const ROUTES = {
             },
         ],
     },
-    ACCESSRIGHTS: {
-        name: 'AccessRights',
-        path: '/access-rights',
+    ACCESS_GROUPS: {
+        name: 'AccessGroups',
+        path: '/access-groups',
         component: () => import('layouts/MainLayout.vue'),
         children: [
             {
-                name: 'AccessRightsPage',
+                name: 'AccessGroupsPage',
                 path: '',
-                component: () => import('pages/AccessRightsPage.vue'),
+                component: () => import('pages/AccessGroupsPage.vue'),
             },
         ],
     },

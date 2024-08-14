@@ -60,12 +60,12 @@
                 ref="tableRef"
                 v-model:pagination="pagination"
                 title="File Processing Queue"
-                :rows="data"
+                :rows="queueEntries || []"
                 :columns="columns"
                 row-key="uuid"
                 flat
                 bordered
-                :loading="loading"
+                :loading="isLoading"
                 binary-state-sort
                 @rowClick="rowClick"
             >
@@ -73,10 +73,8 @@
                     <q-td :props="props">
                         <q-badge :color="getColor(props.row.state)">
                             <q-tooltip>
-                                {{
-                                    getDetailedFileState(props.row.state)
-                                }}</q-tooltip
-                            >
+                                {{ getDetailedFileState(props.row.state) }}
+                            </q-tooltip>
                             {{ getSimpleFileStateName(props.row.state) }}
                         </q-badge>
                     </q-td>
@@ -89,7 +87,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { inject, ref, Ref } from 'vue';
+import { computed, inject, ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
@@ -103,7 +101,6 @@ import RouterService from 'src/services/routerService';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const tableRef: Ref<QTable | null> = ref(null);
-const loading = ref(false);
 const now = new Date();
 const startDate = ref(formatDate(new Date(now.getTime() - 1000 * 60 * 30)));
 const pagination = ref({
@@ -112,13 +109,11 @@ const pagination = ref({
     page: 1,
     rowsPerPage: 10,
 });
-const queue = useQuery<Project[]>({
-    queryKey: ['projects', startDate, Math.random()],
+const { data: queueEntries, isLoading } = useQuery<Project[]>({
+    queryKey: ['queue', startDate],
     queryFn: () => currentQueue(parseDate(startDate.value)),
     refetchInterval: 1000,
 });
-
-const data = queue.data;
 
 function rowClick(event: any, row: Queue) {
     const isFile =

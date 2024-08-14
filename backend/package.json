@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_backend",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "description": "",
     "author": "",
     "private": true,
@@ -52,7 +52,7 @@
         "form-data": "^4.0.0",
         "googleapis": "^140.0.1",
         "jsonwebtoken": "^9.0.2",
-        "minio": "7.1.4",
+        "minio": "8.0.1",
         "multer": "^1.4.5-lts.1",
         "opentelemetry-instrumentation-typeorm": "^0.41.0",
         "passport": "^0.7.0",

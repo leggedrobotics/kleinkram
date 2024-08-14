@@ -5,7 +5,7 @@ import { SubmitAction } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 import { JWTUser } from '../auth/paramDecorator';
 
 @Injectable()
@@ -55,7 +55,7 @@ export class ActionService {
                 take,
             });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.actionRepository
                 .createQueryBuilder('action')
                 .leftJoinAndSelect('action.mission', 'mission')

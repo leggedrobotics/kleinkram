@@ -107,11 +107,6 @@ import { Action } from 'src/types/Action';
 import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
-import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
-import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
-import ButtonGroup from 'components/ButtonGroup.vue';
-import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 
 const router = useRouter();
@@ -143,12 +138,14 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
 
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
+
 function setPagination(update: TableRequest) {
     props.handler?.setPage(update.pagination.page);
     props.handler?.setTake(update.pagination.rowsPerPage);
     props.handler?.setSort(update.pagination.sortBy);
     props.handler?.setDescending(update.pagination.descending);
 }
+
 const pagination = computed(() => {
     return {
         page: props.handler.page,

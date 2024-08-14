@@ -42,9 +42,15 @@
                             >
                                 <q-item-section>View Missions</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Edit Metadata</q-item-section>
-                            </q-item>
+                            <EditProjectDialogOpener
+                                :project_uuid="props.row.uuid"
+                            >
+                                <q-item clickable v-ripple>
+                                    <q-item-section
+                                        >Edit Project
+                                    </q-item-section>
+                                </q-item>
+                            </EditProjectDialogOpener>
                             <q-item clickable v-ripple disabled>
                                 <q-item-section>Configure Tags</q-item-section>
                             </q-item>
@@ -57,9 +63,13 @@
                             >
                                 <q-item-section>Manage Access</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete</q-item-section>
-                            </q-item>
+                            <DeleteProjectDialogOpener
+                                :project_uuid="props.row.uuid"
+                            >
+                                <q-item clickable v-ripple>
+                                    <q-item-section>Delete</q-item-section>
+                                </q-item>
+                            </DeleteProjectDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -76,6 +86,8 @@ import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
+import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
+import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 
 const $q = useQuasar();
 
@@ -92,6 +104,7 @@ function setPagination(update: TableRequest) {
     props.url_handler?.setSort(update.pagination.sortBy);
     props.url_handler?.setDescending(update.pagination.descending);
 }
+
 const pagination = computed(() => {
     return {
         page: props.url_handler.page,

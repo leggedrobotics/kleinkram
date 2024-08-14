@@ -1,14 +1,14 @@
 <template>
-    <q-btn color="red" outline icon="sym_o_delete" @click="deleteProjectDialog">
-        <q-tooltip> Delete the Project </q-tooltip>
-    </q-btn>
+    <div @click="deleteProjectDialog">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">
 import { deleteProject } from 'src/services/mutations/project';
 import { Notify, useQuasar } from 'quasar';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useProjectQuery } from 'src/hooks/customQueryHooks';
+import { useHandler, useProjectQuery } from 'src/hooks/customQueryHooks';
 import { ref } from 'vue';
 
 const { project_uuid } = defineProps({
@@ -17,6 +17,8 @@ const { project_uuid } = defineProps({
 
 const $q = useQuasar();
 const $emit = defineEmits(['onSuccessfulDelete']);
+
+const handler = useHandler();
 
 const queryClient = useQueryClient();
 const { data: project } = useProjectQuery(ref(project_uuid));
@@ -43,6 +45,13 @@ const deleteProjectDialog = () => {
             .then(async () => {
                 // emit the event
                 $emit('onSuccessfulDelete');
+
+                Notify.create({
+                    message: 'Project deleted successfully!',
+                    color: 'positive',
+                });
+
+                handler.value.setProjectUUID('');
 
                 // invalidate queries
                 await queryClient.invalidateQueries({ queryKey: ['projects'] });

@@ -1,4 +1,11 @@
 services:
+    action_test_file_hash:
+        image: rslethz/action:file-hash-latest
+        build:
+            context: ./
+            dockerfile: backend/tests/actions/file-hash/Dockerfile
+        entrypoint: sh
+
     main:
         image: rslethz/grandtour-datasets:api-server-latest
         container_name: API
@@ -11,6 +18,8 @@ services:
             - /usr/src/app/node_modules
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+        environment:
+            SEED: 'false'
         env_file:
             - .env
         networks:
@@ -160,36 +169,10 @@ services:
             - privatenet
             - webnet
 
-    grafana:
-        image: grafana/grafana
-        volumes:
-            - logging-grafana-storage:/var/lib/grafana
-            - ./observability/grafana/provisioning:/etc/grafana/provisioning
-
-        environment:
-            - GF_LOG_LEVEL=critical
-        ports:
-            - '9050:3000' # localhost:9050 for accessing grafana
-        networks:
-            - privatenet
-            - webnet
-
-    docs:
-        build:
-            context: docs/.
-            dockerfile: local-dev.Dockerfile
-        ports:
-            - '4000:4000'
-        volumes:
-            - ./docs:/app/src
-            - vitepress_dist:/app/src/.vitepress/dist
-            - node_modules:/app/src/node_modules
-
 volumes:
     db_data_test:
     minio_data_test:
     logging-prometheus-storage:
-    logging-grafana-storage:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
