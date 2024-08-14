@@ -1,9 +1,11 @@
-import { Ref } from 'vue';
+import { ref, Ref } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
 import { getMission } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
+import { useRouter } from 'vue-router';
+import { QueryURLHandler } from 'src/services/URLHandler';
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,
@@ -52,4 +54,13 @@ export const useAllProjectsQuery = (
         queryFn: () =>
             filteredProjects(take, skip, sortBy, descending, searchParams),
     });
+};
+
+export const useHandler = () => {
+    const handler: Ref<QueryURLHandler> = ref(
+        new QueryURLHandler(),
+    ) as unknown as Ref<QueryURLHandler>;
+    handler.value.setRouter(useRouter());
+
+    return handler;
 };

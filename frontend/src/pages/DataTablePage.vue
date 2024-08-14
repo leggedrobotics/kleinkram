@@ -337,17 +337,14 @@ import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
 import { all } from 'axios';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
-const router = useRouter();
 const tableRef: Ref<QTable | null> = ref(null);
 
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(undefined, 0, 20, 'file.filename', false),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const loading = ref(false);
 const filter = ref('');

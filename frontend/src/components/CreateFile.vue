@@ -117,6 +117,7 @@ import {
     createDrive,
     getUploadURL,
 } from 'src/services/mutations/queue';
+
 const selected_project: Ref<Project | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
@@ -217,7 +218,24 @@ const submitNewFile = async () => {
         const urls = await getUploadURL(
             filteredFilenames,
             selected_mission.value.uuid,
-        );
+        ).catch((e) => {
+            let msg = `Upload of Files failed: ${e}`;
+
+            // show special error for 403
+            if (e.response && e.response.status === 403) {
+                msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.value?.name}`;
+            }
+
+            // close the notification
+            noti({
+                message: msg,
+                color: 'negative',
+                spinner: false,
+                position: 'top-right',
+                timeout: 30000,
+                closeBtn: true,
+            });
+        });
         await Promise.all(
             filteredFilenames.map((filename) => {
                 const file = filesToRecord[filename];
