@@ -12,6 +12,7 @@
                         placeholder="Select start date"
                         class="q-pa-sm"
                         style="width: 49%"
+                        @clear="resetStartDate"
                     >
                         <template v-slot:prepend>
                             <q-icon name="sym_o_event" class="cursor-pointer">
@@ -49,6 +50,7 @@
                         placeholder="Select start date"
                         class="q-pa-sm"
                         style="width: 49%"
+                        @clear="resetEndDate"
                     >
                         <template v-slot:prepend>
                             <q-icon name="sym_o_event" class="cursor-pointer">
@@ -641,6 +643,13 @@ function onFileTypeClicked(index: number) {
     }
 }
 
+function resetStartDate() {
+    startDates.value = formatDate(start);
+}
+
+function resetEndDate() {
+    endDates.value = formatDate(end);
+}
 function resetFilter() {
     handler.value.setProjectUUID(undefined);
     handler.value.setMissionUUID(undefined);
@@ -648,8 +657,13 @@ function resetFilter() {
     filter.value = '';
     selectedTopics.value = [];
     and_or.value = false;
-    mcap_bag.value = true;
+    fileTypeFilter.value = [
+        { name: 'Bag', value: false },
+        { name: 'MCAP', value: true },
+    ];
     tagFilter.value = [];
+    resetStartDate();
+    resetEndDate();
 }
 </script>
 <style scoped>

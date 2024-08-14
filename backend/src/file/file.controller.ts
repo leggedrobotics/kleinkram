@@ -1,9 +1,18 @@
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
+    CanDeleteProject,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
@@ -21,7 +30,6 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-    QueryOptional,
     QueryOptionalRecord,
     QueryOptionalBoolean,
 } from '../validation/queryDecorators';
@@ -160,5 +168,11 @@ export class FileController {
         @QueryString('filename') name: string,
     ) {
         return this.fileService.findOneByName(uuid, name);
+    }
+
+    @Post('delete')
+    @CanDeleteProject()
+    async deleteFile(@QueryUUID('uuid') uuid: string) {
+        return this.fileService.deleteFile(uuid);
     }
 }

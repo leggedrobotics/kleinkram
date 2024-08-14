@@ -9,7 +9,7 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio, moveFile } from '../minioHelper';
+import { deleteFile, externalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
@@ -500,5 +500,19 @@ export class FileService {
             where: { mission: { uuid: missionUUID }, filename: name },
             relations: ['creator'],
         });
+    }
+
+    async deleteFile(uuid: string) {
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
+        const bucket =
+            file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME;
+        const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
+        await deleteFile(bucket, location);
+        await this.fileRepository.delete({ uuid });
     }
 }

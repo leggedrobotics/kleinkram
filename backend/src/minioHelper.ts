@@ -111,3 +111,7 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
             : env.MINIO_MCAP_BUCKET_NAME;
     return internalMinio.statObject(bucketName, location);
 }
+
+export async function deleteFile(bucketName: string, location: string) {
+    return internalMinio.removeObject(bucketName, location);
+}
