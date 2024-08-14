@@ -279,7 +279,8 @@ const { mutate: updateFileMutation } = useMutation({
                 (query) =>
                     query.queryKey[0] === 'Filtered Files' ||
                     (query.queryKey[0] === 'file' &&
-                        query.queryKey[1] === props.file_uuid),
+                        query.queryKey[1] === props.file_uuid) ||
+                    query.queryKey[0] === 'files',
             );
 
         filtered.forEach((query) => {
