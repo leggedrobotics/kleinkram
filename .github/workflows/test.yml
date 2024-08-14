@@ -25,5 +25,7 @@ jobs:
               working-directory: ./backend
               run: |
                   docker compose -f ../docker-compose.testing.yml up -d
-                  sleep 120
+                  while [ ! -f ./__generated__endpoints.json ]; do
+                      sleep 1
+                  done
                   yarn test
