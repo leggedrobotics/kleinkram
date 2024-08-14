@@ -15,7 +15,11 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <DeleteProjectButton :project_uuid="project_uuid" />
+                <DeleteProjectDialogOpener :project_uuid="project_uuid">
+                    <q-btn color="red" outline icon="sym_o_delete">
+                        <q-tooltip> Delete the Project</q-tooltip>
+                    </q-btn>
+                </DeleteProjectDialogOpener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>
                     <q-tooltip> More Actions</q-tooltip>
                 </q-btn>
@@ -220,13 +224,13 @@ import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTa
 import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
-import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
 import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
+import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 
 const $q = useQuasar();
 

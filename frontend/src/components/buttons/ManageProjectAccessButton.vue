@@ -6,7 +6,7 @@
         label="Access Rights"
         @click="manageProjectAccess"
     >
-        <q-tooltip> Manage Access to the Project </q-tooltip>
+        <q-tooltip> Manage Access to the Project</q-tooltip>
     </q-btn>
 </template>
 
