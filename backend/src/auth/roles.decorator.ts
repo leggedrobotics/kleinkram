@@ -21,6 +21,8 @@ import {
     CreateActionGuard,
     AddTagGuard,
     DeleteTagGuard,
+    CanDeleteMissionGuard,
+    DeleteFileGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -134,6 +136,20 @@ export function CanWriteMissionByBody() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
         UseGuards(WriteMissionByBodyGuard),
+    );
+}
+
+export function CanDeleteMission() {
+    return applyDecorators(
+        SetMetadata('CanReadMissionByBody', true),
+        UseGuards(CanDeleteMissionGuard),
+    );
+}
+
+export function CanDeleteFile() {
+    return applyDecorators(
+        SetMetadata('CanDeleteFile', true),
+        UseGuards(DeleteFileGuard),
     );
 }
 

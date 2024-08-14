@@ -41,7 +41,7 @@
                     icon="sym_o_analytics"
                     label="Actions"
                     @click="
-                        router.push({
+                        $router.push({
                             path: ROUTES.ACTION.path,
                             query: {
                                 project_uuid: project_uuid,
@@ -52,7 +52,9 @@
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
-                <q-btn outline color="red" icon="sym_o_delete"></q-btn>
+                <delete-mission-dialog-opener :mission="mission" v-if="mission">
+                    <q-btn outline color="red" icon="sym_o_delete"></q-btn>
+                </delete-mission-dialog-opener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>
                     <q-tooltip> More Actions</q-tooltip>
                 </q-btn>
@@ -207,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
@@ -229,6 +231,9 @@ import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
+import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
+import { Notify } from 'quasar';
+import RouterService from 'src/services/routerService';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -237,7 +242,21 @@ const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
 
 const { data: project } = useProjectQuery(project_uuid);
-const { data: mission } = useMissionQuery(mission_uuid);
+const { data: mission } = useMissionQuery(
+    mission_uuid,
+    (error, query) => {
+        console.log('errsdfor: ', error);
+        Notify.create({
+            message: `Error fetching Mission: ${error.response.data.message}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'top-right',
+        });
+        handler.value.setMissionUUID(undefined);
+        return false;
+    },
+    200,
+);
 
 function refresh() {
     if (handler.value.isListingProjects) {

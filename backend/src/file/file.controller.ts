@@ -12,6 +12,7 @@ import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
+    CanDeleteFile,
     CanDeleteProject,
     CanReadFile,
     CanReadFileByName,
@@ -35,6 +36,7 @@ import {
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
+import { BodyUUID } from '../validation/bodyDecorators';
 
 @Controller('file')
 export class FileController {
@@ -170,9 +172,9 @@ export class FileController {
         return this.fileService.findOneByName(uuid, name);
     }
 
-    @Post('delete')
-    @CanDeleteProject()
-    async deleteFile(@QueryUUID('uuid') uuid: string) {
+    @Delete()
+    @CanDeleteFile()
+    async deleteFile(@BodyUUID('uuid') uuid: string) {
         return this.fileService.deleteFile(uuid);
     }
 }

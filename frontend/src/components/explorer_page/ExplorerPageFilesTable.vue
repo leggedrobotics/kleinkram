@@ -48,8 +48,15 @@
                             <q-item clickable v-ripple disabled>
                                 <q-item-section>Move</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete</q-item-section>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <DeleteFileDialogOpener
+                                        :file="props.row"
+                                        v-if="props.row"
+                                    >
+                                        Delete File
+                                    </DeleteFileDialogOpener>
+                                </q-item-section>
                             </q-item>
                         </q-list>
                     </q-menu>
@@ -69,6 +76,7 @@ import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 

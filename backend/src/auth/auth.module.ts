@@ -28,6 +28,7 @@ import MissionAccess from '@common/entities/auth/mission_access.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import { AccessService } from './access.service';
 import { AccessController } from './access.controller';
+import FileEntity from '@common/entities/file/file.entity';
 
 @Module({
     imports: [
@@ -43,6 +44,7 @@ import { AccessController } from './access.controller';
             MissionAccess,
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
+            FileEntity,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({

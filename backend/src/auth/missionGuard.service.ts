@@ -44,10 +44,13 @@ export class MissionGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const mission = await this.missionRepository.findOneOrFail({
+        const mission = await this.missionRepository.findOne({
             where: { uuid: missionUUID },
             relations: ['project'],
         });
+        if (!mission) {
+            return false;
+        }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
                 userUUID,

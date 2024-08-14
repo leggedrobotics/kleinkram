@@ -63,8 +63,6 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
             if (!user.uuid) {
                 throw new BadRequestException('Missing User / UUID');
             }
-            console.log(request.user.uuid);
-            console.log(request.query.uuid);
             const canAccess = await this.missionGuardService.canAccessMission(
                 request.user.uuid,
                 request.query.uuid,
@@ -220,6 +218,32 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
+export class DeleteFileGuard extends AuthGuard('jwt') {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const fileUUID = request.body.uuid;
+        console.log('fileUUID', fileUUID);
+        return this.fileGuardService.canAccessFile(
+            user.uuid,
+            fileUUID,
+            AccessGroupRights.DELETE,
+        );
+    }
+}
+
+@Injectable()
 export class CreateProjectGuard extends AuthGuard('jwt') {
     constructor(
         private projectGuardService: ProjectGuardService,
@@ -308,6 +332,31 @@ export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
             user.uuid,
             missionUUID,
             AccessGroupRights.WRITE,
+        );
+    }
+}
+
+@Injectable()
+export class CanDeleteMissionGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUID = request.body.uuid;
+        return this.missionGuardService.canAccessMission(
+            user.uuid,
+            missionUUID,
+            AccessGroupRights.DELETE,
         );
     }
 }
