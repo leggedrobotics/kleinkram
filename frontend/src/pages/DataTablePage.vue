@@ -265,21 +265,16 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
-import { useRouter } from 'vue-router';
-import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const $q = useQuasar();
-const router = useRouter();
 
 const tableRef: Ref<QTable | null> = ref(null);
 
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const loading = ref(false);
 const filter = ref('');
