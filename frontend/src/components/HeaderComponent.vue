@@ -41,7 +41,10 @@
                 @click="$router.push('/')"
             >
                 <div style="height: 56px">
-                    <img src="logoRSL.png" style="height: 28px; margin: 14px" />
+                    <img
+                        src="/logoRSL.png"
+                        style="height: 28px; margin: 14px"
+                    />
                 </div>
                 <div class="flex column justify-center" style="height: 56px">
                     <span
