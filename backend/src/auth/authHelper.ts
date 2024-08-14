@@ -1,35 +1,50 @@
 import { Brackets, SelectQueryBuilder } from 'typeorm';
 
-export function addAccessJoinsAndConditions(
+export function addAccessConstraints(
     qb: SelectQueryBuilder<any>,
     userUUID: string,
 ): SelectQueryBuilder<any> {
-    return qb
-        .leftJoin(
-            'ProjectAccessViewEntity',
-            'projectAccessView',
-            'projectAccessView.projectuuid = project.uuid',
-        )
-        .leftJoin(
-            'MissionAccessViewEntity',
-            'missionAccessView',
-            'missionAccessView.missionuuid = mission.uuid',
-        )
-        .leftJoin(
-            'user',
-            'projectUsers',
-            'projectAccessView.useruuid = projectUsers.uuid',
-        )
-        .leftJoin(
-            'user',
-            'missionUsers',
-            'missionAccessView.useruuid = missionUsers.uuid',
-        )
-        .andWhere(
-            new Brackets((qb) => {
-                qb.where('projectUsers.uuid = :user', {
-                    user: userUUID,
-                }).orWhere('missionUsers.uuid = :user', { user: userUUID });
-            }),
-        );
+    // Add project access join
+    qb.leftJoin(
+        (subQuery) => {
+            return subQuery
+                .select(
+                    'DISTINCT "projectAccessView"."projectuuid"',
+                    'projectuuid',
+                )
+                .from('project_access_view_entity', 'projectAccessView')
+                .where('"projectAccessView"."useruuid" = :userUUID', {
+                    userUUID,
+                });
+        },
+        'projectAccess',
+        '"projectAccess"."projectuuid" = "project"."uuid"',
+    );
+
+    // Add mission access join
+    qb.leftJoin(
+        (subQuery) => {
+            return subQuery
+                .select(
+                    'DISTINCT "missionAccessView"."missionuuid"',
+                    'missionuuid',
+                )
+                .from('mission_access_view_entity', 'missionAccessView')
+                .where('"missionAccessView"."useruuid" = :userUUID', {
+                    userUUID,
+                });
+        },
+        'missionAccess',
+        '"missionAccess"."missionuuid" = "mission"."uuid"',
+    );
+
+    qb.andWhere(
+        new Brackets((qb) => {
+            qb.where('"missionAccess"."missionuuid" IS NOT NULL').orWhere(
+                '"projectAccess"."projectuuid" IS NOT NULL',
+            );
+        }),
+    );
+
+    return qb;
 }

@@ -12,7 +12,7 @@ import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
 import { TagService } from '../tag/tag.service';
 import env from '@common/env';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 
 @Injectable()
 export class MissionService {
@@ -108,7 +108,7 @@ export class MissionService {
             });
             return project.missions;
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.missionRepository
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')
@@ -146,7 +146,7 @@ export class MissionService {
                 take,
             });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.missionRepository
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')

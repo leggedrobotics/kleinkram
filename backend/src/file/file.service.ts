@@ -14,7 +14,7 @@ import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
@@ -46,7 +46,7 @@ export class FileService {
                 take,
             });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.fileRepository
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
@@ -85,7 +85,7 @@ export class FileService {
             .take(take);
 
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessJoinsAndConditions(query, userUUID);
+            query = addAccessConstraints(query, userUUID);
         }
         if (projectName) {
             query.andWhere('project.name = :projectName', { projectName });
@@ -192,7 +192,7 @@ export class FileService {
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessJoinsAndConditions(query, userUUID);
+            query = addAccessConstraints(query, userUUID);
         }
 
         // Apply filters for fileName, projectUUID, and date
