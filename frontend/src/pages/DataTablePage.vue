@@ -137,39 +137,9 @@
                         clearable
                         dense
                         outline
-                        class="full-width"
-                        style="line-height: 1rem"
+                        class="full-width full-height"
+                        :label="'File Types: ' + selectedFileTypes"
                     >
-                        <template v-slot:label>
-                            <div class="row flex full-width">
-                                <q-btn-dropdown
-                                    dense
-                                    outline
-                                    style="width: 20%"
-                                    class="col-3"
-                                >
-                                    <template v-slot:label>
-                                        {{ and_or ? 'And' : 'Or' }}
-                                    </template>
-                                    <q-list>
-                                        <q-item
-                                            v-for="(item, index) in [
-                                                'And',
-                                                'Or',
-                                            ]"
-                                            clickable
-                                            :key="index"
-                                            @click="and_or = item === 'And'"
-                                        >
-                                            <q-item-section>
-                                                {{ item }}
-                                            </q-item-section>
-                                        </q-item>
-                                    </q-list>
-                                </q-btn-dropdown>
-                                <div class="col-9">{{ selectedFileTypes }}</div>
-                            </div>
-                        </template>
                         <q-list style="width: 100%">
                             <q-item
                                 v-for="(option, index) in fileTypeFilter"
@@ -200,20 +170,50 @@
                     />
                 </div>
 
-                <div class="col-4 q-pa-sm">
+                <div
+                    class="col-4 q-pa-sm"
+                    style="display: flex; align-items: center"
+                >
                     <q-select
                         v-model="selectedTopics"
                         label="Select Topics"
+                        use-input
+                        @filter="filterFn"
+                        input-debounce="20"
                         outlined
                         dense
                         clearable
                         multiple
                         use-chips
-                        :options="topics"
+                        :options="displayedTopics"
                         emit-value
                         map-options
                         class="full-width"
-                    />
+                        style="padding-right: 5px"
+                    >
+                    </q-select>
+                    <q-btn-dropdown
+                        dense
+                        outline
+                        class="full-height"
+                        style="min-width: 60px"
+                    >
+                        <template v-slot:label>
+                            {{ and_or ? 'And' : 'Or' }}
+                        </template>
+                        <q-list>
+                            <q-item
+                                v-for="(item, index) in ['And', 'Or']"
+                                clickable
+                                :key="index"
+                                @click="and_or = item === 'And'"
+                            >
+                                <q-item-section>
+                                    {{ item }}
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-btn-dropdown>
                 </div>
 
                 <div class="col-3 q-pa-sm">
@@ -336,6 +336,7 @@ import { fetchOverview } from 'src/services/queries/file';
 import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
+import { all } from 'axios';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -398,11 +399,11 @@ const { data: _missions, refetch } = useQuery<[Mission[], number]>({
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 // Fetch topics
-const topicsReturn = useQuery<string[]>({
+const { data: allTopics } = useQuery<string[]>({
     queryKey: ['topics'],
     queryFn: allTopicsNames,
 });
-const topics = topicsReturn.data;
+const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
@@ -613,6 +614,24 @@ function openTagFilterDialog() {
     });
 }
 
+function filterFn(val: string, update) {
+    if (val === '') {
+        update(() => {
+            displayedTopics.value = allTopics.value;
+        });
+        return;
+    }
+    update(() => {
+        if (!allTopics.value) return;
+        const needle = val.toLowerCase();
+        const filtered = allTopics.value.filter(
+            (v) => v.toLowerCase().indexOf(needle) > -1,
+        );
+        console.log(filtered);
+        displayedTopics.value = filtered;
+    });
+}
+
 const onRowClick = (_: Event, row: any) => {
     $routerService?.routeTo(ROUTES.FILE, {
         uuid: row.uuid,
@@ -637,3 +656,8 @@ function resetFilter() {
     tagFilter.value = [];
 }
 </script>
+<style scoped>
+.dropdown-foreground {
+    z-index: 1000; /* Ensure it's in the foreground */
+}
+</style>

@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data"
+                        :rows="data || []"
                         :columns="columns"
                         row-key="uuid"
                         wrap-cells
@@ -50,7 +50,7 @@
                     />
                     <q-toggle
                         v-if="tagLookup[tagTypeUUID].type === DataType.BOOLEAN"
-                        v-model="tagValues[tagTypeUUID]"
+                        v-model="tagValues[tagTypeUUID].value"
                         :label="
                             tagValues[tagTypeUUID] === undefined
                                 ? '-'
@@ -102,26 +102,51 @@ const props = defineProps<{
 }>();
 
 const tagtype = ref<string>('');
-const tagValues = ref<Record<string, any>>(props.tagValues || {});
+const tagValues = ref<Record<string, any>>({ ...props.tagValues } || {});
 
 const convertedTagValues = computed(() => {
     const converted: Record<string, any> = {};
     Object.keys(tagValues.value).forEach((key) => {
         const tagType = tagLookup.value[key];
-        converted[key] = { value: undefined, name: tagValues.value[key].name };
 
         switch (tagType.type) {
             case DataType.BOOLEAN:
-                converted[key].value = tagValues.value[key].value === 'true';
+                console.log(tagValues.value[key].value);
+                if (!(tagValues.value[key].value in ['true', 'false'])) {
+                    break;
+                }
+                converted[key] = {
+                    value: tagValues.value[key].value === 'true',
+                    name: tagValues.value[key].name,
+                };
+
                 break;
             case DataType.NUMBER:
-                converted[key].value = parseFloat(tagValues.value[key].value);
+                if (isNaN(parseFloat(tagValues.value[key].value))) {
+                    break;
+                }
+                converted[key] = {
+                    value: parseFloat(tagValues.value[key].value),
+                    name: tagValues.value[key].name,
+                };
                 break;
             case DataType.DATE:
-                converted[key].value = new Date(tagValues.value[key].value);
+                if (!tagValues.value[key].value) {
+                    break;
+                }
+                converted[key] = {
+                    value: new Date(tagValues.value[key].value),
+                    name: tagValues.value[key].name,
+                };
                 break;
             default:
-                converted[key].value = tagValues.value[key].value;
+                if (!tagValues.value[key].value) {
+                    break;
+                }
+                converted[key] = {
+                    value: tagValues.value[key].value,
+                    name: tagValues.value[key].name,
+                };
         }
     });
     return converted;

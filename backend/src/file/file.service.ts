@@ -314,6 +314,7 @@ export class FileService {
             );
         }
         query.groupBy('file.uuid');
+        console.log(query.getQueryAndParameters());
         // Execute the query
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
