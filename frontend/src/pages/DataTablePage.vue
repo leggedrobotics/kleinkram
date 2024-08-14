@@ -666,8 +666,4 @@ function resetFilter() {
     resetEndDate();
 }
 </script>
-<style scoped>
-.dropdown-foreground {
-    z-index: 1000; /* Ensure it's in the foreground */
-}
-</style>
+<style scoped></style>

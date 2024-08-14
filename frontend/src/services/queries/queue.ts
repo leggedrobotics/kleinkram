@@ -8,9 +8,7 @@ export const currentQueue = async (startDate: Date) => {
     };
     const response = await axios.get('/queue/active', { params });
     const users: Record<string, User> = {};
-    console.log('here');
     if (!response.data || response.data.length === 0) return [];
-    console.log('here2', response.data);
     return response.data.map((res: any) => {
         let creator: User | undefined = users[res.creator.uuid];
         if (!creator) {

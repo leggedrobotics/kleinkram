@@ -111,7 +111,6 @@ const convertedTagValues = computed(() => {
 
         switch (tagType.type) {
             case DataType.BOOLEAN:
-                console.log(tagValues.value[key].value);
                 if (!(tagValues.value[key].value in ['true', 'false'])) {
                     break;
                 }
