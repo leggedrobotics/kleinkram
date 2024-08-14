@@ -8,10 +8,8 @@
 import { deleteProject } from 'src/services/mutations/project';
 import { Notify, useQuasar } from 'quasar';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useProjectQuery } from 'src/hooks/customQueryHooks';
-import { Ref, ref } from 'vue';
-import { QueryURLHandler } from 'src/services/URLHandler';
-import { useRouter } from 'vue-router';
+import { useHandler, useProjectQuery } from 'src/hooks/customQueryHooks';
+import { ref } from 'vue';
 
 const { project_uuid } = defineProps({
     project_uuid: String,
@@ -20,12 +18,7 @@ const { project_uuid } = defineProps({
 const $q = useQuasar();
 const $emit = defineEmits(['onSuccessfulDelete']);
 
-const router = useRouter();
-
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const queryClient = useQueryClient();
 const { data: project } = useProjectQuery(ref(project_uuid));

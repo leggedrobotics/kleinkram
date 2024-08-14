@@ -207,13 +207,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref } from 'vue';
+import { computed } from 'vue';
 import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
-import { useRouter } from 'vue-router';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
-import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
-import { QueryURLHandler } from 'src/services/URLHandler';
+import {
+    useHandler,
+    useMissionQuery,
+    useProjectQuery,
+} from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
@@ -224,21 +226,12 @@ import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessBut
 import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
-import { useQuasar } from 'quasar';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 
-const $q = useQuasar();
-
 const queryClient = useQueryClient();
-
-const router = useRouter();
-
-const handler: Ref<QueryURLHandler> = ref(
-    new QueryURLHandler(),
-) as unknown as Ref<QueryURLHandler>;
-handler.value.setRouter(router);
+const handler = useHandler();
 
 const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
