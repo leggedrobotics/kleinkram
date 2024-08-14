@@ -85,7 +85,7 @@
             >
                 <span class="q-pr-sm">{{ log.timestamp }}</span>
                 <span class="q-pr-sm"> [{{ log.type }}] </span>
-                <span>{{ log.message }}</span>
+                <span>{{ log.message.replaceAll(' ', '\u00a0') }}</span>
             </div>
         </q-card-section>
     </q-card>
