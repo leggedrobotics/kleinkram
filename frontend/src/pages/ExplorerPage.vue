@@ -77,14 +77,11 @@
             </div>
 
             <div class="flex column q-mb-auto">
-                <q-btn
-                    outline
-                    icon="sym_o_edit"
-                    label="Edit Project"
-                    @click="openEditProject"
-                >
-                    <q-tooltip> Edit Project</q-tooltip>
-                </q-btn>
+                <EditProjectDialogOpener :project_uuid="project_uuid">
+                    <q-btn outline icon="sym_o_edit" label="Edit Project">
+                        <q-tooltip> Edit Project</q-tooltip>
+                    </q-btn>
+                </EditProjectDialogOpener>
             </div>
         </q-card-section>
     </q-card>
@@ -228,9 +225,9 @@ import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpe
 import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
-import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
+import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 
 const $q = useQuasar();
 
@@ -277,14 +274,5 @@ function getComponent() {
     }
     console.log('No component found');
     return ExplorerPageProjectTable;
-}
-
-function openEditProject() {
-    $q.dialog({
-        component: EditProjectDialog,
-        componentProps: {
-            project_uuid: project_uuid.value,
-        },
-    });
 }
 </script>
