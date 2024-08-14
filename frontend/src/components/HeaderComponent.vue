@@ -1,28 +1,38 @@
 <template>
     <q-header bordered class="bg-white text-grey-8">
         <q-toolbar style="height: 56px">
-            <q-btn flat dense round icon="sym_o_menu" v-show="$q.screen.lt.md">
-                <q-menu auto-close style="width: 280px; height: 56px">
-                    <q-list>
-                        <q-item
-                            v-for="item in main_menu"
-                            :key="item.title"
-                            clickable
-                            :to="item.to"
-                        >
-                            <q-item-section avatar>
-                                <q-icon
-                                    :name="item.icon"
-                                    style="font-weight: bold"
-                                />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>{{ item.title }}</q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-menu>
-            </q-btn>
+            <div>
+                <q-btn
+                    flat
+                    dense
+                    round
+                    icon="sym_o_menu"
+                    v-show="$q.screen.lt.md"
+                >
+                    <q-menu auto-close style="width: 280px">
+                        <q-list>
+                            <q-item
+                                v-for="item in main_menu"
+                                :key="item.title"
+                                clickable
+                                :to="item.to"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon
+                                        :name="item.icon"
+                                        style="font-weight: bold"
+                                    />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label
+                                        >{{ item.title }}
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </div>
 
             <q-toolbar-title
                 shrink
@@ -71,7 +81,7 @@
 
 <script setup lang="ts">
 import ROUTES from 'src/router/routes';
-import ProfileComponent from 'components/ProfileComponent.vue';
+import ProfileComponent from 'components/HeaderMenuRight.vue';
 
 const main_menu = [
     { title: 'Explorer', icon: 'sym_o_table_chart', to: ROUTES.EXPLORER.path },
