@@ -1,0 +1,29 @@
+name: Test The Application
+
+on:
+    pull_request:
+
+jobs:
+    test_API:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '22'
+
+            - name: install dependencies
+              run: yarn install --immutable
+
+            - name: build_stack
+              run: docker compose -f docker-compose.testing.yml build
+
+            - name: launch_stack
+              working-directory: ./backend
+              run: |
+                  docker compose -f ../docker-compose.testing.yml up -d
+                  sleep 120
+                  yarn test

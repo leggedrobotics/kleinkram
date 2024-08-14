@@ -17,6 +17,7 @@ define(FileEntity, (_, context: Partial<FileContext> = {}) => {
     file.mission = context?.mission || null;
     file.size = extendedFaker.number.int({ min: 0, max: 2e12 }); // 0 bytes to 2 TB
     file.creator = context?.user || null;
+    file.tentative = false;
     file.topics = [];
     return file;
 });

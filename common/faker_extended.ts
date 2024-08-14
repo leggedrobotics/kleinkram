@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { FileType } from './enum';
+import { DataType, FileType } from './enum';
 
 /**
  * A modified faker implementation that provides
@@ -18,7 +18,37 @@ type ExtendedFaker = typeof faker & {
     project: {
         name: () => string;
     };
+    tagType: {
+        tagType: () => [string, DataType, string];
+    };
 };
+
+const tags: [string, DataType, string][] = [
+    ['coordinates', DataType.LOCATION, 'coordinates of the data capture'],
+    ['location', DataType.STRING, 'location of the data capture'],
+    ['time', DataType.DATE, 'time of the data capture'],
+    ['temperature', DataType.NUMBER, 'temperature of the data capture'],
+    ['robot_name', DataType.STRING, 'name of the robot (e.g. Donkey, Dingo)'],
+    ['used_stack', DataType.STRING, 'used software stack'],
+    ['hardware_configuration', DataType.STRING, 'used hardware configuration'],
+    ['additional_information', DataType.LINK, 'additional information'],
+    ['image', DataType.LINK, 'preview image of the data capture'],
+    ['video', DataType.LINK, 'preview video of the data capture'],
+    ['audio', DataType.LINK, 'preview audio of the data capture'],
+    ['description', DataType.STRING, 'description of the data capture'],
+    ['robot_type', DataType.STRING, 'type of the robot (e.g. car, drone)'],
+    ['is_validated', DataType.BOOLEAN, 'is the data capture validated'],
+    ['is_public', DataType.BOOLEAN, 'is the data capture public'],
+    ['is_sensitive', DataType.BOOLEAN, 'is the data capture sensitive'],
+    ['number_of_files', DataType.NUMBER, 'number of files in the data capture'],
+    ['file_size', DataType.NUMBER, 'size of the data capture'],
+    ['file_type', DataType.STRING, 'type of the data capture'],
+    ['file_name', DataType.STRING, 'name of the data capture'],
+    ['file_path', DataType.LINK, 'path of the data capture'],
+    ['file_url', DataType.LINK, 'url of the data capture'],
+    ['file_preview', DataType.LINK, 'preview of the data capture'],
+    ['file_description', DataType.STRING, 'description of the data capture'],
+];
 
 const ros_topic_names = [
     'chatter',
@@ -167,6 +197,24 @@ const ros_topic_types = [
     'trajectory_msgs/JointTrajectory',
 ];
 
+const mission_names = [
+    'Tunnel Mai',
+    'Sechselläuten',
+    'Expedition',
+    'Voyage',
+    'Exploration',
+    'Survey',
+    'Mission',
+    'Quest',
+    'Operation',
+    'Journey',
+    'Adventure',
+    'long_distance_hiking',
+    'zermatt_2021',
+    'hiking',
+    'anymal_on_ice',
+];
+
 const devices = ['jetson', 'npc', 'lpc', 'opc'];
 
 const extendedFaker = faker as ExtendedFaker;
@@ -182,24 +230,16 @@ extendedFaker.ros = {
 
 extendedFaker.mission = {
     name: () => {
-        const events = [
-            'Tunnel Mai',
-            'Sechselläuten',
-            'Expedition',
-            'Voyage',
-            'Exploration',
-            'Survey',
-            'Mission',
-            'Quest',
-            'Operation',
-            'Journey',
-        ];
-
-        const date = faker.date.future().getDate();
-        const event = faker.helpers.arrayElement(events);
-
-        return `${event} ${date}`;
+        const mission = faker.helpers.arrayElement(mission_names);
+        const year = faker.date.future().getFullYear();
+        const month = faker.date.future().getMonth();
+        const day = faker.date.future().getDay();
+        return `${mission} (${year}-${month}-${day})`;
     },
+};
+
+extendedFaker.tagType = {
+    tagType: () => faker.helpers.arrayElement(tags),
 };
 
 extendedFaker.project = {
@@ -207,7 +247,7 @@ extendedFaker.project = {
         const prefixes = [
             'Digi',
             'Grand',
-            'Heap',
+            'Heap on',
             'ANYmal on ',
             'Robo',
             'Cyber',
@@ -232,13 +272,18 @@ extendedFaker.project = {
             'Net',
             'Sys',
             'Link',
+            'Hub',
+            'Node',
+            'Chain',
         ];
 
         const prefix = faker.helpers.arrayElement(prefixes);
         const suffix = faker.helpers.arrayElement(suffixes);
 
+        const date = faker.date.future().getUTCDate();
+
         // Combine prefix and suffix to create a project name
-        return `${prefix}${suffix}`;
+        return `${prefix}${suffix} ${date}`;
     },
 };
 
