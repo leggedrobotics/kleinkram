@@ -54,34 +54,19 @@ async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
  * @param destName - Name of the destination object within the bucket name
  */
 async function copyObject(bucketName, srcName, destName) {
-    return new Promise((resolve, reject) => {
-        internalMinio.copyObject(
-            bucketName,
-            destName,
-            `/${bucketName}/${srcName}`,
-            null,
-            (err, result) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(result);
-                }
-            },
-        );
-    });
+    return internalMinio.copyObject(
+        bucketName,
+        destName,
+        `/${bucketName}/${srcName}`,
+    );
 }
 
 // Function to remove an object from the bucket
-async function removeObject(bucketName, objectName): Promise<void> {
-    return new Promise((resolve, reject) => {
-        internalMinio.removeObject(bucketName, objectName, (err) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
-    });
+async function removeObject(
+    bucketName: string,
+    objectName: string,
+): Promise<void> {
+    return internalMinio.removeObject(bucketName, objectName);
 }
 
 export async function moveFile(
