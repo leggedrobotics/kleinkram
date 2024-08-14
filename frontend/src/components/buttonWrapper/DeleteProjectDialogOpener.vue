@@ -1,7 +1,7 @@
 <template>
-    <q-btn color="red" outline icon="sym_o_delete" @click="deleteProjectDialog">
-        <q-tooltip> Delete the Project </q-tooltip>
-    </q-btn>
+    <div @click="deleteProjectDialog">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">

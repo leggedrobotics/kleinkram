@@ -60,12 +60,12 @@
                 ref="tableRef"
                 v-model:pagination="pagination"
                 title="File Processing Queue"
-                :rows="data"
+                :rows="queueEntries || []"
                 :columns="columns"
                 row-key="uuid"
                 flat
                 bordered
-                :loading="loading"
+                :loading="isLoading"
                 binary-state-sort
                 @rowClick="rowClick"
             >
@@ -73,10 +73,8 @@
                     <q-td :props="props">
                         <q-badge :color="getColor(props.row.state)">
                             <q-tooltip>
-                                {{
-                                    getDetailedFileState(props.row.state)
-                                }}</q-tooltip
-                            >
+                                {{ getDetailedFileState(props.row.state) }}
+                            </q-tooltip>
                             {{ getSimpleFileStateName(props.row.state) }}
                         </q-badge>
                     </q-td>
@@ -103,7 +101,6 @@ import RouterService from 'src/services/routerService';
 const $routerService: RouterService | undefined = inject('$routerService');
 
 const tableRef: Ref<QTable | null> = ref(null);
-const loading = ref(false);
 const now = new Date();
 const startDate = ref(formatDate(new Date(now.getTime() - 1000 * 60 * 30)));
 const pagination = ref({
@@ -112,13 +109,12 @@ const pagination = ref({
     page: 1,
     rowsPerPage: 10,
 });
-const queue = useQuery<Project[]>({
+const { data: queueEntries, isLoading } = useQuery<Project[]>({
     queryKey: ['queue', startDate],
     queryFn: () => currentQueue(parseDate(startDate.value)),
     refetchInterval: 1000,
 });
 
-const data = computed(() => queue.data);
 function rowClick(event: any, row: Queue) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');

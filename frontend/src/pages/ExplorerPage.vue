@@ -15,7 +15,11 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <DeleteProjectButton :project_uuid="project_uuid" />
+                <DeleteProjectDialogOpener :project_uuid="project_uuid">
+                    <q-btn color="red" outline icon="sym_o_delete">
+                        <q-tooltip> Delete the Project</q-tooltip>
+                    </q-btn>
+                </DeleteProjectDialogOpener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>
                     <q-tooltip> More Actions</q-tooltip>
                 </q-btn>
@@ -145,9 +149,16 @@
                 <CreateMissionButton
                     :project_uuid="project_uuid"
                     v-if="handler.isListingMissions"
-                />
-                <CreateProjectButton v-if="handler.isListingProjects" />
-                <UploadFileButton v-if="handler.isListingFiles" />
+                >
+                    <q-btn color="primary" label="Create Mission" />
+                </CreateMissionButton>
+                <CreateProjectButton v-if="handler.isListingProjects">
+                    <q-btn color="primary" label="Create Project" />
+                </CreateProjectButton>
+
+                <CreateFileDialogOpener v-if="handler.isListingFiles">
+                    <q-btn color="primary" label="Upload File" />
+                </CreateFileDialogOpener>
             </ButtonGroup>
         </q-card-section>
 
@@ -213,13 +224,14 @@ import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTa
 import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
-import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
-import CreateMissionButton from 'components/buttons/CreateMissionButton.vue';
-import CreateProjectButton from 'components/buttons/CreateProjectButton.vue';
-import UploadFileButton from 'components/buttons/UploadFileButton.vue';
+import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
+import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
+import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
+import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
+
 const $q = useQuasar();
 
 const queryClient = useQueryClient();

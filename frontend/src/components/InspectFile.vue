@@ -11,7 +11,7 @@
                     label="Edit File"
                     @click="editFile"
                 >
-                    <q-tooltip> Edit File </q-tooltip>
+                    <q-tooltip> Edit File</q-tooltip>
                 </q-btn>
                 <q-btn
                     color="primary"
@@ -19,7 +19,7 @@
                     label="Download"
                     @click="_downloadFile"
                 >
-                    <q-tooltip> Download File </q-tooltip>
+                    <q-tooltip> Download File</q-tooltip>
                 </q-btn>
                 <q-btn
                     outline
@@ -36,8 +36,8 @@
                                 @click="(e) => _copyLink()"
                             >
                                 <q-item-section
-                                    >Copy public link</q-item-section
-                                >
+                                    >Copy public link
+                                </q-item-section>
                             </q-item>
                         </q-list>
                     </q-menu>
@@ -147,10 +147,6 @@ import {
     filesOfMission,
 } from 'src/services/queries/file';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import DeleteProjectButton from 'components/buttons/DeleteProjectButton.vue';
-import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
-import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
-import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import EditFile from 'components/EditFile.vue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
