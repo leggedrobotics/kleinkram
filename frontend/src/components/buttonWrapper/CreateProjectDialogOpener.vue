@@ -1,5 +1,7 @@
 <template>
-    <q-btn color="primary" label="Create Project" @click="createNewProject" />
+    <div @click="createNewProject">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">

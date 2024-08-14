@@ -4,7 +4,10 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 250px; max-width: 1500px"
         >
-            <create-mission :project="project" v-if="isFetched" />
+            <create-mission
+                :project="project || undefined"
+                v-if="isFetched || project_uuid === undefined"
+            />
             <div class="q-mt-md row">
                 <div class="col-10" />
                 <div class="col-2">
@@ -19,10 +22,10 @@
 import { useDialogPluginComponent } from 'quasar';
 import CreateMission from 'components/CreateMission.vue';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogCancel } = useDialogPluginComponent();
 
-const { project_uuid } = defineProps<{ project_uuid: string }>();
+const { project_uuid } = defineProps<{ project_uuid: string | undefined }>();
 const { data: project, isFetched } = useProjectQuery(ref(project_uuid));
 </script>

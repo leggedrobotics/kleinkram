@@ -24,38 +24,52 @@
 
                 <q-menu auto-close style="width: 280px">
                     <q-list>
-                        <q-item clickable disable>
-                            <q-item-section avatar>
-                                <q-icon name="sym_o_sell" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>Create New Tag Type</q-item-label>
-                            </q-item-section>
-                        </q-item>
-                        <q-item clickable disable>
-                            <q-item-section avatar>
-                                <q-icon name="sym_o_tactic" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>Create New Project</q-item-label>
-                            </q-item-section>
-                        </q-item>
-                        <q-item clickable disable>
-                            <q-item-section avatar>
-                                <q-icon name="sym_o_explore" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>Create New Mission</q-item-label>
-                            </q-item-section>
-                        </q-item>
-                        <q-item clickable disable>
-                            <q-item-section avatar>
-                                <q-icon name="sym_o_note_add" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>Upload New File</q-item-label>
-                            </q-item-section>
-                        </q-item>
+                        <CreateTagTypeDialogOpener>
+                            <q-item clickable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_sell" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label
+                                        >Create New Tag Type
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </CreateTagTypeDialogOpener>
+                        <CreateProjectDialogOpener>
+                            <q-item clickable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_tactic" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label
+                                        >Create New Project
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </CreateProjectDialogOpener>
+                        <CreateMissionDialogOpener>
+                            <q-item clickable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_explore" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label
+                                        >Create New Mission
+                                    </q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </CreateMissionDialogOpener>
+                        <CreateFileDialogOpener>
+                            <q-item clickable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_note_add" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label>Upload New File</q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </CreateFileDialogOpener>
                     </q-list>
                 </q-menu>
             </q-btn>
@@ -125,6 +139,10 @@ import { getUser, isAuthenticated, logout } from 'src/services/auth';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
+import CreateProjectDialogOpener from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
+import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
+import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
+import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 
 const is_authenticated = await isAuthenticated();
 
