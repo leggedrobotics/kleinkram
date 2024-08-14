@@ -9,7 +9,9 @@ import { deleteProject } from 'src/services/mutations/project';
 import { Notify, useQuasar } from 'quasar';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
-import { ref } from 'vue';
+import { Ref, ref } from 'vue';
+import { QueryURLHandler } from 'src/services/URLHandler';
+import { useRouter } from 'vue-router';
 
 const { project_uuid } = defineProps({
     project_uuid: String,
@@ -17,6 +19,13 @@ const { project_uuid } = defineProps({
 
 const $q = useQuasar();
 const $emit = defineEmits(['onSuccessfulDelete']);
+
+const router = useRouter();
+
+const handler: Ref<QueryURLHandler> = ref(
+    new QueryURLHandler(),
+) as unknown as Ref<QueryURLHandler>;
+handler.value.setRouter(router);
 
 const queryClient = useQueryClient();
 const { data: project } = useProjectQuery(ref(project_uuid));
@@ -43,6 +52,13 @@ const deleteProjectDialog = () => {
             .then(async () => {
                 // emit the event
                 $emit('onSuccessfulDelete');
+
+                Notify.create({
+                    message: 'Project deleted successfully!',
+                    color: 'positive',
+                });
+
+                handler.value.setProjectUUID('');
 
                 // invalidate queries
                 await queryClient.invalidateQueries({ queryKey: ['projects'] });
