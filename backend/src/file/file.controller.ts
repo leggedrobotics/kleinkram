@@ -1,9 +1,18 @@
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
     AdminOnly,
+    CanDeleteProject,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
@@ -21,8 +30,8 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-    QueryOptional,
     QueryOptionalRecord,
+    QueryOptionalBoolean,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
@@ -72,11 +81,13 @@ export class FileController {
         @QueryOptionalDate('startDate') startDate: Date | undefined,
         @QueryOptionalDate('endDate') endDate: Date | undefined,
         @Query('topics') topics: string,
+        @Query('fileTypes') fileTypes: string,
         @Query('andOr') andOr: boolean,
-        @Query('mcapBag') mcapBag: boolean,
         @QueryOptionalString('tags') tags: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+        @QueryOptionalString('sort') sort: string,
+        @QueryOptionalBoolean('desc') desc: boolean,
         @addJWTUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
@@ -87,11 +98,13 @@ export class FileController {
             endDate,
             topics,
             andOr,
-            mcapBag,
+            fileTypes,
             JSON.parse(tags),
             user.uuid,
             take,
             skip,
+            sort,
+            desc,
         );
     }
 
@@ -155,5 +168,11 @@ export class FileController {
         @QueryString('filename') name: string,
     ) {
         return this.fileService.findOneByName(uuid, name);
+    }
+
+    @Post('delete')
+    @CanDeleteProject()
+    async deleteFile(@QueryUUID('uuid') uuid: string) {
+        return this.fileService.deleteFile(uuid);
     }
 }

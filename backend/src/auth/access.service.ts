@@ -39,6 +39,12 @@ export class AccessService {
         user: JWTUser,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
     ): Promise<boolean> {
+        const dbuser = await this.userRepository.findOneOrFail({
+            where: { uuid: user.uuid },
+        });
+        if (dbuser.role === UserRole.ADMIN) {
+            return true;
+        }
         return this.projectRepository
             .createQueryBuilder('project')
             .leftJoin('project.project_accesses', 'projectAccesses')

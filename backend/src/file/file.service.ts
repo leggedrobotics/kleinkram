@@ -9,12 +9,12 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { externalMinio, moveFile } from '../minioHelper';
+import { deleteFile, externalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
@@ -46,7 +46,7 @@ export class FileService {
                 take,
             });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.fileRepository
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
@@ -85,7 +85,7 @@ export class FileService {
             .take(take);
 
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessJoinsAndConditions(query, userUUID);
+            query = addAccessConstraints(query, userUUID);
         }
         if (projectName) {
             query.andWhere('project.name = :projectName', { projectName });
@@ -163,15 +163,19 @@ export class FileService {
         endDate: Date,
         topics: string,
         and_or: boolean,
-        mcapBag: boolean,
+        fileTypes: string,
         tags: Record<string, any>,
         userUUID: string,
         take: number,
         skip: number,
+        sort: string,
+        desc: boolean,
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
+        // const sortColumn = `file.${sort || 'date'}`;
+        const sortOrder = desc ? 'DESC' : 'ASC';
         // Start building your query with basic filters
         let query = this.fileRepository
             .createQueryBuilder('file')
@@ -179,15 +183,13 @@ export class FileService {
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
             .leftJoin('mission.project', 'project')
-            .andWhere('file.type = :type', {
-                type: mcapBag ? FileType.MCAP : FileType.BAG,
-            })
-            .skip(skip)
-            .take(take);
+            .offset(skip)
+            .limit(take)
+            .orderBy(sort, sortOrder);
 
         // ADMIN user have access to all files, all other users have access to files based on their access
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessJoinsAndConditions(query, userUUID);
+            query = addAccessConstraints(query, userUUID);
         }
 
         // Apply filters for fileName, projectUUID, and date
@@ -196,6 +198,18 @@ export class FileService {
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
+        }
+
+        if (fileTypes) {
+            const splitFileTypes = fileTypes.split(',');
+            if (splitFileTypes.length === 1) {
+                query.andWhere('file.type = :type', {
+                    type:
+                        splitFileTypes[0] === 'MCAP'
+                            ? FileType.MCAP
+                            : FileType.BAG,
+                });
+            }
         }
 
         if (projectUUID) {
@@ -297,10 +311,7 @@ export class FileService {
                                     );
                                     break;
                             }
-                            console.log(
-                                'Subquery: \n',
-                                subquery.getQueryAndParameters(),
-                            );
+
                             return subquery;
                         },
                         subqueryname,
@@ -312,7 +323,6 @@ export class FileService {
             );
         }
         query.groupBy('file.uuid');
-
         // Execute the query
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
@@ -328,6 +338,7 @@ export class FileService {
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .orderBy(sort, sortOrder)
             .getMany();
         return [res, count];
     }
@@ -489,5 +500,19 @@ export class FileService {
             where: { mission: { uuid: missionUUID }, filename: name },
             relations: ['creator'],
         });
+    }
+
+    async deleteFile(uuid: string) {
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
+        const bucket =
+            file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME;
+        const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
+        await deleteFile(bucket, location);
+        await this.fileRepository.delete({ uuid });
     }
 }

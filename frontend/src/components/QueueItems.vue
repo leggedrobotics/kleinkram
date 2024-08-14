@@ -87,7 +87,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { inject, ref, Ref } from 'vue';
+import { computed, inject, ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
@@ -110,7 +110,7 @@ const pagination = ref({
     rowsPerPage: 10,
 });
 const { data: queueEntries, isLoading } = useQuery<Project[]>({
-    queryKey: ['projects', startDate, Math.random()],
+    queryKey: ['queue', startDate],
     queryFn: () => currentQueue(parseDate(startDate.value)),
     refetchInterval: 1000,
 });

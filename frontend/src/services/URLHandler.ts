@@ -4,7 +4,7 @@ import { watch } from 'vue';
 
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
 const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 10 };
-const DEFAULT_SEARCH = { name: '' };
+const DEFAULT_SEARCH = {};
 const DEFAULT_FILE_TYPE = FileType.MCAP;
 
 /**
@@ -249,7 +249,7 @@ export class QueryURLHandler extends QueryHandler {
             this.take = parseInt(route.query.rowsPerPage as string);
         else this.take = DEFAULT_PAGINATION.rowsPerPage;
         if (route.query.sortBy) this.sortBy = route.query.sortBy as string;
-        else this.sortBy = DEFAULT_SORT.sortBy;
+        else this.sortBy = this.default_sort;
         if (route.query.descending)
             this.descending = route.query.descending === 'true';
         else this.descending = DEFAULT_SORT.descending;

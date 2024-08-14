@@ -12,7 +12,7 @@ import { externalMinio, getInfoFromMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
-import { addAccessJoinsAndConditions } from '../auth/authHelper';
+import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
 
 function extractFileIdFromUrl(url: string): string | null {
@@ -208,7 +208,7 @@ export class QueueService {
                 },
             });
         }
-        return addAccessJoinsAndConditions(
+        return addAccessConstraints(
             this.queueRepository
                 .createQueryBuilder('queue')
                 .leftJoinAndSelect('queue.mission', 'mission')

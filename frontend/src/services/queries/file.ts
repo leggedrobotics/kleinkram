@@ -14,10 +14,12 @@ export const fetchOverview = async (
     endDate?: Date,
     topics?: string[],
     andOr?: boolean,
-    mcapBag?: boolean,
+    fileTypes?: ('mcap' | 'bag')[],
     tag?: Record<string, any>,
     take?: number,
     skip?: number,
+    sort?: string,
+    desc?: boolean,
 ): Promise<[FileEntity[], number]> => {
     try {
         const params: Record<string, string> = {};
@@ -28,16 +30,19 @@ export const fetchOverview = async (
         if (endDate) params['endDate'] = endDate.toISOString();
         if (topics && topics.length > 0) params['topics'] = topics.join(',');
         if (andOr !== undefined) params['andOr'] = andOr.toString();
-        if (mcapBag !== undefined) params['mcapBag'] = mcapBag.toString();
+        if (fileTypes !== undefined) params['fileTypes'] = fileTypes.join(',');
         if (tag) params['tags'] = JSON.stringify(tag);
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();
+        if (sort) params['sort'] = sort;
+        if (desc !== undefined) params['desc'] = desc.toString();
         const queryParams = new URLSearchParams(params).toString();
         const projects: Record<string, Project> = {};
         const creator: Record<string, User> = {};
         const missions: Record<string, Mission> = {};
         const response = await axios.get(`/file/filtered?${queryParams}`);
         const data = response.data[0];
+        if (!data) return [[], 0];
         const total = response.data[1];
         const res: FileEntity[] = data.map((file: any): FileEntity => {
             const project_uuid: string = file.mission.project.uuid;
