@@ -11,6 +11,8 @@ services:
             - /usr/src/app/node_modules
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+        environment:
+            SEED: 'false'
         env_file:
             - .env
         networks:
