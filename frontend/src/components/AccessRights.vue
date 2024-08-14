@@ -17,15 +17,15 @@
         </p>
         <ModifyAccessGroups
             v-if="canAddAccessGroupResponse"
-            @add-access-group-to-project="_addAccessGroupToProject"
-            @add-user-to-project="_addUserToProject"
+            @addAccessGroupToProject="_addAccessGroupToProject"
+            @addUsersToProject="_addUserToProject"
             :existing-rights="existingRights"
         />
     </div>
 </template>
 
 <script setup lang="ts">
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
 
 import { ProjectAccess } from 'src/types/ProjectAccess';
@@ -52,6 +52,7 @@ const projectResponse = useQuery<Project>({
     enabled: !!props.project_uuid,
 });
 const project = projectResponse.data;
+const queryClient = useQueryClient();
 
 const queryKey = computed(() => ['canAddAccessGroup', project.value?.uuid]);
 const { data: canAddAccessGroupResponse } = useQuery({
@@ -98,6 +99,11 @@ const { mutate: _addAccessGroupToProject } = useMutation({
             message: 'Access Group Added',
             color: 'positive',
         });
+        queryClient.invalidateQueries({
+            predicate: (query) =>
+                query.queryKey[0] === 'project' &&
+                query.queryKey[1] === project.value?.uuid,
+        });
     },
     onError(error, variables, context) {
         Notify.create({
@@ -119,6 +125,11 @@ const { mutate: _addUserToProject } = useMutation({
         Notify.create({
             message: 'User Updated',
             color: 'positive',
+        });
+        queryClient.invalidateQueries({
+            predicate: (query) =>
+                query.queryKey[0] === 'project' &&
+                query.queryKey[1] === project.value?.uuid,
         });
     },
     onError(error, variables, context) {

@@ -407,7 +407,6 @@ const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
-const mcap_bag = ref(true);
 const tagFilter = ref({});
 
 end.setHours(23, 59, 59, 999);
@@ -415,15 +414,15 @@ const dateTime: Ref<{ from: string; to: string }> = ref({
     from: formatDate(start),
     to: formatDate(end),
 });
-const dateTimeString = computed({
-    get: () => `${dateTime.value.from} - ${dateTime.value.to}`,
-    set: (val: string) => {
-        const [from, to] = val.split(' - ');
-        dateTime.value = { from, to };
-    },
+
+const startDate = computed(() => parseDate(startDates.value));
+const endDate = computed(() => parseDate(endDates.value));
+
+const selectedFileTypesFilter = computed(() => {
+    return fileTypeFilter.value
+        .filter((item) => item.value)
+        .map((item) => item.name);
 });
-const startDate = computed(() => parseDate(dateTime.value.from));
-const endDate = computed(() => parseDate(dateTime.value.to));
 
 const pagination = computed(() => {
     return {
@@ -461,7 +460,7 @@ const queryKeyFiles = computed(() => [
     selectedTopics,
     and_or,
     tagFilter,
-    mcap_bag,
+    selectedFileTypesFilter,
     handler.value.queryKey,
 ]);
 
@@ -491,7 +490,7 @@ const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
             endDate.value,
             selectedTopics.value || [],
             and_or.value,
-            mcap_bag.value,
+            selectedFileTypesFilter.value,
             tagFilterQuery.value,
             handler.value.take,
             handler.value.skip,

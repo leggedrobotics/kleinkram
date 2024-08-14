@@ -14,7 +14,7 @@ export const fetchOverview = async (
     endDate?: Date,
     topics?: string[],
     andOr?: boolean,
-    mcapBag?: boolean,
+    fileTypes?: ('mcap' | 'bag')[],
     tag?: Record<string, any>,
     take?: number,
     skip?: number,
@@ -30,7 +30,7 @@ export const fetchOverview = async (
         if (endDate) params['endDate'] = endDate.toISOString();
         if (topics && topics.length > 0) params['topics'] = topics.join(',');
         if (andOr !== undefined) params['andOr'] = andOr.toString();
-        if (mcapBag !== undefined) params['mcapBag'] = mcapBag.toString();
+        if (fileTypes !== undefined) params['fileTypes'] = fileTypes.join(',');
         if (tag) params['tags'] = JSON.stringify(tag);
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();

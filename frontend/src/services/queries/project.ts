@@ -73,7 +73,6 @@ export const filteredProjects = async (
 };
 
 export const getProject = async (uuid: string): Promise<Project> => {
-    console.log('uuid', uuid);
     const response = await axios.get('/project/one', { params: { uuid } });
     const project = response.data;
     const creator = new User(

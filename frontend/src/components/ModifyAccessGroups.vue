@@ -1,62 +1,67 @@
 <template>
-    <div class="row" style="padding-top: 12px">
-        <div class="col-10">
-            <q-input
-                v-model="search"
-                label="Search User / Access Group"
-                debounce="300"
-            />
+    <div>
+        <div class="row" style="padding-top: 12px">
+            <div class="col-10">
+                <q-input
+                    v-model="search"
+                    label="Search User / Access Group"
+                    debounce="300"
+                />
+            </div>
         </div>
-    </div>
-    <div class="row" style="margin-top: 15px">
-        <b>Individual Users</b>
-    </div>
-    <div class="row" v-for="user in foundUsers">
-        <div class="col-4 flex flex-center">
-            {{ user.name }}
+        <div class="row" style="margin-top: 15px">
+            <b>Individual Users</b>
         </div>
-        <div class="col-4 flex flex-center">
-            {{ user.email }}
+        <div class="row" v-for="user in foundUsers">
+            <div class="col-4 flex flex-center">
+                {{ user.name }}
+            </div>
+            <div class="col-4 flex flex-center">
+                {{ user.email }}
+            </div>
+            <div class="col-2 flex flex-center">
+                <q-select
+                    v-model="rights[user.uuid]"
+                    :options="options"
+                    style="width: 100%"
+                />
+            </div>
+            <div class="col-2 flex flex-center">
+                <q-btn
+                    label="Update"
+                    color="primary"
+                    @click="() => addUserToProject(user.uuid, user.name)"
+                    :disable="!rights[user.uuid]"
+                />
+            </div>
         </div>
-        <div class="col-2 flex flex-center">
-            <q-select
-                v-model="rights[user.uuid]"
-                :options="options"
-                style="width: 100%"
-            />
+        <div class="row">
+            <b>Access Groups</b>
         </div>
-        <div class="col-2 flex flex-center">
-            <q-btn
-                label="Update"
-                color="primary"
-                @click="() => addUserToProject(user.uuid, user.name)"
-                :disable="!rights[user.uuid]"
-            />
-        </div>
-    </div>
-    <div class="row">
-        <b>Access Groups</b>
-    </div>
-    <div class="row" v-for="accessGroup in foundAccessGroups">
-        <div class="col-8 flex flex-center">
-            {{ accessGroup.name }}
-        </div>
-        <div class="col-2 flex flex-center">
-            <q-select v-model="rights[accessGroup.uuid]" :options="options" />
-        </div>
-        <div class="col-2 flex flex-center">
-            <q-btn
-                label="Update"
-                color="primary"
-                @click="
-                    () =>
-                        addAccessGroupToProject(
-                            accessGroup.uuid,
-                            accessGroup.name,
-                        )
-                "
-                :disable="!rights[accessGroup.uuid]"
-            />
+        <div class="row" v-for="accessGroup in foundAccessGroups">
+            <div class="col-8 flex flex-center">
+                {{ accessGroup.name }}
+            </div>
+            <div class="col-2 flex flex-center">
+                <q-select
+                    v-model="rights[accessGroup.uuid]"
+                    :options="options"
+                />
+            </div>
+            <div class="col-2 flex flex-center">
+                <q-btn
+                    label="Update"
+                    color="primary"
+                    @click="
+                        () =>
+                            addAccessGroupToProject(
+                                accessGroup.uuid,
+                                accessGroup.name,
+                            )
+                    "
+                    :disable="!rights[accessGroup.uuid]"
+                />
+            </div>
         </div>
     </div>
 </template>

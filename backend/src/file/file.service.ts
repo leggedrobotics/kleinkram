@@ -163,7 +163,7 @@ export class FileService {
         endDate: Date,
         topics: string,
         and_or: boolean,
-        mcapBag: boolean,
+        fileTypes: string,
         tags: Record<string, any>,
         userUUID: string,
         take: number,
@@ -183,9 +183,6 @@ export class FileService {
             .leftJoin('file.mission', 'mission')
             .leftJoin('file.topics', 'topic')
             .leftJoin('mission.project', 'project')
-            .andWhere('file.type = :type', {
-                type: mcapBag ? FileType.MCAP : FileType.BAG,
-            })
             .offset(skip)
             .limit(take)
             .orderBy(sort, sortOrder);
@@ -201,6 +198,18 @@ export class FileService {
             query.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
+        }
+
+        if (fileTypes) {
+            const splitFileTypes = fileTypes.split(',');
+            if (splitFileTypes.length === 1) {
+                query.andWhere('file.type = :type', {
+                    type:
+                        splitFileTypes[0] === 'MCAP'
+                            ? FileType.MCAP
+                            : FileType.BAG,
+                });
+            }
         }
 
         if (projectUUID) {
@@ -314,7 +323,6 @@ export class FileService {
             );
         }
         query.groupBy('file.uuid');
-        console.log(query.getQueryAndParameters());
         // Execute the query
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
