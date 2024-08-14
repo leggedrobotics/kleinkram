@@ -7,6 +7,7 @@ import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
 import {
     ArgumentsHost,
+    BadRequestException,
     Catch,
     ExceptionFilter,
     INestApplication,
@@ -18,6 +19,15 @@ import logger, { NestLoggerWrapper } from './logger';
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
+        if (exception instanceof BadRequestException) {
+            const response = host.switchToHttp().getResponse();
+            response.status(400).json({
+                statusCode: 400,
+                message: exception.getResponse()['message'][0],
+            });
+            return;
+        }
+
         if (exception instanceof HttpException) {
             const response = host.switchToHttp().getResponse();
             response.status(exception.getStatus()).json({
@@ -26,6 +36,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
             });
             return;
         }
+
         logger.error(
             `An error occurred on route ${host.getArgByIndex(0).url}!`,
         );
@@ -86,8 +97,9 @@ async function bootstrap() {
         credentials: true,
         optionsSuccessStatus: 204,
     });
-    app.useGlobalFilters(new GlobalErrorFilter());
 
+    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
 
     await app.listen(3000);
