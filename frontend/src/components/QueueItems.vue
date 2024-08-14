@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { inject, ref, Ref } from 'vue';
+import { computed, inject, ref, Ref } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
@@ -113,13 +113,12 @@ const pagination = ref({
     rowsPerPage: 10,
 });
 const queue = useQuery<Project[]>({
-    queryKey: ['projects', startDate, Math.random()],
+    queryKey: ['queue', startDate],
     queryFn: () => currentQueue(parseDate(startDate.value)),
     refetchInterval: 1000,
 });
 
-const data = queue.data;
-
+const data = computed(() => queue.data);
 function rowClick(event: any, row: Queue) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');

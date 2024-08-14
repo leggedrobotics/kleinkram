@@ -4,7 +4,7 @@ import { watch } from 'vue';
 
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
 const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 10 };
-const DEFAULT_SEARCH = { name: '' };
+const DEFAULT_SEARCH = {};
 const DEFAULT_FILE_TYPE = FileType.MCAP;
 
 /**
@@ -21,7 +21,6 @@ export class QueryHandler {
     search_params: typeof DEFAULT_SEARCH;
     file_type?: FileType;
     rowsNumber: number;
-    default_sort: string;
 
     constructor(
         page: number = DEFAULT_PAGINATION.page,
@@ -36,7 +35,6 @@ export class QueryHandler {
         this.page = page;
         this.take = take;
         this.sortBy = sortBy;
-        this.default_sort = sortBy;
         this.descending = descending;
         this.project_uuid = project_uuid;
         this.mission_uuid = mission_uuid;

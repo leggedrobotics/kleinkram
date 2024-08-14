@@ -42,6 +42,7 @@ export const fetchOverview = async (
         const missions: Record<string, Mission> = {};
         const response = await axios.get(`/file/filtered?${queryParams}`);
         const data = response.data[0];
+        if (!data) return [[], 0];
         const total = response.data[1];
         const res: FileEntity[] = data.map((file: any): FileEntity => {
             const project_uuid: string = file.mission.project.uuid;
