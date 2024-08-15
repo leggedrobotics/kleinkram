@@ -9,7 +9,6 @@
                     © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
                 </span>
                 <span>
-                    Build:
                     <a
                         class="text-grey-8"
                         style="text-decoration: none"
@@ -43,6 +42,15 @@
                     >
                         {{ BUILD_INFO.git.hash }}
                     </a>
+                </span>
+                <span>
+                    <a
+                        class="text-grey-8"
+                        style="text-decoration: none"
+                        href="https://uptime.leggedrobotics.com/status/kleinkram"
+                    >
+                        Statuspage</a
+                    >
                 </span>
             </q-toolbar>
         </q-toolbar>
