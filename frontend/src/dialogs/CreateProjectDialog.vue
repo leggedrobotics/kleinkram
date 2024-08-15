@@ -51,23 +51,9 @@
                             autofocus
                             style="padding-bottom: 30px"
                             label="Project Name *"
-                            :rules="[
-                                (val) =>
-                                    !!val || 'A project name cannot be empty!',
-                                (val) =>
-                                    !invalidProjectNames.includes(val) ||
-                                    'A project with that name already exists!',
-                            ]"
-                            @update:model-value="
-                                () => {
-                                    hasValidInput =
-                                        !!newProjectName &&
-                                        !!newProjectDescription &&
-                                        !invalidProjectNames.includes(
-                                            newProjectName,
-                                        );
-                                }
-                            "
+                            :error-message="errorMessagesProjectName"
+                            :error="isInErrorStateProjectName"
+                            @update:model-value="verify_input"
                         />
 
                         <q-input
@@ -76,14 +62,10 @@
                             outlined
                             style="padding-bottom: 10px"
                             label="Project Description *"
-                            :rules="[
-                                (val) =>
-                                    !!val || 'Project Description is required',
-                            ]"
-                            @update:model-value="
-                                hasValidInput =
-                                    !!newProjectName && !!newProjectDescription
-                            "
+                            :error-message="errorMessagesProjectDescr"
+                            :error="isInErrorStateProjectDescr"
+                            @update:model-value="verify_input"
+                            autofocus
                         />
                     </q-tab-panel>
 
@@ -179,7 +161,7 @@
                     label="Create Project"
                     color="primary"
                     @click="submitNewProject"
-                    :disable="!hasValidInput"
+                    :disable="!formIsValid"
                 />
             </q-card-actions>
         </q-card>
@@ -199,6 +181,12 @@ import { getAccessRightDescription, icon } from 'src/services/generic';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { TagType } from 'src/types/TagType';
+
+const formIsValid = ref(false);
+const isInErrorStateProjectName = ref(false);
+const errorMessagesProjectName = ref<string>();
+const isInErrorStateProjectDescr = ref(false);
+const errorMessagesProjectDescr = ref<string>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
@@ -253,6 +241,7 @@ function addUserToProject(newUser: {
     }
     usersToAdd.value.push(newUser);
 }
+
 function addAccessGroupToProject(newAccessGroup: {
     accessGroupUUID: string;
     rights: AccessGroupRights;
@@ -275,7 +264,35 @@ function addAccessGroupToProject(newAccessGroup: {
     accessGroupsToAdd.value.push(newAccessGroup);
 }
 
-const hasValidInput = ref(false);
+const verify_input = () => {
+    formIsValid.value =
+        !!newProjectName.value &&
+        !!newProjectDescription.value &&
+        !invalidProjectNames.value.includes(newProjectName.value) &&
+        !!newProjectName &&
+        !!newProjectDescription;
+
+    // client side verification
+    if (
+        !newProjectName.value ||
+        invalidProjectNames.value.includes(newProjectName.value)
+    ) {
+        isInErrorStateProjectName.value = true;
+        errorMessagesProjectName.value = 'Project name is required';
+    } else {
+        isInErrorStateProjectName.value = false;
+        errorMessagesProjectName.value = '';
+    }
+
+    if (!newProjectDescription.value) {
+        isInErrorStateProjectDescr.value = true;
+        errorMessagesProjectDescr.value = 'Project description is required';
+    } else {
+        isInErrorStateProjectDescr.value = false;
+        errorMessagesProjectDescr.value = '';
+    }
+};
+
 const submitNewProject = async () => {
     await createProject(
         newProjectName.value,
@@ -288,15 +305,14 @@ const submitNewProject = async () => {
             onDialogOK();
         })
         .catch((error: AxiosError<{ message: string; statusCode: number }>) => {
-            if (
-                error.code == 'ERR_BAD_REQUEST' &&
-                error.response?.data.message.includes(
-                    'Project with that name already exists',
-                )
-            ) {
+            if (error.code == 'ERR_BAD_REQUEST') {
+                isInErrorStateProjectName.value = true;
+                errorMessagesProjectName.value = error.response?.data.message;
                 invalidProjectNames.value.push(newProjectName.value);
-                projectNameInput.value?.getNativeElement().focus();
             }
+
+            isInErrorStateProjectName.value = true;
+            errorMessagesProjectName.value = error.response?.data.message;
 
             // abort the close of the dialog
             dialogRef.value?.show();

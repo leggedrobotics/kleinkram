@@ -10,6 +10,9 @@
                                 v-model="missionName"
                                 label="Mission Name"
                                 outlined
+                                :error="isInErrorState"
+                                :error-message="errorMessage"
+                                v-on:update:model-value="isInErrorState = false"
                                 dense
                                 clearable
                                 required
@@ -151,6 +154,9 @@ import { createMission } from 'src/services/mutations/mission';
 
 const queryClient = useQueryClient();
 
+const isInErrorState = ref(false);
+const errorMessage = ref('');
+
 const selected_project: Ref<Project | null> = ref(null);
 const { data: project } = useQuery<Project>({
     queryKey: computed(() => ['project', selected_project.value?.uuid]),
@@ -220,7 +226,11 @@ const submitNewMission = async () => {
         missionName.value,
         selected_project.value.uuid,
         tagValues.value,
-    );
+    ).catch((e) => {
+        isInErrorState.value = true;
+        errorMessage.value = e.response.data.message;
+    });
+
     const cache = queryClient.getQueryCache();
     const filtered = cache
         .getAll()
