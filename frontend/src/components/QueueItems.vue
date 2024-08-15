@@ -181,7 +181,7 @@ const removeItem = (value: string) => {
     );
 };
 function clearSelection() {
-    fileStateFilter.value = [];
+    fileStateFilter.value = fileStateFilter.value.slice(0, 0);
 }
 
 watch(fileStateFilter, () => {
@@ -192,9 +192,10 @@ watch(fileStateFilter, () => {
     }
 });
 
-const fileStateFilterEnums = computed(() =>
-    fileStateFilter.value.map((state) => FileState[state]),
-);
+const fileStateFilterEnums = computed(() => {
+    if (!fileStateFilter.value) return [];
+    return fileStateFilter.value.map((state) => FileState[state]);
+});
 
 const { data: queueEntries, isLoading } = useQuery<Project[]>({
     queryKey: queueKey,
