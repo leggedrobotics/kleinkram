@@ -105,7 +105,7 @@ describe('Access Control', () => {
                 cookie: `authtoken=${token}`,
             },
             body: JSON.stringify({
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             }),
@@ -124,7 +124,7 @@ describe('Access Control', () => {
                 cookie: `authtoken=${token}`,
             },
             body: JSON.stringify({
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             }),
@@ -139,7 +139,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -150,7 +150,7 @@ describe('Access Control', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: project_uuid },
         });
-        expect(project.name).toBe('Test Project');
+        expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
     });
 
@@ -164,7 +164,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -175,7 +175,7 @@ describe('Access Control', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: project_uuid },
         });
-        expect(project.name).toBe('Test Project');
+        expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
     });
 
@@ -227,7 +227,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -239,7 +239,7 @@ describe('Access Control', () => {
         let project = await projectRepository.findOneOrFail({
             where: { uuid: project_uuid },
         });
-        expect(project.name).toBe('Test Project');
+        expect(project.name).toBe('test_project');
 
         // delete the project using the API
         const token = await get_jwt_token(user);
@@ -270,7 +270,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -314,7 +314,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -366,7 +366,7 @@ describe('Access Control', () => {
 
         const project_uuid = await create_project_using_post(
             {
-                name: 'Test Project',
+                name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
@@ -377,7 +377,7 @@ describe('Access Control', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: project_uuid },
         });
-        expect(project.name).toBe('Test Project');
+        expect(project.name).toBe('test_project');
 
         const second_user_id = await mock_db_user(
             'internal-2@leggedrobotics.com',
@@ -397,7 +397,7 @@ describe('Access Control', () => {
         );
         expect(res.status).toBe(200);
         const project_res = await res.json();
-        expect(project_res.name).toBe('Test Project');
+        expect(project_res.name).toBe('test_project');
 
         // check denied modification access
         const res2 = await fetch(
@@ -433,6 +433,6 @@ describe('Access Control', () => {
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
         expect(projects[0].uuid).toBe(project_uuid);
-        expect(projects[0].name).toBe('Test Project');
+        expect(projects[0].name).toBe('test_project');
     });
 });
