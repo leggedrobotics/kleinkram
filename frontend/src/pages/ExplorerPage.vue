@@ -157,7 +157,10 @@
                     <q-btn color="primary" label="Create Project" />
                 </CreateProjectButton>
 
-                <CreateFileDialogOpener v-if="handler.isListingFiles">
+                <CreateFileDialogOpener
+                    v-if="handler.isListingFiles"
+                    :mission="mission"
+                >
                     <q-btn color="primary" label="Upload File" />
                 </CreateFileDialogOpener>
             </ButtonGroup>
