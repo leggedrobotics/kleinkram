@@ -21,8 +21,17 @@
         <template v-slot:loading>
             <q-inner-loading showing color="primary" />
         </template>
+        <template v-slot:body-cell="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+                <q-tooltip v-if="props.row.tentative"
+                    >This file has not yet completed uploading</q-tooltip
+                >
+
+                {{ props.value }}
+            </q-td>
+        </template>
         <template v-slot:body-cell-fileaction="props">
-            <q-td :props="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
                 <q-btn
                     flat
                     round
@@ -77,6 +86,7 @@ import { file_columns } from 'components/explorer_page/explorer_page_table_colum
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getTentativeRowStyle } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 

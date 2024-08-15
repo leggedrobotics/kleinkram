@@ -267,7 +267,10 @@
                 @request="setPagination"
             >
                 <template v-slot:body-cell="props">
-                    <q-td :props="props" :style="getRowStyle(props.row)">
+                    <q-td
+                        :props="props"
+                        :style="getTentativeRowStyle(props.row)"
+                    >
                         <q-tooltip v-if="props.row.tentative"
                             >This file has not yet completed
                             uploading</q-tooltip
@@ -277,7 +280,10 @@
                     </q-td>
                 </template>
                 <template v-slot:body-cell-action="props">
-                    <q-td :props="props" :style="getRowStyle(props.row)">
+                    <q-td
+                        :props="props"
+                        :style="getTentativeRowStyle(props.row)"
+                    >
                         <q-btn
                             flat
                             round
@@ -362,6 +368,7 @@ import TagFilter from 'src/dialogs/TagFilter.vue';
 import { all } from 'axios';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getTentativeRowStyle } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -499,12 +506,6 @@ const selectedFileTypes = computed(() => {
         .map((item) => item.name)
         .join(' & ');
 });
-
-function getRowStyle(row: FileEntity) {
-    return {
-        backgroundColor: row.tentative ? '#ffdbcb' : '',
-    };
-}
 
 const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
     queryKey: queryKeyFiles,
@@ -659,7 +660,6 @@ function filterFn(val: string, update) {
 }
 
 const onRowClick = (_: Event, row: any) => {
-    if (row.tentative) return;
     $routerService?.routeTo(ROUTES.FILE, {
         uuid: row.uuid,
     });

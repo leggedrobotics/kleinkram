@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, MoreThan, Repository } from 'typeorm';
+import { Brackets, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
@@ -226,9 +226,9 @@ export class QueueService {
     }
 
     async forFile(filename: string, missionUUID: string) {
-        return this.queueRepository.findOne({
+        return this.queueRepository.find({
             where: {
-                filename,
+                filename: Like(`${filename}%`),
                 mission: { uuid: missionUUID },
             },
             relations: ['creator'],
