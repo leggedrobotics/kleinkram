@@ -56,9 +56,11 @@
                             >
                                 <q-item-section>Move</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete</q-item-section>
-                            </q-item>
+                            <DeleteMissionDialogOpener :mission="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>Delete</q-item-section>
+                                </q-item>
+                            </DeleteMissionDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -75,6 +77,7 @@ import { mission_columns } from 'components/explorer_page/explorer_page_table_co
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
+import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
 
 const props = defineProps({
     url_handler: {
@@ -89,6 +92,7 @@ function setPagination(update: TableRequest) {
     props.url_handler?.setSort(update.pagination.sortBy);
     props.url_handler?.setDescending(update.pagination.descending);
 }
+
 const pagination = computed(() => {
     return {
         page: props.url_handler.page,

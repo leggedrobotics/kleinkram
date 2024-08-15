@@ -11,6 +11,7 @@ import { MissionService } from './mission.service';
 import { CreateMission } from './entities/create-mission.dto';
 import {
     AdminOnly,
+    CanDeleteMission,
     CanMoveMission,
     CanReadMission,
     CanReadMissionByName,
@@ -28,6 +29,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamString } from '../validation/paramDecorators';
+import { BodyUUID } from '../validation/bodyDecorators';
 
 @Controller('mission')
 export class MissionController {
@@ -116,5 +118,11 @@ export class MissionController {
         @QueryUUID('projectUUID') projectUUID: string,
     ) {
         return this.missionService.moveMission(missionUUID, projectUUID);
+    }
+
+    @Delete()
+    @CanDeleteMission()
+    async deleteMission(@BodyUUID('uuid') uuid: string) {
+        return this.missionService.deleteMission(uuid);
     }
 }

@@ -304,9 +304,14 @@
                                             >View File
                                         </q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disable>
-                                        <q-item-section
-                                            >Delete File
+                                    <q-item clickable v-ripple>
+                                        <q-item-section>
+                                            <DeleteFileDialogOpener
+                                                :file="props.row"
+                                                v-if="props.row"
+                                            >
+                                                Delete File
+                                            </DeleteFileDialogOpener>
                                         </q-item-section>
                                     </q-item>
                                 </q-list>
@@ -340,6 +345,7 @@ import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
 import { all } from 'axios';
 import { useHandler } from 'src/hooks/customQueryHooks';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 

@@ -39,6 +39,16 @@
                                     >Copy public link
                                 </q-item-section>
                             </q-item>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <DeleteFileDialogOpener
+                                        :file="data"
+                                        v-if="data"
+                                    >
+                                        Delete File
+                                    </DeleteFileDialogOpener>
+                                </q-item-section>
+                            </q-item>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -135,7 +145,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref } from 'vue';
+import { computed, inject, Ref, ref, watch } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
 import { FileType } from 'src/enums/FILE_ENUM';
 import RouterService from 'src/services/routerService';
@@ -148,6 +158,7 @@ import {
 } from 'src/services/queries/file';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import EditFile from 'components/EditFile.vue';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const $q = useQuasar();
@@ -164,6 +175,18 @@ const tableoniRef: Ref<QTable | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
     queryFn: () => fetchFile(file_uuid.value),
+    retryDelay: 200,
+    throwOnError(error, query) {
+        console.log('errsdfor: ', error);
+        Notify.create({
+            message: `Error fetching file: ${error.response.data.message}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'top-right',
+        });
+        $routerService?.routeTo(ROUTES.DATATABLE);
+        return false;
+    },
 });
 
 const missionUUID = computed(() => data.value?.mission?.uuid);

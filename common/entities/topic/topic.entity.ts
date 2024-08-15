@@ -16,6 +16,6 @@ export default class Topic extends BaseEntity {
     @Column('float')
     frequency: number;
 
-    @ManyToOne(() => FileEntity, (file) => file.topics)
+    @ManyToOne(() => FileEntity, (file) => file.topics, { onDelete: 'CASCADE' })
     file: FileEntity;
 }
