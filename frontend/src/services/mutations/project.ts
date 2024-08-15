@@ -39,3 +39,17 @@ export const deleteProject = async (projectUUID: string) => {
     });
     return response.data;
 };
+
+export const updateTagTypes = async (
+    projectUUID: string,
+    tagTypeUUIDs: string[],
+) => {
+    const response = await axios.post(
+        '/project/updateTagTypes',
+        { tagTypeUUIDs },
+        {
+            params: { uuid: projectUUID },
+        },
+    );
+    return response.data;
+};

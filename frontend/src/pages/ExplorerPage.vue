@@ -12,6 +12,8 @@
                     color="primary"
                     icon="sym_o_sell"
                     label="Metadata"
+                    :disable="!project_uuid"
+                    @click="() => openConfigureTags(project_uuid as string)"
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
@@ -235,11 +237,13 @@ import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpe
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
-import { Notify } from 'quasar';
+import { Notify, useQuasar } from 'quasar';
 import RouterService from 'src/services/routerService';
+import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
+const $q = useQuasar();
 
 const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
@@ -289,5 +293,14 @@ function getComponent() {
     }
     console.log('No component found');
     return ExplorerPageProjectTable;
+}
+
+function openConfigureTags(projectUUID: string) {
+    $q.dialog({
+        component: ModifyProjectTagsDialog,
+        componentProps: {
+            projectUUID: projectUUID,
+        },
+    });
 }
 </script>

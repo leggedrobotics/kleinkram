@@ -111,4 +111,13 @@ export class ProjectController {
     ) {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
+
+    @Post('updateTagTypes')
+    @CanWriteProject()
+    async updateTagTypes(
+        @QueryUUID('uuid') uuid: string,
+        @Body('tagTypeUUIDs') tagTypeUUIDs: string[],
+    ) {
+        return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+    }
 }

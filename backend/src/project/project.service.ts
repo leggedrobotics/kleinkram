@@ -15,7 +15,6 @@ import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { moveMissionFilesInMinio } from '../minioHelper';
-import { db } from '../../tests/utils/database_utils';
 import env from '@common/env';
 
 @Injectable()
@@ -212,6 +211,24 @@ export class ProjectService {
             where: { uuid: tagTypeUUID },
         });
         project.requiredTags.push(tagType);
+        return this.projectRepository.save(project);
+    }
+
+    async updateTagTypes(
+        uuid: string,
+        tagTypeUUIDs: string[],
+    ): Promise<Project> {
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['requiredTags'],
+        });
+        project.requiredTags = await Promise.all(
+            tagTypeUUIDs.map((tag) => {
+                return this.tagTypeRepository.findOneOrFail({
+                    where: { uuid: tag },
+                });
+            }),
+        );
         return this.projectRepository.save(project);
     }
 
