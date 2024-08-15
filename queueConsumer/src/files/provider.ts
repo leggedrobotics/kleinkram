@@ -426,7 +426,7 @@ export class FileProcessor implements OnModuleInit {
 
             logger.debug(`File ${originalFileName} converted successfully`);
             const fileInfo = await getInfoFromMinio(
-                FileType.BAG,
+                FileType.MCAP,
                 full_pathname,
             );
             mcapFileEntity.size = fileInfo.size;
