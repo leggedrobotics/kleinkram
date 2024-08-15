@@ -63,9 +63,7 @@
                             >
                                 <q-item-section>Manage Access</q-item-section>
                             </q-item>
-                            <DeleteProjectDialogOpener
-                                :project_uuid="props.row.uuid"
-                            >
+                            <DeleteProjectDialogOpener :project="props.row">
                                 <q-item clickable v-ripple>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>

@@ -1,70 +1,25 @@
 <template>
-    <div @click="deleteProjectDialog">
+    <div @click="deleteProject">
         <slot />
     </div>
 </template>
-
 <script setup lang="ts">
-import { deleteProject } from 'src/services/mutations/project';
-import { Notify, useQuasar } from 'quasar';
-import { useQueryClient } from '@tanstack/vue-query';
-import { useHandler, useProjectQuery } from 'src/hooks/customQueryHooks';
-import { ref } from 'vue';
+import { useQuasar } from 'quasar';
+import { Project } from 'src/types/Project';
+import DeleteProjectDialog from 'src/dialogs/DeleteProjectDialog.vue';
 
-const { project_uuid } = defineProps({
-    project_uuid: String,
+const { project } = defineProps({
+    project: Project,
 });
 
 const $q = useQuasar();
-const $emit = defineEmits(['onSuccessfulDelete']);
 
-const handler = useHandler();
-
-const queryClient = useQueryClient();
-const { data: project } = useProjectQuery(ref(project_uuid));
-
-const deleteProjectDialog = () => {
-    const project_uuid_val = project_uuid;
-    if (!project_uuid_val) return;
-
-    const dialog = $q.dialog({
-        title: 'Delete Project ' + project.value?.name,
-        message: 'Are you sure you want to delete this project?',
-        ok: {
-            label: 'Yes',
-            color: 'negative',
-        },
-        cancel: {
-            label: 'No',
-            color: 'primary',
+const deleteProject = () =>
+    $q.dialog({
+        title: 'Delete Project',
+        component: DeleteProjectDialog,
+        componentProps: {
+            project,
         },
     });
-
-    dialog.onOk(() =>
-        deleteProject(project_uuid_val)
-            .then(async () => {
-                // emit the event
-                $emit('onSuccessfulDelete');
-
-                Notify.create({
-                    message: 'Project deleted successfully!',
-                    color: 'positive',
-                });
-
-                handler.value.setProjectUUID('');
-
-                // invalidate queries
-                await queryClient.invalidateQueries({ queryKey: ['projects'] });
-                await queryClient.invalidateQueries({
-                    queryKey: ['project', project_uuid],
-                });
-            })
-            .catch(() =>
-                Notify.create({
-                    message: 'Project deletion failed!',
-                    color: 'negative',
-                }),
-            ),
-    );
-};
 </script>

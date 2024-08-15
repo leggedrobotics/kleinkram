@@ -15,7 +15,7 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <DeleteProjectDialogOpener :project_uuid="project_uuid">
+                <DeleteProjectDialogOpener :project="project">
                     <q-btn color="red" outline icon="sym_o_delete">
                         <q-tooltip> Delete the Project</q-tooltip>
                     </q-btn>
