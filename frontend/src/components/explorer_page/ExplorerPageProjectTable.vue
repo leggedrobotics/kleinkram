@@ -51,7 +51,11 @@
                                     </q-item-section>
                                 </q-item>
                             </EditProjectDialogOpener>
-                            <q-item clickable v-ripple disabled>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="() => openConfigureTags(props.row.uuid)"
+                            >
                                 <q-item-section>Configure Tags</q-item-section>
                             </q-item>
                             <q-item
@@ -86,6 +90,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
+import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 
 const $q = useQuasar();
 
@@ -152,4 +157,13 @@ const manageAccessRights = (project_uuid: string) => {
         },
     });
 };
+
+function openConfigureTags(projectUUID: string) {
+    $q.dialog({
+        component: ModifyProjectTagsDialog,
+        componentProps: {
+            projectUUID: projectUUID,
+        },
+    });
+}
 </script>
