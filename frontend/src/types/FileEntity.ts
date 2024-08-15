@@ -12,6 +12,7 @@ export class FileEntity extends BaseEntity {
     size: number;
     creator: User;
     type: FileType;
+    tentative: boolean;
 
     constructor(
         uuid: string,
@@ -22,6 +23,7 @@ export class FileEntity extends BaseEntity {
         topics: Topic[],
         size: number,
         type: FileType,
+        tentative: boolean,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -34,5 +36,6 @@ export class FileEntity extends BaseEntity {
         this.filename = filename;
         this.topics = topics;
         this.type = type;
+        this.tentative = tentative;
     }
 }

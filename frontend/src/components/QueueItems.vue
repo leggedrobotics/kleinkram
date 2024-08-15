@@ -97,6 +97,11 @@ import { FileEntity } from 'src/types/FileEntity';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
+import {
+    getDetailedFileState,
+    getSimpleFileStateName,
+} from '../services/generic';
+import { getColor } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -182,76 +187,6 @@ const columns = [
     },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];
-
-function getColor(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'green';
-        case FileState.ERROR:
-            return 'red';
-        case FileState.AWAITING_PROCESSING:
-            return 'yellow';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
-            return 'blue';
-        case FileState.AWAITING_UPLOAD:
-            return 'purple';
-        case FileState.CORRUPTED:
-            return 'orange';
-
-        default:
-            return 'grey'; // Default color for unknown states
-    }
-}
-
-function getSimpleFileStateName(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'Completed';
-        case FileState.ERROR:
-            return 'Error';
-        case FileState.AWAITING_PROCESSING:
-            return 'Awaiting Processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
-            return 'Processing';
-        case FileState.AWAITING_UPLOAD:
-            return 'Awaiting Upload';
-        case FileState.CORRUPTED:
-            return 'Corrupted';
-        default:
-            return 'Unknown'; // Default color for unknown states
-    }
-}
-
-function getDetailedFileState(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'File has been processed and is ready for download';
-        case FileState.ERROR:
-            return 'An error occurred during processing';
-        case FileState.AWAITING_PROCESSING:
-            return 'File is awaiting processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-            return 'File is being converted and topics are being extracted';
-        case FileState.UPLOADING:
-            return 'File is being uploaded';
-        case FileState.PROCESSING:
-            return 'File is being processed';
-        case FileState.AWAITING_UPLOAD:
-            return 'File is awaiting upload';
-        case FileState.CORRUPTED:
-            return 'File is corrupted';
-        case FileState.DOWNLOADING:
-            return 'File is being downloaded';
-        default:
-            return 'Unknown'; // Default color for unknown states
-    }
-}
 </script>
 
 <style scoped></style>
