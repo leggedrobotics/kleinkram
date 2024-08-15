@@ -21,8 +21,17 @@
         <template v-slot:loading>
             <q-inner-loading showing color="primary" />
         </template>
+        <template v-slot:body-cell="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+                <q-tooltip v-if="props.row.tentative"
+                    >This file has not yet completed uploading</q-tooltip
+                >
+
+                {{ props.value }}
+            </q-td>
+        </template>
         <template v-slot:body-cell-fileaction="props">
-            <q-td :props="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
                 <q-btn
                     flat
                     round
@@ -48,8 +57,15 @@
                             <q-item clickable v-ripple disabled>
                                 <q-item-section>Move</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete</q-item-section>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <DeleteFileDialogOpener
+                                        :file="props.row"
+                                        v-if="props.row"
+                                    >
+                                        Delete File
+                                    </DeleteFileDialogOpener>
+                                </q-item-section>
                             </q-item>
                         </q-list>
                     </q-menu>
@@ -69,6 +85,8 @@ import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getTentativeRowStyle } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 

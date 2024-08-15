@@ -9,17 +9,18 @@ import { QueryURLHandler } from 'src/services/URLHandler';
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,
+    throwOnError: ((error: any, query: any) => boolean) | undefined = undefined,
+    retryDelay: number = 1000,
 ): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
         queryKey: ['mission', !!mission_uuid.value ? mission_uuid : ''],
         queryFn: () => {
             if (!mission_uuid.value) return null;
-            return getMission(mission_uuid.value as string).catch((e) => {
-                console.error(e);
-                return null;
-            });
+            return getMission(mission_uuid.value as string);
         },
         enabled: () => !!mission_uuid.value,
+        retryDelay,
+        throwOnError,
     });
 };
 export const useProjectQuery = (

@@ -38,6 +38,9 @@ export class FileGuardService {
             where: { uuid: fileUUID },
             relations: ['mission', 'mission.project'],
         });
+        if (!file) {
+            return false;
+        }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
                 userUUID,

@@ -9,7 +9,7 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { deleteFile, externalMinio, moveFile } from '../minioHelper';
+import { deleteFileMinio, externalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
@@ -460,7 +460,7 @@ export class FileService {
             where: { uuid: missionUUID },
             relations: ['files', 'project'],
         });
-        const urls = await Promise.all(
+        return await Promise.all(
             mission.files.map((f) =>
                 externalMinio.presignedUrl(
                     'GET',
@@ -470,7 +470,6 @@ export class FileService {
                 ),
             ),
         );
-        return urls;
     }
 
     async findByMission(
@@ -480,7 +479,9 @@ export class FileService {
         filename?: string,
         fileType?: FileType,
     ): Promise<[FileEntity[], number]> {
-        const where: Record<string, any> = { mission: { uuid: missionUUID } };
+        const where: Record<string, any> = {
+            mission: { uuid: missionUUID },
+        };
         if (filename) {
             where.filename = ILike(`%${filename}%`);
         }
@@ -512,7 +513,7 @@ export class FileService {
                 ? env.MINIO_MCAP_BUCKET_NAME
                 : env.MINIO_BAG_BUCKET_NAME;
         const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
-        await deleteFile(bucket, location);
-        await this.fileRepository.delete({ uuid });
+        await deleteFileMinio(bucket, location);
+        return this.fileRepository.remove(file);
     }
 }

@@ -19,3 +19,45 @@ export const IsValidFileName = (
         message: 'Filename is not valid!',
         ...validationOptions,
     });
+
+/**
+ * Validates that the property is a valid project name.
+ *
+ * numbers [0-9]
+ * letters [A-Z, a-z]
+ * underscore [_]
+ * dash [-]
+ *
+ * A valid project name is between 3 and 20 characters long.
+ *
+ * @param validationOptions
+ * @constructor
+ */
+export const IsValidProjectName = (
+    validationOptions?: ValidationOptions,
+): PropertyDecorator =>
+    Matches(/^[\w\-_]{3,20}$/, {
+        message: 'Project name is not valid!',
+        ...validationOptions,
+    });
+
+/**
+ * Validates that the property is a valid mission name.
+ *
+ * numbers [0-9]
+ * letters [A-Z, a-z]
+ * underscore [_]
+ * dash [-]
+ *
+ * A valid mission name is between 3 and 20 characters long.
+ *
+ * @param validationOptions
+ * @constructor
+ */
+export const IsValidMissionName = (
+    validationOptions?: ValidationOptions,
+): PropertyDecorator =>
+    Matches(/^[\w\-_]{3,20}$/, {
+        message: 'Mission name is not valid!',
+        ...validationOptions,
+    });

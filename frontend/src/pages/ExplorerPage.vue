@@ -12,10 +12,12 @@
                     color="primary"
                     icon="sym_o_sell"
                     label="Metadata"
+                    :disable="!project_uuid"
+                    @click="() => openConfigureTags(project_uuid as string)"
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <DeleteProjectDialogOpener :project_uuid="project_uuid">
+                <DeleteProjectDialogOpener :project="project">
                     <q-btn color="red" outline icon="sym_o_delete">
                         <q-tooltip> Delete the Project</q-tooltip>
                     </q-btn>
@@ -41,7 +43,7 @@
                     icon="sym_o_analytics"
                     label="Actions"
                     @click="
-                        router.push({
+                        $router.push({
                             path: ROUTES.ACTION.path,
                             query: {
                                 project_uuid: project_uuid,
@@ -52,7 +54,9 @@
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
-                <q-btn outline color="red" icon="sym_o_delete"></q-btn>
+                <delete-mission-dialog-opener :mission="mission" v-if="mission">
+                    <q-btn outline color="red" icon="sym_o_delete"></q-btn>
+                </delete-mission-dialog-opener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>
                     <q-tooltip> More Actions</q-tooltip>
                 </q-btn>
@@ -153,7 +157,10 @@
                     <q-btn color="primary" label="Create Project" />
                 </CreateProjectButton>
 
-                <CreateFileDialogOpener v-if="handler.isListingFiles">
+                <CreateFileDialogOpener
+                    v-if="handler.isListingFiles"
+                    :mission="mission"
+                >
                     <q-btn color="primary" label="Upload File" />
                 </CreateFileDialogOpener>
             </ButtonGroup>
@@ -207,7 +214,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import ExplorerPageBreadcrumbs from 'components/explorer_page/ExplorerPageBreadcrumbs.vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
@@ -229,15 +236,34 @@ import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
+import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
+import { Notify, useQuasar } from 'quasar';
+import RouterService from 'src/services/routerService';
+import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
+const $q = useQuasar();
 
 const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
 
 const { data: project } = useProjectQuery(project_uuid);
-const { data: mission } = useMissionQuery(mission_uuid);
+const { data: mission } = useMissionQuery(
+    mission_uuid,
+    (error, query) => {
+        console.log('errsdfor: ', error);
+        Notify.create({
+            message: `Error fetching Mission: ${error.response.data.message}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'top-right',
+        });
+        handler.value.setMissionUUID(undefined);
+        return false;
+    },
+    200,
+);
 
 function refresh() {
     if (handler.value.isListingProjects) {
@@ -267,5 +293,14 @@ function getComponent() {
     }
     console.log('No component found');
     return ExplorerPageProjectTable;
+}
+
+function openConfigureTags(projectUUID: string) {
+    $q.dialog({
+        component: ModifyProjectTagsDialog,
+        componentProps: {
+            projectUUID: projectUUID,
+        },
+    });
 }
 </script>

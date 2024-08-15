@@ -200,4 +200,18 @@ export class MissionService {
         );
         return this.missionRepository.save(mission);
     }
+
+    async deleteMission(uuid: string): Promise<Mission> {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['files'],
+        });
+        if (mission.files.length > 0) {
+            throw new ConflictException(
+                'Mission cannot be deleted because it contains files',
+            );
+        }
+        await this.missionRepository.remove(mission);
+        return mission;
+    }
 }

@@ -266,8 +266,24 @@
                 @row-click="onRowClick"
                 @request="setPagination"
             >
+                <template v-slot:body-cell="props">
+                    <q-td
+                        :props="props"
+                        :style="getTentativeRowStyle(props.row)"
+                    >
+                        <q-tooltip v-if="props.row.tentative"
+                            >This file has not yet completed
+                            uploading</q-tooltip
+                        >
+
+                        {{ props.value }}
+                    </q-td>
+                </template>
                 <template v-slot:body-cell-action="props">
-                    <q-td :props="props">
+                    <q-td
+                        :props="props"
+                        :style="getTentativeRowStyle(props.row)"
+                    >
                         <q-btn
                             flat
                             round
@@ -284,6 +300,12 @@
                                         clickable
                                         v-ripple
                                         @click="() => openQDialog(props.row)"
+                                        :style="
+                                            props.row.tentative
+                                                ? 'pointer-events: none'
+                                                : ''
+                                        "
+                                        :disabled="props.row.tentative"
                                     >
                                         <q-item-section
                                             >Edit File
@@ -304,9 +326,14 @@
                                             >View File
                                         </q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disable>
-                                        <q-item-section
-                                            >Delete File
+                                    <q-item clickable v-ripple>
+                                        <q-item-section>
+                                            <DeleteFileDialogOpener
+                                                :file="props.row"
+                                                v-if="props.row"
+                                            >
+                                                Delete File
+                                            </DeleteFileDialogOpener>
                                         </q-item-section>
                                     </q-item>
                                 </q-list>
@@ -340,6 +367,8 @@ import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
 import { all } from 'axios';
 import { useHandler } from 'src/hooks/customQueryHooks';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getTentativeRowStyle } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 

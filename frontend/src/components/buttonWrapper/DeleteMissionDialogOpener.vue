@@ -1,24 +1,27 @@
 <template>
-    <div @click="createNewTageType">
+    <div @click="deleteFile">
         <slot />
     </div>
 </template>
-
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import CreateFileDialog from 'src/dialogs/CreateFileDialog.vue';
+import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 import { Mission } from 'src/types/Mission';
 
-const $q = useQuasar();
 const props = defineProps<{
-    mission?: Mission;
+    mission: Mission;
 }>();
-const createNewTageType = () =>
+
+const $q = useQuasar();
+
+const deleteFile = () =>
     $q.dialog({
-        title: 'Create new mission',
-        component: CreateFileDialog,
+        title: 'Delete File',
+        component: DeleteMissionDialog,
         componentProps: {
             mission: props.mission,
         },
     });
 </script>
+
+<style scoped></style>

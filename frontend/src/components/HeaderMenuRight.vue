@@ -88,7 +88,15 @@
             </div>
 
             <div style="margin: auto 0">
-                <q-btn round flat>
+                <q-btn
+                    round
+                    flat
+                    :style="
+                        user.role === USER_ROLES.ADMIN
+                            ? 'border: 3px solid red'
+                            : ''
+                    "
+                >
                     <q-avatar
                         size="32px"
                         v-if="!!user['avatarUrl'] && user['avatarUrl'] !== ''"
@@ -143,6 +151,7 @@ import CreateProjectDialogOpener from 'components/buttonWrapper/CreateProjectDia
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
+import USER_ROLES from 'src/enums/USER_ROLES';
 
 const is_authenticated = await isAuthenticated();
 

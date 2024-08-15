@@ -10,6 +10,7 @@
                     icon="sym_o_edit"
                     label="Edit File"
                     @click="editFile"
+                    :disable="data?.tentative"
                 >
                     <q-tooltip> Edit File</q-tooltip>
                 </q-btn>
@@ -18,6 +19,7 @@
                     icon="sym_o_download"
                     label="Download"
                     @click="_downloadFile"
+                    :disable="data?.tentative"
                 >
                     <q-tooltip> Download File</q-tooltip>
                 </q-btn>
@@ -34,9 +36,20 @@
                                 clickable
                                 v-ripple
                                 @click="(e) => _copyLink()"
+                                :disable="data?.tentative"
                             >
                                 <q-item-section
                                     >Copy public link
+                                </q-item-section>
+                            </q-item>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <DeleteFileDialogOpener
+                                        :file="data"
+                                        v-if="data"
+                                    >
+                                        Delete File
+                                    </DeleteFileDialogOpener>
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -104,14 +117,14 @@
                 filled
                 placeholder="Search"
                 class="q-mb-md"
-                v-if="data?.type === FileType.MCAP"
+                v-if="displayTopics"
             />
             <q-table
                 flat
                 bordered
                 separator="none"
                 v-model:selected="selected"
-                v-if="data?.type === FileType.MCAP"
+                v-if="displayTopics"
                 ref="tableoniRef"
                 v-model:pagination="pagination"
                 :rows="data?.topics"
@@ -123,19 +136,35 @@
             >
             </q-table>
             <q-btn
-                v-else
+                v-if="!displayTopics && !data?.tentative"
                 label="Got to Mcap"
                 icon="sym_o_turn_slight_right"
                 @click="redirectToMcap"
             >
             </q-btn>
+            <div v-if="data?.tentative">
+                <h5 style="margin-top: 10px; margin-bottom: 10px">
+                    Queues related to this file
+                </h5>
+                This file has not yet completed uploading or processing.
+                <q-separator style="margin-top: 6px; margin-bottom: 6px" />
+                <div v-for="queue in queues">
+                    {{ queue.filename }} -
+                    <q-badge :color="getColor(queue.state)">
+                        <q-tooltip>
+                            {{ getDetailedFileState(queue.state) }}
+                        </q-tooltip>
+                        {{ getSimpleFileStateName(queue.state) }}
+                    </q-badge>
+                </div>
+            </div>
         </q-card-section>
     </q-card>
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref } from 'vue';
+import { computed, inject, Ref, ref, watch } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
 import { FileType } from 'src/enums/FILE_ENUM';
 import RouterService from 'src/services/routerService';
@@ -148,6 +177,14 @@ import {
 } from 'src/services/queries/file';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import EditFile from 'components/EditFile.vue';
+import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getQueueForFile } from 'src/services/queries/queue';
+import { Queue } from 'src/types/Queue';
+import {
+    getColor,
+    getDetailedFileState,
+    getSimpleFileStateName,
+} from '../services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const $q = useQuasar();
@@ -164,6 +201,18 @@ const tableoniRef: Ref<QTable | null> = ref(null);
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
     queryFn: () => fetchFile(file_uuid.value),
+    retryDelay: 200,
+    throwOnError(error, query) {
+        console.log('errsdfor: ', error);
+        Notify.create({
+            message: `Error fetching file: ${error.response?.data.message}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'top-right',
+        });
+        $routerService?.routeTo(ROUTES.DATATABLE);
+        return false;
+    },
 });
 
 const missionUUID = computed(() => data.value?.mission?.uuid);
@@ -175,9 +224,23 @@ const { data: _filesReturn, refetch } = useQuery({
         return !!missionUUID.value;
     },
 });
+const queueKey = computed(() => ['queue', data.value?.filename]);
+const { data: queues } = useQuery<Queue[]>({
+    queryKey: queueKey,
+    queryFn: () =>
+        getQueueForFile(
+            data.value?.filename.replace(/\.(bag|mcap)$/, '') || '',
+            data.value?.mission?.uuid || '',
+        ),
+});
+
 const filesReturn = computed(() =>
     _filesReturn.value ? _filesReturn.value[0] : [],
 );
+
+const displayTopics = computed(() => {
+    return data.value?.type === FileType.MCAP && !data.value?.tentative;
+});
 
 const columns = [
     {

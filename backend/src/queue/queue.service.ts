@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, MoreThan, Repository } from 'typeorm';
+import { Brackets, In, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
@@ -163,17 +163,19 @@ export class QueueService {
         if (queue.state !== FileState.AWAITING_UPLOAD) {
             throw new ConflictException('File is not in uploading state');
         }
-
-        const fileInfo = await getInfoFromMinio(
-            queue.filename.endsWith('.bag') ? FileType.BAG : FileType.MCAP,
-            `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`,
-        );
-
         const file = await this.fileRepository.findOneOrFail({
             where: {
                 filename: queue.filename,
                 mission: { uuid: queue.mission.uuid },
             },
+        });
+
+        const fileInfo = await getInfoFromMinio(
+            queue.filename.endsWith('.bag') ? FileType.BAG : FileType.MCAP,
+            `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`,
+        ).catch(async (err) => {
+            await this.fileRepository.remove(file);
+            throw new ConflictException('File not found in Minio');
         });
 
         file.tentative = false;
@@ -190,16 +192,24 @@ export class QueueService {
 
     async active(
         startDate: Date,
+        stateFilter: string,
         userUUID: string,
         skip: number,
         take: number,
     ) {
         const user = await this.userservice.findOneByUUID(userUUID);
+        const where = {
+            updatedAt: MoreThan(startDate),
+        };
+        if (stateFilter) {
+            const filter = stateFilter
+                .split(',')
+                .map((state) => parseInt(state));
+            where['state'] = In(filter);
+        }
         if (user.role === UserRole.ADMIN) {
             return await this.queueRepository.find({
-                where: {
-                    updatedAt: MoreThan(startDate),
-                },
+                where,
                 relations: ['mission', 'mission.project', 'creator'],
                 skip,
                 take,
@@ -221,5 +231,15 @@ export class QueueService {
             .take(take)
             .orderBy('queue.createdAt', 'DESC')
             .getMany();
+    }
+
+    async forFile(filename: string, missionUUID: string) {
+        return this.queueRepository.find({
+            where: {
+                filename: Like(`${filename}%`),
+                mission: { uuid: missionUUID },
+            },
+            relations: ['creator'],
+        });
     }
 }

@@ -4,7 +4,7 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 250px; max-width: 1500px"
         >
-            <create-file />
+            <create-file :mission="mission" />
             <div class="q-mt-md row">
                 <div class="col-10" />
                 <div class="col-2">
@@ -18,6 +18,10 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import CreateFile from 'components/CreateFile.vue';
+import { Mission } from 'src/types/Mission';
 
+const props = defineProps<{
+    mission?: Mission;
+}>();
 const { dialogRef, onDialogCancel } = useDialogPluginComponent();
 </script>

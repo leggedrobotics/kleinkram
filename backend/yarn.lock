@@ -377,28 +377,6 @@
   resolved "https://registry.yarnpkg.com/@eslint/object-schema/-/object-schema-2.1.4.tgz#9e69f8bb4031e11df79e03db09f9dbbae1740843"
   integrity sha512-BsWiH1yFGjXXS2yvrf5LyuoSIIbPrGUWob917o+BTKuZ7qJdxX8aJLRxs1fS9n6r7vESrq1OUqb68dANcFXuQQ==
 
-"@foxglove/crc@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@foxglove/crc/-/crc-0.0.3.tgz#04cd8816454e14f1ec48de17c949199b4b3ec9c2"
-  integrity sha512-DjIZsnL3CyP/yQ/vUYA9cjrD0a/8YXejI5ZmsaOiT16cLfZcTwaCxIN01/ys4jsy+dZCQ/9DnWFn7AEFbiMDaA==
-
-"@foxglove/wasm-bz2@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@foxglove/wasm-bz2/-/wasm-bz2-0.1.1.tgz#d3bf629b7caf747a0278ed2efb9c38644b6d3439"
-  integrity sha512-huMVZ//J9S1TAh689pj7U5tstbmtGhH1g9/HCj9jE3UPaLF83dTeJIOLE0+pe16ha1iH4QRvYgv35aykikHkvA==
-  dependencies:
-    tslib "^2"
-
-"@foxglove/wasm-lz4@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@foxglove/wasm-lz4/-/wasm-lz4-1.0.2.tgz#ce8e27ae9c039058a033e288043f38acee3d1e2b"
-  integrity sha512-qwGOVLITlMBwuI+Vf09xWkTtbQldaCKchGEiFNZzsY0Q6ZXnHFhFgl4UAew7Xaq0wCv5YB7hqYsHmSrFIVSjCg==
-
-"@foxglove/wasm-zstd@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@foxglove/wasm-zstd/-/wasm-zstd-1.0.1.tgz#41f97f9c1ed5d10790603376fbecda7ce2145fe5"
-  integrity sha512-hqKTO45Sl+kSq9SDqM9xi5L+GncjFEZIJgYEkGTlpJXTfhy1Gf+a+3epWMcE0tLUKmzM77dtu8snape/J+7ueQ==
-
 "@google-cloud/local-auth@^3.0.1":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@google-cloud/local-auth/-/local-auth-3.0.1.tgz#e4e593eea4de344ea997ef36e8ca90aac91fc69b"
@@ -726,30 +704,6 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@lukeed/csprng/-/csprng-1.1.0.tgz#1e3e4bd05c1cc7a0b2ddbd8a03f39f6e4b5e6cfe"
   integrity sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==
-
-"@mcap/browser@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@mcap/browser/-/browser-1.0.0.tgz#92f5dc81f215e78f527e34f56eb62be84a432c52"
-  integrity sha512-lFbF73s1kD6JajYZo551HGmiLoErvlg5xku/xeBzHnnlLvbnKy6tun6Mcl7vLFBBV5wDgazzNNWU8wHZ110UFQ==
-
-"@mcap/core@^2.1.0":
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/@mcap/core/-/core-2.1.2.tgz#63a0949302b4116655c06db94336e46cabf7494f"
-  integrity sha512-eHqc58JDapioD9o6ydY1FKhNut5VEWKOOxU6ern4ZDrWdYtjIjg4iT/EJakrR9WH9spQz+E/KK2PQHgd2JRj4w==
-  dependencies:
-    "@foxglove/crc" "^0.0.3"
-    heap-js "^2.2.0"
-    tslib "^2.5.0"
-
-"@mcap/support@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.1.tgz#595fa108f36ef95565f6adba13be7458bf40705a"
-  integrity sha512-fsZb7//3fG06OKnN+qcs9wdW1sZrpKHU8i2G0ZW/Sj8skkqw6Y6aVqf2hOthJ/e/kChydcsJrNoB4XhvlUhW7w==
-  dependencies:
-    "@foxglove/wasm-bz2" "^0.1.1"
-    "@foxglove/wasm-lz4" "^1.0.2"
-    "@foxglove/wasm-zstd" "^1.0.1"
-    protobufjs "^7.2.5"
 
 "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3":
   version "3.0.3"
@@ -3641,11 +3595,6 @@ hasown@^2.0.0, hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-heap-js@^2.2.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/heap-js/-/heap-js-2.5.0.tgz#487e268b1733b187ca04eccf52f8387be92b46cb"
-  integrity sha512-kUGoI3p7u6B41z/dp33G6OaL7J4DRqRYwVmeIlwLClx7yaaAy7hoDExnuejTKtuDwfcatGmddHDEOjf6EyIxtQ==
-
 hexoid@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/hexoid/-/hexoid-1.0.0.tgz#ad10c6573fb907de23d9ec63a711267d9dc9bc18"
@@ -6278,7 +6227,7 @@ tsconfig-paths@4.2.0, tsconfig-paths@^4.1.2, tsconfig-paths@^4.2.0:
     minimist "^1.2.6"
     strip-bom "^3.0.0"
 
-tslib@2.6.3, tslib@^2, tslib@^2.1.0, tslib@^2.5.0, tslib@^2.6.2:
+tslib@2.6.3, tslib@^2.1.0, tslib@^2.5.0, tslib@^2.6.2:
   version "2.6.3"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.6.3.tgz#0438f810ad7a9edcde7a241c3d80db693c8cbfe0"
   integrity sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==

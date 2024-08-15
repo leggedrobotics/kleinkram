@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_backend",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "description": "",
     "author": "",
     "private": true,
@@ -19,9 +19,6 @@
     },
     "dependencies": {
         "@google-cloud/local-auth": "^3.0.1",
-        "@mcap/browser": "^1.0.0",
-        "@mcap/core": "^2.1.0",
-        "@mcap/support": "^1.0.0",
         "@nestjs/bull": "^10.1.1",
         "@nestjs/common": "^10.4.0",
         "@nestjs/config": "^3.2.0",

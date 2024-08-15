@@ -51,23 +51,9 @@
                             autofocus
                             style="padding-bottom: 30px"
                             label="Project Name *"
-                            :rules="[
-                                (val) =>
-                                    !!val || 'A project name cannot be empty!',
-                                (val) =>
-                                    !invalidProjectNames.includes(val) ||
-                                    'A project with that name already exists!',
-                            ]"
-                            @update:model-value="
-                                () => {
-                                    hasValidInput =
-                                        !!newProjectName &&
-                                        !!newProjectDescription &&
-                                        !invalidProjectNames.includes(
-                                            newProjectName,
-                                        );
-                                }
-                            "
+                            :error-message="errorMessagesProjectName"
+                            :error="isInErrorStateProjectName"
+                            @update:model-value="verify_input"
                         />
 
                         <q-input
@@ -76,78 +62,16 @@
                             outlined
                             style="padding-bottom: 10px"
                             label="Project Description *"
-                            :rules="[
-                                (val) =>
-                                    !!val || 'Project Description is required',
-                            ]"
-                            @update:model-value="
-                                hasValidInput =
-                                    !!newProjectName && !!newProjectDescription
-                            "
+                            :error-message="errorMessagesProjectDescr"
+                            :error="isInErrorStateProjectDescr"
+                            @update:model-value="verify_input"
+                            autofocus
                         />
                     </q-tab-panel>
 
                     <q-tab-panel name="tags">
                         <div class="text-h6">Configure Tags</div>
-                        <div class="row">
-                            <div class="col-10">
-                                <q-select
-                                    v-model="selected"
-                                    @input-value="
-                                        (val) => {
-                                            tagSearch = val;
-                                        }
-                                    "
-                                    use-input
-                                    multiple
-                                    input-debounce="100"
-                                    :options="tags"
-                                    option-label="name"
-                                >
-                                    <template v-slot:no-option>
-                                        <q-item>
-                                            <q-item-section class="text-grey">
-                                                No results
-                                            </q-item-section>
-                                        </q-item>
-                                    </template>
-                                    <template v-slot:selected-item="scope">
-                                        <q-chip
-                                            removable
-                                            @remove="
-                                                scope.removeAtIndex(scope.index)
-                                            "
-                                            :tabindex="scope.tabindex"
-                                            :icon="icon(scope.opt.type)"
-                                        >
-                                            {{ scope.opt.name }}
-                                        </q-chip>
-                                    </template>
-                                    <template
-                                        v-slot:option="{ itemProps, opt }"
-                                    >
-                                        <q-item v-bind="itemProps">
-                                            <q-item-section>
-                                                <q-item-label
-                                                    v-html="opt.name"
-                                                />
-                                            </q-item-section>
-                                            <q-item-section side>
-                                                <q-icon
-                                                    :name="icon(opt.type)"
-                                                    class="q-mr-sm"
-                                                />
-                                            </q-item-section>
-                                        </q-item>
-                                    </template>
-                                </q-select>
-                            </div>
-                            <div class="col-2">
-                                <DatatypeSelectorButton
-                                    v-model="selectedDataType"
-                                />
-                            </div>
-                        </div>
+                        <ConfigureTags v-model:selected="selected" />
                     </q-tab-panel>
 
                     <q-tab-panel name="manage_access">
@@ -179,7 +103,7 @@
                     label="Create Project"
                     color="primary"
                     @click="submitNewProject"
-                    :disable="!hasValidInput"
+                    :disable="!formIsValid"
                 />
             </q-card-actions>
         </q-card>
@@ -199,6 +123,13 @@ import { getAccessRightDescription, icon } from 'src/services/generic';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { TagType } from 'src/types/TagType';
+import ConfigureTags from 'components/ConfigureTags.vue';
+
+const formIsValid = ref(false);
+const isInErrorStateProjectName = ref(false);
+const errorMessagesProjectName = ref<string>();
+const isInErrorStateProjectDescr = ref(false);
+const errorMessagesProjectDescr = ref<string>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const queryClient = useQueryClient();
@@ -253,6 +184,7 @@ function addUserToProject(newUser: {
     }
     usersToAdd.value.push(newUser);
 }
+
 function addAccessGroupToProject(newAccessGroup: {
     accessGroupUUID: string;
     rights: AccessGroupRights;
@@ -275,7 +207,35 @@ function addAccessGroupToProject(newAccessGroup: {
     accessGroupsToAdd.value.push(newAccessGroup);
 }
 
-const hasValidInput = ref(false);
+const verify_input = () => {
+    formIsValid.value =
+        !!newProjectName.value &&
+        !!newProjectDescription.value &&
+        !invalidProjectNames.value.includes(newProjectName.value) &&
+        !!newProjectName &&
+        !!newProjectDescription;
+
+    // client side verification
+    if (
+        !newProjectName.value ||
+        invalidProjectNames.value.includes(newProjectName.value)
+    ) {
+        isInErrorStateProjectName.value = true;
+        errorMessagesProjectName.value = 'Project name is required';
+    } else {
+        isInErrorStateProjectName.value = false;
+        errorMessagesProjectName.value = '';
+    }
+
+    if (!newProjectDescription.value) {
+        isInErrorStateProjectDescr.value = true;
+        errorMessagesProjectDescr.value = 'Project description is required';
+    } else {
+        isInErrorStateProjectDescr.value = false;
+        errorMessagesProjectDescr.value = '';
+    }
+};
+
 const submitNewProject = async () => {
     await createProject(
         newProjectName.value,
@@ -288,15 +248,14 @@ const submitNewProject = async () => {
             onDialogOK();
         })
         .catch((error: AxiosError<{ message: string; statusCode: number }>) => {
-            if (
-                error.code == 'ERR_BAD_REQUEST' &&
-                error.response?.data.message.includes(
-                    'Project with that name already exists',
-                )
-            ) {
+            if (error.code == 'ERR_BAD_REQUEST') {
+                isInErrorStateProjectName.value = true;
+                errorMessagesProjectName.value = error.response?.data.message;
                 invalidProjectNames.value.push(newProjectName.value);
-                projectNameInput.value?.getNativeElement().focus();
             }
+
+            isInErrorStateProjectName.value = true;
+            errorMessagesProjectName.value = error.response?.data.message;
 
             // abort the close of the dialog
             dialogRef.value?.show();

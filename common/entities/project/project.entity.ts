@@ -29,6 +29,8 @@ export default class Project extends BaseEntity {
     @ManyToOne(() => User, (user) => user.projects)
     creator: User;
 
-    @ManyToMany(() => TagType, (tag) => tag.project)
+    @ManyToMany(() => TagType, (tag) => tag.project, {
+        onDelete: 'CASCADE',
+    })
     requiredTags: TagType[];
 }

@@ -1,58 +1,106 @@
 <template>
     <q-card>
         <q-card-section>
-            <div class="col-12 col-md-3">
-                <q-input
-                    filled
-                    v-model="startDate"
-                    hint="File Processing since: "
-                >
-                    <template v-slot:prepend>
-                        <q-icon name="sym_o_event" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-date v-model="startDate" :mask="dateMask">
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-date>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-
-                    <template v-slot:append>
-                        <q-icon name="sym_o_access_time" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-time
-                                    v-model="startDate"
-                                    :mask="dateMask"
-                                    format24h
+            <div class="row">
+                <div class="col-6 q-pa-md">
+                    <q-input
+                        filled
+                        v-model="startDate"
+                        hint="File Processing since: "
+                    >
+                        <template v-slot:prepend>
+                            <q-icon name="sym_o_event" class="cursor-pointer">
+                                <q-popup-proxy
+                                    cover
+                                    transition-show="scale"
+                                    transition-hide="scale"
                                 >
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-time>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
+                                    <q-date
+                                        v-model="startDate"
+                                        :mask="dateMask"
+                                    >
+                                        <div
+                                            class="row items-center justify-end"
+                                        >
+                                            <q-btn
+                                                v-close-popup
+                                                label="Close"
+                                                color="primary"
+                                                flat
+                                            />
+                                        </div>
+                                    </q-date>
+                                </q-popup-proxy>
+                            </q-icon>
+                        </template>
+
+                        <template v-slot:append>
+                            <q-icon
+                                name="sym_o_access_time"
+                                class="cursor-pointer"
+                            >
+                                <q-popup-proxy
+                                    cover
+                                    transition-show="scale"
+                                    transition-hide="scale"
+                                >
+                                    <q-time
+                                        v-model="startDate"
+                                        :mask="dateMask"
+                                        format24h
+                                    >
+                                        <div
+                                            class="row items-center justify-end"
+                                        >
+                                            <q-btn
+                                                v-close-popup
+                                                label="Close"
+                                                color="primary"
+                                                flat
+                                            />
+                                        </div>
+                                    </q-time>
+                                </q-popup-proxy>
+                            </q-icon>
+                        </template>
+                    </q-input>
+                </div>
+                <div class="col-6 q-pa-md">
+                    <q-select
+                        v-model="fileStateFilter"
+                        multiple
+                        clearable
+                        :options="FileStateOptions"
+                        label="Select filter"
+                    >
+                        <template v-slot:selected-item="scope">
+                            <q-chip
+                                removable
+                                @remove="removeItem(scope.opt)"
+                                :tabindex="scope.tabindex"
+                                dense
+                                :color="
+                                    getColor(FileState[scope.opt] as FileState)
+                                "
+                            >
+                                {{ scope.opt }}
+                            </q-chip>
+                        </template>
+                        <template v-slot:no-option>
+                            <q-item>
+                                <q-item-section class="text-grey">
+                                    No results
+                                </q-item-section>
+                            </q-item>
+                        </template>
+                        <template v-slot:append>
+                            <q-icon
+                                class="cursor-pointer"
+                                @click.stop="clearSelection"
+                            />
+                        </template>
+                    </q-select>
+                </div>
             </div>
         </q-card-section>
         <q-card-section>
@@ -87,7 +135,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { computed, inject, ref, Ref } from 'vue';
+import { computed, inject, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
@@ -97,6 +145,11 @@ import { FileEntity } from 'src/types/FileEntity';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import RouterService from 'src/services/routerService';
+import {
+    getDetailedFileState,
+    getSimpleFileStateName,
+} from '../services/generic';
+import { getColor } from 'src/services/generic';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -109,9 +162,45 @@ const pagination = ref({
     page: 1,
     rowsPerPage: 10,
 });
+
+const queueKey = computed(() => [
+    'queue',
+    startDate.value,
+    fileStateFilterEnums.value,
+]);
+
+const fileStateFilter = ref<string[]>([]);
+
+const FileStateOptions = Object.keys(FileState).splice(
+    Object.keys(FileState).length / 2,
+); //  WHY JAVASCRIPT, WHY?
+
+const removeItem = (value: string) => {
+    fileStateFilter.value = fileStateFilter.value.filter(
+        (item) => item !== value,
+    );
+};
+function clearSelection() {
+    fileStateFilter.value = fileStateFilter.value.slice(0, 0);
+}
+
+watch(fileStateFilter, () => {
+    if (fileStateFilter.value) {
+        fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
+            FileState[a] > FileState[b] ? 1 : -1,
+        );
+    }
+});
+
+const fileStateFilterEnums = computed(() => {
+    if (!fileStateFilter.value) return [];
+    return fileStateFilter.value.map((state) => FileState[state]);
+});
+
 const { data: queueEntries, isLoading } = useQuery<Project[]>({
-    queryKey: ['queue', startDate],
-    queryFn: () => currentQueue(parseDate(startDate.value)),
+    queryKey: queueKey,
+    queryFn: () =>
+        currentQueue(parseDate(startDate.value), fileStateFilterEnums.value),
     refetchInterval: 1000,
 });
 
@@ -182,76 +271,6 @@ const columns = [
     },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];
-
-function getColor(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'green';
-        case FileState.ERROR:
-            return 'red';
-        case FileState.AWAITING_PROCESSING:
-            return 'yellow';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
-            return 'blue';
-        case FileState.AWAITING_UPLOAD:
-            return 'purple';
-        case FileState.CORRUPTED:
-            return 'orange';
-
-        default:
-            return 'grey'; // Default color for unknown states
-    }
-}
-
-function getSimpleFileStateName(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'Completed';
-        case FileState.ERROR:
-            return 'Error';
-        case FileState.AWAITING_PROCESSING:
-            return 'Awaiting Processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
-            return 'Processing';
-        case FileState.AWAITING_UPLOAD:
-            return 'Awaiting Upload';
-        case FileState.CORRUPTED:
-            return 'Corrupted';
-        default:
-            return 'Unknown'; // Default color for unknown states
-    }
-}
-
-function getDetailedFileState(state: FileState) {
-    switch (state) {
-        case FileState.COMPLETED:
-            return 'File has been processed and is ready for download';
-        case FileState.ERROR:
-            return 'An error occurred during processing';
-        case FileState.AWAITING_PROCESSING:
-            return 'File is awaiting processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-            return 'File is being converted and topics are being extracted';
-        case FileState.UPLOADING:
-            return 'File is being uploaded';
-        case FileState.PROCESSING:
-            return 'File is being processed';
-        case FileState.AWAITING_UPLOAD:
-            return 'File is awaiting upload';
-        case FileState.CORRUPTED:
-            return 'File is corrupted';
-        case FileState.DOWNLOADING:
-            return 'File is being downloaded';
-        default:
-            return 'Unknown'; // Default color for unknown states
-    }
-}
 </script>
 
 <style scoped></style>

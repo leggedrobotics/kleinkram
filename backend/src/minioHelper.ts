@@ -14,7 +14,7 @@ export const externalMinio: Client = new Client({
 
 export const internalMinio: Client = new Client({
     endPoint: 'minio',
-    useSSL: !env.DEV,
+    useSSL: false,
     port: 9000,
 
     region: 'GUGUS GEWESEN',
@@ -112,6 +112,6 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
     return internalMinio.statObject(bucketName, location);
 }
 
-export async function deleteFile(bucketName: string, location: string) {
+export async function deleteFileMinio(bucketName: string, location: string) {
     return internalMinio.removeObject(bucketName, location);
 }
