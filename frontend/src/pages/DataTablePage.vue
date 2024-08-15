@@ -266,8 +266,18 @@
                 @row-click="onRowClick"
                 @request="setPagination"
             >
+                <template v-slot:body-cell="props">
+                    <q-td :props="props" :style="getRowStyle(props.row)">
+                        <q-tooltip v-if="props.row.tentative"
+                            >This file has not yet completed
+                            uploading</q-tooltip
+                        >
+
+                        {{ props.value }}
+                    </q-td>
+                </template>
                 <template v-slot:body-cell-action="props">
-                    <q-td :props="props">
+                    <q-td :props="props" :style="getRowStyle(props.row)">
                         <q-btn
                             flat
                             round
@@ -284,6 +294,12 @@
                                         clickable
                                         v-ripple
                                         @click="() => openQDialog(props.row)"
+                                        :style="
+                                            props.row.tentative
+                                                ? 'pointer-events: none'
+                                                : ''
+                                        "
+                                        :disabled="props.row.tentative"
                                     >
                                         <q-item-section
                                             >Edit File
@@ -484,6 +500,12 @@ const selectedFileTypes = computed(() => {
         .join(' & ');
 });
 
+function getRowStyle(row: FileEntity) {
+    return {
+        backgroundColor: row.tentative ? '#ffdbcb' : '',
+    };
+}
+
 const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
     queryKey: queryKeyFiles,
     queryFn: () =>
@@ -637,6 +659,7 @@ function filterFn(val: string, update) {
 }
 
 const onRowClick = (_: Event, row: any) => {
+    if (row.tentative) return;
     $routerService?.routeTo(ROUTES.FILE, {
         uuid: row.uuid,
     });

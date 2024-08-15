@@ -460,7 +460,7 @@ export class FileService {
             where: { uuid: missionUUID },
             relations: ['files', 'project'],
         });
-        const urls = await Promise.all(
+        return await Promise.all(
             mission.files.map((f) =>
                 externalMinio.presignedUrl(
                     'GET',
@@ -470,7 +470,6 @@ export class FileService {
                 ),
             ),
         );
-        return urls;
     }
 
     async findByMission(
@@ -480,7 +479,9 @@ export class FileService {
         filename?: string,
         fileType?: FileType,
     ): Promise<[FileEntity[], number]> {
-        const where: Record<string, any> = { mission: { uuid: missionUUID } };
+        const where: Record<string, any> = {
+            mission: { uuid: missionUUID },
+        };
         if (filename) {
             where.filename = ILike(`%${filename}%`);
         }

@@ -5,13 +5,22 @@ import logger from '../logger';
 import {
     AdminOnly,
     CanCreateQueueByBody,
+    CanReadFile,
+    CanReadFileByName,
+    CanReadMission,
     CanWriteMissionByBody,
     LoggedIn,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import { BodyUUID } from '../validation/bodyDecorators';
-import { QueryDate, QuerySkip, QueryTake } from '../validation/queryDecorators';
+import {
+    QueryDate,
+    QuerySkip,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '../validation/queryDecorators';
 
 @Controller('queue')
 export class QueueController {
@@ -63,5 +72,14 @@ export class QueueController {
         const date = new Date(startDate);
 
         return this.queueService.active(date, user.uuid, skip, take);
+    }
+
+    @Get('forFile')
+    @CanReadMission()
+    async forFile(
+        @QueryString('filename') filename: string,
+        @QueryUUID('uuid') uuid: string, //Mission UUID
+    ) {
+        return this.queueService.forFile(filename, uuid);
     }
 }

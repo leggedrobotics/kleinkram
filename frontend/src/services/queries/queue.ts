@@ -39,3 +39,39 @@ export const currentQueue = async (startDate: Date) => {
         );
     });
 };
+
+export const getQueueForFile = async (
+    filename: string,
+    missionUUID: string,
+) => {
+    if (!filename || !missionUUID) return null;
+    const params = {
+        filename,
+        uuid: missionUUID,
+    };
+    const response = await axios.get('/queue/forFile', { params });
+    const res = response.data;
+    const creator = new User(
+        res.creator.uuid,
+        res.creator.name,
+        res.creator.email,
+        res.creator.role,
+        res.creator.avatarUrl,
+        [],
+        new Date(res.creator.createdAt),
+        new Date(res.creator.updatedAt),
+        new Date(res.creator.deletedAt),
+    );
+    return new Queue(
+        res.uuid,
+        res.identifier,
+        res.filename,
+        res.state,
+        res.location,
+        res.mission,
+        creator,
+        new Date(res.createdAt),
+        new Date(res.updatedAt),
+        new Date(res.deletedAt),
+    );
+};

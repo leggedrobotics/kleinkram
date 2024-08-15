@@ -114,14 +114,14 @@
                 filled
                 placeholder="Search"
                 class="q-mb-md"
-                v-if="data?.type === FileType.MCAP"
+                v-if="displayTopics"
             />
             <q-table
                 flat
                 bordered
                 separator="none"
                 v-model:selected="selected"
-                v-if="data?.type === FileType.MCAP"
+                v-if="displayTopics"
                 ref="tableoniRef"
                 v-model:pagination="pagination"
                 :rows="data?.topics"
@@ -133,12 +133,13 @@
             >
             </q-table>
             <q-btn
-                v-else
+                v-if="!displayTopics && !data?.tentative"
                 label="Got to Mcap"
                 icon="sym_o_turn_slight_right"
                 @click="redirectToMcap"
             >
             </q-btn>
+            <div v-if="data?.tentative">tentative</div>
         </q-card-section>
     </q-card>
 </template>
@@ -159,6 +160,7 @@ import {
 import ButtonGroup from 'components/ButtonGroup.vue';
 import EditFile from 'components/EditFile.vue';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
+import { getQueueForFile } from 'src/services/queries/queue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const $q = useQuasar();
@@ -198,9 +200,23 @@ const { data: _filesReturn, refetch } = useQuery({
         return !!missionUUID.value;
     },
 });
+const queueKey = computed(() => ['queue', data.value?.filename]);
+const { data: queue } = useQuery({
+    queryKey: queueKey,
+    queryFn: () =>
+        getQueueForFile(
+            data.value?.filename || '',
+            data.value?.mission?.uuid || '',
+        ),
+});
+
 const filesReturn = computed(() =>
     _filesReturn.value ? _filesReturn.value[0] : [],
 );
+
+const displayTopics = computed(() => {
+    return data.value?.type === FileType.MCAP && !data.value?.tentative;
+});
 
 const columns = [
     {
