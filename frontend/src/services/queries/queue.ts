@@ -1,10 +1,15 @@
 import axios from 'src/api/axios';
 import { User } from 'src/types/User';
 import { Queue } from 'src/types/Queue';
+import { FileState } from 'src/enums/QUEUE_ENUM';
 
-export const currentQueue = async (startDate: Date) => {
+export const currentQueue = async (
+    startDate: Date,
+    stateFilter: FileState[],
+) => {
     const params = {
         startDate: startDate.toISOString(),
+        stateFilter: stateFilter.length > 0 ? stateFilter.join(',') : undefined,
     };
     const response = await axios.get('/queue/active', { params });
     const users: Record<string, User> = {};

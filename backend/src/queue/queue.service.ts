@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Like, MoreThan, Repository } from 'typeorm';
+import { Brackets, In, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
@@ -192,16 +192,24 @@ export class QueueService {
 
     async active(
         startDate: Date,
+        stateFilter: string,
         userUUID: string,
         skip: number,
         take: number,
     ) {
         const user = await this.userservice.findOneByUUID(userUUID);
+        const where = {
+            updatedAt: MoreThan(startDate),
+        };
+        if (stateFilter) {
+            const filter = stateFilter
+                .split(',')
+                .map((state) => parseInt(state));
+            where['state'] = In(filter);
+        }
         if (user.role === UserRole.ADMIN) {
             return await this.queueRepository.find({
-                where: {
-                    updatedAt: MoreThan(startDate),
-                },
+                where,
                 relations: ['mission', 'mission.project', 'creator'],
                 skip,
                 take,

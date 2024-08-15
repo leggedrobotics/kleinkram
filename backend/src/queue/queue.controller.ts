@@ -16,6 +16,7 @@ import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import { BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
+    QueryOptionalString,
     QuerySkip,
     QueryString,
     QueryTake,
@@ -65,13 +66,20 @@ export class QueueController {
     @LoggedIn()
     async active(
         @QueryDate('startDate') startDate: string,
+        @QueryOptionalString('stateFilter') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
     ) {
         const date = new Date(startDate);
 
-        return this.queueService.active(date, user.uuid, skip, take);
+        return this.queueService.active(
+            date,
+            stateFilter,
+            user.uuid,
+            skip,
+            take,
+        );
     }
 
     @Get('forFile')
