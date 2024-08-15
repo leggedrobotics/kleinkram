@@ -9,10 +9,40 @@
                     © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
                 </span>
                 <span>
-                    Build: {{ BUILD_INFO.version }} ({{
-                        new Date(BUILD_INFO.timestamp).toLocaleString()
-                    }}) - {{ BUILD_INFO.git.branch }} -
-                    {{ BUILD_INFO.git.hash }}
+                    Build:
+                    <a
+                        class="text-grey-8"
+                        style="text-decoration: none"
+                        :href="
+                            'https://github.com/leggedrobotics/kleinkram/releases/tag/v' +
+                            BUILD_INFO.version
+                        "
+                        >{{ BUILD_INFO.version }} ({{
+                            new Date(BUILD_INFO.timestamp).toLocaleString()
+                        }})</a
+                    >
+                    -
+                    <a
+                        class="text-grey-8"
+                        style="text-decoration: none"
+                        :href="
+                            'https://github.com/leggedrobotics/kleinkram/tree/' +
+                            BUILD_INFO.git.branch
+                        "
+                    >
+                        {{ BUILD_INFO.git.branch }}
+                    </a>
+                    -
+                    <a
+                        class="text-grey-8"
+                        style="text-decoration: none"
+                        :href="
+                            'https://github.com/leggedrobotics/kleinkram/commit/' +
+                            BUILD_INFO.git.hash
+                        "
+                    >
+                        {{ BUILD_INFO.git.hash }}
+                    </a>
                 </span>
             </q-toolbar>
         </q-toolbar>
