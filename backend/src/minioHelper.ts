@@ -14,7 +14,7 @@ export const externalMinio: Client = new Client({
 
 export const internalMinio: Client = new Client({
     endPoint: 'minio',
-    useSSL: !env.DEV,
+    useSSL: false,
     port: 9000,
 
     region: 'GUGUS GEWESEN',
