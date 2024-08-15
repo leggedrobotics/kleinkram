@@ -26,8 +26,6 @@ import { Notify } from 'quasar';
 const filenamecheck = ref('');
 const client = useQueryClient();
 
-const emit = defineEmits(['deleted']);
-
 async function _deleteFile() {
     if (filenamecheck.value === props.file.filename) {
         await deleteFile(props.file)
@@ -45,7 +43,6 @@ async function _deleteFile() {
                     timeout: 2000,
                     position: 'top-right',
                 });
-                emit('deleted');
             })
             .catch((e) => {
                 Notify.create({

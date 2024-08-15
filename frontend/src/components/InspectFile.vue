@@ -205,7 +205,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
     throwOnError(error, query) {
         console.log('errsdfor: ', error);
         Notify.create({
-            message: `Error fetching file: ${error.response.data.message}`,
+            message: `Error fetching file: ${error.response?.data.message}`,
             color: 'negative',
             timeout: 2000,
             position: 'top-right',

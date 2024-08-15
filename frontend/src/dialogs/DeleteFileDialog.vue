@@ -4,7 +4,7 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 250px; max-width: 500px"
         >
-            <delete-file :file="file" @deleted="onDialogCancel" />
+            <delete-file :file="file" />
         </q-card>
     </q-dialog>
 </template>
@@ -13,7 +13,7 @@ import DeleteFile from 'components/DeleteFile.vue';
 import { useDialogPluginComponent } from 'quasar';
 import { FileEntity } from 'src/types/FileEntity';
 
-const { dialogRef, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
     file: FileEntity;

@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const $q = useQuasar();
 
-const deleteFile = () =>
+function deleteFile() {
     $q.dialog({
         title: 'Delete File',
         component: DeleteFileDialog,
@@ -22,6 +22,7 @@ const deleteFile = () =>
             file: props.file,
         },
     });
+}
 </script>
 
 <style scoped></style>
