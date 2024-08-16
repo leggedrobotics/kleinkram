@@ -5,6 +5,10 @@ COPY ./backend/yarn.lock /usr/src/app/backend/
 COPY ./common/package.json /usr/src/app/common/
 COPY ./common/yarn.lock /usr/src/app/common/
 
+COPY --from=cache-stage /usr/src/app/backend/.yarn_cache/ /root/.cache/yarn/
+COPY --from=cache-stage /usr/src/app/common/.yarn_cache/ /root/.cache/yarn/
+
+
 WORKDIR /usr/src/app/backend
 RUN yarn --immutable
 

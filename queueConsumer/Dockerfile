@@ -5,6 +5,9 @@ COPY ./queueConsumer/yarn.lock /usr/src/queueConsumer/
 COPY ./common/package.json /usr/src/common/
 COPY ./common/yarn.lock /usr/src/common/
 
+COPY --from=cache-stage /usr/src/app/backend/.yarn_cache/ /root/.cache/yarn/
+COPY --from=cache-stage /usr/src/app/common/.yarn_cache/ /root/.cache/yarn/
+
 WORKDIR /usr/src/queueConsumer
 RUN yarn --immutable
 RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%2Fv0.0.42/mcap-linux-amd64 -O /usr/local/bin/mcap \
