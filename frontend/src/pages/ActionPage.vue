@@ -31,6 +31,24 @@
                 label="Action Name"
             />
 
+            <q-select
+                :model-value="selected_project?.name"
+                label="Project"
+                outlined
+                dense
+                class="q-mb-sm"
+                readonly
+            />
+
+            <q-select
+                :model-value="selected_mission?.name"
+                label="Mission"
+                outlined
+                dense
+                class="q-mb-sm"
+                readonly
+            />
+
             <span class="text-bold q-mt-md">Define the Action</span>
             <q-input
                 v-model="image_name"
