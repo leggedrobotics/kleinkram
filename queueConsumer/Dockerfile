@@ -13,6 +13,7 @@ RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%
 WORKDIR /usr/src/common
 RUN yarn --immutable
 
+RUN yarn cache dir
 # copy the rest of the files
 COPY ./queueConsumer /usr/src/queueConsumer
 COPY ./common /usr/src/common
