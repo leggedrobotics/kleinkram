@@ -14,7 +14,7 @@ import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
-import { ActionDetails } from '@common/types';
+import { ActionSubmissionDetails } from '@common/types';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -53,7 +53,7 @@ export class QueueService {
 
     async addActionQueue(
         mission_action_id: string,
-        action_details: ActionDetails,
+        action_details: ActionSubmissionDetails,
     ) {
         await this.actionQueue.add('actionProcessQueue', action_details, {
             jobId: mission_action_id,
