@@ -42,6 +42,11 @@
                     >
                         {{ BUILD_INFO.git.hash }}
                     </a>
+                    <q-icon
+                        v-if="kleinkramVersion.version !== BUILD_INFO.version"
+                        name="sym_o_warning"
+                        color="red"
+                    />
                 </span>
                 <span>
                     <a
@@ -59,6 +64,7 @@
 
 <script setup lang="ts">
 import BUILD_INFO from 'src/build';
+import { kleinkramVersion } from 'src/api/axios';
 
 const year = new Date().getFullYear();
 </script>

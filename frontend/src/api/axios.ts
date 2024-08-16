@@ -8,8 +8,16 @@ const axiosInstance = axios.create({
     // Add more settings as needed
 });
 
+export const kleinkramVersion = { version: '' };
+
 axiosInstance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const headers = response.headers;
+        if (headers['kleinkram-version']) {
+            kleinkramVersion.version = headers['kleinkram-version'];
+        }
+        return response;
+    },
     async (error) => {
         const originalRequest = error.config;
         if (error.response.status === 401 && !originalRequest._retry) {
