@@ -5,6 +5,8 @@ COPY ./backend/yarn.lock /usr/src/app/backend/
 COPY ./common/package.json /usr/src/app/common/
 COPY ./common/yarn.lock /usr/src/app/common/
 
+
+
 WORKDIR /usr/src/app/backend
 RUN yarn --immutable
 

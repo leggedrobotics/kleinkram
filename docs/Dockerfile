@@ -5,6 +5,8 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
+
+
 RUN yarn install
 
 # Build the docs
