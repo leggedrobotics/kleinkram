@@ -205,7 +205,7 @@ export class ActionQueueProcessor
             ACTION_UUID: action.uuid,
         };
 
-        const container = await this.start_container({
+        const { container, image_repo_digests } = await this.start_container({
             docker_image: action.docker_image,
             uuid,
             limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
@@ -215,11 +215,9 @@ export class ActionQueueProcessor
 
         // save start parameters to action object
         const container_id = container.id;
-
         const container_details = await container
             .inspect()
             .catch(dockerDaemonErrorHandler);
-        const image_sha = container_details?.Image;
 
         // capture runner information
         const CPU_model = os.cpus()[0].model;
@@ -228,7 +226,7 @@ export class ActionQueueProcessor
         // update the action with additional information
         action.executionStartedAt = new Date(container_details.Created);
         action.container_id = container_id;
-        action.docker_image_sha = image_sha;
+        action.docker_image_sha = image_repo_digests;
         action.runner_hostname = hostname;
         action.runner_cpu_model = CPU_model;
         await this.actionRepository.save(action);

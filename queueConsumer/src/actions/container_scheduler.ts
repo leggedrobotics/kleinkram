@@ -82,7 +82,7 @@ export class ContainerScheduler {
     @tracing()
     protected async start_container(
         container_options?: Partial<ContainerOptions>,
-    ): Promise<Dockerode.Container> {
+    ): Promise<{ container: Dockerode.Container; image_repo_digests: string }> {
         // merge the given container limitations with the default ones
         if (!container_options) container_options = {};
         container_options = {
@@ -110,9 +110,7 @@ export class ContainerScheduler {
             throw new Error('Docker socket not available or not responding');
         }
 
-        const err_msg = await this.pull_image(
-            container_options.docker_image,
-        ).catch((error) => {
+        await this.pull_image(container_options.docker_image).catch((error) => {
             // cleanup error message
             error.message = error.message.replace(/\(.*?\)/g, '');
             error.message = error.message.replace(/ +/g, ' ').trim();
@@ -120,6 +118,16 @@ export class ContainerScheduler {
             logger.warn(`Failed to pull image: ${error.message}`);
             return error.message;
         });
+
+        // get image details
+        const image = this.docker.getImage(container_options.docker_image);
+        const image_details = await image
+            .inspect()
+            .catch(dockerDaemonErrorHandler);
+        if (!image_details) {
+            throw new Error('Failed to inspect image');
+        }
+        const repo_digests = image_details.RepoDigests;
 
         const needs_gpu = container_options.needs_gpu || false;
         const add_gpu_capabilities = {
@@ -184,12 +192,6 @@ export class ContainerScheduler {
                 // cleanup error message
                 error.message = error.message.replace(/\(.*?\)/g, '');
                 error.message = error.message.replace(/ +/g, ' ').trim();
-
-                if (!!err_msg && err_msg !== '')
-                    throw new Error(
-                        `Failed to create container: ${error.message} due to image pull error: ${err_msg}`,
-                    );
-
                 logger.error(`Failed to create container: ${error.message}`);
                 throw error;
             });
@@ -247,7 +249,7 @@ export class ContainerScheduler {
             logger.info(`Container ${container.id} stopped.`);
         });
 
-        return container;
+        return { container, image_repo_digests: repo_digests };
     }
 
     @tracing()
