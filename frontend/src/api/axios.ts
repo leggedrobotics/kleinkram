@@ -17,7 +17,6 @@ axiosInstance.interceptors.response.use(
         const headers = response.headers;
         if (headers['kleinkram-version']) {
             kleinkramVersion.version = headers['kleinkram-version'];
-            console.log('kleinkramVersion', kleinkramVersion);
         }
         return response;
     },
