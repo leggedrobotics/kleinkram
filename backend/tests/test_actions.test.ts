@@ -11,6 +11,7 @@ import {
     upload_file,
 } from './utils/api_calls';
 import { ActionState } from '@common/enum';
+import { SubmitAction } from '../src/action/entities/submit_action.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {
@@ -63,9 +64,11 @@ describe('Verify Action', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    action_name: 'file-hash',
+                    gpu_model: 'no-gpu',
                     missionUUID: mission_uuid,
                     docker_image: 'rslethz/action:file-hash-latest',
-                }),
+                } as SubmitAction),
             },
         );
 

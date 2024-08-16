@@ -63,17 +63,9 @@ export class ActionQueueProcessor
     }
 
     private async setHardwareCapabilities() {
-        const dockeror = await this.dockerode();
-
         this.hardware_capabilities = {
             gpus: {
-                models: [
-                    {
-                        name: 'Tesla T4',
-                        memory: 16,
-                        compute_capability: '7.5',
-                    },
-                ],
+                models: [],
             },
         };
     }
