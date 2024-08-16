@@ -17,7 +17,9 @@ export class AddVersionInterceptor implements NestInterceptor {
         return next.handle().pipe(
             tap(() => {
                 const res = context.switchToHttp().getResponse();
-                res.header('kleinkram-version', appVersion);
+                if (!res.finished) {
+                    res.header('kleinkram-version', appVersion);
+                }
             }),
         );
     }
