@@ -8,10 +8,10 @@ COPY ./common/yarn.lock /usr/src/app/common/
 
 
 WORKDIR /usr/src/app/backend
-RUN yarn --immutable
+RUN --mount=type=cache,target=~/.yarn-cache yarn --immutable
 
 WORKDIR /usr/src/app/common
-RUN yarn --immutable
+RUN --mount=type=cache,target=~/.yarn-cache yarn --immutable
 
 # copy the rest of the files
 COPY ./backend /usr/src/app/backend

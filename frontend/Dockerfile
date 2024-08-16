@@ -14,7 +14,7 @@ COPY ./.git/HEAD /app/.git/HEAD
 COPY ./.git/refs/heads/ /app/.git/refs/heads/
 
 
-RUN yarn install --ignore-engines --immutable
+RUN --mount=type=cache,target=~/.yarn-cache yarn --immutable --ignore-engines
 
 COPY ./frontend/. .
 
