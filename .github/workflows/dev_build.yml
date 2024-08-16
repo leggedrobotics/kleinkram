@@ -16,13 +16,15 @@ jobs:
               with:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
+            - name: Set Yarn cache directory
+              run: echo "YARN_CACHE_FOLDER=~/.yarn-cache" >> $GITHUB_ENV
 
             - name: Cache Yarn
               id: yarn-cache
               uses: actions/cache@v4
               with:
                   path: |
-                      /usr/local/share/.cache/yarn/v6
+                      ~/.yarn-cache
                   key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                   restore-keys: |
                       ${{ runner.os }}-yarn-
