@@ -185,6 +185,7 @@ import {
     getDetailedFileState,
     getSimpleFileStateName,
 } from '../services/generic';
+import { getMe } from 'src/services/queries/user';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const $q = useQuasar();
@@ -197,6 +198,12 @@ const selected = ref([]);
 const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
+//
+// //get Current User:
+// const { data: user } = useQuery({
+//     queryKey: ['me'],
+//     queryFn: () => getMe(),
+// });
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
