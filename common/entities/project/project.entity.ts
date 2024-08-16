@@ -15,7 +15,7 @@ export default class Project extends BaseEntity {
 
     @OneToMany(
         () => ProjectAccess,
-        (project_access) => project_access.projects,
+        (project_access) => project_access.project,
         {
             cascade: true,
             eager: true,

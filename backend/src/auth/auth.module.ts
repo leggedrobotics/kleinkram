@@ -29,6 +29,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
 import { AccessService } from './access.service';
 import { AccessController } from './access.controller';
 import FileEntity from '@common/entities/file/file.entity';
+import { AuthGuardService } from './authGuard.service';
 
 @Module({
     imports: [
@@ -61,6 +62,7 @@ import FileEntity from '@common/entities/file/file.entity';
         UserService,
         ProjectGuardService,
         MissionGuardService,
+        AuthGuardService,
         JwtStrategy,
         AdminOnlyGuard,
         LoggedInUserGuard,

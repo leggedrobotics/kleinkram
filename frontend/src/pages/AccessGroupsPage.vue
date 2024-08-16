@@ -39,7 +39,7 @@
                         <q-form>
                             <div
                                 class="row"
-                                v-for="accessgroup in foundAccessGroups"
+                                v-for="accessgroup in accessGroupsTable"
                                 style="margin-top: 3px"
                             >
                                 <div class="col-4 flex flex-center">
@@ -105,30 +105,50 @@
                 </div>
             </div>
             <q-separator style="margin-top: 12px; margin-bottom: 12px" />
-            <div>
-                <b>Add Access Group / Users to Projects</b>
-            </div>
-            <q-table
-                ref="tableRef"
-                v-model:pagination="pagination"
-                title="Projects"
-                :rows="projects"
-                :columns="project_columns"
-                style="margin-top: 8px"
-                selection="multiple"
-                v-model:selected="selectedProjects"
-                row-key="uuid"
-            >
-                <template v-slot:body-cell-projectaction="props">
-                    <q-td :props="props">
-                        <q-btn
-                            color="primary"
-                            label="Edit"
-                            @click="() => openAccessRightsModal(props.row)"
-                        ></q-btn>
-                    </q-td>
-                </template>
-            </q-table>
+            <q-tabs v-model="tab" align="justify">
+                <q-tab name="projects" label="Projects"></q-tab>
+                <q-tab name="accessgroups" label="Access Groups"></q-tab>
+            </q-tabs>
+            <q-tab-panels v-model="tab" animated>
+                <q-tab-panel name="projects">
+                    <q-table
+                        ref="tableRef"
+                        v-model:pagination="pagination"
+                        title="Projects"
+                        :rows="projects"
+                        :columns="project_columns"
+                        style="margin-top: 8px"
+                        selection="multiple"
+                        v-model:selected="selectedProjects"
+                        row-key="uuid"
+                    >
+                        <template v-slot:body-cell-projectaction="props">
+                            <q-td :props="props">
+                                <q-btn
+                                    color="primary"
+                                    label="Edit"
+                                    @click="
+                                        () => openAccessRightsModal(props.row)
+                                    "
+                                ></q-btn>
+                            </q-td>
+                        </template>
+                    </q-table>
+                </q-tab-panel>
+                <q-tab-panel name="accessgroups">
+                    <q-table
+                        :rows="accessGroupsTable"
+                        v-model:pagination="pagination2"
+                        title="Access Groups"
+                        :columns="accessGroupsColumns"
+                        style="margin-top: 8px"
+                        selection="multiple"
+                        v-model:selected="selectedAccessGroups"
+                        row-key="uuid"
+                    >
+                    </q-table>
+                </q-tab-panel>
+            </q-tab-panels>
         </div>
     </q-page>
 </template>
@@ -156,7 +176,9 @@ const searchAccessGroup = ref('');
 const searchUser = ref('');
 const selectedAccessGroup: Ref<AccessGroup[]> = ref([]);
 const selectedProjects: Ref<Project[]> = ref([]);
+const selectedAccessGroups: Ref<Project[]> = ref([]);
 const $q = useQuasar();
+const tab = ref('projects');
 
 const { mutate: _createAccessGroup } = useMutation({
     mutationFn: () => createAccessGroup(name.value),
@@ -203,11 +225,15 @@ const { data: foundUsers, refetch } = useQuery({
     enabled: !!searchUser.value,
 });
 
-const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
+const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery<
+    [AccessGroup[], number]
+>({
     queryKey: ['accessGroups', searchAccessGroup.value],
     queryFn: () => searchAccessGroups(searchAccessGroup.value),
-    enabled: !!searchAccessGroup.value,
 });
+const accessGroupsTable = computed(() =>
+    foundAccessGroups.value ? foundAccessGroups.value[0] : [],
+);
 
 const { data: _projects } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
@@ -216,6 +242,13 @@ const { data: _projects } = useQuery<[Project[], number]>({
 const projects = computed(() => (_projects.value ? _projects.value[0] : []));
 
 const pagination = ref({
+    sortBy: 'name',
+    descending: false,
+    page: 1,
+    rowsPerPage: 30,
+});
+
+const pagination2 = ref({
     sortBy: 'name',
     descending: false,
     page: 1,
@@ -275,6 +308,37 @@ const project_columns = [
         name: 'projectaction',
         label: 'Action',
         align: 'center',
+    },
+];
+const accessGroupsColumns = [
+    {
+        name: 'Access Group',
+        required: true,
+        label: 'Access Group',
+        align: 'left',
+        field: (row: AccessGroup) => row.name,
+        format: (val: string) => `${val}`,
+        sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 10%;',
+    },
+    {
+        name: 'NrOfUsers',
+        required: true,
+        label: 'Nr of Users',
+        align: 'left',
+        field: (row: AccessGroup) => row.users.length,
+        format: (val: number) => `${val}`,
+        sortable: true,
+    },
+    {
+        name: 'NrOfProjects',
+        required: true,
+        label: 'Nr of Projects',
+        align: 'left',
+        field: (row: AccessGroup) =>
+            row.project_accesses.map((pa) => pa.projects).flat().length,
+        format: (val: number) => `${val}`,
+        sortable: true,
     },
 ];
 

@@ -145,7 +145,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
             access.uuid,
             access.rights,
             accessGroup,
-            [],
+            undefined,
             new Date(access.createdAt),
             new Date(access.updatedAt),
             new Date(access.deletedAt),

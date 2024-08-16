@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
@@ -122,7 +122,7 @@ export class AccessService {
         const projectAccess = this.projectAccessRepository.create({
             rights: rights,
             accessGroup: personalAccessGroup,
-            projects: project,
+            project: project,
         });
         await this.projectAccessRepository.save(projectAccess);
         return this.projectRepository.findOneOrFail({
@@ -151,14 +151,20 @@ export class AccessService {
         skip: number,
         take: number,
     ) {
-        return this.accessGroupRepository
-            .createQueryBuilder('accessGroup')
-            .where('accessGroup.name ILIKE :search', { search: `%${search}%` })
-            .andWhere('accessGroup.inheriting = false')
-            .andWhere('accessGroup.personal = false')
-            .skip(skip)
-            .take(take)
-            .getMany();
+        const where = { inheriting: false, personal: false };
+        if (search) {
+            where['name'] = ILike(`%${search}%`);
+        }
+        return this.accessGroupRepository.findAndCount({
+            where,
+            skip,
+            take,
+            relations: [
+                'users',
+                'project_accesses',
+                'project_accesses.project',
+            ],
+        });
     }
 
     async addAccessGroupToProject(
@@ -215,7 +221,7 @@ export class AccessService {
         const projectAccess = this.projectAccessRepository.create({
             rights: rights,
             accessGroup: accessGroup,
-            projects: project,
+            project: project,
         });
         await this.projectAccessRepository.save(projectAccess);
         return this.projectRepository.findOneOrFail({

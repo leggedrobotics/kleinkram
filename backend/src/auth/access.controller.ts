@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AccessService } from './access.service';
-import { CanWriteProject, LoggedIn } from './roles.decorator';
+import {
+    CanAddUserToAccessGroup,
+    CanWriteProject,
+    LoggedIn,
+} from './roles.decorator';
 import { addJWTUser, JWTUser } from './paramDecorator';
 import { AccessGroupRights } from '@common/enum';
 import {
@@ -9,8 +13,10 @@ import {
     BodyUUID,
 } from '../validation/bodyDecorators';
 import {
+    QueryOptionalString,
     QuerySkip,
     QueryString,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 
@@ -53,7 +59,7 @@ export class AccessController {
     }
 
     @Post('addUserToAccessGroup')
-    @LoggedIn() //#Todo write a decorator for this
+    @CanAddUserToAccessGroup()
     async addUserToAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
@@ -65,7 +71,7 @@ export class AccessController {
     @Get('searchAccessGroup')
     @LoggedIn()
     async search(
-        @QueryString('search') search: string,
+        @QueryOptionalString('search') search: string,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @addJWTUser() user?: JWTUser,
