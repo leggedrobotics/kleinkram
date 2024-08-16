@@ -13,8 +13,7 @@ COPY ./frontend/yarn.lock ./
 COPY ./.git/HEAD /app/.git/HEAD
 COPY ./.git/refs/heads/ /app/.git/refs/heads/
 
-
-RUN --mount=type=cache,target=~/.cache/yarn/v6 yarn --immutable --ignore-engines
+RUN yarn install --ignore-engines --immutable
 
 COPY ./frontend/. .
 
