@@ -11,15 +11,15 @@
                 <span>
                     <q-icon
                         v-if="
-                            !!kleinkramVersion.version &&
-                            kleinkramVersion.version !== BUILD_INFO.version
+                            !!kleinkramVersion &&
+                            kleinkramVersion !== BUILD_INFO.version
                         "
                         name="sym_o_warning"
                         color="red"
                     >
                         <q-tooltip
                             >The API is running
-                            {{ kleinkramVersion.version }}</q-tooltip
+                            {{ kleinkramVersion }}</q-tooltip
                         >
                     </q-icon>
                     <a
