@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 
-RUN --mount=type=cache,target=~/.yarn-cache yarn install
+RUN --mount=type=cache,target=~/.cache/yarn/v6 yarn install
 
 # Build the docs
 COPY . ./
