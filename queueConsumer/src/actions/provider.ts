@@ -30,12 +30,26 @@ class DependencyNotMetError extends Error {
     }
 }
 
+type GPUModel = {
+    name: string;
+    memory: number;
+    compute_capability: string;
+};
+
+type HardwareCapabilities = {
+    gpus: {
+        models: GPUModel[];
+    };
+};
+
 @Processor('action-queue')
 @Injectable()
 export class ActionQueueProcessor
     extends ContainerScheduler
     implements OnModuleInit
 {
+    private hardware_capabilities: HardwareCapabilities = undefined;
+
     constructor(
         @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(Action)
@@ -44,12 +58,34 @@ export class ActionQueueProcessor
         private apikeyRepository: Repository<Apikey>,
     ) {
         super(actionRepository);
+
         logger.debug('AnalysisProcessor constructor');
     }
 
+    private async setHardwareCapabilities() {
+        const dockeror = await this.dockerode();
+
+        this.hardware_capabilities = {
+            gpus: {
+                models: [
+                    {
+                        name: 'Tesla T4',
+                        memory: 16,
+                        compute_capability: '7.5',
+                    },
+                ],
+            },
+        };
+    }
+
     async onModuleInit() {
-        logger.debug('Connecting to Redis...');
+        logger.debug('AnalysisProcessor onModuleInit');
+
+        logger.debug('Setting hardware capabilities...');
+        await this.setHardwareCapabilities();
+
         try {
+            logger.debug('Connecting to Redis...');
             await this.analysisQueue.isReady();
             logger.debug('Connected to Redis successfully!');
         } catch (error) {
@@ -60,10 +96,11 @@ export class ActionQueueProcessor
     }
 
     private async checkHardwareConfiguration(job: Job<ActionDetails>) {
-        const has_gpu = false;
-
         // check if the job requires a GPU and the system has one
-        if (job.data.hardware_requirements.needs_gpu && !has_gpu) {
+        if (
+            job.data.hardware_requirements.needs_gpu &&
+            !this.hardware_capabilities.gpus.models.length
+        ) {
             throw new DependencyNotMetError();
         }
     }
@@ -180,6 +217,7 @@ export class ActionQueueProcessor
             docker_image: action.docker_image,
             uuid,
             limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
+            needs_gpu: job.data.hardware_requirements.needs_gpu,
             environment: env_variables,
         });
 

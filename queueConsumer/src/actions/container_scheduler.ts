@@ -40,6 +40,7 @@ export type ContainerOptions = {
     docker_image: string; // the docker image to run
     uuid: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
+    needs_gpu?: boolean;
     environment?: ContainerEnv;
 };
 
@@ -120,7 +121,23 @@ export class ContainerScheduler {
             return error.message;
         });
 
-        logger.info('Creating container...');
+        const needs_gpu = container_options.needs_gpu || false;
+        const add_gpu_capabilities = {
+            DeviceRequests: [
+                {
+                    Driver: 'nvidia',
+                    Count: 1,
+                    Capabilities: [['gpu']],
+                },
+            ],
+        };
+
+        logger.info(
+            needs_gpu
+                ? 'Creating container with GPU support'
+                : 'Creating container without GPU support',
+        );
+
         const container = await this.docker
             .createContainer({
                 Image: container_options.docker_image,
@@ -132,6 +149,7 @@ export class ContainerScheduler {
                 ),
 
                 HostConfig: {
+                    ...(needs_gpu ? add_gpu_capabilities : {}),
                     Memory: container_options.limits.memory_limit, // memory limit in bytes
                     NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
                     DiskQuota: container_options.limits.disk_quota,

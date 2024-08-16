@@ -5,6 +5,11 @@ set -e # exit on error
 env
 echo ""
 echo ""
+
+nvidia-smi
+
+echo ""
+echo ""
 echo "List files of mission with UUID $MISSION_UUID"
 echo ""
 
