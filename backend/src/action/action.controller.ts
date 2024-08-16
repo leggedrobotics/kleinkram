@@ -23,6 +23,8 @@ import {
     QuerySkip,
     QueryUUID,
 } from '../validation/queryDecorators';
+import { ActionDetails } from '@common/types';
+import logger from '../logger';
 
 @Controller('action')
 export class ActionController {
@@ -43,7 +45,12 @@ export class ActionController {
             );
         }
         const action = await this.actionService.submit(dto, user);
-        await this.queueService.addActionQueue(action.uuid);
+        await this.queueService.addActionQueue(action.uuid, {
+            action_uuid: action.uuid,
+            hardware_requirements: {
+                needs_gpu: dto.gpu_model !== 'no-gpu',
+            },
+        } as ActionDetails);
         return action.uuid;
     }
 

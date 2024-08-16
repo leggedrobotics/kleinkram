@@ -10,7 +10,10 @@
                 </span>
                 <span>
                     <q-icon
-                        v-if="kleinkramVersion.version !== BUILD_INFO.version"
+                        v-if="
+                            !!kleinkramVersion.version &&
+                            kleinkramVersion.version !== BUILD_INFO.version
+                        "
                         name="sym_o_warning"
                         color="red"
                     >

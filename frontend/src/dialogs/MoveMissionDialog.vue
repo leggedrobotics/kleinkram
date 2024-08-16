@@ -1,5 +1,5 @@
 <template>
-    <q-dialog ref="dialogRef" persistent style="max-width: 1500px">
+    <q-dialog ref="dialogRef">
         <q-card
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 200px; max-width: 500px"
