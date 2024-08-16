@@ -9,6 +9,16 @@
                     © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
                 </span>
                 <span>
+                    <q-icon
+                        v-if="kleinkramVersion.version !== BUILD_INFO.version"
+                        name="sym_o_warning"
+                        color="red"
+                    >
+                        <q-tooltip
+                            >The API is running
+                            {{ kleinkramVersion.version }}</q-tooltip
+                        >
+                    </q-icon>
                     <a
                         class="text-grey-8"
                         style="text-decoration: none"
@@ -42,11 +52,6 @@
                     >
                         {{ BUILD_INFO.git.hash }}
                     </a>
-                    <q-icon
-                        v-if="kleinkramVersion.version !== BUILD_INFO.version"
-                        name="sym_o_warning"
-                        color="red"
-                    />
                 </span>
                 <span>
                     <a
