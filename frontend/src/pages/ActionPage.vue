@@ -3,6 +3,105 @@
         Verify Mission Data using Actions
     </h1>
 
+    <q-drawer
+        side="right"
+        show-if-above
+        :width="450"
+        :breakpoint="1000"
+        class="q-pa-md"
+        bordered
+    >
+        <h3 class="text-h6">Submit new Action</h3>
+
+        <span class="text-caption">
+            Actions are used to verify mission data or to generate derived
+            files.
+        </span>
+
+        <!-- Select a project and mission, on which the anylsis will be performed -->
+        <q-form @submit.prevent="submitAnalysis" class="flex column q-mt-lg">
+            <span class="text-bold">Basic Information</span>
+
+            <q-input
+                v-model="action_name"
+                outlined
+                dense
+                class="q-mb-sm"
+                clearable
+                label="Action Name"
+            />
+
+            <span class="text-bold q-mt-md">Define the Action</span>
+            <q-input
+                v-model="image_name"
+                outlined
+                dense
+                class="q-mb-sm"
+                clearable
+                label="Docker Image"
+            />
+
+            <q-input
+                model-value="manually triggered"
+                outlined
+                readonly
+                dense
+                class="q-mb-sm"
+                clearable
+                label="Action Trigger"
+            />
+
+            <q-input
+                model-value="default entrypoint.sh"
+                outlined
+                readonly
+                dense
+                class="q-mb-sm"
+                clearable
+                label="Command"
+            />
+
+            <span class="text-bold q-mt-md">Compute Resources</span>
+
+            <q-select
+                model-value="2GB RAM"
+                :options="[]"
+                label="Memory Allocation"
+                outlined
+                class="q-mb-sm"
+                readonly
+                dense
+            />
+
+            <q-select
+                model-value="2 Cores"
+                :options="[]"
+                label="CPU Core Allocation"
+                outlined
+                class="q-mb-sm"
+                readonly
+                dense
+            />
+
+            <q-select
+                v-model="gpu_model"
+                :options="options"
+                label="GPU Acceleration"
+                class="q-mb-sm"
+                outlined
+                dense
+            />
+
+            <div class="flex justify-end q-mt-md">
+                <q-btn
+                    label="Submit Action"
+                    color="primary"
+                    @click="submitAnalysis"
+                />
+            </div>
+        </q-form>
+    </q-drawer>
+
     <div class="q-mb-md">
         <div class="flex justify-between q-mv-md">
             <div></div>
@@ -58,34 +157,6 @@
         </div>
     </div>
 
-    <q-card class="q-pa-md q-mb-md" flat bordered>
-        <q-card-section>
-            <h3 class="text-h6">Submit new Mission Analysis</h3>
-
-            <!-- Select a project and mission, on which the anylsis will be performed -->
-            <q-form @submit.prevent="submitAnalysis">
-                <div class="flex column">
-                    <q-input
-                        v-model="image_name"
-                        outlined
-                        dense
-                        class="q-mb-sm"
-                        clearable
-                        label="Docker Image"
-                        hint="e.g., rslethz/action:latest"
-                    />
-                    <div class="flex justify-end">
-                        <q-btn
-                            label="Submit Action"
-                            color="primary"
-                            outline
-                            @click="submitAnalysis"
-                        />
-                    </div>
-                </div>
-            </q-form>
-        </q-card-section>
-    </q-card>
     <q-card class="q-pa-md q-mb-xl" flat bordered>
         <q-card-section>
             <template v-if="selected_project && selected_mission">
@@ -114,7 +185,14 @@ import { createAnalysis } from 'src/services/mutations/action';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import { useHandler } from 'src/hooks/customQueryHooks';
 
-const image_name = ref('');
+const action_name = ref('');
+const image_name = ref('rslethz/action:latest');
+const options = [
+    { label: 'no GPU', value: 'no-gpu' },
+    { label: 'GPU needed', value: 'GPU needed' },
+];
+const gpu_model = ref(options[0]);
+
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 
@@ -185,7 +263,12 @@ const submitAnalysis = () => {
     // post: the input should be valid now
 
     // send the action request to the backend and show a notification
-    createAnalysis(image_name.value, selected_mission.value.uuid)
+    createAnalysis({
+        action_name: action_name.value,
+        docker_image: image_name.value,
+        mission_uuid: selected_mission.value.uuid,
+        gpu_model: gpu_model.value.value,
+    })
         .then(() => {
             Notify.create({
                 group: false,

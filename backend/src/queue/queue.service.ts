@@ -51,26 +51,20 @@ export class QueueService {
         private userservice: UserService,
     ) {}
 
-    async addActionQueue(mission_action_id: string) {
-        await this.actionQueue.add(
-            'actionProcessQueue',
-            {
-                mission_action_id: mission_action_id,
-                hardware_requirements: {
-                    needs_gpu: false,
-                },
-            } as ActionDetails,
-            {
-                jobId: mission_action_id,
-                backoff: {
-                    delay: 1000,
-                    type: 'exponential',
-                },
-                removeOnComplete: true,
-                removeOnFail: false,
-                attempts: 10,
+    async addActionQueue(
+        mission_action_id: string,
+        action_details: ActionDetails,
+    ) {
+        await this.actionQueue.add('actionProcessQueue', action_details, {
+            jobId: mission_action_id,
+            backoff: {
+                delay: 60 * 1_000, // 60 seconds
+                type: 'exponential',
             },
-        );
+            removeOnComplete: true,
+            removeOnFail: false,
+            attempts: 60, // one hour of attempts
+        });
     }
 
     async createDrive(driveCreate: DriveCreate, user: JWTUser) {

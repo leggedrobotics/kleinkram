@@ -70,7 +70,7 @@ export class ActionQueueProcessor
 
     @Process({ concurrency: 5, name: 'actionProcessQueue' })
     async process_action(job: Job<ActionDetails>) {
-        const device_gpu = await this.checkHardwareConfiguration(job);
+        await this.checkHardwareConfiguration(job);
         return await this.handleAction(job);
     }
 
@@ -111,15 +111,15 @@ export class ActionQueueProcessor
         ) {
             // retry the job
             logger.debug(
-                `Retrying job ${job.id} of type ${job.name} (attempt ${job.attemptsMade}).\n`,
+                `Retrying job ${job.id} of type ${job.name} (attempt ${job.attemptsMade} of ${job.opts.attempts}).\n`,
             );
 
             // update the state of the action in the database
             const action = await this.actionRepository.findOneOrFail({
-                where: { uuid: job.data.mission_action_id },
+                where: { uuid: job.id as string },
             });
             action.state = ActionState.PENDING;
-            action.state_cause = 'Retrying due to unmet hardware requirements';
+            action.state_cause = 'Pending.... Unmet hardware requirements!';
             await this.actionRepository.save(action);
 
             return;
@@ -135,7 +135,7 @@ export class ActionQueueProcessor
         logger.error(error.stack);
         // update the state of the action in the database
         const action = await this.actionRepository.findOneOrFail({
-            where: { uuid: job.data.mission_action_id },
+            where: { uuid: job.id as string },
         });
         action.state = ActionState.FAILED;
         action.state_cause = error.message;
@@ -144,10 +144,10 @@ export class ActionQueueProcessor
 
     @tracing('processing_action')
     private async handleAction(job: Job<ActionDetails>) {
-        logger.info(`\n\nProcessing Action ${job.data.mission_action_id}`);
+        logger.info(`\n\nProcessing Action ${job.data.action_uuid}`);
 
         logger.info('Creating container.');
-        const uuid = job.data.mission_action_id;
+        const uuid = job.data.action_uuid;
         const action = await this.actionRepository.findOne({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],

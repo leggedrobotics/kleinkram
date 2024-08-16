@@ -3,6 +3,6 @@ export type HardwareRequirements = {
 };
 
 export type ActionDetails = {
-    mission_action_id: string;
+    action_uuid: string;
     hardware_requirements: HardwareRequirements;
 };
