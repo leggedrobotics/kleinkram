@@ -6,7 +6,7 @@ COPY ./common/package.json /usr/src/common/
 COPY ./common/yarn.lock /usr/src/common/
 
 WORKDIR /usr/src/queueConsumer
-RUN --mount=type=cache,target=~/.cache/yarn/v6 yarn --immutable
+RUN yarn --immutable
 RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%2Fv0.0.42/mcap-linux-amd64 -O /usr/local/bin/mcap \
     && chmod +x /usr/local/bin/mcap
 
