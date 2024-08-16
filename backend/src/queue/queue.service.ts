@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, In, Like, MoreThan, Repository } from 'typeorm';
+import { In, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
@@ -14,6 +14,7 @@ import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
+import { ActionDetails } from '@common/types';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -51,9 +52,25 @@ export class QueueService {
     ) {}
 
     async addActionQueue(mission_action_id: string) {
-        await this.actionQueue.add('actionProcessQueue', {
-            mission_action_id: mission_action_id,
-        });
+        await this.actionQueue.add(
+            'actionProcessQueue',
+            {
+                mission_action_id: mission_action_id,
+                hardware_requirements: {
+                    needs_gpu: false,
+                },
+            } as ActionDetails,
+            {
+                jobId: mission_action_id,
+                backoff: {
+                    delay: 1000,
+                    type: 'exponential',
+                },
+                removeOnComplete: true,
+                removeOnFail: false,
+                attempts: 10,
+            },
+        );
     }
 
     async createDrive(driveCreate: DriveCreate, user: JWTUser) {
