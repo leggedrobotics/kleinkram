@@ -13,8 +13,6 @@ COPY ./frontend/yarn.lock ./
 COPY ./.git/HEAD /app/.git/HEAD
 COPY ./.git/refs/heads/ /app/.git/refs/heads/
 
-COPY --from=cache-stage /usr/src/app/backend/.yarn_cache/ /root/.cache/yarn/
-COPY --from=cache-stage /usr/src/app/common/.yarn_cache/ /root/.cache/yarn/
 
 RUN yarn install --ignore-engines --immutable
 

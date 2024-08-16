@@ -18,6 +18,7 @@ jobs:
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
 
             - name: Cache Yarn
+              id: yarn-cache
               uses: actions/cache@v4
               with:
                   path: |

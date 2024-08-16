@@ -6,8 +6,6 @@ WORKDIR /app
 # Install dependencies
 COPY package*.json ./
 
-COPY --from=cache-stage /usr/src/app/backend/.yarn_cache/ /root/.cache/yarn/
-COPY --from=cache-stage /usr/src/app/common/.yarn_cache/ /root/.cache/yarn/
 
 RUN yarn install
 
