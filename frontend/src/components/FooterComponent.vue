@@ -9,6 +9,19 @@
                     © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
                 </span>
                 <span>
+                    <q-icon
+                        v-if="
+                            !!kleinkramVersion &&
+                            kleinkramVersion !== BUILD_INFO.version
+                        "
+                        name="sym_o_warning"
+                        color="red"
+                    >
+                        <q-tooltip
+                            >The API is running
+                            {{ kleinkramVersion }}</q-tooltip
+                        >
+                    </q-icon>
                     <a
                         class="text-grey-8"
                         style="text-decoration: none"
@@ -59,6 +72,7 @@
 
 <script setup lang="ts">
 import BUILD_INFO from 'src/build';
+import { kleinkramVersion } from 'src/api/axios';
 
 const year = new Date().getFullYear();
 </script>

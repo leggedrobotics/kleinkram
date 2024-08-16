@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import logger, { NestLoggerWrapper } from './logger';
+import { AddVersionInterceptor } from './versionInjector';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -81,6 +82,7 @@ async function bootstrap() {
     });
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
+    app.useGlobalInterceptors(new AddVersionInterceptor());
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,

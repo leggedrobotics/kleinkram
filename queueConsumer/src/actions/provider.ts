@@ -21,6 +21,26 @@ import {
 } from './container_scheduler';
 import Apikey from '@common/entities/auth/apikey.entity';
 import * as os from 'node:os';
+import { ActionDetails } from '@common/types';
+
+class DependencyNotMetError extends Error {
+    constructor() {
+        super('Hardware requirements not met');
+        this.name = 'DependencyNotMetError';
+    }
+}
+
+type GPUModel = {
+    name: string;
+    memory: number;
+    compute_capability: string;
+};
+
+type HardwareCapabilities = {
+    gpus: {
+        models: GPUModel[];
+    };
+};
 
 @Processor('action-queue')
 @Injectable()
@@ -28,6 +48,8 @@ export class ActionQueueProcessor
     extends ContainerScheduler
     implements OnModuleInit
 {
+    private hardware_capabilities: HardwareCapabilities = undefined;
+
     constructor(
         @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(Action)
@@ -36,12 +58,26 @@ export class ActionQueueProcessor
         private apikeyRepository: Repository<Apikey>,
     ) {
         super(actionRepository);
+
         logger.debug('AnalysisProcessor constructor');
     }
 
+    private async setHardwareCapabilities() {
+        this.hardware_capabilities = {
+            gpus: {
+                models: [],
+            },
+        };
+    }
+
     async onModuleInit() {
-        logger.debug('Connecting to Redis...');
+        logger.debug('AnalysisProcessor onModuleInit');
+
+        logger.debug('Setting hardware capabilities...');
+        await this.setHardwareCapabilities();
+
         try {
+            logger.debug('Connecting to Redis...');
             await this.analysisQueue.isReady();
             logger.debug('Connected to Redis successfully!');
         } catch (error) {
@@ -51,11 +87,19 @@ export class ActionQueueProcessor
         await super.onModuleInit();
     }
 
-    // TODO: instead of concurrency we should use a more sophisticated way to limit the number of containers
-    //  running at the same time by considering the resources available on the machine and the
-    //  resources required by the containers (e.g., memory, CPU, disk space)
+    private async checkHardwareConfiguration(job: Job<ActionDetails>) {
+        // check if the job requires a GPU and the system has one
+        if (
+            job.data.hardware_requirements.needs_gpu &&
+            !this.hardware_capabilities.gpus.models.length
+        ) {
+            throw new DependencyNotMetError();
+        }
+    }
+
     @Process({ concurrency: 5, name: 'actionProcessQueue' })
-    async process_action(job: Job<{ mission_action_id: string }>) {
+    async process_action(job: Job<ActionDetails>) {
+        await this.checkHardwareConfiguration(job);
         return await this.handleAction(job);
     }
 
@@ -90,13 +134,37 @@ export class ActionQueueProcessor
 
     @OnQueueFailed()
     async onFailed(job: Job, error: any) {
+        if (
+            error instanceof DependencyNotMetError &&
+            job.attemptsMade < job.opts.attempts
+        ) {
+            // retry the job
+            logger.debug(
+                `Retrying job ${job.id} of type ${job.name} (attempt ${job.attemptsMade} of ${job.opts.attempts}).\n`,
+            );
+
+            // update the state of the action in the database
+            const action = await this.actionRepository.findOneOrFail({
+                where: { uuid: job.id as string },
+            });
+            action.state = ActionState.PENDING;
+            action.state_cause = 'Pending.... Unmet hardware requirements!';
+            await this.actionRepository.save(action);
+
+            return;
+        }
+
+        // unmet hardware requirements or other error
+        // remove the job from the queue and don't retry
+        await job.remove();
+
         logger.error(
             `Job ${job.id} of type ${job.name} failed with error: ${error.message}.`,
         );
         logger.error(error.stack);
         // update the state of the action in the database
         const action = await this.actionRepository.findOneOrFail({
-            where: { uuid: job.data.mission_action_id },
+            where: { uuid: job.id as string },
         });
         action.state = ActionState.FAILED;
         action.state_cause = error.message;
@@ -104,11 +172,11 @@ export class ActionQueueProcessor
     }
 
     @tracing('processing_action')
-    private async handleAction(job: Job<{ mission_action_id: string }>) {
-        logger.info(`\n\nProcessing Action ${job.data.mission_action_id}`);
+    private async handleAction(job: Job<ActionDetails>) {
+        logger.info(`\n\nProcessing Action ${job.data.action_uuid}`);
 
         logger.info('Creating container.');
-        const uuid = job.data.mission_action_id;
+        const uuid = job.data.action_uuid;
         const action = await this.actionRepository.findOne({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],
@@ -141,6 +209,7 @@ export class ActionQueueProcessor
             docker_image: action.docker_image,
             uuid,
             limits: { max_runtime: 60 * 60 * 1_000 }, // 1 hour
+            needs_gpu: job.data.hardware_requirements.needs_gpu,
             environment: env_variables,
         });
 
