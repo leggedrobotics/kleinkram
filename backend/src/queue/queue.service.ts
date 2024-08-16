@@ -218,13 +218,14 @@ export class QueueService {
         const where = {
             updatedAt: MoreThan(startDate),
         };
-        if (stateFilter) {
-            const filter = stateFilter
-                .split(',')
-                .map((state) => parseInt(state));
-            where['state'] = In(filter);
-        }
+
         if (user.role === UserRole.ADMIN) {
+            if (stateFilter) {
+                const filter = stateFilter
+                    .split(',')
+                    .map((state) => parseInt(state));
+                where['state'] = In(filter);
+            }
             return await this.queueRepository.find({
                 where,
                 relations: ['mission', 'mission.project', 'creator'],
@@ -235,7 +236,7 @@ export class QueueService {
                 },
             });
         }
-        return addAccessConstraints(
+        const query = addAccessConstraints(
             this.queueRepository
                 .createQueryBuilder('queue')
                 .leftJoinAndSelect('queue.mission', 'mission')
@@ -246,8 +247,15 @@ export class QueueService {
         )
             .skip(skip)
             .take(take)
-            .orderBy('queue.createdAt', 'DESC')
-            .getMany();
+            .orderBy('queue.createdAt', 'DESC');
+
+        if (stateFilter) {
+            const filter = stateFilter
+                .split(',')
+                .map((state) => parseInt(state));
+            query.andWhere('queue.state IN (:...filter)', { filter });
+        }
+        return query.getMany();
     }
 
     async forFile(filename: string, missionUUID: string) {

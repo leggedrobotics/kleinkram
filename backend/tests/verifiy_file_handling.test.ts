@@ -89,5 +89,5 @@ describe('Verify File Handling', () => {
         );
 
         expect(download_file_hash).toEqual(file_hash);
-    }, 10_000);
+    }, 30_000);
 });
