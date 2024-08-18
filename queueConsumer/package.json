@@ -16,6 +16,7 @@
         "@nestjs/config": "^3.2.2",
         "@nestjs/core": "10.3.7",
         "@nestjs/platform-express": "^10.0.0",
+        "@nestjs/schedule": "^4.1.0",
         "@nestjs/typeorm": "^10.0.2",
         "@opentelemetry/api": "^1.4.1",
         "@opentelemetry/core": "^1.15.1",

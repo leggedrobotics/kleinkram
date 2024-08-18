@@ -4,7 +4,7 @@ import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
 import { ActionState } from '../../enum';
 import User from '../user/user.entity';
-import { RuntimeRequirements } from '../../types';
+import { RuntimeCapability, RuntimeRequirements } from '../../types';
 
 export type ContainerLog = {
     timestamp: string;
@@ -15,15 +15,27 @@ export type ContainerLog = {
 export type Image = {
     name: string;
     sha: string | null;
-    repo_digests: string | null;
+    repo_digests: string[] | null;
+};
+
+export type RunnerInfo = {
+    hostname: string;
+    runtime_capabilities: RuntimeCapability;
 };
 
 export type Container = {
     id: string;
 };
 
+export interface SubmittedAction {
+    uuid: string;
+    state: ActionState;
+    runtime_requirements: RuntimeRequirements;
+    image: Image;
+}
+
 @Entity()
-export default class Action extends BaseEntity {
+export default class Action extends BaseEntity implements SubmittedAction {
     @Column()
     state: ActionState;
 
@@ -36,6 +48,9 @@ export default class Action extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     container: Container;
 
+    @Column({ type: 'json', nullable: true })
+    runner_info: RunnerInfo;
+
     @ManyToOne(() => User, (user) => user.submittedActions)
     createdBy: User;
 
@@ -47,12 +62,6 @@ export default class Action extends BaseEntity {
 
     @Column({ nullable: true })
     executionEndedAt: Date;
-
-    @Column({ nullable: true })
-    runner_hostname: string;
-
-    @Column({ nullable: true })
-    runner_cpu_model: string;
 
     @ManyToOne(() => Mission, (mission) => mission.actions, {
         onDelete: 'CASCADE',

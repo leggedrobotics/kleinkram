@@ -17,12 +17,13 @@
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
         "noFallthroughCasesInSwitch": false,
-        "target": "ES2022",
         "module": "commonjs",
         "moduleResolution": "node",
         "paths": {
             "@common/*": ["../common/*"]
-        }
+        },
+        "target": "es2022",
+        "lib": ["es2022", "esnext.disposable", "dom"]
     },
     "rules": {
         "no-console": [true, "warning"]

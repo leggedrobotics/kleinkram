@@ -5,12 +5,8 @@ type GPUModel = {
 };
 
 type RuntimeDescription = {
-    gpu_model: GPUModel | null;
+    gpu_model?: GPUModel | null;
+    cpu_model?: string | null;
 };
 export type RuntimeCapability = RuntimeDescription;
 export type RuntimeRequirements = RuntimeDescription;
-
-export type ActionSubmissionDetails = {
-    action_uuid: string;
-    runtime_requirements: RuntimeRequirements;
-};

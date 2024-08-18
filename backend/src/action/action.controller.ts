@@ -21,7 +21,8 @@ import {
     QuerySkip,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ActionSubmissionDetails, RuntimeRequirements } from '@common/types';
+import { RuntimeRequirements } from '@common/types';
+import { SubmittedAction } from '@common/entities/action/action.entity';
 
 @Controller('action')
 export class ActionController {
@@ -58,13 +59,14 @@ export class ActionController {
             user,
         );
 
-        await this.queueService.addActionQueue(action.uuid, {
-            action_uuid: action.uuid,
+        await this.queueService.addActionQueue({
+            uuid: action.uuid,
             runtime_requirements,
-        } as ActionSubmissionDetails);
+            state: action.state,
+            image: action.image,
+        });
         return action.uuid;
     }
-
     @Get('list')
     @LoggedIn()
     async list(

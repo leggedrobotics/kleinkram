@@ -14,15 +14,17 @@ import User from '@common/entities/user/user.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { FileProcessor } from './files/provider';
-import { ActionQueueProcessor } from './actions/action_queue_processor';
 import env from '@common/env';
 import TagType from '@common/entities/tagType/tagType.entity';
 import Tag from '@common/entities/tag/tag.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import MissionAccess from '@common/entities/auth/mission_access.entity';
-import { DockerDaemon } from './actions/docker_daemon';
-import { ContainerScheduler } from './actions/container_scheduler';
+import { FileQueueProcessorProvider } from './files/fileQueueProcessor.provider';
+import { ActionQueueProcessorProvider } from './actions/actionQueueProcessor.provider';
+import { DockerDaemon } from './actions/services/dockerDaemon.service';
+import { ContainerCleanupService } from './actions/services/cleanupContainers.service';
+import { ActionManagerService } from './actions/services/actionManager.service';
+import { RuntimeCapabilitiesService } from './actions/services/runtime-capabilities.service';
 
 @Module({
     imports: [
@@ -96,10 +98,12 @@ import { ContainerScheduler } from './actions/container_scheduler';
         ]),
     ],
     providers: [
-        FileProcessor,
-        ActionQueueProcessor,
+        FileQueueProcessorProvider,
+        ActionQueueProcessorProvider,
         DockerDaemon,
-        ContainerScheduler,
+        ActionManagerService,
+        ContainerCleanupService,
+        RuntimeCapabilitiesService,
     ],
 })
 export class AppModule {}
