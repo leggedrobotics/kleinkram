@@ -18,6 +18,10 @@ services:
         networks:
             - webnet
             - privatenet
+            -
+        environment:
+            SEED: 'false'
+            DEVBUILD: 'false'
 
         depends_on:
             - database
@@ -88,7 +92,7 @@ services:
         container_name: bullconsumer
         build:
             context: .
-            dockerfile: ./queueConsumer/Dockerfile
+            dockerfile: ./queueConsumer/prod.Dockerfile
         env_file:
             - .env
         networks:

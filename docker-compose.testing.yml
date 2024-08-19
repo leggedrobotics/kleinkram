@@ -20,6 +20,7 @@ services:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         environment:
             SEED: 'false'
+            DEVBUILD: 'true'
         env_file:
             - .env
         networks:
