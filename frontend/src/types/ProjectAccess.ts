@@ -5,14 +5,14 @@ import { AccessGroup } from 'src/types/AccessGroup';
 
 export class ProjectAccess extends BaseEntity {
     rights: AccessGroupRights;
-    accessGroup: AccessGroup;
-    projects: Project[];
+    accessGroup?: AccessGroup;
+    project?: Project;
 
     constructor(
         uuid: string,
         rights: AccessGroupRights,
-        accessGroup: AccessGroup,
-        projects: Project[],
+        accessGroup: AccessGroup | undefined,
+        project: Project | undefined,
         createdAt: Date,
         updatedAt: Date,
         deletedAt: Date | null,
@@ -20,6 +20,6 @@ export class ProjectAccess extends BaseEntity {
         super(uuid, createdAt, updatedAt, deletedAt);
         this.rights = rights;
         this.accessGroup = accessGroup;
-        this.projects = projects;
+        this.project = project;
     }
 }

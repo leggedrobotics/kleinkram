@@ -278,7 +278,7 @@ export class ProjectService {
                 const projectAccess = this.projectAccessRepository.create({
                     rights,
                     accessGroup,
-                    projects: project,
+                    project: project,
                 });
                 return manager.save(ProjectAccess, projectAccess);
             }),
@@ -323,7 +323,7 @@ export class ProjectService {
                 const projectAccess = this.projectAccessRepository.create({
                     rights: accessGroup.rights,
                     accessGroup: accessGroupDB,
-                    projects: project,
+                    project: project,
                 });
                 return manager.save(ProjectAccess, projectAccess);
             }),
