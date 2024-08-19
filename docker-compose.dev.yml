@@ -18,7 +18,7 @@ services:
         networks:
             - webnet
             - privatenet
-            -
+
         environment:
             SEED: 'true'
             DEVBUILD: 'false'
