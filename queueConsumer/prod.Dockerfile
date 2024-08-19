@@ -16,6 +16,8 @@ RUN yarn --immutable
 # copy the rest of the files
 COPY ./queueConsumer /usr/src/queueConsumer
 COPY ./common /usr/src/common
+
+WORKDIR /usr/src/queueConsumer
 RUN yarn build
 
 # build the app
