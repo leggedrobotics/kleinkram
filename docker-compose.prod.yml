@@ -7,7 +7,7 @@ services:
 
         build:
             context: .
-            dockerfile: ./backend/Dockerfile
+            dockerfile: ./backend/prod.Dockerfile
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
