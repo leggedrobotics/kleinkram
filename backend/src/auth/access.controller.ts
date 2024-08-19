@@ -13,6 +13,7 @@ import {
     BodyUUID,
 } from '../validation/bodyDecorators';
 import {
+    QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip,
     QueryString,
@@ -23,6 +24,15 @@ import {
 @Controller('access')
 export class AccessController {
     constructor(private readonly accessService: AccessService) {}
+
+    @Get('one')
+    @LoggedIn()
+    async getAccessGroup(
+        @QueryString('uuid') uuid: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.getAccessGroup(uuid, user);
+    }
 
     @Post('createAccessGroup')
     @LoggedIn()
@@ -74,9 +84,20 @@ export class AccessController {
         @QueryOptionalString('search') search: string,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
+        @QueryOptionalBoolean('personal') personal: boolean,
+        @QueryOptionalBoolean('creator') creator: boolean,
+        @QueryOptionalBoolean('member') member: boolean,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.accessService.searchAccessGroup(search, user, skip, take);
+        return this.accessService.searchAccessGroup(
+            search,
+            personal,
+            creator,
+            member,
+            user,
+            skip,
+            take,
+        );
     }
 
     @Post('addAccessGroupToProject')

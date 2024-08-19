@@ -20,7 +20,18 @@ export class AccessService {
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
     ) {}
-
+    async getAccessGroup(uuid: string, jwtuser: JWTUser) {
+        return this.accessGroupRepository.findOneOrFail({
+            where: { uuid },
+            relations: [
+                'users',
+                'project_accesses',
+                'project_accesses.project',
+                'project_accesses.project.creator',
+                'creator',
+            ],
+        });
+    }
     async createAccessGroup(name: string, jwtuser: JWTUser) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: jwtuser.uuid },
@@ -148,6 +159,9 @@ export class AccessService {
 
     async searchAccessGroup(
         search: string,
+        personal: boolean,
+        creator: boolean,
+        member: boolean,
         user: JWTUser,
         skip: number,
         take: number,
@@ -155,6 +169,16 @@ export class AccessService {
         const where = { inheriting: false, personal: false };
         if (search) {
             where['name'] = ILike(`%${search}%`);
+        }
+        if (personal) {
+            where['personal'] = true;
+        }
+        if (creator) {
+            where['creator'] = { uuid: user.uuid };
+        }
+        if (member) {
+            // user in in users of access group
+            where['users'] = { uuid: user.uuid };
         }
         return this.accessGroupRepository.findAndCount({
             where,
@@ -200,8 +224,8 @@ export class AccessService {
         const existingAccess = await this.projectAccessRepository
             .createQueryBuilder('projectAccess')
             .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.projects', 'projects')
-            .where('projectAccess.projects.uuid = :projectUUID', {
+            .leftJoin('projectAccess.project', 'project')
+            .where('project.uuid = :projectUUID', {
                 projectUUID,
             })
             .andWhere('accessGroup.uuid = :accessGroupUUID', {

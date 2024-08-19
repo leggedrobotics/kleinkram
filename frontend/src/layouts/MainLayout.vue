@@ -23,7 +23,6 @@
                     This app is in active development. Data will be reset
                     without notice!
                 </q-banner>
-
                 <router-view />
             </main>
         </q-page-container>
