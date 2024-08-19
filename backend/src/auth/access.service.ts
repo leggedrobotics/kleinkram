@@ -31,6 +31,7 @@ export class AccessService {
             personal: false,
             inheriting: false,
             users: [user],
+            creator: user,
         });
         return this.accessGroupRepository.save(new_group);
     }
@@ -163,6 +164,7 @@ export class AccessService {
                 'users',
                 'project_accesses',
                 'project_accesses.project',
+                'creator',
             ],
         });
     }

@@ -17,7 +17,7 @@ define(ProjectAccess, (_, context: ProjectAccessFactoryContext) => {
         0, 10, 20, 30,
     ]) as AccessGroupRights;
 
-    projectAccess.projects = faker.helpers.arrayElement(context.projects);
+    projectAccess.project = faker.helpers.arrayElement(context.projects);
     projectAccess.accessGroup = faker.helpers.arrayElement(
         context.accessGroups,
     );

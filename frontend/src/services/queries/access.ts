@@ -80,6 +80,7 @@ export const searchAccessGroups = async (
             [],
             group.personal,
             group.inheriting,
+            group.creator,
             new Date(group.createdAt),
             new Date(group.updatedAt),
             new Date(group.deletedAt),
