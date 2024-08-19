@@ -1,8 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e # exit on error
 
 env
+echo ""
+echo ""
+
+nvidia-smi
+
 echo ""
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"
@@ -23,15 +28,5 @@ echo ""
 echo "List files of mission with UUID $MISSION_UUID"
 cd ./data || exit 1
 ls -la
-
-echo ""
-echo "generate 1_000 lines of fake log messages"
-echo ""
-for i in {1..1000}; do
-  echo "log message $i"
-  echo "🚀 Rocket" 1>&2
-done
-
-sleep 1000
 
 exit 0

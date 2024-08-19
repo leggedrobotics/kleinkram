@@ -42,7 +42,7 @@ describe('Verify File Handling', () => {
         // create mission using the post
         const mission_uuid = await create_mission_using_post(
             {
-                name: 'test_mission',
+                name: 'test_mission2',
                 projectUUID: project_uuid,
                 tags: {},
             },

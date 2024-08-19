@@ -19,5 +19,5 @@ How do we resolve this? copying the files in docker build doesn't directly work 
 
 In `src/entities` are the entities. In `src/helper` are helper function for Google Drive handling and Minio handling.
 
-In `src/files/provider.ts` is the logic for Bag -> MCap conversion.
-In `src/actions/provider.ts` is the logic for the actions.
+In `src/files/fileQueueProcessor.provider.ts` is the logic for Bag -> MCap conversion.
+In `src/actions/fileQueueProcessor.provider.ts` is the logic for the actions.

@@ -4,6 +4,7 @@ import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
 import { ActionState } from '../../enum';
 import User from '../user/user.entity';
+import { RuntimeCapability, RuntimeRequirements } from '../../types';
 
 export type ContainerLog = {
     timestamp: string;
@@ -11,10 +12,44 @@ export type ContainerLog = {
     type: 'stdout' | 'stderr';
 };
 
+export type Image = {
+    name: string;
+    sha: string | null;
+    repo_digests: string[] | null;
+};
+
+export type RunnerInfo = {
+    hostname: string;
+    runtime_capabilities: RuntimeCapability;
+};
+
+export type Container = {
+    id: string;
+};
+
+export interface SubmittedAction {
+    uuid: string;
+    state: ActionState;
+    runtime_requirements: RuntimeRequirements;
+    image: Image;
+}
+
 @Entity()
-export default class Action extends BaseEntity {
+export default class Action extends BaseEntity implements SubmittedAction {
     @Column()
     state: ActionState;
+
+    @Column({ type: 'json' })
+    runtime_requirements: RuntimeRequirements;
+
+    @Column({ type: 'json' })
+    image: Image;
+
+    @Column({ type: 'json', nullable: true })
+    container: Container;
+
+    @Column({ type: 'json', nullable: true })
+    runner_info: RunnerInfo;
 
     @ManyToOne(() => User, (user) => user.submittedActions)
     createdBy: User;
@@ -22,26 +57,11 @@ export default class Action extends BaseEntity {
     @Column({ nullable: true })
     state_cause: string;
 
-    @Column()
-    docker_image: string;
-
-    @Column({ nullable: true })
-    docker_image_sha: string;
-
-    @Column({ nullable: true })
-    container_id: string;
-
     @Column({ nullable: true })
     executionStartedAt: Date;
 
     @Column({ nullable: true })
     executionEndedAt: Date;
-
-    @Column({ nullable: true })
-    runner_hostname: string;
-
-    @Column({ nullable: true })
-    runner_cpu_model: string;
 
     @ManyToOne(() => Mission, (mission) => mission.actions, {
         onDelete: 'CASCADE',

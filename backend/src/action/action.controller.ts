@@ -2,7 +2,6 @@ import {
     Body,
     ConflictException,
     Controller,
-    Delete,
     Get,
     Post,
     Query,
@@ -11,7 +10,6 @@ import { ActionService } from './action.service';
 import { ActionQuery, SubmitAction } from './entities/submit_action.dto';
 import { QueueService } from '../queue/queue.service';
 import {
-    AdminOnly,
     CanCreateAction,
     CanReadAction,
     LoggedIn,
@@ -23,8 +21,8 @@ import {
     QuerySkip,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ActionDetails } from '@common/types';
-import logger from '../logger';
+import { RuntimeRequirements } from '@common/types';
+import { SubmittedAction } from '@common/entities/action/action.entity';
 
 @Controller('action')
 export class ActionController {
@@ -44,16 +42,31 @@ export class ActionController {
                 'Docker image must start with rslethz/',
             );
         }
-        const action = await this.actionService.submit(dto, user);
-        await this.queueService.addActionQueue(action.uuid, {
-            action_uuid: action.uuid,
-            hardware_requirements: {
-                needs_gpu: dto.gpu_model !== 'no-gpu',
-            },
-        } as ActionDetails);
+
+        const runtime_requirements: RuntimeRequirements = {
+            gpu_model:
+                dto.gpu_model !== 'no-gpu'
+                    ? {
+                          name: 'Nvidia',
+                          memory: 0,
+                          compute_capability: '',
+                      }
+                    : null,
+        };
+        const action = await this.actionService.submit(
+            dto,
+            runtime_requirements,
+            user,
+        );
+
+        await this.queueService.addActionQueue({
+            uuid: action.uuid,
+            runtime_requirements,
+            state: action.state,
+            image: action.image,
+        });
         return action.uuid;
     }
-
     @Get('list')
     @LoggedIn()
     async list(

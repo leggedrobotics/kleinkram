@@ -7,6 +7,7 @@ import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
 import { addAccessConstraints } from '../auth/authHelper';
 import { JWTUser } from '../auth/paramDecorator';
+import { RuntimeRequirements } from '@common/types';
 
 @Injectable()
 export class ActionService {
@@ -17,12 +18,21 @@ export class ActionService {
         private userRepository: Repository<User>,
     ) {}
 
-    async submit(data: SubmitAction, user: JWTUser): Promise<Action> {
+    async submit(
+        data: SubmitAction,
+        runtime_requirements: RuntimeRequirements,
+        user: JWTUser,
+    ): Promise<Action> {
         let action = this.actionRepository.create({
             mission: { uuid: data.missionUUID },
             createdBy: { uuid: user.uuid },
             state: ActionState.PENDING,
-            docker_image: data.docker_image,
+            runtime_requirements,
+            image: {
+                name: data.docker_image,
+                sha: null,
+                repo_digests: null,
+            },
         });
         await this.actionRepository.save(action);
 
