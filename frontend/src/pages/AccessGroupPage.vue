@@ -1,5 +1,5 @@
 <template>
-    <div class="text-h4">{{ accessGroup?.name }}</div>
+    <title-section :title="accessGroup?.name" />
     <q-tabs v-model="tab" align="left">
         <q-tab name="members" label="Members" :disable="personal">
             <q-tooltip>
@@ -175,6 +175,7 @@ import { ProjectAccess } from 'src/types/ProjectAccess';
 import { useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
+import TitleSection from 'components/TitleSection.vue';
 
 const $q = useQuasar();
 const router = useRouter();

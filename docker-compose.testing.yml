@@ -11,7 +11,7 @@ services:
         container_name: API
         build:
             context: .
-            dockerfile: backend/Dockerfile
+            dockerfile: backend/prod.Dockerfile
         volumes:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
@@ -20,7 +20,7 @@ services:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         environment:
             SEED: 'false'
-            DEVBUILD: 'true'
+            DEVBUILD: 'false'
         env_file:
             - .env
         networks:
@@ -73,7 +73,7 @@ services:
         image: rslethz/grandtour-datasets:vuejs_frontend-latest
         build:
             context: .
-            dockerfile: ./frontend/dev.Dockerfile
+            dockerfile: ./frontend/Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
         container_name: vuejs_frontend
@@ -104,7 +104,7 @@ services:
         container_name: bullconsumer
         build:
             context: .
-            dockerfile: queueConsumer/Dockerfile
+            dockerfile: queueConsumer/prod.Dockerfile
         volumes:
             - ./queueConsumer:/usr/src/queueConsumer
             - ./common:/usr/src/common

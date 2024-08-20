@@ -1,7 +1,7 @@
 <template>
     <q-page>
+        <title-section title="Access Groups" />
         <div class="q-pa-md">
-            <div class="text-h4">Access Groups</div>
             <div
                 class="row"
                 style="
@@ -127,6 +127,7 @@ import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
+import TitleSection from 'components/TitleSection.vue';
 
 const $router = useRouter();
 const $routerService = inject<RouterService>('$routerService');
