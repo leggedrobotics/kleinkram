@@ -11,11 +11,7 @@ services:
         container_name: API
         build:
             context: .
-            dockerfile: backend/prod.Dockerfile
-        volumes:
-            - ./backend:/usr/src/app/backend
-            - ./common:/usr/src/app/common
-            - /usr/src/app/node_modules
+            dockerfile: ./backend/prod.Dockerfile
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         environment:
@@ -107,10 +103,6 @@ services:
             context: .
             dockerfile: queueConsumer/prod.Dockerfile
         volumes:
-            - ./queueConsumer:/usr/src/queueConsumer
-            - ./common:/usr/src/common
-            - /usr/src/queueConsumer/node_modules
-            - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
         develop:

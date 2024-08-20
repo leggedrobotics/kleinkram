@@ -62,7 +62,6 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
         }));
 
     const fs = require('fs');
-    console.log('Writing endpoints to', filename);
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
@@ -104,9 +103,7 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
-    console.log('Starting to listen');
     await app.listen(3000);
-    console.log('saving endpoints');
     save_endpoints_as_json(app, '__generated__endpoints.json');
 }
 

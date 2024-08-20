@@ -1,5 +1,4 @@
 #!/bin/sh
-
 echo "Start Backend"
 if [ "$DEVBUILD" = "true" ]; then
   echo "Development Build"
