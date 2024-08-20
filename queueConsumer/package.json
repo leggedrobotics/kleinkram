@@ -4,7 +4,7 @@
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
-        "start:prod": "node dist/main",
+        "start:prod": "node dist/queueConsumer/src/main.js",
         "build": "nest build"
     },
     "dependencies": {
