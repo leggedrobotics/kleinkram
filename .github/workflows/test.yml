@@ -26,31 +26,13 @@ jobs:
               run: |
                   docker compose -f ../docker-compose.testing.yml up -d
                   SECONDS=0
-                  TIMEOUT=240
-                  FILE_FOUND=false
-                  DIRECTORIES=(./ ../ ./src/ ./dist/ / ' ')  # List directories to check
-                  while [ $SECONDS -lt $TIMEOUT ]; do
-                      for DIR in "${DIRECTORIES[@]}"; do
-                          FILE_PATH="$DIR/__generated__endpoints.json"
-                          echo "Looking for $FILE_PATH"
-                          if [ -f "$FILE_PATH" ]; then
-                              echo "File found: $FILE_PATH"
-                              FILE_FOUND=true
-                              break
-                          fi
-                      done
-
-                      if [ "$FILE_FOUND" = true ]; then
-                          break
+                  TIMEOUT=60
+                  while [ ! -f ./__generated__endpoints.json ]; do
+                      if [ $SECONDS -ge $TIMEOUT ]; then
+                          echo "Timeout reached: __generated__endpoints.json not found"
+                          exit 1
                       fi
-
                       sleep 1
                       echo "waiting for endpoints"
                   done
-
-                  if [ "$FILE_FOUND" = false ]; then
-                      echo "Timeout reached: __generated__endpoints.json not found"
-                      exit 1
-                  fi
-
                   yarn test
