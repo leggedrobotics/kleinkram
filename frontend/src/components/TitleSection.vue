@@ -1,6 +1,9 @@
 <template>
-    <div class="bg-white block" style="margin: 0 -24px; padding: 24px">
-        <div class="q-py-lg flex row justify-between">
+    <div
+        class="bg-white flex column"
+        style="margin: 0 -24px; padding: 24px; gap: 24px"
+    >
+        <div class="flex row justify-between">
             <h1 class="text-h3 q-ma-none">{{ title || '' }}</h1>
 
             <div>
@@ -8,7 +11,7 @@
             </div>
         </div>
 
-        <div>
+        <div v-if="slots.subtitle">
             <slot name="subtitle"> {{ slots.subtitle }}</slot>
         </div>
     </div>
