@@ -26,7 +26,7 @@ jobs:
               run: |
                   docker compose -f ../docker-compose.testing.yml up -d
                   SECONDS=0
-                  TIMEOUT=60
+                  TIMEOUT=240
                   FILE_FOUND=false
                   DIRECTORIES=(. .. ./src ./dist)  # List directories to check
                   while [ $SECONDS -lt $TIMEOUT ]; do
