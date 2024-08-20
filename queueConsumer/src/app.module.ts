@@ -25,6 +25,7 @@ import { DockerDaemon } from './actions/services/dockerDaemon.service';
 import { ContainerCleanupService } from './actions/services/cleanupContainers.service';
 import { ActionManagerService } from './actions/services/actionManager.service';
 import { RuntimeCapabilitiesService } from './actions/services/runtime-capabilities.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
     imports: [
@@ -96,6 +97,7 @@ import { RuntimeCapabilitiesService } from './actions/services/runtime-capabilit
             ProjectAccess,
             MissionAccess,
         ]),
+        ScheduleModule.forRoot(),
     ],
     providers: [
         FileQueueProcessorProvider,

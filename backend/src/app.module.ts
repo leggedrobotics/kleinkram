@@ -14,8 +14,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ActionModule } from './action/actionModule';
 import env from '@common/env';
 import { TagModule } from './tag/tag.module';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 import access_config from '../access_config.json';
+import { DBDumper } from './dbdumper/dbdumper.service';
 
 @Module({
     imports: [
@@ -52,7 +53,9 @@ import access_config from '../access_config.json';
         PassportModule,
         ActionModule,
         TagModule,
+        ScheduleModule.forRoot(),
     ],
+    providers: [DBDumper],
 })
 export class AppModule {}
 
