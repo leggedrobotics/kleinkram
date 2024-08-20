@@ -1,349 +1,318 @@
 <template>
-    <q-card class="q-pa-md q-mt-xl q-mb-md" flat bordered>
-        <q-card-section>
-            <div class="row">
-                <div class="col-4 flex">
-                    <q-input
-                        filled
-                        v-model="startDates"
-                        dense
-                        outlined
-                        clearable
-                        placeholder="Select start date"
-                        class="q-pa-sm"
-                        style="width: 49%"
-                        @clear="resetStartDate"
-                    >
-                        <template v-slot:prepend>
-                            <q-icon name="sym_o_event" class="cursor-pointer">
-                                <q-popup-proxy
-                                    cover
-                                    transition-show="scale"
-                                    transition-hide="scale"
-                                >
-                                    <q-date
-                                        v-model="startDates"
-                                        :mask="dateMask"
-                                    >
-                                        <div
-                                            class="row items-center justify-end"
-                                        >
-                                            <q-btn
-                                                v-close-popup
-                                                label="Close"
-                                                color="primary"
-                                                flat
-                                            />
-                                        </div>
-                                    </q-date>
-                                </q-popup-proxy>
-                            </q-icon>
-                        </template>
-                    </q-input>
-                    <p class="flex flex-center" style="margin-bottom: 0">-</p>
-                    <q-input
-                        filled
-                        v-model="endDates"
-                        dense
-                        outlined
-                        clearable
-                        placeholder="Select start date"
-                        class="q-pa-sm"
-                        style="width: 49%"
-                        @clear="resetEndDate"
-                    >
-                        <template v-slot:prepend>
-                            <q-icon name="sym_o_event" class="cursor-pointer">
-                                <q-popup-proxy
-                                    cover
-                                    transition-show="scale"
-                                    transition-hide="scale"
-                                >
-                                    <q-date v-model="endDates" :mask="dateMask">
-                                        <div
-                                            class="row items-center justify-end"
-                                        >
-                                            <q-btn
-                                                v-close-popup
-                                                label="Close"
-                                                color="primary"
-                                                flat
-                                            />
-                                        </div>
-                                    </q-date>
-                                </q-popup-proxy>
-                            </q-icon>
-                        </template>
-                    </q-input>
-                </div>
-                <div class="col-4 flex q-pa-sm">
-                    <q-btn-dropdown
-                        v-model="dd_open_projects"
-                        :label="selected_project?.name || 'Filter by Project'"
-                        outline
-                        dense
-                        clearable
-                        class="full-width"
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="project in projects"
-                                :key="project.uuid"
-                                clickable
-                                @click="
-                                    handler.setProjectUUID(project.uuid);
-                                    dd_open_projects = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label
-                                        >{{ project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-4 flex q-pa-sm">
-                    <q-btn-dropdown
-                        v-model="dd_open_missions"
-                        :label="selected_mission?.name || 'Filter by Mission'"
-                        outline
-                        dense
-                        clearable
-                        class="full-width"
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="mission in missions"
-                                :key="mission.uuid"
-                                clickable
-                                @click="
-                                    handler.setMissionUUID(mission.uuid);
-                                    dd_open_missions = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label
-                                        >{{ mission.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-2 q-pa-sm">
-                    <q-btn-dropdown
-                        clearable
-                        dense
-                        outline
-                        class="full-width full-height"
-                        :label="'File Types: ' + selectedFileTypes"
-                    >
-                        <q-list style="width: 100%">
-                            <q-item
-                                v-for="(option, index) in fileTypeFilter"
-                                :key="index"
-                            >
-                                <q-item-section class="items-center">
-                                    <q-toggle
-                                        :model-value="
-                                            fileTypeFilter[index].value
-                                        "
-                                        @click="onFileTypeClicked(index)"
-                                        :label="option.name"
-                                    />
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-2 q-pa-sm" style="margin: 0">
-                    <q-input
-                        v-model="filter"
-                        outlined
-                        dense
-                        debounce="300"
-                        clearable
-                        placeholder="Filter by Filename"
-                        class="full-width"
-                    />
-                </div>
+    <title-section title="Datatable"></title-section>
 
-                <div
-                    class="col-4 q-pa-sm"
-                    style="display: flex; align-items: center"
-                >
-                    <q-select
-                        v-model="selectedTopics"
-                        label="Select Topics"
-                        use-input
-                        @filter="filterFn"
-                        input-debounce="20"
-                        outlined
-                        dense
-                        clearable
-                        multiple
-                        use-chips
-                        :options="displayedTopics"
-                        emit-value
-                        map-options
-                        class="full-width"
-                        style="padding-right: 5px"
-                    >
-                    </q-select>
-                    <q-btn-dropdown
-                        dense
-                        outline
-                        class="full-height"
-                        style="min-width: 60px"
-                    >
-                        <template v-slot:label>
-                            {{ and_or ? 'And' : 'Or' }}
-                        </template>
-                        <q-list>
-                            <q-item
-                                v-for="(item, index) in ['And', 'Or']"
-                                clickable
-                                :key="index"
-                                @click="and_or = item === 'And'"
-                            >
-                                <q-item-section>
-                                    {{ item }}
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-
-                <div class="col-3 q-pa-sm">
-                    <q-btn
-                        outline
-                        text-color="black"
-                        color="primary"
-                        label="Tags"
-                        icon="sym_o_filter_list"
-                        class="full-width"
-                        @click="openTagFilterDialog"
-                    >
-                        <q-chip
-                            v-if="tagFilter"
-                            v-for="value in Object.values(tagFilter)"
-                            dense
-                        >
-                            {{ value.name }}: {{ value.value }}</q-chip
-                        >
-                    </q-btn>
-                </div>
-                <div class="col-1 q-pa-sm">
-                    <q-btn
-                        outline
-                        text-color="black"
-                        label="Reset"
-                        icon="sym_o_clear"
-                        class="full-width"
-                        @click="resetFilter"
-                    />
-                </div>
-            </div>
-        </q-card-section>
-        <q-card-section>
-            <q-table
-                flat
-                bordered
-                separator="none"
-                ref="tableRef"
-                v-model:pagination="pagination"
-                v-model:selected="selected"
-                :rows-per-page-options="[5, 10, 20, 50, 100]"
-                :rows="data"
-                :columns="columns"
-                row-key="uuid"
-                :loading="loading"
-                selection="multiple"
-                @row-click="onRowClick"
-                @request="setPagination"
+    <div class="row">
+        <div class="col-4 flex">
+            <q-input
+                filled
+                v-model="startDates"
+                dense
+                outlined
+                clearable
+                placeholder="Select start date"
+                class="q-pa-sm"
+                style="width: 49%"
+                @clear="resetStartDate"
             >
-                <template v-slot:body-cell="props">
-                    <q-td
-                        :props="props"
-                        :style="getTentativeRowStyle(props.row)"
-                    >
-                        <q-tooltip v-if="props.row.tentative"
-                            >This file has not yet completed
-                            uploading</q-tooltip
+                <template v-slot:prepend>
+                    <q-icon name="sym_o_event" class="cursor-pointer">
+                        <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
                         >
+                            <q-date v-model="startDates" :mask="dateMask">
+                                <div class="row items-center justify-end">
+                                    <q-btn
+                                        v-close-popup
+                                        label="Close"
+                                        color="primary"
+                                        flat
+                                    />
+                                </div>
+                            </q-date>
+                        </q-popup-proxy>
+                    </q-icon>
+                </template>
+            </q-input>
+            <p class="flex flex-center" style="margin-bottom: 0">-</p>
+            <q-input
+                filled
+                v-model="endDates"
+                dense
+                outlined
+                clearable
+                placeholder="Select start date"
+                class="q-pa-sm"
+                style="width: 49%"
+                @clear="resetEndDate"
+            >
+                <template v-slot:prepend>
+                    <q-icon name="sym_o_event" class="cursor-pointer">
+                        <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
+                        >
+                            <q-date v-model="endDates" :mask="dateMask">
+                                <div class="row items-center justify-end">
+                                    <q-btn
+                                        v-close-popup
+                                        label="Close"
+                                        color="primary"
+                                        flat
+                                    />
+                                </div>
+                            </q-date>
+                        </q-popup-proxy>
+                    </q-icon>
+                </template>
+            </q-input>
+        </div>
+        <div class="col-4 flex q-pa-sm">
+            <q-btn-dropdown
+                v-model="dd_open_projects"
+                :label="selected_project?.name || 'Filter by Project'"
+                outline
+                dense
+                clearable
+                class="full-width"
+            >
+                <q-list>
+                    <q-item
+                        v-for="project in projects"
+                        :key="project.uuid"
+                        clickable
+                        @click="
+                            handler.setProjectUUID(project.uuid);
+                            dd_open_projects = false;
+                        "
+                    >
+                        <q-item-section>
+                            <q-item-label>{{ project.name }}</q-item-label>
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </q-btn-dropdown>
+        </div>
+        <div class="col-4 flex q-pa-sm">
+            <q-btn-dropdown
+                v-model="dd_open_missions"
+                :label="selected_mission?.name || 'Filter by Mission'"
+                outline
+                dense
+                clearable
+                class="full-width"
+            >
+                <q-list>
+                    <q-item
+                        v-for="mission in missions"
+                        :key="mission.uuid"
+                        clickable
+                        @click="
+                            handler.setMissionUUID(mission.uuid);
+                            dd_open_missions = false;
+                        "
+                    >
+                        <q-item-section>
+                            <q-item-label>{{ mission.name }}</q-item-label>
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </q-btn-dropdown>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2 q-pa-sm">
+            <q-btn-dropdown
+                clearable
+                dense
+                outline
+                class="full-width full-height"
+                :label="'File Types: ' + selectedFileTypes"
+            >
+                <q-list style="width: 100%">
+                    <q-item
+                        v-for="(option, index) in fileTypeFilter"
+                        :key="index"
+                    >
+                        <q-item-section class="items-center">
+                            <q-toggle
+                                :model-value="fileTypeFilter[index].value"
+                                @click="onFileTypeClicked(index)"
+                                :label="option.name"
+                            />
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </q-btn-dropdown>
+        </div>
+        <div class="col-2 q-pa-sm" style="margin: 0">
+            <q-input
+                v-model="filter"
+                outlined
+                dense
+                debounce="300"
+                clearable
+                placeholder="Filter by Filename"
+                class="full-width"
+            />
+        </div>
 
-                        {{ props.value }}
-                    </q-td>
+        <div class="col-4 q-pa-sm" style="display: flex; align-items: center">
+            <q-select
+                v-model="selectedTopics"
+                label="Select Topics"
+                use-input
+                @filter="filterFn"
+                input-debounce="20"
+                outlined
+                dense
+                clearable
+                multiple
+                use-chips
+                :options="displayedTopics"
+                emit-value
+                map-options
+                class="full-width"
+                style="padding-right: 5px"
+            >
+            </q-select>
+            <q-btn-dropdown
+                dense
+                outline
+                class="full-height"
+                style="min-width: 60px"
+            >
+                <template v-slot:label>
+                    {{ and_or ? 'And' : 'Or' }}
                 </template>
-                <template v-slot:body-cell-action="props">
-                    <q-td
-                        :props="props"
-                        :style="getTentativeRowStyle(props.row)"
+                <q-list>
+                    <q-item
+                        v-for="(item, index) in ['And', 'Or']"
+                        clickable
+                        :key="index"
+                        @click="and_or = item === 'And'"
                     >
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_more_vert"
-                            unelevated
-                            color="primary"
-                            class="cursor-pointer"
-                            @click.stop
-                        >
-                            <q-menu auto-close>
-                                <q-list>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="() => openQDialog(props.row)"
-                                        :style="
-                                            props.row.tentative
-                                                ? 'pointer-events: none'
-                                                : ''
-                                        "
-                                        :disabled="props.row.tentative"
+                        <q-item-section>
+                            {{ item }}
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </q-btn-dropdown>
+        </div>
+
+        <div class="col-3 q-pa-sm">
+            <q-btn
+                outline
+                text-color="black"
+                color="primary"
+                label="Tags"
+                icon="sym_o_filter_list"
+                class="full-width"
+                @click="openTagFilterDialog"
+            >
+                <q-chip
+                    v-if="tagFilter"
+                    v-for="value in Object.values(tagFilter)"
+                    dense
+                >
+                    {{ value.name }}: {{ value.value }}
+                </q-chip>
+            </q-btn>
+        </div>
+        <div class="col-1 q-pa-sm">
+            <q-btn
+                outline
+                text-color="black"
+                label="Reset"
+                icon="sym_o_clear"
+                class="full-width"
+                @click="resetFilter"
+            />
+        </div>
+    </div>
+
+    <q-table
+        flat
+        bordered
+        separator="none"
+        ref="tableRef"
+        v-model:pagination="pagination"
+        v-model:selected="selected"
+        :rows-per-page-options="[5, 10, 20, 50, 100]"
+        :rows="data"
+        :columns="columns"
+        row-key="uuid"
+        :loading="loading"
+        selection="multiple"
+        @row-click="onRowClick"
+        @request="setPagination"
+    >
+        <template v-slot:body-cell="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+                <q-tooltip v-if="props.row.tentative"
+                    >This file has not yet completed uploading
+                </q-tooltip>
+
+                {{ props.value }}
+            </q-td>
+        </template>
+        <template v-slot:body-cell-action="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="sym_o_more_vert"
+                    unelevated
+                    color="primary"
+                    class="cursor-pointer"
+                    @click.stop
+                >
+                    <q-menu auto-close>
+                        <q-list>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="() => openQDialog(props.row)"
+                                :style="
+                                    props.row.tentative
+                                        ? 'pointer-events: none'
+                                        : ''
+                                "
+                                :disabled="props.row.tentative"
+                            >
+                                <q-item-section>Edit File</q-item-section>
+                            </q-item>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="
+                                    () =>
+                                        $routerService?.routeTo(ROUTES.FILE, {
+                                            uuid: props.row.uuid,
+                                        })
+                                "
+                            >
+                                <q-item-section>View File</q-item-section>
+                            </q-item>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <DeleteFileDialogOpener
+                                        :file="props.row"
+                                        v-if="props.row"
                                     >
-                                        <q-item-section
-                                            >Edit File
-                                        </q-item-section>
-                                    </q-item>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="
-                                            () =>
-                                                $routerService?.routeTo(
-                                                    ROUTES.FILE,
-                                                    { uuid: props.row.uuid },
-                                                )
-                                        "
-                                    >
-                                        <q-item-section
-                                            >View File
-                                        </q-item-section>
-                                    </q-item>
-                                    <q-item clickable v-ripple>
-                                        <q-item-section>
-                                            <DeleteFileDialogOpener
-                                                :file="props.row"
-                                                v-if="props.row"
-                                            >
-                                                Delete File
-                                            </DeleteFileDialogOpener>
-                                        </q-item-section>
-                                    </q-item>
-                                </q-list>
-                            </q-menu>
-                        </q-btn>
-                    </q-td>
-                </template>
-            </q-table>
-        </q-card-section>
-    </q-card>
+                                        Delete File
+                                    </DeleteFileDialogOpener>
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </q-td>
+        </template>
+    </q-table>
 </template>
 <script setup lang="ts">
 import { computed, inject, Ref, ref, watch } from 'vue';
@@ -362,13 +331,11 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
-import { useRouter } from 'vue-router';
-import { QueryURLHandler } from 'src/services/URLHandler';
 import TagFilter from 'src/dialogs/TagFilter.vue';
-import { all } from 'axios';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
+import TitleSection from 'components/TitleSection.vue';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 
@@ -679,6 +646,7 @@ function resetStartDate() {
 function resetEndDate() {
     endDates.value = formatDate(end);
 }
+
 function resetFilter() {
     handler.value.setProjectUUID(undefined);
     handler.value.setMissionUUID(undefined);

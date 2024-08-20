@@ -3,14 +3,28 @@ $space-x-base: $space-base !default
 $space-y-base: $space-base !default
 
 $space-none: (x: 0, y: 0) !default
+// xs --> 4px
 $space-xs: (x: ($space-x-base * .25), y: ($space-y-base * .25)) !default
+// sm --> 8px
 $space-sm: (x: ($space-x-base * .5), y: ($space-y-base * .5)) !default
+// md --> 16px
 $space-md: (x: $space-x-base, y: $space-y-base) !default
+// lg --> 24px
 $space-lg: (x: ($space-x-base * 1.5), y: ($space-y-base * 1.5)) !default
+// xl --> 48px
 $space-xl: (x: ($space-x-base * 3), y: ($space-y-base * 3)) !default
 
+.height-xl
+  height: ($space-base * 3)
+
+// xxl --> 64px
+$space-xxl: (x: ($space-x-base * 4), y: ($space-y-base * 4)) !default
+
+.height-xxl
+  height: ($space-base * 4)
+
 // sorry for long line; we need .sass and it doesn't support multi-line list
-$spaces: ('none': $space-none, 'xs': $space-xs, 'sm': $space-sm, 'md': $space-md, 'lg': $space-lg, 'xl': $space-xl) !default
+$spaces: ('none': $space-none, 'xs': $space-xs, 'sm': $space-sm, 'md': $space-md, 'lg': $space-lg, 'xl': $space-xl, 'xxl': $space-xxl) !default
 
 $animate-duration: .3s !default
 $animate-delay: .3s !default
@@ -86,6 +100,9 @@ $headings: ('h1': $h1, 'h2': $h2, 'h3': $h3, 'h4': $h4, 'h5': $h5, 'h6': $h6, 's
 $h-tags: (h1: map-get($headings, "h1"), h2: map-get($headings, "h2"), h3: map-get($headings, "h3"), h4: map-get($headings, "h4"), h5: map-get($headings, "h5"), h6: map-get($headings, "h6")) !default
 
 $background: #ffffff !default
+.bg-default
+  background-color: $background
+
 $background-hover: #8D8D8D1F !default
 $background-active: #8D8D8D80 !default
 $background-selected: #8D8D8D33 !default
@@ -107,41 +124,55 @@ $layer-selected-hover-01: #CACACA !default
 $layer-selected-hover-02: #CACACA !default
 $layer-selected-hover-03: #8D8D8D !default
 
-$border-interactive: #0F62FE !default
 $border-subtle-00: #E0E0E0 !default
-$border-subtle-01: #C6C6C6 !default
-$border-subtle-02: #E0E0E0 !default
-$border-subtle-03: #C6C6C6 !default
-$border-subtle-selected-01: #C6C6C6 !default
-$border-subtle-selected-02: #C6C6C6 !default
-$border-subtle-selected-03: #C6C6C6 !default
 
-$border-strong-01: #8D8D8D !default
-$border-strong-02: #8D8D8D !default
-$border-strong-03: #8D8D8D !default
-
-$border-tile-01: #C6C6C6 !default
-$border-tile-02: #A8A8A8 !default
-$border-tile-03: #C6C6C6 !default
-
-$border-disabled: #C6C6C6 !default
+.q-separator
+  border-color: $border-subtle-00
 
 $text-primary: #161616 !default
+
+.text-primary
+  color: $text-primary !important
+
 $text-secondary: #525252 !default
+
+.text-secondary
+  color: $text-secondary !important
+
 $text-placeholder: #A8A8A8 !default
 $text-on-color: #FFFFFF !default
+
+.text-on-color
+    color: $text-on-color !important
+
 $text-on-color-disabled: #8D8D8D !default
 $text-helper: #6F6F6F !default
 $text-error: #DA1E28 !default
+
+.text-error
+    color: $text-error !important
+
 $text-disabled: #16161640 !default
 
 $link-primary: #0F62FE !default
+
+.text-link-primary
+  color: $link-primary
+
 $link-primary-hover: #054ADA !default
+
+.text-link-primary:hover
+  color: $link-primary-hover
+
 $link-secondary: #0043CE !default
 $link-visited: #8A3FFC !default
 
 $icon-primary: #161616 !default
 $icon-secondary: #525252 !default
+
+.text-icon-secondary
+    color: $icon-secondary !important
+
 $icon-on-color: #FFFFFF !default
 $icon-on-color-disabled: #8D8D8D !default
 $icon-interactive: #0F62FE !default
@@ -156,10 +187,19 @@ $support-caution-minor: #F1C21B !default
 $support-undefined: #8A3FFC !default
 
 $button-primary: #0F62FE !default
+
 $button-primary-hover: #0353E9 !default
 $button-primary-active: #002D9C !default
 $button-secondary: #393939 !default
+
+.bg-button-secondary
+  background-color: $button-secondary
+
 $button-secondary-hover: #4C4C4C !default
+
+.bg-button-secondary:hover
+  background-color: $button-secondary-hover
+
 $button-secondary-active: #6F6F6F !default
 $button-tertiary: #0F62FE !default
 $button-tertiary-hover: #0353E9 !default

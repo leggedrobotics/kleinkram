@@ -24,8 +24,8 @@
         <template v-slot:body-cell="props">
             <q-td :props="props" :style="getTentativeRowStyle(props.row)">
                 <q-tooltip v-if="props.row.tentative"
-                    >This file has not yet completed uploading</q-tooltip
-                >
+                    >This file has not yet completed uploading
+                </q-tooltip>
 
                 {{ props.value }}
             </q-td>
@@ -77,9 +77,7 @@
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { computed, inject, ref, watch } from 'vue';
-
-import RouterService from 'src/services/routerService';
+import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
@@ -87,8 +85,11 @@ import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
+import { useHandler } from 'src/hooks/customQueryHooks';
+import { useRouter } from 'vue-router';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
+const handler = useHandler();
 
 const props = defineProps({
     url_handler: {
@@ -147,6 +148,16 @@ watch(
 );
 
 const onRowClick = async (_: Event, row: any) => {
-    $routerService?.routeTo(ROUTES.FILE, { uuid: row.uuid });
+    $router?.push({
+        name: ROUTES.FILE.name,
+        params: {
+            project_uuid: handler.value.project_uuid as string,
+            mission_uuid: handler.value.mission_uuid as string,
+            file_uuid: row.uuid,
+        },
+        query: {
+            uuid: row.uuid,
+        },
+    });
 };
 </script>

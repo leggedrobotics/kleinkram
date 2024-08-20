@@ -1,13 +1,5 @@
 <template>
     <div>
-        <template v-if="url_handler.isListingProjects">
-            <h2 class="text-h5 q-mb-xs">Explore all Projects</h2>
-            <HelpMessage
-                text="You can only see projects on which you have at least view access on project level."
-                link="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
-            />
-        </template>
-
         <template v-if="url_handler.isListingMissions">
             <h2 class="text-h6 q-mb-xs">Explore all Missions of Project</h2>
             <HelpMessage

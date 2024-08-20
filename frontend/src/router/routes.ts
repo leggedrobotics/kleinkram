@@ -56,18 +56,7 @@ const ROUTES = {
             },
         ],
     },
-    FILE: {
-        name: 'File',
-        path: '/file',
-        component: () => import('layouts/MainLayout.vue'),
-        children: [
-            {
-                name: 'FileInfo',
-                path: '',
-                component: () => import('pages/FileInfo.vue'),
-            },
-        ],
-    },
+
     ACTION: {
         name: 'Action',
         path: '/action',
@@ -106,15 +95,54 @@ const ROUTES = {
         ],
     },
 
-    EXPLORER: {
-        name: 'Explorer',
-        path: '/explorer',
+    PROJECTS: {
+        name: 'Projects',
+        path: '/projects',
         component: () => import('layouts/MainLayout.vue'),
         children: [
             {
-                name: 'ExplorerPage2',
+                name: 'ProjectsExplorer',
                 path: '',
-                component: () => import('pages/ExplorerPage.vue'),
+                component: () => import('pages/ProjectsExplorer.vue'),
+            },
+        ],
+    },
+
+    MISSIONS: {
+        name: 'Missions',
+        path: '/projects/:project_uuid/missions',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            {
+                name: 'MissionsExplorer',
+                path: '',
+                component: () => import('pages/MissionsExplorer.vue'),
+            },
+        ],
+    },
+
+    FILES: {
+        name: 'Files',
+        path: '/projects/:project_uuid/missions/:mission_uuid/files',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            {
+                name: 'FilesExplorer',
+                path: '',
+                component: () => import('pages/FilesExplorer.vue'),
+            },
+        ],
+    },
+
+    FILE: {
+        name: 'File',
+        path: '/projects/:project_uuid/missions/:mission_uuid/files/:file_uuid',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [
+            {
+                name: 'FileExplorer',
+                path: '',
+                component: () => import('pages/FileInfo.vue'),
             },
         ],
     },

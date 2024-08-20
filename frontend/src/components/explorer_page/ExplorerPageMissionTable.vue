@@ -78,6 +78,9 @@ import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { QueryHandler, TableRequest } from 'src/services/URLHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
+import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const props = defineProps({
     url_handler: {
@@ -135,8 +138,23 @@ watch(
     },
     { immediate: true },
 );
+const $router = useRouter();
+const handler = useHandler();
+
 const onRowClick = async (_: Event, row: any) => {
     props.url_handler?.setMissionUUID(row.uuid);
+
+    $router?.push({
+        name: ROUTES.FILES.name,
+        params: {
+            project_uuid: handler.value.project_uuid as string,
+            mission_uuid: handler.value.mission_uuid as string,
+        },
+        query: {
+            project_uuid: handler.value.project_uuid as string,
+            mission_uuid: handler.value.mission_uuid as string,
+        },
+    });
 };
 
 const $q = useQuasar();

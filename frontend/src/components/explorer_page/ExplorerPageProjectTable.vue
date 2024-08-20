@@ -91,6 +91,9 @@ import { filteredProjects } from 'src/services/queries/project';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
+import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const $q = useQuasar();
 
@@ -145,8 +148,22 @@ watch(
     },
     { immediate: true },
 );
+
+const $router = useRouter();
+const handler = useHandler();
+
 const onRowClick = async (_: Event, row: any) => {
     props.url_handler?.setProjectUUID(row.uuid);
+
+    $router?.push({
+        name: ROUTES.MISSIONS.name,
+        params: {
+            project_uuid: handler.value.project_uuid as string,
+        },
+        query: {
+            project_uuid: handler.value.project_uuid as string,
+        },
+    });
 };
 
 const manageAccessRights = (project_uuid: string) => {

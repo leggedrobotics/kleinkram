@@ -5,9 +5,9 @@ body {
 }
 
 .q-layout--standard,
-.q-table thead,
+thead,
 .q-footer {
-    background-color: whitesmoke;
+    background-color: $layer-01 !important;
 }
 
 q-page {
@@ -45,7 +45,7 @@ q-page {
 }
 
 body:has(.q-dialog__backdrop) .transparent-on-open-dialog {
-    opacity: 0.6;
+    opacity: 0.4;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -57,4 +57,20 @@ textarea {
 
 .q-btn {
     text-transform: none;
+}
+
+/////////////////////////////////////////////////////////////////
+// Style Tables
+/////////////////////////////////////////////////////////////////
+
+.q-table tbody {
+    background-color: $layer-01;
+}
+
+.q-table thead {
+    background-color: $layer-hover-01 !important;
+}
+
+.q-table__bottom {
+    background-color: $layer-01;
 }
