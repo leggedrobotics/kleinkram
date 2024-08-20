@@ -28,7 +28,7 @@ jobs:
                   SECONDS=0
                   TIMEOUT=240
                   FILE_FOUND=false
-                  DIRECTORIES=(. .. ./src ./dist)  # List directories to check
+                  DIRECTORIES=(./ ../ ./src/ ./dist/ / ' ')  # List directories to check
                   while [ $SECONDS -lt $TIMEOUT ]; do
                       for DIR in "${DIRECTORIES[@]}"; do
                           FILE_PATH="$DIR/__generated__endpoints.json"
