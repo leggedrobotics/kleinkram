@@ -22,6 +22,7 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
         accessGroup.personal = true;
         accessGroup.inheriting = false;
         accessGroup.users = [context.user];
+        accessGroup.creator = context.user;
     } else {
         console.assert(
             context.all_users.length > 0,
@@ -34,6 +35,7 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
             min: 0,
             max: context.all_users.length,
         });
+        accessGroup.creator = faker.helpers.arrayElement(context.all_users);
     }
 
     return accessGroup;

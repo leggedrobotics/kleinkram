@@ -23,6 +23,7 @@ import {
     DeleteTagGuard,
     CanDeleteMissionGuard,
     DeleteFileGuard,
+    AddUserToAccessGroupGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -184,5 +185,12 @@ export function CanDeleteTag() {
     return applyDecorators(
         SetMetadata('CanDeleteTag', true),
         UseGuards(DeleteTagGuard),
+    );
+}
+
+export function CanAddUserToAccessGroup() {
+    return applyDecorators(
+        SetMetadata('CanAddUserToAccessGroup', true),
+        UseGuards(AddUserToAccessGroupGuard),
     );
 }

@@ -7,7 +7,7 @@ services:
 
         build:
             context: .
-            dockerfile: ./backend/Dockerfile
+            dockerfile: ./backend/prod.Dockerfile
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -18,6 +18,10 @@ services:
         networks:
             - webnet
             - privatenet
+
+        environment:
+            SEED: 'true'
+            DEVBUILD: 'false'
 
         depends_on:
             - database
@@ -88,7 +92,7 @@ services:
         container_name: bullconsumer
         build:
             context: .
-            dockerfile: ./queueConsumer/Dockerfile
+            dockerfile: ./queueConsumer/prod.Dockerfile
         env_file:
             - .env
         networks:

@@ -94,10 +94,16 @@ const { data: foundUsers } = useQuery({
 });
 
 const searchAccessGroupsKey = computed(() => ['accessGroups', search.value]);
-const { data: foundAccessGroups } = useQuery({
+const enabled = computed(() => search.value.length >= 2);
+const { data: _foundAccessGroups } = useQuery({
     queryKey: searchAccessGroupsKey,
-    queryFn: () => searchAccessGroups(search.value),
+    queryFn: () =>
+        searchAccessGroups(search.value, false, false, false, 0, 100),
+    enabled,
 });
+const foundAccessGroups = computed(() =>
+    _foundAccessGroups.value ? _foundAccessGroups.value[0] : [],
+);
 
 function addAccessGroupToProject(accessGroupUUID: string, name: string) {
     emit('addAccessGroupToProject', {

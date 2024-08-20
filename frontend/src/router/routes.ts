@@ -1,4 +1,6 @@
 import { RouteRecordRaw } from 'vue-router';
+import MainLayout from 'layouts/MainLayout.vue';
+import AccessGroupPage from 'pages/AccessGroupPage.vue';
 
 /**
  * This file defines the routes available within the application
@@ -181,6 +183,18 @@ const ROUTES = {
                 name: 'AccessGroupsPage',
                 path: '',
                 component: () => import('pages/AccessGroupsPage.vue'),
+            },
+        ],
+    },
+    ACCESS_GROUP: {
+        name: 'AccessGroupDetails',
+        path: '/access-group/:uuid',
+        component: () => MainLayout,
+        children: [
+            {
+                name: 'AccessGroupDetailPage',
+                path: '',
+                component: () => AccessGroupPage,
             },
         ],
     },

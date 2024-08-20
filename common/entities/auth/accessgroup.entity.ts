@@ -1,4 +1,11 @@
-import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import {
+    Column,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
 import ProjectAccess from './project_access.entity';
@@ -31,4 +38,7 @@ export default class AccessGroup extends BaseEntity {
 
     @Column({ default: false })
     inheriting: boolean;
+
+    @ManyToOne(() => User, (user) => user.files, { nullable: true })
+    creator: User;
 }
