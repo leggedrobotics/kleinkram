@@ -93,7 +93,6 @@ import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogO
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
-import { useHandler } from 'src/hooks/customQueryHooks';
 
 const $q = useQuasar();
 
@@ -150,18 +149,15 @@ watch(
 );
 
 const $router = useRouter();
-const handler = useHandler();
 
 const onRowClick = async (_: Event, row: any) => {
-    props.url_handler?.setProjectUUID(row.uuid);
-
     $router?.push({
         name: ROUTES.MISSIONS.name,
         params: {
-            project_uuid: handler.value.project_uuid as string,
+            project_uuid: row.uuid,
         },
         query: {
-            project_uuid: handler.value.project_uuid as string,
+            project_uuid: row.uuid,
         },
     });
 };

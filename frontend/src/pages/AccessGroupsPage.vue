@@ -25,9 +25,9 @@
                                 v-ripple
                                 @click="() => (prefilter = option)"
                             >
-                                <q-item-section>{{
-                                    option.label
-                                }}</q-item-section>
+                                <q-item-section
+                                    >{{ option.label }}
+                                </q-item-section>
                             </q-item>
                         </q-list>
                     </q-btn-dropdown>
@@ -101,10 +101,10 @@
                                     </q-item>
 
                                     <q-item clickable v-ripple disabled>
-                                        <q-item-section>Edit </q-item-section>
+                                        <q-item-section>Edit</q-item-section>
                                     </q-item>
                                     <q-item clickable v-ripple disabled>
-                                        <q-item-section>Delete </q-item-section>
+                                        <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
@@ -116,7 +116,7 @@
     </q-page>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 
 import { computed, inject, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
@@ -124,9 +124,9 @@ import { Project } from 'src/types/Project';
 
 import { AccessGroup } from 'src/types/AccessGroup';
 import { searchAccessGroups } from 'src/services/queries/access';
-import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import RouterService from 'src/services/routerService';
+import ROUTES from 'src/router/routes';
 
 const $router = useRouter();
 const $routerService = inject<RouterService>('$routerService');
@@ -207,7 +207,7 @@ const accessGroupsTable = computed(() =>
 
 async function rowClick(event: any, row: AccessGroup) {
     await $router.push({
-        name: 'AccessGroupDetailPage',
+        name: ROUTES.ACCESS_GROUP.name,
         params: { uuid: row.uuid },
     });
 }

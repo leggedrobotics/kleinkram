@@ -188,12 +188,11 @@ import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpe
 import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
-import { Notify, useQuasar } from 'quasar';
+import { Notify } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
-const $q = useQuasar();
 
 const project_uuid = computed(() => handler.value.project_uuid);
 const mission_uuid = computed(() => handler.value.mission_uuid);
@@ -202,7 +201,6 @@ const { data: project } = useProjectQuery(project_uuid);
 const { data: mission } = useMissionQuery(
     mission_uuid,
     (error, query) => {
-        console.log('errsdfor: ', error);
         Notify.create({
             message: `Error fetching Mission: ${error.response.data.message}`,
             color: 'negative',

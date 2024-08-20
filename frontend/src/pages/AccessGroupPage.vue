@@ -73,7 +73,7 @@
                                         </q-item-section>
                                     </q-item>
                                     <q-item clickable v-ripple disabled>
-                                        <q-item-section>Remove </q-item-section>
+                                        <q-item-section>Remove</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
@@ -151,10 +151,10 @@
                                     </q-item>
 
                                     <q-item clickable v-ripple disabled>
-                                        <q-item-section>Edit </q-item-section>
+                                        <q-item-section>Edit</q-item-section>
                                     </q-item>
                                     <q-item clickable v-ripple disabled>
-                                        <q-item-section>Delete </q-item-section>
+                                        <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
@@ -167,15 +167,15 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { canAddAccessGroup, getAccessGroup } from 'src/services/queries/access';
+import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
+
 const $q = useQuasar();
 const router = useRouter();
 const tab = ref('members');
@@ -226,6 +226,7 @@ const project_rows = computed(() => {
         };
     });
 });
+
 function openAddProject() {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
@@ -234,6 +235,7 @@ function openAddProject() {
         },
     });
 }
+
 function openAddUser() {
     $q.dialog({
         component: AddUserToAccessGroupDialog,

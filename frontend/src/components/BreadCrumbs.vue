@@ -12,13 +12,13 @@
             <q-breadcrumbs gutter="md">
                 <template v-for="crumb in crumbs" :key="crumb.name">
                     <q-breadcrumbs-el
-                        v-if="!isLastCrumb(crumb)"
+                        v-if="isClickable(crumb)"
                         class="text-link-primary"
-                        :to="crumb.link"
-                        :label="crumb.name"
+                        :to="crumb.to"
+                        :label="crumb.displayName"
                     />
 
-                    <q-breadcrumbs-el v-else :label="crumb.name" />
+                    <q-breadcrumbs-el v-else :label="crumb.displayName" />
                 </template>
 
                 <template v-if="isLoading">
@@ -34,27 +34,17 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref } from 'vue';
+import { PageBreadCrumb } from 'src/router/routes';
+import { useCrumbs } from 'src/hooks/crumbs';
 
 const isLoading = ref(false);
+const crumbs = useCrumbs();
 
-const route = useRoute();
-
-type Crumbs = {
-    name: string;
-    link: string | undefined;
-}[];
-
-const crumbs = computed<Crumbs>(() => [
-    {
-        name: 'All Projects',
-        link: '/projects',
-    },
-]);
-
-const isLastCrumb = (crumb: any) => {
-    const idx = crumbs.value.findIndex((c: any) => c.name === crumb.name);
-    return idx === crumbs.value.length - 1;
+const isClickable = (crumb: PageBreadCrumb) => {
+    const idx = crumbs.value?.findIndex(
+        (c: PageBreadCrumb) => c.displayName === crumb.displayName,
+    );
+    return idx !== crumbs.value.length - 1 && !!crumb.to;
 };
 </script>

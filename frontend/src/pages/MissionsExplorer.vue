@@ -114,6 +114,7 @@ const queryClient = useQueryClient();
 const handler = useHandler();
 
 const project_uuid = computed(() => handler.value.project_uuid);
+console.log(project_uuid.value);
 const { data: project } = useProjectQuery(project_uuid);
 
 const search = computed({
