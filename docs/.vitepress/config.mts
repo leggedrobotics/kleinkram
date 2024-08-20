@@ -39,7 +39,7 @@ export default withMermaid({
                 },
 
                 {
-                    text: 'Data Validation and Actions',
+                    text: 'Kleinkram Actions',
                     items: [
                         {
                             text: 'Getting Started',
