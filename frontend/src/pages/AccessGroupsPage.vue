@@ -207,7 +207,7 @@ const accessGroupsTable = computed(() =>
 
 async function rowClick(event: any, row: AccessGroup) {
     await $router.push({
-        name: ROUTES.ACCESS_GROUP.name,
+        name: ROUTES.ACCESS_GROUP.routeName,
         params: { uuid: row.uuid },
     });
 }

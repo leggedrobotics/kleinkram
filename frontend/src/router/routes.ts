@@ -1,43 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
-
-/**
- * Represents a single breadcrumb in the application.
- * The `to` field is optional, and if it is not defined,
- * the breadcrumb is not clickable.
- *
- * The last breadcrumb in an array of breadcrumbs is
- * always not clickable.
- *
- */
-export type PageBreadCrumb = {
-    displayName: string;
-    to: string | undefined;
-};
-
-/**
- * Helper function to create a route with a layout.
- */
-const routeWithLayout = (component: {
-    name: string;
-    path: string;
-    breadcrumbs?: PageBreadCrumb[];
-    component: () => Promise<typeof import('*.vue')>;
-    layout: () => Promise<typeof import('*.vue')>;
-}) => {
-    return {
-        name: component.name,
-        path: component.path,
-        breadcrumbs: component.breadcrumbs,
-        component: component.layout,
-        children: [
-            {
-                name: component.name + 'Page',
-                path: '',
-                component: component.component,
-            },
-        ],
-    };
-};
+import { routeWithLayout } from 'src/router/routesUtils';
 
 /**
  *
@@ -49,109 +11,109 @@ const routeWithLayout = (component: {
  */
 const ROUTES = {
     LOGIN: routeWithLayout({
-        name: 'Login',
+        name: 'LoginPage',
         path: '/login',
         component: () => import('pages/LoginPage.vue'),
         layout: () => import('layouts/NoTopNavLayout.vue'),
     }),
 
     HOME: routeWithLayout({
-        name: 'Home',
+        name: 'HomePage',
         path: '/',
         component: () => import('pages/IndexPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     DATATABLE: routeWithLayout({
-        name: 'DataTable',
+        name: 'DataTablePage',
         path: '/datatable',
         component: () => import('pages/DataTablePage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     UPLOAD: routeWithLayout({
-        name: 'Upload',
+        name: 'UploadPage',
         path: '/upload',
         component: () => import('pages/UploadPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     ACTION: routeWithLayout({
-        name: 'Action',
+        name: 'ActionPage',
         path: '/action',
         component: () => import('pages/ActionPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     ANALYSIS_DETAILS: routeWithLayout({
-        name: 'AnalysisDetails',
+        name: 'AnalysisDetailsPage',
         path: '/action/:id',
         component: () => import('pages/ActionDetailsPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     LANDING: routeWithLayout({
-        name: 'Landing',
+        name: 'LandingPage',
         path: '/landing',
         component: () => import('pages/LandingPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     PROJECTS: routeWithLayout({
-        name: 'Projects',
+        name: 'ProjectsPage',
         path: '/projects',
-        breadcrumbs: [{ displayName: 'Projects', to: '/projects' }],
+        breadcrumbs: [{ displayName: 'All Projects', to: '/projects' }],
         component: () => import('pages/ProjectsExplorer.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     MISSIONS: routeWithLayout({
-        name: 'Missions',
+        name: 'MissionsPage',
         breadcrumbs: [
-            { displayName: 'Projects', to: '/projects' },
+            { displayName: 'All Projects', to: '/projects' },
             { displayName: 'project_name_placeholder', to: undefined },
         ],
-        path: '/projects/:project_uuid/missions',
+        path: '/project/:project_uuid/missions',
         component: () => import('pages/MissionsExplorer.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     FILES: routeWithLayout({
-        name: 'Files',
+        name: 'FilesPage',
         breadcrumbs: [
-            { displayName: 'Projects', to: '/projects' },
+            { displayName: 'All Projects', to: '/projects' },
             { displayName: 'project_name_placeholder', to: '/projects' },
             { displayName: 'mission_name_placeholder', to: undefined },
         ],
-        path: '/projects/:project_uuid/missions/:mission_uuid/files',
+        path: '/project/:project_uuid/mission/:mission_uuid/files',
         component: () => import('pages/FilesExplorer.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     FILE: routeWithLayout({
-        name: 'File',
+        name: 'FilePage',
         breadcrumbs: [
-            { displayName: 'Projects', to: '/projects' },
+            { displayName: 'All Projects', to: '/projects' },
             { displayName: 'project_name_placeholder', to: '/projects' },
             { displayName: 'mission_name_placeholder', to: '/projects' },
             { displayName: 'file_name_placeholder', to: undefined },
         ],
-        path: '/projects/:project_uuid/missions/:mission_uuid/files/:file_uuid',
+        path: '/project/:project_uuid/mission/:mission_uuid/file/:file_uuid',
         component: () => import('pages/FileInfo.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     ERROR_404: routeWithLayout({
-        name: 'Error404',
+        name: 'Error404Page',
         path: '/:catchAll(.*)',
         component: () => import('pages/Error404Page.vue'),
         layout: () => import('layouts/NoTopNavLayout.vue'),
     }),
 
     USER_PROFILE: routeWithLayout({
-        name: 'UserProfile',
+        name: 'UserProfilePage',
         path: '/user-profile',
-        breadcrumbs: [{ displayName: 'User Profile', to: undefined }],
+        breadcrumbs: [{ displayName: 'Profile', to: undefined }],
         component: () => import('pages/UserProfilePage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
@@ -160,7 +122,7 @@ const ROUTES = {
         breadcrumbs: [
             { displayName: 'All Access Groups', to: '/access-groups' },
         ],
-        name: 'AccessGroups',
+        name: 'AccessGroupsPage',
         path: '/access-groups',
         component: () => import('pages/AccessGroupsPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
@@ -174,18 +136,12 @@ const ROUTES = {
                 to: undefined,
             },
         ],
-        name: 'AccessGroupDetail',
+        name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',
         component: () => import('pages/AccessGroupPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 };
-
-// check if all routes have unique names
-const routeNames = Object.values(ROUTES).map((route) => route.name);
-if (new Set(routeNames).size !== routeNames.length) {
-    throw new Error('Route names must be unique');
-}
 
 // Routes that can be accessed without being logged in
 export const PUBLIC_ROUTES: RouteRecordRaw[] = [
@@ -193,5 +149,11 @@ export const PUBLIC_ROUTES: RouteRecordRaw[] = [
     ROUTES.HOME,
     ROUTES.ERROR_404,
 ];
+
+// check if all routes have unique names
+const routeNames = Object.values(ROUTES).map((route) => route.name);
+if (new Set(routeNames).size !== routeNames.length) {
+    throw new Error('Route names must be unique');
+}
 
 export default ROUTES;

@@ -109,12 +109,13 @@ import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessBut
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
+import { useProjectUUID } from 'src/hooks/utils';
+import { useQuasar } from 'quasar';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
-
-const project_uuid = computed(() => handler.value.project_uuid);
-console.log(project_uuid.value);
+const $q = useQuasar();
+const project_uuid = useProjectUUID();
 const { data: project } = useProjectQuery(project_uuid);
 
 const search = computed({

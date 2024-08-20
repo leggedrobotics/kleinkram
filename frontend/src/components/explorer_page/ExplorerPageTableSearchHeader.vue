@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler } from 'src/services/QueryHandler';
 import { FileType } from 'src/enums/FILE_ENUM';
 import { computed } from 'vue';
 

@@ -1,8 +1,6 @@
 <template>
     <title-section
-        :title="
-            handler.isListingFiles ? mission?.name : project?.name || 'Projects'
-        "
+        :title="handler.isListingFiles ? mission?.name : project?.name"
     >
         <template v-slot:subtitle>
             <div>
@@ -55,7 +53,7 @@
                         label="Actions"
                         @click="
                             $router.push({
-                                path: ROUTES.ACTION.path,
+                                path: ROUTES.ACTION.routeName,
                                 query: {
                                     project_uuid: project_uuid,
                                     mission_uuid: mission_uuid,
@@ -171,7 +169,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
 import {
@@ -190,12 +187,13 @@ import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpe
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
 import { Notify } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 
-const project_uuid = computed(() => handler.value.project_uuid);
-const mission_uuid = computed(() => handler.value.mission_uuid);
+const project_uuid = useProjectUUID();
+const mission_uuid = useMissionUUID();
 
 const { data: project } = useProjectQuery(project_uuid);
 const { data: mission } = useMissionQuery(
@@ -215,7 +213,7 @@ const { data: mission } = useMissionQuery(
 
 function refresh() {
     queryClient.invalidateQueries({
-        queryKey: ['files', handler.value.mission_uuid],
+        queryKey: ['files', mission_uuid],
     });
 }
 </script>

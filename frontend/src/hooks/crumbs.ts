@@ -14,11 +14,9 @@ import ROUTES, { PageBreadCrumb } from 'src/router/routes';
 export const useCrumbs = () => {
     const route = useRoute();
     return computed(() => {
-        // remove the 'Page' postfix from the route name
-        // to find the layout definition in the routes.ts file
-        const nameWithoutPostfix = (route.name as string).replace(/Page$/, '');
+        const nameWithPostfix = (route.name as string) + 'Layout';
         const routeDefinition = Object.values(ROUTES).find(
-            (r) => r.name === nameWithoutPostfix,
+            (r) => r.name === nameWithPostfix,
         );
         return (
             routeDefinition ? routeDefinition.breadcrumbs : []

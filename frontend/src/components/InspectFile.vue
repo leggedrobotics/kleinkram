@@ -164,7 +164,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, inject, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
 import { FileType } from 'src/enums/FILE_ENUM';
 import RouterService from 'src/services/routerService';
@@ -185,7 +185,7 @@ import {
     getDetailedFileState,
     getSimpleFileStateName,
 } from '../services/generic';
-import { getMe } from 'src/services/queries/user';
+import { useMissionUUID } from 'src/hooks/utils';
 
 const $routerService: RouterService | undefined = inject('$routerService');
 const $q = useQuasar();
@@ -198,12 +198,6 @@ const selected = ref([]);
 const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
-//
-// //get Current User:
-// const { data: user } = useQuery({
-//     queryKey: ['me'],
-//     queryFn: () => getMe(),
-// });
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
@@ -222,7 +216,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
     },
 });
 
-const missionUUID = computed(() => data.value?.mission?.uuid);
+const missionUUID = useMissionUUID();
 
 const { data: _filesReturn, refetch } = useQuery({
     queryKey: ['files', missionUUID.value],

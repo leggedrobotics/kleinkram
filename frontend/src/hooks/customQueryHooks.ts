@@ -5,7 +5,7 @@ import { getMission } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
-import { QueryURLHandler } from 'src/services/URLHandler';
+import { QueryURLHandler } from 'src/services/QueryHandler';
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,

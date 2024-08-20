@@ -107,7 +107,7 @@ import { Action } from 'src/types/Action';
 import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 
 const router = useRouter();
 

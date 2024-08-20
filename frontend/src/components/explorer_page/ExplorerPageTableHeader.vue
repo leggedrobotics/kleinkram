@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import HelpMessage from 'components/HelpMessage.vue';
 
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler } from 'src/services/QueryHandler';
 const props = defineProps({
     url_handler: {
         type: QueryHandler,
