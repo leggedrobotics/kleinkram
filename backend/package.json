@@ -26,7 +26,7 @@
         "@nestjs/jwt": "^10.2.0",
         "@nestjs/mapped-types": "^2.0.5",
         "@nestjs/passport": "^10.0.3",
-        "@nestjs/platform-express": "^10.0.0",
+        "@nestjs/platform-express": "^10.4.1",
         "@nestjs/typeorm": "^10.0.2",
         "@opentelemetry/api": "^1.4.1",
         "@opentelemetry/core": "^1.15.1",
