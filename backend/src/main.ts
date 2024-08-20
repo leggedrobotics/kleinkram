@@ -62,6 +62,7 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
         }));
 
     const fs = require('fs');
+    console.log('Writing endpoints to', filename);
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
