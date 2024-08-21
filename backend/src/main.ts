@@ -103,10 +103,11 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
-
+    console.log('Listening on port 3000');
     await app.listen(3000);
-
-    save_endpoints_as_json(app, '__generated__endpoints.json');
+    console.log('Save endpoints as JSON');
+    save_endpoints_as_json(app, '.endpoints/__generated__endpoints.json');
+    console.log('Endpoints saved');
 }
 
 bootstrap().catch((err) => {

@@ -8,7 +8,7 @@ import { ActionManagerService } from './actionManager.service';
 export class ContainerCleanupService {
     constructor(private actionManager: ActionManagerService) {}
 
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Cron(CronExpression.EVERY_30_SECONDS)
     @tracing('cleanup_containers')
     async handleCron() {
         logger.debug('Cleaning up containers...');
