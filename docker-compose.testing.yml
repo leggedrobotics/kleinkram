@@ -14,6 +14,8 @@ services:
             dockerfile: ./backend/prod.Dockerfile
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+        volumes:
+            - ./backend/__generated__endpoints.json:/usr/src/app/backend/__generated__endpoints.json
         environment:
             SEED: 'false'
             DEVBUILD: 'false'
