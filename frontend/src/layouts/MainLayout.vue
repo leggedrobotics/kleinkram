@@ -6,22 +6,28 @@
     >
         <header-component />
 
-        <q-page-container>
-            <navigation-bread-crumbs />
-            <dev-instance-warning />
-
-            <main>
-                <router-view />
-            </main>
-        </q-page-container>
-
-        <FooterComponent />
+        <main>
+            <q-page-container
+                style="
+                    width: auto;
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                "
+            >
+                <div>
+                    <dev-instance-warning />
+                    <router-view />
+                </div>
+                <FooterComponent />
+            </q-page-container>
+        </main>
     </q-layout>
 </template>
 
 <script setup lang="ts">
 import FooterComponent from 'components/FooterComponent.vue';
 import HeaderComponent from 'components/HeaderComponent.vue';
-import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
 import DevInstanceWarning from 'components/DevInstanceWarning.vue';
 </script>

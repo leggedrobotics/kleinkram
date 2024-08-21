@@ -1,5 +1,5 @@
 <template>
-    <q-header bordered class="bg-default text-grey-8 height-xxl q-px-lg">
+    <q-header class="bg-default text-grey-8 q-px-lg">
         <q-toolbar class="q-pa-none height-xxl">
             <q-toolbar-title
                 shrink
@@ -18,6 +18,7 @@
                 <header-menu-right />
             </Suspense>
         </q-toolbar>
+        <navigation-bread-crumbs />
     </q-header>
 </template>
 
@@ -27,6 +28,7 @@ import ROUTES from 'src/router/routes';
 import KleinkramLogo from 'components/header/KleinkramLogo.vue';
 import HeaderTabs from 'components/header/HeaderTabs.vue';
 import HeaderMenuRight from 'components/HeaderMenuRight.vue';
+import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
 
 const $router = useRouter();
 

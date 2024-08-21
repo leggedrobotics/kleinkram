@@ -1,8 +1,6 @@
 <template>
-    <div
-        class="bg-default text-grey-8"
-        style="margin: 0 -24px; position: sticky; top: 64px; z-index: 999"
-    >
+    <div class="bg-default text-grey-8" style="margin: 0 -24px; z-index: 999">
+        <q-separator v-if="resolved_crumbs?.length >= 1" />
         <div class="height-xl flex column justify-center q-px-lg">
             <q-breadcrumbs gutter="md">
                 <template v-for="crumb in resolved_crumbs" :key="crumb.name">
@@ -29,7 +27,7 @@
                 </template>
             </q-breadcrumbs>
         </div>
-        <q-separator v-if="resolved_crumbs?.length >= 1" />
+        <q-separator />
     </div>
 </template>
 <script setup lang="ts">
