@@ -51,7 +51,7 @@
                         label="Actions"
                         @click="
                             $router.push({
-                                path: ROUTES.ACTION.routeName,
+                                name: ROUTES.ACTION.routeName,
                                 query: {
                                     project_uuid: project_uuid,
                                     mission_uuid: mission_uuid,
@@ -193,9 +193,12 @@ import { Notify } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
+
+const $router = useRouter();
 
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
