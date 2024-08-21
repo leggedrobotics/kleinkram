@@ -9,7 +9,12 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { deleteFileMinio, externalMinio, moveFile } from '../minioHelper';
+import {
+    deleteFileMinio,
+    externalMinio,
+    internalMinio,
+    moveFile,
+} from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
@@ -515,5 +520,9 @@ export class FileService {
         const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
         await deleteFileMinio(bucket, location);
         return this.fileRepository.remove(file);
+    }
+
+    async getStorage() {
+        internalMinio.partSize;
     }
 }
