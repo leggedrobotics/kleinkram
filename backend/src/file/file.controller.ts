@@ -17,6 +17,7 @@ import {
     CanReadMission,
     CanWriteFile,
     LoggedIn,
+    Public,
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
@@ -177,7 +178,7 @@ export class FileController {
     }
 
     @Get('storage')
-    @LoggedIn()
+    @Public()
     async getStorage() {
         return this.fileService.getStorage();
     }

@@ -3,6 +3,7 @@ import {
     ConflictException,
     Injectable,
 } from '@nestjs/common';
+import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
@@ -23,6 +24,7 @@ import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
+import axios from 'axios';
 
 @Injectable()
 export class FileService {
@@ -523,6 +525,31 @@ export class FileService {
     }
 
     async getStorage() {
-        internalMinio.partSize;
+        const expiredAt = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+
+        const payload = {
+            exp: expiredAt,
+            sub: env.MINIO_ACCESS_KEY,
+            iss: 'prometheus',
+        };
+
+        const token = jwt.sign(payload, env.MINIO_SECRET_KEY, {
+            algorithm: 'HS512',
+        });
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+
+        axios
+            .get('http://minio:9000/minio/metrics/v3/system/drive', {
+                headers,
+            })
+            .then((response) => {
+                console.log(response.data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
     }
 }
