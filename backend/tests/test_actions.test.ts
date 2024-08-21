@@ -110,6 +110,7 @@ describe('Verify Action', () => {
         const contains_file = messages.some((message) =>
             message.includes(file_hash_str),
         );
+        console.log(messages);
         expect(contains_file).toBeTruthy();
 
         // submit a new action
