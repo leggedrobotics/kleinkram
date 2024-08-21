@@ -164,10 +164,9 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
 import { FileType } from 'src/enums/FILE_ENUM';
-import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import { FileEntity } from 'src/types/FileEntity';
 import {
@@ -186,8 +185,9 @@ import {
     getSimpleFileStateName,
 } from '../services/generic';
 import { useMissionUUID } from 'src/hooks/utils';
+import { useRouter } from 'vue-router';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
 const $q = useQuasar();
 
 const props = defineProps<{
@@ -211,7 +211,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
             timeout: 2000,
             position: 'top-right',
         });
-        $routerService?.routeTo(ROUTES.DATATABLE);
+        $router.push(ROUTES.DATATABLE.routeName);
         return false;
     },
 });
@@ -278,12 +278,19 @@ async function _downloadFile() {
     document.body.removeChild(a);
 }
 
-async function redirectToMcap() {
+function redirectToMcap() {
     const mcap = filesReturn.value?.find((file: FileEntity) => {
         return file.filename === data.value?.filename.replace('.bag', '.mcap');
     });
-    if (mcap && $routerService) {
-        await $routerService.routeTo(ROUTES.FILE, { uuid: mcap.uuid });
+    if (mcap) {
+        $router.push({
+            name: ROUTES.FILE.routeName,
+            params: {
+                mission_uuid: mcap?.mission?.uuid,
+                project_uuid: mcap?.mission?.project?.uuid,
+                file_uuid: mcap?.uuid,
+            },
+        });
     }
 }
 

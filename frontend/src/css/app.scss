@@ -81,6 +81,18 @@ textarea {
     gap: 32px;
 }
 
+.q-field--outlined .q-field__control:before {
+    border-color: $border-input;
+}
+
+.q-field--outlined .q-field__control:hover:before {
+    border-color: $border-input-hover;
+}
+
+.q-field--outlined .q-field__control:after {
+    color: $border-interactive;
+}
+
 .q-panel {
     display: contents;
 }

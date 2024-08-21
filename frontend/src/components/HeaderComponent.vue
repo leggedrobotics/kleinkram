@@ -1,39 +1,6 @@
 <template>
     <q-header bordered class="bg-default text-grey-8 height-xxl q-px-lg">
         <q-toolbar class="q-pa-none height-xxl">
-            <div>
-                <q-btn
-                    flat
-                    dense
-                    round
-                    icon="sym_o_menu"
-                    v-show="$q.screen.lt.lg"
-                >
-                    <q-menu auto-close style="width: 280px">
-                        <q-list>
-                            <q-item
-                                v-for="item in main_menu"
-                                :key="item.title"
-                                clickable
-                                :to="item.to"
-                            >
-                                <q-item-section avatar>
-                                    <q-icon
-                                        :name="item.icon"
-                                        style="font-weight: bold"
-                                    />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-label
-                                        >{{ item.title }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-menu>
-                </q-btn>
-            </div>
-
             <q-toolbar-title
                 shrink
                 @click="$router.push('/')"
@@ -44,11 +11,7 @@
 
             <q-separator vertical />
 
-            <header-tabs
-                v-show="$q.screen.gt.md"
-                :main_menu="main_menu"
-                class="q-ml-lg"
-            />
+            <header-tabs :main_menu="main_menu" class="q-ml-lg" />
 
             <q-space />
             <Suspense>

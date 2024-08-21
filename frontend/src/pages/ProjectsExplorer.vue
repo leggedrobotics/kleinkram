@@ -33,6 +33,7 @@
                 <create-project-button-opener>
                     <q-btn
                         flat
+                        style="height: 100%"
                         class="bg-button-secondary text-on-color"
                         label="Create Project"
                         icon="sym_o_add"

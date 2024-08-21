@@ -118,19 +118,17 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 
 import { AccessGroup } from 'src/types/AccessGroup';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
-import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 
 const $router = useRouter();
-const $routerService = inject<RouterService>('$routerService');
 const prefilter = ref({ label: 'All', value: 'all' });
 const prefilterOptions = [
     { label: 'All', value: 'all' },

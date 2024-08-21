@@ -288,12 +288,7 @@
                             <q-item
                                 clickable
                                 v-ripple
-                                @click="
-                                    () =>
-                                        $routerService?.routeTo(ROUTES.FILE, {
-                                            uuid: props.row.uuid,
-                                        })
-                                "
+                                @click="() => onRowClick(null, props.row)"
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
@@ -322,7 +317,6 @@ import { useQuery } from '@tanstack/vue-query';
 import EditMission from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
-import RouterService from 'src/services/routerService';
 import { formatSize } from 'src/services/generalFormatting';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
@@ -336,8 +330,9 @@ import { useHandler } from 'src/hooks/customQueryHooks';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
+import { useRouter } from 'vue-router';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
 
 const $q = useQuasar();
 const tableRef: Ref<QTable | null> = ref(null);
@@ -627,8 +622,13 @@ function filterFn(val: string, update) {
 }
 
 const onRowClick = (_: Event, row: any) => {
-    $routerService?.routeTo(ROUTES.FILE, {
-        uuid: row.uuid,
+    $router.push({
+        name: ROUTES.FILE.routeName,
+        params: {
+            file_uuid: row.uuid,
+            mission_uuid: row.mission.uuid,
+            project_uuid: row.mission.project.uuid,
+        },
     });
 };
 

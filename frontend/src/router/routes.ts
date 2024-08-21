@@ -60,7 +60,7 @@ const ROUTES = {
         path: '/action/:id',
         breadcrumbs: [
             { displayName: 'All Uploads', to: '/actions' },
-            { displayName: 'action_name_placeholder', to: undefined },
+            { displayName: 'Action Details', to: undefined },
         ],
         component: () => import('pages/ActionDetailsPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
@@ -85,7 +85,7 @@ const ROUTES = {
         name: 'MissionsPage',
         breadcrumbs: [
             { displayName: 'All Projects', to: '/projects' },
-            { displayName: 'project_name_placeholder', to: undefined },
+            { displayName: ':project_name', to: undefined },
         ],
         path: '/project/:project_uuid/missions',
         component: () => import('pages/MissionsExplorer.vue'),
@@ -96,8 +96,11 @@ const ROUTES = {
         name: 'FilesPage',
         breadcrumbs: [
             { displayName: 'All Projects', to: '/projects' },
-            { displayName: 'project_name_placeholder', to: '/projects' },
-            { displayName: 'mission_name_placeholder', to: undefined },
+            {
+                displayName: ':project_name',
+                to: '/project/:project_uuid/missions',
+            },
+            { displayName: ':mission_name', to: undefined },
         ],
         path: '/project/:project_uuid/mission/:mission_uuid/files',
         component: () => import('pages/FilesExplorer.vue'),
@@ -108,9 +111,15 @@ const ROUTES = {
         name: 'FilePage',
         breadcrumbs: [
             { displayName: 'All Projects', to: '/projects' },
-            { displayName: 'project_name_placeholder', to: '/projects' },
-            { displayName: 'mission_name_placeholder', to: '/projects' },
-            { displayName: 'file_name_placeholder', to: undefined },
+            {
+                displayName: ':project_name',
+                to: '/project/:project_uuid/missions',
+            },
+            {
+                displayName: ':mission_name',
+                to: '/project/:project_uuid/mission/:mission_uuid/files',
+            },
+            { displayName: ':file_name', to: undefined },
         ],
         path: '/project/:project_uuid/mission/:mission_uuid/file/:file_uuid',
         component: () => import('pages/FileInfo.vue'),
@@ -146,7 +155,7 @@ const ROUTES = {
         breadcrumbs: [
             { displayName: 'All Access Groups', to: '/access-groups' },
             {
-                displayName: 'access_group_name_placeholder',
+                displayName: 'Group Details',
                 to: undefined,
             },
         ],

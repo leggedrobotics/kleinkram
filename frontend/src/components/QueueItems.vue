@@ -114,7 +114,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
-import { computed, inject, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
@@ -123,14 +123,14 @@ import { currentQueue } from 'src/services/queries/queue';
 import { FileEntity } from 'src/types/FileEntity';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
-import RouterService from 'src/services/routerService';
 import {
     getDetailedFileState,
     getSimpleFileStateName,
 } from '../services/generic';
 import { getColor } from 'src/services/generic';
+import { useRouter } from 'vue-router';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
 
 const tableRef: Ref<QTable | null> = ref(null);
 const now = new Date();
@@ -191,7 +191,14 @@ function rowClick(event: any, row: Queue) {
     if (isFile && isCompleted) {
         findOneByNameAndMission(row.filename, row.mission.uuid).then(
             (file: FileEntity) => {
-                $routerService?.routeTo(ROUTES.FILE, { uuid: file.uuid });
+                $router.push({
+                    name: ROUTES.FILE.routeName,
+                    params: {
+                        file_uuid: file?.uuid,
+                        mission_uuid: row?.mission?.uuid,
+                        project_uuid: row?.mission?.project?.uuid,
+                    },
+                });
             },
         );
     }
