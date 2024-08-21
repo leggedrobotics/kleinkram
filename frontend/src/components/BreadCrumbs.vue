@@ -19,7 +19,13 @@
                         />
                     </q-breadcrumbs-el>
 
-                    <q-breadcrumbs-el v-else :label="crumb.displayName" />
+                    <q-breadcrumbs-el v-else :label="crumb.displayName">
+                        <q-skeleton
+                            v-if="crumb.displayName === ''"
+                            class="q-mr-md q-mb-sm"
+                            style="width: 160px; height: 18px; margin-top: 5px"
+                        />
+                    </q-breadcrumbs-el>
                 </template>
             </q-breadcrumbs>
         </div>
