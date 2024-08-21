@@ -44,6 +44,7 @@ export class UserService {
     async me(jwt_user: JWTUser) {
         return await this.userRepository.findOneOrFail({
             where: { uuid: jwt_user.uuid },
+            relations: ['accessGroups'],
         });
     }
 

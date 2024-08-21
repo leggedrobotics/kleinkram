@@ -1,16 +1,117 @@
 <template>
-    <div class="q-pa-md">
-        <h1 class="text-h4">User Profile</h1>
-        <Suspense>
-            <vue-json-pretty :data="data" />
-        </Suspense>
-    </div>
+    <title-section title="">
+        <template #subtitle>
+            <div class="row">
+                <q-img
+                    :src="data?.avatarUrl"
+                    style="width: 100px; height: 100px; border-radius: 50%"
+                />
+                <div class="q-ml-md">
+                    <h2
+                        class="text-h3"
+                        style="margin-bottom: 5px; margin-top: 10px"
+                    >
+                        {{ data?.name }}
+                    </h2>
+                    <p class="text-subtitle2" style="color: #58585c">
+                        {{ data?.email }}
+                    </p>
+                </div>
+            </div>
+        </template>
+        <template #tabs>
+            <q-tabs
+                v-model="tab"
+                dense
+                class="text-grey"
+                align="left"
+                active-color="primary"
+            >
+                <q-tab name="Details" label="Details" style="color: #222" />
+                <q-tab name="Projects" label="Projects" style="color: #222" />
+                <q-tab
+                    name="Settings"
+                    label="Settings"
+                    :disable="true"
+                    style="color: #222"
+                />
+            </q-tabs>
+        </template>
+    </title-section>
+    <h4>{{ tab }}</h4>
+    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
+        <q-tab-panel name="Details">
+            <div class="q-table-container">
+                <table class="q-table__table">
+                    <tbody>
+                        <tr>
+                            <td class="q-table__cell">Name:</td>
+                            <td class="q-table__cell">{{ data?.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Email:</td>
+                            <td class="q-table__cell">{{ data?.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Role:</td>
+                            <td class="q-table__cell">{{ data?.role }}</td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">UUID:</td>
+                            <td class="q-table__cell">
+                                {{ data?.uuid }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Default Group:</td>
+                            <td class="q-table__cell">
+                                {{ defaultGroup?.name }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </q-tab-panel>
+        <q-tab-panel name="Projects">
+            <explorer-page-project-table :url_handler="handler" />
+        </q-tab-panel>
+    </q-tab-panels>
 </template>
 
 <script setup lang="ts">
-import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { getUser } from 'src/services/auth';
+import TitleSection from 'components/TitleSection.vue';
+import { computed, ref } from 'vue';
+import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
+import { QueryHandler } from 'src/services/QueryHandler';
 
 const data = await getUser();
+const tab = ref('Details');
+
+const defaultGroup = data?.accessGroups.find((group) => group.inheriting);
+const handler = new QueryHandler();
+handler.search_params = { 'creator.uuid': data?.uuid || '' };
 </script>
+<style>
+.q-table-container {
+    max-width: 400px; /* Adjust this value to make the table narrower or wider */
+    border: 1px solid #e0e0e0;
+}
+
+.q-table__table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.q-table__cell {
+    padding: 8px;
+    border-bottom: none; /* Remove border to match page background */
+    outline: black;
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+}
+.q-table__cell:last-child {
+    border-right: none;
+}
+</style>
