@@ -258,5 +258,3 @@ function addTag(tagtype: TagType) {
     additonalTags.value.push(tagtype);
 }
 </script>
-
-<style scoped></style>

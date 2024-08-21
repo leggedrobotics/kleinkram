@@ -44,7 +44,7 @@
             <button-group>
                 <q-input
                     debounce="300"
-                    label="Search"
+                    placeholder="Search"
                     dense
                     v-model="search"
                     outlined
@@ -55,13 +55,14 @@
                 </q-input>
 
                 <q-btn
-                    outline
+                    flat
                     dense
-                    @click="() => refresh()"
+                    padding="6px"
                     color="icon-secondary"
-                    style="padding: 6px 8px"
+                    class="button-border"
+                    icon="sym_o_refresh"
+                    @click="() => refresh()"
                 >
-                    <q-icon name="sym_o_refresh" />
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
 

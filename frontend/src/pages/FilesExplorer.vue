@@ -98,30 +98,20 @@
 
             <ButtonGroup>
                 <q-btn
-                    outline
-                    @click="() => refresh()"
-                    color="grey-8"
+                    flat
+                    dense
+                    padding="6px"
+                    color="icon-secondary"
+                    class="button-border"
                     icon="sym_o_refresh"
+                    @click="() => refresh()"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
 
-                <CreateMissionButton
-                    :project_uuid="project_uuid"
-                    v-if="handler.isListingMissions"
-                >
-                    <q-btn color="primary" label="Create Mission" />
-                </CreateMissionButton>
-                <CreateProjectButton v-if="handler.isListingProjects">
-                    <q-btn color="primary" label="Create Project" />
-                </CreateProjectButton>
-
-                <CreateFileDialogOpener
-                    v-if="handler.isListingFiles"
-                    :mission="mission"
-                >
+                <create-file-dialog-opener :mission="mission">
                     <q-btn color="primary" label="Upload File" />
-                </CreateFileDialogOpener>
+                </create-file-dialog-opener>
             </ButtonGroup>
         </div>
 
@@ -180,8 +170,6 @@ import { useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
 import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import CreateMissionButton from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
-import CreateProjectButton from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';

@@ -1,22 +1,25 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="q-pa-sm text-center"
-            style="width: 80%; min-height: 250px; max-width: 1500px"
-        >
+    <base-dialog ref="dialogRef">
+        <template #title> Access Rights</template>
+
+        <template #content>
             <AccessRights :project_uuid="props.project_uuid" />
-            <div class="q-mt-md row">
-                <div class="col-10" />
-                <div class="col-2">
-                    <q-btn label="Close" color="orange" @click="onDialogOK" />
-                </div>
-            </div>
-        </q-card>
-    </q-dialog>
+        </template>
+
+        <template #actions>
+            <q-btn
+                flat
+                label="Save Access Rights"
+                class="bg-button-primary"
+                @click="onDialogOK"
+            />
+        </template>
+    </base-dialog>
 </template>
 <script setup lang="ts">
 import AccessRights from 'components/AccessRights.vue';
 import { useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/BaseDialog.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
