@@ -15,7 +15,7 @@
                 />
             </div>
 
-            <div class="q-mx-lg justify-start flex">
+            <div class="q-mx-lg justify-start flex" v-if="$slots.tabs">
                 <div class="q-mt-sm q-pa-none">
                     <slot name="tabs"></slot>
                 </div>
@@ -23,7 +23,13 @@
 
             <q-separator />
 
-            <div style="margin: 40px 24px">
+            <div
+                style="
+                    margin: 40px 24px;
+                    max-height: calc(min(650px, 100vh - 350px));
+                    overflow-y: auto;
+                "
+            >
                 <slot name="content"></slot>
             </div>
 

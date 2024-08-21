@@ -68,14 +68,13 @@ import HeaderMenuRight from 'components/HeaderMenuRight.vue';
 const $router = useRouter();
 
 const main_menu = [
-    { title: 'Dashboard', icon: 'sym_o_dashboard', to: '' },
+    { title: 'Dashboard', icon: 'sym_o_dashboard', to: ROUTES.DASHBOARD.path },
     { title: 'Projects', icon: 'sym_o_box', to: ROUTES.PROJECTS.path },
     {
         title: 'Datatable',
         icon: 'sym_o_database',
         to: ROUTES.DATATABLE.path,
     },
-    { title: 'Upload', icon: 'sym_o_upload', to: ROUTES.UPLOAD.path },
     { title: 'Actions', icon: 'sym_o_analytics', to: ROUTES.ACTION.path },
     {
         title: 'Access Groups',

@@ -10,6 +10,13 @@ import { routeWithLayout } from 'src/router/routesUtils';
  *
  */
 const ROUTES = {
+    DASHBOARD: routeWithLayout({
+        name: 'DashboardPage',
+        path: '/dashboard',
+        component: () => import('pages/DashboardPage.vue'),
+        layout: () => import('layouts/MainLayout.vue'),
+    }),
+
     LOGIN: routeWithLayout({
         name: 'LoginPage',
         path: '/login',
@@ -27,6 +34,7 @@ const ROUTES = {
     DATATABLE: routeWithLayout({
         name: 'DataTablePage',
         path: '/datatable',
+        breadcrumbs: [{ displayName: 'All Data', to: undefined }],
         component: () => import('pages/DataTablePage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
@@ -34,13 +42,15 @@ const ROUTES = {
     UPLOAD: routeWithLayout({
         name: 'UploadPage',
         path: '/upload',
+        breadcrumbs: [{ displayName: 'All Uploads', to: undefined }],
         component: () => import('pages/UploadPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 
     ACTION: routeWithLayout({
         name: 'ActionPage',
-        path: '/action',
+        path: '/actions',
+        breadcrumbs: [{ displayName: 'All Actions', to: undefined }],
         component: () => import('pages/ActionPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
@@ -48,6 +58,10 @@ const ROUTES = {
     ANALYSIS_DETAILS: routeWithLayout({
         name: 'AnalysisDetailsPage',
         path: '/action/:id',
+        breadcrumbs: [
+            { displayName: 'All Uploads', to: '/actions' },
+            { displayName: 'action_name_placeholder', to: undefined },
+        ],
         component: () => import('pages/ActionDetailsPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),

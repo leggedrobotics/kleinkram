@@ -81,6 +81,19 @@ textarea {
     gap: 32px;
 }
 
+.q-panel {
+    display: contents;
+}
+
+.q-tab-panel {
+    padding: 0;
+}
+
+.q-header .q-tab__label {
+    font-weight: $button-font-weight;
+    font-size: $bar-inner-font-size;
+}
+
 label {
     color: $text-secondary;
     font-size: 12px;
@@ -107,6 +120,7 @@ label {
 
 .q-table thead {
     background-color: $layer-hover-01 !important;
+    color: $text-secondary;
 }
 
 .q-table__bottom {
