@@ -27,7 +27,7 @@ jobs:
                   docker compose -f ../docker-compose.testing.yml up -d
                   SECONDS=0
                   TIMEOUT=60
-                  while [ ! -f ./__generated__endpoints.json ]; do
+                  while [ ! -f ./.endpoints/__generated__endpoints.json ]; do
                       if [ $SECONDS -ge $TIMEOUT ]; then
                           echo "Timeout reached: __generated__endpoints.json not found"
                           exit 1

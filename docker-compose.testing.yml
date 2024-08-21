@@ -15,7 +15,7 @@ services:
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         volumes:
-            - ./backend/__generated__endpoints.json:/usr/src/app/backend/__generated__endpoints.json
+            - ./backend/.endpoints:/usr/src/app/backend/.endpoints
         environment:
             SEED: 'false'
             DEVBUILD: 'false'
