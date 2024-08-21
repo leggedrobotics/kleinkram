@@ -4,7 +4,7 @@
     <q-drawer
         side="right"
         v-model="createAction"
-        :width="450"
+        :width="496"
         style="bottom: 0 !important"
         :breakpoint="1000"
         bordered
@@ -23,8 +23,8 @@
 
         <q-separator />
 
-        <div class="q-pa-md">
-            <span class="text-caption">
+        <div class="q-pa-lg">
+            <span class="help-text">
                 Actions are used to verify mission data or to generate derived
                 files.
             </span>
@@ -32,103 +32,151 @@
             <!-- Select a project and mission, on which the anylsis will be performed -->
             <q-form
                 @submit.prevent="submitAnalysis"
-                class="flex column q-mt-lg"
+                class="flex column"
+                style="margin-top: 24px"
             >
-                <span class="text-bold">Basic Information</span>
+                <span class="text-h5">Basic Information</span>
+                <div class="flex column" style="gap: 12px; margin-top: 16px">
+                    <div>
+                        <label for="action_name">Action Name</label>
+                        <q-input
+                            v-model="action_name"
+                            name="action_name"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Action Name"
+                        />
+                    </div>
 
-                <q-input
-                    v-model="action_name"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    clearable
-                    label="Action Name"
-                />
+                    <div>
+                        <label for="project">Project</label>
+                        <q-select
+                            name="project"
+                            :model-value="selected_project?.name"
+                            placeholder="Project"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            readonly
+                        />
+                    </div>
+                    <div>
+                        <label for="mission">Mission</label>
+                        <q-select
+                            :model-value="selected_mission?.name"
+                            placeholder="Mission"
+                            name="mission"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            readonly
+                        />
+                    </div>
+                </div>
+                <span class="text-h5" style="margin-top: 32px"
+                    >Define the Action</span
+                >
+                <div class="flex column" style="gap: 12px; margin-top: 16px">
+                    <div>
+                        <label for="action_name">Define the Action</label>
+                        <q-input
+                            name="action_name"
+                            v-model="image_name"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Docker Image"
+                        />
+                    </div>
 
-                <q-select
-                    :model-value="selected_project?.name"
-                    label="Project"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    readonly
-                />
+                    <div>
+                        <label for="action_trigger">Define the Action</label>
 
-                <q-select
-                    :model-value="selected_mission?.name"
-                    label="Mission"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    readonly
-                />
+                        <q-input
+                            name="action_trigger"
+                            model-value="Manually Triggered"
+                            outlined
+                            readonly
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Action Trigger"
+                        />
+                    </div>
 
-                <span class="text-bold q-mt-md">Define the Action</span>
-                <q-input
-                    v-model="image_name"
-                    outlined
-                    dense
-                    class="q-mb-sm"
-                    clearable
-                    label="Docker Image"
-                />
+                    <div>
+                        <label for="action_command">Command</label>
+                        <q-input
+                            name="action_command"
+                            model-value="Default Entrypoint"
+                            outlined
+                            readonly
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Command"
+                        />
+                    </div>
+                </div>
 
-                <q-input
-                    model-value="manually triggered"
-                    outlined
-                    readonly
-                    dense
-                    class="q-mb-sm"
-                    clearable
-                    label="Action Trigger"
-                />
+                <span class="text-h5" style="margin-top: 32px">
+                    Compute Resources
+                </span>
+                <div
+                    class="flex column q-mb-lg"
+                    style="gap: 12px; margin-top: 16px"
+                >
+                    <div>
+                        <label for="memory">Memory Allocation</label>
+                        <q-select
+                            name="memory"
+                            model-value="2GB RAM"
+                            :options="[]"
+                            placholder="Memory Allocation"
+                            outlined
+                            class="q-mb-sm"
+                            readonly
+                            dense
+                        />
+                    </div>
+                    <div>
+                        <label for="cpu">CPU Core Allocation</label>
+                        <q-select
+                            name="cpu"
+                            model-value="2 Cores"
+                            :options="[]"
+                            label="CPU Core Allocation"
+                            outlined
+                            class="q-mb-sm"
+                            readonly
+                            dense
+                        />
+                    </div>
+                    <div>
+                        <label for="gpu">GPU Acceleration</label>
+                        <q-select
+                            name="gpu"
+                            v-model="gpu_model"
+                            :options="options"
+                            label="GPU Acceleration"
+                            class="q-mb-sm"
+                            outlined
+                            dense
+                        />
+                    </div>
+                </div>
 
-                <q-input
-                    model-value="default entrypoint.sh"
-                    outlined
-                    readonly
-                    dense
-                    class="q-mb-sm"
-                    clearable
-                    label="Command"
-                />
+                <q-separator />
 
-                <span class="text-bold q-mt-md">Compute Resources</span>
-
-                <q-select
-                    model-value="2GB RAM"
-                    :options="[]"
-                    label="Memory Allocation"
-                    outlined
-                    class="q-mb-sm"
-                    readonly
-                    dense
-                />
-
-                <q-select
-                    model-value="2 Cores"
-                    :options="[]"
-                    label="CPU Core Allocation"
-                    outlined
-                    class="q-mb-sm"
-                    readonly
-                    dense
-                />
-
-                <q-select
-                    v-model="gpu_model"
-                    :options="options"
-                    label="GPU Acceleration"
-                    class="q-mb-sm"
-                    outlined
-                    dense
-                />
-
-                <div class="flex justify-end q-mt-md">
+                <div class="flex row justify-end q-mt-lg">
                     <q-btn
-                        label="Submit Action"
-                        color="primary"
+                        flat
                         @click="submitAnalysis"
+                        class="bg-button-secondary text-on-color"
+                        label="Submit Action"
                     />
                 </div>
             </q-form>
