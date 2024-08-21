@@ -143,14 +143,14 @@ $text-placeholder: #A8A8A8 !default
 $text-on-color: #FFFFFF !default
 
 .text-on-color
-    color: $text-on-color !important
+  color: $text-on-color !important
 
 $text-on-color-disabled: #8D8D8D !default
 $text-helper: #6F6F6F !default
 $text-error: #DA1E28 !default
 
 .text-error
-    color: $text-error !important
+  color: $text-error !important
 
 $text-disabled: #16161640 !default
 
@@ -171,7 +171,7 @@ $icon-primary: #161616 !default
 $icon-secondary: #525252 !default
 
 .text-icon-secondary
-    color: $icon-secondary !important
+  color: $icon-secondary !important
 
 $icon-on-color: #FFFFFF !default
 $icon-on-color-disabled: #8D8D8D !default
@@ -187,6 +187,10 @@ $support-caution-minor: #F1C21B !default
 $support-undefined: #8A3FFC !default
 
 $button-primary: #0F62FE !default
+
+.bg-button-primary
+  color: $text-on-color
+  background-color: $button-primary
 
 $button-primary-hover: #0353E9 !default
 $button-primary-active: #002D9C !default
@@ -210,6 +214,14 @@ $button-danger-hover: #BA1B23 !default
 $button-danger-active: #750E13 !default
 $button-separator: #E0E0E0 !default
 $button-disabled: #C6C6C6 !default
+
+.bg-button-primary:disabled
+  color: $text-on-color
+  background-color: $button-disabled
+
+.button-border
+  border-radius: 4px
+  border: 1px solid $button-separator
 
 $tag-background-gray: #E0E0E0 !default
 $tag-color-gray: #161616 !default
@@ -236,7 +248,7 @@ $grey-7: #616161 !default
 $dimmed-background: rgba(0, 0, 0, .4) !default
 $light-dimmed-background: rgba(255, 255, 255, .6) !default
 
-$separator-color: rgba(0, 0, 0, .12) !default
+$separator-color: $border-subtle-00 !default
 $separator-dark-color: rgba(255, 255, 255, .28) !default
 
 $ios-statusbar-height: 20px !default

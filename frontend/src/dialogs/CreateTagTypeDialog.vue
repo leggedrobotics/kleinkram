@@ -1,23 +1,25 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="q-pa-sm text-center"
-            style="width: 80%; min-height: 250px; max-width: 1500px"
-        >
-            <create-tag-type />
-            <div class="q-mt-md row">
-                <div class="col-10" />
-                <div class="col-2">
-                    <q-btn label="OK" color="primary" @click="onDialogCancel" />
-                </div>
-            </div>
-        </q-card>
-    </q-dialog>
-</template>
+    <base-dialog ref="dialogRef">
+        <template #title> Create Tag Type</template>
 
+        <template #content>
+            <create-tag-type />
+        </template>
+
+        <template #actions>
+            <q-btn
+                flat
+                label="Create Tag Type"
+                class="bg-button-primary"
+                @click="onDialogOK"
+            />
+        </template>
+    </base-dialog>
+</template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import CreateTagType from 'components/CreateTagType.vue';
+import BaseDialog from 'src/dialogs/BaseDialog.vue';
 
-const { dialogRef, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 </script>

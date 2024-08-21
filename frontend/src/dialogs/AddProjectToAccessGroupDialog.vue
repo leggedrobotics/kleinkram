@@ -1,16 +1,27 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="q-pa-sm text-center"
-            style="width: 80%; min-height: 150px; max-width: 1200px"
-        >
+    <base-dialog ref="dialogRef">
+        <template #title> Add Project to Access Group</template>
+
+        <template #content>
             <AddProjectToAccessGroupDialog :access_group="props.access_group" />
-        </q-card>
-    </q-dialog>
+        </template>
+
+        <template #actions>
+            <q-btn
+                flat
+                label="Add Project"
+                class="bg-button-primary"
+                @click="onDialogOK"
+            />
+        </template>
+    </base-dialog>
+    >
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import AddProjectToAccessGroupDialog from 'src/components/AddProjectToAccessGroup.vue';
+import BaseDialog from 'src/dialogs/BaseDialog.vue';
+
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{

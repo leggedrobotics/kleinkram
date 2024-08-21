@@ -84,6 +84,16 @@
 
             <div style="margin: auto 10px auto 30px">
                 <q-btn
+                    round
+                    flat
+                    color="grey-8"
+                    :to="ROUTES.UPLOAD.path"
+                    icon="sym_o_export_notes"
+                >
+                    <q-tooltip>Processing Uploads</q-tooltip>
+                </q-btn>
+
+                <q-btn
                     href="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
                     round
                     flat

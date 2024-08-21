@@ -1,135 +1,114 @@
 <template>
-    <q-card>
-        <q-card-section>
-            <div class="row">
-                <div class="col-6 q-pa-md">
-                    <q-input
-                        filled
-                        v-model="startDate"
-                        hint="File Processing since: "
-                    >
-                        <template v-slot:prepend>
-                            <q-icon name="sym_o_event" class="cursor-pointer">
-                                <q-popup-proxy
-                                    cover
-                                    transition-show="scale"
-                                    transition-hide="scale"
-                                >
-                                    <q-date
-                                        v-model="startDate"
-                                        :mask="dateMask"
-                                    >
-                                        <div
-                                            class="row items-center justify-end"
-                                        >
-                                            <q-btn
-                                                v-close-popup
-                                                label="Close"
-                                                color="primary"
-                                                flat
-                                            />
-                                        </div>
-                                    </q-date>
-                                </q-popup-proxy>
-                            </q-icon>
-                        </template>
-
-                        <template v-slot:append>
-                            <q-icon
-                                name="sym_o_access_time"
-                                class="cursor-pointer"
-                            >
-                                <q-popup-proxy
-                                    cover
-                                    transition-show="scale"
-                                    transition-hide="scale"
-                                >
-                                    <q-time
-                                        v-model="startDate"
-                                        :mask="dateMask"
-                                        format24h
-                                    >
-                                        <div
-                                            class="row items-center justify-end"
-                                        >
-                                            <q-btn
-                                                v-close-popup
-                                                label="Close"
-                                                color="primary"
-                                                flat
-                                            />
-                                        </div>
-                                    </q-time>
-                                </q-popup-proxy>
-                            </q-icon>
-                        </template>
-                    </q-input>
-                </div>
-                <div class="col-6 q-pa-md">
-                    <q-select
-                        v-model="fileStateFilter"
-                        multiple
-                        clearable
-                        :options="FileStateOptions"
-                        label="Select filter"
-                    >
-                        <template v-slot:selected-item="scope">
-                            <q-chip
-                                removable
-                                @remove="removeItem(scope.opt)"
-                                :tabindex="scope.tabindex"
-                                dense
-                                :color="
-                                    getColor(FileState[scope.opt] as FileState)
-                                "
-                            >
-                                {{ scope.opt }}
-                            </q-chip>
-                        </template>
-                        <template v-slot:no-option>
-                            <q-item>
-                                <q-item-section class="text-grey">
-                                    No results
-                                </q-item-section>
-                            </q-item>
-                        </template>
-                        <template v-slot:append>
-                            <q-icon
-                                class="cursor-pointer"
-                                @click.stop="clearSelection"
-                            />
-                        </template>
-                    </q-select>
-                </div>
-            </div>
-        </q-card-section>
-        <q-card-section>
-            <q-table
-                ref="tableRef"
-                v-model:pagination="pagination"
-                title="File Processing Queue"
-                :rows="queueEntries || []"
-                :columns="columns"
-                row-key="uuid"
-                flat
-                bordered
-                :loading="isLoading"
-                binary-state-sort
-                @rowClick="rowClick"
-            >
-                <template v-slot:body-cell-Status="props">
-                    <q-td :props="props">
-                        <q-badge :color="getColor(props.row.state)">
-                            <q-tooltip>
-                                {{ getDetailedFileState(props.row.state) }}
-                            </q-tooltip>
-                            {{ getSimpleFileStateName(props.row.state) }}
-                        </q-badge>
-                    </q-td>
+    <div class="row">
+        <div class="col-6 q-pa-md">
+            <q-input filled v-model="startDate" hint="File Processing since: ">
+                <template v-slot:prepend>
+                    <q-icon name="sym_o_event" class="cursor-pointer">
+                        <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
+                        >
+                            <q-date v-model="startDate" :mask="dateMask">
+                                <div class="row items-center justify-end">
+                                    <q-btn
+                                        v-close-popup
+                                        label="Close"
+                                        color="primary"
+                                        flat
+                                    />
+                                </div>
+                            </q-date>
+                        </q-popup-proxy>
+                    </q-icon>
                 </template>
-            </q-table>
-        </q-card-section>
-    </q-card>
+
+                <template v-slot:append>
+                    <q-icon name="sym_o_access_time" class="cursor-pointer">
+                        <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
+                        >
+                            <q-time
+                                v-model="startDate"
+                                :mask="dateMask"
+                                format24h
+                            >
+                                <div class="row items-center justify-end">
+                                    <q-btn
+                                        v-close-popup
+                                        label="Close"
+                                        color="primary"
+                                        flat
+                                    />
+                                </div>
+                            </q-time>
+                        </q-popup-proxy>
+                    </q-icon>
+                </template>
+            </q-input>
+        </div>
+        <div class="col-6 q-pa-md">
+            <q-select
+                v-model="fileStateFilter"
+                multiple
+                clearable
+                :options="FileStateOptions"
+                label="Select filter"
+            >
+                <template v-slot:selected-item="scope">
+                    <q-chip
+                        removable
+                        @remove="removeItem(scope.opt)"
+                        :tabindex="scope.tabindex"
+                        dense
+                        :color="getColor(FileState[scope.opt] as FileState)"
+                    >
+                        {{ scope.opt }}
+                    </q-chip>
+                </template>
+                <template v-slot:no-option>
+                    <q-item>
+                        <q-item-section class="text-grey">
+                            No results
+                        </q-item-section>
+                    </q-item>
+                </template>
+                <template v-slot:append>
+                    <q-icon
+                        class="cursor-pointer"
+                        @click.stop="clearSelection"
+                    />
+                </template>
+            </q-select>
+        </div>
+    </div>
+
+    <q-table
+        ref="tableRef"
+        v-model:pagination="pagination"
+        title="File Processing Queue"
+        :rows="queueEntries || []"
+        :columns="columns"
+        row-key="uuid"
+        flat
+        bordered
+        :loading="isLoading"
+        binary-state-sort
+        @rowClick="rowClick"
+    >
+        <template v-slot:body-cell-Status="props">
+            <q-td :props="props">
+                <q-badge :color="getColor(props.row.state)">
+                    <q-tooltip>
+                        {{ getDetailedFileState(props.row.state) }}
+                    </q-tooltip>
+                    {{ getSimpleFileStateName(props.row.state) }}
+                </q-badge>
+            </q-td>
+        </template>
+    </q-table>
 </template>
 
 <script setup lang="ts">
@@ -180,6 +159,7 @@ const removeItem = (value: string) => {
         (item) => item !== value,
     );
 };
+
 function clearSelection() {
     fileStateFilter.value = fileStateFilter.value.slice(0, 0);
 }

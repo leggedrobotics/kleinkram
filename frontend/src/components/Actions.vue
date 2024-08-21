@@ -9,7 +9,11 @@
             row-key="uuid"
             :loading="loading"
             @row-click="
-                (_, row) => router.push(ROUTES.ACTION.path + '/' + row.uuid)
+                (_, row) =>
+                    router.push({
+                        name: ROUTES.ANALYSIS_DETAILS.routeName,
+                        params: { id: row.uuid },
+                    })
             "
             flat
             bordered

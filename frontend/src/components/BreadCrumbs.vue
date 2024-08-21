@@ -1,12 +1,7 @@
 <template>
     <div
         class="bg-default text-grey-8"
-        style="
-            margin: 0 -24px;
-            border-bottom: 1px solid #e0e0e0;
-            position: sticky;
-            top: 64px;
-        "
+        style="margin: 0 -24px; position: sticky; top: 64px; z-index: 999"
     >
         <div class="height-xl flex column justify-center q-px-lg">
             <q-breadcrumbs gutter="md">
@@ -31,12 +26,13 @@
                 </template>
             </q-breadcrumbs>
         </div>
+        <q-separator v-if="crumbs?.length >= 1" />
     </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import { PageBreadCrumb } from 'src/router/routes';
 import { useCrumbs } from 'src/hooks/crumbs';
+import { PageBreadCrumb } from 'src/router/routesUtils';
 
 const isLoading = ref(false);
 const crumbs = useCrumbs();

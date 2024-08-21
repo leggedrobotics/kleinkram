@@ -2,13 +2,18 @@ import { boot } from 'quasar/wrappers';
 import { Router } from 'vue-router';
 import { isAuthenticated } from 'src/services/auth';
 import ROUTES, { PUBLIC_ROUTES } from 'src/router/routes';
-import { useQuery } from '@tanstack/vue-query';
-import { getMe } from 'src/services/queries/user';
 
 let routerInstance: Router;
 
 export default boot(({ router }) => {
     routerInstance = router;
+
+    routerInstance.afterEach(async (to, from) => {
+        const auth = await isAuthenticated();
+        if (auth && to.path === ROUTES.HOME.path) {
+            return routerInstance.push(ROUTES.DASHBOARD.path);
+        }
+    });
 
     routerInstance.beforeEach(async (to, from) => {
         // check if it's a public route
@@ -27,7 +32,7 @@ export default boot(({ router }) => {
             return ROUTES.LOGIN.path;
         }
         if (auth && to.path === ROUTES.LOGIN.path) {
-            return ROUTES.HOME.path;
+            return ROUTES.DASHBOARD.path;
         }
     });
 });

@@ -1,7 +1,5 @@
 <template>
-    <h1 class="text-h4 q-mt-xl" style="font-weight: 500">
-        Verify Mission Data using Actions
-    </h1>
+    <title-section title="Mission Analysis"></title-section>
 
     <q-drawer
         side="right"
@@ -202,6 +200,7 @@ import { missionsOfProject } from 'src/services/queries/mission';
 import { createAnalysis } from 'src/services/mutations/action';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import { useHandler } from 'src/hooks/customQueryHooks';
+import TitleSection from 'components/TitleSection.vue';
 
 const action_name = ref('');
 const image_name = ref('rslethz/action:latest');
