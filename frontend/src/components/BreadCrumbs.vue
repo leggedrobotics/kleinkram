@@ -52,7 +52,7 @@ const { data: project } = useQuery({
     queryFn: async () => {
         return getProject(project_uuid.value);
     },
-    enabled: !!project_uuid,
+    enabled: !!project_uuid.value,
 });
 
 const { data: mission } = useQuery({
@@ -60,7 +60,7 @@ const { data: mission } = useQuery({
     queryFn: async () => {
         return getMission(mission_uuid.value);
     },
-    enabled: !!mission_uuid,
+    enabled: !!mission_uuid.value,
 });
 
 const { data: file } = useQuery({
@@ -68,7 +68,7 @@ const { data: file } = useQuery({
     queryFn: async () => {
         return fetchFile(file_uuid.value);
     },
-    enabled: !!file_uuid,
+    enabled: !!file_uuid.value,
 });
 
 const resolved_crumbs = computed(() =>
