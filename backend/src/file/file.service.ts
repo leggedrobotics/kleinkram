@@ -3,13 +3,19 @@ import {
     ConflictException,
     Injectable,
 } from '@nestjs/common';
+import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { deleteFileMinio, externalMinio, moveFile } from '../minioHelper';
+import {
+    deleteFileMinio,
+    externalMinio,
+    internalMinio,
+    moveFile,
+} from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileType, UserRole } from '@common/enum';
@@ -18,6 +24,7 @@ import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
+import axios from 'axios';
 
 @Injectable()
 export class FileService {
@@ -516,4 +523,80 @@ export class FileService {
         await deleteFileMinio(bucket, location);
         return this.fileRepository.remove(file);
     }
+
+    async getStorage() {
+        const expiredAt = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+
+        const payload = {
+            exp: expiredAt,
+            sub: env.MINIO_ACCESS_KEY,
+            iss: 'prometheus',
+        };
+
+        const token = jwt.sign(payload, env.MINIO_SECRET_KEY, {
+            algorithm: 'HS512',
+        });
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+
+        return axios
+            .get('http://minio:9000/minio/metrics/v3/system/drive', {
+                headers,
+            })
+            .then((response) => {
+                const metrics = parseMinioMetrics(response.data);
+                return {
+                    usedBytes:
+                        metrics['minio_system_drive_used_bytes'][0].value,
+                    totalBytes:
+                        metrics['minio_system_drive_total_bytes'][0].value,
+                    usedInodes:
+                        metrics['minio_system_drive_used_inodes'][0].value,
+                    totalInodes:
+                        metrics['minio_system_drive_total_inodes'][0].value,
+                };
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+}
+
+function parseMinioMetrics(metricsText) {
+    const lines = metricsText.split('\n').filter((line) => line.trim() !== '');
+
+    const result = {};
+
+    lines.forEach((line) => {
+        // Skip comments
+        if (line.startsWith('#')) {
+            return;
+        }
+
+        // Match metric lines
+        const match = line.match(/^(\w+)\{(.+)\}\s+(.+)$/);
+        if (match) {
+            const [, metricName, labelsText, value] = match;
+
+            // Parse labels
+            const labels = {};
+            labelsText.split(',').forEach((labelPair) => {
+                const [key, val] = labelPair.split('=');
+                labels[key] = val.replace(/\"/g, ''); // Remove quotes
+            });
+
+            // Add to the result object
+            if (!result[metricName]) {
+                result[metricName] = [];
+            }
+            result[metricName].push({
+                labels,
+                value: parseFloat(value),
+            });
+        }
+    });
+
+    return result;
 }

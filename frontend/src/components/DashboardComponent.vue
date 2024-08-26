@@ -33,6 +33,7 @@
                 <q-skeleton type="QBtn" />
             </q-card-actions>
         </q-card>
+        <Storage />
     </div>
 </template>
 
@@ -40,6 +41,7 @@
 import TitleSection from 'components/TitleSection.vue';
 import { useQuery } from '@tanstack/vue-query';
 import { getUser, isAuthenticated } from 'src/services/auth';
+import Storage from 'components/Storage.vue';
 
 const is_authenticated = await isAuthenticated();
 

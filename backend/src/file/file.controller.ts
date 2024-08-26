@@ -11,14 +11,13 @@ import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
-    AdminOnly,
     CanDeleteFile,
-    CanDeleteProject,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
     LoggedIn,
+    Public,
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
@@ -176,5 +175,11 @@ export class FileController {
     @CanDeleteFile()
     async deleteFile(@BodyUUID('uuid') uuid: string) {
         return this.fileService.deleteFile(uuid);
+    }
+
+    @Get('storage')
+    @LoggedIn()
+    async getStorage() {
+        return this.fileService.getStorage();
     }
 }
