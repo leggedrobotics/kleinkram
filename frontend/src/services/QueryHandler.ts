@@ -18,7 +18,7 @@ export class QueryHandler {
     descending: boolean;
     mission_uuid?: string;
     project_uuid?: string;
-    search_params: typeof DEFAULT_SEARCH;
+    search_params: Record<string, string>;
     file_type?: FileType;
     rowsNumber: number;
 
@@ -29,7 +29,7 @@ export class QueryHandler {
         descending: boolean = DEFAULT_SORT.descending,
         project_uuid?: string,
         mission_uuid?: string,
-        search_params?: typeof DEFAULT_SEARCH,
+        search_params?: Record<string, string>,
         file_type?: FileType,
     ) {
         this.page = page;
@@ -91,8 +91,12 @@ export class QueryHandler {
         this.resetPagination();
     }
 
-    setSearch(search_params: { name: string }) {
-        if (this.search_params.name !== search_params.name) {
+    setSearch(search_params: Record<string, string>) {
+        const paramsChanged = Object.keys(search_params).some(
+            (key) => this.search_params[key] !== search_params[key],
+        );
+
+        if (paramsChanged) {
             this.search_params = search_params;
             this.resetPagination();
         }
@@ -225,7 +229,7 @@ export class QueryURLHandler extends QueryHandler {
         this.writeURL();
     }
 
-    setSearch(search_params: typeof DEFAULT_SEARCH) {
+    setSearch(search_params: Record<string, string>) {
         super.setSearch(search_params);
         this.writeURL();
     }
@@ -249,7 +253,6 @@ export class QueryURLHandler extends QueryHandler {
             this.take = parseInt(route.query.rowsPerPage as string);
         else this.take = DEFAULT_PAGINATION.rowsPerPage;
         if (route.query.sortBy) this.sortBy = route.query.sortBy as string;
-        else this.sortBy = this.default_sort;
         if (route.query.descending)
             this.descending = route.query.descending === 'true';
         else this.descending = DEFAULT_SORT.descending;

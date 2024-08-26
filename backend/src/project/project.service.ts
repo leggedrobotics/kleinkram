@@ -75,7 +75,10 @@ export class ProjectService {
         }
 
         // add sorting
-        if (sortBy) {
+        if (
+            sortBy &&
+            ['name', 'createdAt', 'updatedAt', 'creator'].includes(sortBy) // SQL Sanitization
+        ) {
             console.log('Sorting by ' + sortBy + ' descending: ' + descending);
             baseQuery = baseQuery.orderBy(
                 `project.${sortBy}`,
@@ -84,11 +87,23 @@ export class ProjectService {
         }
 
         if (!!searchParams) {
-            console.log('Searching for: ' + searchParams['name']);
-            Object.keys(searchParams).forEach((key) => {
-                baseQuery = baseQuery.where(`project.${key} ILIKE :${key}`, {
-                    [key]: `%${searchParams[key]}%`,
-                });
+            console.log('Searching for: ' + searchParams);
+            Object.keys(searchParams).forEach((key, index) => {
+                if (!['name', 'creator.uuid'].includes(key)) {
+                    return;
+                }
+                if (key.toLowerCase().includes('uuid')) {
+                    baseQuery = baseQuery.where(`project.${key} = :${index}`, {
+                        [index]: searchParams[key],
+                    });
+                } else {
+                    baseQuery = baseQuery.where(
+                        `project.${key} ILIKE :${index}`,
+                        {
+                            [index]: searchParams[key],
+                        },
+                    );
+                }
             });
         }
 

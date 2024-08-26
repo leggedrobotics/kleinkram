@@ -1,6 +1,7 @@
 import ROLE from 'src/enums/USER_ROLES';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Project } from 'src/types/Project';
+import { AccessGroup } from 'src/types/AccessGroup';
 
 export class User extends BaseEntity {
     name: string;
@@ -8,6 +9,7 @@ export class User extends BaseEntity {
     avatarUrl: string;
     role: ROLE;
     projects: Project[];
+    accessGroups: AccessGroup[];
 
     constructor(
         uuid: string,
@@ -16,6 +18,7 @@ export class User extends BaseEntity {
         role: ROLE,
         avatarUrl: string,
         projects: Project[],
+        accessGroups: AccessGroup[],
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -25,6 +28,7 @@ export class User extends BaseEntity {
         this.email = email;
         this.role = role;
         this.projects = projects;
+        this.accessGroups = accessGroups;
         this.avatarUrl = avatarUrl;
     }
 }
