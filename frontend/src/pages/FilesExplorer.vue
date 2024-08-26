@@ -51,7 +51,7 @@
                         label="Actions"
                         @click="
                             $router.push({
-                                path: ROUTES.ACTION.routeName,
+                                name: ROUTES.ACTION.routeName,
                                 query: {
                                     project_uuid: project_uuid,
                                     mission_uuid: mission_uuid,
