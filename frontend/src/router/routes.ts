@@ -59,7 +59,7 @@ const ROUTES = {
         name: 'AnalysisDetailsPage',
         path: '/action/:id',
         breadcrumbs: [
-            { displayName: 'All Uploads', to: '/actions' },
+            { displayName: 'All Actions', to: '/actions' },
             { displayName: 'Action Details', to: undefined },
         ],
         component: () => import('pages/ActionDetailsPage.vue'),
