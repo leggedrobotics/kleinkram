@@ -2,13 +2,13 @@
     <title-section :title="accessGroup?.name" />
     <q-tabs v-model="tab" align="left">
         <q-tab name="members" label="Members" :disable="personal">
-            <q-tooltip>
+            <q-tooltip v-if="personal">
                 Personal Access groups have only the trivial member
             </q-tooltip>
         </q-tab>
         <q-tab name="projects" label="Projects"></q-tab>
     </q-tabs>
-    <q-tab-panels v-model="tab" animated>
+    <q-tab-panels v-model="tab">
         <q-tab-panel name="projects">
             <div
                 class="row flex justify-end"

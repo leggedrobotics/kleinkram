@@ -61,6 +61,7 @@
                             icon="sym_o_add"
                             style="width: 45%"
                             class="full-height"
+                            @click="() => createAccessGroupDialog()"
                         />
                     </div>
                 </div>
@@ -116,7 +117,7 @@
     </q-page>
 </template>
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
@@ -127,7 +128,12 @@ import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
+import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
+import { Notify, useQuasar } from 'quasar';
+import { createAccessGroup } from 'src/services/mutations/access';
+const $q = useQuasar();
 
+const queryClient = useQueryClient();
 const $router = useRouter();
 const prefilter = ref({ label: 'All', value: 'all' });
 const prefilterOptions = [
@@ -204,10 +210,35 @@ const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value[0] : [],
 );
 
+const { mutate: _createAccessGroup } = useMutation({
+    mutationFn: (name: string) => createAccessGroup(name),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'accessGroups';
+            },
+        });
+        Notify.create({
+            message: 'Access Group Created',
+            color: 'positive',
+            position: 'top-right',
+            timeout: 2000,
+        });
+    },
+});
+
 async function rowClick(event: any, row: AccessGroup) {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,
         params: { uuid: row.uuid },
+    });
+}
+
+async function createAccessGroupDialog() {
+    $q.dialog({
+        component: CreateAccessGroupDialog,
+    }).onOk((name: string) => {
+        _createAccessGroup(name);
     });
 }
 
