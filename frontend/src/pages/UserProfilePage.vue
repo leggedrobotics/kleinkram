@@ -1,9 +1,7 @@
 <template>
-    <q-page class="flex">
-        <Suspense>
-            <UserProfileDetails />
-        </Suspense>
-    </q-page>
+    <Suspense>
+        <UserProfileDetails />
+    </Suspense>
 </template>
 
 <script setup lang="ts">
