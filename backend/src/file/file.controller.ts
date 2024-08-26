@@ -178,7 +178,7 @@ export class FileController {
     }
 
     @Get('storage')
-    @Public()
+    @LoggedIn()
     async getStorage() {
         return this.fileService.getStorage();
     }
