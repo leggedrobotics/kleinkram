@@ -41,15 +41,15 @@ const { data: storage } = useQuery<StorageResponse>({
     queryFn: () => getStorage(),
     queryKey: ['storage'],
 });
-// const bytePercentage = computed(() => {
-//     if (storage.value) {
-//         return Math.round(
-//             (storage.value.usedBytes / storage.value.totalBytes) * 100,
-//         );
-//     }
-//     return 0;
-// });
-const bytePercentage = ref(30);
+const bytePercentage = computed(() => {
+    if (storage.value) {
+        return Math.round(
+            (storage.value.usedBytes / storage.value.totalBytes) * 100,
+        );
+    }
+    return 0;
+});
+// const bytePercentage = ref(30);
 const inodePercentage = computed(() => {
     if (storage.value) {
         return Math.round(
@@ -76,7 +76,7 @@ const option = computed(() => {
         },
         radiusAxis: {
             type: 'category',
-            data: ['data', 'inodes'],
+            data: ['Data', 'Inodes'],
         },
         tooltip: {
             trigger: 'item',
