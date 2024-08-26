@@ -541,15 +541,62 @@ export class FileService {
             Authorization: `Bearer ${token}`,
         };
 
-        axios
+        return axios
             .get('http://minio:9000/minio/metrics/v3/system/drive', {
                 headers,
             })
             .then((response) => {
-                console.log(response.data);
+                const metrics = parseMinioMetrics(response.data);
+                return {
+                    usedBytes:
+                        metrics['minio_system_drive_used_bytes'][0].value,
+                    totalBytes:
+                        metrics['minio_system_drive_total_bytes'][0].value,
+                    usedInodes:
+                        metrics['minio_system_drive_used_inodes'][0].value,
+                    totalInodes:
+                        metrics['minio_system_drive_total_inodes'][0].value,
+                };
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
     }
+}
+
+function parseMinioMetrics(metricsText) {
+    const lines = metricsText.split('\n').filter((line) => line.trim() !== '');
+
+    const result = {};
+
+    lines.forEach((line) => {
+        // Skip comments
+        if (line.startsWith('#')) {
+            return;
+        }
+
+        // Match metric lines
+        const match = line.match(/^(\w+)\{(.+)\}\s+(.+)$/);
+        if (match) {
+            const [, metricName, labelsText, value] = match;
+
+            // Parse labels
+            const labels = {};
+            labelsText.split(',').forEach((labelPair) => {
+                const [key, val] = labelPair.split('=');
+                labels[key] = val.replace(/\"/g, ''); // Remove quotes
+            });
+
+            // Add to the result object
+            if (!result[metricName]) {
+                result[metricName] = [];
+            }
+            result[metricName].push({
+                labels,
+                value: parseFloat(value),
+            });
+        }
+    });
+
+    return result;
 }

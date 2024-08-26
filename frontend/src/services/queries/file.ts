@@ -336,3 +336,8 @@ export const findOneByNameAndMission = async (
         new Date(file.deletedAt),
     );
 };
+
+export const getStorage = async (): Promise<StorageResponse> => {
+    const response = await axios.get('file/storage');
+    return response.data as StorageResponse;
+};

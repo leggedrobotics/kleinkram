@@ -24,13 +24,6 @@ const ROUTES = {
         layout: () => import('layouts/NoTopNavLayout.vue'),
     }),
 
-    HOME: routeWithLayout({
-        name: 'HomePage',
-        path: '/',
-        component: () => import('pages/IndexPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
-    }),
-
     DATATABLE: routeWithLayout({
         name: 'DataTablePage',
         path: '/datatable',
@@ -162,6 +155,12 @@ const ROUTES = {
         name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',
         component: () => import('pages/AccessGroupPage.vue'),
+        layout: () => import('layouts/MainLayout.vue'),
+    }),
+    HOME: routeWithLayout({
+        name: 'HomePage',
+        path: '/',
+        component: () => import('pages/IndexPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),
 };

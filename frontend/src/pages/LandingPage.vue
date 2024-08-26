@@ -9,6 +9,6 @@ import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 
-$router.push(ROUTES.HOME.routeName);
+$router.push({ name: ROUTES.DASHBOARD.routeName });
 </script>
 <style scoped></style>
