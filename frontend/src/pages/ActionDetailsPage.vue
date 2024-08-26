@@ -14,91 +14,68 @@
         </template>
     </title-section>
 
-    <q-tab-panels v-model="tab" class="q-mt-lg">
+    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
         <q-tab-panel name="info">
-            <q-card
-                class="q-pa-lg"
-                style="background-color: #f4f4f4"
-                flat
-                bordered
-            >
-                <q-card-section class="flex column q-pa-none">
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Docker Image:
-                        </span>
-                        <span
-                            >{{ data?.docker_image }}
-
-                            <template v-if="data?.docker_image_sha !== ''">
-                                ({{ data?.docker_image_sha }})
-                            </template>
-                        </span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Created By:
-                        </span>
-                        <span>{{ data?.createdBy.name }}</span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Status:
-                        </span>
-                        <span>{{ data?.state }}</span>
-                    </div>
-
-                    <div
-                        class="flex justify-start"
-                        v-if="data?.state_cause != ''"
-                    >
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Status Reason:
-                        </span>
-                        <span>{{ data?.state_cause }}</span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Submitted At:
-                        </span>
-                        <span>{{ data?.createdAt }}</span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Last Updated At:
-                        </span>
-                        <span>{{ data?.updatedAt }}</span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Runner CPU Model:
-                        </span>
-                        <span>{{ data?.runner_cpu_model }}</span>
-                    </div>
-
-                    <div class="flex justify-start">
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Runner Hostname:
-                        </span>
-                        <span>{{ data?.runner_hostname }}</span>
-                    </div>
-
-                    <div
-                        class="flex justify-start"
-                        v-if="data && data?.getRuntimeInMS() != 0"
-                    >
-                        <span style="font-weight: bold" class="q-pr-sm">
-                            Runtime
-                        </span>
-                        <span>{{ data?.getRuntimeInMS() / 1000 }} seconds</span>
-                    </div>
-                </q-card-section>
-            </q-card>
+            <div class="q-table-container">
+                <table class="q-table__table">
+                    <tbody>
+                        <tr>
+                            <td class="q-table__cell">Docker Image</td>
+                            <td class="q-table__cell">
+                                {{ data?.docker_image }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Created By</td>
+                            <td class="q-table__cell">
+                                {{ data?.createdBy.name }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">State</td>
+                            <td class="q-table__cell">
+                                {{ data?.state }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">State Reason</td>
+                            <td class="q-table__cell">
+                                {{ data?.state_cause }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Submitted At:</td>
+                            <td class="q-table__cell">
+                                {{ data?.createdAt }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Last Updated At:</td>
+                            <td class="q-table__cell">
+                                {{ data?.updatedAt }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Runner CPU Model:</td>
+                            <td class="q-table__cell">
+                                {{ data?.runner_cpu_model }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Runner Hostname:</td>
+                            <td class="q-table__cell">
+                                {{ data?.runner_hostname }}
+                            </td>
+                        </tr>
+                        <tr v-if="data && data?.getRuntimeInMS() != 0">
+                            <td class="q-table__cell">Runtime:</td>
+                            <td class="q-table__cell">
+                                {{ data?.getRuntimeInMS() / 1000 }} seconds
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </q-tab-panel>
 
         <q-tab-panel name="logs">
@@ -189,3 +166,28 @@ const { data } = useQuery<Action>({
     queryFn: () => actionDetails($route.params.id as string),
 });
 </script>
+
+<style>
+.q-table-container {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-bottom: none;
+}
+
+.q-table__table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.q-table__cell {
+    padding: 8px;
+    border-bottom: none; /* Remove border to match page background */
+    outline: black;
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+}
+
+.q-table__cell:last-child {
+    border-right: none;
+}
+</style>
