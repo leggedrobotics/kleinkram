@@ -97,6 +97,7 @@ handler.search_params = { 'creator.uuid': data?.uuid || '' };
 .q-table-container {
     max-width: 400px; /* Adjust this value to make the table narrower or wider */
     border: 1px solid #e0e0e0;
+    border-bottom: none;
 }
 
 .q-table__table {
