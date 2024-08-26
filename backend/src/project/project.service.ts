@@ -93,14 +93,17 @@ export class ProjectService {
                     return;
                 }
                 if (key.toLowerCase().includes('uuid')) {
-                    baseQuery = baseQuery.where(`project.${key} = :${index}`, {
-                        [index]: searchParams[key],
-                    });
-                } else {
-                    baseQuery = baseQuery.where(
-                        `project.${key} ILIKE :${index}`,
+                    baseQuery = baseQuery.andWhere(
+                        `project.${key} = :${index}`,
                         {
                             [index]: searchParams[key],
+                        },
+                    );
+                } else {
+                    baseQuery = baseQuery.andWhere(
+                        `project.${key} ILIKE :${index}`,
+                        {
+                            [index]: `%${searchParams[key]}%`,
                         },
                     );
                 }
