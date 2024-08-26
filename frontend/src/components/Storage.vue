@@ -15,11 +15,12 @@ import VChart from 'vue-echarts';
 import { computed, ref, watch } from 'vue';
 
 import { use } from 'echarts/core';
-import { BarChart } from 'echarts/charts';
+import { BarChart, PieChart } from 'echarts/charts';
 import {
     TitleComponent,
-    PolarComponent,
+    LegendComponent,
     TooltipComponent,
+    GraphicComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useQuery } from '@tanstack/vue-query';
@@ -31,82 +32,113 @@ import {
 
 use([
     TitleComponent,
-    PolarComponent,
+    PieChart,
     TooltipComponent,
+    GraphicComponent,
     BarChart,
     CanvasRenderer,
+    LegendComponent,
 ]);
 
 const { data: storage } = useQuery<StorageResponse>({
     queryFn: () => getStorage(),
     queryKey: ['storage'],
 });
-const bytePercentage = computed(() => {
-    if (storage.value) {
-        return Math.round(
-            (storage.value.usedBytes / storage.value.totalBytes) * 100,
-        );
-    }
-    return 0;
-});
-// const bytePercentage = ref(30);
-const inodePercentage = computed(() => {
-    if (storage.value) {
-        return Math.round(
-            (storage.value.usedInodes / storage.value.totalInodes) * 100,
-        );
-    }
-    return 0;
-});
+const usedBytes = computed(() => storage.value?.usedBytes || 0);
+const totalBytes = computed(() => storage.value?.totalBytes || 0);
+const freeBytes = computed(() => totalBytes.value - usedBytes.value);
+const usedInodes = computed(() => storage.value?.usedInodes || 0);
+const totalInodes = computed(() => storage.value?.totalInodes || 0);
+const freeInodes = computed(() => totalInodes.value - usedInodes.value);
 
 const option = computed(() => {
     return {
-        title: [
-            {
-                text: 'Storage utilization',
-                left: 'center',
-            },
-        ],
-        polar: {
-            radius: ['40px', '80%'],
-        },
-        angleAxis: {
-            max: 100,
-            startAngle: 90,
-        },
-        radiusAxis: {
-            type: 'category',
-            data: ['Data', 'Inodes'],
+        title: {
+            text: 'Storage Utilization',
+            left: 'center',
         },
         tooltip: {
             trigger: 'item',
             formatter: (params) => {
-                return `${params.data.used} / ${params.data.total}`;
+                return `${params.name}: ${params.data.formatted}`;
             },
         },
-        series: {
-            type: 'bar',
-            data: [
-                {
-                    value: bytePercentage.value,
-                    used: formatSize(storage.value?.usedBytes || 0),
-                    total: formatSize(storage.value?.totalBytes || 0),
-                    itemStyle: {
-                        color: interpolateColor(bytePercentage.value, 0, 100),
+        legend: {
+            show: true,
+            data: ['Used Storage', 'Used Inodes'],
+            bottom: 0,
+        },
+        series: [
+            {
+                type: 'pie',
+                radius: ['65%', '70%'],
+                label: {
+                    show: false,
+                },
+                data: [
+                    {
+                        name: 'Used Storage',
+                        value: usedBytes.value,
+                        formatted: formatSize(usedBytes.value),
+                        itemStyle: {
+                            color: '#0F62FE',
+                        },
+                    },
+                    {
+                        name: 'Free Storage',
+                        value: freeBytes.value,
+                        formatted: formatSize(freeBytes.value),
+                        itemStyle: {
+                            color: '#eee', // Default color for free space
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'pie',
+                radius: ['75%', '80%'],
+                label: {
+                    show: false,
+                },
+                data: [
+                    {
+                        name: 'Used Inodes',
+                        value: usedInodes.value,
+                        formatted: formatGenericNumber(usedInodes.value),
+                        itemStyle: {
+                            color: '#8A3FFC',
+                        },
+                    },
+                    {
+                        name: 'Free Inodes',
+                        value: freeInodes.value,
+                        formatted: formatGenericNumber(freeInodes.value),
+                        itemStyle: {
+                            color: '#eee', // Default color for free inodes
+                        },
+                    },
+                ],
+            },
+        ],
+        graphic: {
+            type: 'text',
+            left: 'center',
+            top: 'center',
+            style: {
+                text: `{top|${formatSize(usedBytes.value, 1000, 1)}}\n{bottom|/ ${formatSize(totalBytes.value, 1000, 1)}}`,
+                textAlign: 'center',
+                rich: {
+                    top: {
+                        fontSize: 40,
+                        fontWeight: 'bold',
+                        fill: '#000', // Text color for the top line
+                    },
+                    bottom: {
+                        fontSize: 20,
+                        fontWeight: 'normal',
+                        fill: '#000', // Text color for the bottom line
                     },
                 },
-                {
-                    value: inodePercentage.value,
-                    used: formatGenericNumber(storage.value?.usedInodes || 0),
-                    total: formatGenericNumber(storage.value?.totalInodes || 0),
-                    itemStyle: {
-                        color: interpolateColor(inodePercentage.value, 0, 100),
-                    },
-                },
-            ],
-            coordinateSystem: 'polar',
-            label: {
-                show: false,
             },
         },
     };
