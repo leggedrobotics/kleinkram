@@ -26,7 +26,7 @@
 
         <template #content>
             <q-tab-panels v-model="tab">
-                <q-tab-panel name="meta_data">
+                <q-tab-panel name="meta_data" style="min-height: 280px">
                     <label for="projectName">Project Name *</label>
                     <q-input
                         name="projectName"
