@@ -15,7 +15,7 @@
                 style="padding-left: 0; height: 40px"
             >
                 <q-input
-                    v-model="userSearch"
+                    v-model="search"
                     outlined
                     dense
                     placeholder="Search"
@@ -51,7 +51,7 @@
                 selection="multiple"
                 v-model:selected="selectedProjects"
                 row-key="uuid"
-                :filter="projectSearch"
+                :filter="search"
             >
                 <template v-slot:body-cell-projectaction="props">
                     <q-td :props="props">
@@ -88,7 +88,7 @@
                 style="padding-left: 0; height: 40px"
             >
                 <q-input
-                    v-model="userSearch"
+                    v-model="search"
                     outlined
                     dense
                     placeholder="Search"
@@ -123,7 +123,7 @@
                 selection="multiple"
                 v-model:selected="selectedUsers"
                 row-key="uuid"
-                :filter="userSearch"
+                :filter="search"
             >
                 <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
@@ -184,8 +184,7 @@ const uuid = computed(() => router.currentRoute.value.params.uuid);
 const selectedProjects = ref([]);
 const selectedUsers = ref([]);
 
-const userSearch = ref('');
-const projectSearch = ref('');
+const search = ref('');
 
 const pagination = ref({
     sortBy: 'name',
