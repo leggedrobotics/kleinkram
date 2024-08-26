@@ -1,5 +1,5 @@
 <template>
-    <q-footer class="text-grey-8" style="position: absolute">
+    <div class="text-grey-8">
         <q-toolbar>
             <q-toolbar
                 class="flex text-center justify-between"
@@ -67,7 +67,7 @@
                 </span>
             </q-toolbar>
         </q-toolbar>
-    </q-footer>
+    </div>
 </template>
 
 <script setup lang="ts">

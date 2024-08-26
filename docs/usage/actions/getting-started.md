@@ -33,7 +33,7 @@ With the following entrypoint script:
 
 # exit on error
 # (all non-zero exit codes mark the action as failed)
-set -e 
+set -e
 
 echo "Get Started with Kleinkram Actions 🚀"
 
@@ -70,10 +70,11 @@ docker push rslethz/my-action
 ```
 
 ## Submit and Run a Kleinkram Action
+
 You can now submit the action to Kleinkram. You can do this via the web interface.
 
 ## Limitations
 
-- Actions can only run for a limited time
-- Actions can only use a limited amount of memory
-- Actions can request GPU support via Nvidia docker (requested on submission)
+-   Actions can only run for a limited time
+-   Actions can only use a limited amount of memory
+-   Actions can request GPU support via Nvidia docker (requested on submission)

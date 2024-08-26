@@ -1,8 +1,7 @@
 <template>
-    <div
-        class="bg-default text-grey-8"
-        style="margin: 0 -24px; position: sticky; top: 64px; z-index: 999"
-    >
+    <div class="bg-default text-grey-8" style="margin: 0 -24px; z-index: 999">
+        <q-separator />
+
         <div class="height-xl flex column justify-center q-px-lg">
             <q-breadcrumbs gutter="md">
                 <template v-for="crumb in resolved_crumbs" :key="crumb.name">
@@ -19,7 +18,13 @@
                         />
                     </q-breadcrumbs-el>
 
-                    <q-breadcrumbs-el v-else :label="crumb.displayName" />
+                    <q-breadcrumbs-el v-else :label="crumb.displayName">
+                        <q-skeleton
+                            v-if="crumb.displayName === ''"
+                            class="q-mr-md q-mb-sm"
+                            style="width: 160px; height: 18px; margin-top: 5px"
+                        />
+                    </q-breadcrumbs-el>
                 </template>
             </q-breadcrumbs>
         </div>

@@ -1,7 +1,5 @@
 <template>
-    <title-section
-        :title="handler.isListingFiles ? mission?.name : project?.name"
-    >
+    <title-section :title="mission?.name">
         <template v-slot:subtitle>
             <div>
                 <div class="flex justify-between items-center">
@@ -53,7 +51,7 @@
                         label="Actions"
                         @click="
                             $router.push({
-                                path: ROUTES.ACTION.routeName,
+                                name: ROUTES.ACTION.routeName,
                                 query: {
                                     project_uuid: project_uuid,
                                     mission_uuid: mission_uuid,
@@ -97,6 +95,18 @@
             </Suspense>
 
             <ButtonGroup>
+                <q-input
+                    debounce="300"
+                    placeholder="Search"
+                    dense
+                    v-model="search"
+                    outlined
+                >
+                    <template v-slot:append>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+
                 <q-btn
                     flat
                     dense
@@ -110,7 +120,13 @@
                 </q-btn>
 
                 <create-file-dialog-opener :mission="mission">
-                    <q-btn color="primary" label="Upload File" />
+                    <q-btn
+                        flat
+                        style="height: 100%"
+                        class="bg-button-secondary text-on-color"
+                        label="Upload File"
+                        icon="sym_o_upload"
+                    />
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
@@ -176,12 +192,23 @@ import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDia
 import { Notify } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 
+const $router = useRouter();
+
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
+
+const search = computed({
+    get: () => handler.value.search_params.name,
+    set: (value: string) => {
+        handler.value.setSearch({ name: value });
+    },
+});
 
 const { data: project } = useProjectQuery(project_uuid);
 const { data: mission } = useMissionQuery(

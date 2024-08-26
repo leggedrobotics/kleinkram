@@ -81,6 +81,10 @@ textarea {
     gap: 32px;
 }
 
+.q-field {
+    margin: 0;
+}
+
 .q-field--outlined .q-field__control:before {
     border-color: $border-input;
 }
@@ -126,6 +130,10 @@ label {
 // Style Tables
 /////////////////////////////////////////////////////////////////
 
+.q-table {
+    font-size: 14px;
+}
+
 .q-table tbody {
     background-color: $layer-01;
 }
@@ -137,4 +145,15 @@ label {
 
 .q-table__bottom {
     background-color: $layer-01;
+}
+
+.q-table .q-checkbox__inner {
+    font-size: 32px;
+}
+
+.help-text {
+    color: $text-secondary;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.16px;
 }

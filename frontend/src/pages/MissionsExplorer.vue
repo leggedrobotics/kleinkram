@@ -67,7 +67,13 @@
                 </q-btn>
 
                 <create-mission-dialog-opener :project_uuid="project_uuid">
-                    <q-btn color="button-secondary" label="Create Mission" />
+                    <q-btn
+                        flat
+                        style="height: 100%"
+                        class="bg-button-secondary text-on-color"
+                        label="Create Mission"
+                        icon="sym_o_add"
+                    />
                 </create-mission-dialog-opener>
             </button-group>
         </div>

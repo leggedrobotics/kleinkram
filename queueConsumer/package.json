@@ -23,7 +23,7 @@
         "@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
         "@opentelemetry/instrumentation-express": "^0.41.1",
         "@opentelemetry/instrumentation-fetch": "^0.52.1",
-        "@opentelemetry/instrumentation-http": "^0.41.1",
+        "@opentelemetry/instrumentation-http": "^0.52.1",
         "@opentelemetry/instrumentation-nestjs-core": "^0.39.0",
         "@opentelemetry/instrumentation-winston": "^0.39.0",
         "@opentelemetry/sdk-node": "^0.52.1",
@@ -46,7 +46,7 @@
     "devDependencies": {
         "@nestjs/cli": "^10.4.4",
         "@types/dockerode": "^3.3.29",
-        "@types/node": "20.12.6",
+        "@types/node": "22.4.1",
         "typescript": "5.4.4"
     }
 }
