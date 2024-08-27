@@ -11,7 +11,7 @@ echo ""
 # print rocket emoji
 echo "🚀 Rocket"
 
-klein endpoint set http://localhost:3000
+klein endpoint set $ENDPOINT
 klein login --key $APIKEY
 klein mission byUUID $MISSION_UUID
 
