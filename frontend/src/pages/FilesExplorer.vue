@@ -40,6 +40,7 @@
                         outline
                         icon="sym_o_lock"
                         label="Access Rights"
+                        disable
                     >
                         <q-tooltip> Manage Access to the Project</q-tooltip>
                     </q-btn>
@@ -75,8 +76,8 @@
         </template>
     </title-section>
 
-    <div class="q-my-lg">
-        <div class="flex justify-between items-center">
+    <div>
+        <div class="q-my-lg flex justify-between items-center">
             <Suspense>
                 <TableHeader :url_handler="handler" v-if="handler" />
 
@@ -153,25 +154,6 @@
             </ButtonGroup>
         </div>
 
-        <div style="padding-top: 10px">
-            <Suspense>
-                <TableSearchHeader :handler="handler" v-if="handler" />
-
-                <template #fallback>
-                    <div style="width: 550px; height: 67px">
-                        <q-skeleton
-                            class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 300px; height: 20px"
-                        />
-                        <q-skeleton
-                            class="q-mr-md"
-                            style="width: 200px; height: 18px"
-                        />
-                    </div>
-                </template>
-            </Suspense>
-        </div>
-
         <div>
             <Suspense>
                 <ExplorerPageFilesTable :handler="handler" v-if="handler" />
@@ -198,7 +180,6 @@
 
 <script setup lang="ts">
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
-import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
 import {
     useHandler,
     useMissionQuery,
@@ -283,7 +264,7 @@ const { data: mission } = useMissionQuery(
 
 function refresh() {
     queryClient.invalidateQueries({
-        queryKey: ['files', mission_uuid],
+        predicate: (query) => query.queryKey[0] === 'files',
     });
 }
 </script>
