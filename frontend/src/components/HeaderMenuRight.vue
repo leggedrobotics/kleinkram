@@ -9,7 +9,6 @@
                 <div
                     style="
                         background-color: #0f62fe;
-                        margin: 0 1px 0 0;
                         border-radius: 4px 0 0 4px;
                     "
                 >
@@ -20,6 +19,11 @@
                     />
                     <span class="q-mr-md"> New </span>
                 </div>
+                <q-separator
+                    vertical
+                    style="background-color: white; width: 1.2px"
+                />
+
                 <q-icon
                     style="
                         background-color: #0f62fe;
