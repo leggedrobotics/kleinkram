@@ -105,8 +105,8 @@ export class AccessService {
         const existingAccess = await this.projectAccessRepository
             .createQueryBuilder('projectAccess')
             .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.projects', 'projects')
-            .where('projectAccess.projects.uuid = :projectUUID', {
+            .leftJoin('projectAccess.project', 'project')
+            .where('project.uuid = :projectUUID', {
                 projectUUID,
             })
             .andWhere('accessGroup.uuid = :accessGroupUUID', {

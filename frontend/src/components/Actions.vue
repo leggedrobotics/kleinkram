@@ -171,10 +171,10 @@ const columns = [
     },
 
     {
-        name: 'docker_image',
+        name: 'image',
         label: 'Docker Image',
         align: 'left',
-        sortable: true,
+        sortable: false,
         field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
     },
 
