@@ -49,6 +49,7 @@ const { mutate } = useMutation({
         Notify.create({
             message: 'Tagtypes updated',
             color: 'positive',
+            position: 'bottom',
         });
         queryClient.invalidateQueries({
             predicate: (query) =>
@@ -60,6 +61,7 @@ const { mutate } = useMutation({
         Notify.create({
             message: 'Error adding TagTypes: ' + error.message,
             color: 'negative',
+            position: 'bottom',
         });
     },
 });

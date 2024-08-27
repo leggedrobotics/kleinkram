@@ -44,3 +44,34 @@ export const addAccessGroupToProject = async (
     });
     return response.data;
 };
+
+export const removeAccessGroupFromProject = async (
+    projectUUID: string,
+    accessGroupUUID: string,
+) => {
+    const response = await axios.post('/access/removeAccessGroupFromProject', {
+        uuid: projectUUID,
+        accessGroupUUID,
+    });
+    return response.data;
+};
+
+export const removeUserFromAccessGroup = async (
+    userUUID: string,
+    accessGroupUUID: string,
+) => {
+    const response = await axios.post('/access/removeUserFromAccessGroup', {
+        userUUID,
+        uuid: accessGroupUUID,
+    });
+    return response.data;
+};
+
+export const deleteAccessGroup = async (accessGroupUUID: string) => {
+    const response = await axios.delete('/access/deleteAccessGroup', {
+        params: {
+            uuid: accessGroupUUID,
+        },
+    });
+    return response.data;
+};

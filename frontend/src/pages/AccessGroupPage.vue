@@ -92,7 +92,13 @@
                                             >View Details
                                         </q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disabled>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="
+                                            () => _removeProject(props.row.uuid)
+                                        "
+                                    >
                                         <q-item-section>Remove</q-item-section>
                                     </q-item>
                                 </q-list>
@@ -176,7 +182,13 @@
                                     <q-item clickable v-ripple disabled>
                                         <q-item-section>Edit</q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disabled>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="
+                                            () => _removeUser(props.row.uuid)
+                                        "
+                                    >
                                         <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
@@ -189,17 +201,21 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import { QTable, useQuasar } from 'quasar';
+import { Notify, QTable, useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
 import TitleSection from 'components/TitleSection.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
+import {
+    removeAccessGroupFromProject,
+    removeUserFromAccessGroup,
+} from 'src/services/mutations/access';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -224,10 +240,55 @@ const pagination2 = ref({
     rowsPerPage: 30,
 });
 
+const queryClient = useQueryClient();
+
 const { data: accessGroup, refetch } = useQuery({
     queryKey: ['AccessGroup', uuid],
     queryFn: async () => {
         return getAccessGroup(uuid.value as string);
+    },
+});
+
+const { mutate: _removeProject } = useMutation({
+    mutationFn: (projectUUID) =>
+        removeAccessGroupFromProject(projectUUID, uuid.value),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            queryKey: ['AccessGroup', uuid],
+        });
+        Notify.create({
+            message: 'Project removed from access group',
+            color: 'positive',
+            position: 'bottom',
+        });
+    },
+    onError: () => {
+        Notify.create({
+            message: 'Error removing project from access group',
+            color: 'negative',
+            position: 'bottom',
+        });
+    },
+});
+
+const { mutate: _removeUser } = useMutation({
+    mutationFn: (userUUID) => removeUserFromAccessGroup(userUUID, uuid.value),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            queryKey: ['AccessGroup', uuid],
+        });
+        Notify.create({
+            message: 'User removed from access group',
+            color: 'positive',
+            position: 'bottom',
+        });
+    },
+    onError: () => {
+        Notify.create({
+            message: 'Error removing user from access group',
+            color: 'negative',
+            position: 'bottom',
+        });
     },
 });
 const personal = computed(() => accessGroup.value?.personal);

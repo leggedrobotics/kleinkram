@@ -105,8 +105,8 @@ export class AccessService {
         const existingAccess = await this.projectAccessRepository
             .createQueryBuilder('projectAccess')
             .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.projects', 'projects')
-            .where('projectAccess.projects.uuid = :projectUUID', {
+            .leftJoin('projectAccess.project', 'project')
+            .where('project.uuid = :projectUUID', {
                 projectUUID,
             })
             .andWhere('accessGroup.uuid = :accessGroupUUID', {
@@ -154,6 +154,21 @@ export class AccessService {
             where: { uuid: userUUID },
         });
         accessGroup.users.push(user);
+        return this.accessGroupRepository.save(accessGroup);
+    }
+
+    async removeUserFromAccessGroup(
+        accessGroupUUID: string,
+        userUUID: string,
+    ): Promise<AccessGroup> {
+        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['users'],
+        });
+
+        accessGroup.users = accessGroup.users.filter(
+            (u) => u.uuid !== userUUID,
+        );
         return this.accessGroupRepository.save(accessGroup);
     }
 
@@ -254,5 +269,43 @@ export class AccessService {
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
         });
+    }
+
+    async removeAccessGroupFromProject(
+        projectUUID: string,
+        accessGroupUUID: string,
+        jwtuser: JWTUser,
+    ): Promise<AccessGroup> {
+        const canDelete = await this.canModifyAccessGroup(
+            projectUUID,
+            { uuid: jwtuser.uuid },
+            AccessGroupRights.DELETE,
+        );
+        if (!canDelete) {
+            throw new ConflictException(
+                'User cannot remove access group without having delete rights himself/herself',
+            );
+        }
+
+        const projectAccess = await this.projectAccessRepository.find({
+            where: {
+                project: { uuid: projectUUID },
+                accessGroup: { uuid: accessGroupUUID },
+            },
+        });
+        await this.projectAccessRepository.remove(projectAccess);
+        return this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['users'],
+        });
+    }
+
+    async deleteAccessGroup(uuid: string) {
+        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+            where: { uuid },
+        });
+
+        await this.accessGroupRepository.remove(accessGroup);
+        return;
     }
 }

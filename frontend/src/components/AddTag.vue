@@ -154,6 +154,7 @@ const { mutate: save } = useMutation({
         Notify.create({
             message: 'Tags saved',
             color: 'positive',
+            position: 'bottom',
         });
         const cache = queryClient.getQueryCache();
         const filtered = cache

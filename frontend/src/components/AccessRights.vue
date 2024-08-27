@@ -97,6 +97,7 @@ const { mutate: _addAccessGroupToProject } = useMutation({
         Notify.create({
             message: 'Access Group Added',
             color: 'positive',
+            position: 'bottom',
         });
         queryClient.invalidateQueries({
             predicate: (query) =>
@@ -108,6 +109,7 @@ const { mutate: _addAccessGroupToProject } = useMutation({
         Notify.create({
             message: 'Error adding access group: ' + error.message,
             color: 'negative',
+            position: 'bottom',
         });
     },
 });
@@ -124,6 +126,7 @@ const { mutate: _addUserToProject } = useMutation({
         Notify.create({
             message: 'User Updated',
             color: 'positive',
+            position: 'bottom',
         });
         queryClient.invalidateQueries({
             predicate: (query) =>
@@ -135,6 +138,7 @@ const { mutate: _addUserToProject } = useMutation({
         Notify.create({
             message: 'Error adding user: ' + error.message,
             color: 'negative',
+            position: 'bottom',
         });
     },
 });

@@ -101,7 +101,7 @@ async function save() {
             color: 'info',
             spinner: true,
             timeout: 0,
-            position: 'top-right',
+            position: 'bottom',
         });
         try {
             await updateProject(

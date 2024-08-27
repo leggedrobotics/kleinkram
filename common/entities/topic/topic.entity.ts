@@ -10,7 +10,13 @@ export default class Topic extends BaseEntity {
     @Column()
     type: string;
 
-    @Column('bigint')
+    @Column({
+        type: 'bigint',
+        transformer: {
+            to: (value: number) => value,
+            from: (value: string) => parseInt(value, 10),
+        },
+    })
     nrMessages: bigint;
 
     @Column('float')

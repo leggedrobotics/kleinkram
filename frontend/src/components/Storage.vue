@@ -55,7 +55,7 @@ const option = computed(() => {
     return {
         title: {
             text: 'Storage Utilization',
-            left: 'center',
+            left: 'left',
         },
         tooltip: {
             trigger: 'item',

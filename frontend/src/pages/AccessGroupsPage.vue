@@ -101,7 +101,16 @@
                                     <q-item clickable v-ripple disabled>
                                         <q-item-section>Edit</q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disabled>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="
+                                            () =>
+                                                _deleteAccessGroup(
+                                                    props.row.uuid,
+                                                )
+                                        "
+                                    >
                                         <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
@@ -127,19 +136,22 @@ import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import { createAccessGroup } from 'src/services/mutations/access';
+import {
+    createAccessGroup,
+    deleteAccessGroup,
+} from 'src/services/mutations/access';
 import ButtonGroup from 'components/ButtonGroup.vue';
 const $q = useQuasar();
 
 const queryClient = useQueryClient();
 const $router = useRouter();
-const prefilter = ref({ label: 'All', value: 'all' });
 const prefilterOptions = [
-    { label: 'All', value: 'all' },
+    { label: 'All Groups', value: 'all' },
     { label: 'Member', value: 'member' },
     { label: 'Created', value: 'created' },
-    { label: 'Personal', value: 'personal' },
+    { label: 'User', value: 'personal' },
 ];
+const prefilter = ref(prefilterOptions[0]);
 
 const selectedAccessGroups: Ref<Project[]> = ref([]);
 
@@ -219,7 +231,40 @@ const { mutate: _createAccessGroup } = useMutation({
         Notify.create({
             message: 'Access Group Created',
             color: 'positive',
-            position: 'top-right',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: 'Error creating Access Group',
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+});
+
+const { mutate: _deleteAccessGroup } = useMutation({
+    mutationFn: (uuid: string) => deleteAccessGroup(uuid),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'accessGroups';
+            },
+        });
+        Notify.create({
+            message: 'Access Group Deleted',
+            color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: 'Error deleting Access Group',
+            color: 'negative',
+            position: 'bottom',
             timeout: 2000,
         });
     },
@@ -277,7 +322,7 @@ const accessGroupsColumns = [
         required: false,
         label: 'Creator',
         align: 'center',
-        field: (row: AccessGroup) => row.creator?.name,
+        field: (row: AccessGroup) => row.creator?.name || '-',
         format: (val: string) => `${val}`,
         sortable: false,
         style: 'width:  20%; max-width: 30%; min-width: 10%;',

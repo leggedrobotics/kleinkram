@@ -1,11 +1,11 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { AccessGroupRights } from '@common/enum';
-import { IsValidProjectName } from '../../validation/propertyDecorator';
+import { IsValidName } from '../../validation/propertyDecorator';
 
 export class CreateProject {
     @IsString()
     @IsNotEmpty()
-    @IsValidProjectName()
+    @IsValidName()
     name: string;
 
     @IsNotEmpty()

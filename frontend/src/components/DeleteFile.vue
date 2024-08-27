@@ -41,14 +41,14 @@ async function _deleteFile() {
                     message: 'File deleted',
                     color: 'positive',
                     timeout: 2000,
-                    position: 'top-right',
+                    position: 'bottom',
                 });
             })
             .catch((e) => {
                 Notify.create({
                     message: `Error deleting file: ${e.response.data.message}`,
                     color: 'negative',
-                    position: 'top-right',
+                    position: 'bottom',
                 });
             });
     }

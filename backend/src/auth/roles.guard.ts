@@ -184,7 +184,7 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const projectUUID = request.query.uuid;
+        const projectUUID = request.query.uuid || request.body.uuid;
         return this.projectGuardService.canAccessProject(
             user.uuid,
             projectUUID,

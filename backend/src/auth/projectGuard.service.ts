@@ -30,19 +30,24 @@ export class ProjectGuardService {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
+        console.log(user);
+        console.log(rights);
+        console.log(projectUUID);
         if (!user) {
             return false;
         }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        return this.projectAccessView.exists({
+        const res = await this.projectAccessView.exists({
             where: {
                 projectUUID,
                 userUUID,
                 rights: MoreThanOrEqual(rights),
             },
         });
+        console.log(res);
+        return res;
     }
 
     async canAccessProjectByName(
