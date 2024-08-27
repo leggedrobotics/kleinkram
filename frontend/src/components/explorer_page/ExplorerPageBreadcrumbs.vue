@@ -40,7 +40,7 @@ import { computed, ref, watch, watchEffect } from 'vue';
 
 import { useToggle } from 'src/hooks/utils';
 import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler } from 'src/services/QueryHandler';
 
 const props = defineProps({
     url_handler: {

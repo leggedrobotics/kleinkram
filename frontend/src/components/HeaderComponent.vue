@@ -1,99 +1,45 @@
 <template>
-    <q-header bordered class="bg-white text-grey-8">
-        <q-toolbar style="height: 56px">
-            <div>
-                <q-btn
-                    flat
-                    dense
-                    round
-                    icon="sym_o_menu"
-                    v-show="$q.screen.lt.md"
-                >
-                    <q-menu auto-close style="width: 280px">
-                        <q-list>
-                            <q-item
-                                v-for="item in main_menu"
-                                :key="item.title"
-                                clickable
-                                :to="item.to"
-                            >
-                                <q-item-section avatar>
-                                    <q-icon
-                                        :name="item.icon"
-                                        style="font-weight: bold"
-                                    />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-label
-                                        >{{ item.title }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-menu>
-                </q-btn>
-            </div>
-
+    <q-header class="bg-default text-grey-8 q-px-lg">
+        <q-toolbar class="q-pa-none height-xxl">
             <q-toolbar-title
                 shrink
-                class="cursor-pointer flex row q-mr-xl"
-                style="height: 56px"
                 @click="$router.push('/')"
+                class="q-pa-none"
             >
-                <div style="height: 56px">
-                    <img
-                        src="/logoRSL.png"
-                        style="height: 28px; margin: 14px"
-                    />
-                </div>
-                <div class="flex column justify-center" style="height: 56px">
-                    <span
-                        style="
-                            margin-right: 30px;
-                            font-weight: 600;
-                            font-size: 16px;
-                            line-height: 18px;
-                        "
-                    >
-                        Kleinkram
-                    </span>
-                    <span style="font-size: 10px; line-height: 12px"
-                        >by Robotics Systems Lab</span
-                    >
-                </div>
+                <kleinkram-logo class="q-pr-lg" />
             </q-toolbar-title>
 
-            <q-tabs v-show="$q.screen.gt.sm" inline-label>
-                <q-route-tab
-                    no-caps
-                    v-for="item in main_menu"
-                    :key="item.title"
-                    :label="item.title"
-                    :to="item.to"
-                    :icon="item.icon"
-                />
-            </q-tabs>
+            <q-separator vertical />
+
+            <header-tabs :main_menu="main_menu" class="q-ml-lg" />
 
             <q-space />
             <Suspense>
-                <ProfileComponent />
+                <header-menu-right />
             </Suspense>
         </q-toolbar>
+        <navigation-bread-crumbs />
     </q-header>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import ProfileComponent from 'components/HeaderMenuRight.vue';
+import KleinkramLogo from 'components/header/KleinkramLogo.vue';
+import HeaderTabs from 'components/header/HeaderTabs.vue';
+import HeaderMenuRight from 'components/HeaderMenuRight.vue';
+import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
+
+const $router = useRouter();
 
 const main_menu = [
-    { title: 'Explorer', icon: 'sym_o_table_chart', to: ROUTES.EXPLORER.path },
+    { title: 'Dashboard', icon: 'sym_o_dashboard', to: ROUTES.DASHBOARD.path },
+    { title: 'Projects', icon: 'sym_o_box', to: ROUTES.PROJECTS.path },
     {
         title: 'Datatable',
-        icon: 'sym_o_table_rows_narrow',
+        icon: 'sym_o_database',
         to: ROUTES.DATATABLE.path,
     },
-    { title: 'Upload', icon: 'sym_o_upload', to: ROUTES.UPLOAD.path },
     { title: 'Actions', icon: 'sym_o_analytics', to: ROUTES.ACTION.path },
     {
         title: 'Access Groups',

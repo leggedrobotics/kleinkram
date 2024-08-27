@@ -85,12 +85,14 @@ import { QTable, useQuasar } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
 import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
-import { QueryHandler, TableRequest } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
+import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
 
@@ -145,8 +147,16 @@ watch(
     },
     { immediate: true },
 );
+
+const $router = useRouter();
+
 const onRowClick = async (_: Event, row: any) => {
-    props.url_handler?.setProjectUUID(row.uuid);
+    $router?.push({
+        name: ROUTES.MISSIONS.routeName,
+        params: {
+            project_uuid: row.uuid,
+        },
+    });
 };
 
 const manageAccessRights = (project_uuid: string) => {

@@ -16,6 +16,10 @@ services:
         networks:
             - webnet
             - privatenet
+
+        environment:
+            DEVBUILD: 'true'
+
         depends_on:
             - database
 
@@ -46,6 +50,7 @@ services:
         command: >
             -c "mkdir -p /data/${MINIO_BAG_BUCKET_NAME} &&
             mkdir -p /data/${MINIO_MCAP_BUCKET_NAME} && 
+            mkdir -p /data/${MINIO_DB_BUCKET_NAME} &&
             /usr/bin/minio server --console-address ':9001' /data & 
             sleep 10 &&
             mc alias set myminio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&

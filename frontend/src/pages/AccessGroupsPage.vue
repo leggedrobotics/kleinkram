@@ -1,131 +1,112 @@
 <template>
     <q-page>
-        <div class="q-pa-md">
-            <div class="text-h4">Access Groups</div>
-            <p>
-                Access Groups allows you to manage the access rights of the
-                users and blablabla lorem ipsum dolor sit amet.
-            </p>
-            <q-form @submit="() => _createAccessGroup()">
-                <b>Create Access Group</b>
-                <div class="row">
-                    <div class="col-3">
-                        <q-input
-                            v-model="name"
-                            label="Access Group Name"
-                            required
-                        />
-                    </div>
-                    <div class="col-5">
-                        <q-btn color="primary" label="Create" type="submit" />
-                    </div>
-                </div>
-            </q-form>
-            <q-separator style="margin-top: 12px; margin-bottom: 12px" />
-            <q-form @submit="() => refetchAccessGroups()">
-                <b>Add Users to Access Group</b>
-                <div class="row">
-                    <div class="col-3">
-                        <q-input
-                            v-model="searchAccessGroup"
-                            label="Select Access Group"
-                            required
-                        />
-                    </div>
-                    <div class="col-1">
-                        <q-btn color="primary" label="Find" type="submit" />
-                    </div>
-                    <div class="col-5">
-                        <q-form>
-                            <div
-                                class="row"
-                                v-for="accessgroup in foundAccessGroups"
-                                style="margin-top: 3px"
+        <title-section title="Access Groups" />
+
+        <div class="q-my-lg">
+            <div class="flex justify-between items-center">
+                <button-group>
+                    <q-btn-dropdown
+                        :label="prefilter.label"
+                        class="q-uploader--bordered full-width full-height"
+                        flat
+                    >
+                        <q-list>
+                            <q-item
+                                v-for="option in prefilterOptions"
+                                :key="option.value"
+                                clickable
+                                v-ripple
+                                @click="() => (prefilter = option)"
                             >
-                                <div class="col-4 flex flex-center">
-                                    {{ accessgroup.name }}
-                                </div>
-                                <div class="col-2 flex flex-center">
-                                    <q-btn
-                                        label="Select"
-                                        color="primary"
-                                        @click="
-                                            () => selectAccessGroup(accessgroup)
-                                        "
-                                    />
-                                </div>
-                            </div>
-                        </q-form>
-                    </div>
-                </div>
-            </q-form>
-            <div
-                class="row"
-                v-for="accessGroup in selectedAccessGroup"
-                :key="accessGroup.uuid"
-                style="margin-top: 20px"
-            >
-                <b class="col-1 flex flex-center">{{ accessGroup.name }}</b>
-                <div class="col-2">
+                                <q-item-section
+                                    >{{ option.label }}
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-btn-dropdown>
+                </button-group>
+
+                <button-group>
                     <q-input
-                        v-model="searchUser"
-                        label="Search User"
-                        @keyup.enter="refetch"
-                    />
-                </div>
-                <div class="col-1 flex flex-center">
+                        dense
+                        outlined
+                        v-model="filterOptions.search"
+                        placeholder="Search"
+                        debounce="200"
+                    >
+                        <template v-slot:append>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
+
                     <q-btn
-                        label="Search"
-                        color="primary"
-                        @click="() => refetch"
+                        flat
+                        dense
+                        padding="6px"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_loop"
+                        @click="() => refetchAccessGroups()"
                     />
-                </div>
-                <div class="col-5 flex flex-center">
-                    <q-form>
-                        <div class="row" v-for="user in foundUsers">
-                            <div class="col-8 flex flex-center">
-                                {{ user.name }} - {{ user.email }}
-                            </div>
-                            <div class="col-2 flex flex-center">
-                                <q-btn
-                                    label="Add"
-                                    color="primary"
-                                    @click="
-                                        () =>
-                                            addUserMutation({
-                                                userUUID: user.uuid,
-                                                accessGroupUUID:
-                                                    accessGroup.uuid,
-                                            })
-                                    "
-                                />
-                            </div>
-                        </div>
-                    </q-form>
-                </div>
+
+                    <q-btn
+                        flat
+                        class="bg-button-secondary text-on-color"
+                        label="Create Access Group"
+                        icon="sym_o_add"
+                        @click="() => createAccessGroupDialog()"
+                    />
+                </button-group>
             </div>
-            <q-separator style="margin-top: 12px; margin-bottom: 12px" />
-            <div>
-                <b>Add Access Group / Users to Projects</b>
-            </div>
+
             <q-table
-                ref="tableRef"
+                flat
+                bordered
+                wrap-cells
+                virtual-scroll
+                separator="none"
+                :rows="accessGroupsTable"
                 v-model:pagination="pagination"
-                title="Projects"
-                :rows="projects"
-                :columns="project_columns"
-                style="margin-top: 8px"
+                :columns="accessGroupsColumns"
+                style="margin-top: 24px"
                 selection="multiple"
-                v-model:selected="selectedProjects"
+                v-model:selected="selectedAccessGroups"
                 row-key="uuid"
+                @rowClick="rowClick"
             >
-                <template v-slot:body-cell-projectaction="props">
+                <template v-slot:body-cell-accessgroupaction="props">
                     <q-td :props="props">
                         <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_more_vert"
+                            unelevated
                             color="primary"
-                            label="Edit"
-                            @click="() => openAccessRightsModal(props.row)"
-                        ></q-btn>
+                            class="cursor-pointer"
+                            @click.stop
+                        >
+                            <q-menu auto-close>
+                                <q-list>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="rowClick(undefined, props.row)"
+                                    >
+                                        <q-item-section
+                                            >View Details
+                                        </q-item-section>
+                                    </q-item>
+
+                                    <q-item clickable v-ripple disabled>
+                                        <q-item-section>Edit</q-item-section>
+                                    </q-item>
+                                    <q-item clickable v-ripple disabled>
+                                        <q-item-section>Delete</q-item-section>
+                                    </q-item>
+                                </q-list>
+                            </q-menu>
+                        </q-btn>
                     </q-td>
                 </template>
             </q-table>
@@ -133,87 +114,69 @@
     </q-page>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { searchUsers } from 'src/services/queries/user';
-
-import { computed, Ref, ref } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 
-import { Notify, useQuasar } from 'quasar';
 import { AccessGroup } from 'src/types/AccessGroup';
-import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { searchAccessGroups } from 'src/services/queries/access';
-import { filteredProjects } from 'src/services/queries/project';
-import {
-    addUserToAccessGroup,
-    createAccessGroup,
-} from 'src/services/mutations/access';
-
-const name = ref('');
-const searchAccessGroup = ref('');
-const searchUser = ref('');
-const selectedAccessGroup: Ref<AccessGroup[]> = ref([]);
-const selectedProjects: Ref<Project[]> = ref([]);
+import { useRouter } from 'vue-router';
+import ROUTES from 'src/router/routes';
+import TitleSection from 'components/TitleSection.vue';
+import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
+import { Notify, QTable, useQuasar } from 'quasar';
+import { createAccessGroup } from 'src/services/mutations/access';
+import ButtonGroup from 'components/ButtonGroup.vue';
 const $q = useQuasar();
 
-const { mutate: _createAccessGroup } = useMutation({
-    mutationFn: () => createAccessGroup(name.value),
-    onSuccess: (data) => {
-        Notify.create({
-            message: 'Access Group created',
-            color: 'positive',
-        });
-        selectedAccessGroup.value = [data];
-        name.value = '';
+const queryClient = useQueryClient();
+const $router = useRouter();
+const prefilter = ref({ label: 'All', value: 'all' });
+const prefilterOptions = [
+    { label: 'All', value: 'all' },
+    { label: 'Member', value: 'member' },
+    { label: 'Created', value: 'created' },
+    { label: 'Personal', value: 'personal' },
+];
+
+const selectedAccessGroups: Ref<Project[]> = ref([]);
+
+const filterOptions: Ref<{
+    personal: boolean;
+    search: string;
+    creator: boolean;
+    member: boolean;
+}> = ref({
+    personal: false,
+    search: '',
+    creator: false,
+    member: false,
+});
+
+watch(
+    () => prefilter.value,
+    (newVal) => {
+        if (newVal.value === 'all') {
+            filterOptions.value.personal = false;
+            filterOptions.value.creator = false;
+            filterOptions.value.member = false;
+        } else if (newVal.value === 'member') {
+            filterOptions.value.member = true;
+            filterOptions.value.creator = false;
+            filterOptions.value.personal = false;
+        } else if (newVal.value === 'created') {
+            filterOptions.value.creator = true;
+            filterOptions.value.member = false;
+            filterOptions.value.personal = false;
+        } else if (newVal.value === 'personal') {
+            filterOptions.value.personal = true;
+            filterOptions.value.creator = false;
+            filterOptions.value.member = false;
+        }
     },
-    onError: (error) => {
-        Notify.create({
-            message: "Couldn't create Access Group: " + error,
-            color: 'negative',
-        });
-    },
-});
-
-const selectAccessGroup = (accessGroup: AccessGroup) => {
-    selectedAccessGroup.value = [accessGroup];
-};
-
-const { mutate: addUserMutation } = useMutation({
-    mutationFn: (params: { userUUID: string; accessGroupUUID: string }) =>
-        addUserToAccessGroup(params.userUUID, params.accessGroupUUID),
-    onSuccess: () => {
-        Notify.create({
-            message: 'User added to Access Group',
-            color: 'positive',
-        });
-    },
-    onError: (error) => {
-        Notify.create({
-            message: "Couldn't add user to Access Group: " + error,
-            color: 'negative',
-        });
-    },
-});
-
-const { data: foundUsers, refetch } = useQuery({
-    queryKey: ['users', searchUser.value],
-    queryFn: () => searchUsers(searchUser.value),
-    enabled: !!searchUser.value,
-});
-
-const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery({
-    queryKey: ['accessGroups', searchAccessGroup.value],
-    queryFn: () => searchAccessGroups(searchAccessGroup.value),
-    enabled: !!searchAccessGroup.value,
-});
-
-const { data: _projects } = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
-});
-const projects = computed(() => (_projects.value ? _projects.value[0] : []));
+);
 
 const pagination = ref({
     sortBy: 'name',
@@ -221,71 +184,121 @@ const pagination = ref({
     page: 1,
     rowsPerPage: 30,
 });
-const project_columns = [
-    {
-        name: 'Project',
-        required: true,
-        label: 'Project',
-        align: 'left',
-        field: (row: Project) => row.name,
-        format: (val: string) => `${val}`,
-        sortable: true,
-        style: 'width:  10%; max-width: 10%; min-width: 10%;',
-    },
-    {
-        name: 'Description',
-        required: true,
-        label: 'Description',
-        align: 'left',
-        field: (row: Project) => row.description || '',
-        format: (val: string) => `${val}`,
-        sortable: true,
-        style: 'width:  60%; max-width: 60%; min-width: 60%;',
-    },
+const accessGroupKey = computed(() => [
+    'accessGroups',
+    filterOptions.value,
+    pagination.value,
+]);
 
-    {
-        name: 'Creator',
-        required: true,
-        label: 'Creator',
-        align: 'left',
-        field: (row: Project) => (row.creator ? row.creator.name : ''),
-        format: (val: number) => `${val}`,
-        sortable: true,
-        style: 'width:  10%; max-width: 10%; min-width: 10%;',
-    },
-    {
-        name: 'Created',
-        required: true,
-        label: 'Created',
-        align: 'left',
-        field: (row: Project) => row.createdAt,
-        format: (val: string) => formatDate(new Date(val)),
-        sortable: true,
-    },
-    {
-        name: 'NrOfMissions',
-        required: true,
-        label: 'Nr of Missions',
-        align: 'left',
-        field: (row: Project) => row.missions.length,
-        format: (val: number) => `${val}`,
-        sortable: true,
-    },
-    {
-        name: 'projectaction',
-        label: 'Action',
-        align: 'center',
-    },
-];
+const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery<
+    [AccessGroup[], number]
+>({
+    queryKey: accessGroupKey,
+    queryFn: () =>
+        searchAccessGroups(
+            filterOptions.value.search,
+            filterOptions.value.personal,
+            filterOptions.value.creator,
+            filterOptions.value.member,
+            (pagination.value.page - 1) * pagination.value.rowsPerPage,
+            pagination.value.rowsPerPage,
+        ),
+});
+const accessGroupsTable = computed(() =>
+    foundAccessGroups.value ? foundAccessGroups.value[0] : [],
+);
 
-function openAccessRightsModal(project: Project) {
-    $q.dialog({
-        component: AccessRightsDialog,
-        componentProps: {
-            project_uuid: project.uuid,
-        },
+const { mutate: _createAccessGroup } = useMutation({
+    mutationFn: (name: string) => createAccessGroup(name),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'accessGroups';
+            },
+        });
+        Notify.create({
+            message: 'Access Group Created',
+            color: 'positive',
+            position: 'top-right',
+            timeout: 2000,
+        });
+    },
+});
+
+async function rowClick(event: any, row: AccessGroup) {
+    await $router.push({
+        name: ROUTES.ACCESS_GROUP.routeName,
+        params: { uuid: row.uuid },
     });
 }
+
+async function createAccessGroupDialog() {
+    $q.dialog({
+        component: CreateAccessGroupDialog,
+    }).onOk((name: string) => {
+        _createAccessGroup(name);
+    });
+}
+
+const accessGroupsColumns = [
+    {
+        name: 'Access Group',
+        required: true,
+        label: 'Access Group',
+        align: 'left',
+        field: (row: AccessGroup) => row.name,
+        format: (val: string) => `${val}`,
+        sortable: true,
+        style: 'width:  60%; max-width: 60%; min-width: 10%;',
+    },
+    {
+        name: 'NrOfUsers',
+        required: true,
+        label: 'Nr of Users',
+        align: 'center',
+        field: (row: AccessGroup) => row.users.length,
+        format: (val: number) => `${val}`,
+        sortable: true,
+        style: 'width:  5%; max-width: 10%; min-width: 5%;',
+    },
+    {
+        name: 'NrOfProjects',
+        required: true,
+        label: 'Nr of Projects',
+        align: 'center',
+        field: (row: AccessGroup) =>
+            row.project_accesses.map((pa) => pa.project).flat().length,
+        format: (val: number) => `${val}`,
+        sortable: true,
+        style: 'width:  5%; max-width: 10%; min-width: 5%;',
+    },
+    {
+        name: 'Creator',
+        required: false,
+        label: 'Creator',
+        align: 'center',
+        field: (row: AccessGroup) => row.creator?.name,
+        format: (val: string) => `${val}`,
+        sortable: false,
+        style: 'width:  20%; max-width: 30%; min-width: 10%;',
+    },
+    {
+        name: 'createdAt',
+        required: true,
+        label: 'Creation Date',
+        align: 'center',
+        field: (row: AccessGroup) => row.createdAt,
+        format: (val: string) => formatDate(new Date(val)),
+        sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 10%;',
+    },
+    {
+        name: 'accessgroupaction',
+        label: ' ',
+        align: 'center',
+        style: 'width:  2%; max-width: 10%; min-width: 2%;',
+    },
+];
 </script>
 
 <style scoped></style>

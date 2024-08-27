@@ -1,9 +1,7 @@
 <template>
-    <div class="q-mb-md q-mt-xl">
-        <div class="flex justify-between q-mv-md">
-            <div />
-
-            <ButtonGroup>
+    <title-section :title="`File: ${data?.filename}`">
+        <template v-slot:buttons>
+            <button-group>
                 <q-btn
                     outline
                     color="primary"
@@ -14,15 +12,15 @@
                 >
                     <q-tooltip> Edit File</q-tooltip>
                 </q-btn>
+
                 <q-btn
-                    color="primary"
+                    outline
                     icon="sym_o_download"
                     label="Download"
                     @click="_downloadFile"
                     :disable="data?.tentative"
-                >
-                    <q-tooltip> Download File</q-tooltip>
-                </q-btn>
+                />
+
                 <q-btn
                     outline
                     icon="sym_o_more_vert"
@@ -42,6 +40,7 @@
                                     >Copy public link
                                 </q-item-section>
                             </q-item>
+
                             <q-item clickable v-ripple>
                                 <q-item-section>
                                     <DeleteFileDialogOpener
@@ -55,18 +54,14 @@
                         </q-list>
                     </q-menu>
                 </q-btn>
-            </ButtonGroup>
-        </div>
-    </div>
+            </button-group>
+        </template>
 
-    <q-card class="q-pa-md q-mb-md" flat bordered>
-        <q-card-section>
-            <div class="text-h4 q-mb-md">File: {{ data?.filename }}</div>
-            <q-separator class="q-mt-md" />
+        <template #subtitle>
             <div class="q-gutter-md q-mt-xs">
                 <div class="row items-start">
                     <div class="col-2">
-                        <div class="text-subtitle3">Project</div>
+                        <div class="text-placeholder">Project</div>
                         <div
                             class="text-caption text-primary"
                             style="font-size: 16px"
@@ -75,7 +70,7 @@
                         </div>
                     </div>
                     <div class="col-2">
-                        <div class="text-subtitle3">Mission</div>
+                        <div class="text-placeholder">Mission</div>
                         <div
                             class="text-caption text-primary"
                             style="font-size: 16px"
@@ -85,7 +80,7 @@
                     </div>
                     <div class="col-3">
                         <div v-if="data?.date">
-                            <div class="text-subtitle3">Start Date</div>
+                            <div class="text-placeholder">Start Date</div>
                             <div
                                 class="text-caption text-primary"
                                 style="font-size: 16px"
@@ -96,7 +91,7 @@
                     </div>
                     <div class="col-2">
                         <div v-if="data?.creator">
-                            <div class="text-subtitle3">Creator</div>
+                            <div class="text-placeholder">Creator</div>
                             <div
                                 class="text-caption text-primary"
                                 style="font-size: 16px"
@@ -107,18 +102,30 @@
                     </div>
                 </div>
             </div>
-        </q-card-section>
-    </q-card>
+        </template>
+    </title-section>
 
-    <q-card class="q-pa-md q-mb-xl" flat bordered>
-        <q-card-section>
-            <q-input
-                v-model="filterKey"
-                filled
-                placeholder="Search"
-                class="q-mb-md"
-                v-if="displayTopics"
-            />
+    <div class="q-my-lg">
+        <div class="flex justify-between items-center">
+            <h2 class="text-h4 q-mb-xs">All ROS Topics</h2>
+
+            <button-group>
+                <q-input
+                    debounce="300"
+                    placeholder="Search"
+                    dense
+                    v-model="filterKey"
+                    v-if="displayTopics"
+                    outlined
+                >
+                    <template v-slot:append>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+            </button-group>
+        </div>
+
+        <div style="padding-top: 10px">
             <q-table
                 flat
                 bordered
@@ -158,16 +165,15 @@
                     </q-badge>
                 </div>
             </div>
-        </q-card-section>
-    </q-card>
+        </div>
+    </div>
 </template>
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
 import { FileType } from 'src/enums/FILE_ENUM';
-import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
 import { FileEntity } from 'src/types/FileEntity';
 import {
@@ -185,9 +191,13 @@ import {
     getDetailedFileState,
     getSimpleFileStateName,
 } from '../services/generic';
-import { getMe } from 'src/services/queries/user';
+import { useMissionUUID } from 'src/hooks/utils';
+import { useRouter } from 'vue-router';
+import TitleSection from 'components/TitleSection.vue';
+import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
+import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
 const $q = useQuasar();
 
 const props = defineProps<{
@@ -198,12 +208,6 @@ const selected = ref([]);
 const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
-//
-// //get Current User:
-// const { data: user } = useQuery({
-//     queryKey: ['me'],
-//     queryFn: () => getMe(),
-// });
 
 const { isLoading, isError, data, error } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
@@ -217,12 +221,12 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
             timeout: 2000,
             position: 'top-right',
         });
-        $routerService?.routeTo(ROUTES.DATATABLE);
+        $router.push(ROUTES.DATATABLE.routeName);
         return false;
     },
 });
 
-const missionUUID = computed(() => data.value?.mission?.uuid);
+const missionUUID = useMissionUUID();
 
 const { data: _filesReturn, refetch } = useQuery({
     queryKey: ['files', missionUUID.value],
@@ -284,12 +288,19 @@ async function _downloadFile() {
     document.body.removeChild(a);
 }
 
-async function redirectToMcap() {
+function redirectToMcap() {
     const mcap = filesReturn.value?.find((file: FileEntity) => {
         return file.filename === data.value?.filename.replace('.bag', '.mcap');
     });
-    if (mcap && $routerService) {
-        await $routerService.routeTo(ROUTES.FILE, { uuid: mcap.uuid });
+    if (mcap) {
+        $router.push({
+            name: ROUTES.FILE.routeName,
+            params: {
+                mission_uuid: mcap?.mission?.uuid,
+                project_uuid: mcap?.mission?.project?.uuid,
+                file_uuid: mcap?.uuid,
+            },
+        });
     }
 }
 

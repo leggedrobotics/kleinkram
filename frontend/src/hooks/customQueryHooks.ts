@@ -1,11 +1,12 @@
-import { ref, Ref } from 'vue';
+import { ComputedRef, ref, Ref } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
 import { getMission } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
-import { QueryURLHandler } from 'src/services/URLHandler';
+import { QueryURLHandler } from 'src/services/QueryHandler';
+import { getIsUploading } from 'src/services/queries/file';
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,
@@ -64,4 +65,14 @@ export const useHandler = () => {
     handler.value.setRouter(useRouter());
 
     return handler;
+};
+
+export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
+    const { data: isUploading } = useQuery<boolean>({
+        queryKey: ['isUploading'],
+        queryFn: () => getIsUploading(),
+        refetchInterval: 1000,
+    });
+
+    return isUploading;
 };

@@ -75,9 +75,12 @@ import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { mission_columns } from 'components/explorer_page/explorer_page_table_columns';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
-import { QueryHandler, TableRequest } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
+import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
+import { useProjectUUID } from 'src/hooks/utils';
 
 const props = defineProps({
     url_handler: {
@@ -103,10 +106,12 @@ const pagination = computed(() => {
     };
 });
 
+const project_uuid = useProjectUUID();
+
 const selected = ref([]);
 const queryKey = computed(() => [
     'missions',
-    props.url_handler.project_uuid,
+    project_uuid,
     props.url_handler?.queryKey,
 ]);
 
@@ -114,7 +119,7 @@ const { data: rawData, isLoading } = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         missionsOfProject(
-            props.url_handler.project_uuid as string,
+            project_uuid.value,
             props.url_handler?.take,
             props.url_handler?.skip,
             props.url_handler?.sortBy,
@@ -135,8 +140,16 @@ watch(
     },
     { immediate: true },
 );
+const $router = useRouter();
+
 const onRowClick = async (_: Event, row: any) => {
-    props.url_handler?.setMissionUUID(row.uuid);
+    $router?.push({
+        name: ROUTES.FILES.routeName,
+        params: {
+            project_uuid: project_uuid.value,
+            mission_uuid: row.uuid as string,
+        },
+    });
 };
 
 const $q = useQuasar();

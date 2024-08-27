@@ -47,7 +47,7 @@ module.exports = configure(function (/* ctx */) {
                     'chrome87',
                     'safari13.1',
                 ],
-                node: 'node20',
+                node: 'node22',
             },
 
             vueRouterMode: 'history', // available values: 'hash', 'history'

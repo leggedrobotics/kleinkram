@@ -5,9 +5,9 @@ body {
 }
 
 .q-layout--standard,
-.q-table thead,
+thead,
 .q-footer {
-    background-color: whitesmoke;
+    background-color: $layer-01 !important;
 }
 
 q-page {
@@ -45,7 +45,7 @@ q-page {
 }
 
 body:has(.q-dialog__backdrop) .transparent-on-open-dialog {
-    opacity: 0.6;
+    opacity: 0.4;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -55,6 +55,105 @@ textarea {
     resize: none !important;
 }
 
-.q-btn {
+.q-btn,
+.q-tab__label {
     text-transform: none;
+}
+
+.q-tab .q-ripple,
+.q-tab .q-focus-helper {
+    display: none;
+}
+
+.q-tab,
+.q-tab__content {
+    padding: 0;
+}
+
+.q-tab-panel {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.q-tabs__content {
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+}
+
+.q-field {
+    margin: 0;
+}
+
+.q-field--outlined .q-field__control:before {
+    border-color: $border-input;
+}
+
+.q-field--outlined .q-field__control:hover:before {
+    border-color: $border-input-hover;
+}
+
+.q-field--outlined .q-field__control:after {
+    color: $border-interactive;
+}
+
+.q-panel {
+    display: contents;
+}
+
+.q-tab-panel {
+    padding: 0;
+}
+
+.q-header .q-tab__label {
+    font-weight: $button-font-weight;
+    font-size: $bar-inner-font-size;
+}
+
+label {
+    color: $text-secondary;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+}
+
+.q-placeholder:placeholder-shown {
+    color: $text-placeholder;
+}
+
+.q-separator {
+    background-color: $separator-color;
+}
+
+/////////////////////////////////////////////////////////////////
+// Style Tables
+/////////////////////////////////////////////////////////////////
+
+.q-table {
+    font-size: 14px;
+}
+
+.q-table tbody {
+    background-color: $layer-01;
+}
+
+.q-table thead {
+    background-color: $layer-hover-01 !important;
+    color: $text-secondary;
+}
+
+.q-table__bottom {
+    background-color: $layer-01;
+}
+
+.q-table .q-checkbox__inner {
+    font-size: 32px;
+}
+
+.help-text {
+    color: $text-secondary;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.16px;
 }

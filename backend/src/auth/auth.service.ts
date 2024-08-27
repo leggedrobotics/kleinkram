@@ -127,6 +127,7 @@ export const create_access_groups = async (
                     uuid: group.uuid,
                     personal: false,
                     inheriting: true,
+                    creator: null,
                 });
                 return accessGroupRepository.save(new_group);
             }

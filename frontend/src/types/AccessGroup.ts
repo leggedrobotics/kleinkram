@@ -8,6 +8,7 @@ export class AccessGroup extends BaseEntity {
     users: User[];
     project_accesses: ProjectAccess[];
     mission_accesses: MissionAccess[];
+    creator?: User;
     personal: boolean;
     inheriting: boolean;
 
@@ -19,6 +20,7 @@ export class AccessGroup extends BaseEntity {
         mission_accesses: MissionAccess[],
         personal: boolean,
         inheriting: boolean,
+        creator: User | undefined,
         createdAt: Date,
         updatedAt: Date,
         deletedAt: Date | null,
@@ -30,5 +32,6 @@ export class AccessGroup extends BaseEntity {
         this.mission_accesses = mission_accesses;
         this.personal = personal;
         this.inheriting = inheriting;
+        this.creator = creator;
     }
 }

@@ -207,7 +207,7 @@ export const QueryProjectSearchParam = createParamDecorator(
         }
 
         // check if it is a valid key
-        const validKeys = ['name'];
+        const validKeys = ['name', 'creator.uuid'];
         const key = Object.keys(value)[0];
         if (!validKeys.includes(key)) {
             throw new BadRequestException('Parameter is not a valid key');

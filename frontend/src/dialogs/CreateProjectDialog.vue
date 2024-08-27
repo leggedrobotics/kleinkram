@@ -1,113 +1,98 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card style="width: 95%; max-width: 1200px">
-            <q-card-section>
-                <div class="text-h6">Create New Project</div>
-            </q-card-section>
+    <base-dialog ref="dialogRef">
+        <template #title>Create Project</template>
 
-            <q-card-section
-                style="max-height: 60vh; height: 700px; margin: 0; padding: 0"
-                class="scroll"
+        <template #tabs>
+            <q-tabs
+                v-model="tab"
+                dense
+                class="text-grey"
+                align="left"
+                active-color="primary"
             >
-                <q-tabs
-                    v-model="tab"
-                    dense
-                    class="text-grey"
-                    align="justify"
-                    active-color="primary"
-                    narrow-indicator
-                >
-                    <q-tab
-                        name="meta_data"
-                        label="New Project"
-                        style="color: #222"
-                    />
-                    <q-tab
-                        name="tags"
-                        label="Configure Tags"
-                        style="color: #222"
-                    />
-                    <q-tab
-                        name="manage_access"
-                        label="Manage Access"
-                        style="color: #222"
-                    />
-                </q-tabs>
-                <q-separator />
-
-                <q-tab-panels v-model="tab" class="q-pa-lg">
-                    <q-tab-panel name="meta_data">
-                        <p>
-                            Create a new project by providing a name and
-                            description. The project name must be globally
-                            unique, additionally you must provide a brief
-                            description of the project.
-                        </p>
-
-                        <q-input
-                            ref="projectNameInput"
-                            v-model="newProjectName"
-                            outlined
-                            autofocus
-                            style="padding-bottom: 30px"
-                            label="Project Name *"
-                            :error-message="errorMessagesProjectName"
-                            :error="isInErrorStateProjectName"
-                            @update:model-value="verify_input"
-                        />
-
-                        <q-input
-                            v-model="newProjectDescription"
-                            type="textarea"
-                            outlined
-                            style="padding-bottom: 10px"
-                            label="Project Description *"
-                            :error-message="errorMessagesProjectDescr"
-                            :error="isInErrorStateProjectDescr"
-                            @update:model-value="verify_input"
-                            autofocus
-                        />
-                    </q-tab-panel>
-
-                    <q-tab-panel name="tags">
-                        <div class="text-h6">Configure Tags</div>
-                        <ConfigureTags v-model:selected="selected" />
-                    </q-tab-panel>
-
-                    <q-tab-panel name="manage_access">
-                        <div class="text-h6">Manage Access</div>
-                        <q-table
-                            :columns="AccessRightsColumns"
-                            :rows="accessRightsRows"
-                            hide-pagination
-                            flat
-                            bordered
-                            style="margin-top: 6px"
-                        />
-                        <ModifyAccessGroups
-                            :existing-rights="{}"
-                            @add-access-group-to-project="
-                                addAccessGroupToProject
-                            "
-                            @add-users-to-project="addUserToProject"
-                        />
-                    </q-tab-panel>
-                </q-tab-panels>
-            </q-card-section>
-
-            <q-separator />
-
-            <q-card-actions align="right">
-                <q-btn flat label="Close" color="red" v-close-popup />
-                <q-btn
-                    label="Create Project"
-                    color="primary"
-                    @click="submitNewProject"
-                    :disable="!formIsValid"
+                <q-tab
+                    name="meta_data"
+                    label="Project Details*"
+                    style="color: #222"
                 />
-            </q-card-actions>
-        </q-card>
-    </q-dialog>
+                <q-tab name="tags" label="Configure Tags" style="color: #222" />
+                <q-tab
+                    name="manage_access"
+                    label="Manage Access"
+                    style="color: #222"
+                />
+            </q-tabs>
+        </template>
+
+        <template #content>
+            <q-tab-panels v-model="tab">
+                <q-tab-panel name="meta_data" style="min-height: 280px">
+                    <label for="projectName">Project Name *</label>
+                    <q-input
+                        name="projectName"
+                        ref="projectNameInput"
+                        v-model="newProjectName"
+                        outlined
+                        autofocus
+                        dense
+                        placeholder="Name...."
+                        style="padding-bottom: 30px"
+                        :error-message="errorMessagesProjectName"
+                        :error="isInErrorStateProjectName"
+                        @update:model-value="verify_input"
+                    />
+
+                    <label for="projectDescription"
+                        >Project Description *</label
+                    >
+                    <q-input
+                        name="projectDescription"
+                        v-model="newProjectDescription"
+                        type="textarea"
+                        outlined
+                        dense
+                        placeholder="Description...."
+                        aria-placeholder="Project Name"
+                        style="padding-bottom: 10px"
+                        :error-message="errorMessagesProjectDescr"
+                        :error="isInErrorStateProjectDescr"
+                        @update:model-value="verify_input"
+                        autofocus
+                    />
+                </q-tab-panel>
+
+                <q-tab-panel name="tags">
+                    <div class="text-h6">Configure Tags</div>
+                    <ConfigureTags v-model:selected="selected" />
+                </q-tab-panel>
+
+                <q-tab-panel name="manage_access">
+                    <div class="text-h6">Manage Access</div>
+                    <q-table
+                        :columns="AccessRightsColumns"
+                        :rows="accessRightsRows"
+                        hide-pagination
+                        flat
+                        bordered
+                        style="margin-top: 6px"
+                    />
+                    <ModifyAccessGroups
+                        :existing-rights="{}"
+                        @add-access-group-to-project="addAccessGroupToProject"
+                        @add-users-to-project="addUserToProject"
+                    />
+                </q-tab-panel>
+            </q-tab-panels>
+        </template>
+        <template #actions>
+            <q-btn
+                label="Create Project"
+                color="primary"
+                @click="submitNewProject"
+                :disable="!formIsValid"
+            />
+        </template>
+    </base-dialog>
 </template>
 
 <script setup lang="ts">
@@ -118,12 +103,12 @@ import { AxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getFilteredTagTypes } from 'src/services/queries/tag';
 import { DataType } from 'src/enums/TAG_TYPES';
-import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
-import { getAccessRightDescription, icon } from 'src/services/generic';
+import { getAccessRightDescription } from 'src/services/generic';
 import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { TagType } from 'src/types/TagType';
 import ConfigureTags from 'components/ConfigureTags.vue';
+import BaseDialog from 'src/dialogs/BaseDialog.vue';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);

@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AccessService } from './access.service';
-import { CanWriteProject, LoggedIn } from './roles.decorator';
+import {
+    CanAddUserToAccessGroup,
+    CanWriteProject,
+    LoggedIn,
+} from './roles.decorator';
 import { addJWTUser, JWTUser } from './paramDecorator';
 import { AccessGroupRights } from '@common/enum';
 import {
@@ -9,14 +13,26 @@ import {
     BodyUUID,
 } from '../validation/bodyDecorators';
 import {
+    QueryOptionalBoolean,
+    QueryOptionalString,
     QuerySkip,
     QueryString,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 
 @Controller('access')
 export class AccessController {
     constructor(private readonly accessService: AccessService) {}
+
+    @Get('one')
+    @LoggedIn()
+    async getAccessGroup(
+        @QueryString('uuid') uuid: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.getAccessGroup(uuid, user);
+    }
 
     @Post('createAccessGroup')
     @LoggedIn()
@@ -53,7 +69,7 @@ export class AccessController {
     }
 
     @Post('addUserToAccessGroup')
-    @LoggedIn() //#Todo write a decorator for this
+    @CanAddUserToAccessGroup()
     async addUserToAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
@@ -65,12 +81,23 @@ export class AccessController {
     @Get('searchAccessGroup')
     @LoggedIn()
     async search(
-        @QueryString('search') search: string,
+        @QueryOptionalString('search') search: string,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
+        @QueryOptionalBoolean('personal') personal: boolean,
+        @QueryOptionalBoolean('creator') creator: boolean,
+        @QueryOptionalBoolean('member') member: boolean,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.accessService.searchAccessGroup(search, user, skip, take);
+        return this.accessService.searchAccessGroup(
+            search,
+            personal,
+            creator,
+            member,
+            user,
+            skip,
+            take,
+        );
     }
 
     @Post('addAccessGroupToProject')

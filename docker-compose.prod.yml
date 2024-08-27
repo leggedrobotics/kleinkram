@@ -7,7 +7,7 @@ services:
 
         build:
             context: .
-            dockerfile: ./backend/Dockerfile
+            dockerfile: ./backend/prod.Dockerfile
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -18,6 +18,9 @@ services:
         networks:
             - webnet
             - privatenet
+        environment:
+            SEED: 'false'
+            DEVBUILD: 'false'
 
         depends_on:
             - database
@@ -51,7 +54,16 @@ services:
             MINIO_ROOT_USER: ${MINIO_USER}
             MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
 
-        command: server --console-address ":9001" /data
+        command: >
+            -c "mkdir -p /data/${MINIO_BAG_BUCKET_NAME} &&
+            mkdir -p /data/${MINIO_MCAP_BUCKET_NAME} && 
+            mkdir -p /data/${MINIO_DB_BUCKET_NAME} &&
+            /usr/bin/minio server --console-address ':9001' /data & 
+            sleep 10 &&
+            mc alias set myminio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&
+            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
+            echo 'minio is ready' &&
+            sleep infinity"
 
         ports:
             - '127.0.0.1:9000:9000' # file storage
@@ -88,7 +100,7 @@ services:
         container_name: bullconsumer
         build:
             context: .
-            dockerfile: ./queueConsumer/Dockerfile
+            dockerfile: ./queueConsumer/prod.Dockerfile
         env_file:
             - .env
         networks:

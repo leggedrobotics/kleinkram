@@ -49,7 +49,6 @@ the application
         ::: info
         Should definitively be spit by endpoint
         :::
-    -   `routerService.ts` - Functions to navigate the application
 -   `types` - The typescript types / classes
 -   `env.ts` - Wrapper for the env variables
 

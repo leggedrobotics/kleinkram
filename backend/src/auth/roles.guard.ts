@@ -19,6 +19,7 @@ import { FileGuardService } from './fileGuard.service';
 import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
 import logger from '../logger';
+import { AuthGuardService } from './authGuard.service';
 @Injectable()
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
@@ -616,6 +617,31 @@ export class CreateActionGuard extends AuthGuard('jwt') {
             user.uuid,
             missionUUID,
             AccessGroupRights.CREATE,
+        );
+    }
+}
+
+@Injectable()
+export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
+    constructor(
+        private reflector: Reflector,
+        private authGuardService: AuthGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context);
+
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const accessGroupUUID = request.body.uuid;
+        return this.authGuardService.canAddUserToAccessGroup(
+            user.uuid,
+            accessGroupUUID,
         );
     }
 }

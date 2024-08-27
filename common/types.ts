@@ -1,8 +1,12 @@
-export type HardwareRequirements = {
-    needs_gpu: boolean;
+type GPUModel = {
+    name: string;
+    memory: number;
+    compute_capability: string;
 };
 
-export type ActionDetails = {
-    action_uuid: string;
-    hardware_requirements: HardwareRequirements;
+type RuntimeDescription = {
+    gpu_model?: GPUModel | null;
+    cpu_model?: string | null;
 };
+export type RuntimeCapability = RuntimeDescription;
+export type RuntimeRequirements = RuntimeDescription;

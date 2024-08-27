@@ -1,15 +1,12 @@
 <template>
-    <InspectFile
-        :uuid="route.query.uuid"
-        v-if="route.query.uuid && typeof route.query.uuid === 'string'"
-    />
+    <InspectFile :uuid="file_uuid" v-if="!!file_uuid" />
 </template>
 
 <script setup lang="ts">
 import InspectFile from 'components/InspectFile.vue';
-import { useRoute } from 'vue-router';
+import { useFileUUID } from 'src/hooks/utils';
 
-const route = useRoute();
+const file_uuid = useFileUUID();
 </script>
 
 <style scoped></style>

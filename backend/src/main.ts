@@ -16,12 +16,19 @@ import {
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
-
+import * as fs from 'node:fs';
+const packageJson = JSON.parse(
+    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
+);
+export const appVersion = packageJson.version;
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
+        const response = host.switchToHttp().getResponse();
+        response.header('kleinkram-version', appVersion);
+        response.header('Access-Control-Expose-Headers', 'kleinkram-version');
+
         if (exception instanceof BadRequestException) {
-            const response = host.switchToHttp().getResponse();
             response.status(400).json({
                 statusCode: 400,
                 message: exception.getResponse()['message'][0],
@@ -30,7 +37,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
         }
 
         if (exception instanceof HttpException) {
-            const response = host.switchToHttp().getResponse();
             response.status(exception.getStatus()).json({
                 statusCode: exception.getStatus(),
                 message: exception.message,
@@ -44,7 +50,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
         logger.error(exception.message);
         logger.error(exception.stack);
 
-        const response = host.switchToHttp().getResponse();
         response.status(500).json({
             statusCode: 500,
             message: 'Internal server error',
@@ -80,9 +85,9 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new NestLoggerWrapper(),
     });
+    app.useGlobalInterceptors(new AddVersionInterceptor());
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
-    app.useGlobalInterceptors(new AddVersionInterceptor());
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,
@@ -103,10 +108,11 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
-
+    console.log('Listening on port 3000');
     await app.listen(3000);
-
-    save_endpoints_as_json(app, '__generated__endpoints.json');
+    console.log('Save endpoints as JSON');
+    save_endpoints_as_json(app, '.endpoints/__generated__endpoints.json');
+    console.log('Endpoints saved');
 }
 
 bootstrap().catch((err) => {

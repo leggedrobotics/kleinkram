@@ -1,20 +1,5 @@
 <template>
     <div>
-        <q-input
-            v-model="search"
-            debounce="300"
-            outlined
-            :label="type + ' Name'"
-            :placeholder="`Search for ${type}...`"
-        >
-            <template #append>
-                <q-icon
-                    name="sym_o_close"
-                    class="cursor-pointer"
-                    @click="search = ''"
-                />
-            </template>
-        </q-input>
         <br v-if="url_handler.isListingFiles" />
 
         <q-select
@@ -29,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { QueryHandler } from 'src/services/URLHandler';
+import { QueryHandler } from 'src/services/QueryHandler';
 import { FileType } from 'src/enums/FILE_ENUM';
 import { computed } from 'vue';
 
@@ -37,13 +22,6 @@ const props = defineProps({
     url_handler: {
         type: QueryHandler,
         required: true,
-    },
-});
-
-const search = computed({
-    get: () => props.url_handler.search_params.name,
-    set: (value: string) => {
-        props.url_handler?.setSearch({ name: value });
     },
 });
 

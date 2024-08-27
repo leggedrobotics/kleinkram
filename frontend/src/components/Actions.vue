@@ -1,100 +1,93 @@
 <template>
-    <q-card-section>
-        <q-table
-            ref="tableRef"
-            v-model:pagination="pagination"
-            :rows="data"
-            :columns="columns"
-            :rows-per-page-options="[10, 20, 50, 100]"
-            row-key="uuid"
-            :loading="loading"
-            @row-click="
-                (_, row) => router.push(ROUTES.ACTION.path + '/' + row.uuid)
-            "
-            flat
-            bordered
-            binary-state-sort
-            @request="setPagination"
-        >
-            <template v-slot:body-cell-state="props">
-                <q-td :props="props">
-                    <template
-                        v-if="
-                            props.row.state === ActionState.PROCESSING ||
-                            props.row.state === ActionState.PENDING
-                        "
+    <q-table
+        ref="tableRef"
+        v-model:pagination="pagination"
+        :rows="data"
+        :columns="columns"
+        :rows-per-page-options="[10, 20, 50, 100]"
+        row-key="uuid"
+        :loading="loading"
+        @row-click="
+            (_, row) =>
+                router.push({
+                    name: ROUTES.ANALYSIS_DETAILS.routeName,
+                    params: { id: row.uuid },
+                })
+        "
+        flat
+        bordered
+        binary-state-sort
+        @request="setPagination"
+    >
+        <template v-slot:body-cell-state="props">
+            <q-td :props="props">
+                <template
+                    v-if="
+                        props.row.state === ActionState.PROCESSING ||
+                        props.row.state === ActionState.PENDING
+                    "
+                >
+                    <q-skeleton
+                        class="q-pa-none q-ma-none"
+                        style="background: none; margin-left: -3px"
                     >
-                        <q-skeleton
-                            class="q-pa-none q-ma-none"
-                            style="background: none; margin-left: -3px"
-                        >
-                            <q-badge
-                                :color="getColor(props.row.state)"
-                                class="q-pa-sm"
-                            >
-                                {{ props.row.state }}
-                            </q-badge>
-                        </q-skeleton>
-                    </template>
-
-                    <template v-else>
                         <q-badge
                             :color="getColor(props.row.state)"
                             class="q-pa-sm"
                         >
                             {{ props.row.state }}
                         </q-badge>
-                    </template>
-                </q-td>
-            </template>
+                    </q-skeleton>
+                </template>
 
-            <template v-slot:body-cell-Details="props">
-                <q-td :props="props">
-                    <q-btn
-                        flat
-                        round
-                        dense
-                        icon="sym_o_more_vert"
-                        unelevated
-                        color="primary"
-                        class="cursor-pointer"
-                        @click.stop
-                    >
-                        <q-menu auto-close>
-                            <q-list>
-                                <q-item
-                                    clickable
-                                    v-ripple
-                                    @click="
-                                        router.push(
-                                            ROUTES.ACTION.path +
-                                                '/' +
-                                                props.row.uuid,
-                                        )
-                                    "
-                                >
-                                    <q-item-section
-                                        >View Details
-                                    </q-item-section>
-                                </q-item>
+                <template v-else>
+                    <q-badge :color="getColor(props.row.state)" class="q-pa-sm">
+                        {{ props.row.state }}
+                    </q-badge>
+                </template>
+            </q-td>
+        </template>
 
-                                <q-item clickable v-ripple disabled>
-                                    <q-item-section
-                                        >Cancel Action
-                                    </q-item-section>
-                                </q-item>
-                                <q-item clickable v-ripple disabled>
-                                    <q-item-section
-                                        >Delete Action
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-menu>
-                    </q-btn>
-                </q-td>
-            </template>
-        </q-table>
-    </q-card-section>
+        <template v-slot:body-cell-Details="props">
+            <q-td :props="props">
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="sym_o_more_vert"
+                    unelevated
+                    color="primary"
+                    class="cursor-pointer"
+                    @click.stop
+                >
+                    <q-menu auto-close>
+                        <q-list>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="
+                                    router.push(
+                                        ROUTES.ACTION.path +
+                                            '/' +
+                                            props.row.uuid,
+                                    )
+                                "
+                            >
+                                <q-item-section>View Details </q-item-section>
+                            </q-item>
+
+                            <q-item clickable v-ripple disabled>
+                                <q-item-section>Cancel Action </q-item-section>
+                            </q-item>
+                            <q-item clickable v-ripple disabled>
+                                <q-item-section>Delete Action </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </q-td>
+        </template>
+    </q-table>
 </template>
 
 <script setup lang="ts">
@@ -107,7 +100,7 @@ import { Action } from 'src/types/Action';
 import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from 'src/services/URLHandler';
+import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 
 const router = useRouter();
 

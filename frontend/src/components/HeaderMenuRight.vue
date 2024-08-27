@@ -7,7 +7,10 @@
         <div class="flex row justify-end" v-else style="height: 56px">
             <q-btn flat color="white" class="q-pa-none">
                 <div
-                    style="background-color: rgb(54 122 199); margin: 0 1px 0 0"
+                    style="
+                        background-color: #0f62fe;
+                        border-radius: 4px 0 0 4px;
+                    "
                 >
                     <q-icon
                         name="sym_o_add"
@@ -16,15 +19,24 @@
                     />
                     <span class="q-mr-md"> New </span>
                 </div>
+                <q-separator
+                    vertical
+                    style="background-color: white; width: 1.2px"
+                />
+
                 <q-icon
-                    style="background-color: rgb(54 122 199); height: 36px"
+                    style="
+                        background-color: #0f62fe;
+                        height: 36px;
+                        border-radius: 0 4px 4px 0;
+                    "
                     name="sym_o_arrow_drop_down"
                     class="q-my-sm"
                 />
 
                 <q-menu auto-close style="width: 280px">
                     <q-list>
-                        <CreateTagTypeDialogOpener>
+                        <create-tag-type-dialog-opener>
                             <q-item clickable>
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_sell" />
@@ -35,8 +47,8 @@
                                     </q-item-label>
                                 </q-item-section>
                             </q-item>
-                        </CreateTagTypeDialogOpener>
-                        <CreateProjectDialogOpener>
+                        </create-tag-type-dialog-opener>
+                        <create-project-dialog-opener>
                             <q-item clickable>
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_tactic" />
@@ -47,8 +59,8 @@
                                     </q-item-label>
                                 </q-item-section>
                             </q-item>
-                        </CreateProjectDialogOpener>
-                        <CreateMissionDialogOpener>
+                        </create-project-dialog-opener>
+                        <create-mission-dialog-opener>
                             <q-item clickable>
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_explore" />
@@ -59,8 +71,8 @@
                                     </q-item-label>
                                 </q-item-section>
                             </q-item>
-                        </CreateMissionDialogOpener>
-                        <CreateFileDialogOpener>
+                        </create-mission-dialog-opener>
+                        <create-file-dialog-opener>
                             <q-item clickable>
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_note_add" />
@@ -69,12 +81,29 @@
                                     <q-item-label>Upload New File</q-item-label>
                                 </q-item-section>
                             </q-item>
-                        </CreateFileDialogOpener>
+                        </create-file-dialog-opener>
                     </q-list>
                 </q-menu>
             </q-btn>
 
             <div style="margin: auto 10px auto 30px">
+                <q-btn
+                    round
+                    flat
+                    color="grey-8"
+                    :to="ROUTES.UPLOAD.path"
+                    icon="sym_o_export_notes"
+                >
+                    <q-tooltip>Processing Uploads</q-tooltip>
+                    <q-linear-progress
+                        v-if="is_uploading"
+                        indeterminate
+                        size="4px"
+                        color="blue"
+                        style="position: absolute; top: 35px; width: 30px"
+                    />
+                </q-btn>
+
                 <q-btn
                     href="https://docs.datasets.leggedrobotics.com/usage/getting-started.html"
                     round
@@ -119,19 +148,45 @@
                                 v-close-popup
                                 @click="navigateTo(ROUTES.USER_PROFILE.path)"
                             >
-                                <q-item-section avatar></q-item-section>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_person" />
+                                </q-item-section>
                                 <q-item-section>
                                     <q-item-section
                                         >{{ user['name'] }}
                                     </q-item-section>
                                 </q-item-section>
                             </q-item>
-                            <q-item clickable @click="logout">
+                            <q-separator />
+
+                            <q-item disabled>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_storage" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label>Storage</q-item-label>
+                                </q-item-section>
+                            </q-item>
+
+                            <q-item disabled>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_settings" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label>Settings</q-item-label>
+                                </q-item-section>
+                            </q-item>
+
+                            <q-item
+                                clickable
+                                @click="logout"
+                                class="text-error"
+                            >
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_logout" />
                                 </q-item-section>
                                 <q-item-section>
-                                    <q-item-label>Sign out</q-item-label>
+                                    <q-item-label>Log out</q-item-label>
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -152,8 +207,10 @@ import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDia
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import USER_ROLES from 'src/enums/USER_ROLES';
+import { useIsUploading } from 'src/hooks/customQueryHooks';
 
 const is_authenticated = await isAuthenticated();
+const is_uploading = useIsUploading();
 
 const { data: user } = useQuery({
     queryKey: ['user'],

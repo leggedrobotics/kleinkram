@@ -1,10 +1,10 @@
 {
     "name": "Kleinkram_queueConsumer",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
-        "start:prod": "node dist/main",
+        "start:prod": "node dist/queueConsumer/src/main.js",
         "build": "nest build"
     },
     "dependencies": {
@@ -16,22 +16,23 @@
         "@nestjs/config": "^3.2.2",
         "@nestjs/core": "10.3.7",
         "@nestjs/platform-express": "^10.0.0",
+        "@nestjs/schedule": "^4.1.0",
         "@nestjs/typeorm": "^10.0.2",
         "@opentelemetry/api": "^1.4.1",
         "@opentelemetry/core": "^1.15.1",
         "@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
         "@opentelemetry/instrumentation-express": "^0.41.1",
-        "@opentelemetry/instrumentation-fetch": "^0.51.0",
-        "@opentelemetry/instrumentation-http": "^0.41.1",
+        "@opentelemetry/instrumentation-fetch": "^0.52.1",
+        "@opentelemetry/instrumentation-http": "^0.52.1",
         "@opentelemetry/instrumentation-nestjs-core": "^0.39.0",
         "@opentelemetry/instrumentation-winston": "^0.39.0",
-        "@opentelemetry/sdk-node": "^0.51.0",
+        "@opentelemetry/sdk-node": "^0.52.1",
         "@opentelemetry/sdk-trace-base": "^1.15.1",
         "@opentelemetry/sdk-trace-node": "^1.24.0",
         "@types/multer": "^1.4.11",
         "bull": "^4.12.2",
         "dockerode": "^4.0.2",
-        "googleapis": "^140.0.1",
+        "googleapis": "^142.0.0",
         "minio": "^8.0.1",
         "opentelemetry-instrumentation-typeorm": "^0.41.0",
         "pg": "^8.11.3",
@@ -45,7 +46,7 @@
     "devDependencies": {
         "@nestjs/cli": "^10.4.4",
         "@types/dockerode": "^3.3.29",
-        "@types/node": "20.12.6",
+        "@types/node": "22.4.1",
         "typescript": "5.4.4"
     }
 }

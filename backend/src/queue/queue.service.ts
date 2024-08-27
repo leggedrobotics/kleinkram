@@ -14,7 +14,7 @@ import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
-import { ActionDetails } from '@common/types';
+import { SubmittedAction } from '@common/entities/action/action.entity';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -48,15 +48,12 @@ export class QueueService {
         private fileRepository: Repository<FileEntity>,
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
-        private userservice: UserService,
+        private user_service: UserService,
     ) {}
 
-    async addActionQueue(
-        mission_action_id: string,
-        action_details: ActionDetails,
-    ) {
+    async addActionQueue(action_details: SubmittedAction) {
         await this.actionQueue.add('actionProcessQueue', action_details, {
-            jobId: mission_action_id,
+            jobId: action_details.uuid,
             backoff: {
                 delay: 60 * 1_000, // 60 seconds
                 type: 'exponential',
@@ -71,7 +68,7 @@ export class QueueService {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const creator = await this.user_service.findOneByUUID(user.uuid);
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
 
         const newQueue = this.queueRepository.create({
@@ -98,7 +95,7 @@ export class QueueService {
         missionUUID: string,
         user: JWTUser,
     ) {
-        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const creator = await this.user_service.findOneByUUID(user.uuid);
         const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
         const filteredFilenames = filenames.filter(
             (filename) =>
@@ -208,7 +205,7 @@ export class QueueService {
         skip: number,
         take: number,
     ) {
-        const user = await this.userservice.findOneByUUID(userUUID);
+        const user = await this.user_service.findOneByUUID(userUUID);
         const where = {
             updatedAt: MoreThan(startDate),
         };

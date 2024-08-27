@@ -24,8 +24,8 @@
         <template v-slot:body-cell="props">
             <q-td :props="props" :style="getTentativeRowStyle(props.row)">
                 <q-tooltip v-if="props.row.tentative"
-                    >This file has not yet completed uploading</q-tooltip
-                >
+                    >This file has not yet completed uploading
+                </q-tooltip>
 
                 {{ props.value }}
             </q-td>
@@ -77,39 +77,38 @@
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { computed, inject, ref, watch } from 'vue';
-
-import RouterService from 'src/services/routerService';
+import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
-import { QueryHandler, TableRequest } from 'src/services/URLHandler';
+import { TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
+import { useHandler } from 'src/hooks/customQueryHooks';
+import { useRouter } from 'vue-router';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 
-const $routerService: RouterService | undefined = inject('$routerService');
+const $router = useRouter();
 
-const props = defineProps({
-    url_handler: {
-        type: QueryHandler,
-        required: true,
-    },
-});
+const project_uuid = useProjectUUID();
+const mission_uuid = useMissionUUID();
+
+const handler = useHandler();
 
 function setPagination(update: TableRequest) {
-    props.url_handler?.setPage(update.pagination.page);
-    props.url_handler?.setTake(update.pagination.rowsPerPage);
-    props.url_handler?.setSort(update.pagination.sortBy);
-    props.url_handler?.setDescending(update.pagination.descending);
+    handler.value.setPage(update.pagination.page);
+    handler.value.setTake(update.pagination.rowsPerPage);
+    handler.value.setSort(update.pagination.sortBy);
+    handler.value.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.url_handler.page,
-        rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler?.rowsNumber,
-        sortBy: props.url_handler?.sortBy,
+        page: handler.value.page,
+        rowsPerPage: handler.value.take,
+        rowsNumber: handler.value.rowsNumber,
+        sortBy: handler.value.sortBy,
         descending: false,
     };
 });
@@ -117,20 +116,20 @@ const pagination = computed(() => {
 const selected = ref([]);
 const queryKey = computed(() => [
     'files',
-    props.url_handler.mission_uuid,
-    props.url_handler?.queryKey,
-    props.url_handler.file_type,
+    handler.value.mission_uuid,
+    handler.value.queryKey,
+    handler.value.file_type,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         filesOfMission(
-            props.url_handler.mission_uuid as string,
-            props.url_handler?.take,
-            props.url_handler?.skip,
-            props.url_handler.file_type,
-            props.url_handler?.search_params.name,
+            mission_uuid.value,
+            handler.value.take,
+            handler.value.skip,
+            handler.value.file_type,
+            handler.value.search_params.name,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -140,13 +139,20 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
-            props.url_handler.rowsNumber = total.value;
+            handler.value.rowsNumber = total.value;
         }
     },
     { immediate: true },
 );
 
 const onRowClick = async (_: Event, row: any) => {
-    $routerService?.routeTo(ROUTES.FILE, { uuid: row.uuid });
+    $router?.push({
+        name: ROUTES.FILE.routeName,
+        params: {
+            project_uuid: project_uuid.value,
+            mission_uuid: mission_uuid.value,
+            file_uuid: row.uuid,
+        },
+    });
 };
 </script>

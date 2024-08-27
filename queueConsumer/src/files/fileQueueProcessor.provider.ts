@@ -41,10 +41,9 @@ type FileProcessorJob = Job<{
 
 @Processor('file-queue')
 @Injectable()
-export class FileProcessor implements OnModuleInit {
+export class FileQueueProcessorProvider implements OnModuleInit {
     constructor(
         @InjectQueue('file-queue') private readonly fileQueue: Queue,
-        @InjectQueue('action-queue') private readonly analysisQueue: Queue,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(FileEntity)
@@ -58,7 +57,6 @@ export class FileProcessor implements OnModuleInit {
         logger.debug('Connecting to Redis...');
         try {
             await this.fileQueue.isReady();
-            await this.analysisQueue.isReady();
             logger.debug('Connected to Redis successfully!');
         } catch (error) {
             logger.error('Failed to connect to Redis:', error);

@@ -4,10 +4,11 @@
     </div>
 </template>
 <script setup lang="ts">
-import { inject, ref } from 'vue';
-import RouterService from 'src/services/routerService';
 import ROUTES from 'src/router/routes';
-const $routerService: RouterService | undefined = inject('$routerService');
-$routerService?.routeTo(ROUTES.HOME);
+import { useRouter } from 'vue-router';
+
+const $router = useRouter();
+
+$router.push({ name: ROUTES.DASHBOARD.routeName });
 </script>
 <style scoped></style>

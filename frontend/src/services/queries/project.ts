@@ -11,9 +11,7 @@ export const filteredProjects = async (
     skip: number,
     sortBy: string,
     descending: boolean = false,
-    searchParams?: {
-        name: string;
-    },
+    searchParams?: Record<string, string>,
 ): Promise<[Project[], number]> => {
     const params: Record<string, any> = {
         take,
@@ -21,7 +19,7 @@ export const filteredProjects = async (
         sortBy,
         descending,
     };
-    if (searchParams && searchParams.name) {
+    if (searchParams && Object.keys(searchParams).length > 0) {
         params['searchParams'] = searchParams;
     }
     const response = await axios.get('/project', {
@@ -58,6 +56,7 @@ export const filteredProjects = async (
                 project.creator.role,
                 project.creator.avatarUrl,
                 [],
+                [],
                 new Date(project.creator.createdAt),
                 new Date(project.creator.updatedAt),
                 new Date(project.creator.deletedAt),
@@ -81,6 +80,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
         project.creator.email,
         project.creator.role,
         project.creator.avatarUrl,
+        [],
         [],
         new Date(project.creator.createdAt),
         new Date(project.creator.updatedAt),
@@ -121,6 +121,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
                         user.role,
                         user.avatarUrl,
                         [],
+                        [],
                         new Date(user.createdAt),
                         new Date(user.updatedAt),
                         new Date(user.deletedAt),
@@ -136,6 +137,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
             [],
             access.accessGroup.personal,
             access.accessGroup.inheriting,
+            undefined,
             new Date(access.accessGroup.createdAt),
             new Date(access.accessGroup.updatedAt),
             new Date(access.accessGroup.deletedAt),
@@ -145,7 +147,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
             access.uuid,
             access.rights,
             accessGroup,
-            [],
+            undefined,
             new Date(access.createdAt),
             new Date(access.updatedAt),
             new Date(access.deletedAt),

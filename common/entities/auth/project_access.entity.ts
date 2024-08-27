@@ -16,5 +16,5 @@ export default class ProjectAccess extends BaseEntity {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
     })
-    projects: Project;
+    project: Project;
 }
