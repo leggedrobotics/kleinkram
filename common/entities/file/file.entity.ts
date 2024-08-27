@@ -20,7 +20,13 @@ export default class FileEntity extends BaseEntity {
     @Column()
     filename: string;
 
-    @Column({ type: 'bigint' })
+    @Column({
+        type: 'bigint',
+        transformer: {
+            to: (value: number) => value,
+            from: (value: string) => parseInt(value, 10),
+        },
+    })
     size: number;
 
     @ManyToOne(() => User, (user) => user.files)
