@@ -66,3 +66,12 @@ export const removeUserFromAccessGroup = async (
     });
     return response.data;
 };
+
+export const deleteAccessGroup = async (accessGroupUUID: string) => {
+    const response = await axios.delete('/access/deleteAccessGroup', {
+        params: {
+            uuid: accessGroupUUID,
+        },
+    });
+    return response.data;
+};

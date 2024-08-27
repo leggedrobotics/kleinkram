@@ -101,7 +101,16 @@
                                     <q-item clickable v-ripple disabled>
                                         <q-item-section>Edit</q-item-section>
                                     </q-item>
-                                    <q-item clickable v-ripple disabled>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="
+                                            () =>
+                                                _deleteAccessGroup(
+                                                    props.row.uuid,
+                                                )
+                                        "
+                                    >
                                         <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
@@ -127,7 +136,10 @@ import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import { createAccessGroup } from 'src/services/mutations/access';
+import {
+    createAccessGroup,
+    deleteAccessGroup,
+} from 'src/services/mutations/access';
 import ButtonGroup from 'components/ButtonGroup.vue';
 const $q = useQuasar();
 
@@ -219,6 +231,39 @@ const { mutate: _createAccessGroup } = useMutation({
         Notify.create({
             message: 'Access Group Created',
             color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: 'Error creating Access Group',
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+});
+
+const { mutate: _deleteAccessGroup } = useMutation({
+    mutationFn: (uuid: string) => deleteAccessGroup(uuid),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'accessGroups';
+            },
+        });
+        Notify.create({
+            message: 'Access Group Deleted',
+            color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: 'Error deleting Access Group',
+            color: 'negative',
             position: 'bottom',
             timeout: 2000,
         });

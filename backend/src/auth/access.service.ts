@@ -299,4 +299,13 @@ export class AccessService {
             relations: ['users'],
         });
     }
+
+    async deleteAccessGroup(uuid: string) {
+        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+            where: { uuid },
+        });
+
+        await this.accessGroupRepository.remove(accessGroup);
+        return;
+    }
 }

@@ -33,7 +33,7 @@ export const IsValidFileName = (
  * @param validationOptions
  * @constructor
  */
-export const IsValidProjectName = (
+export const IsValidName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
     Matches(/^[\w\-_]{3,20}$/, {
