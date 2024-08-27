@@ -254,7 +254,7 @@ const { data: mission } = useMissionQuery(
             message: `Error fetching Mission: ${error.response.data.message}`,
             color: 'negative',
             timeout: 2000,
-            position: 'top-right',
+            position: 'bottom',
         });
         handler.value.setMissionUUID(undefined);
         return false;

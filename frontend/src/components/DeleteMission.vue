@@ -44,7 +44,7 @@ async function _deleteMission() {
                     message: 'Mission deleted',
                     color: 'positive',
                     timeout: 2000,
-                    position: 'top-right',
+                    position: 'bottom',
                 });
                 emit('deleted');
             })
@@ -52,7 +52,7 @@ async function _deleteMission() {
                 Notify.create({
                     message: `Error deleting mission: ${e.response.data.message}`,
                     color: 'negative',
-                    position: 'top-right',
+                    position: 'bottom',
                 });
             });
     }

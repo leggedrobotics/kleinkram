@@ -49,7 +49,7 @@ async function _deleteProject() {
                     message: 'Project deleted',
                     color: 'positive',
                     timeout: 2000,
-                    position: 'top-right',
+                    position: 'bottom',
                 });
 
                 handler.value.setProjectUUID('');
@@ -59,7 +59,7 @@ async function _deleteProject() {
                 Notify.create({
                     message: `Error deleting project: ${e.response.data.message}`,
                     color: 'negative',
-                    position: 'top-right',
+                    position: 'bottom',
                 });
             });
     }

@@ -66,6 +66,7 @@ const { mutate: removeTagCallback } = useMutation({
         Notify.create({
             message: 'Tag removed',
             color: 'positive',
+            position: 'bottom',
         });
         const cache = queryClient.getQueryCache();
         const filtered = cache

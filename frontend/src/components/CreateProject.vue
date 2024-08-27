@@ -86,7 +86,7 @@ const submitNewProject = async () => {
             color: 'negative',
             spinner: false,
             timeout: 4000,
-            position: 'top-right',
+            position: 'bottom',
         });
         return;
     }
@@ -102,7 +102,7 @@ const submitNewProject = async () => {
         color: 'positive',
         spinner: false,
         timeout: 4000,
-        position: 'top-right',
+        position: 'bottom',
     });
     projectName.value = '';
     projectDescription.value = '';

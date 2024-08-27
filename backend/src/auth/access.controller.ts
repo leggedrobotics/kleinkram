@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { AccessService } from './access.service';
 import {
     CanAddUserToAccessGroup,
@@ -9,6 +17,7 @@ import { addJWTUser, JWTUser } from './paramDecorator';
 import { AccessGroupRights } from '@common/enum';
 import {
     BodyAccessGroupRights,
+    BodyName,
     BodyString,
     BodyUUID,
 } from '../validation/bodyDecorators';
@@ -20,6 +29,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('access')
 export class AccessController {
@@ -37,7 +47,7 @@ export class AccessController {
     @Post('createAccessGroup')
     @LoggedIn()
     async createAccessGroup(
-        @BodyString('name') name: string,
+        @BodyName('name') name: string,
         @addJWTUser() user: JWTUser,
     ) {
         return this.accessService.createAccessGroup(name, user);
@@ -78,6 +88,16 @@ export class AccessController {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
     }
 
+    @Post('removeUserFromAccessGroup')
+    @CanAddUserToAccessGroup()
+    async removeUserFromAccessGroup(
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('userUUID') userUUID: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
+    }
+
     @Get('searchAccessGroup')
     @LoggedIn()
     async search(
@@ -114,5 +134,28 @@ export class AccessController {
             rights,
             user,
         );
+    }
+
+    @Post('removeAccessGroupFromProject')
+    @CanWriteProject()
+    async removeAccessGroupFromProject(
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('accessGroupUUID') accessGroupUUID: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.removeAccessGroupFromProject(
+            uuid,
+            accessGroupUUID,
+            user,
+        );
+    }
+
+    @Delete('deleteAccessGroup')
+    @CanAddUserToAccessGroup()
+    async deleteAccessGroup(
+        @QueryUUID('uuid') uuid: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.deleteAccessGroup(uuid);
     }
 }

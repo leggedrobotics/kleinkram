@@ -11,7 +11,7 @@ import {
     IsNotEmpty,
 } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { StringValidate, UUIDValidate } from './validationTypes';
+import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
 import { AccessGroupRights, DataType } from '@common/enum';
 
 export const BodyUUID = createParamDecorator(
@@ -38,6 +38,23 @@ export const BodyString = createParamDecorator(
         const value = request.body[data];
 
         const object = plainToInstance(StringValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException(
+                undefined,
+                'Parameter is not a valid String',
+            );
+        });
+
+        return value;
+    },
+);
+
+export const BodyName = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.body[data];
+
+        const object = plainToInstance(NameValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException('Parameter is not a valid String');
         });
