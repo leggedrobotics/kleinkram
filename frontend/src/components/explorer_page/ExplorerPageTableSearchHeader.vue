@@ -1,9 +1,9 @@
 <template>
     <div>
-        <br v-if="url_handler.isListingFiles" />
+        <br v-if="handler.isListingFiles" />
 
         <q-select
-            v-if="url_handler.isListingFiles"
+            v-if="handler.isListingFiles"
             v-model="_filetype"
             :options="[FileType.BAG, FileType.MCAP]"
             label="File Type"
@@ -19,25 +19,22 @@ import { FileType } from 'src/enums/FILE_ENUM';
 import { computed } from 'vue';
 
 const props = defineProps({
-    url_handler: {
-        type: QueryHandler,
-        required: true,
-    },
+    handler: QueryHandler,
 });
 
 const _filetype = computed({
-    get: (): FileType => props.url_handler.file_type || FileType.BAG,
+    get: (): FileType => props.handler.file_type || FileType.BAG,
     set: (value: FileType) => {
-        props.url_handler?.setFileType(value);
+        props.handler?.setFileType(value);
     },
 });
 
 const type = computed(() => {
-    if (props.url_handler.isListingProjects) {
+    if (props.handler.isListingProjects) {
         return 'Project';
-    } else if (props.url_handler.isListingMissions) {
+    } else if (props.handler.isListingMissions) {
         return 'Mission';
-    } else if (props.url_handler.isListingFiles) {
+    } else if (props.handler.isListingFiles) {
         return 'File';
     }
 });

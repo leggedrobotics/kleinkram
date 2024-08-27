@@ -81,7 +81,7 @@ import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
-import { TableRequest } from 'src/services/QueryHandler';
+import { QueryURLHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
@@ -94,21 +94,23 @@ const $router = useRouter();
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
-const handler = useHandler();
+const props = defineProps({
+    handler: QueryURLHandler,
+});
 
 function setPagination(update: TableRequest) {
-    handler.value.setPage(update.pagination.page);
-    handler.value.setTake(update.pagination.rowsPerPage);
-    handler.value.setSort(update.pagination.sortBy);
-    handler.value.setDescending(update.pagination.descending);
+    props.handler.setPage(update.pagination.page);
+    props.handler.setTake(update.pagination.rowsPerPage);
+    props.handler.setSort(update.pagination.sortBy);
+    props.handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: handler.value.page,
-        rowsPerPage: handler.value.take,
-        rowsNumber: handler.value.rowsNumber,
-        sortBy: handler.value.sortBy,
+        page: props.handler.page,
+        rowsPerPage: props.handler.take,
+        rowsNumber: props.handler.rowsNumber,
+        sortBy: props.handler.sortBy,
         descending: false,
     };
 });
@@ -116,9 +118,9 @@ const pagination = computed(() => {
 const selected = ref([]);
 const queryKey = computed(() => [
     'files',
-    handler.value.mission_uuid,
-    handler.value.queryKey,
-    handler.value.file_type,
+    props.handler.mission_uuid,
+    props.handler.queryKey,
+    props.handler.file_type,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -126,10 +128,10 @@ const { data: rawData, isLoading } = useQuery({
     queryFn: () =>
         filesOfMission(
             mission_uuid.value,
-            handler.value.take,
-            handler.value.skip,
-            handler.value.file_type,
-            handler.value.search_params.name,
+            props.handler.take,
+            props.handler.skip,
+            props.handler.file_type,
+            props.handler.search_params.name,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -139,7 +141,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
-            handler.value.rowsNumber = total.value;
+            props.handler.rowsNumber = total.value;
         }
     },
     { immediate: true },

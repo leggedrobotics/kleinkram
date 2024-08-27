@@ -42,7 +42,6 @@ axiosInstance.interceptors.response.use(
 );
 
 function setVersion(headers: RawAxiosResponseHeaders) {
-    console.log('KKV', headers['kleinkram-version']);
     if (
         headers['kleinkram-version'] &&
         validVersion.test(kleinkramVersion.value) &&
