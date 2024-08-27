@@ -219,7 +219,7 @@ const { mutate: _createAccessGroup } = useMutation({
         Notify.create({
             message: 'Access Group Created',
             color: 'positive',
-            position: 'top-right',
+            position: 'bottom',
             timeout: 2000,
         });
     },

@@ -174,7 +174,7 @@ const submitNewFile = async () => {
         message: 'Processing file...',
         color: 'primary',
         spinner: true,
-        position: 'top-right',
+        position: 'bottom',
         timeout: 0,
     });
     if (files.value && files.value.length > 0) {
@@ -198,7 +198,7 @@ const submitNewFile = async () => {
                         message: `Upload of File ${filename} failed: Invalid file type. Only .bag and .mcap files are allowed.`,
                         color: 'negative',
                         spinner: false,
-                        position: 'top-right',
+                        position: 'bottom',
                         timeout: 30000,
                         closeBtn: true,
                     });
@@ -208,7 +208,7 @@ const submitNewFile = async () => {
                         message: `Upload of File ${filename} failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`,
                         color: 'negative',
                         spinner: false,
-                        position: 'top-right',
+                        position: 'bottom',
                         timeout: 30000,
                         closeBtn: true,
                     });
@@ -245,7 +245,7 @@ const submitNewFile = async () => {
                         message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type? Unique filename?`,
                         color: 'negative',
                         spinner: false,
-                        position: 'top-right',
+                        position: 'bottom',
                         timeout: 30000,
                         closeBtn: true,
                     });
@@ -257,7 +257,7 @@ const submitNewFile = async () => {
                         message: `Upload of File ${filename} failed: ${urls[filename]['error']}`,
                         color: 'negative',
                         spinner: false,
-                        position: 'top-right',
+                        position: 'bottom',
                         timeout: 30000,
                         closeBtn: true,
                     });
@@ -280,7 +280,7 @@ const submitNewFile = async () => {
                                     message: `File ${filename} uploaded`,
                                     color: 'positive',
                                     spinner: false,
-                                    position: 'top-right',
+                                    position: 'bottom',
                                     group: false,
                                     timeout: 2000,
                                 });
@@ -291,7 +291,7 @@ const submitNewFile = async () => {
                                     message: `Upload of File ${filename} failed: ${e}`,
                                     color: 'negative',
                                     spinner: false,
-                                    position: 'top-right',
+                                    position: 'bottom',
                                     group: false,
                                     closeBtn: true,
                                     timeout: 0,
@@ -302,7 +302,7 @@ const submitNewFile = async () => {
                         Notify.create({
                             message: `Upload of File ${filename} failed: ${e}`,
                             color: 'negative',
-                            position: 'top-right',
+                            position: 'bottom',
                             group: false,
                             spinner: false,
                             closeBtn: true,

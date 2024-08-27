@@ -157,6 +157,21 @@ export class AccessService {
         return this.accessGroupRepository.save(accessGroup);
     }
 
+    async removeUserFromAccessGroup(
+        accessGroupUUID: string,
+        userUUID: string,
+    ): Promise<AccessGroup> {
+        const accessGroup = await this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['users'],
+        });
+
+        accessGroup.users = accessGroup.users.filter(
+            (u) => u.uuid !== userUUID,
+        );
+        return this.accessGroupRepository.save(accessGroup);
+    }
+
     async searchAccessGroup(
         search: string,
         personal: boolean,
@@ -253,6 +268,35 @@ export class AccessService {
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
+        });
+    }
+
+    async removeAccessGroupFromProject(
+        projectUUID: string,
+        accessGroupUUID: string,
+        jwtuser: JWTUser,
+    ): Promise<AccessGroup> {
+        const canDelete = await this.canModifyAccessGroup(
+            projectUUID,
+            { uuid: jwtuser.uuid },
+            AccessGroupRights.DELETE,
+        );
+        if (!canDelete) {
+            throw new ConflictException(
+                'User cannot remove access group without having delete rights himself/herself',
+            );
+        }
+
+        const projectAccess = await this.projectAccessRepository.find({
+            where: {
+                project: { uuid: projectUUID },
+                accessGroup: { uuid: accessGroupUUID },
+            },
+        });
+        await this.projectAccessRepository.remove(projectAccess);
+        return this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['users'],
         });
     }
 }

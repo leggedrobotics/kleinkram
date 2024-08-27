@@ -219,7 +219,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
             message: `Error fetching file: ${error.response?.data.message}`,
             color: 'negative',
             timeout: 2000,
-            position: 'top-right',
+            position: 'bottom',
         });
         $router.push(ROUTES.DATATABLE.routeName);
         return false;
@@ -311,7 +311,7 @@ async function _copyLink() {
         group: false,
         message: 'Copied: Link valid for 7 days',
         color: 'positive',
-        position: 'top-right',
+        position: 'bottom',
         timeout: 2000,
     });
 }

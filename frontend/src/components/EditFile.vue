@@ -269,7 +269,7 @@ const { mutate: updateFileMutation } = useMutation({
             message: 'File updated',
             color: 'positive',
             spinner: false,
-            position: 'top-right',
+            position: 'bottom',
             timeout: 3000,
         });
         const cache = queryClient.getQueryCache();
@@ -294,7 +294,7 @@ const { mutate: updateFileMutation } = useMutation({
             message: 'Error updating file: ' + error.response.data.message,
             color: 'negative',
             spinner: false,
-            position: 'top-right',
+            position: 'bottom',
             timeout: 3000,
         });
     },

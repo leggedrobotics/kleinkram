@@ -357,7 +357,7 @@ const submitAnalysis = () => {
             group: false,
             message: 'Please select a project and a mission',
             color: 'negative',
-            position: 'top-right',
+            position: 'bottom',
             timeout: 2000,
         });
         return;
@@ -368,7 +368,7 @@ const submitAnalysis = () => {
             group: false,
             message: 'The image name must start with "rslethz/"',
             color: 'negative',
-            position: 'top-right',
+            position: 'bottom',
             timeout: 2000,
         });
         return;
@@ -388,7 +388,7 @@ const submitAnalysis = () => {
                 group: false,
                 message: 'Analysis submitted',
                 color: 'positive',
-                position: 'top-right',
+                position: 'bottom',
                 timeout: 2000,
             });
         })
@@ -397,7 +397,7 @@ const submitAnalysis = () => {
                 group: false,
                 message: `Error: ${error}`,
                 color: 'negative',
-                position: 'top-right',
+                position: 'bottom',
                 timeout: 2000,
             });
         });

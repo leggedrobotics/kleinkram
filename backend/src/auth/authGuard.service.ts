@@ -26,7 +26,7 @@ export class AuthGuardService {
         }
 
         return this.accessGroupRepository.exists({
-            where: { uuid: accessGroupUUID, users: { uuid: userUUID } },
+            where: { uuid: accessGroupUUID, creator: { uuid: userUUID } },
             relations: ['users'],
         });
     }

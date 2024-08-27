@@ -82,7 +82,7 @@ const submitNewTag = async () => {
             color: 'negative',
             spinner: false,
             timeout: 4000,
-            position: 'top-right',
+            position: 'bottom',
         });
         return;
     }
@@ -98,7 +98,7 @@ const submitNewTag = async () => {
         color: 'positive',
         spinner: false,
         timeout: 4000,
-        position: 'top-right',
+        position: 'bottom',
     });
     tagName.value = '';
     selectedDataType.value = DataType.STRING;

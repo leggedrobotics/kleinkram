@@ -107,7 +107,7 @@ const { mutate } = useMutation({
         Notify.create({
             message: 'Access group added to project',
             color: 'positive',
-            position: 'top-right',
+            position: 'bottom',
         });
         queryClient.invalidateQueries({
             queryKey: ['AccessGroup', props.access_group],
@@ -117,7 +117,7 @@ const { mutate } = useMutation({
         Notify.create({
             message: 'Failed to add some projects to access group',
             color: 'negative',
-            position: 'top-right',
+            position: 'bottom',
         });
     },
 });

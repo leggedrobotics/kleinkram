@@ -78,6 +78,16 @@ export class AccessController {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
     }
 
+    @Post('removeUserFromAccessGroup')
+    @CanAddUserToAccessGroup()
+    async removeUserFromAccessGroup(
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('userUUID') userUUID: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
+    }
+
     @Get('searchAccessGroup')
     @LoggedIn()
     async search(
@@ -112,6 +122,20 @@ export class AccessController {
             uuid,
             accessGroupUUID,
             rights,
+            user,
+        );
+    }
+
+    @Post('removeAccessGroupFromProject')
+    @CanWriteProject()
+    async removeAccessGroupFromProject(
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('accessGroupUUID') accessGroupUUID: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.removeAccessGroupFromProject(
+            uuid,
+            accessGroupUUID,
             user,
         );
     }

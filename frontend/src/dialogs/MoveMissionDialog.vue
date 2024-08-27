@@ -90,7 +90,7 @@ async function onOk() {
             color: 'positive',
             spinner: true,
             timeout: 4000,
-            position: 'top-right',
+            position: 'bottom',
         });
         await moveMission(props.mission.uuid, selected_project.value.uuid);
         creating({
@@ -117,7 +117,7 @@ async function onOk() {
             color: 'negative',
             spinner: false,
             timeout: 4000,
-            position: 'top-right',
+            position: 'bottom',
         });
     }
     onDialogOK();
