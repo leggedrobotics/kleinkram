@@ -1,15 +1,16 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Access Rights</template>
+        <template #title> New Access Rights</template>
 
         <template #content>
-            <q-input v-model="name" label="Name" />
+            <label for="name">Group Name</label>
+            <q-input v-model="name" placeholder="Name" name="name" />
         </template>
 
         <template #actions>
             <q-btn
                 flat
-                label="Create"
+                label="Create Access Group"
                 class="bg-button-primary"
                 @click="() => onDialogOK(name)"
             />

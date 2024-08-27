@@ -23,5 +23,5 @@
 import ENV from 'src/env';
 
 // TODO: currently, all hosted versions should show this warning
-const is_dev_instance = ENV.ENDPOINT.includes('.leggedrobotics.com');
+const is_dev_instance = ENV.ENDPOINT.includes('.dev.leggedrobotics.com');
 </script>
