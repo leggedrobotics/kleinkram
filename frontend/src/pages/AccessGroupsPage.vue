@@ -145,13 +145,13 @@ const $q = useQuasar();
 
 const queryClient = useQueryClient();
 const $router = useRouter();
-const prefilter = ref({ label: 'All', value: 'all' });
 const prefilterOptions = [
-    { label: 'All', value: 'all' },
+    { label: 'All Groups', value: 'all' },
     { label: 'Member', value: 'member' },
     { label: 'Created', value: 'created' },
-    { label: 'Personal', value: 'personal' },
+    { label: 'User', value: 'personal' },
 ];
+const prefilter = ref(prefilterOptions[0]);
 
 const selectedAccessGroups: Ref<Project[]> = ref([]);
 
@@ -322,7 +322,7 @@ const accessGroupsColumns = [
         required: false,
         label: 'Creator',
         align: 'center',
-        field: (row: AccessGroup) => row.creator?.name,
+        field: (row: AccessGroup) => row.creator?.name || '-',
         format: (val: string) => `${val}`,
         sortable: false,
         style: 'width:  20%; max-width: 30%; min-width: 10%;',
