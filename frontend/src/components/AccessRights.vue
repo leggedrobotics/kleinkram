@@ -3,7 +3,6 @@
         <q-table
             v-if="project"
             :columns="AccessRightsColumns"
-            title="Access Rights"
             flat
             bordered
             :rows="project.projectAccesses"

@@ -254,7 +254,7 @@
                     padding="6px"
                     color="icon-secondary"
                     class="button-border"
-                    icon="sym_o_refresh"
+                    icon="sym_o_loop"
                     disabled=""
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>

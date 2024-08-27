@@ -1,17 +1,10 @@
 <template>
     <q-page>
         <title-section title="Access Groups" />
-        <div class="q-pa-md">
-            <div
-                class="row"
-                style="
-                    padding-left: 0;
-                    margin-bottom: 30px;
-                    align-items: center;
-                    height: 40px;
-                "
-            >
-                <div class="col-2 q-pa-md">
+
+        <div class="q-my-lg">
+            <div class="flex justify-between items-center">
+                <button-group>
                     <q-btn-dropdown
                         :label="prefilter.label"
                         class="q-uploader--bordered full-width full-height"
@@ -31,47 +24,51 @@
                             </q-item>
                         </q-list>
                     </q-btn-dropdown>
-                </div>
-                <div class="col-6 q-pa-md" />
-                <div class="col-4">
-                    <div class="row items-center">
-                        <q-input
-                            v-model="filterOptions.search"
-                            label="Search"
-                            outlined
-                            class="q-mr-sm full-height"
-                            style="width: 45%"
-                            debounce="200"
-                            dense
-                        >
-                            <template v-slot:append>
-                                <q-icon name="sym_o_search" />
-                            </template>
-                        </q-input>
+                </button-group>
 
-                        <q-btn
-                            icon="sym_o_loop"
-                            class="q-mr-sm full-height"
-                            @click="() => refetchAccessGroups()"
-                        />
+                <button-group>
+                    <q-input
+                        dense
+                        outlined
+                        v-model="filterOptions.search"
+                        placeholder="Search"
+                        debounce="200"
+                    >
+                        <template v-slot:append>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
 
-                        <q-btn
-                            label="Create Access Group"
-                            color="dark"
-                            icon="sym_o_add"
-                            style="width: 45%"
-                            class="full-height"
-                            @click="() => createAccessGroupDialog()"
-                        />
-                    </div>
-                </div>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_loop"
+                        @click="() => refetchAccessGroups()"
+                    />
+
+                    <q-btn
+                        flat
+                        class="bg-button-secondary text-on-color"
+                        label="Create Access Group"
+                        icon="sym_o_add"
+                        @click="() => createAccessGroupDialog()"
+                    />
+                </button-group>
             </div>
+
             <q-table
+                flat
+                bordered
+                wrap-cells
+                virtual-scroll
+                separator="none"
                 :rows="accessGroupsTable"
                 v-model:pagination="pagination"
-                title="Access Groups"
                 :columns="accessGroupsColumns"
-                style="margin-top: 8px"
+                style="margin-top: 24px"
                 selection="multiple"
                 v-model:selected="selectedAccessGroups"
                 row-key="uuid"
@@ -129,8 +126,9 @@ import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
-import { Notify, useQuasar } from 'quasar';
+import { Notify, QTable, useQuasar } from 'quasar';
 import { createAccessGroup } from 'src/services/mutations/access';
+import ButtonGroup from 'components/ButtonGroup.vue';
 const $q = useQuasar();
 
 const queryClient = useQueryClient();

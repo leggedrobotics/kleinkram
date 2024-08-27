@@ -1,53 +1,73 @@
 <template>
-    <title-section :title="accessGroup?.name" />
-    <q-tabs v-model="tab" align="left">
-        <q-tab name="members" label="Members" :disable="personal">
-            <q-tooltip v-if="personal">
-                Personal Access groups have only the trivial member
-            </q-tooltip>
-        </q-tab>
-        <q-tab name="projects" label="Projects"></q-tab>
-    </q-tabs>
-    <q-tab-panels v-model="tab">
-        <q-tab-panel name="projects">
-            <div
-                class="row flex justify-end"
-                style="padding-left: 0; height: 40px"
+    <title-section :title="accessGroup?.name">
+        <template #tabs>
+            <q-tabs
+                v-model="tab"
+                align="left"
+                active-color="primary"
+                dense
+                class="text-grey"
             >
-                <q-input
-                    v-model="search"
-                    outlined
-                    dense
-                    placeholder="Search"
-                    style="width: 300px"
-                    class="q-mr-sm full-height"
+                <q-tab
+                    name="members"
+                    label="Members"
+                    :disable="personal"
+                    style="color: #222"
                 >
-                    <template v-slot:append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-                <q-btn
-                    icon="sym_o_loop"
-                    class="q-mr-sm full-height"
-                    unelevated
-                    outline
-                    @click="() => refetch()"
-                />
-                <q-btn
-                    label="Add Project"
-                    color="dark"
-                    icon="sym_o_add"
-                    style="width: 300px"
-                    class="full-height"
-                    @click="openAddProject"
-                />
+                    <q-tooltip v-if="personal">
+                        Personal Access groups have only the trivial member
+                    </q-tooltip>
+                </q-tab>
+                <q-tab name="projects" label="Projects" style="color: #222" />
+            </q-tabs>
+        </template>
+    </title-section>
+
+    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
+        <q-tab-panel name="projects">
+            <div class="flex justify-between items-center q-mb-lg">
+                <div />
+                <button-group>
+                    <q-input
+                        v-model="search"
+                        outlined
+                        dense
+                        placeholder="Search"
+                        class="q-mr-sm full-height"
+                    >
+                        <template v-slot:append>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_loop"
+                        @click="() => refetch()"
+                    >
+                        <q-tooltip> Refetch the Data</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                        flat
+                        class="bg-button-secondary text-on-color"
+                        label="Add Project"
+                        icon="sym_o_add"
+                        @click="openAddProject"
+                    />
+                </button-group>
             </div>
+
             <q-table
+                flat
+                bordered
+                separator="none"
                 ref="tableRef"
                 v-model:pagination="pagination"
                 :rows="project_rows"
                 :columns="project_cols"
-                style="margin-top: 8px"
                 selection="multiple"
                 v-model:selected="selectedProjects"
                 row-key="uuid"
@@ -83,37 +103,40 @@
             </q-table>
         </q-tab-panel>
         <q-tab-panel name="members">
-            <div
-                class="row flex justify-end"
-                style="padding-left: 0; height: 40px"
-            >
-                <q-input
-                    v-model="search"
-                    outlined
-                    dense
-                    placeholder="Search"
-                    style="width: 300px"
-                    class="q-mr-sm full-height"
-                >
-                    <template v-slot:append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-                <q-btn
-                    icon="sym_o_loop"
-                    class="q-mr-sm full-height"
-                    unelevated
-                    outline
-                    @click="() => refetch()"
-                />
-                <q-btn
-                    label="Add User"
-                    color="dark"
-                    icon="sym_o_add"
-                    style="width: 300px"
-                    class="full-height"
-                    @click="openAddUser"
-                />
+            <div class="flex justify-between items-center q-mb-lg">
+                <div />
+                <button-group>
+                    <q-input
+                        v-model="search"
+                        outlined
+                        dense
+                        placeholder="Search"
+                        class="q-mr-sm full-height"
+                    >
+                        <template v-slot:append>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_loop"
+                        @click="() => refetch()"
+                    >
+                        <q-tooltip> Refetch the Data</q-tooltip>
+                    </q-btn>
+
+                    <q-btn
+                        flat
+                        class="bg-button-secondary text-on-color"
+                        label="Add User"
+                        icon="sym_o_add"
+                        @click="openAddUser"
+                    />
+                </button-group>
             </div>
             <q-table
                 :rows="accessGroup?.users || []"
@@ -172,10 +195,11 @@ import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import { useQuasar } from 'quasar';
+import { QTable, useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
 import TitleSection from 'components/TitleSection.vue';
+import ButtonGroup from 'components/ButtonGroup.vue';
 
 const $q = useQuasar();
 const router = useRouter();

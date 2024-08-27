@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Access Rights</template>
+        <template #title> Project Access Rights</template>
 
         <template #content>
             <AccessRights :project_uuid="props.project_uuid" />
