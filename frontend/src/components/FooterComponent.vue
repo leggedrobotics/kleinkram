@@ -1,14 +1,15 @@
 <template>
-    <div class="text-grey-8">
+    <div class="text-placeholder">
         <q-toolbar>
             <q-toolbar
                 class="flex text-center justify-between"
                 style="font-size: 12px"
             >
-                <span>
-                    © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
-                </span>
-                <span>
+                <div class="flex" style="gap: 8px">
+                    <span>
+                        © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
+                    </span>
+                    <span> • </span>
                     <q-icon
                         v-if="
                             !!kleinkramVersion &&
@@ -23,7 +24,7 @@
                         >
                     </q-icon>
                     <a
-                        class="text-grey-8"
+                        class="text-placeholder"
                         style="text-decoration: none"
                         :href="
                             'https://github.com/leggedrobotics/kleinkram/releases/tag/v' +
@@ -33,9 +34,10 @@
                             new Date(BUILD_INFO.timestamp).toLocaleString()
                         }})</a
                     >
-                    -
+                    <span> • </span>
+
                     <a
-                        class="text-grey-8"
+                        class="text-placeholder"
                         style="text-decoration: none"
                         :href="
                             'https://github.com/leggedrobotics/kleinkram/tree/' +
@@ -44,9 +46,11 @@
                     >
                         {{ BUILD_INFO.git.branch }}
                     </a>
-                    -
+
+                    <span> • </span>
+
                     <a
-                        class="text-grey-8"
+                        class="text-placeholder"
                         style="text-decoration: none"
                         :href="
                             'https://github.com/leggedrobotics/kleinkram/commit/' +
@@ -55,10 +59,10 @@
                     >
                         {{ BUILD_INFO.git.hash }}
                     </a>
-                </span>
+                </div>
                 <span>
                     <a
-                        class="text-grey-8"
+                        class="text-placeholder"
                         style="text-decoration: none"
                         href="https://uptime.leggedrobotics.com/status/kleinkram"
                     >
