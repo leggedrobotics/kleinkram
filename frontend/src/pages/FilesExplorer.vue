@@ -40,6 +40,7 @@
                         outline
                         icon="sym_o_lock"
                         label="Access Rights"
+                        disable
                     >
                         <q-tooltip> Manage Access to the Project</q-tooltip>
                     </q-btn>
@@ -75,8 +76,8 @@
         </template>
     </title-section>
 
-    <div class="q-my-lg">
-        <div class="flex justify-between items-center">
+    <div>
+        <div class="q-my-lg flex justify-between items-center">
             <Suspense>
                 <TableHeader :url_handler="handler" v-if="handler" />
 
@@ -95,6 +96,28 @@
             </Suspense>
 
             <ButtonGroup>
+                <q-btn-dropdown
+                    clearable
+                    dense
+                    outline
+                    style="min-width: 220px"
+                    :label="'File Types: ' + selectedFileTypes"
+                >
+                    <q-list style="width: 100%">
+                        <q-item
+                            v-for="(option, index) in fileTypeFilter"
+                            :key="index"
+                        >
+                            <q-item-section class="items-center">
+                                <q-toggle
+                                    :model-value="fileTypeFilter[index].value"
+                                    @click="onFileTypeClicked(index)"
+                                    :label="option.name"
+                                />
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-btn-dropdown>
                 <q-input
                     debounce="300"
                     placeholder="Search"
@@ -131,28 +154,9 @@
             </ButtonGroup>
         </div>
 
-        <div style="padding-top: 10px">
-            <Suspense>
-                <TableSearchHeader :url_handler="handler" v-if="handler" />
-
-                <template #fallback>
-                    <div style="width: 550px; height: 67px">
-                        <q-skeleton
-                            class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 300px; height: 20px"
-                        />
-                        <q-skeleton
-                            class="q-mr-md"
-                            style="width: 200px; height: 18px"
-                        />
-                    </div>
-                </template>
-            </Suspense>
-        </div>
-
         <div>
             <Suspense>
-                <ExplorerPageFilesTable :url_handler="handler" v-if="handler" />
+                <ExplorerPageFilesTable :handler="handler" v-if="handler" />
 
                 <template #fallback>
                     <div style="width: 100%; height: 645px">
@@ -176,7 +180,6 @@
 
 <script setup lang="ts">
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
-import TableSearchHeader from 'components/explorer_page/ExplorerPageTableSearchHeader.vue';
 import {
     useHandler,
     useMissionQuery,
@@ -192,8 +195,9 @@ import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDia
 import { Notify } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { FileType } from 'src/enums/FILE_ENUM';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -209,6 +213,38 @@ const search = computed({
         handler.value.setSearch({ name: value });
     },
 });
+const fileTypeFilter = ref([
+    { name: 'Bag', value: false },
+    { name: 'MCAP', value: true },
+]);
+const selectedFileTypes = computed(() => {
+    return fileTypeFilter.value
+        .filter((item) => item.value)
+        .map((item) => item.name)
+        .join(' & ');
+});
+watch(
+    () => fileTypeFilter.value,
+    () => {
+        if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
+            handler.value.setFileType(FileType.ALL);
+            return;
+        }
+        handler.value.setFileType(
+            fileTypeFilter.value[0].value ? FileType.BAG : FileType.MCAP,
+        );
+    },
+    { deep: true },
+);
+
+function onFileTypeClicked(index: number) {
+    const updatedFileTypeFilter = [...fileTypeFilter.value]; // Only trigger a single mutation
+    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index].value;
+    if (!updatedFileTypeFilter[0].value && !updatedFileTypeFilter[1].value) {
+        updatedFileTypeFilter[1 - index].value = true;
+    }
+    fileTypeFilter.value = updatedFileTypeFilter;
+}
 
 const { data: project } = useProjectQuery(project_uuid);
 const { data: mission } = useMissionQuery(
@@ -228,7 +264,7 @@ const { data: mission } = useMissionQuery(
 
 function refresh() {
     queryClient.invalidateQueries({
-        queryKey: ['files', mission_uuid],
+        predicate: (query) => query.queryKey[0] === 'files',
     });
 }
 </script>
