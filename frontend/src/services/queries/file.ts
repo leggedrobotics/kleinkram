@@ -341,3 +341,8 @@ export const getStorage = async (): Promise<StorageResponse> => {
     const response = await axios.get('file/storage');
     return response.data as StorageResponse;
 };
+
+export const getIsUploading = async (): Promise<boolean> => {
+    const response = await axios.get('file/isUploading');
+    return response.data as boolean;
+};

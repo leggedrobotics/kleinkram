@@ -95,6 +95,13 @@
                     icon="sym_o_export_notes"
                 >
                     <q-tooltip>Processing Uploads</q-tooltip>
+                    <q-linear-progress
+                        v-if="is_uploading"
+                        indeterminate
+                        size="4px"
+                        color="blue"
+                        style="position: absolute; top: 35px; width: 30px"
+                    />
                 </q-btn>
 
                 <q-btn
@@ -200,8 +207,10 @@ import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDia
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import USER_ROLES from 'src/enums/USER_ROLES';
+import { useIsUploading } from 'src/hooks/customQueryHooks';
 
 const is_authenticated = await isAuthenticated();
+const is_uploading = useIsUploading();
 
 const { data: user } = useQuery({
     queryKey: ['user'],

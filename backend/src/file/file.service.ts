@@ -5,26 +5,22 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, LessThan, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import {
-    deleteFileMinio,
-    externalMinio,
-    internalMinio,
-    moveFile,
-} from '../minioHelper';
+import { deleteFileMinio, externalMinio, moveFile } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
-import { DataType, FileType, UserRole } from '@common/enum';
+import { DataType, FileState, FileType, UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import axios from 'axios';
+import QueueEntity from '@common/entities/queue/queue.entity';
 
 @Injectable()
 export class FileService {
@@ -40,6 +36,8 @@ export class FileService {
         private readonly dataSource: DataSource,
         @InjectRepository(TagType)
         private tagTypeRepository: Repository<TagType>,
+        @InjectRepository(QueueEntity)
+        private queueRepository: Repository<QueueEntity>,
     ) {}
 
     async findAll(userUUID: string, take: number, skip: number) {
@@ -561,6 +559,17 @@ export class FileService {
             .catch((error) => {
                 console.error('Error:', error);
             });
+    }
+
+    async isUploading(userUUID: string) {
+        return this.queueRepository
+            .findOne({
+                where: {
+                    state: LessThan(FileState.COMPLETED),
+                    creator: { uuid: userUUID },
+                },
+            })
+            .then((res) => !!res);
     }
 }
 

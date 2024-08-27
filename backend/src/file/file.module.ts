@@ -21,6 +21,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
             Mission,
             FileEntity,
             Topic,
+            QueueEntity,
             Project,
             User,
             Apikey,

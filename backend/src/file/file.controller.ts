@@ -1,12 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -17,21 +9,20 @@ import {
     CanReadMission,
     CanWriteFile,
     LoggedIn,
-    Public,
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
+    QueryOptionalBoolean,
     QueryOptionalDate,
-    QuerySkip,
+    QueryOptionalRecord,
     QueryOptionalString,
     QueryOptionalUUID,
+    QuerySkip,
     QueryString,
     QueryTake,
     QueryUUID,
-    QueryOptionalRecord,
-    QueryOptionalBoolean,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
@@ -181,5 +172,11 @@ export class FileController {
     @LoggedIn()
     async getStorage() {
         return this.fileService.getStorage();
+    }
+
+    @Get('isUploading')
+    @LoggedIn()
+    async isUploading(@addJWTUser() user: JWTUser) {
+        return this.fileService.isUploading(user.uuid);
     }
 }
