@@ -10,7 +10,14 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import { deleteFileMinio, externalMinio, moveFile } from '../minioHelper';
+import {
+    basePolicy,
+    deleteFileMinio,
+    externalMinio,
+    generateTemporaryCredentials,
+    internalMinio,
+    moveFile,
+} from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import { DataType, FileState, FileType, UserRole } from '@common/enum';
@@ -570,6 +577,22 @@ export class FileService {
                 },
             })
             .then((res) => !!res);
+    }
+
+    async getTemporaryAccess(filenames: string[], missionUUID: string) {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['project'],
+        });
+
+        const paths = filenames.map((filename) => {
+            return `${mission.project.name}/${mission.name}/${filename}`;
+        });
+        try {
+            return generateTemporaryCredentials(paths);
+        } catch (err) {
+            console.error(err);
+        }
     }
 }
 

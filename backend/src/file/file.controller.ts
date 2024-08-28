@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -8,7 +16,9 @@ import {
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
+    CanWriteMissionByBody,
     LoggedIn,
+    Public,
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
@@ -21,12 +31,14 @@ import {
     QueryOptionalUUID,
     QuerySkip,
     QueryString,
+    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
 import { BodyUUID } from '../validation/bodyDecorators';
+import { CreatePreSignedURLSDto } from '../queue/entities/createPreSignedURLS.dto';
 
 @Controller('file')
 export class FileController {
@@ -178,5 +190,18 @@ export class FileController {
     @LoggedIn()
     async isUploading(@addJWTUser() user: JWTUser) {
         return this.fileService.isUploading(user.uuid);
+    }
+
+    @Post('temporaryAccess')
+    @Public()
+    async getTemporaryAccess(
+        @addJWTUser() user: JWTUser,
+        @Body() body: CreatePreSignedURLSDto,
+    ) {
+        console.log('getTemporaryAccess', body);
+        return this.fileService.getTemporaryAccess(
+            body.filenames,
+            body.missionUUID,
+        );
     }
 }
