@@ -311,8 +311,12 @@ const createFileAction = async () => {
             .getAll()
             .filter(
                 (query) =>
-                    query.queryKey[0] === 'files' &&
-                    query.queryKey[1] === selected_mission.value?.uuid,
+                    (query.queryKey[0] === 'files' &&
+                        query.queryKey[1] === selected_mission.value?.uuid) ||
+                    (query.queryKey[0] === 'missions' &&
+                        query.queryKey[1] === selected_project.value?.uuid) ||
+                    (query.queryKey[0] === 'projects' &&
+                        query.queryKey[1] === selected_project.value?.uuid),
             );
         filtered.forEach((query) => {
             console.log('Invalidating query', query.queryKey);
