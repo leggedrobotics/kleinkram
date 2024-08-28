@@ -25,9 +25,9 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <delete-project-dialog-opener :project="project">
+                <delete-project-dialog-opener :project_uuid="project_uuid">
                     <q-btn color="red" outline icon="sym_o_delete">
-                        <q-tooltip> Delete the Procker ject</q-tooltip>
+                        <q-tooltip> Delete the Project</q-tooltip>
                     </q-btn>
                 </delete-project-dialog-opener>
                 <q-btn icon="sym_o_more_horiz" outline disabled>

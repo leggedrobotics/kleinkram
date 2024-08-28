@@ -56,7 +56,9 @@
                             >
                                 <q-item-section>Move</q-item-section>
                             </q-item>
-                            <DeleteMissionDialogOpener :mission="props.row">
+                            <DeleteMissionDialogOpener
+                                :mission_uuid="props.row.uuid"
+                            >
                                 <q-item clickable v-ripple>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>

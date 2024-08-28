@@ -63,7 +63,7 @@
                         <q-tooltip> Analyze Actions</q-tooltip>
                     </q-btn>
                     <delete-mission-dialog-opener
-                        :mission="mission"
+                        :mission_uuid="mission.uuid"
                         v-if="mission"
                     >
                         <q-btn outline color="red" icon="sym_o_delete"></q-btn>

@@ -1,49 +1,45 @@
 <template>
     <q-card-section class="q-pa-md">
-        <h5>Delete Project</h5>
-        <p>Please confirm by entering the Project name: {{ project.name }}</p>
-        <q-input v-model="project_name_check" label="Mission Name" />
-        <div class="q-mt-md row">
-            <div class="col-10" />
-            <div class="col-2">
-                <q-btn
-                    label="DELETE"
-                    color="red"
-                    @click="_deleteProject"
-                    :disable="project_name_check !== project.name"
-                />
-            </div>
-        </div>
+        <p>
+            Please confirm by entering the Project name:
+            <b>{{ project.name }}</b>
+        </p>
+        <q-input
+            v-model="project_name_check"
+            outlined
+            placeholder="Confirm Project Name"
+            autofocus
+        />
     </q-card-section>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { Notify } from 'quasar';
-import { Mission } from 'src/types/Mission';
-import { deleteMission } from 'src/services/mutations/mission';
+import { Notify, QInput } from 'quasar';
 import { Project } from 'src/types/Project';
 import { deleteProject } from 'src/services/mutations/project';
 import { useHandler } from 'src/hooks/customQueryHooks';
 
 const project_name_check = ref('');
 const client = useQueryClient();
-const props = defineProps<{
-    project: Project;
-}>();
-const emit = defineEmits(['deleted']);
+const { project } = defineProps({
+    project: {
+        type: Project,
+        required: true,
+    },
+});
 
 const handler = useHandler();
 
-async function _deleteProject() {
-    if (project_name_check.value === props.project.name) {
-        await deleteProject(props.project.uuid)
+async function deleteProjectAction() {
+    if (project_name_check.value === project.name) {
+        await deleteProject(project.uuid)
             .then(() => {
                 client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
-                            query.queryKey[1] === props.project.uuid),
+                            query.queryKey[1] === project.uuid),
                 });
                 Notify.create({
                     message: 'Project deleted',
@@ -53,7 +49,6 @@ async function _deleteProject() {
                 });
 
                 handler.value.setProjectUUID('');
-                emit('deleted');
             })
             .catch((e) => {
                 Notify.create({
@@ -64,4 +59,9 @@ async function _deleteProject() {
             });
     }
 }
+
+defineExpose({
+    deleteProjectAction,
+    project_name_check,
+});
 </script>

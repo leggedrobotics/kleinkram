@@ -22,7 +22,9 @@ export default class Tag extends BaseEntity {
     @Column({ nullable: true })
     LOCATION: string;
 
-    @ManyToOne(() => Mission, (mission) => mission.tags)
+    @ManyToOne(() => Mission, (mission) => mission.tags, {
+        onDelete: 'CASCADE',
+    })
     mission: Mission;
 
     @ManyToOne(() => TagType, (tagType) => tagType.tags)

@@ -450,6 +450,7 @@ export class FileService {
         if (file.uuid === undefined || file.uuid !== uuid) {
             throw new Error('File not found');
         }
+
         return await externalMinio.presignedUrl(
             'GET',
             file.type === FileType.MCAP

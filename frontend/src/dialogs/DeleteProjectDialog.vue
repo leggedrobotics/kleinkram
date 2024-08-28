@@ -2,15 +2,28 @@
     <base-dialog ref="dialogRef">
         <template #title> Delete Project</template>
         <template #content>
-            <DeleteProject :project="project" @deleted="onDialogCancel" />
+            <DeleteProject
+                :project="project"
+                ref="deleteProjectRef"
+                v-if="project"
+            />
+            <q-skeleton v-else height="250px" />
         </template>
 
         <template #actions>
             <q-btn
                 flat
+                :disable="
+                    deleteProjectRef?.project_name_check !== project?.name
+                "
                 label="Delete Project"
                 class="bg-button-primary"
-                @click="onDialogCancel"
+                @click="
+                    () => {
+                        deleteProjectRef?.deleteProjectAction();
+                        onDialogOK();
+                    }
+                "
             />
         </template>
     </base-dialog>
@@ -18,12 +31,16 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import DeleteProject from 'components/DeleteProject.vue';
-import { Project } from 'src/types/Project';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { computed, ref } from 'vue';
+import { useProjectQuery } from 'src/hooks/customQueryHooks';
 
-const { dialogRef, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const deleteProjectRef = ref<InstanceType<typeof DeleteProject> | null>(null);
 
-defineProps<{
-    project: Project;
-}>();
+const { project_uuid } = defineProps({
+    project_uuid: String,
+});
+
+const { data: project } = useProjectQuery(computed(() => project_uuid));
 </script>

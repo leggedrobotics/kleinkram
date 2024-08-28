@@ -2,30 +2,45 @@
     <base-dialog ref="dialogRef">
         <template #title> Delete Mission</template>
         <template #content>
-            <delete-mission :mission="mission" @deleted="onDialogCancel" />
+            <DeleteMission
+                :mission="mission"
+                ref="deleteMissionRef"
+                v-if="mission"
+            />
+            <q-skeleton v-else height="250px" />
         </template>
 
         <template #actions>
             <q-btn
                 flat
+                :disable="
+                    deleteMissionRef?.mission_name_check !== mission?.name
+                "
                 label="Delete Mission"
                 class="bg-button-primary"
-                @click="onDialogCancel"
+                @click="
+                    () => {
+                        deleteMissionRef?.deleteMissionAction();
+                        onDialogOK();
+                    }
+                "
             />
         </template>
     </base-dialog>
-    >
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import { Mission } from 'src/types/Mission';
-import DeleteMission from 'components/DeleteMission.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { computed, ref } from 'vue';
+import { useMissionQuery } from 'src/hooks/customQueryHooks';
+import DeleteMission from 'components/DeleteMission.vue';
 
-const { dialogRef, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const deleteMissionRef = ref<InstanceType<typeof DeleteMission> | null>(null);
 
-const props = defineProps<{
-    mission: Mission;
-}>();
+const { mission_uuid } = defineProps({
+    mission_uuid: String,
+});
+
+const { data: mission } = useMissionQuery(computed(() => mission_uuid));
 </script>
-<style scoped></style>
