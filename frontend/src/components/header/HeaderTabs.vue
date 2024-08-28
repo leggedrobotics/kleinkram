@@ -34,6 +34,7 @@
             v-show="$q.screen.gt.md"
             no-caps
             class="q-py-none q-px-sm q-mx-sm text-secondary"
+            :class="{ 'q-tab--active': path === item.to }"
             v-for="item in main_menu"
             :key="item.title"
             :label="item.title"
@@ -44,13 +45,27 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
+import ROUTES from 'src/router/routes';
+import { computed } from 'vue';
+
 interface MainMenu {
     title: string;
     to: string;
     icon: string;
+    subpage_names: string[];
 }
 
 const { main_menu } = defineProps<{
     main_menu: MainMenu[];
 }>();
+
+const route = useRoute();
+const path = computed(() => {
+    const nameWithPostfix = (route.name as string) + 'Layout';
+    const menu_item = main_menu.find((item) =>
+        item.subpage_names.includes(nameWithPostfix),
+    );
+    return menu_item?.to ?? route.path;
+});
 </script>

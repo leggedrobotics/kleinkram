@@ -34,6 +34,10 @@ export default withMermaid({
                             text: 'Getting Started',
                             link: '/usage/getting-started',
                         },
+                        {
+                            text: 'Access Control',
+                            link: '/usage/access-control',
+                        },
                     ],
                     collapsed: false,
                 },
