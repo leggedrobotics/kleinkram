@@ -13,8 +13,8 @@
             />
         </template>
         <span>
-            This app is the development version of Legged Robotics. Data may be
-            lost at any time.
+            This app is the development version of Kleinkram. Data may be lost
+            at any time.
         </span>
     </q-banner>
 </template>
