@@ -3,7 +3,7 @@
         <template #title> Create File</template>
 
         <template #content>
-            <create-file :mission="mission" />
+            <create-file :mission="mission" ref="createFileRef" />
         </template>
 
         <template #actions>
@@ -11,7 +11,12 @@
                 flat
                 label="Create File"
                 class="bg-button-primary"
-                @click="onDialogOK"
+                @click="
+                    () => {
+                        createFileRef?.createFileAction();
+                        onDialogOK();
+                    }
+                "
             />
         </template>
     </base-dialog>
@@ -23,6 +28,9 @@ import { useDialogPluginComponent } from 'quasar';
 import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { ref } from 'vue';
+
+const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 
 const props = defineProps<{
     mission?: Mission;
