@@ -49,11 +49,15 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
                     relations: ['mission'],
                 })
                 .catch(() => {
-                    throw new ForbiddenException('Invalid key');
+                    console.log(
+                        'Invalid key: ',
+                        request.cookies[CookieNames.CLI_KEY],
+                    );
+                    throw new ForbiddenException('Invalid key!');
                 });
 
             if (request.query.uuid != token.mission.uuid) {
-                throw new ForbiddenException('Invalid key');
+                throw new ForbiddenException('Invalid key?');
             }
         } else {
             await super.canActivate(context);

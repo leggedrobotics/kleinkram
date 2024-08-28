@@ -110,17 +110,21 @@ export class DockerDaemon {
         if (!this.docker || !(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
+        let image = this.docker.getImage(container_options.docker_image);
+        if (!image) {
+            await this.pull_image(container_options.docker_image).catch(
+                (error) => {
+                    // cleanup error message
+                    error.message = error.message.replace(/\(.*?\)/g, '');
+                    error.message = error.message.replace(/ +/g, ' ').trim();
 
-        await this.pull_image(container_options.docker_image).catch((error) => {
-            // cleanup error message
-            error.message = error.message.replace(/\(.*?\)/g, '');
-            error.message = error.message.replace(/ +/g, ' ').trim();
-
-            logger.warn(`Failed to pull image: ${error.message}`);
-        });
+                    logger.warn(`Failed to pull image: ${error.message}`);
+                },
+            );
+            image = this.docker.getImage(container_options.docker_image);
+        }
 
         // get image details
-        const image = this.docker.getImage(container_options.docker_image);
         const image_details = await image
             .inspect()
             .catch(dockerDaemonErrorHandler);
