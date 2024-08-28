@@ -1,22 +1,86 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="q-pa-sm text-center"
-            style="width: 80%; min-height: 250px; max-width: 900px"
-        >
-            <ConfigureProjectTags :projectUUID="projectUUID" />
-        </q-card>
-    </q-dialog>
+    <base-dialog ref="dialogRef">
+        <template #title> Configure Project Tags</template>
+
+        <template #content>
+            <ConfigureTags v-model:selected="selected" v-if="project" />
+        </template>
+
+        <template #actions>
+            <q-btn
+                flat
+                :disable="selected.length === 0"
+                label="Save"
+                class="bg-button-primary"
+                @click="
+                    () => {
+                        mutate();
+                        onDialogOK();
+                    }
+                "
+            />
+        </template>
+    </base-dialog>
 </template>
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import ConfigureTags from 'components/ConfigureTags.vue';
+import { getProject } from 'src/services/queries/project';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { ref, watch } from 'vue';
+import { TagType } from 'src/types/TagType';
+import { updateTagTypes } from 'src/services/mutations/project';
 
-import ConfigureProjectTags from 'components/ConfigureProjectTags.vue';
-
-const { dialogRef, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
     projectUUID: string;
 }>();
+
+const queryClient = useQueryClient();
+
+const { data: project } = useQuery({
+    queryKey: ['project', props.projectUUID],
+    queryFn: async () => {
+        return getProject(props.projectUUID);
+    },
+});
+const selected = ref<TagType[]>([]);
+
+watch(
+    () => project.value,
+    (newVal) => {
+        selected.value = newVal?.requiredTags || ([] as TagType[]);
+    },
+    { immediate: true },
+);
+const { mutate } = useMutation({
+    mutationFn: () => {
+        return updateTagTypes(
+            project.value?.uuid as string,
+            selected.value.map((tag) => tag.uuid),
+        );
+    },
+    onSuccess(data, variables, context) {
+        Notify.create({
+            message: 'Tagtypes updated',
+            color: 'positive',
+            position: 'bottom',
+        });
+        queryClient.invalidateQueries({
+            predicate: (query) =>
+                query.queryKey[0] === 'project' &&
+                query.queryKey[1] === props.projectUUID,
+        });
+    },
+    onError(error, variables, context) {
+        Notify.create({
+            message: 'Error adding TagTypes: ' + error.message,
+            color: 'negative',
+            position: 'bottom',
+        });
+    },
+});
 </script>
 <style scoped></style>
