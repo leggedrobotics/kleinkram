@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="accessGroup?.name">
+    <title-section :title="'Group: ' + accessGroup?.name">
         <template #tabs>
             <q-tabs
                 v-model="tab"
