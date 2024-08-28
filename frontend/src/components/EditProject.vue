@@ -1,50 +1,38 @@
 <template>
-    <h4>Edit Project</h4>
-    <div>
-        <q-input
-            ref="projectNameInput"
-            v-model="projectName"
-            outlined
-            autofocus
-            style="padding-bottom: 30px"
-            label="Project Name *"
-            :rules="[
-                (val) => !!val || 'A project name cannot be empty!',
-                (val) =>
-                    !invalidProjectNames.includes(val) ||
-                    'A project with that name already exists!',
-            ]"
-            @update:model-value="
-                () => {
-                    hasValidInput =
-                        !!projectName &&
-                        !!projectDescription &&
-                        !invalidProjectNames.includes(projectName);
-                }
-            "
-        />
+    <q-input
+        ref="projectNameInput"
+        v-model="projectName"
+        outlined
+        autofocus
+        style="padding-bottom: 30px"
+        label="Project Name *"
+        :rules="[
+            (val) => !!val || 'A project name cannot be empty!',
+            (val) =>
+                !invalidProjectNames.includes(val) ||
+                'A project with that name already exists!',
+        ]"
+        @update:model-value="
+            () => {
+                hasValidInput =
+                    !!projectName &&
+                    !!projectDescription &&
+                    !invalidProjectNames.includes(projectName);
+            }
+        "
+    />
 
-        <q-input
-            v-model="projectDescription"
-            type="textarea"
-            outlined
-            style="padding-bottom: 10px"
-            label="Project Description *"
-            :rules="[(val) => !!val || 'Project Description is required']"
-            @update:model-value="
-                hasValidInput = !!projectName && !!projectDescription
-            "
-        />
-        <div class="flex justify-end">
-            <q-btn
-                v-if="project"
-                label="Save"
-                color="primary"
-                @click="save"
-                icon="sym_o_save"
-            />
-        </div>
-    </div>
+    <q-input
+        v-model="projectDescription"
+        type="textarea"
+        outlined
+        style="padding-bottom: 10px"
+        label="Project Description *"
+        :rules="[(val) => !!val || 'Project Description is required']"
+        @update:model-value="
+            hasValidInput = !!projectName && !!projectDescription
+        "
+    />
 </template>
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -150,5 +138,9 @@ async function save() {
         }
     }
 }
+
+defineExpose({
+    save,
+});
 </script>
 <style scoped></style>
