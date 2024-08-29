@@ -18,7 +18,6 @@ import {
     CanWriteFile,
     CanWriteMissionByBody,
     LoggedIn,
-    Public,
     TokenOrUser,
 } from '../auth/roles.decorator';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
@@ -31,7 +30,6 @@ import {
     QueryOptionalUUID,
     QuerySkip,
     QueryString,
-    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
@@ -193,18 +191,15 @@ export class FileController {
     }
 
     @Post('temporaryAccess')
-    @LoggedIn()
+    @CanWriteMissionByBody()
     async getTemporaryAccess(
         @addJWTUser() user: JWTUser,
         @Body() body: CreatePreSignedURLSDto,
     ) {
-        console.log('getTemporaryAccess', body);
-        const res = await this.fileService.getTemporaryAccess(
+        return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
             user.uuid,
         );
-        console.log('getTemporaryAccess', res);
-        return res;
     }
 }

@@ -642,7 +642,6 @@ export class FileService {
                 }
             }),
         );
-        console.log(successfullySavedFiles);
         const paths = filenames.map((filename) => {
             return `${mission.project.name}/${mission.name}/${filename}`;
         });
