@@ -330,15 +330,17 @@ async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
 ) {
+    let UploadId: string | undefined;
     try {
         // Step 1: Initiate Multipart Upload
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
             Bucket: bucket,
             Key: key,
         });
-        const { UploadId } = await minioClient.send(
+        const { UploadId: _uploadID } = await minioClient.send(
             createMultipartUploadCommand,
         );
+        UploadId = _uploadID;
 
         // Step 2: Upload Parts
         const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
