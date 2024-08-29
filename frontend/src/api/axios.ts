@@ -6,6 +6,7 @@ import { ref } from 'vue';
 const axiosInstance = axios.create({
     baseURL: ENV.ENDPOINT,
     withCredentials: true,
+    timeout: 1000 * 60 * 30,
     // Add more settings as needed
 });
 

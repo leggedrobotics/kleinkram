@@ -71,7 +71,7 @@ export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
     const { data: isUploading } = useQuery<boolean>({
         queryKey: ['isUploading'],
         queryFn: () => getIsUploading(),
-        refetchInterval: 1000,
+        refetchInterval: 5000,
     });
 
     return isUploading;

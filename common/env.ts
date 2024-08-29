@@ -133,6 +133,14 @@ export default {
         return asString(process.env.MINIO_ENDPOINT);
     },
 
+    get MINIO_USER(): string {
+        return asString(process.env.MINIO_USER);
+    },
+
+    get MINIO_PASSWORD(): string {
+        return asString(process.env.MINIO_PASSWORD);
+    },
+
     get GOOGLE_CLIENT_ID(): string {
         return asString(process.env.GOOGLE_CLIENT_ID);
     },

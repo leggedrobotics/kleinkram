@@ -1,6 +1,7 @@
 import { BucketItem, Client } from 'minio';
 import env from '@common/env';
 import { FileType } from '@common/enum';
+import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -114,4 +115,37 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
 
 export async function deleteFileMinio(bucketName: string, location: string) {
     return internalMinio.removeObject(bucketName, location);
+}
+
+export function basePolicy(resources: string[]) {
+    return {
+        Version: '2012-10-17',
+        Statement: [
+            {
+                Effect: 'Allow',
+                Action: ['s3:PutObject', 's3:AbortMultipartUpload'],
+                Resource: resources,
+            },
+        ],
+    };
+}
+
+export async function generateTemporaryCredentials(filenames: string[]) {
+    const resources = filenames.map((filename) => {
+        if (filename.endsWith('.bag')) {
+            return `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${filename}`;
+        }
+        return `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${filename}`;
+    });
+
+    const provider = new AssumeRoleProvider({
+        secretKey: env.MINIO_PASSWORD,
+        accessKey: env.MINIO_USER,
+        stsEndpoint: 'http://minio:9000',
+        action: 'AssumeRole',
+        policy: JSON.stringify(basePolicy(resources)),
+        durationSeconds: 60 * 30,
+    });
+
+    return await provider.getCredentials();
 }

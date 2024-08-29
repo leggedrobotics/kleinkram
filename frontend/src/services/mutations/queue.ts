@@ -1,17 +1,6 @@
 import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
 
-export const getUploadURL = async (
-    filenames: string[],
-    missionUUID: string,
-) => {
-    const response = await axios.post('/queue/createPreSignedURLS', {
-        filenames,
-        missionUUID,
-    });
-    return response.data;
-};
-
 export const confirmUpload = async (uuid: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid });
     return response.data;
