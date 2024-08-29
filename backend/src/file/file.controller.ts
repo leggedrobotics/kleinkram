@@ -193,15 +193,18 @@ export class FileController {
     }
 
     @Post('temporaryAccess')
-    @Public()
+    @LoggedIn()
     async getTemporaryAccess(
         @addJWTUser() user: JWTUser,
         @Body() body: CreatePreSignedURLSDto,
     ) {
         console.log('getTemporaryAccess', body);
-        return this.fileService.getTemporaryAccess(
+        const res = await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
+            user.uuid,
         );
+        console.log('getTemporaryAccess', res);
+        return res;
     }
 }

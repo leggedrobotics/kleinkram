@@ -1,10 +1,7 @@
 import { BucketItem, Client } from 'minio';
 import env from '@common/env';
 import { FileType } from '@common/enum';
-const aws4 = require('aws4');
-import * as querystring from 'querystring';
-import axios from 'axios';
-import { request } from 'http';
+import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -126,55 +123,28 @@ export function basePolicy(resources: string[]) {
         Statement: [
             {
                 Effect: 'Allow',
-                Action: 's3:ListBucket',
-                Resource: 'arn:aws:s3:::bags',
+                Action: ['s3:PutObject', 's3:AbortMultipartUpload'],
+                Resource: resources,
             },
         ],
     };
 }
 
 export async function generateTemporaryCredentials(filenames: string[]) {
-    // const resources = filenames.map(
-    //     (filename) => `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${filename}`,
-    // );
-    // const policy = basePolicy(resources);
-    const host = 'minio';
-    //
-    const baseUrl = `http://${host}:9000/`;
-    // const params = {
-    //     Action: 'AssumeRole',
-    //     DurationSeconds: '3600',
-    //     Version: '2011-06-15',
-    //     Policy: JSON.stringify(policy),
-    // };
-    //
-    // // Generate the query string
-    // const queryString = querystring.stringify(params);
-    const queryString =
-        '?Action=AssumeRole&DurationSeconds=3600&Version=2011-06-15&Policy={"Version":"2012-10-17","Statement":[{"Sid":"Stmt1","Effect":"Allow","Action":"s3:*","Resource":"arn:aws:s3:::*"}]}';
-    // Prepare the request options
-    const requestOptions = {
-        host,
-        path: `${queryString}`,
-        service: 'sts',
-        region: 'us-east-1',
-        method: 'GET',
-    };
-
-    // Sign the request using aws4
-    const res = aws4.sign(requestOptions, {
-        accessKeyId: env.MINIO_ACCESS_KEY,
-        secretAccessKey: env.MINIO_SECRET_KEY,
+    const resources = filenames.map((filename) => {
+        if (filename.endsWith('.bag')) {
+            return `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${filename}`;
+        }
+        return `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${filename}`;
     });
 
-    // Construct the final URL
-    const finalUrl = `${baseUrl}${requestOptions.path}&${querystring.stringify(res.headers)}`;
-    console.log('finalUrl', finalUrl);
-    try {
-        const res2 = await axios.get(finalUrl);
-        console.log('res2', res2);
-    } catch (e) {
-        console.log('error', e);
-    }
-    return finalUrl;
+    const provider = new AssumeRoleProvider({
+        secretKey: env.MINIO_PASSWORD,
+        accessKey: env.MINIO_USER,
+        stsEndpoint: 'http://minio:9000',
+        action: 'AssumeRole',
+        policy: JSON.stringify(basePolicy(resources)),
+    });
+
+    return await provider.getCredentials();
 }

@@ -33,29 +33,6 @@ export class QueueController {
         return this.queueService.createDrive(body, user);
     }
 
-    // @Post('create')
-    // @UseInterceptors(FileInterceptor('file'))
-    // async create(
-    //   @UploadedFile() file: Express.Multer.File,
-    //   @Body() body: CreateFile, // Use a specific DTO type if available
-    // ) {
-    //   return this.queueService.create(body, file);
-    // }
-
-    @Post('createPreSignedURLS')
-    @CanWriteMissionByBody()
-    async create(
-        @Body() body: CreatePreSignedURLSDto,
-        @addJWTUser() user: JWTUser,
-    ) {
-        logger.debug('createPreSignedURLS', body.filenames, body.missionUUID);
-        return this.queueService.handleFileUpload(
-            body.filenames,
-            body.missionUUID,
-            user,
-        );
-    }
-
     @Post('confirmUpload')
     @CanCreateQueueByBody()
     async confirmUpload(@BodyUUID('uuid') uuid: string) {

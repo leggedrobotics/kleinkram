@@ -20,7 +20,13 @@ import {
 } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
-import { DataType, FileState, FileType, UserRole } from '@common/enum';
+import {
+    DataType,
+    FileLocation,
+    FileState,
+    FileType,
+    UserRole,
+} from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
@@ -579,17 +585,72 @@ export class FileService {
             .then((res) => !!res);
     }
 
-    async getTemporaryAccess(filenames: string[], missionUUID: string) {
+    async getTemporaryAccess(
+        filenames: string[],
+        missionUUID: string,
+        userUUID: string,
+    ) {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
         });
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        const successfullySavedFiles = {};
+        await Promise.all(
+            filenames.map(async (filename) => {
+                const fileType = filename.endsWith('.bag')
+                    ? FileType.BAG
+                    : FileType.MCAP;
+                const tentativeFile = this.fileRepository.create({
+                    date: new Date(),
+                    size: 0,
+                    filename,
+                    mission,
+                    creator: user,
+                    type: fileType,
+                    tentative: true,
+                });
+                try {
+                    const savedFile =
+                        await this.fileRepository.save(tentativeFile);
+                    const location = `${mission.project.name}/${mission.name}/${filename}`;
 
+                    const newQueue = this.queueRepository.create({
+                        filename,
+                        identifier: location,
+                        state: FileState.AWAITING_UPLOAD,
+                        location: FileLocation.MINIO,
+                        mission,
+                        creator: user,
+                    });
+                    const queueEntity =
+                        await this.queueRepository.save(newQueue);
+                    successfullySavedFiles[filename] = {
+                        bucket:
+                            fileType === FileType.BAG
+                                ? env.MINIO_BAG_BUCKET_NAME
+                                : env.MINIO_MCAP_BUCKET_NAME,
+                        location,
+                        fileUUID: savedFile.uuid,
+                        queueUUID: queueEntity.uuid,
+                    };
+                } catch (error) {
+                    logger.debug('Tentative file could not be saved');
+                }
+            }),
+        );
+        console.log(successfullySavedFiles);
         const paths = filenames.map((filename) => {
             return `${mission.project.name}/${mission.name}/${filename}`;
         });
         try {
-            return generateTemporaryCredentials(paths);
+            const credentials = await generateTemporaryCredentials(paths);
+            return {
+                credentials,
+                files: successfullySavedFiles,
+            };
         } catch (err) {
             console.error(err);
         }

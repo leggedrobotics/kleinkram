@@ -25,7 +25,7 @@ export default class QueueEntity extends BaseEntity {
     @Column({
         type: 'enum',
         enum: FileLocation,
-        default: 'DRIVE',
+        default: FileLocation.MINIO,
     })
     location: FileLocation;
 

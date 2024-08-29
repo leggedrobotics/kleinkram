@@ -107,16 +107,19 @@ import { computed, Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import axios from 'axios';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
+import { confirmUpload, createDrive } from 'src/services/mutations/queue';
+import { generateTemporaryCredentials } from 'src/services/mutations/file';
 import {
-    confirmUpload,
-    createDrive,
-    getUploadURL,
-} from 'src/services/mutations/queue';
+    AbortMultipartUploadCommand,
+    CompleteMultipartUploadCommand,
+    CreateMultipartUploadCommand,
+    S3Client,
+    UploadPartCommand,
+} from '@aws-sdk/client-s3';
 
 const selected_project: Ref<Project | null> = ref(null);
 
@@ -215,100 +218,67 @@ const submitNewFile = async () => {
                 }
             }
         });
-        const urls = await getUploadURL(
-            filteredFilenames,
-            selected_mission.value.uuid,
-        ).catch((e) => {
-            let msg = `Upload of Files failed: ${e}`;
+        const { credentials, files: reservedFilenames } =
+            await generateTemporaryCredentials(
+                filteredFilenames,
+                selected_mission.value.uuid,
+            ).catch((e) => {
+                let msg = `Upload of Files failed: ${e}`;
 
-            // show special error for 403
-            if (e.response && e.response.status === 403) {
-                msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.value?.name}`;
-            }
+                // show special error for 403
+                if (e.response && e.response.status === 403) {
+                    msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.value?.name}`;
+                }
 
-            // close the notification
-            noti({
-                message: msg,
-                color: 'negative',
-                spinner: false,
-                position: 'top-right',
-                timeout: 30000,
-                closeBtn: true,
+                // close the notification
+                noti({
+                    message: msg,
+                    color: 'negative',
+                    spinner: false,
+                    position: 'top-right',
+                    timeout: 30000,
+                    closeBtn: true,
+                });
             });
+        const minioClient = new S3Client({
+            endpoint: 'http://localhost:9000',
+            forcePathStyle: true,
+            region: 'us-east-1',
+            credentials: {
+                accessKeyId: credentials.accessKey,
+                secretAccessKey: credentials.secretKey,
+                sessionToken: credentials.sessionToken,
+            },
         });
-        await Promise.all(
-            filteredFilenames.map((filename) => {
-                const file = filesToRecord[filename];
-                if (!urls[filename]) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type? Unique filename?`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                    return;
-                }
-                if (urls[filename]['error'] !== undefined) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: ${urls[filename]['error']}`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                    return;
-                }
-                const uploadURL = urls[filename]['url'];
 
-                // Use axios to upload the file
-                return axios
-                    .put(uploadURL, file, {
-                        headers: {
-                            'Content-Type':
-                                file.type || 'application/octet-stream',
-                        },
-                    })
-                    .then(async () => {
-                        confirmUpload(urls[filename]['uuid'])
-                            .then(() => {
-                                Notify.create({
-                                    message: `File ${filename} uploaded`,
-                                    color: 'positive',
-                                    spinner: false,
-                                    position: 'bottom',
-                                    group: false,
-                                    timeout: 2000,
-                                });
-                                files.value = [];
-                            })
-                            .catch((e) => {
-                                Notify.create({
-                                    message: `Upload of File ${filename} failed: ${e}`,
-                                    color: 'negative',
-                                    spinner: false,
-                                    position: 'bottom',
-                                    group: false,
-                                    closeBtn: true,
-                                    timeout: 0,
-                                });
-                            });
-                    })
-                    .catch((e) => {
-                        Notify.create({
-                            message: `Upload of File ${filename} failed: ${e}`,
-                            color: 'negative',
-                            position: 'bottom',
-                            group: false,
-                            spinner: false,
-                            closeBtn: true,
-                            timeout: 0,
-                        });
+        await Promise.all(
+            Object.keys(reservedFilenames).map(async (filename) => {
+                const file = filesToRecord[filename];
+
+                try {
+                    await uploadFileMultipart(
+                        file,
+                        reservedFilenames[filename].bucket,
+                        reservedFilenames[filename].location,
+                        minioClient,
+                    );
+                    noti({
+                        message: `File ${filename} uploaded`,
+                        color: 'positive',
+                        spinner: false,
+                        timeout: 5000,
                     });
+                    return confirmUpload(reservedFilenames[filename].queueUUID);
+                } catch (e) {
+                    noti({
+                        message: `Upload of File ${filename} failed: ${e}`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 0,
+                        closeBtn: true,
+                    });
+                }
+                return;
             }),
         );
         noti({
@@ -360,5 +330,71 @@ const submitNewFile = async () => {
         });
     }
 };
+
+async function uploadFileMultipart(
+    file: File,
+    bucket: string,
+    key: string,
+    minioClient: S3Client,
+) {
+    try {
+        // Step 1: Initiate Multipart Upload
+        const createMultipartUploadCommand = new CreateMultipartUploadCommand({
+            Bucket: bucket,
+            Key: key,
+        });
+        const { UploadId } = await minioClient.send(
+            createMultipartUploadCommand,
+        );
+
+        // Step 2: Upload Parts
+        const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
+        const parts = [];
+        for (
+            let partNumber = 1, start = 0;
+            start < file.size;
+            partNumber++, start += partSize
+        ) {
+            const end = Math.min(start + partSize, file.size);
+            const partBlob = file.slice(start, end);
+            const uploadPartCommand = new UploadPartCommand({
+                Bucket: bucket,
+                Key: key,
+                PartNumber: partNumber,
+                UploadId,
+                Body: partBlob,
+            });
+            const { ETag } = await minioClient.send(uploadPartCommand);
+            parts.push({ PartNumber: partNumber, ETag });
+        }
+
+        // Step 3: Complete Multipart Upload
+        const completeMultipartUploadCommand =
+            new CompleteMultipartUploadCommand({
+                Bucket: bucket,
+                Key: key,
+                UploadId,
+                MultipartUpload: { Parts: parts },
+            });
+        return await minioClient.send(completeMultipartUploadCommand);
+    } catch (error) {
+        console.error('Multipart upload failed:', error);
+
+        // Step 4 (Optional): Abort Multipart Upload
+        if (UploadId) {
+            const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
+                {
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId,
+                },
+            );
+            await minioClient.send(abortMultipartUploadCommand);
+            console.log('Multipart upload aborted.');
+        }
+
+        throw error;
+    }
+}
 </script>
 <style scoped></style>
