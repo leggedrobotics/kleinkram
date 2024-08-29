@@ -19,7 +19,9 @@ export default class QueueEntity extends BaseEntity {
     })
     state: FileState;
 
-    @ManyToOne(() => Mission, (project) => project.queues)
+    @ManyToOne(() => Mission, (project) => project.queues, {
+        onDelete: 'CASCADE',
+    })
     mission: Mission;
 
     @Column({

@@ -8,13 +8,6 @@
 
         <template v-slot:buttons>
             <button-group>
-                <edit-project-dialog-opener :project_uuid="project_uuid">
-                    <q-btn outline icon="sym_o_edit" label="Edit Project">
-                        <q-tooltip> Edit Project</q-tooltip>
-                    </q-btn>
-                </edit-project-dialog-opener>
-
-                <manage-project-access-button :project_uuid="project_uuid" />
                 <q-btn
                     outline
                     color="primary"
@@ -25,13 +18,64 @@
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
-                <delete-project-dialog-opener :project="project">
-                    <q-btn color="red" outline icon="sym_o_delete">
-                        <q-tooltip> Delete the Procker ject</q-tooltip>
-                    </q-btn>
-                </delete-project-dialog-opener>
-                <q-btn icon="sym_o_more_horiz" outline disabled>
+
+                <q-btn icon="sym_o_more_vert" outline>
                     <q-tooltip> More Actions</q-tooltip>
+
+                    <q-menu auto-close style="width: 280px">
+                        <q-list>
+                            <manage-project-dialog-opener
+                                :project_uuid="project_uuid"
+                            >
+                                <q-item clickable v-close-popup>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_lock" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Manage Access
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </manage-project-dialog-opener>
+
+                            <edit-project-dialog-opener
+                                :project_uuid="project_uuid"
+                            >
+                                <q-item clickable v-close-popup>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_edit" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Edit Project
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </edit-project-dialog-opener>
+
+                            <q-item
+                                clickable
+                                v-close-popup
+                                @click="
+                                    () =>
+                                        openConfigureTags(
+                                            project_uuid as string,
+                                        )
+                                "
+                                style="color: red"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_delete" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-section>
+                                        Delete Project
+                                    </q-item-section>
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
                 </q-btn>
             </button-group>
         </template>
@@ -112,12 +156,13 @@ import TitleSection from 'components/TitleSection.vue';
 import { computed } from 'vue';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
-import ManageProjectAccessButton from 'components/buttons/ManageProjectAccessButton.vue';
+import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import { useProjectUUID } from 'src/hooks/utils';
 import { useQuasar } from 'quasar';
+import { logout } from 'src/services/auth';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

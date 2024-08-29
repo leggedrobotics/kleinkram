@@ -58,16 +58,19 @@
                             >
                                 <q-item-section>Configure Tags</q-item-section>
                             </q-item>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="
-                                    () => manageAccessRights(props.row.uuid)
-                                "
+
+                            <manage-project-dialog-opener
+                                :project_uuid="props.row.uuid"
                             >
-                                <q-item-section>Manage Access</q-item-section>
-                            </q-item>
-                            <DeleteProjectDialogOpener :project="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section
+                                        >Manage Access
+                                    </q-item-section>
+                                </q-item>
+                            </manage-project-dialog-opener>
+                            <DeleteProjectDialogOpener
+                                :project_uuid="props.row.uuid"
+                            >
                                 <q-item clickable v-ripple>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
@@ -84,7 +87,6 @@
 import { QTable, useQuasar } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
-import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
@@ -93,6 +95,7 @@ import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogO
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
+import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
 
 const $q = useQuasar();
 
@@ -155,15 +158,6 @@ const onRowClick = async (_: Event, row: any) => {
         name: ROUTES.MISSIONS.routeName,
         params: {
             project_uuid: row.uuid,
-        },
-    });
-};
-
-const manageAccessRights = (project_uuid: string) => {
-    $q.dialog({
-        component: AccessRightsDialog,
-        componentProps: {
-            project_uuid: project_uuid,
         },
     });
 };

@@ -4,8 +4,8 @@
 
         <template #content>
             <edit-project
+                ref="editProjectRef"
                 :project_uuid="props.project_uuid"
-                @close="onDialogOK"
             />
         </template>
 
@@ -14,7 +14,12 @@
                 flat
                 label="Save Project"
                 class="bg-button-primary"
-                @click="onDialogOK"
+                @click="
+                    () => {
+                        editProjectRef?.save();
+                        onDialogOK();
+                    }
+                "
             />
         </template>
     </base-dialog>
@@ -23,6 +28,9 @@
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import EditProject from 'components/EditProject.vue';
 import { useDialogPluginComponent } from 'quasar';
+import { ref } from 'vue';
+
+const editProjectRef = ref<InstanceType<typeof EditProject> | null>(null);
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

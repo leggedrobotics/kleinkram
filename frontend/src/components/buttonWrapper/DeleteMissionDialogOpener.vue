@@ -6,10 +6,9 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
-import { Mission } from 'src/types/Mission';
 
-const props = defineProps<{
-    mission: Mission;
+const { mission_uuid } = defineProps<{
+    mission_uuid: string;
 }>();
 
 const $q = useQuasar();
@@ -19,7 +18,7 @@ const deleteFile = () =>
         title: 'Delete File',
         component: DeleteMissionDialog,
         componentProps: {
-            mission: props.mission,
+            mission_uuid,
         },
     });
 </script>

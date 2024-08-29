@@ -1,105 +1,94 @@
 <template>
     <q-card-section>
-        <h3 class="text-h6">Create new files</h3>
-        <q-form @submit.prevent="submitNewFile">
-            <div class="row items-center justify-between q-gutter-md">
-                <div class="col-1">
-                    <q-btn-dropdown
-                        v-model="dropdownNewFileProject"
-                        :label="selected_project?.name || 'Project'"
-                        outlined
-                        dense
-                        clearable
-                        required
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="project in data"
-                                :key="project.uuid"
-                                clickable
-                                @click="
-                                    selected_project = project;
-                                    dropdownNewFileProject = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-1">
-                    <q-btn-dropdown
-                        v-model="dropdownNewFileMission"
-                        :label="selected_mission?.name || 'Mission'"
-                        outlined
-                        dense
-                        clearable
-                        required
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="mission in missions"
-                                :key="mission.uuid"
-                                clickable
-                                @click="
-                                    selected_mission = mission;
-                                    dropdownNewFileMission = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ mission.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-5">
-                    <div class="row" style="padding-bottom: 8px">
-                        <q-file
-                            outlined
-                            v-model="files"
-                            hint="Upload File"
-                            multiple
-                            accept=".bag, .mcap"
-                            style="min-width: 300px"
-                        >
-                            <template v-slot:prepend>
-                                <q-icon name="sym_o_attach_file" />
-                            </template>
-                            <template v-slot:append>
-                                <q-icon
-                                    name="sym_o_cancel"
-                                    @click="files = []"
-                                />
-                            </template>
-                        </q-file>
-                    </div>
-                    <div class="row">
-                        <q-input
-                            v-model="drive_url"
-                            outlined
-                            dense
-                            clearable
-                            hint="Google Drive URL"
-                            style="min-width: 300px"
-                        />
-                    </div>
-                </div>
-                <div class="col-1">
-                    <q-btn
-                        label="Submit"
-                        color="primary"
-                        @click="submitNewFile"
-                    />
-                </div>
-            </div>
-        </q-form>
+        <label>Project*</label>
+
+        <q-btn-dropdown
+            v-model="dropdownNewFileProject"
+            :disable="!!props?.mission?.project"
+            :label="selected_project?.name || 'Project'"
+            class="q-uploader--bordered full-width full-height q-mb-lg"
+            flat
+            clearable
+            required
+        >
+            <q-list>
+                <q-item
+                    v-for="project in data"
+                    :key="project.uuid"
+                    clickable
+                    @click="
+                        selected_project = project;
+                        dropdownNewFileProject = false;
+                    "
+                >
+                    <q-item-section>
+                        <q-item-label>
+                            {{ project.name }}
+                        </q-item-label>
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-btn-dropdown>
+
+        <label>Mission*</label>
+
+        <q-btn-dropdown
+            v-model="dropdownNewFileMission"
+            :disable="!!props?.mission"
+            :label="selected_mission?.name || 'Mission'"
+            class="q-uploader--bordered full-width full-height q-mb-lg"
+            flat
+            clearable
+            required
+        >
+            <q-list>
+                <q-item
+                    v-for="mission in missions"
+                    :key="mission.uuid"
+                    clickable
+                    @click="
+                        selected_mission = mission;
+                        dropdownNewFileMission = false;
+                    "
+                >
+                    <q-item-section>
+                        <q-item-label>
+                            {{ mission.name }}
+                        </q-item-label>
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-btn-dropdown>
+
+        <label>Upload File from Device</label>
+        <q-file
+            outlined
+            v-model="files"
+            multiple
+            accept=".bag, .mcap"
+            style="min-width: 300px"
+        >
+            <template #prepend>
+                <q-icon name="sym_o_attach_file" />
+            </template>
+
+            <template #append>
+                <q-icon name="sym_o_cancel" @click="files = []" />
+            </template>
+        </q-file>
+
+        <br />
+
+        <label>Import File from Google Drive</label>
+
+        <q-input
+            v-model="drive_url"
+            outlined
+            dense
+            clearable
+            placholder="Google Drive Link"
+            style="min-width: 300px"
+        />
     </q-card-section>
 </template>
 <script setup lang="ts">
@@ -168,7 +157,7 @@ watchEffect(() => {
     }
 });
 
-const submitNewFile = async () => {
+const createFileAction = async () => {
     if (!selected_mission.value) {
         return;
     }
@@ -292,8 +281,12 @@ const submitNewFile = async () => {
             .getAll()
             .filter(
                 (query) =>
-                    query.queryKey[0] === 'files' &&
-                    query.queryKey[1] === selected_mission.value?.uuid,
+                    (query.queryKey[0] === 'files' &&
+                        query.queryKey[1] === selected_mission.value?.uuid) ||
+                    (query.queryKey[0] === 'missions' &&
+                        query.queryKey[1] === selected_project.value?.uuid) ||
+                    (query.queryKey[0] === 'projects' &&
+                        query.queryKey[1] === selected_project.value?.uuid),
             );
         filtered.forEach((query) => {
             console.log('Invalidating query', query.queryKey);
@@ -396,5 +389,9 @@ async function uploadFileMultipart(
         throw error;
     }
 }
+
+defineExpose({
+    createFileAction,
+});
 </script>
 <style scoped></style>
