@@ -1,105 +1,94 @@
 <template>
     <q-card-section>
-        <h3 class="text-h6">Create new files</h3>
-        <q-form @submit.prevent="submitNewFile">
-            <div class="row items-center justify-between q-gutter-md">
-                <div class="col-1">
-                    <q-btn-dropdown
-                        v-model="dropdownNewFileProject"
-                        :label="selected_project?.name || 'Project'"
-                        outlined
-                        dense
-                        clearable
-                        required
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="project in data"
-                                :key="project.uuid"
-                                clickable
-                                @click="
-                                    selected_project = project;
-                                    dropdownNewFileProject = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-1">
-                    <q-btn-dropdown
-                        v-model="dropdownNewFileMission"
-                        :label="selected_mission?.name || 'Mission'"
-                        outlined
-                        dense
-                        clearable
-                        required
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="mission in missions"
-                                :key="mission.uuid"
-                                clickable
-                                @click="
-                                    selected_mission = mission;
-                                    dropdownNewFileMission = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ mission.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-5">
-                    <div class="row" style="padding-bottom: 8px">
-                        <q-file
-                            outlined
-                            v-model="files"
-                            hint="Upload File"
-                            multiple
-                            accept=".bag, .mcap"
-                            style="min-width: 300px"
-                        >
-                            <template v-slot:prepend>
-                                <q-icon name="sym_o_attach_file" />
-                            </template>
-                            <template v-slot:append>
-                                <q-icon
-                                    name="sym_o_cancel"
-                                    @click="files = []"
-                                />
-                            </template>
-                        </q-file>
-                    </div>
-                    <div class="row">
-                        <q-input
-                            v-model="drive_url"
-                            outlined
-                            dense
-                            clearable
-                            hint="Google Drive URL"
-                            style="min-width: 300px"
-                        />
-                    </div>
-                </div>
-                <div class="col-1">
-                    <q-btn
-                        label="Submit"
-                        color="primary"
-                        @click="submitNewFile"
-                    />
-                </div>
-            </div>
-        </q-form>
+        <label>Project*</label>
+
+        <q-btn-dropdown
+            v-model="dropdownNewFileProject"
+            :disable="!!props?.mission?.project"
+            :label="selected_project?.name || 'Project'"
+            class="q-uploader--bordered full-width full-height q-mb-lg"
+            flat
+            clearable
+            required
+        >
+            <q-list>
+                <q-item
+                    v-for="project in data"
+                    :key="project.uuid"
+                    clickable
+                    @click="
+                        selected_project = project;
+                        dropdownNewFileProject = false;
+                    "
+                >
+                    <q-item-section>
+                        <q-item-label>
+                            {{ project.name }}
+                        </q-item-label>
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-btn-dropdown>
+
+        <label>Mission*</label>
+
+        <q-btn-dropdown
+            v-model="dropdownNewFileMission"
+            :disable="!!props?.mission"
+            :label="selected_mission?.name || 'Mission'"
+            class="q-uploader--bordered full-width full-height q-mb-lg"
+            flat
+            clearable
+            required
+        >
+            <q-list>
+                <q-item
+                    v-for="mission in missions"
+                    :key="mission.uuid"
+                    clickable
+                    @click="
+                        selected_mission = mission;
+                        dropdownNewFileMission = false;
+                    "
+                >
+                    <q-item-section>
+                        <q-item-label>
+                            {{ mission.name }}
+                        </q-item-label>
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-btn-dropdown>
+
+        <label>Upload File from Device</label>
+        <q-file
+            outlined
+            v-model="files"
+            multiple
+            accept=".bag, .mcap"
+            style="min-width: 300px"
+        >
+            <template #prepend>
+                <q-icon name="sym_o_attach_file" />
+            </template>
+
+            <template #append>
+                <q-icon name="sym_o_cancel" @click="files = []" />
+            </template>
+        </q-file>
+
+        <br />
+
+        <label>Import File from Google Drive</label>
+
+        <q-input
+            v-model="drive_url"
+            outlined
+            dense
+            clearable
+            placholder="Google Drive Link"
+            style="min-width: 300px"
+        />
     </q-card-section>
 </template>
 <script setup lang="ts">
@@ -107,16 +96,20 @@ import { computed, Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import axios from 'axios';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
+import { confirmUpload, createDrive } from 'src/services/mutations/queue';
+import { generateTemporaryCredentials } from 'src/services/mutations/file';
 import {
-    confirmUpload,
-    createDrive,
-    getUploadURL,
-} from 'src/services/mutations/queue';
+    AbortMultipartUploadCommand,
+    CompleteMultipartUploadCommand,
+    CreateMultipartUploadCommand,
+    S3Client,
+    UploadPartCommand,
+} from '@aws-sdk/client-s3';
+import ENV from 'src/env';
 
 const selected_project: Ref<Project | null> = ref(null);
 
@@ -165,7 +158,7 @@ watchEffect(() => {
     }
 });
 
-const submitNewFile = async () => {
+const createFileAction = async () => {
     if (!selected_mission.value) {
         return;
     }
@@ -215,100 +208,72 @@ const submitNewFile = async () => {
                 }
             }
         });
-        const urls = await getUploadURL(
-            filteredFilenames,
-            selected_mission.value.uuid,
-        ).catch((e) => {
-            let msg = `Upload of Files failed: ${e}`;
+        const { credentials, files: reservedFilenames } =
+            await generateTemporaryCredentials(
+                filteredFilenames,
+                selected_mission.value.uuid,
+            ).catch((e) => {
+                let msg = `Upload of Files failed: ${e}`;
 
-            // show special error for 403
-            if (e.response && e.response.status === 403) {
-                msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.value?.name}`;
-            }
+                // show special error for 403
+                if (e.response && e.response.status === 403) {
+                    msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.value?.name}`;
+                }
 
-            // close the notification
-            noti({
-                message: msg,
-                color: 'negative',
-                spinner: false,
-                position: 'top-right',
-                timeout: 30000,
-                closeBtn: true,
+                // close the notification
+                noti({
+                    message: msg,
+                    color: 'negative',
+                    spinner: false,
+                    position: 'top-right',
+                    timeout: 30000,
+                    closeBtn: true,
+                });
             });
+        const api = ENV.ENDPOINT;
+        let minio_endpoint = api.replace('api', 'minio');
+        if (api === 'http://localhost:3000') {
+            minio_endpoint = 'http://localhost:9000';
+        }
+        const minioClient = new S3Client({
+            endpoint: minio_endpoint,
+            forcePathStyle: true,
+            region: 'us-east-1',
+            credentials: {
+                accessKeyId: credentials.accessKey,
+                secretAccessKey: credentials.secretKey,
+                sessionToken: credentials.sessionToken,
+            },
         });
-        await Promise.all(
-            filteredFilenames.map((filename) => {
-                const file = filesToRecord[filename];
-                if (!urls[filename]) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: Could not generate Upload URL. Correct file type? Unique filename?`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                    return;
-                }
-                if (urls[filename]['error'] !== undefined) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: ${urls[filename]['error']}`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                    return;
-                }
-                const uploadURL = urls[filename]['url'];
 
-                // Use axios to upload the file
-                return axios
-                    .put(uploadURL, file, {
-                        headers: {
-                            'Content-Type':
-                                file.type || 'application/octet-stream',
-                        },
-                    })
-                    .then(async () => {
-                        confirmUpload(urls[filename]['uuid'])
-                            .then(() => {
-                                Notify.create({
-                                    message: `File ${filename} uploaded`,
-                                    color: 'positive',
-                                    spinner: false,
-                                    position: 'bottom',
-                                    group: false,
-                                    timeout: 2000,
-                                });
-                                files.value = [];
-                            })
-                            .catch((e) => {
-                                Notify.create({
-                                    message: `Upload of File ${filename} failed: ${e}`,
-                                    color: 'negative',
-                                    spinner: false,
-                                    position: 'bottom',
-                                    group: false,
-                                    closeBtn: true,
-                                    timeout: 0,
-                                });
-                            });
-                    })
-                    .catch((e) => {
-                        Notify.create({
-                            message: `Upload of File ${filename} failed: ${e}`,
-                            color: 'negative',
-                            position: 'bottom',
-                            group: false,
-                            spinner: false,
-                            closeBtn: true,
-                            timeout: 0,
-                        });
+        await Promise.all(
+            Object.keys(reservedFilenames).map(async (filename) => {
+                const file = filesToRecord[filename];
+
+                try {
+                    await uploadFileMultipart(
+                        file,
+                        reservedFilenames[filename].bucket,
+                        reservedFilenames[filename].location,
+                        minioClient,
+                    );
+                    noti({
+                        message: `File ${filename} uploaded`,
+                        color: 'positive',
+                        spinner: false,
+                        timeout: 5000,
                     });
+                    return confirmUpload(reservedFilenames[filename].queueUUID);
+                } catch (e) {
+                    noti({
+                        message: `Upload of File ${filename} failed: ${e}`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 0,
+                        closeBtn: true,
+                    });
+                }
+                return;
             }),
         );
         noti({
@@ -322,8 +287,12 @@ const submitNewFile = async () => {
             .getAll()
             .filter(
                 (query) =>
-                    query.queryKey[0] === 'files' &&
-                    query.queryKey[1] === selected_mission.value?.uuid,
+                    (query.queryKey[0] === 'files' &&
+                        query.queryKey[1] === selected_mission.value?.uuid) ||
+                    (query.queryKey[0] === 'missions' &&
+                        query.queryKey[1] === selected_project.value?.uuid) ||
+                    (query.queryKey[0] === 'projects' &&
+                        query.queryKey[1] === selected_project.value?.uuid),
             );
         filtered.forEach((query) => {
             console.log('Invalidating query', query.queryKey);
@@ -360,5 +329,77 @@ const submitNewFile = async () => {
         });
     }
 };
+
+async function uploadFileMultipart(
+    file: File,
+    bucket: string,
+    key: string,
+    minioClient: S3Client,
+) {
+    let UploadId: string | undefined;
+    try {
+        // Step 1: Initiate Multipart Upload
+        const createMultipartUploadCommand = new CreateMultipartUploadCommand({
+            Bucket: bucket,
+            Key: key,
+        });
+        const { UploadId: _uploadID } = await minioClient.send(
+            createMultipartUploadCommand,
+        );
+        UploadId = _uploadID;
+
+        // Step 2: Upload Parts
+        const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
+        const parts = [];
+        for (
+            let partNumber = 1, start = 0;
+            start < file.size;
+            partNumber++, start += partSize
+        ) {
+            const end = Math.min(start + partSize, file.size);
+            const partBlob = file.slice(start, end);
+            const uploadPartCommand = new UploadPartCommand({
+                Bucket: bucket,
+                Key: key,
+                PartNumber: partNumber,
+                UploadId,
+                Body: partBlob,
+            });
+            const { ETag } = await minioClient.send(uploadPartCommand);
+            parts.push({ PartNumber: partNumber, ETag });
+        }
+
+        // Step 3: Complete Multipart Upload
+        const completeMultipartUploadCommand =
+            new CompleteMultipartUploadCommand({
+                Bucket: bucket,
+                Key: key,
+                UploadId,
+                MultipartUpload: { Parts: parts },
+            });
+        return await minioClient.send(completeMultipartUploadCommand);
+    } catch (error) {
+        console.error('Multipart upload failed:', error);
+
+        // Step 4 (Optional): Abort Multipart Upload
+        if (UploadId) {
+            const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
+                {
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId,
+                },
+            );
+            await minioClient.send(abortMultipartUploadCommand);
+            console.log('Multipart upload aborted.');
+        }
+
+        throw error;
+    }
+}
+
+defineExpose({
+    createFileAction,
+});
 </script>
 <style scoped></style>

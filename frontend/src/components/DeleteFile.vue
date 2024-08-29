@@ -1,19 +1,14 @@
 <template>
     <q-card-section class="q-pa-md">
-        <h5>Delete File</h5>
-        <p>Please confirm by entering the Filename: {{ file.filename }}</p>
-        <q-input v-model="filenamecheck" label="Filename" />
-        <div class="q-mt-md row">
-            <div class="col-10" />
-            <div class="col-2">
-                <q-btn
-                    label="DELETE"
-                    color="red"
-                    @click="_deleteFile"
-                    :disable="filenamecheck !== file.filename"
-                />
-            </div>
-        </div>
+        <p>
+            Please confirm by entering the Filename: <b>{{ file.filename }}</b>
+        </p>
+        <q-input
+            v-model="file_name_check"
+            outlined
+            placeholder="Confirm File Name"
+            autofocus
+        />
     </q-card-section>
 </template>
 <script setup lang="ts">
@@ -22,12 +17,17 @@ import { FileEntity } from 'src/types/FileEntity';
 import { deleteFile } from 'src/services/mutations/file';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
+import { useRoute, useRouter } from 'vue-router';
+import ROUTES from 'src/router/routes';
 
-const filenamecheck = ref('');
+const file_name_check = ref('');
 const client = useQueryClient();
 
-async function _deleteFile() {
-    if (filenamecheck.value === props.file.filename) {
+const route = useRoute();
+const router = useRouter();
+
+async function deleteFileAction() {
+    if (file_name_check.value === props.file.filename) {
         await deleteFile(props.file)
             .then(() => {
                 client.invalidateQueries({
@@ -43,6 +43,17 @@ async function _deleteFile() {
                     timeout: 2000,
                     position: 'bottom',
                 });
+
+                // Redirect to missions page if we are on the file page
+                if (route.name === ROUTES.FILE.routeName) {
+                    router.push({
+                        name: ROUTES.FILES.routeName,
+                        params: {
+                            project_uuid: route.params.project_uuid,
+                            mission_uuid: route.params.mission_uuid,
+                        },
+                    });
+                }
             })
             .catch((e) => {
                 Notify.create({
@@ -57,5 +68,10 @@ async function _deleteFile() {
 const props = defineProps<{
     file: FileEntity;
 }>();
+
+defineExpose({
+    deleteFileAction,
+    file_name_check,
+});
 </script>
 <style scoped></style>

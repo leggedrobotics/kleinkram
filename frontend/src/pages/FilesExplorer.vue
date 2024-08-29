@@ -17,62 +17,105 @@
                             </span>
                         </div>
                     </div>
-
-                    <div class="flex column q-mb-auto">
-                        <q-btn
-                            outline
-                            icon="sym_o_edit"
-                            label="Edit Mission"
-                            disable
-                        >
-                            <q-tooltip> Edit Mission</q-tooltip>
-                        </q-btn>
-                    </div>
                 </div>
             </div>
         </template>
 
         <template v-slot:buttons>
-            <div>
-                <button-group>
-                    <q-btn
-                        color="primary"
-                        outline
-                        icon="sym_o_lock"
-                        label="Access Rights"
-                        disable
-                    >
-                        <q-tooltip> Manage Access to the Project</q-tooltip>
-                    </q-btn>
-                    <move-mission-button v-if="mission" :mission="mission" />
-                    <q-btn
-                        outline
-                        color="primary"
-                        icon="sym_o_analytics"
-                        label="Actions"
-                        @click="
-                            $router.push({
-                                name: ROUTES.ACTION.routeName,
-                                query: {
-                                    project_uuid: project_uuid,
-                                    mission_uuid: mission_uuid,
-                                },
-                            })
-                        "
-                    >
-                        <q-tooltip> Analyze Actions</q-tooltip>
-                    </q-btn>
-                    <delete-mission-dialog-opener
-                        :mission="mission"
-                        v-if="mission"
-                    >
-                        <q-btn outline color="red" icon="sym_o_delete"></q-btn>
-                    </delete-mission-dialog-opener>
-                    <q-btn icon="sym_o_more_horiz" outline disabled>
-                        <q-tooltip> More Actions</q-tooltip>
-                    </q-btn>
-                </button-group>
-            </div>
+            <button-group>
+                <q-btn
+                    outline
+                    color="primary"
+                    icon="sym_o_analytics"
+                    label="Actions"
+                    @click="
+                        $router.push({
+                            name: ROUTES.ACTION.routeName,
+                            query: {
+                                project_uuid: project_uuid,
+                                mission_uuid: mission_uuid,
+                            },
+                        })
+                    "
+                >
+                    <q-tooltip> Analyze Actions</q-tooltip>
+                </q-btn>
+
+                <q-btn
+                    outline
+                    color="primary"
+                    icon="sym_o_sell"
+                    label="Metadata"
+                    disable
+                >
+                    <q-tooltip> Manage Metadata Tags</q-tooltip>
+                </q-btn>
+
+                <q-btn icon="sym_o_more_vert" outline>
+                    <q-tooltip> More Actions</q-tooltip>
+
+                    <q-menu auto-close style="width: 280px">
+                        <q-list>
+                            <move-mission-dialog-opener
+                                v-if="mission"
+                                :mission="mission"
+                            >
+                                <q-item clickable v-close-popup>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_move_down" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Move Mission
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </move-mission-dialog-opener>
+
+                            <q-item clickable v-close-popup disable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_lock" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-section>
+                                        Manage Access
+                                    </q-item-section>
+                                </q-item-section>
+                            </q-item>
+
+                            <q-item clickable v-close-popup disable>
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_edit" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-section>
+                                        Edit Mission
+                                    </q-item-section>
+                                </q-item-section>
+                            </q-item>
+
+                            <delete-mission-dialog-opener
+                                :mission_uuid="mission.uuid"
+                            >
+                                <q-item
+                                    clickable
+                                    v-close-popup
+                                    style="color: red"
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_delete" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Delete Mission
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </delete-mission-dialog-opener>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </button-group>
         </template>
     </title-section>
 
@@ -187,7 +230,7 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
-import MoveMissionButton from 'components/buttons/MoveMissionButton.vue';
+import MoveMissionDialogOpener from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';

@@ -1,64 +1,43 @@
 <template>
-    <q-card-section>
-        <h3 class="text-h6">Create new Tag Type</h3>
-        <div class="row justify-between q-gutter-md">
-            <div class="col-9">
-                <q-form @submit="submitNewTag">
-                    <div class="row justify-between">
-                        <div class="col-3">
-                            <q-input
-                                v-model="tagName"
-                                label="Tag Type Name"
-                                outlined
-                                dense
-                                clearable
-                                required
-                            />
-                        </div>
-                        <div class="col-8">
-                            <q-btn-dropdown
-                                v-model="ddr_open"
-                                :label="selectedDataType || 'Data Type'"
-                                outlined
-                                dense
-                                clearable
-                                required
-                            >
-                                <q-list>
-                                    <q-item
-                                        v-for="[
-                                            datatype,
-                                            value,
-                                        ] in Object.entries(DataType)"
-                                        :key="datatype"
-                                        clickable
-                                        @click="
-                                            selectedDataType = value;
-                                            ddr_open = false;
-                                        "
-                                    >
-                                        <q-item-section>
-                                            <q-item-label>
-                                                {{ datatype }}
-                                            </q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </q-list>
-                            </q-btn-dropdown>
-                        </div>
-                    </div>
-                </q-form>
-            </div>
-            <div class="col-2">
-                <q-btn
-                    label="Submit"
-                    color="primary"
-                    :disable="!tagName"
-                    @click="submitNewTag"
-                />
-            </div>
-        </div>
-    </q-card-section>
+    <label>Tag Name</label>
+    <q-input
+        v-model="tagName"
+        placeholder="Tag Name"
+        outlined
+        dense
+        clearable
+        required
+        autofocus
+    />
+
+    <br />
+    <label>Tag Type</label>
+    <q-btn-dropdown
+        v-model="ddr_open"
+        :label="selectedDataType || 'Data Type'"
+        class="q-uploader--bordered full-width full-height q-mb-lg"
+        flat
+        clearable
+        required
+    >
+        <q-list>
+            <q-item
+                v-for="[datatype, value] in Object.entries(DataType)"
+                :key="datatype"
+                clickable
+                @click="
+                    selectedDataType = value;
+                    ddr_open = false;
+                "
+            >
+                <q-item-section>
+                    <q-item-label>
+                        {{ datatype }}
+                    </q-item-label>
+                </q-item-section>
+            </q-item>
+        </q-list>
+    </q-btn-dropdown>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
@@ -72,7 +51,7 @@ const selectedDataType = ref(DataType.STRING);
 const queryClient = useQueryClient();
 const ddr_open = ref(false);
 
-const submitNewTag = async () => {
+const createTagTypeAction = async () => {
     try {
         await createTagType(tagName.value, selectedDataType.value);
     } catch (error) {
@@ -103,5 +82,9 @@ const submitNewTag = async () => {
     tagName.value = '';
     selectedDataType.value = DataType.STRING;
 };
+
+defineExpose({
+    createTagTypeAction,
+});
 </script>
 <style scoped></style>

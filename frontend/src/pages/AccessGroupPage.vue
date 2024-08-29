@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="accessGroup?.name">
+    <title-section :title="'Group: ' + accessGroup?.name">
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -216,6 +216,7 @@ import {
     removeAccessGroupFromProject,
     removeUserFromAccessGroup,
 } from 'src/services/mutations/access';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -339,7 +340,7 @@ const project_cols = computed(() => {
             required: true,
             label: 'Rights',
             align: 'center',
-            field: (row: any) => row.rights,
+            field: (row: any) => AccessGroupRights[row.rights],
         });
         return defaultCols;
     }

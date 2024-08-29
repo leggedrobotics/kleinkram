@@ -19,13 +19,15 @@ export default class QueueEntity extends BaseEntity {
     })
     state: FileState;
 
-    @ManyToOne(() => Mission, (project) => project.queues)
+    @ManyToOne(() => Mission, (project) => project.queues, {
+        onDelete: 'CASCADE',
+    })
     mission: Mission;
 
     @Column({
         type: 'enum',
         enum: FileLocation,
-        default: 'DRIVE',
+        default: FileLocation.MINIO,
     })
     location: FileLocation;
 

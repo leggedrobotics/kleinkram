@@ -33,18 +33,35 @@ import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
 const $router = useRouter();
 
 const main_menu = [
-    { title: 'Dashboard', icon: 'sym_o_dashboard', to: ROUTES.DASHBOARD.path },
-    { title: 'Projects', icon: 'sym_o_box', to: ROUTES.PROJECTS.path },
+    {
+        title: 'Dashboard',
+        icon: 'sym_o_dashboard',
+        to: ROUTES.DASHBOARD.path,
+        subpage_names: [],
+    },
+    {
+        title: 'Projects',
+        icon: 'sym_o_box',
+        to: ROUTES.PROJECTS.path,
+        subpage_names: [ROUTES.FILES.name, ROUTES.MISSIONS.name],
+    },
     {
         title: 'Datatable',
         icon: 'sym_o_database',
         to: ROUTES.DATATABLE.path,
+        subpage_names: [],
     },
-    { title: 'Actions', icon: 'sym_o_analytics', to: ROUTES.ACTION.path },
+    {
+        title: 'Actions',
+        icon: 'sym_o_analytics',
+        to: ROUTES.ACTION.path,
+        subpage_names: [ROUTES.ANALYSIS_DETAILS.name],
+    },
     {
         title: 'Access Groups',
         icon: 'sym_o_lock',
         to: ROUTES.ACCESS_GROUPS.path,
+        subpage_names: [ROUTES.ACCESS_GROUP.name],
     },
 ];
 </script>

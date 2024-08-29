@@ -1,13 +1,7 @@
 <template>
-    <q-btn
-        color="primary"
-        outline
-        icon="sym_o_lock"
-        label="Access Rights"
-        @click="manageProjectAccess"
-    >
-        <q-tooltip> Manage Access to the Project</q-tooltip>
-    </q-btn>
+    <div @click="manageProjectAccess">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">

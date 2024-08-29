@@ -18,6 +18,7 @@ import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
+import env from '@common/env';
 
 @Injectable()
 export class ActionManagerService {
@@ -82,6 +83,7 @@ export class ActionManagerService {
             PROJECT_UUID: action.mission.project.uuid,
             MISSION_UUID: action.mission.uuid,
             ACTION_UUID: action.uuid,
+            ENDPOINT: env.ENDPOINT,
         };
 
         const { container, repo_digests } =

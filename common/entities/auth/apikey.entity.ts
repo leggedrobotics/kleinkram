@@ -13,9 +13,13 @@ export default class Apikey extends BaseEntity {
     @Column()
     key_type: KeyTypes;
 
-    @ManyToOne(() => Mission, (mission) => mission.api_keys)
+    @ManyToOne(() => Mission, (mission) => mission.api_keys, {
+        onDelete: 'CASCADE',
+    })
     mission: Mission;
 
-    @OneToOne(() => Action)
+    @OneToOne(() => Action, {
+        onDelete: 'CASCADE',
+    })
     action: Action;
 }

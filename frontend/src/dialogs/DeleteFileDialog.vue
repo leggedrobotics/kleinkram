@@ -2,28 +2,37 @@
     <base-dialog ref="dialogRef">
         <template #title> Delete File</template>
         <template #content>
-            <delete-file :file="file" />
+            <delete-file :file="file" ref="deleteFileRef" v-if="file" />
+            <q-skeleton v-else height="250px" />
         </template>
+
         <template #actions>
             <q-btn
                 flat
+                :disable="deleteFileRef?.file_name_check !== file?.filename"
                 label="Delete File"
                 class="bg-button-primary"
-                @click="onDialogOK"
+                @click="
+                    () => {
+                        deleteFileRef?.deleteFileAction();
+                        onDialogOK();
+                    }
+                "
             />
         </template>
     </base-dialog>
 </template>
 <script setup lang="ts">
-import DeleteFile from 'components/DeleteFile.vue';
 import { useDialogPluginComponent } from 'quasar';
-import { FileEntity } from 'src/types/FileEntity';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { ref } from 'vue';
+import DeleteFile from 'components/DeleteFile.vue';
+import { FileEntity } from 'src/types/FileEntity';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const deleteFileRef = ref<InstanceType<typeof DeleteFile> | null>(null);
 
-const props = defineProps<{
-    file: FileEntity;
-}>();
+const { file } = defineProps({
+    file: FileEntity,
+});
 </script>
-<style scoped></style>

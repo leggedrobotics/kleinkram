@@ -5,6 +5,9 @@ import { CreateMission } from '../../src/mission/entities/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { FileState } from '@common/enum';
 import * as fs from 'node:fs';
+import { uploadFileMultipart } from './multipartUpload';
+import { S3Client } from '@aws-sdk/client-s3';
+const FormData = require('form-data');
 
 export const create_project_using_post = async (
     project: CreateProject,
@@ -45,7 +48,8 @@ export const create_mission_using_post = async (
 
     // check if the request was successful
     expect(res.status).toBeLessThan(300);
-    return (await res.json()).uuid;
+    const json = await res.json();
+    return json.uuid;
 };
 
 /**
@@ -65,8 +69,7 @@ export async function upload_file(
     filename: string,
     mission_uuid: string,
 ) {
-    // http://localhost:3000/queue/createPreSignedURLS
-    const res = await fetch(`http://localhost:3000/queue/createPreSignedURLS`, {
+    const res = await fetch(`http://localhost:3000/file/temporaryAccess`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -80,20 +83,42 @@ export async function upload_file(
 
     expect(res.status).toBe(201);
     const json = await res.json();
-    const upload_url = json[filename].url;
-    expect(upload_url).toBeDefined();
+    const credentials = json['credentials'];
+    const files = json['files'];
+    expect(credentials).toBeDefined();
+    expect(files).toBeDefined();
+    const fileResponse = files[filename];
+    expect(fileResponse).toBeDefined();
+    expect(fileResponse['bucket']).toBe('bags');
+    expect(fileResponse['fileUUID']).toBeDefined();
+    expect(fileResponse['queueUUID']).toBeDefined();
 
     // open file from fixtures
     const file = fs.readFileSync(`./tests/fixtures/${filename}`);
+    const blob = new Blob([file], {
+        type: 'application/octet-stream',
+    });
+    const fileFile = Buffer.from(await blob.arrayBuffer());
     const file_hash = await crypto.subtle.digest('SHA-256', file.buffer);
 
-    // upload file
-    const upload_res = await fetch(upload_url, {
-        method: 'PUT',
-        body: file,
+    const minioClient = new S3Client({
+        endpoint: 'http://localhost:9000',
+        forcePathStyle: true,
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: credentials.accessKey,
+            secretAccessKey: credentials.secretKey,
+            sessionToken: credentials.sessionToken,
+        },
     });
 
-    expect(upload_res.status).toBe(200);
+    const resi = await uploadFileMultipart(
+        fileFile,
+        fileResponse['bucket'],
+        fileResponse['location'],
+        minioClient,
+    );
+    expect(resi).toBeDefined();
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
@@ -106,7 +131,7 @@ export async function upload_file(
                 cookie: `authtoken=${await get_jwt_token(user)}`,
             },
             body: JSON.stringify({
-                uuid: json[filename].uuid,
+                uuid: fileResponse['queueUUID'],
             }),
         },
     );
@@ -125,7 +150,7 @@ export async function upload_file(
         if (
             active.find(
                 (x: QueueEntity) =>
-                    x.uuid === json[filename].uuid &&
+                    x.uuid === fileResponse['queueUUID'] &&
                     x.state === FileState.COMPLETED,
             )
         ) {

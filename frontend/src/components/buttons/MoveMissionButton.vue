@@ -1,13 +1,7 @@
 <template>
-    <q-btn
-        color="primary"
-        outline
-        icon="sym_o_move_down"
-        label="Move"
-        @click="moveMissionToDifferentProject"
-    >
-        <q-tooltip> Move the Mission another Project </q-tooltip>
-    </q-btn>
+    <div @click="moveMissionToDifferentProject">
+        <slot />
+    </div>
 </template>
 
 <script setup lang="ts">

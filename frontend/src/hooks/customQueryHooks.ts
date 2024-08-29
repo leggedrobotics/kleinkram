@@ -1,4 +1,4 @@
-import { ComputedRef, ref, Ref } from 'vue';
+import { ref, Ref, watch } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
 import { getMission } from 'src/services/queries/mission';
@@ -71,7 +71,7 @@ export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
     const { data: isUploading } = useQuery<boolean>({
         queryKey: ['isUploading'],
         queryFn: () => getIsUploading(),
-        refetchInterval: 1000,
+        refetchInterval: 5000,
     });
 
     return isUploading;

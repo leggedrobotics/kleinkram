@@ -13,8 +13,8 @@
             />
         </template>
         <span>
-            This app is in active development. Data will be reset without
-            notice!
+            This app is the development version of Kleinkram. Data may be lost
+            at any time.
         </span>
     </q-banner>
 </template>
