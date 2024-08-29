@@ -1,6 +1,5 @@
 import axios, { RawAxiosResponseHeaders } from 'axios';
 import ENV from 'src/env';
-import env from 'src/env';
 import { ref } from 'vue';
 
 const axiosInstance = axios.create({
@@ -31,7 +30,7 @@ axiosInstance.interceptors.response.use(
         if (error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             await axios.post(
-                `${env.ENDPOINT}/auth/refresh-token`,
+                `${ENV.ENDPOINT}/auth/refresh-token`,
                 {},
                 { withCredentials: true },
             );

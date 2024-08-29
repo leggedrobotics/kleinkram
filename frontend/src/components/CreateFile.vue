@@ -109,6 +109,7 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import ENV from 'src/env';
 
 const selected_project: Ref<Project | null> = ref(null);
 
@@ -229,8 +230,13 @@ const createFileAction = async () => {
                     closeBtn: true,
                 });
             });
+        const api = ENV.ENDPOINT;
+        let minio_endpoint = api.replace('api', 'minio');
+        if (api === 'http://localhost:3000') {
+            minio_endpoint = 'http://localhost:9000';
+        }
         const minioClient = new S3Client({
-            endpoint: 'http://localhost:9000',
+            endpoint: minio_endpoint,
             forcePathStyle: true,
             region: 'us-east-1',
             credentials: {
