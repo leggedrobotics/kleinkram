@@ -165,7 +165,7 @@ const createFileAction = async () => {
     const noti = Notify.create({
         group: false,
         message: 'Processing file...',
-        color: 'primary',
+        color: '#24a148',
         spinner: true,
         position: 'bottom',
         timeout: 0,
@@ -251,18 +251,22 @@ const createFileAction = async () => {
                 const file = filesToRecord[filename];
 
                 try {
+                    const noti = Notify.create({
+                        group: false,
+                        message: `Uploading File ${filename}...`,
+                        color: '#0043ce',
+                        spinner: true,
+                        position: 'bottom',
+                        timeout: 0,
+                    });
                     await uploadFileMultipart(
                         file,
                         reservedFilenames[filename].bucket,
                         reservedFilenames[filename].location,
                         minioClient,
+                        noti,
                     );
-                    noti({
-                        message: `File ${filename} uploaded`,
-                        color: 'positive',
-                        spinner: false,
-                        timeout: 5000,
-                    });
+
                     return confirmUpload(reservedFilenames[filename].queueUUID);
                 } catch (e) {
                     noti({
@@ -278,7 +282,7 @@ const createFileAction = async () => {
         );
         noti({
             message: `Files for Mission ${selected_mission.value?.name} uploaded`,
-            color: 'positive',
+            color: '#24a148',
             spinner: false,
             timeout: 5000,
         });
@@ -335,10 +339,10 @@ async function uploadFileMultipart(
     bucket: string,
     key: string,
     minioClient: S3Client,
+    noti: any,
 ) {
     let UploadId: string | undefined;
     try {
-        // Step 1: Initiate Multipart Upload
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
             Bucket: bucket,
             Key: key,
@@ -348,14 +352,18 @@ async function uploadFileMultipart(
         );
         UploadId = _uploadID;
 
-        // Step 2: Upload Parts
-        const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
+        const partSize = 50 * 1024 * 1024; // 50 MB per part
         const parts = [];
         for (
             let partNumber = 1, start = 0;
             start < file.size;
             partNumber++, start += partSize
         ) {
+            // percentage completed
+            const percent = Math.round((start / file.size) * 100);
+            noti({
+                caption: `${percent}%`,
+            });
             const end = Math.min(start + partSize, file.size);
             const partBlob = file.slice(start, end);
             const uploadPartCommand = new UploadPartCommand({
@@ -377,7 +385,13 @@ async function uploadFileMultipart(
                 UploadId,
                 MultipartUpload: { Parts: parts },
             });
-        return await minioClient.send(completeMultipartUploadCommand);
+        const resi = await minioClient.send(completeMultipartUploadCommand);
+        noti({
+            caption: '100%',
+            timeout: 2000,
+            spinner: false,
+        });
+        return resi;
     } catch (error) {
         console.error('Multipart upload failed:', error);
 
