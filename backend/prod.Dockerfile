@@ -10,6 +10,7 @@ RUN yarn --immutable
 
 WORKDIR /usr/src/app/common
 RUN yarn --immutable
+RUN apk --no-cache add postgresql-client
 
 # copy the rest of the files
 COPY ./backend /usr/src/app/backend
