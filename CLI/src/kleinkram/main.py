@@ -179,23 +179,25 @@ def upload(
         )
         new_mission.raise_for_status()
         new_mission_data = new_mission.json()
-        print(f"Created mission: {new_mission_data['name']}")
 
-        get_presigned_url = "/queue/createPreSignedURLS"
+        get_temporary_credentials = "/file/temporaryAccess"
 
         response_2 = client.post(
-            get_presigned_url,
+            get_temporary_credentials,
             json={"filenames": filenames, "missionUUID": new_mission_data["uuid"]},
         )
         response_2.raise_for_status()
-        presigned_urls = response_2.json()
-        for file in filenames:
-            if not file in presigned_urls.keys():
+        temp_credentials = response_2.json()
+        credential = temp_credentials["credentials"]
+        confirmed_files = temp_credentials["files"]
+        for _file in filenames:
+            if not _file in confirmed_files.keys():
                 raise Exception(
                     "Could not upload File '" + file + "'. Is the filename unique? "
                 )
-        if len(presigned_urls) > 0:
-            uploadFiles(presigned_urls, filepaths, 4)
+            confirmed_files[_file]['filepath'] = filepaths[_file]
+        if len(confirmed_files.keys()) > 0:
+            uploadFiles(confirmed_files, credential, 4)
 
     except httpx.HTTPError as e:
         print(e)
