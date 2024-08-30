@@ -16,7 +16,7 @@ export class DBDumper {
         console.log('DBDumper service created');
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_1AM)
+    @Cron(CronExpression.EVERY_MINUTE)
     async handleCron() {
         console.log('Dumping database...');
         // const { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } =
