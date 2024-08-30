@@ -195,7 +195,7 @@ def upload(
                 raise Exception(
                     "Could not upload File '" + file + "'. Is the filename unique? "
                 )
-            confirmed_files[_file]['filepath'] = filepaths[_file]
+            confirmed_files[_file]["filepath"] = filepaths[_file]
         if len(confirmed_files.keys()) > 0:
             uploadFiles(confirmed_files, credential, 4)
 

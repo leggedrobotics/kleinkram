@@ -6,13 +6,13 @@ from functools import partial
 from typing import Dict
 import boto3
 
-import httpx
 import tqdm
 from boto3.s3.transfer import TransferConfig
 from botocore.client import BaseClient
 from rich import print
 
 from kleinkram.api_client import AuthenticatedClient
+
 
 class TransferCallback:
     """
@@ -40,10 +40,15 @@ class TransferCallback:
         :param target_size: The total size of the file being transferred.
         """
         with self._lock:
-            tqdm_instance = tqdm.tqdm(total=target_size, unit='B', unit_scale=True, desc=f'Uploading {file_id}')
+            tqdm_instance = tqdm.tqdm(
+                total=target_size,
+                unit="B",
+                unit_scale=True,
+                desc=f"Uploading {file_id}",
+            )
             self.file_progress[file_id] = {
-                'tqdm': tqdm_instance,
-                'total_transferred': 0
+                "tqdm": tqdm_instance,
+                "total_transferred": 0,
             }
 
     def __call__(self, file_id, bytes_transferred):
@@ -60,16 +65,18 @@ class TransferCallback:
         with self._lock:
             if file_id in self.file_progress:
                 progress = self.file_progress[file_id]
-                progress['total_transferred'] += bytes_transferred
+                progress["total_transferred"] += bytes_transferred
 
                 # Update tqdm progress bar
-                progress['tqdm'].update(bytes_transferred)
+                progress["tqdm"].update(bytes_transferred)
 
     def close(self):
         """Close all tqdm progress bars."""
         with self._lock:
             for progress in self.file_progress.values():
-                progress['tqdm'].close()
+                progress["tqdm"].close()
+
+
 def create_transfer_callback(callback_instance, file_id):
     """
     Factory function to create a partial function for TransferCallback.
@@ -78,6 +85,7 @@ def create_transfer_callback(callback_instance, file_id):
     :return: A callable that can be passed as a callback to boto3's upload_file method.
     """
     return partial(callback_instance.__call__, file_id)
+
 
 def expand_and_match(path_pattern):
     expanded_path = os.path.expanduser(path_pattern)
@@ -99,10 +107,11 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
     session = boto3.Session(
         aws_access_key_id=credentials["accessKey"],
         aws_secret_access_key=credentials["secretKey"],
-        aws_session_token=credentials["sessionToken"])
+        aws_session_token=credentials["sessionToken"],
+    )
     api_endpoint = client.tokenfile.endpoint
-    if api_endpoint == 'http://localhost:3000':
-        minio_endpoint = 'http://localhost:9000'
+    if api_endpoint == "http://localhost:3000":
+        minio_endpoint = "http://localhost:9000"
     else:
         minio_endpoint = api_endpoint.replace("api", "minio")
     s3 = session.resource("s3", endpoint_url=minio_endpoint)
@@ -114,7 +123,9 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
     transferCallback = TransferCallback()
 
     for i in range(nrThreads):
-        thread = threading.Thread(target=uploadFile, args=(_queue, s3, transferCallback))
+        thread = threading.Thread(
+            target=uploadFile, args=(_queue, s3, transferCallback)
+        )
         thread.start()
         threads.append(thread)
     for thread in threads:
@@ -125,16 +136,20 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
     while True:
         try:
             filename, _file = _queue.get(timeout=3)
-            queueUUID = _file['queueUUID']
-            filepath = _file['filepath']
-            bucket = _file['bucket']
-            target_location = _file['location']
-            config = TransferConfig(multipart_chunksize=10*1024*1024, max_concurrency=5)
+            queueUUID = _file["queueUUID"]
+            filepath = _file["filepath"]
+            bucket = _file["bucket"]
+            target_location = _file["location"]
+            config = TransferConfig(
+                multipart_chunksize=10 * 1024 * 1024, max_concurrency=5
+            )
             with open(filepath, "rb") as f:
                 size = os.path.getsize(filepath)
                 transferCallback.add_file(filename, size)
                 callback_function = create_transfer_callback(transferCallback, filename)
-                s3.Bucket(bucket).upload_file(filepath, target_location, Config=config, Callback=callback_function)
+                s3.Bucket(bucket).upload_file(
+                    filepath, target_location, Config=config, Callback=callback_function
+                )
 
                 client = AuthenticatedClient()
                 res = client.post("/queue/confirmUpload", json={"uuid": queueUUID})
@@ -145,8 +160,6 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
         except Exception as e:
             print(f"Error uploading {filename}: {e}")
             _queue.task_done()
-
-
 
 
 if __name__ == "__main__":

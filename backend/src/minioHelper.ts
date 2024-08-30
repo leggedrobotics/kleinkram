@@ -144,7 +144,7 @@ export async function generateTemporaryCredentials(filenames: string[]) {
         stsEndpoint: 'http://minio:9000',
         action: 'AssumeRole',
         policy: JSON.stringify(basePolicy(resources)),
-        durationSeconds: 60 * 30,
+        durationSeconds: 60 * 60 * 4, // 4 hours
     });
 
     return await provider.getCredentials();
