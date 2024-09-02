@@ -13,7 +13,7 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
-        "@types/node": "22.4.1",
+        "@types/node": "22.5.2",
         "typescript": "5.4.4"
     }
 }
