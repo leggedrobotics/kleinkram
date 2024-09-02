@@ -239,7 +239,6 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
         }
         const user = request.user;
         const fileUUID = request.body.uuid;
-        console.log('fileUUID', fileUUID);
         return this.fileGuardService.canAccessFile(
             user.uuid,
             fileUUID,

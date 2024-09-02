@@ -151,7 +151,7 @@
                             v-for="(option, index) in fileTypeFilter"
                             :key="index"
                         >
-                            <q-item-section class="items-center">
+                            <q-item-section class="items-baseline">
                                 <q-toggle
                                     :model-value="fileTypeFilter[index].value"
                                     @click="onFileTypeClicked(index)"
@@ -257,7 +257,7 @@ const search = computed({
     },
 });
 const fileTypeFilter = ref([
-    { name: 'Bag', value: false },
+    { name: 'Bag', value: true },
     { name: 'MCAP', value: true },
 ]);
 const selectedFileTypes = computed(() => {
@@ -269,6 +269,9 @@ const selectedFileTypes = computed(() => {
 watch(
     () => fileTypeFilter.value,
     () => {
+        console.log(
+            fileTypeFilter.value[0].value && fileTypeFilter.value[1].value,
+        );
         if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
             handler.value.setFileType(FileType.ALL);
             return;

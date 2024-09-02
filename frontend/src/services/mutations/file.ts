@@ -26,6 +26,16 @@ export const generateTemporaryCredentials = async (
         filenames,
         missionUUID,
     });
-    console.log('generateTemporaryCredentials', response.data);
+    return response.data;
+};
+
+export const cancelUploads = async (
+    fileUUIDs: string[],
+    missionUUID: string,
+) => {
+    const response = await axios.post('/file/cancelUpload', {
+        uuids: fileUUIDs,
+        missionUUID,
+    });
     return response.data;
 };

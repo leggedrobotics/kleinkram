@@ -30,9 +30,7 @@ export class ProjectGuardService {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
-        console.log(user);
-        console.log(rights);
-        console.log(projectUUID);
+
         if (!user) {
             return false;
         }
@@ -46,7 +44,6 @@ export class ProjectGuardService {
                 rights: MoreThanOrEqual(rights),
             },
         });
-        console.log(res);
         return res;
     }
 

@@ -211,6 +211,7 @@ export const filesOfMission = async (
         take,
         skip,
     };
+    console.log('fileType', fileType);
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
     const response = await axios.get('file/ofMission', {

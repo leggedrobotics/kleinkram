@@ -92,7 +92,7 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { computed, Ref, ref, watchEffect } from 'vue';
+import { computed, onMounted, Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -101,7 +101,11 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
-import { generateTemporaryCredentials } from 'src/services/mutations/file';
+import {
+    cancelUpload,
+    cancelUploads,
+    generateTemporaryCredentials,
+} from 'src/services/mutations/file';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -130,6 +134,7 @@ const data = computed(() => {
 const queryClient = useQueryClient();
 
 const drive_url = ref('');
+const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 
 const props = defineProps<{
     mission?: Mission;
@@ -165,7 +170,7 @@ const createFileAction = async () => {
     const noti = Notify.create({
         group: false,
         message: 'Processing file...',
-        color: '#24a148',
+        color: 'green-8',
         spinner: true,
         position: 'bottom',
         timeout: 0,
@@ -230,6 +235,7 @@ const createFileAction = async () => {
                     closeBtn: true,
                 });
             });
+        uploadingFiles.value = reservedFilenames;
         const api = ENV.ENDPOINT;
         let minio_endpoint = api.replace('api', 'minio');
         if (api === 'http://localhost:3000') {
@@ -248,13 +254,23 @@ const createFileAction = async () => {
 
         await Promise.all(
             Object.keys(reservedFilenames).map(async (filename) => {
+                if (!reservedFilenames[filename].success) {
+                    Notify.create({
+                        group: false,
+                        message: `Upload of File ${filename} failed: File with this Name already exists`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 6000,
+                    });
+                    return;
+                }
                 const file = filesToRecord[filename];
 
                 try {
-                    const noti = Notify.create({
+                    const notii = Notify.create({
                         group: false,
                         message: `Uploading File ${filename}...`,
-                        color: '#0043ce',
+                        color: 'green-8',
                         spinner: true,
                         position: 'bottom',
                         timeout: 0,
@@ -264,12 +280,12 @@ const createFileAction = async () => {
                         reservedFilenames[filename].bucket,
                         reservedFilenames[filename].location,
                         minioClient,
-                        noti,
+                        notii,
                     );
 
                     return confirmUpload(reservedFilenames[filename].queueUUID);
                 } catch (e) {
-                    noti({
+                    Notify({
                         message: `Upload of File ${filename} failed: ${e}`,
                         color: 'negative',
                         spinner: false,
@@ -282,7 +298,7 @@ const createFileAction = async () => {
         );
         noti({
             message: `Files for Mission ${selected_mission.value?.name} uploaded`,
-            color: '#24a148',
+            color: 'green-8',
             spinner: false,
             timeout: 5000,
         });
@@ -412,8 +428,36 @@ async function uploadFileMultipart(
     }
 }
 
+onMounted(() => {
+    window.addEventListener('beforeunload', async (e) => {
+        let isDone = false;
+        const uuids = Object.keys(uploadingFiles.value).map(
+            (filename) => uploadingFiles.value[filename].fileUUID,
+        );
+
+        cancelUploads(uuids, selected_mission.value?.uuid)
+            .then(() => {
+                isDone = true;
+            })
+            .catch(() => {
+                isDone = true;
+            });
+        const start = Date.now();
+        while (!isDone && Date.now() - start < 2000) {
+            console.log(Date.now() - start);
+            console.log(isDone);
+        }
+    });
+});
 defineExpose({
     createFileAction,
 });
 </script>
-<style scoped></style>
+<style scoped>
+.text-success {
+    color: #000000;
+}
+.bg-success {
+    background-color: #24a148;
+}
+</style>

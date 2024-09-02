@@ -598,7 +598,7 @@ export class FileService {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        const successfullySavedFiles = {};
+        const fileReturn = {};
         await Promise.all(
             filenames.map(async (filename) => {
                 const fileType = filename.endsWith('.bag')
@@ -628,7 +628,7 @@ export class FileService {
                     });
                     const queueEntity =
                         await this.queueRepository.save(newQueue);
-                    successfullySavedFiles[filename] = {
+                    fileReturn[filename] = {
                         bucket:
                             fileType === FileType.BAG
                                 ? env.MINIO_BAG_BUCKET_NAME
@@ -636,9 +636,11 @@ export class FileService {
                         location,
                         fileUUID: savedFile.uuid,
                         queueUUID: queueEntity.uuid,
+                        success: true,
                     };
                 } catch (error) {
                     logger.debug('Tentative file could not be saved');
+                    fileReturn[filename] = { success: false };
                 }
             }),
         );
@@ -649,11 +651,39 @@ export class FileService {
             const credentials = await generateTemporaryCredentials(paths);
             return {
                 credentials,
-                files: successfullySavedFiles,
+                files: fileReturn,
             };
         } catch (err) {
             console.error(err);
         }
+    }
+
+    async cancelUpload(uuids: string[], missionUUID: string) {
+        await Promise.all(
+            uuids.map(async (uuid) => {
+                const file = await this.fileRepository.findOne({
+                    where: { uuid, mission: { uuid: missionUUID } },
+                    relations: ['mission'],
+                });
+                if (!file) {
+                    return;
+                }
+                console.log('canceling: ', file.filename);
+                if (!file.tentative) {
+                    return;
+                }
+                const queue = await this.queueRepository.findOne({
+                    where: {
+                        filename: file.filename,
+                        mission: { uuid: file.mission.uuid },
+                    },
+                });
+                queue.state = FileState.CANCELED;
+                await this.queueRepository.save(queue);
+                await this.fileRepository.remove(file);
+                return;
+            }),
+        );
     }
 }
 
