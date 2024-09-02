@@ -453,11 +453,4 @@ defineExpose({
     createFileAction,
 });
 </script>
-<style scoped>
-.text-success {
-    color: #000000;
-}
-.bg-success {
-    background-color: #24a148;
-}
-</style>
+<style scoped></style>
