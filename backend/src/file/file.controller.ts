@@ -35,7 +35,7 @@ import {
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
-import { BodyUUID } from '../validation/bodyDecorators';
+import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from '../queue/entities/createPreSignedURLS.dto';
 
 @Controller('file')
@@ -201,5 +201,14 @@ export class FileController {
             body.missionUUID,
             user.uuid,
         );
+    }
+
+    @Post('cancelUpload')
+    @CanWriteMissionByBody()
+    async cancelUpload(
+        @BodyUUIDArray('uuids') uuids: string[],
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
+        return this.fileService.cancelUpload(uuids, missionUUID);
     }
 }

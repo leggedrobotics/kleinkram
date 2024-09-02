@@ -103,3 +103,25 @@ export const BodyNotNull = createParamDecorator(
         return value;
     },
 );
+
+export const BodyUUIDArray = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.body[data];
+
+        if (!Array.isArray(value)) {
+            throw new BadRequestException('Parameter is not an array');
+        }
+
+        for (const uuid of value) {
+            const object = plainToInstance(UUIDValidate, { value: uuid });
+            await validateOrReject(object).catch((errors) => {
+                throw new BadRequestException(
+                    'Body parameter is not a valid UUID',
+                );
+            });
+        }
+
+        return value;
+    },
+);

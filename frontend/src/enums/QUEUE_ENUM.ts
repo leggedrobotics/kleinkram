@@ -8,6 +8,7 @@ export enum FileState {
     'COMPLETED' = 30,
     'ERROR' = 40,
     'CORRUPTED' = 41,
+    'CANCELED' = 42,
 }
 
 export enum FileLocation {

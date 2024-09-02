@@ -5,7 +5,7 @@ import { watch } from 'vue';
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
 const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 10 };
 const DEFAULT_SEARCH = {};
-const DEFAULT_FILE_TYPE = FileType.MCAP;
+const DEFAULT_FILE_TYPE = FileType.ALL;
 
 /**
  * Class passed around to handle the query state
@@ -39,7 +39,7 @@ export class QueryHandler {
         this.project_uuid = project_uuid;
         this.mission_uuid = mission_uuid;
         this.search_params = search_params || DEFAULT_SEARCH;
-        this.file_type = file_type || DEFAULT_FILE_TYPE;
+        this.file_type = file_type || FileType.ALL;
         this.rowsNumber = 0;
     }
 

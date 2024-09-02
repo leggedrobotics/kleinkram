@@ -39,6 +39,7 @@ export function getColor(state: FileState) {
         case FileState.COMPLETED:
             return 'green';
         case FileState.ERROR:
+        case FileState.CANCELED:
             return 'red';
         case FileState.AWAITING_PROCESSING:
             return 'yellow';
@@ -63,6 +64,8 @@ export function getSimpleFileStateName(state: FileState) {
             return 'Completed';
         case FileState.ERROR:
             return 'Error';
+        case FileState.CANCELED:
+            return 'Canceled';
         case FileState.AWAITING_PROCESSING:
             return 'Awaiting Processing';
         case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
@@ -85,6 +88,8 @@ export function getDetailedFileState(state: FileState) {
             return 'File has been processed and is ready for download';
         case FileState.ERROR:
             return 'An error occurred during processing';
+        case FileState.CANCELED:
+            return 'File upload was canceled';
         case FileState.AWAITING_PROCESSING:
             return 'File is awaiting processing';
         case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
