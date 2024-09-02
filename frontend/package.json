@@ -27,7 +27,7 @@
     },
     "devDependencies": {
         "@quasar/app-vite": "1.9.5",
-        "@types/node": "^22.5.0",
+        "@types/node": "^22.5.2",
         "autoprefixer": "^10.4.20",
         "typescript": "^5.5.4"
     },
