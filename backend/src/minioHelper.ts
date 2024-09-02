@@ -131,6 +131,8 @@ export function basePolicy(resources: string[]) {
 }
 
 export async function generateTemporaryCredentials(filenames: string[]) {
+    const prefix = filenames[0].split('/').slice(0, -1).join('/');
+    console.log('prefix:', prefix);
     const resources = filenames.map((filename) => {
         if (filename.endsWith('.bag')) {
             return `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${filename}`;
@@ -138,12 +140,17 @@ export async function generateTemporaryCredentials(filenames: string[]) {
         return `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${filename}`;
     });
 
+    const policy = basePolicy([
+        `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${prefix}/*`,
+        `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${prefix}/*`,
+    ]); //TODO THIS IS NOT SAFE. MALICIOUS USER CAN OVERRIDE EXISTING FILES
     const provider = new AssumeRoleProvider({
         secretKey: env.MINIO_PASSWORD,
         accessKey: env.MINIO_USER,
         stsEndpoint: 'http://minio:9000',
         action: 'AssumeRole',
-        policy: JSON.stringify(basePolicy(resources)),
+        // policy: JSON.stringify(basePolicy(resources)),
+        policy: JSON.stringify(policy),
         durationSeconds: 60 * 60 * 4, // 4 hours
     });
 
