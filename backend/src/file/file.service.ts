@@ -660,6 +660,7 @@ export class FileService {
     }
 
     async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {
+        // Cleanup cannot be done synchronously as this takes too long; the request is sent on unload; delaying the onUnload is difficult and discouraged
         return this.fileCleanupQueue.add('cancelUpload', {
             uuids,
             missionUUID,
