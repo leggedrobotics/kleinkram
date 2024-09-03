@@ -443,7 +443,7 @@ onMounted(() => {
                 isDone = true;
             });
         const start = Date.now();
-        while (!isDone && Date.now() - start < 2000) {
+        while (!isDone && Date.now() - start < 200) {
             console.log(Date.now() - start);
             console.log(isDone);
         }

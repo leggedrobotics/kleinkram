@@ -6,6 +6,9 @@ import {
     Post,
     Put,
     Query,
+    Req,
+    Res,
+    Response,
 } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
@@ -204,12 +207,13 @@ export class FileController {
     }
 
     @Post('cancelUpload')
-    @CanWriteMissionByBody()
+    @LoggedIn() //Push back authentication to the queue to accelerate the request
     async cancelUpload(
         @BodyUUIDArray('uuids') uuids: string[],
         @BodyUUID('missionUUID') missionUUID: string,
+        @addJWTUser() user: JWTUser,
     ) {
-        return this.fileService.cancelUpload(uuids, missionUUID);
+        return this.fileService.cancelUpload(uuids, missionUUID, user.uuid);
     }
 
     @Post('deleteMultiple')

@@ -33,12 +33,6 @@ import FileEntity from '@common/entities/file/file.entity';
             MissionAccessViewEntity,
             FileEntity,
         ]),
-        BullModule.forRoot({
-            redis: {
-                host: 'redis',
-                port: 6379,
-            },
-        }),
         BullModule.registerQueue({
             name: 'file-queue',
         }),

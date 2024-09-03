@@ -26,6 +26,9 @@ import { ContainerCleanupService } from './actions/services/cleanupContainers.se
 import { ActionManagerService } from './actions/services/actionManager.service';
 import { RuntimeCapabilitiesService } from './actions/services/runtime-capabilities.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { FileCleanupQueueProcessorProvider } from './fileCleanup/fileCleanupQueueProcessor.provider';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 
 @Module({
     imports: [
@@ -42,6 +45,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 
         BullModule.registerQueue({
             name: 'action-queue',
+        }),
+        BullModule.registerQueue({
+            name: 'file-cleanup',
         }),
 
         ConfigModule.forRoot({
@@ -77,6 +83,8 @@ import { ScheduleModule } from '@nestjs/schedule';
                         Tag,
                         ProjectAccess,
                         MissionAccess,
+                        ProjectAccessViewEntity,
+                        MissionAccessViewEntity,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -96,12 +104,15 @@ import { ScheduleModule } from '@nestjs/schedule';
             Tag,
             ProjectAccess,
             MissionAccess,
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
         ]),
         ScheduleModule.forRoot(),
     ],
     providers: [
         FileQueueProcessorProvider,
         ActionQueueProcessorProvider,
+        FileCleanupQueueProcessorProvider,
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,

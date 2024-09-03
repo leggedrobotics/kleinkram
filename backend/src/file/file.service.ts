@@ -11,11 +11,9 @@ import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
 import {
-    basePolicy,
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredentials,
-    internalMinio,
     moveFile,
 } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
@@ -34,6 +32,8 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class FileService {
@@ -51,6 +51,7 @@ export class FileService {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
+        @InjectQueue('file-cleanup') private fileCleanupQueue: Queue,
     ) {}
 
     async findAll(userUUID: string, take: number, skip: number) {
@@ -658,32 +659,13 @@ export class FileService {
         }
     }
 
-    async cancelUpload(uuids: string[], missionUUID: string) {
-        await Promise.all(
-            uuids.map(async (uuid) => {
-                const file = await this.fileRepository.findOne({
-                    where: { uuid, mission: { uuid: missionUUID } },
-                    relations: ['mission'],
-                });
-                if (!file) {
-                    return;
-                }
-                console.log('canceling: ', file.filename);
-                if (!file.tentative) {
-                    return;
-                }
-                const queue = await this.queueRepository.findOne({
-                    where: {
-                        filename: file.filename,
-                        mission: { uuid: file.mission.uuid },
-                    },
-                });
-                queue.state = FileState.CANCELED;
-                await this.queueRepository.save(queue);
-                await this.fileRepository.remove(file);
-                return;
-            }),
-        );
+    async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {
+        // Cleanup cannot be done synchronously as this takes too long; the request is sent on unload; delaying the onUnload is difficult and discouraged
+        return this.fileCleanupQueue.add('cancelUpload', {
+            uuids,
+            missionUUID,
+            userUUID,
+        });
     }
 
     async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
