@@ -39,3 +39,11 @@ export const cancelUploads = async (
     });
     return response.data;
 };
+
+export const deleteFiles = async (fileUUIDs: string[], missionUUID: string) => {
+    const response = await axios.post('/file/deleteMultiple', {
+        uuids: fileUUIDs,
+        missionUUID,
+    });
+    return response.data;
+};

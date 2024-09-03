@@ -37,11 +37,10 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
-import { Notify, QInput, useQuasar } from 'quasar';
+import { Notify, QInput } from 'quasar';
 import { Project } from 'src/types/Project';
-import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
 import { getProject } from 'src/services/queries/project';
-import { deleteProject, updateProject } from 'src/services/mutations/project';
+import { updateProject } from 'src/services/mutations/project';
 
 const props = defineProps<{
     project_uuid: string;

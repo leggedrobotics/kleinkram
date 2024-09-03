@@ -120,7 +120,10 @@
     </title-section>
 
     <div>
-        <div class="q-my-lg flex justify-between items-center">
+        <div
+            class="q-my-lg flex justify-between items-center"
+            v-if="selectedFiles.length === 0"
+        >
             <Suspense>
                 <TableHeader :url_handler="handler" v-if="handler" />
 
@@ -196,10 +199,62 @@
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
-
+        <div class="q-py-md" v-else style="background: blue">
+            <ButtonGroupOverlay>
+                <template v-slot:start>
+                    <div style="margin: 0; font-size: 14pt; color: white">
+                        {{ selectedFiles.length }}
+                        {{ selectedFiles.length === 1 ? 'file' : 'files' }}
+                        selected
+                    </div>
+                </template>
+                <template v-slot:end>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_move_down"
+                        color="white"
+                        disable
+                    >
+                        Move
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_download"
+                        color="white"
+                    >
+                        Download
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_delete"
+                        color="white"
+                        @click="() => deleteFilesCallback()"
+                        >Delete</q-btn
+                    >
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_close"
+                        color="white"
+                        @click="() => deselect()"
+                    />
+                </template>
+            </ButtonGroupOverlay>
+        </div>
         <div>
             <Suspense>
-                <ExplorerPageFilesTable :handler="handler" v-if="handler" />
+                <ExplorerPageFilesTable
+                    :handler="handler"
+                    v-model:selected="selectedFiles"
+                    v-if="handler"
+                />
 
                 <template #fallback>
                     <div style="width: 100%; height: 645px">
@@ -228,23 +283,27 @@ import {
     useMissionQuery,
     useProjectQuery,
 } from 'src/hooks/customQueryHooks';
-import { useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
 import MoveMissionDialogOpener from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
-import { Notify } from 'quasar';
+import { Notify, useQuasar } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
-import { computed, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { FileType } from 'src/enums/FILE_ENUM';
+import { FileEntity } from 'src/types/FileEntity';
+import { deleteFiles } from 'src/services/mutations/file';
+import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
+import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
-
+const $q = useQuasar();
 const $router = useRouter();
 
 const project_uuid = useProjectUUID();
@@ -266,6 +325,8 @@ const selectedFileTypes = computed(() => {
         .map((item) => item.name)
         .join(' & ');
 });
+
+const selectedFiles: Ref<FileEntity[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
@@ -308,9 +369,50 @@ const { data: mission } = useMissionQuery(
     200,
 );
 
+const { mutate: _deleteFiles } = useMutation({
+    mutationFn: (update: { fileUUIDs; missionUUID }) =>
+        deleteFiles(update.fileUUIDs, update.missionUUID),
+    onSuccess: () => {
+        Notify.create({
+            message: 'Files deleted successfully',
+            color: 'positive',
+            timeout: 2000,
+            position: 'bottom',
+        });
+        queryClient.invalidateQueries({
+            predicate: (query) =>
+                query.queryKey[0] === 'files' &&
+                query.queryKey[1] === mission_uuid.value,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: `Error deleting files: ${error.response.data.message}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    },
+});
+
 function refresh() {
     queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',
     });
+}
+
+function deleteFilesCallback() {
+    $q.dialog({
+        component: ConfirmDeleteDialog,
+        componentProps: {
+            filenames: selectedFiles.value.map((file) => file.filename),
+        },
+    }).onOk(() => {
+        const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
+        _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+    });
+}
+function deselect() {
+    selectedFiles.value = [];
 }
 </script>

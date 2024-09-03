@@ -85,10 +85,10 @@ import { QueryURLHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getTentativeRowStyle } from 'src/services/generic';
-import { useHandler } from 'src/hooks/customQueryHooks';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 
+const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
 
 const project_uuid = useProjectUUID();
@@ -118,7 +118,7 @@ const pagination = computed(() => {
 const selected = ref([]);
 const queryKey = computed(() => [
     'files',
-    props.handler.mission_uuid,
+    mission_uuid.value,
     props.handler.queryKey,
     props.handler.file_type,
 ]);
@@ -157,4 +157,10 @@ const onRowClick = async (_: Event, row: any) => {
         },
     });
 };
+watch(
+    () => selected.value,
+    (newVal) => {
+        $emit('update:selected', newVal);
+    },
+);
 </script>
