@@ -277,8 +277,6 @@ const columns = [
     },
 ];
 
-const downloadURL = ref<string>('');
-
 function redirectToMcap() {
     const mcap = filesReturn.value?.find((file: FileEntity) => {
         return file.filename === data.value?.filename.replace('.bag', '.mcap');
