@@ -22,6 +22,7 @@ import TagType from '@common/entities/tagType/tagType.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import QueueEntity from '@common/entities/queue/queue.entity';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
     imports: [
@@ -40,6 +41,9 @@ import QueueEntity from '@common/entities/queue/queue.entity';
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
         ]),
+        BullModule.registerQueue({
+            name: 'file-cleanup',
+        }),
     ],
     providers: [
         FileService,
