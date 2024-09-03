@@ -51,7 +51,17 @@
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="
+                                    () =>
+                                        _downloadFile(
+                                            props.row.uuid,
+                                            props.row.filename,
+                                        )
+                                "
+                            >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
                             <q-item clickable v-ripple disabled>
@@ -84,11 +94,11 @@ import { file_columns } from 'components/explorer_page/explorer_page_table_colum
 import { QueryURLHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
-import { getTentativeRowStyle } from 'src/services/generic';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import { _downloadFile, getTentativeRowStyle } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 
+const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
 
 const project_uuid = useProjectUUID();
@@ -118,7 +128,7 @@ const pagination = computed(() => {
 const selected = ref([]);
 const queryKey = computed(() => [
     'files',
-    props.handler.mission_uuid,
+    mission_uuid.value,
     props.handler.queryKey,
     props.handler.file_type,
 ]);
@@ -157,4 +167,10 @@ const onRowClick = async (_: Event, row: any) => {
         },
     });
 };
+watch(
+    () => selected.value,
+    (newVal) => {
+        $emit('update:selected', newVal);
+    },
+);
 </script>

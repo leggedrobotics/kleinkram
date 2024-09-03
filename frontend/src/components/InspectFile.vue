@@ -17,7 +17,7 @@
                     outline
                     icon="sym_o_download"
                     label="Download"
-                    @click="_downloadFile"
+                    @click="() => _downloadFile(data?.uuid, data?.filename)"
                     :disable="data?.tentative"
                 />
 
@@ -187,6 +187,7 @@ import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpe
 import { getQueueForFile } from 'src/services/queries/queue';
 import { Queue } from 'src/types/Queue';
 import {
+    _downloadFile,
     getColor,
     getDetailedFileState,
     getSimpleFileStateName,
@@ -275,18 +276,6 @@ const columns = [
         sortable: true,
     },
 ];
-
-const downloadURL = ref<string>('');
-
-async function _downloadFile() {
-    const res = await downloadFile(props.uuid, true);
-    const a = document.createElement('a');
-    a.href = res;
-    a.download = data.value?.filename || 'file.mcap'; // Optionally set the file name for the download
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
 
 function redirectToMcap() {
     const mcap = filesReturn.value?.find((file: FileEntity) => {

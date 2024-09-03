@@ -2,6 +2,7 @@ import { DataType } from 'src/enums/TAG_TYPES';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { FileState } from 'src/enums/QUEUE_ENUM';
 import { FileEntity } from 'src/types/FileEntity';
+import { downloadFile } from 'src/services/queries/file';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -113,4 +114,32 @@ export function getTentativeRowStyle(row: FileEntity) {
     return {
         backgroundColor: row.tentative ? '#ffdbcb' : '',
     };
+}
+export async function _downloadFile(fileUUID: string, filename: string) {
+    const res = await downloadFile(fileUUID, true);
+    const a = document.createElement('a');
+    a.href = res;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+export async function _downloadFiles(files: FileEntity[]) {
+    const downloadPromises = files.map(async (file) => {
+        const url = await downloadFile(file.uuid, true);
+        return { url, filename: file.filename };
+    });
+    const downloadURLs = await Promise.all(downloadPromises);
+    console.log(downloadURLs);
+
+    for (const { url, filename } of downloadURLs) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Delay of 100ms
+    }
 }

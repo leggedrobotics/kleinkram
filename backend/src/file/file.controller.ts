@@ -211,4 +211,13 @@ export class FileController {
     ) {
         return this.fileService.cancelUpload(uuids, missionUUID);
     }
+
+    @Post('deleteMultiple')
+    @CanWriteMissionByBody()
+    async deleteMultiple(
+        @BodyUUIDArray('uuids') uuids: string[],
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
+        return this.fileService.deleteMultiple(uuids, missionUUID);
+    }
 }
