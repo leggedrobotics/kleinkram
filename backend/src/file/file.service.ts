@@ -685,6 +685,28 @@ export class FileService {
             }),
         );
     }
+
+    async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
+        const filteredFileUUIDs = (
+            await Promise.all(
+                fileUUIDs.map(async (uuid) => {
+                    const file = await this.fileRepository.findOne({
+                        where: { uuid, mission: { uuid: missionUUID } },
+                        relations: ['mission'],
+                    });
+                    if (!file) {
+                        return;
+                    }
+                    return file.uuid;
+                }),
+            )
+        ).filter((uuid) => !!uuid);
+        await Promise.all(
+            filteredFileUUIDs.map(async (uuid) => {
+                return this.deleteFile(uuid);
+            }),
+        );
+    }
 }
 
 function parseMinioMetrics(metricsText) {
