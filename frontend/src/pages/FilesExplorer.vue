@@ -199,7 +199,7 @@
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
-        <div class="q-py-md" v-else style="background: blue">
+        <div class="q-py-lg" v-else style="background: blue">
             <ButtonGroupOverlay>
                 <template v-slot:start>
                     <div style="margin: 0; font-size: 14pt; color: white">
@@ -225,6 +225,7 @@
                         padding="6px"
                         icon="sym_o_download"
                         color="white"
+                        @click="() => downloadCallback()"
                     >
                         Download
                     </q-btn>
@@ -300,6 +301,7 @@ import { FileEntity } from 'src/types/FileEntity';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
+import { _downloadFile, _downloadFiles } from 'src/services/generic';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -414,5 +416,9 @@ function deleteFilesCallback() {
 }
 function deselect() {
     selectedFiles.value = [];
+}
+
+async function downloadCallback() {
+    await _downloadFiles(selectedFiles.value);
 }
 </script>

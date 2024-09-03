@@ -51,7 +51,17 @@
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="
+                                    () =>
+                                        _downloadFile(
+                                            props.row.uuid,
+                                            props.row.filename,
+                                        )
+                                "
+                            >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
                             <q-item clickable v-ripple disabled>
@@ -84,7 +94,7 @@ import { file_columns } from 'components/explorer_page/explorer_page_table_colum
 import { QueryURLHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
-import { getTentativeRowStyle } from 'src/services/generic';
+import { _downloadFile, getTentativeRowStyle } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 
