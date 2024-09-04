@@ -137,7 +137,6 @@
                 :rows="data?.topics"
                 :columns="columns"
                 row-key="uuid"
-                selection="multiple"
                 :loading="isLoading"
                 :filter="filterKey"
             >
@@ -272,8 +271,9 @@ const columns = [
     {
         name: 'Frequency',
         label: 'Frequency',
-        field: 'frequency',
+        field: (row: any) => row.frequency || 0,
         sortable: true,
+        format: (val: number) => Math.round(val * 100) / 100,
     },
 ];
 

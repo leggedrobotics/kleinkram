@@ -1,6 +1,6 @@
 <template>
     <div class="row">
-        <div class="col-10">
+        <div class="col-9">
             <q-select
                 v-model="_selected"
                 @input-value="
@@ -43,7 +43,7 @@
                 </template>
             </q-select>
         </div>
-        <div class="col-2">
+        <div class="col-3">
             <DatatypeSelectorButton v-model="selectedDataType" />
         </div>
     </div>

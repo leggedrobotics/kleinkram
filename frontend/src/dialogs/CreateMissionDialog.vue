@@ -25,6 +25,7 @@
                     "
                     style="color: #222"
                 />
+                <q-tab name="upload" label="Upload Data" style="color: #222" />
             </q-tabs>
         </template>
         <template #content>
@@ -175,17 +176,47 @@
                         </q-field>
                     </template>
                 </q-tab-panel>
+                <q-tab-panel name="upload" style="min-width: 280px">
+                    <CreateFile
+                        v-if="newMission"
+                        :mission="newMission"
+                        :uploads="uploads"
+                        ref="createFileRef"
+                    />
+                </q-tab-panel>
             </q-tab-panels>
         </template>
 
         <template #actions>
             <q-btn
+                v-if="tab_selection === 'meta_data'"
+                flat
+                label="Next"
+                :disable="!missionName"
+                @click="tab_selection = 'tags'"
+                class="bg-button-primary"
+            />
+            <q-btn
+                v-if="tab_selection === 'tags'"
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
                 @click="
                     () => {
                         submitNewMission();
+                    }
+                "
+            />
+            <q-btn
+                v-if="tab_selection === 'upload'"
+                flat
+                label="Upload & Exit"
+                class="bg-button-primary"
+                @click="
+                    () => {
+                        createFileRef?.createFileAction().then(() => {
+                            onDialogOK();
+                        });
                     }
                 "
             />
@@ -204,16 +235,21 @@ import { TagType } from 'src/types/TagType';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { getTagTypes } from 'src/services/queries/tag';
 import { createMission } from 'src/services/mutations/mission';
+import CreateFile from 'components/CreateFile.vue';
+import { Mission } from 'src/types/Mission';
+import { FileUpload } from 'src/types/FileUpload';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
+const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 
 const props = defineProps<{
     project_uuid: string | undefined;
+    uploads: Ref<FileUpload[]>;
 }>();
 
 const project_uuid = ref(props.project_uuid);
-
+const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
 const { data: project, refetch } = useQuery<Project>({
@@ -281,7 +317,8 @@ const submitNewMission = async () => {
 
     // exit if the request failed
     if (!resp) return;
-
+    newMission.value = resp;
+    newMission.value.project = project.value;
     const cache = queryClient.getQueryCache();
     const filtered = cache
         .getAll()
@@ -303,7 +340,7 @@ const submitNewMission = async () => {
     });
     missionName.value = '';
     tagValues.value = {};
-    onDialogOK();
+    tab_selection.value = 'upload';
 };
 
 function addTag(tagtype: TagType) {
