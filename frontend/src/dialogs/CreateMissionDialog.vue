@@ -180,6 +180,7 @@
                     <CreateFile
                         v-if="newMission"
                         :mission="newMission"
+                        :uploads="uploads"
                         ref="createFileRef"
                     />
                 </q-tab-panel>
@@ -236,6 +237,7 @@ import { getTagTypes } from 'src/services/queries/tag';
 import { createMission } from 'src/services/mutations/mission';
 import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
+import { FileUpload } from 'src/types/FileUpload';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -243,6 +245,7 @@ const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 
 const props = defineProps<{
     project_uuid: string | undefined;
+    uploads: Ref<FileUpload[]>;
 }>();
 
 const project_uuid = ref(props.project_uuid);

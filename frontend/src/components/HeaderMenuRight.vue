@@ -93,6 +93,8 @@
                     color="grey-8"
                     :to="ROUTES.UPLOAD.path"
                     icon="sym_o_export_notes"
+                    @mouseover="showOverlay = true"
+                    @mouseleave="showOverlay = true"
                 >
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
@@ -102,6 +104,74 @@
                         color="blue"
                         style="position: absolute; top: 35px; width: 30px"
                     />
+                    <q-menu
+                        v-model="showOverlay"
+                        :offset="[0, 40]"
+                        style="min-width: 600px"
+                    >
+                        <q-card>
+                            <q-card-section
+                                style="
+                                    padding-bottom: 5px;
+                                    padding-top: 4px;
+                                    max-height: 40px;
+                                "
+                            >
+                                <q-item style="padding-bottom: 0">
+                                    <q-item-section>
+                                        <b>File Upload</b>
+                                    </q-item-section>
+                                </q-item>
+                            </q-card-section>
+
+                            <q-card-section
+                                class="q-py-xs"
+                                style="max-height: 40px"
+                            >
+                                <q-item style="padding-top: 0">
+                                    <q-item-section>
+                                        <div class="row items-center">
+                                            <q-spinner
+                                                size="20px"
+                                                v-if="progress !== 100"
+                                            />
+                                            <span class="q-ml-sm"
+                                                >{{ Math.round(progress) }}% ({{
+                                                    timeEstimated
+                                                }})</span
+                                            >
+                                        </div>
+                                    </q-item-section>
+                                </q-item>
+                            </q-card-section>
+                            <q-card-section class="q-py-xs">
+                                <q-item>
+                                    <q-item-section>
+                                        Don't close this tab while files are
+                                        uploading
+                                    </q-item-section>
+                                </q-item>
+                                <q-item v-for="upload in uploads">
+                                    <div class="row items-center">
+                                        <q-icon
+                                            name="sym_o_upload_file"
+                                            size="3em"
+                                        />
+                                        <q-item-section>
+                                            {{ upload.value.name }}
+                                            <br />
+                                            {{
+                                                Math.round(
+                                                    upload.value.getProgress() *
+                                                        100,
+                                                )
+                                            }}%
+                                        </q-item-section>
+                                    </div>
+                                </q-item>
+                            </q-card-section>
+                        </q-card>
+                    </q-menu>
                 </q-btn>
 
                 <q-btn
@@ -208,6 +278,8 @@ import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDia
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import USER_ROLES from 'src/enums/USER_ROLES';
 import { useIsUploading } from 'src/hooks/customQueryHooks';
+import { computed, inject, Ref, ref } from 'vue';
+import { FileUpload } from 'src/types/FileUpload';
 
 const is_authenticated = await isAuthenticated();
 const is_uploading = useIsUploading();
@@ -218,6 +290,45 @@ const { data: user } = useQuery({
     enabled: is_authenticated,
 });
 
+const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
+
+const uncompletedUploads = computed(() =>
+    uploads.value.filter(
+        (upload) => !upload.value.completed && upload.value.uploaded > 0,
+    ),
+);
+
+const totalToUpload = computed(() =>
+    uploads.value.reduce((acc, upload) => acc + upload.value.size, 0),
+);
+const totalUploaded = computed(() =>
+    uploads.value.reduce((acc, upload) => acc + upload.value.uploaded, 0),
+);
+const progress = computed(() =>
+    totalToUpload.value === 0
+        ? 100
+        : (totalUploaded.value / totalToUpload.value) * 100,
+);
+
+const averageUploadSpeed = computed(() => {
+    if (uncompletedUploads.value.length === 0) return 0;
+    return (
+        uncompletedUploads.value.reduce(
+            (acc, upload) => acc + upload.value.speed,
+            0,
+        ) / uncompletedUploads.value.length
+    );
+});
+const timeEstimated = computed(() => {
+    const remainingSize = totalToUpload.value - totalUploaded.value;
+    if (remainingSize === 0) return '0 min';
+    if (averageUploadSpeed.value === 0) return 'Calculating...';
+    const remainingTime = remainingSize / averageUploadSpeed.value;
+    const ave = Math.round(remainingTime / 60);
+    return `${ave} min`;
+});
+
+const showOverlay = ref(false);
 const $router = useRouter();
 const navigateTo = (path: string) => {
     $router.push(path);

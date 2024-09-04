@@ -92,7 +92,7 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, Ref, ref, watchEffect } from 'vue';
+import { computed, inject, onMounted, Ref, ref, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -114,6 +114,7 @@ import {
 } from '@aws-sdk/client-s3';
 import pLimit from 'p-limit';
 import ENV from 'src/env';
+import { FileUpload } from 'src/types/FileUpload';
 
 const selected_project: Ref<Project | null> = ref(null);
 
@@ -138,6 +139,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 
 const props = defineProps<{
     mission?: Mission;
+    uploads: Ref<FileUpload[]>;
 }>();
 
 if (props.mission && props.mission.project) {
@@ -169,7 +171,7 @@ const createFileAction = async () => {
     }
     const noti = Notify.create({
         group: false,
-        message: 'Processing file...',
+        message: 'Processing files...',
         color: 'green-8',
         spinner: true,
         position: 'bottom',
@@ -254,6 +256,9 @@ const createFileAction = async () => {
         const limit = pLimit(5);
         await Promise.all(
             Object.keys(reservedFilenames).map(async (filename) => {
+                const file = filesToRecord[filename];
+                const newFileUpload = ref(new FileUpload(filename, file.size));
+                props.uploads.value.push(newFileUpload);
                 return limit(async () => {
                     if (!reservedFilenames[filename].success) {
                         Notify.create({
@@ -265,29 +270,21 @@ const createFileAction = async () => {
                         });
                         return;
                     }
-                    const file = filesToRecord[filename];
 
                     try {
-                        const notii = Notify.create({
-                            group: false,
-                            message: `Uploading File ${filename}...`,
-                            color: 'green-8',
-                            spinner: true,
-                            position: 'bottom',
-                            timeout: 0,
-                        });
                         await uploadFileMultipart(
                             file,
                             reservedFilenames[filename].bucket,
                             reservedFilenames[filename].location,
                             minioClient,
-                            notii,
+                            newFileUpload,
                         );
 
                         return confirmUpload(
                             reservedFilenames[filename].queueUUID,
                         );
                     } catch (e) {
+                        console.error(e);
                         Notify({
                             message: `Upload of File ${filename} failed: ${e}`,
                             color: 'negative',
@@ -359,7 +356,7 @@ async function uploadFileMultipart(
     bucket: string,
     key: string,
     minioClient: S3Client,
-    noti: any,
+    newFileUpload: Ref<FileUpload>,
 ) {
     let UploadId: string | undefined;
     try {
@@ -381,9 +378,7 @@ async function uploadFileMultipart(
         ) {
             // percentage completed
             const percent = Math.round((start / file.size) * 100);
-            noti({
-                caption: `${percent}%`,
-            });
+
             const end = Math.min(start + partSize, file.size);
             const partBlob = file.slice(start, end);
             const uploadPartCommand = new UploadPartCommand({
@@ -394,6 +389,7 @@ async function uploadFileMultipart(
                 Body: partBlob,
             });
             const { ETag } = await minioClient.send(uploadPartCommand);
+            newFileUpload.value.uploaded += partBlob.size;
             parts.push({ PartNumber: partNumber, ETag });
         }
 
@@ -406,11 +402,6 @@ async function uploadFileMultipart(
                 MultipartUpload: { Parts: parts },
             });
         const resi = await minioClient.send(completeMultipartUploadCommand);
-        noti({
-            caption: '100%',
-            timeout: 2000,
-            spinner: false,
-        });
         return resi;
     } catch (error) {
         console.error('Multipart upload failed:', error);
