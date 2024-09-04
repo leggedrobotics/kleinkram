@@ -102,7 +102,6 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import {
-    cancelUpload,
     cancelUploads,
     generateTemporaryCredentials,
 } from 'src/services/mutations/file';
@@ -113,6 +112,7 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import pLimit from 'p-limit';
 import ENV from 'src/env';
 
 const selected_project: Ref<Project | null> = ref(null);
@@ -251,49 +251,53 @@ const createFileAction = async () => {
                 sessionToken: credentials.sessionToken,
             },
         });
-
+        const limit = pLimit(5);
         await Promise.all(
             Object.keys(reservedFilenames).map(async (filename) => {
-                if (!reservedFilenames[filename].success) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: File with this Name already exists`,
-                        color: 'negative',
-                        spinner: false,
-                        timeout: 6000,
-                    });
+                return limit(async () => {
+                    if (!reservedFilenames[filename].success) {
+                        Notify.create({
+                            group: false,
+                            message: `Upload of File ${filename} failed: File with this Name already exists`,
+                            color: 'negative',
+                            spinner: false,
+                            timeout: 6000,
+                        });
+                        return;
+                    }
+                    const file = filesToRecord[filename];
+
+                    try {
+                        const notii = Notify.create({
+                            group: false,
+                            message: `Uploading File ${filename}...`,
+                            color: 'green-8',
+                            spinner: true,
+                            position: 'bottom',
+                            timeout: 0,
+                        });
+                        await uploadFileMultipart(
+                            file,
+                            reservedFilenames[filename].bucket,
+                            reservedFilenames[filename].location,
+                            minioClient,
+                            notii,
+                        );
+
+                        return confirmUpload(
+                            reservedFilenames[filename].queueUUID,
+                        );
+                    } catch (e) {
+                        Notify({
+                            message: `Upload of File ${filename} failed: ${e}`,
+                            color: 'negative',
+                            spinner: false,
+                            timeout: 0,
+                            closeBtn: true,
+                        });
+                    }
                     return;
-                }
-                const file = filesToRecord[filename];
-
-                try {
-                    const notii = Notify.create({
-                        group: false,
-                        message: `Uploading File ${filename}...`,
-                        color: 'green-8',
-                        spinner: true,
-                        position: 'bottom',
-                        timeout: 0,
-                    });
-                    await uploadFileMultipart(
-                        file,
-                        reservedFilenames[filename].bucket,
-                        reservedFilenames[filename].location,
-                        minioClient,
-                        notii,
-                    );
-
-                    return confirmUpload(reservedFilenames[filename].queueUUID);
-                } catch (e) {
-                    Notify({
-                        message: `Upload of File ${filename} failed: ${e}`,
-                        color: 'negative',
-                        spinner: false,
-                        timeout: 0,
-                        closeBtn: true,
-                    });
-                }
-                return;
+                });
             }),
         );
         noti({
