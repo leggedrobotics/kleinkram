@@ -43,6 +43,7 @@ export class Tag extends BaseEntity {
             case DataType.NUMBER:
                 return this.NUMBER?.toString() || '';
             case DataType.STRING:
+            case DataType.LINK:
                 return this.STRING as string;
         }
     }

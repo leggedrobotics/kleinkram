@@ -10,7 +10,11 @@
                                 :key="tag.uuid"
                                 class="q-mr-xs"
                             >
-                                <q-chip square color="gray">
+                                <q-chip
+                                    square
+                                    color="gray"
+                                    @mouseup="() => openLink(tag)"
+                                >
                                     {{ tag.type.name }}:
                                     {{ tag.asString() }}
                                 </q-chip>
@@ -301,7 +305,9 @@ import { FileEntity } from 'src/types/FileEntity';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
-import { _downloadFile, _downloadFiles } from 'src/services/generic';
+import { _downloadFiles } from 'src/services/generic';
+import { Tag } from 'src/types/Tag';
+import { DataType } from 'src/enums/TAG_TYPES';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -401,6 +407,11 @@ function refresh() {
     queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',
     });
+}
+
+function openLink(tag: Tag) {
+    if (tag.type.type !== DataType.LINK) return;
+    window.open(tag.asString(), '_blank');
 }
 
 function deleteFilesCallback() {

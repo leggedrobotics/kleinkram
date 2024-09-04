@@ -13,6 +13,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import { TagService } from '../tag/tag.service';
 import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
+import TagType from '@common/entities/tagType/tagType.entity';
 
 @Injectable()
 export class MissionService {
@@ -33,7 +34,19 @@ export class MissionService {
         const creator = await this.userservice.findOneByUUID(user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
+            relations: ['requiredTags'],
         });
+        if (
+            project.requiredTags.some(
+                (tagType: TagType) =>
+                    !createMission.tags[tagType.uuid] ||
+                    createMission.tags[tagType.uuid] === '',
+            )
+        ) {
+            throw new ConflictException(
+                'All required tags must be provided for the mission',
+            );
+        }
         const mission = this.missionRepository.create({
             name: createMission.name,
             project: project,
