@@ -101,6 +101,15 @@ export const mission_columns: Array<ProjectColumnType> = [
         format: (val: number) => `${val}`,
     },
     {
+        name: 'Size',
+        required: true,
+        label: 'Size',
+        align: 'left',
+        field: (row: Mission) =>
+            row.files?.map((f) => f.size).reduce((a, b) => a + b, 0),
+        format: formatSize,
+    },
+    {
         name: 'missionaction',
         label: 'Action',
         align: 'center',

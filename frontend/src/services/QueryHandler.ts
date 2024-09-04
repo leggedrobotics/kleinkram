@@ -3,7 +3,7 @@ import { FileType } from 'src/enums/FILE_ENUM';
 import { watch } from 'vue';
 
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
-const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 10 };
+const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 20 };
 const DEFAULT_SEARCH = {};
 const DEFAULT_FILE_TYPE = FileType.ALL;
 

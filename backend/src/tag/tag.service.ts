@@ -84,7 +84,7 @@ export class TagService {
                 }
                 tag = this.tagRepository.create({
                     tagType,
-                    [tagType.datatype]: value,
+                    [DataType.STRING]: value,
                     mission,
                 });
                 break;
@@ -102,7 +102,7 @@ export class TagService {
                 }
 
                 throw new UnprocessableEntityException(
-                    'Value must be a number',
+                    'Value must be a boolean',
                 );
             case DataType.DATE:
                 if (typeof value !== 'string') {
