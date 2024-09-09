@@ -29,11 +29,9 @@ export const useToggle = (
 
 export const useProjectUUID = () => {
     const route = useRoute();
-    const project_uuid = computed(() => {
+    return computed(() => {
         return route.params.project_uuid as string;
     });
-    console.log(`project_uuid updated to: ${project_uuid}`);
-    return project_uuid;
 };
 
 export const useMissionUUID = () => {

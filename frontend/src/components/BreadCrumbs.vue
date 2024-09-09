@@ -50,6 +50,7 @@ const file_uuid = useFileUUID();
 const { data: project } = useQuery({
     queryKey: ['project', project_uuid],
     queryFn: async () => {
+        if (!project_uuid.value) return;
         return getProject(project_uuid.value);
     },
     enabled: !!project_uuid.value,
@@ -58,6 +59,7 @@ const { data: project } = useQuery({
 const { data: mission } = useQuery({
     queryKey: ['mission', mission_uuid],
     queryFn: async () => {
+        if (!mission_uuid.value) return;
         return getMission(mission_uuid.value);
     },
     enabled: !!mission_uuid.value,
@@ -66,6 +68,7 @@ const { data: mission } = useQuery({
 const { data: file } = useQuery({
     queryKey: ['file', file_uuid],
     queryFn: async () => {
+        if (!file_uuid.value) return;
         return fetchFile(file_uuid.value);
     },
     enabled: !!file_uuid.value,

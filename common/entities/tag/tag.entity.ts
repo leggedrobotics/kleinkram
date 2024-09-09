@@ -27,7 +27,7 @@ export default class Tag extends BaseEntity {
     })
     mission: Mission;
 
-    @ManyToOne(() => TagType, (tagType) => tagType.tags)
+    @ManyToOne(() => TagType, (tagType) => tagType.tags, { eager: true })
     tagType: TagType;
 
     @ManyToOne(() => User, (user) => user.tags)

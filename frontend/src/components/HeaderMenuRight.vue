@@ -108,6 +108,7 @@
                         v-model="showOverlay"
                         :offset="[0, 40]"
                         style="min-width: 600px"
+                        v-if="uncompletedUploads.length > 0"
                     >
                         <q-card>
                             <q-card-section

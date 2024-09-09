@@ -45,25 +45,31 @@
                 <table class="q-table__table">
                     <tbody>
                         <tr>
-                            <td class="q-table__cell">Name:</td>
+                            <td class="q-table__cell first-column">Name:</td>
                             <td class="q-table__cell">{{ data?.name }}</td>
                         </tr>
                         <tr>
-                            <td class="q-table__cell">Email:</td>
+                            <td class="q-table__cell first-column">Email:</td>
                             <td class="q-table__cell">{{ data?.email }}</td>
                         </tr>
                         <tr>
-                            <td class="q-table__cell">Role:</td>
-                            <td class="q-table__cell">{{ data?.role }}</td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">UUID:</td>
+                            <td class="q-table__cell first-column">Role:</td>
                             <td class="q-table__cell">
-                                {{ data?.uuid }}
+                                <q-chip>{{ data?.role }}</q-chip>
                             </td>
                         </tr>
                         <tr>
-                            <td class="q-table__cell">Default Group:</td>
+                            <td class="q-table__cell first-column">UUID:</td>
+                            <td class="q-table__cell">
+                                <q-chip>
+                                    {{ data?.uuid }}
+                                </q-chip>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell first-column">
+                                Default Group:
+                            </td>
                             <td class="q-table__cell">
                                 {{ defaultGroup?.name }}
                             </td>
@@ -95,7 +101,7 @@ handler.search_params = { 'creator.uuid': data?.uuid || '' };
 </script>
 <style>
 .q-table-container {
-    max-width: 400px; /* Adjust this value to make the table narrower or wider */
+    max-width: 500px; /* Adjust this value to make the table narrower or wider */
     border: 1px solid #e0e0e0;
     border-bottom: none;
 }
@@ -114,5 +120,9 @@ handler.search_params = { 'creator.uuid': data?.uuid || '' };
 }
 .q-table__cell:last-child {
     border-right: none;
+}
+
+.first-column {
+    width: 130px;
 }
 </style>

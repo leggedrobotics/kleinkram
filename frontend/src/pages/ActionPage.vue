@@ -59,7 +59,8 @@
                             outlined
                             dense
                             class="q-mb-sm"
-                            readonly
+                            disable
+                            style="background-color: #f4f4f4"
                         />
                     </div>
                     <div>
@@ -71,7 +72,8 @@
                             outlined
                             dense
                             class="q-mb-sm"
-                            readonly
+                            disable
+                            style="background-color: #f4f4f4"
                         />
                     </div>
                 </div>

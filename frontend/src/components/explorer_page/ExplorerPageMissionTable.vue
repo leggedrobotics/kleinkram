@@ -21,7 +21,45 @@
         <template v-slot:loading>
             <q-inner-loading showing color="primary" />
         </template>
-
+        <template v-slot:body-cell-tagverification="props">
+            <q-td :props="props" style="width: 150px">
+                <div
+                    class="flex items-center"
+                    v-if="missingTags(props.row).length === 0"
+                >
+                    <q-icon
+                        name="sym_o_check"
+                        color="black"
+                        style="
+                            border: 1px solid black;
+                            border-radius: 50%;
+                            margin-right: 5px;
+                        "
+                        size="15px"
+                        round
+                    />
+                    Complete
+                </div>
+                <div class="flex items-center" v-else style="color: red">
+                    <q-icon
+                        name="sym_o_error"
+                        color="red"
+                        style="margin-right: 5px"
+                        size="20px"
+                        round
+                    />
+                    {{ missingTagsText(props.row) }}
+                    <q-tooltip>
+                        <div
+                            v-for="tagType in missingTags(props.row)"
+                            style="font-size: 14px"
+                        >
+                            {{ tagType.name }}
+                        </div>
+                    </q-tooltip>
+                </div>
+            </q-td>
+        </template>
         <template v-slot:body-cell-missionaction="props">
             <q-td :props="props">
                 <q-btn
@@ -83,6 +121,8 @@ import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDia
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useProjectUUID } from 'src/hooks/utils';
+import { Mission } from 'src/types/Mission';
+import { useProjectQuery } from 'src/hooks/customQueryHooks';
 
 const props = defineProps({
     url_handler: {
@@ -109,6 +149,7 @@ const pagination = computed(() => {
 });
 
 const project_uuid = useProjectUUID();
+const { data: project } = useProjectQuery(project_uuid);
 
 const selected = ref([]);
 const queryKey = computed(() => [
@@ -165,4 +206,22 @@ const moveMission = (mission: any) => {
         componentProps: { mission: mission },
     });
 };
+
+function missingTags(row: Mission) {
+    const mapped = project.value.requiredTags.map((tagType) => {
+        const setTypes = row.tags.map((tag) => tag.type);
+        if (!setTypes.find((setType) => setType.uuid === tagType.uuid)) {
+            return tagType;
+        }
+    });
+    return mapped.filter((val) => !!val);
+}
+
+function missingTagsText(row: Mission) {
+    const _missionTags = missingTags(row);
+    if (_missionTags.length === 1) {
+        return `1 Tag missing`;
+    }
+    return `${_missionTags.length} Tags missing`;
+}
 </script>

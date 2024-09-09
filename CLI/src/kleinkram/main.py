@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 import httpx
-import pkg_resources
+import importlib.metadata
 import typer
 from rich import print
 from rich.table import Table
@@ -33,9 +33,8 @@ class CommandPanel(str, Enum):
 
 def version_callback(value: bool):
     if value:
-        typer.echo(
-            f"CLI Version: {pkg_resources.get_distribution('kleinkram').version}"
-        )
+        _version = importlib.metadata.version("kleinkram")
+        typer.echo(f"CLI Version: {_version}")
         raise typer.Exit()
 
 

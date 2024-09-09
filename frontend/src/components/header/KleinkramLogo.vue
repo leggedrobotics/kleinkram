@@ -4,7 +4,7 @@
         <div
             class="flex column justify-center"
             style="margin-left: 12px"
-            v-show="$q.screen.gt.md"
+            v-show="$q.screen.gt.sm"
         >
             <span
                 style="
