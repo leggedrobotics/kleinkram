@@ -21,9 +21,6 @@ jobs:
             - name: build_stack
               run: docker compose -f docker-compose.testing.yml build
 
-            - name: install Setuptools
-              run: pip install setuptools
-
             - name: launch_stack
               working-directory: ./backend
               run: |
