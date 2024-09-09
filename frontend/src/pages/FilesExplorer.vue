@@ -50,7 +50,7 @@
                     color="primary"
                     icon="sym_o_sell"
                     label="Metadata"
-                    disable
+                    @click="openTagsDialog"
                 >
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
@@ -308,6 +308,7 @@ import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
 import { _downloadFiles } from 'src/services/generic';
 import { Tag } from 'src/types/Tag';
 import { DataType } from 'src/enums/TAG_TYPES';
+import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -431,5 +432,14 @@ function deselect() {
 
 async function downloadCallback() {
     await _downloadFiles(selectedFiles.value);
+}
+
+function openTagsDialog() {
+    $q.dialog({
+        component: ModifyMissionTagsDialog,
+        componentProps: {
+            mission: mission.value,
+        },
+    });
 }
 </script>

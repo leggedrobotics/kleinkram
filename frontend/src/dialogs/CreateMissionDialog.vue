@@ -80,101 +80,11 @@
                     />
                 </q-tab-panel>
                 <q-tab-panel name="tags" style="min-height: 280px">
-                    <q-btn-dropdown
-                        label="Add Tag"
-                        class="q-uploader--bordered full-width full-height q-mb-lg"
-                        flat
-                        clearable
-                        required
-                        :disabled="availableAdditionalTags.length === 0"
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="tagtype in availableAdditionalTags"
-                                :key="tagtype.uuid"
-                                clickable
-                                @click="() => addTag(tagtype)"
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ tagtype.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-
-                    <template
-                        v-for="tagtype in [
-                            ...(project?.requiredTags ?? []),
-                            ...additonalTags,
-                        ]"
-                        :key="tagtype.uuid"
-                        class="row q-gutter-sm"
-                    >
-                        <label>
-                            Tag: {{ tagtype.name }}
-
-                            <template
-                                v-if="
-                                    (project?.requiredTags ?? [])
-                                        .map((t) => t.name)
-                                        .includes(tagtype.name)
-                                "
-                            >
-                                *
-                            </template>
-                        </label>
-
-                        <q-input
-                            v-if="tagtype.type !== DataType.BOOLEAN"
-                            v-model="tagValues[tagtype.uuid]"
-                            :placeholder="tagtype.name"
-                            outlined
-                            dense
-                            clearable
-                            required
-                            style="padding-bottom: 30px"
-                            :type="DataType_InputType[tagtype.type] || 'text'"
-                        />
-                        <q-field
-                            v-if="tagtype.type === DataType.BOOLEAN"
-                            :rules="[
-                                (val) =>
-                                    val === true ||
-                                    val === false ||
-                                    'Please select a value',
-                            ]"
-                            color="black"
-                            dense
-                            outlined
-                            style="padding-bottom: 30px"
-                            v-model="tagValues[tagtype.uuid]"
-                        >
-                            <q-toggle
-                                v-model="tagValues[tagtype.uuid]"
-                                :label="
-                                    tagValues[tagtype.uuid] === undefined
-                                        ? '-'
-                                        : tagValues[tagtype.uuid]
-                                          ? 'True'
-                                          : 'False'
-                                "
-                                outlined
-                                dense
-                                required
-                                flat
-                                style="padding-bottom: 30px"
-                                :type="
-                                    DataType_InputType[tagtype.type] || 'text'
-                                "
-                                :options="[
-                                    { label: 'True', value: true },
-                                    { label: 'False', value: false },
-                                ]"
-                            />
-                        </q-field>
-                    </template>
+                    <SelectMissionTags
+                        :tag-values="tagValues"
+                        :projectUUID="project.uuid"
+                        @update:tagValues="(update) => (tagValues = update)"
+                    />
                 </q-tab-panel>
                 <q-tab-panel name="upload" style="min-width: 280px">
                     <CreateFile
@@ -229,15 +139,13 @@ import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { DataType } from 'src/enums/TAG_TYPES';
 import { Project } from 'src/types/Project';
-import { TagType } from 'src/types/TagType';
 import { filteredProjects, getProject } from 'src/services/queries/project';
-import { getTagTypes } from 'src/services/queries/tag';
 import { createMission } from 'src/services/mutations/mission';
 import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
+import SelectMissionTags from 'components/SelectMissionTags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -271,36 +179,7 @@ const { data: all_projects } = useQuery<[Project[], number]>({
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
 
-const DataType_InputType = {
-    [DataType.STRING]: 'text',
-    [DataType.NUMBER]: 'number',
-    [DataType.BOOLEAN]: 'checkbox',
-    [DataType.DATE]: 'date',
-    [DataType.LOCATION]: 'text',
-};
-
 const tagValues: Ref<Record<string, string>> = ref({});
-
-const { data: tagTypes } = useQuery<TagType[]>({
-    queryKey: ['tagTypes'],
-    queryFn: getTagTypes,
-});
-const availableAdditionalTags: Ref<TagType[]> = computed(() => {
-    if (!tagTypes.value) return [];
-    let usedTagUUIDs: string[] = [];
-    if (project.value) {
-        usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
-    }
-    const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
-    console.log('usedTagUUIDs', usedTagUUIDs);
-    return tagTypes.value?.filter(
-        (tagtype) =>
-            !usedTagUUIDs.includes(tagtype.uuid) &&
-            !addedTagUUIDs.includes(tagtype.uuid),
-    );
-});
-
-const additonalTags: Ref<TagType[]> = ref<TagType[]>([]);
 
 const submitNewMission = async () => {
     if (!project.value) {
@@ -342,8 +221,4 @@ const submitNewMission = async () => {
     tagValues.value = {};
     tab_selection.value = 'upload';
 };
-
-function addTag(tagtype: TagType) {
-    additonalTags.value.push(tagtype);
-}
 </script>

@@ -89,6 +89,8 @@ export class MissionService {
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoinAndSelect('mission.files', 'files')
+            .leftJoinAndSelect('mission.tags', 'tags')
+            .leftJoinAndSelect('tags.tagType', 'tagType')
             .leftJoinAndSelect('files.creator', 'fileCreator')
             .where('project.uuid = :projectUUID', { projectUUID })
             .take(take)
@@ -226,5 +228,31 @@ export class MissionService {
         }
         await this.missionRepository.remove(mission);
         return mission;
+    }
+
+    async updateTags(missionUUID: string, tags: Record<string, string>) {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['tags', 'tags.tagType'],
+        });
+        await Promise.all(
+            Object.entries(tags).map(async ([tagTypeUUID, value]) => {
+                const tag = mission.tags.find(
+                    (tag) => tag.tagType.uuid === tagTypeUUID,
+                );
+                if (tag) {
+                    return this.tagservice.updateTagType(
+                        missionUUID,
+                        tagTypeUUID,
+                        value,
+                    );
+                }
+                return this.tagservice.addTagType(
+                    missionUUID,
+                    tagTypeUUID,
+                    value,
+                );
+            }),
+        );
     }
 }

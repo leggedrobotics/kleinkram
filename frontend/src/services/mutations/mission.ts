@@ -29,3 +29,11 @@ export const deleteMission = async (mission: Mission) => {
     });
     return response.data;
 };
+
+export const updateMissionTags = async (
+    missionUUID: string,
+    tags: Record<string, string>,
+) => {
+    const response = await axios.post('/mission/tags', { missionUUID, tags });
+    return response.data;
+};

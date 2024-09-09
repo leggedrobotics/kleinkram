@@ -53,27 +53,25 @@
                                     </q-item-section>
                                 </q-item>
                             </edit-project-dialog-opener>
-
-                            <q-item
-                                clickable
-                                v-close-popup
-                                @click="
-                                    () =>
-                                        openConfigureTags(
-                                            project_uuid as string,
-                                        )
-                                "
-                                style="color: red"
+                            <DeleteProjectDialogOpener
+                                :project_uuid="project_uuid"
                             >
-                                <q-item-section avatar>
-                                    <q-icon name="sym_o_delete" />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-section>
-                                        Delete Project
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    style="color: red"
+                                    v-close-popup
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_delete" />
                                     </q-item-section>
-                                </q-item-section>
-                            </q-item>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Delete Project
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </DeleteProjectDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
