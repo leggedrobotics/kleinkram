@@ -15,7 +15,7 @@ dependencies = [
   "requests",
   "boto3",
   "botocore",
-  "pkg_resources"
+  "setuptools"
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
