@@ -16,6 +16,7 @@ import {
     CanReadMission,
     CanReadMissionByName,
     CanReadProject,
+    CanWriteMissionByBody,
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
@@ -124,5 +125,14 @@ export class MissionController {
     @CanDeleteMission()
     async deleteMission(@BodyUUID('uuid') uuid: string) {
         return this.missionService.deleteMission(uuid);
+    }
+
+    @Post('tags')
+    @CanWriteMissionByBody()
+    async updateMissionTags(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @Body('tags') tags: Record<string, string>,
+    ) {
+        return this.missionService.updateTags(missionUUID, tags);
     }
 }

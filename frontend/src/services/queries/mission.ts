@@ -127,12 +127,34 @@ export const missionsOfProject = async (
             );
             users[mission.creator.uuid] = missionCreator;
         }
+        const tags = mission.tags.map((tag: any) => {
+            const tagType = new TagType(
+                tag.tagType.uuid,
+                tag.tagType.name,
+                tag.tagType.datatype,
+                new Date(tag.tagType.createdAt),
+                new Date(tag.tagType.updatedAt),
+                new Date(tag.tagType.deletedAt),
+            );
+            return new Tag(
+                tag.uuid,
+                tag.STRING,
+                tag.NUMBER ? parseInt(tag.NUMBER) : tag.NUMBER,
+                tag.BOOLEAN ? !!tag.BOOLEAN : tag.BOOLEAN,
+                tag.DATE ? new Date(tag.DATE) : tag.DATE,
+                tag.LOCATION,
+                tagType,
+                new Date(tag.createdAt),
+                new Date(tag.updatedAt),
+                new Date(tag.deletedAt),
+            );
+        });
         const missionEntity = new Mission(
             mission.uuid,
             mission.name,
             project,
             [],
-            [],
+            tags,
             missionCreator,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),

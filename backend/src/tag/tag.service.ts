@@ -75,7 +75,6 @@ export class TagService {
                     'Value must be a number',
                 );
             case DataType.STRING:
-            case DataType.LOCATION:
             case DataType.LINK:
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
@@ -85,6 +84,18 @@ export class TagService {
                 tag = this.tagRepository.create({
                     tagType,
                     [DataType.STRING]: value,
+                    mission,
+                });
+                break;
+            case DataType.LOCATION:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+                tag = this.tagRepository.create({
+                    tagType,
+                    [tagType.datatype]: value,
                     mission,
                 });
                 break;
@@ -122,6 +133,86 @@ export class TagService {
         }
 
         return this.tagRepository.save(tag);
+    }
+
+    async updateTagType(
+        missionUUID: string,
+        tagTypeUUID: string,
+        value: string | number | boolean,
+    ): Promise<Tag> {
+        const tagType = await this.tagTypeRepository.findOneOrFail({
+            where: { uuid: tagTypeUUID },
+        });
+        const exsitingTag = await this.tagRepository.findOne({
+            where: {
+                tagType: { uuid: tagTypeUUID },
+                mission: { uuid: missionUUID },
+            },
+            relations: ['tagType', 'mission'],
+        });
+
+        if (!exsitingTag) {
+            throw new ConflictException("Tag hasn't been set yet");
+        }
+
+        const isString = typeof value === 'string';
+        switch (tagType.datatype) {
+            case DataType.NUMBER:
+                if (typeof value == 'number' || isString) {
+                    if (isString) {
+                        value = parseInt(value as string);
+                    }
+                    exsitingTag[tagType.datatype] = value as number;
+                    break;
+                }
+                throw new UnprocessableEntityException(
+                    'Value must be a number',
+                );
+
+            case DataType.STRING:
+            case DataType.LINK:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+                exsitingTag[DataType.STRING] = value;
+                break;
+
+            case DataType.LOCATION:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+                exsitingTag[tagType.datatype] = value;
+                break;
+
+            case DataType.BOOLEAN:
+                if (typeof value == 'boolean' || isString) {
+                    if (isString) {
+                        value = value === 'true';
+                    }
+                    exsitingTag[tagType.datatype] = value as boolean;
+                    break;
+                }
+
+                throw new UnprocessableEntityException(
+                    'Value must be a boolean',
+                );
+            case DataType.DATE:
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+                exsitingTag[tagType.datatype] = new Date(value);
+                break;
+
+            default:
+                throw new Error('Unknown datatype');
+        }
+        return this.tagRepository.save(exsitingTag);
     }
     async addTags(
         missionUUID: string,

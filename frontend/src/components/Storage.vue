@@ -1,6 +1,6 @@
 <template>
-    <q-card style="height: 500px; width: 500px" class="flex">
-        <q-card-section style="width: 500px">
+    <q-card style="height: 350px; width: 350px" class="flex">
+        <q-card-section style="width: 350px">
             <v-chart
                 :option="option"
                 style="width: 100%; height: 100%"
@@ -54,8 +54,10 @@ const freeInodes = computed(() => totalInodes.value - usedInodes.value);
 const option = computed(() => {
     return {
         title: {
-            text: 'Storage Utilization',
+            text: 'Storage',
             left: 'left',
+            fontWeight: 'normal',
+            fontSize: 16,
         },
         tooltip: {
             trigger: 'item',
@@ -65,19 +67,19 @@ const option = computed(() => {
         },
         legend: {
             show: true,
-            data: ['Used Storage', 'Used Inodes'],
+            data: ['Storage', 'Inodes'],
             bottom: 0,
         },
         series: [
             {
                 type: 'pie',
-                radius: ['65%', '70%'],
+                radius: ['75%', '80%'],
                 label: {
                     show: false,
                 },
                 data: [
                     {
-                        name: 'Used Storage',
+                        name: 'Storage',
                         value: usedBytes.value,
                         formatted: formatSize(usedBytes.value),
                         itemStyle: {
@@ -96,13 +98,13 @@ const option = computed(() => {
             },
             {
                 type: 'pie',
-                radius: ['75%', '80%'],
+                radius: ['65%', '70%'],
                 label: {
                     show: false,
                 },
                 data: [
                     {
-                        name: 'Used Inodes',
+                        name: 'Inodes',
                         value: usedInodes.value,
                         formatted: formatGenericNumber(usedInodes.value),
                         itemStyle: {
@@ -129,12 +131,12 @@ const option = computed(() => {
                 textAlign: 'center',
                 rich: {
                     top: {
-                        fontSize: 40,
-                        fontWeight: 'bold',
+                        fontSize: 32,
                         fill: '#000', // Text color for the top line
+                        font: 'Arial',
                     },
                     bottom: {
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: 'normal',
                         fill: '#000', // Text color for the bottom line
                     },

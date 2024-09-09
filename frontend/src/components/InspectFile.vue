@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="`File: ${data?.filename}`">
+    <title-section :title="`File: ${data?.filename || 'Loading...'}`">
         <template v-slot:buttons>
             <button-group>
                 <q-btn

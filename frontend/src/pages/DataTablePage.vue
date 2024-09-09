@@ -175,7 +175,7 @@
                 emit-value
                 map-options
                 class="full-width"
-                style="padding-right: 5px"
+                style="padding-right: 5px; max-height: 70px; overflow: scroll"
             >
             </q-select>
             <q-btn-dropdown
@@ -310,7 +310,7 @@
     </q-table>
 </template>
 <script setup lang="ts">
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 

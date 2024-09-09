@@ -17,8 +17,10 @@
                     >
                         {{ filename }}
                     </li>
-                    <li>...</li>
-                    <li>{{ props.filenames.slice(-1)[0] }}</li>
+                    <li v-if="props.filenames.length > 6">...</li>
+                    <li v-if="props.filenames.length >= 6">
+                        {{ props.filenames.slice(-1)[0] }}
+                    </li>
                 </ul>
             </div>
             <div class="flex justify-end">
