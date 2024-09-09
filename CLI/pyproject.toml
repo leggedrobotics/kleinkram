@@ -4,11 +4,19 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kleinkram"
-version = "0.16.0"
+version = "0.16.1"
 description = "A CLI for the ETH project kleinkram"
 readme = "README.md"
 requires-python = ">=3.7"
-dependencies = [ "typer", "httpx", "tqdm", "requests", "boto3", "botocore" ]
+dependencies = [
+  "typer",
+  "httpx",
+  "tqdm",
+  "requests",
+  "boto3",
+  "botocore",
+  "pkg_resources"
+]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
