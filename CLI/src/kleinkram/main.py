@@ -33,7 +33,7 @@ class CommandPanel(str, Enum):
 
 def version_callback(value: bool):
     if value:
-        _version = importlib.metadata.version('kleinkram')
+        _version = importlib.metadata.version("kleinkram")
         typer.echo(f"CLI Version: {_version}")
         raise typer.Exit()
 
