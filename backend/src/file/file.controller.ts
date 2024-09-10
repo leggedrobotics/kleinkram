@@ -175,9 +175,9 @@ export class FileController {
         return this.fileService.findOneByName(uuid, name);
     }
 
-    @Delete()
+    @Delete(':uuid')
     @CanDeleteFile()
-    async deleteFile(@BodyUUID('uuid') uuid: string) {
+    async deleteFile(@ParamUUID('uuid') uuid: string) {
         return this.fileService.deleteFile(uuid);
     }
 

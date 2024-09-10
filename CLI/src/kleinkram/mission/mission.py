@@ -55,8 +55,10 @@ def list_missions(
     """
 
     url = "/mission"
+    params = {}
     if project:
-        url += f"/filteredByProjectName/{project}"
+        url += f"/filteredByProjectName"
+        params["projectName"] = project
     else:
         url += "/all"
 
@@ -64,7 +66,7 @@ def list_missions(
 
     try:
 
-        response = client.get(url)
+        response = client.get(url, params=params)
         response.raise_for_status()
 
     except httpx.HTTPError:

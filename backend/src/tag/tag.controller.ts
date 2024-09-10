@@ -15,6 +15,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('tag')
 export class TagController {
@@ -48,9 +49,9 @@ export class TagController {
         return this.tagService.addTags(uuid, tags);
     }
 
-    @Delete('deleteTag')
+    @Delete(':uuid')
     @CanDeleteTag()
-    async deleteTag(@QueryUUID('uuid') uuid: string) {
+    async deleteTag(@ParamUUID('uuid') uuid: string) {
         return this.tagService.deleteTag(uuid);
     }
 

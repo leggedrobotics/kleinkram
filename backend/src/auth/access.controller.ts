@@ -44,7 +44,7 @@ export class AccessController {
         return this.accessService.getAccessGroup(uuid, user);
     }
 
-    @Post('createAccessGroup')
+    @Post('create')
     @LoggedIn()
     async createAccessGroup(
         @BodyName('name') name: string,
@@ -98,7 +98,7 @@ export class AccessController {
         return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
     }
 
-    @Get('searchAccessGroup')
+    @Get('filtered')
     @LoggedIn()
     async search(
         @QueryOptionalString('search') search: string,
@@ -150,10 +150,10 @@ export class AccessController {
         );
     }
 
-    @Delete('deleteAccessGroup')
+    @Delete(':uuid')
     @CanAddUserToAccessGroup()
     async deleteAccessGroup(
-        @QueryUUID('uuid') uuid: string,
+        @ParamUUID('uuid') uuid: string,
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.deleteAccessGroup(uuid);

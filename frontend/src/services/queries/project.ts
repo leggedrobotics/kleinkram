@@ -22,7 +22,7 @@ export const filteredProjects = async (
     if (searchParams && Object.keys(searchParams).length > 0) {
         params['searchParams'] = searchParams;
     }
-    const response = await axios.get('/project', {
+    const response = await axios.get('/project/filtered', {
         params,
     });
     const data = response.data[0];

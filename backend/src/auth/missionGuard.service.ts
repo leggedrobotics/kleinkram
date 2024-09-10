@@ -74,6 +74,9 @@ export class MissionGuardService {
         missionName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!missionName || !userUUID) {
+            return false;
+        }
         const mission = await this.missionRepository.findOne({
             where: { name: missionName },
         });
@@ -88,6 +91,9 @@ export class MissionGuardService {
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!tagUUID || !userUUID) {
+            return false;
+        }
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });

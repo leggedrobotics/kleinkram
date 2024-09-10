@@ -28,12 +28,13 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('project')
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
 
-    @Get()
+    @Get('filtered')
     @LoggedIn()
     async allProjects(
         @addJWTUser() user: JWTUser,
@@ -60,10 +61,10 @@ export class ProjectController {
         return this.projectService.findOne(uuid);
     }
 
-    @Put('update')
+    @Put(':uuid')
     @CanWriteProject()
     async updateProject(
-        @QueryUUID('uuid') uuid: string,
+        @ParamUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ) {
         return this.projectService.update(uuid, dto);
@@ -88,9 +89,9 @@ export class ProjectController {
         return project;
     }
 
-    @Delete('delete')
+    @Delete(':uuid')
     @CanDeleteProject()
-    async deleteProject(@QueryUUID('uuid') uuid: string) {
+    async deleteProject(@ParamUUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }
 
