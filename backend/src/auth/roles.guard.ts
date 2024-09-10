@@ -214,7 +214,7 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const projectUUID = request.query.uuid || request.param.uuid;
+        const projectUUID = request.query.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(
             user.uuid,
             projectUUID,
