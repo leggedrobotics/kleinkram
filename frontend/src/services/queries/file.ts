@@ -347,3 +347,14 @@ export const getIsUploading = async (): Promise<boolean> => {
     const response = await axios.get('file/isUploading');
     return response.data as boolean;
 };
+
+export const existsFile = async (uuid) => {
+    try {
+        const response = await axios.get('/file/exists', {
+            params: { uuid },
+        });
+        return response.data;
+    } catch (error) {
+        return false;
+    }
+};

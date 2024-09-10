@@ -67,4 +67,22 @@ export class QueueController {
     ) {
         return this.queueService.forFile(filename, uuid);
     }
+
+    @Post('delete')
+    @CanWriteMissionByBody()
+    async delete(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('queueUUID') queueUUID: string,
+    ) {
+        return this.queueService.delete(missionUUID, queueUUID);
+    }
+
+    @Post('cancelProcessing')
+    @CanWriteMissionByBody()
+    async cancelProcessing(
+        @BodyUUID('queueUUID') queueUUID: string,
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
+        return this.queueService.cancelProcessing(queueUUID, missionUUID);
+    }
 }

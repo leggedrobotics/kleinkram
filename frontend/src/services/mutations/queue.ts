@@ -30,3 +30,18 @@ export const createDrive = async (missionUUID: string, driveURL: string) => {
     });
     return response.data;
 };
+
+export const deleteFile = async (missionUUID: string, queueUUID: string) => {
+    const response = await axios.post('/queue/delete', {
+        missionUUID,
+        queueUUID,
+    });
+    return response.data;
+};
+export const cancelProcessing = async (queueUUID: string, missionUUID) => {
+    const response = await axios.post(`/queue/cancelProcessing`, {
+        queueUUID,
+        missionUUID,
+    });
+    return response.data;
+};

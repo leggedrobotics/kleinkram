@@ -175,7 +175,12 @@
                 emit-value
                 map-options
                 class="full-width"
-                style="padding-right: 5px; max-height: 70px; overflow: scroll"
+                style="
+                    padding-right: 5px;
+                    max-height: 70px;
+                    overflow: scroll;
+                    scrollbar-width: none;
+                "
             >
             </q-select>
             <q-btn-dropdown
