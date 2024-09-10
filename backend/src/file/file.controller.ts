@@ -224,4 +224,10 @@ export class FileController {
     ) {
         return this.fileService.deleteMultiple(uuids, missionUUID);
     }
+
+    @Get('exists')
+    @CanReadFile()
+    async exists(@QueryUUID('uuid') uuid: string) {
+        return this.fileService.exists(uuid);
+    }
 }

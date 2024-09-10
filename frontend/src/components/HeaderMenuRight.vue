@@ -161,12 +161,15 @@
                                         <q-item-section>
                                             {{ upload.value.name }}
                                             <br />
-                                            {{
-                                                Math.round(
-                                                    upload.value.getProgress() *
-                                                        100,
-                                                )
-                                            }}%
+                                            <p v-if="!upload.value.canceled">
+                                                {{
+                                                    Math.round(
+                                                        upload.value.getProgress() *
+                                                            100,
+                                                    )
+                                                }}%
+                                            </p>
+                                            <i v-else> Upload Canceled </i>
                                         </q-item-section>
                                     </div>
                                 </q-item>
@@ -300,10 +303,17 @@ const uncompletedUploads = computed(() =>
 );
 
 const totalToUpload = computed(() =>
-    uploads.value.reduce((acc, upload) => acc + upload.value.size, 0),
+    uploads.value.reduce(
+        (acc, upload) => acc + (upload.value.canceled ? 0 : upload.value.size),
+        0,
+    ),
 );
 const totalUploaded = computed(() =>
-    uploads.value.reduce((acc, upload) => acc + upload.value.uploaded, 0),
+    uploads.value.reduce(
+        (acc, upload) =>
+            acc + (upload.value.canceled ? 0 : upload.value.uploaded),
+        0,
+    ),
 );
 const progress = computed(() =>
     totalToUpload.value === 0

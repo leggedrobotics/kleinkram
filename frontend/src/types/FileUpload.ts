@@ -3,6 +3,7 @@ export class FileUpload {
     size: number;
     uploaded: number;
     startTime: Date;
+    canceled: boolean = false;
     constructor(name: string, size: number) {
         this.name = name;
         this.size = size;
@@ -28,6 +29,6 @@ export class FileUpload {
         return this.uploaded / elapsedTime;
     }
     get completed(): boolean {
-        return this.uploaded === this.size;
+        return this.uploaded === this.size || this.canceled;
     }
 }
