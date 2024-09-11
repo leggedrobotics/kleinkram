@@ -64,6 +64,7 @@ export class ActionController {
             runtime_requirements,
             state: action.state,
             image: action.image,
+            command: action.command,
         });
         return action.uuid;
     }

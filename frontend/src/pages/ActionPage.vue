@@ -55,25 +55,34 @@
                         <q-select
                             name="project"
                             :model-value="selected_project?.name"
+                            :options="projects"
+                            option-label="name"
+                            option-value="uuid"
                             placeholder="Project"
                             outlined
                             dense
                             class="q-mb-sm"
-                            disable
                             style="background-color: #f4f4f4"
+                            @update:model-value="
+                                (a) => handler.setProjectUUID(a.uuid)
+                            "
                         />
                     </div>
                     <div>
                         <label for="mission">Mission</label>
                         <q-select
                             :model-value="selected_mission?.name"
+                            :options="missions"
+                            option-label="name"
                             placeholder="Mission"
                             name="mission"
                             outlined
                             dense
                             class="q-mb-sm"
-                            disable
                             style="background-color: #f4f4f4"
+                            @update:model-value="
+                                (a) => handler.setMissionUUID(a.uuid)
+                            "
                         />
                     </div>
                 </div>
@@ -113,9 +122,8 @@
                         <label for="action_command">Command</label>
                         <q-input
                             name="action_command"
-                            model-value="Default Entrypoint"
+                            v-model="command"
                             outlined
-                            readonly
                             dense
                             class="q-mb-sm"
                             clearable
@@ -308,6 +316,7 @@ const options = [
     { label: 'GPU needed', value: 'GPU needed' },
 ];
 const gpu_model = ref(options[0]);
+const command = ref('');
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -384,6 +393,7 @@ const submitAnalysis = () => {
         docker_image: image_name.value,
         mission_uuid: selected_mission.value.uuid,
         gpu_model: gpu_model.value.value,
+        command: command.value,
     })
         .then(() => {
             Notify.create({

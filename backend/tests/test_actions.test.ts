@@ -68,6 +68,7 @@ describe('Verify Action', () => {
                     gpu_model: 'no-gpu',
                     missionUUID: mission_uuid,
                     docker_image: 'rslethz/action:file-hash-latest',
+                    command: '',
                 } as SubmitAction),
             },
         );

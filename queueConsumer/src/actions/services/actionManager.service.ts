@@ -97,6 +97,7 @@ export class ActionManagerService {
                 },
                 needs_gpu: action_data.runtime_requirements.gpu_model !== null,
                 environment: env_variables,
+                command: action.command,
             });
 
         // capture runner information
