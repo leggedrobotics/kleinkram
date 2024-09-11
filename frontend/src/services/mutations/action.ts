@@ -5,12 +5,14 @@ export const createAnalysis = async (action: {
     mission_uuid: string;
     gpu_model: string;
     docker_image: string;
+    command: string;
 }) => {
     const response = await axios.post('/action/submit', {
         action_name: action.action_name,
         missionUUID: action.mission_uuid,
         gpu_model: action.gpu_model,
         docker_image: action.docker_image,
+        command: action.command,
     });
     return response.data;
 };

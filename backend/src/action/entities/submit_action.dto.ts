@@ -12,6 +12,9 @@ export class SubmitAction {
 
     @IsString()
     gpu_model: string;
+
+    @IsString()
+    command: string;
 }
 
 export class ActionQuery {

@@ -32,6 +32,7 @@ export interface SubmittedAction {
     state: ActionState;
     runtime_requirements: RuntimeRequirements;
     image: Image;
+    command: string;
 }
 
 @Entity()
@@ -59,6 +60,9 @@ export default class Action extends BaseEntity implements SubmittedAction {
 
     @Column({ nullable: true })
     executionStartedAt: Date;
+
+    @Column({ nullable: true })
+    command: string;
 
     @Column({ nullable: true })
     executionEndedAt: Date;

@@ -33,6 +33,7 @@ export class ActionService {
                 sha: null,
                 repo_digests: null,
             },
+            command: data.command,
         });
         await this.actionRepository.save(action);
 
