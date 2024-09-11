@@ -1,2 +1,2 @@
 # Project Module
-<Redoc />
+<Module module="project"></Module>

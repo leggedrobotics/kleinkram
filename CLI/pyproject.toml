@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kleinkram"
-version = "0.17.1"
+version = "0.18.0"
 description = "A CLI for the ETH project kleinkram"
 readme = "README.md"
 requires-python = ">=3.7"

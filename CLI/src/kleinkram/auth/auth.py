@@ -4,7 +4,7 @@ import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Optional
+from typing_extensions import Optional
 
 import typer
 from typing_extensions import Annotated

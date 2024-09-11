@@ -29,11 +29,21 @@ import {
 } from '../validation/queryDecorators';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
+import Project from '@common/entities/project/project.entity';
 
 @Controller('project')
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
 
+    /**
+     * Get all projects
+     * @param user
+     * @param skip
+     * @param take
+     * @param sortBy
+     * @param descending
+     * @param searchParams
+     */
     @Get('filtered')
     @LoggedIn()
     async allProjects(
@@ -57,7 +67,7 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@QueryUUID('uuid') uuid: string) {
+    async getProjectById(@QueryUUID('uuid') uuid: string): Promise<Project> {
         return this.projectService.findOne(uuid);
     }
 

@@ -3,7 +3,7 @@ import os
 import queue
 import threading
 from functools import partial
-from typing import Dict
+from typing_extensions import Dict
 import boto3
 
 import tqdm
