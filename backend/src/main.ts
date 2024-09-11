@@ -17,6 +17,8 @@ import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as path from 'node:path';
 const packageJson = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
 );
@@ -108,6 +110,21 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
+    const config = new DocumentBuilder()
+        .setTitle('API Documentation')
+        .setDescription('API description')
+        .setVersion('1.0')
+        .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    // // Save the Swagger JSON
+    try {
+        const swaggerOutputPath = './docs/swagger-spec.json';
+        fs.writeFileSync(swaggerOutputPath, JSON.stringify(document));
+    } catch (e) {
+        console.log(e);
+    }
+
     console.log('Listening on port 3000');
     await app.listen(3000);
     console.log('Save endpoints as JSON');

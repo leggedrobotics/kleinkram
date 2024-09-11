@@ -8,12 +8,8 @@ For more information see the [QueingService Documentation](./queuingService/READ
 The Queue Processor also uses NestJS & TypeORM. But with `@nestjs/bull` for Queuing. The Documentation can be
 found [here](https://docs.nestjs.com/techniques/queues).
 
-As it connects directly to the Postres Database it needs to use the same schema. Thus in `src/entities` is a copy of all
-entities from the API. This is not ideal and should be changed.
-Similarly, the env.ts and enum.ts are copied from the API. This should be changed.
-::: warning Duplication
-How do we resolve this? copying the files in docker build doesn't directly work as they use different imports.
-:::
+As it connects directly to the Postres Database it needs to use the same schema. Thus the entities, enums and 
+environment variables are in the `common` folder.
 
 ## Structure
 

@@ -32,6 +32,6 @@ for i in {1..1000}; do
   echo "🚀 Rocket" 1>&2
 done
 
-sleep 1000
+sleep 20
 
 exit 0

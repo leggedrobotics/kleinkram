@@ -279,16 +279,12 @@ export class ActionManagerService {
                     `/${DockerDaemon.CONTAINER_PREFIX}`,
                 ),
             ) || [];
-
         //////////////////////////////////////////////////////////////////////////////
         // Find crashed containers
         //////////////////////////////////////////////////////////////////////////////
 
         const action_ids = running_action_containers.map((container) =>
-            container.Names[0].replace(
-                `/${DockerDaemon.CONTAINER_PREFIX}_`,
-                '',
-            ),
+            container.Names[0].replace(`/${DockerDaemon.CONTAINER_PREFIX}`, ''),
         );
 
         const actions_in_process = await this.actionRepository.find({
@@ -298,7 +294,7 @@ export class ActionManagerService {
         logger.info(`Checking ${actions_in_process.length} pending Actions.`);
 
         for (const action of actions_in_process) {
-            if (!action_ids.includes(action.image.name)) {
+            if (!action_ids.includes(action.uuid)) {
                 logger.info(
                     `Action ${action.uuid} is running but has no running container.`,
                 );
@@ -314,12 +310,14 @@ export class ActionManagerService {
 
         for (const container of running_action_containers) {
             // try to find corresponding action
+            const uuid = container.Names[0].replace(
+                `/${DockerDaemon.CONTAINER_PREFIX}`,
+                '',
+            );
+            console.log('uuid', uuid);
             const action = await this.actionRepository.findOne({
                 where: {
-                    uuid: container.Names[0].replace(
-                        `/${DockerDaemon.CONTAINER_PREFIX}`,
-                        '',
-                    ),
+                    uuid,
                 },
             });
 
@@ -331,7 +329,6 @@ export class ActionManagerService {
                 await this.containerDaemon.killAndRemoveContainer(container.Id);
                 continue;
             }
-
             // ignore containers which are not in processing state
             if (action?.state === ActionState.PROCESSING) {
                 // kill if older than 24 hours
@@ -352,6 +349,7 @@ export class ActionManagerService {
                         'Container killed: running for more than 24 hours';
                     await this.actionRepository.save(action);
                 }
+                continue;
             }
 
             // kill and fail the action
