@@ -181,6 +181,15 @@ export default withMermaid({
                     collapsed: true,
                 },
                 {
+                    text: 'API',
+                    items: [
+                        {
+                            text: 'Introduction',
+                            link: '/development/API/Introduction',
+                        }
+                    ]
+                },
+                {
                     text: 'Migrations',
                     items: [
                         {

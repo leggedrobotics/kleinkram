@@ -25,6 +25,9 @@ export class FileGuardService {
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!fileUUID || !userUUID) {
+            return false;
+        }
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
@@ -62,6 +65,9 @@ export class FileGuardService {
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!filename || !userUUID) {
+            return false;
+        }
         const file = await this.fileRepository.findOne({
             where: { filename: filename },
         });

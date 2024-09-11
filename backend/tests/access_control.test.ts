@@ -204,7 +204,7 @@ describe('Access Control', () => {
 
         const token = await get_jwt_token(user);
         const res = await fetch(
-            `http://localhost:3000/project?take=11&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/project/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {
@@ -243,16 +243,13 @@ describe('Access Control', () => {
 
         // delete the project using the API
         const token = await get_jwt_token(user);
-        const res = await fetch(
-            `http://localhost:3000/project/delete?uuid=${project_uuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token}`,
-                },
+        const url = `http://localhost:3000/project/${project_uuid}`;
+        const res = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                cookie: `authtoken=${token}`,
             },
-        );
-
+        });
         expect(res.status).toBe(200);
 
         const projects = await projectRepository.find();
@@ -292,7 +289,7 @@ describe('Access Control', () => {
         const third_party_token = await get_jwt_token(third_party_user);
 
         const res = await fetch(
-            `http://localhost:3000/project/delete?uuid=${project_uuid}`,
+            `http://localhost:3000/project/${project_uuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -345,7 +342,7 @@ describe('Access Control', () => {
 
         // check list of projects view access
         const res = await fetch(
-            `http://localhost:3000/project?take=10&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/project/filtered?take=10&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {

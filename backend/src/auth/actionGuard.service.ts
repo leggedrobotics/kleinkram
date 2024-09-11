@@ -23,6 +23,9 @@ export class ActionGuardService {
         actionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!actionUUID || !userUUID) {
+            return false;
+        }
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });

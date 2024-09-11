@@ -28,12 +28,23 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { ParamUUID } from '../validation/paramDecorators';
+import Project from '@common/entities/project/project.entity';
 
 @Controller('project')
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
 
-    @Get()
+    /**
+     * Get all projects
+     * @param user
+     * @param skip
+     * @param take
+     * @param sortBy
+     * @param descending
+     * @param searchParams
+     */
+    @Get('filtered')
     @LoggedIn()
     async allProjects(
         @addJWTUser() user: JWTUser,
@@ -56,14 +67,14 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@QueryUUID('uuid') uuid: string) {
+    async getProjectById(@QueryUUID('uuid') uuid: string): Promise<Project> {
         return this.projectService.findOne(uuid);
     }
 
-    @Put('update')
+    @Put(':uuid')
     @CanWriteProject()
     async updateProject(
-        @QueryUUID('uuid') uuid: string,
+        @ParamUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ) {
         return this.projectService.update(uuid, dto);
@@ -88,9 +99,9 @@ export class ProjectController {
         return project;
     }
 
-    @Delete('delete')
+    @Delete(':uuid')
     @CanDeleteProject()
-    async deleteProject(@QueryUUID('uuid') uuid: string) {
+    async deleteProject(@ParamUUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }
 

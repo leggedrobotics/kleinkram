@@ -15,7 +15,7 @@ export const addUsersToProject = async (
 };
 
 export const createAccessGroup = async (name: string) => {
-    const response = await axios.post('/access/createAccessGroup', {
+    const response = await axios.post('/access/create', {
         name,
     });
     return response.data;
@@ -68,10 +68,6 @@ export const removeUserFromAccessGroup = async (
 };
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
-    const response = await axios.delete('/access/deleteAccessGroup', {
-        params: {
-            uuid: accessGroupUUID,
-        },
-    });
+    const response = await axios.delete(`/access/${accessGroupUUID}`);
     return response.data;
 };

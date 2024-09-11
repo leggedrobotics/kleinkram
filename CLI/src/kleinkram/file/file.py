@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Annotated
+from typing_extensions import Optional, Annotated
 
 import httpx
 import requests

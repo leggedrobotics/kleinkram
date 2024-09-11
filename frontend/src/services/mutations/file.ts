@@ -29,7 +29,7 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
 };
 
 export const deleteFile = async (file: FileEntity) => {
-    const response = await axios.delete(`/file`, { data: { uuid: file.uuid } });
+    const response = await axios.delete(`/file/${file.uuid}`);
     return response.data;
 };
 
