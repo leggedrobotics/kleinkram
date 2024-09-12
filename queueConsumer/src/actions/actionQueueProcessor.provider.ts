@@ -84,9 +84,13 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @Process({ concurrency: 5, name: 'actionProcessQueue' })
-    async process_action(job: Job<SubmittedAction>) {
-        this.checkRuntimeCapability(job.data.runtime_requirements);
-        return await this.actionController.processAction(job.data);
+    async process_action(job: Job<{ uuid: string }>) {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: job.data.uuid },
+            relations: ['template', 'mission', 'mission.project'],
+        });
+        this.checkRuntimeCapability(action.template.runtime_requirements);
+        return await this.actionController.processAction(action);
     }
 
     @OnQueueActive()

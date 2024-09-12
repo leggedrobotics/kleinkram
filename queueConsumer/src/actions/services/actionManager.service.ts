@@ -8,10 +8,7 @@ import { tracing } from '../../tracing';
 import logger from '../../logger';
 import { ActionState, KeyTypes } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
-import Action, {
-    ContainerLog,
-    SubmittedAction,
-} from '@common/entities/action/action.entity';
+import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Dockerode from 'dockerode';
@@ -55,18 +52,10 @@ export class ActionManagerService {
     }
 
     @tracing('processing_action')
-    async processAction(action_data: SubmittedAction) {
-        logger.info(`\n\nProcessing Action ${action_data.uuid}`);
+    async processAction(action: Action) {
+        logger.info(`\n\nProcessing Action ${action.uuid}`);
 
         logger.info('Creating container.');
-        const uuid = action_data.uuid;
-        const action = await this.actionRepository.findOne({
-            where: { uuid: uuid },
-            relations: ['mission', 'mission.project'],
-        });
-
-        if (!action.uuid || action.uuid !== uuid)
-            throw new Error('Action not found');
 
         if (action.state !== ActionState.PENDING)
             throw new Error(`Action state is not 'PENDING'`);
@@ -85,23 +74,25 @@ export class ActionManagerService {
             ACTION_UUID: action.uuid,
             ENDPOINT: env.ENDPOINT,
         };
-
+        const needs_gpu =
+            action.template.runtime_requirements.gpu_model !== null &&
+            action.template.runtime_requirements.gpu_model.name !== 'no-gpu';
         const { container, repo_digests } =
             await this.containerDaemon.start_container({
-                docker_image: action.image.name,
-                name: uuid,
+                docker_image: action.template.image.name,
+                name: action.uuid,
                 limits: {
                     max_runtime: 5 * 60 * 1_000, // 5 minutes
                     cpu_limit: 2 * 1000000000, // 2 CPU cores in nanoseconds
                     memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
                 },
-                needs_gpu: action_data.runtime_requirements.gpu_model !== null,
+                needs_gpu,
                 environment: env_variables,
-                command: action.command,
+                command: action.template.command,
             });
 
         // capture runner information
-        action.image.repo_digests = repo_digests;
+        action.template.image.repo_digests = repo_digests;
         await this.setContainerInfo(action, container);
         await this.actionRepository.save(action);
 

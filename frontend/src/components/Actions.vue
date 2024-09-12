@@ -175,7 +175,18 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: false,
-        field: (row: Action) => (row.docker_image ? row.docker_image : 'N/A'),
+        field: (row: Action) =>
+            row.template?.image.name ? row.template.image.name : 'N/A',
+    },
+    {
+        name: 'name',
+        label: 'Action Name',
+        align: 'left',
+        sortable: false,
+        field: (row: Action) =>
+            row.template?.name
+                ? row.template.name + ' v' + row.template.version
+                : 'N/A',
     },
 
     {

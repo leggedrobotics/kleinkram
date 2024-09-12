@@ -29,6 +29,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/fileCleanupQueueProcessor.provider';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 
 @Module({
     imports: [
@@ -74,6 +75,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
                         Project,
                         Topic,
                         Action,
+                        ActionTemplate,
                         Project,
                         User,
                         Apikey,
@@ -97,6 +99,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
             FileEntity,
             Topic,
             Action,
+            ActionTemplate,
             Project,
             User,
             Apikey,

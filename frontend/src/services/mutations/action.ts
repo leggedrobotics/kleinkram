@@ -1,18 +1,58 @@
 import axios from 'src/api/axios';
 
 export const createAnalysis = async (action: {
-    action_name: string;
-    mission_uuid: string;
-    gpu_model: string;
-    docker_image: string;
-    command: string;
+    missionUUID: string;
+    templateUUID: string;
 }) => {
-    const response = await axios.post('/action/submit', {
-        action_name: action.action_name,
-        missionUUID: action.mission_uuid,
-        gpu_model: action.gpu_model,
-        docker_image: action.docker_image,
-        command: action.command,
+    const response = await axios.post('/action/submit', action);
+    return response.data;
+};
+
+export const createActionTemplate = async (template: {
+    name: string;
+    command: string;
+    docker_image: string;
+    gpu_model: string;
+    searchable: boolean;
+}) => {
+    console.log(template);
+    const response = await axios.post('/action/createTemplate', {
+        name: template.name,
+        command: template.command,
+        image: template.docker_image,
+        runtime_requirements: {
+            gpu_model: {
+                name: template.gpu_model,
+                memory: 0,
+                compute_capability: '',
+            },
+        },
+        searchable: template.searchable,
+    });
+    return response.data;
+};
+
+export const createNewActionTemplateVersion = async (template: {
+    uuid: string;
+    name: string;
+    command: string;
+    docker_image: string;
+    gpu_model: string;
+    searchable: boolean;
+}) => {
+    const response = await axios.post('/action/createNewVersion', {
+        uuid: template.uuid,
+        name: template.name,
+        command: template.command,
+        image: template.docker_image,
+        runtime_requirements: {
+            gpu_model: {
+                name: template.gpu_model,
+                memory: 0,
+                compute_capability: '',
+            },
+        },
+        searchable: template.searchable,
     });
     return response.data;
 };

@@ -2,6 +2,7 @@ import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
+import { ActionTemplate } from 'src/types/ActionTemplate';
 
 type ContainerLog = {
     timestamp: string;
@@ -12,8 +13,7 @@ type ContainerLog = {
 export class Action extends BaseEntity {
     state: ActionState;
     state_cause: string;
-    docker_image: string;
-    docker_image_sha: string;
+
     createdBy: User;
 
     mission: Mission | null;
@@ -25,6 +25,8 @@ export class Action extends BaseEntity {
     executionStartedAt: Date | null;
     executionEndedAt: Date | null;
 
+    template: ActionTemplate;
+
     constructor(
         uuid: string,
         createdAt: Date | null,
@@ -32,9 +34,8 @@ export class Action extends BaseEntity {
         deletedAt: Date | null,
         state: ActionState,
         state_cause: string,
-        docker_image: string,
-        docker_image_sha: string,
         mission: Mission | null,
+        template: ActionTemplate,
         createdBy: User,
         logs: ContainerLog[] | null = null,
         runner_hostname: string | null = null,
@@ -46,13 +47,12 @@ export class Action extends BaseEntity {
 
         this.state = state;
         this.state_cause = state_cause || '';
-        this.docker_image = docker_image;
         this.mission = mission;
         this.logs = logs;
-        this.docker_image_sha = docker_image_sha || '';
         this.createdBy = createdBy;
         this.runner_hostname = runner_hostname;
         this.runner_cpu_model = runner_cpu_model;
+        this.template = template;
         this.executionStartedAt = executionStartedAt
             ? new Date(executionStartedAt)
             : null;
