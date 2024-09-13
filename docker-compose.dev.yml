@@ -16,7 +16,7 @@ services:
             - .env
 
         volumes:
-            - swagger-spec:/app/docs/
+            - swagger-spec:/usr/src/app/backend/docs
 
         networks:
             - webnet
@@ -172,7 +172,7 @@ services:
             - main
         image: rslethz/grandtour-datasets:docs-dev
         volumes:
-            - swagger-spec:/app/docs/
+            - swagger-spec:/app/src/docs/
         build:
             context: docs/.
             dockerfile: Dockerfile
