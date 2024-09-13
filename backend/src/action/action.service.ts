@@ -79,6 +79,20 @@ export class ActionService {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.uuid },
         });
+        console.log(template);
+        console.log(data);
+        if (
+            !template.searchable &&
+            data.searchable &&
+            template.runtime_requirements.gpu_model.name ===
+                data.runtime_requirements.gpu_model.name &&
+            template.image.name === data.image &&
+            template.command === data.command
+        ) {
+            console.log('making template searchable');
+            template.searchable = true;
+            return this.actionTemplateRepository.save(template);
+        }
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: user.uuid },
         });

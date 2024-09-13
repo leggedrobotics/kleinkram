@@ -3,6 +3,7 @@ import {
     IsBoolean,
     IsDefined,
     IsNotEmpty,
+    IsOptional,
     IsString,
     IsUUID,
 } from 'class-validator';
@@ -13,7 +14,7 @@ export class CreateTemplateDto {
     name: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     command: string;
 
     @IsString()

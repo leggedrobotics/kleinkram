@@ -80,8 +80,7 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.createdBy.updatedAt,
         response.data.createdBy.deletedAt,
     );
-    console.log('user', user);
-    console.log(response.data.template);
+
     const template = new ActionTemplate(
         response.data.template.uuid,
         new Date(response.data.template.createdAt),

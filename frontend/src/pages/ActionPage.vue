@@ -54,7 +54,7 @@
                             @update:model-value="selectTemplate($event)"
                         >
                             <template v-slot:selected>
-                                <div v-if="select">
+                                <div v-if="select && select.name">
                                     {{ select.name }}&Tab;v{{ select.version }}
                                 </div>
                             </template>
@@ -400,12 +400,15 @@ const { data: actionTemplatesRes } = useQuery({
     queryFn: () => listActionTemplates(filter.value),
 });
 
-function saveAsTemplate() {
+async function saveAsTemplate() {
+    let res: undefined;
     if (isModified.value && editingTemplate.value.uuid) {
-        updateTemplate(true);
+        res = await updateTemplate(true);
     } else {
-        createTemplate(true);
+        res = await createTemplate(true);
     }
+    editingTemplate.value = res;
+    select.value = res.clone();
 }
 
 const { mutateAsync: createTemplate } = useMutation({
@@ -478,6 +481,7 @@ const isModified = computed(() => {
     const sameGPU =
         editingTemplate.value.runtime_requirements.gpu_model.name ===
         select.value?.runtime_requirements.gpu_model.name;
+
     return !(sameName && sameImage && sameCommand && sameGPU);
 });
 
@@ -515,7 +519,6 @@ async function submitAnalysis() {
         });
         return;
     }
-    console.log(editingTemplate.value.image);
     if (!editingTemplate.value.image.name.startsWith('rslethz/')) {
         Notify.create({
             group: false,
@@ -529,17 +532,20 @@ async function submitAnalysis() {
 
     // post: the input should be valid now
     let res = editingTemplate.value;
+
     if (isModified.value && editingTemplate.value.uuid) {
         res = await updateTemplate(false);
     } else if (!editingTemplate.value.uuid) {
         res = await createTemplate(false);
     }
+    editingTemplate.value = res;
+    select.value = res.clone();
     // send the action request to the backend and show a notification
     createAnalysis({
         missionUUID: selected_mission.value.uuid,
         templateUUID: res.uuid,
     })
-        .then(() => {
+        .then((res) => {
             Notify.create({
                 group: false,
                 message: 'Analysis submitted',
@@ -573,7 +579,6 @@ function selectTemplate(template: ActionTemplate) {
             { gpu_model: { name: options[0].value } },
         );
         select.value = undefined;
-
         return;
     }
     if (template.hasOwnProperty('_rawValue')) {

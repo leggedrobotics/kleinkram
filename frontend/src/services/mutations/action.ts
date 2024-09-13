@@ -1,4 +1,5 @@
 import axios from 'src/api/axios';
+import { ActionTemplate } from 'src/types/ActionTemplate';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
@@ -29,7 +30,19 @@ export const createActionTemplate = async (template: {
         },
         searchable: template.searchable,
     });
-    return response.data;
+    const res = response.data;
+    return new ActionTemplate(
+        res.uuid,
+        res.createdAt,
+        res.updatedAt,
+        res.deletedAt,
+        res.image,
+        undefined,
+        res.name,
+        res.version,
+        res.command,
+        res.runtime_requirements,
+    );
 };
 
 export const createNewActionTemplateVersion = async (template: {
@@ -54,5 +67,17 @@ export const createNewActionTemplateVersion = async (template: {
         },
         searchable: template.searchable,
     });
-    return response.data;
+    const res = response.data;
+    return new ActionTemplate(
+        res.uuid,
+        res.createdAt,
+        res.updatedAt,
+        res.deletedAt,
+        res.image,
+        undefined,
+        res.name,
+        res.version,
+        res.command,
+        res.runtime_requirements,
+    );
 };
