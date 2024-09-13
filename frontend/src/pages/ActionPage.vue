@@ -435,6 +435,15 @@ const { mutateAsync: createTemplate } = useMutation({
             timeout: 2000,
         });
     },
+    onError: (error) => {
+        Notify.create({
+            group: false,
+            message: `Error: ${error.response.data.message}`,
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
 });
 
 const { mutateAsync: updateTemplate } = useMutation({
@@ -448,7 +457,7 @@ const { mutateAsync: updateTemplate } = useMutation({
                 editingTemplate.value.runtime_requirements.gpu_model.name,
             searchable,
         }),
-    onSuccess: () => {
+    onSuccess: (newVal) => {
         queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'actionTemplates';
@@ -456,8 +465,17 @@ const { mutateAsync: updateTemplate } = useMutation({
         });
         Notify.create({
             group: false,
-            message: 'Template updated',
+            message: `Template updated: ${newVal.name} v${newVal.version}`,
             color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            group: false,
+            message: `Error: ${error.response.data.message}`,
+            color: 'negative',
             position: 'bottom',
             timeout: 2000,
         });
@@ -486,6 +504,13 @@ const isModified = computed(() => {
 });
 
 function newValue(val: string, done: Function) {
+    const existingTemplate = actionTemplatesRes.value.find(
+        (template: ActionTemplate) => template.name === val,
+    );
+    if (existingTemplate) {
+        editingTemplate.value = existingTemplate.clone();
+        select.value = existingTemplate;
+    }
     editingTemplate.value.name = val;
     done(editingTemplate);
 }

@@ -55,6 +55,16 @@ export class ActionService {
                 'Only images from the rslethz namespace are allowed',
             );
         }
+        const exists = await this.actionTemplateRepository.exists({
+            where: {
+                name: data.name,
+            },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Template with this name already exists',
+            );
+        }
         const template = this.actionTemplateRepository.create({
             createdBy: { uuid: user.uuid },
             name: data.name,
