@@ -572,6 +572,8 @@ function selectTemplate(template: ActionTemplate) {
             '',
             { gpu_model: { name: options[0].value } },
         );
+        select.value = undefined;
+
         return;
     }
     if (template.hasOwnProperty('_rawValue')) {

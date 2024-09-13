@@ -54,6 +54,31 @@ describe('Verify Action', () => {
 
         const file_hash = await upload_file(user, filename, mission_uuid);
 
+        const create_template = await fetch(
+            `http://localhost:3000/action/createTemplate`,
+            {
+                method: 'POST',
+                headers: {
+                    cookie: `authtoken=${await get_jwt_token(user)}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'echo "Hello World"',
+                    image: 'rslethz/action:latest',
+                    name: 'test-template',
+                    runtime_requirements: {
+                        gpu_model: {
+                            name: 'no-gpu',
+                            memory: 0,
+                            compute_capability: '',
+                        },
+                    },
+                    searchable: true,
+                }),
+            },
+        );
+        const res = await create_template.json();
+        const uuid = res.uuid;
         // start action container
         const action_submission = await fetch(
             `http://localhost:3000/action/submit`,
@@ -64,22 +89,18 @@ describe('Verify Action', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    action_name: 'file-hash',
-                    gpu_model: 'no-gpu',
                     missionUUID: mission_uuid,
-                    docker_image: 'rslethz/action:file-hash-latest',
-                    command: '',
+                    templateUUID: uuid,
                 } as SubmitAction),
             },
         );
-
         // check if the request was successful
         expect(action_submission.status).toBeLessThan(300);
 
         // get action uuid
-        const action_uuid = await action_submission.text();
+        const action = await action_submission.json();
+        const action_uuid = action.uuid;
         expect(action_uuid).toBeDefined();
-
         let logs = null;
         while (true) {
             const res = await fetch(
@@ -111,7 +132,6 @@ describe('Verify Action', () => {
         const contains_file = messages.some((message) =>
             message.includes(file_hash_str),
         );
-        console.log(messages);
         expect(contains_file).toBeTruthy();
 
         // submit a new action
