@@ -102,6 +102,8 @@ describe('Verify Action', () => {
         const action_uuid = action.uuid;
         expect(action_uuid).toBeDefined();
         let logs = null;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
         while (true) {
             const res = await fetch(
                 `http://localhost:3000/action/details?uuid=${action_uuid}`,
@@ -119,6 +121,7 @@ describe('Verify Action', () => {
                 json.state === ActionState.FAILED
             ) {
                 logs = json.logs;
+                console.log('exiting: ', json.state);
                 break;
             }
 
@@ -129,6 +132,7 @@ describe('Verify Action', () => {
 
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message);
+        console.log(messages);
         const contains_file = messages.some((message) =>
             message.includes(file_hash_str),
         );

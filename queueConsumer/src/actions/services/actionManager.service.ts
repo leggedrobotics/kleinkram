@@ -312,6 +312,8 @@ export class ActionManagerService {
                     uuid,
                 },
             });
+            const all_actions = await this.actionRepository.find();
+            console.log('all_actions', all_actions);
 
             // kill action container if no corresponding action is found
             if (!action) {

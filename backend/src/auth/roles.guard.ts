@@ -39,8 +39,9 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-
+        console.log('TokenOrUserGuard');
         if (request.cookies[CookieNames.CLI_KEY]) {
+            console.log('CLI key: ', request.cookies[CookieNames.CLI_KEY]);
             const token = await this.tokenRepository
                 .findOneOrFail({
                     where: {
