@@ -16,15 +16,9 @@ const props = defineProps<{
 }>();
 const swaggerSpec = ref(null);
 
-try {
-    import('../../swagger-spec.json').then((spec) => {
-        swaggerSpec.value = spec;
-    });
-} catch (error) {
-    console.error(
-        "can't import swagger-spec.json, trying to fetch it at runtime",
-    );
-}
+// import('../../docs/swagger-spec.json').then((spec) => {
+//     swaggerSpec.value = spec;
+// });
 
 const filteredSpec = ref(null);
 
