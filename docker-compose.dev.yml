@@ -15,6 +15,9 @@ services:
         env_file:
             - .env
 
+        volumes:
+            - swagger-spec:/usr/src/app/backend/docs
+
         networks:
             - webnet
             - privatenet
@@ -165,7 +168,11 @@ services:
             - privatenet
 
     awt-docs:
+        depends_on:
+            - main
         image: rslethz/grandtour-datasets:docs-dev
+        volumes:
+            - swagger-spec:/app/src/docs/
         build:
             context: docs/.
             dockerfile: Dockerfile
@@ -176,6 +183,7 @@ volumes:
     logging-prometheus-storage:
     logging-grafana-storage:
     logging-tempo-data:
+    swagger-spec:
 
 networks:
     webnet:

@@ -9,6 +9,8 @@ services:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
             - /usr/src/app/node_modules
+            - swagger-spec:/usr/src/app/backend/docs
+
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         env_file:
@@ -180,6 +182,8 @@ services:
             - webnet
 
     docs:
+        depends_on:
+            - main
         image: rslethz/grandtour-datasets:docs-latest
         build:
             context: docs/.
@@ -190,6 +194,7 @@ services:
             - ./docs:/app/src
             - vitepress_dist:/app/src/.vitepress/dist
             - node_modules:/app/src/node_modules
+            - swagger-spec:/app/src/docs/
 
 volumes:
     db_data:
@@ -199,6 +204,7 @@ volumes:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
+    swagger-spec:
 
 networks:
     webnet:
