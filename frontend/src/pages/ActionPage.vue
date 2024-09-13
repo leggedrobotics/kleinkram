@@ -54,8 +54,14 @@
                             @update:model-value="selectTemplate($event)"
                         >
                             <template v-slot:selected>
-                                <div v-if="select && select.name">
-                                    {{ select.name }}&Tab;v{{ select.version }}
+                                <div
+                                    v-if="
+                                        editingTemplate && editingTemplate.name
+                                    "
+                                >
+                                    {{ editingTemplate.name }}&Tab;v{{
+                                        editingTemplate.version
+                                    }}
                                 </div>
                             </template>
                             <template v-slot:option="scope">
@@ -125,6 +131,7 @@
                             class="q-mb-sm"
                             clearable
                             placeholder="Docker Image"
+                            v-if="editingTemplate.image"
                         />
                     </div>
 
@@ -153,6 +160,7 @@
                             class="q-mb-sm"
                             clearable
                             placeholder="Command"
+                            v-if="editingTemplate"
                         />
                     </div>
                 </div>
@@ -206,6 +214,7 @@
                             map-options
                             outlined
                             dense
+                            v-if="editingTemplate"
                         />
                     </div>
                 </div>
@@ -492,13 +501,17 @@ const projects = computed(() =>
 );
 
 const isModified = computed(() => {
+    if (!select.value) {
+        return true;
+    }
     const sameName = editingTemplate.value.name === select.value?.name;
     const sameImage =
-        editingTemplate.value.image.name === select.value?.image.name;
-    const sameCommand = editingTemplate.value.command === select.value?.command;
+        editingTemplate.value?.image?.name === select.value?.image?.name;
+    const sameCommand =
+        editingTemplate.value?.command === select.value?.command;
     const sameGPU =
-        editingTemplate.value.runtime_requirements.gpu_model.name ===
-        select.value?.runtime_requirements.gpu_model.name;
+        editingTemplate.value?.runtime_requirements?.gpu_model?.name ===
+        select.value?.runtime_requirements?.gpu_model?.name;
 
     return !(sameName && sameImage && sameCommand && sameGPU);
 });
