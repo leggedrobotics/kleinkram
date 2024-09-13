@@ -5,6 +5,7 @@ import Apikey from '../auth/apikey.entity';
 import { ActionState } from '../../enum';
 import User from '../user/user.entity';
 import { RuntimeCapability, RuntimeRequirements } from '../../types';
+import ActionTemplate from './actionTemplate.entity';
 
 export type ContainerLog = {
     timestamp: string;
@@ -36,15 +37,9 @@ export interface SubmittedAction {
 }
 
 @Entity()
-export default class Action extends BaseEntity implements SubmittedAction {
+export default class Action extends BaseEntity {
     @Column()
     state: ActionState;
-
-    @Column({ type: 'json' })
-    runtime_requirements: RuntimeRequirements;
-
-    @Column({ type: 'json' })
-    image: Image;
 
     @Column({ type: 'json', nullable: true })
     container: Container;
@@ -60,9 +55,6 @@ export default class Action extends BaseEntity implements SubmittedAction {
 
     @Column({ nullable: true })
     executionStartedAt: Date;
-
-    @Column({ nullable: true })
-    command: string;
 
     @Column({ nullable: true })
     executionEndedAt: Date;
@@ -81,4 +73,7 @@ export default class Action extends BaseEntity implements SubmittedAction {
     @OneToOne(() => Apikey)
     @JoinColumn()
     key: Apikey;
+
+    @ManyToOne(() => ActionTemplate, (actionTemplate) => actionTemplate.actions)
+    template: ActionTemplate;
 }
