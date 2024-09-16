@@ -23,6 +23,7 @@ export default boot(({ router }) => {
         // check if the user is authenticated, if not redirect to login page
         const auth = await isAuthenticated();
         if (!auth && to.path !== ROUTES.LOGIN.path) {
+            // Save the target route to redirect after login
             localStorage.setItem('redirectAfterLogin', to.fullPath);
             return ROUTES.LOGIN.path;
         }
@@ -31,6 +32,7 @@ export default boot(({ router }) => {
             const redirectAfterLogin =
                 localStorage.getItem('redirectAfterLogin');
             if (redirectAfterLogin) {
+                // If a target after login is saved, redirect to it
                 return redirectAfterLogin;
             }
         }
