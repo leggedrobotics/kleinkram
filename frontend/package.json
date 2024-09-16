@@ -14,7 +14,7 @@
         "@aws-sdk/client-s3": "^3.637.0",
         "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.55.4",
-        "axios": "^1.7.4",
+        "axios": "^1.7.7",
         "date-fns": "^3.6.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
