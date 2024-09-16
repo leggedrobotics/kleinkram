@@ -5,6 +5,7 @@ import logger from '../../logger';
 import { ContainerLog } from '@common/entities/action/action.entity';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
+import process from 'node:process';
 
 export type ContainerLimits = {
     /**
@@ -112,29 +113,34 @@ export class DockerDaemon {
             throw new Error('Docker socket not available or not responding');
         }
         let image = this.docker.getImage(container_options.docker_image);
-        if (!image) {
-            await this.pull_image(container_options.docker_image).catch(
-                (error) => {
-                    // cleanup error message
-                    error.message = error.message.replace(/\(.*?\)/g, '');
-                    error.message = error.message.replace(/ +/g, ' ').trim();
+        let details = await image.inspect().catch(dockerDaemonErrorHandler);
+        logger.info(
+            `Checking if image ${container_options.docker_image} exists...`,
+        );
+        if (!details) {
+            logger.info('Image does not exist, pulling image...');
+            const pull_res = await this.pull_image(
+                container_options.docker_image,
+            ).catch((error) => {
+                // cleanup error message
+                error.message = error.message.replace(/\(.*?\)/g, '');
+                error.message = error.message.replace(/ +/g, ' ').trim();
 
-                    logger.warn(`Failed to pull image: ${error.message}`);
-                },
-            );
+                logger.warn(`Failed to pull image: ${error.message}`);
+            });
+
+            logger.info(`Image pulled: ${pull_res}. Starting container...`);
             image = this.docker.getImage(container_options.docker_image);
         }
 
         // get image details
-        const image_details = await image
-            .inspect()
-            .catch(dockerDaemonErrorHandler);
-        if (!image_details) {
+        details = await image.inspect().catch(dockerDaemonErrorHandler);
+        if (!details) {
             throw new Error(
                 `Image ${container_options.docker_image} not found, could not start container!`,
             );
         }
-        const repo_digests = image_details.RepoDigests;
+        const repo_digests = details.RepoDigests;
 
         const needs_gpu = container_options.needs_gpu || false;
         const add_gpu_capabilities = {
@@ -278,7 +284,7 @@ export class DockerDaemon {
     }
 
     @tracing()
-    private async pull_image(docker_image: string): Promise<void> {
+    private async pull_image(docker_image: string) {
         if (!this.docker || !(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
@@ -287,12 +293,19 @@ export class DockerDaemon {
             throw new Error('No docker image specified');
         }
 
-        logger.info(`Pulling image ${docker_image}`);
-        const pullStream = await this.docker.pull(docker_image);
-        await new Promise((res) =>
+        // pull the image from the docker hub
+        logger.info(`Pulling image: ${docker_image}`);
+        const pullStream = await this.docker.pull(docker_image, {
+            authconfig: {
+                auth: '',
+                serveraddress: 'https://index.docker.io/v1',
+                password: process.env.DOCKER_HUB_PASSWORD,
+                username: process.env.DOCKER_HUB_USERNAME,
+            },
+        });
+        return new Promise((res) =>
             this.docker.modem.followProgress(pullStream, res),
         );
-        logger.info('Image pulled!');
     }
 
     async stopContainer(container_id: string) {
