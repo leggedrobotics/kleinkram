@@ -15,7 +15,7 @@
     <q-btn-dropdown
         v-model="ddr_open"
         :label="selectedDataType || 'Data Type'"
-        class="q-uploader--bordered full-width full-height q-mb-lg"
+        class="q-uploader--bordered full-width q-mb-lg"
         flat
         clearable
         required
@@ -65,13 +65,10 @@ const createTagTypeAction = async () => {
         });
         return;
     }
-    const cache = queryClient.getQueryCache();
-    const filtered = cache
-        .getAll()
-        .filter((query) => query.queryKey[0] === 'tagTypes');
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries(query.queryKey);
+    await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'tagTypes',
     });
+
     Notify.create({
         message: `Tag Type ${tagName.value} created`,
         color: 'positive',
