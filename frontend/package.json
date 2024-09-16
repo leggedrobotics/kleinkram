@@ -19,7 +19,7 @@
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
         "p-limit": "^6.1.0",
-        "postcss": "^8.1.0",
+        "postcss": "^8.4.47",
         "quasar": "^2.16.11",
         "vue": "^3.4.38",
         "vue-echarts": "^7.0.3",
