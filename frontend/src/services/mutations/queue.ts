@@ -32,8 +32,8 @@ export const createDrive = async (missionUUID: string, driveURL: string) => {
 };
 
 export const deleteFile = async (missionUUID: string, queueUUID: string) => {
-    const response = await axios.post(`/queue/delete/${queueUUID}`, {
-        missionUUID,
+    const response = await axios.delete(`/queue/${queueUUID}`, {
+        data: { missionUUID },
     });
     return response.data;
 };

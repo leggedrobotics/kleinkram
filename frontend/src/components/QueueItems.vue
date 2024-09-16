@@ -263,6 +263,14 @@ const { mutate: removeFile } = useMutation({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
+    onError: (error) => {
+        Notify.create({
+            message: `Error deleting file: ${error?.response?.data?.message || error.message}`,
+            color: 'negative',
+            timeout: 4000,
+            position: 'bottom',
+        });
+    },
 });
 
 const { mutate: _cancelProcessing } = useMutation({
@@ -271,6 +279,14 @@ const { mutate: _cancelProcessing } = useMutation({
     onSuccess: () => {
         queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'queue',
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: `Error canceling processing: ${error?.response?.data?.message || error.message}`,
+            color: 'negative',
+            timeout: 4000,
+            position: 'bottom',
         });
     },
 });
