@@ -32,8 +32,8 @@ identically:
 -   `module` - The module contains the configuration for the module.
 -   `controller` - The controller handles the incoming requests and outgoing responses.
 -   `service` - The service handles the business logic.
--   `entities/` - Contains .dto files for the data transfer objects. The entities are moved to the toplevel 'common' 
-folder as they are shared with the queue-processor.
+-   `entities/` - Contains .dto files for the data transfer objects. The entities are moved to the toplevel 'common'
+    folder as they are shared with the queue-processor.
 
 Each entity should inherit from the `BaseEntity` class. This class adds basic fields
 like `uuid`, `createdAt`, `deletedAt`, and `updatedAt`.
