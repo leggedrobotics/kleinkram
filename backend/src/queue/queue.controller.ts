@@ -73,9 +73,9 @@ export class QueueController {
     @CanWriteMissionByBody()
     async delete(
         @BodyUUID('missionUUID') missionUUID: string,
-        @ParamUUID('queueUUID') queueUUID: string,
+        @ParamUUID('uuid') uuid: string,
     ) {
-        return this.queueService.delete(missionUUID, queueUUID);
+        return this.queueService.delete(missionUUID, uuid);
     }
 
     @Post('cancelProcessing')
