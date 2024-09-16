@@ -75,7 +75,7 @@ watch(
 );
 
 const queryKey = computed(() => [
-    'tags',
+    'tagTypes',
     tagSearch.value,
     selectedDataType.value,
 ]);
