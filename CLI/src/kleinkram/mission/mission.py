@@ -188,7 +188,12 @@ def download(
         filename = path.split("/")[-1].split("?")[0]
         print(f" - {filename}")
 
-        response = requests.get(path)
+        response = requests.get(path, stream=True)  # Enable streaming mode
+        chunk_size = 1024  # 1 KB chunks, adjust size if needed
+
+        # Open the file for writing in binary mode
         with open(os.path.join(local_path, filename), "wb") as f:
-            f.write(response.content)
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if chunk:  # Filter out keep-alive new chunks
+                    f.write(chunk)
             print(f"   Downloaded {filename}")
