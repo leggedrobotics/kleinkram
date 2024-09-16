@@ -97,6 +97,8 @@
         :loading="isLoading"
         binary-state-sort
         @rowClick="rowClick"
+        v-model:selected="selected"
+        selection="multiple"
     >
         <template v-slot:body-cell-Status="props">
             <q-td :props="props">
@@ -108,12 +110,67 @@
                 </q-badge>
             </q-td>
         </template>
+        <template v-slot:body-cell-action="props">
+            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="sym_o_more_vert"
+                    unelevated
+                    color="primary"
+                    class="cursor-pointer"
+                    @click.stop
+                >
+                    <q-menu
+                        auto-close
+                        style="max-width: 150px; min-width: 140px; width: 145px"
+                    >
+                        <q-list>
+                            <q-item
+                                clickable
+                                v-ripple
+                                @click="() => downloadFile(props.row)"
+                                :disable="
+                                    props.row.state ===
+                                        FileState.AWAITING_UPLOAD ||
+                                    props.row.state === FileState.CANCELED
+                                "
+                            >
+                                <q-item-section>Download File</q-item-section>
+                            </q-item>
+                            <q-item
+                                clickable
+                                v-ripple
+                                :disable="canDelete(props.row)"
+                                @click="() => openDeleteFileDialog(props.row)"
+                            >
+                                <q-item-section>Delete File</q-item-section>
+                            </q-item>
+                            <q-item
+                                clickable
+                                v-ripple
+                                :disable="
+                                    props.row.state !==
+                                    FileState.AWAITING_PROCESSING
+                                "
+                                @click="() => _cancelProcessing(props.row)"
+                            >
+                                <q-item-section
+                                    >Cancel Processing</q-item-section
+                                >
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </q-td>
+        </template>
     </q-table>
 </template>
 
 <script setup lang="ts">
-import { QTable } from 'quasar';
-import { useQuery } from '@tanstack/vue-query';
+import { QTable, useQuasar } from 'quasar';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
@@ -124,13 +181,20 @@ import { FileEntity } from 'src/types/FileEntity';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import {
+    _downloadFile,
     getDetailedFileState,
     getSimpleFileStateName,
+    getTentativeRowStyle,
 } from '../services/generic';
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
+import { Notify } from 'quasar';
+import { deleteFile, cancelProcessing } from 'src/services/mutations/queue';
+import ConfirmDeleteFile from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 
 const $router = useRouter();
+const queryClient = useQueryClient();
+const $q = useQuasar();
 
 const tableRef: Ref<QTable | null> = ref(null);
 const now = new Date();
@@ -147,6 +211,7 @@ const queueKey = computed(() => [
     startDate.value,
     fileStateFilterEnums.value,
 ]);
+const selected = ref<Queue[]>([]);
 
 const fileStateFilter = ref<string[]>([]);
 
@@ -184,6 +249,59 @@ const { data: queueEntries, isLoading } = useQuery<Project[]>({
     refetchInterval: 1000,
 });
 
+const { mutate: removeFile } = useMutation({
+    mutationFn: (queueEntry: Queue) =>
+        deleteFile(queueEntry.mission.uuid, queueEntry.uuid),
+    onSuccess: () => {
+        Notify.create({
+            message: 'File deleted',
+            color: 'positive',
+            timeout: 2000,
+            position: 'bottom',
+        });
+        queryClient.invalidateQueries({
+            predicate: (query) => query.queryKey[0] === 'queue',
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: `Error deleting file: ${error?.response?.data?.message || error.message}`,
+            color: 'negative',
+            timeout: 4000,
+            position: 'bottom',
+        });
+    },
+});
+
+const { mutate: _cancelProcessing } = useMutation({
+    mutationFn: (queueEntry: Queue) =>
+        cancelProcessing(queueEntry.uuid, queueEntry.mission.uuid),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => query.queryKey[0] === 'queue',
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            message: `Error canceling processing: ${error?.response?.data?.message || error.message}`,
+            color: 'negative',
+            timeout: 4000,
+            position: 'bottom',
+        });
+    },
+});
+
+function openDeleteFileDialog(queueEntry: Queue) {
+    $q.dialog({
+        component: ConfirmDeleteFile,
+        componentProps: {
+            filename: queueEntry.filename,
+        },
+    }).onOk(() => {
+        removeFile(queueEntry);
+    });
+}
+
 function rowClick(event: any, row: Queue) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
@@ -202,6 +320,25 @@ function rowClick(event: any, row: Queue) {
             },
         );
     }
+}
+
+function canDelete(row: Queue) {
+    return (
+        row.state !== FileState.AWAITING_PROCESSING &&
+        row.state !== FileState.CANCELED &&
+        row.state !== FileState.COMPLETED &&
+        row.state !== FileState.ERROR &&
+        row.state !== FileState.CORRUPTED &&
+        row.state !== FileState.AWAITING_UPLOAD
+    );
+}
+
+function downloadFile(row: Queue) {
+    findOneByNameAndMission(row.filename, row.mission.uuid).then(
+        (file: FileEntity) => {
+            _downloadFile(file.uuid, file.filename);
+        },
+    );
 }
 
 const columns = [
@@ -255,6 +392,14 @@ const columns = [
         label: 'Creator',
         align: 'left',
         field: (row: Queue) => row?.creator?.name,
+    },
+    {
+        name: 'action',
+        required: true,
+        label: '',
+        align: 'center',
+        field: 'Edit',
+        style: 'width: 100px',
     },
     // {name: 'id', required: true, label: 'Google Drive File ID', align: 'left', field: 'identifier'},
 ];

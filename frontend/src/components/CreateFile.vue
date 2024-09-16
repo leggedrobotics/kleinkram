@@ -91,8 +91,14 @@
         />
     </q-card-section>
 </template>
+<style lang="scss">
+.q-field__prepend {
+    pointer-events: none;
+}
+</style>
+
 <script setup lang="ts">
-import { computed, inject, onMounted, Ref, ref, watchEffect } from 'vue';
+import { computed, inject, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -104,6 +110,7 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import {
     cancelUploads,
     generateTemporaryCredentials,
+    GenerateTemporaryCredentialsResponse,
 } from 'src/services/mutations/file';
 import {
     AbortMultipartUploadCommand,
@@ -115,6 +122,10 @@ import {
 import pLimit from 'p-limit';
 import ENV from 'src/env';
 import { FileUpload } from 'src/types/FileUpload';
+import axios from 'src/api/axios';
+import { existsFile } from 'src/services/queries/file';
+
+const emit = defineEmits(['update:ready']);
 
 const selected_project: Ref<Project | null> = ref(null);
 
@@ -136,6 +147,20 @@ const queryClient = useQueryClient();
 
 const drive_url = ref('');
 const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
+
+const ready = computed(() => {
+    const hasProject = !!selected_project.value;
+    const hasMission = !!selected_mission.value;
+    const hasFileOrDrive = files.value.length > 0 || drive_url.value;
+    return hasProject && hasMission && hasFileOrDrive;
+});
+
+watch(
+    () => ready.value,
+    (value) => {
+        emit('update:ready', value);
+    },
+);
 
 const props = defineProps<{
     mission?: Mission;
@@ -215,7 +240,7 @@ const createFileAction = async () => {
                 }
             }
         });
-        const { credentials, files: reservedFilenames } =
+        const tempCreds: GenerateTemporaryCredentialsResponse =
             await generateTemporaryCredentials(
                 filteredFilenames,
                 selected_mission.value.uuid,
@@ -237,6 +262,8 @@ const createFileAction = async () => {
                     closeBtn: true,
                 });
             });
+        const credentials = tempCreds.credentials;
+        const reservedFilenames = tempCreds.files;
         uploadingFiles.value = reservedFilenames;
         const api = ENV.ENDPOINT;
         let minio_endpoint = api.replace('api', 'minio');
@@ -278,14 +305,15 @@ const createFileAction = async () => {
                             reservedFilenames[filename].location,
                             minioClient,
                             newFileUpload,
+                            reservedFilenames[filename].fileUUID,
                         );
 
                         return confirmUpload(
                             reservedFilenames[filename].queueUUID,
                         );
                     } catch (e) {
-                        console.error(e);
-                        Notify({
+                        console.error('err', e);
+                        Notify.create({
                             message: `Upload of File ${filename} failed: ${e}`,
                             color: 'negative',
                             spinner: false,
@@ -357,6 +385,7 @@ async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
     newFileUpload: Ref<FileUpload>,
+    fileUUID: string,
 ) {
     let UploadId: string | undefined;
     try {
@@ -376,9 +405,12 @@ async function uploadFileMultipart(
             start < file.size;
             partNumber++, start += partSize
         ) {
-            // percentage completed
-            const percent = Math.round((start / file.size) * 100);
-
+            if ((partNumber - 1) % 20 === 0) {
+                const queueExists = await existsFile(fileUUID);
+                if (!queueExists) {
+                    throw new Error('Upload was cancelled');
+                }
+            }
             const end = Math.min(start + partSize, file.size);
             const partBlob = file.slice(start, end);
             const uploadPartCommand = new UploadPartCommand({
@@ -405,6 +437,7 @@ async function uploadFileMultipart(
         return resi;
     } catch (error) {
         console.error('Multipart upload failed:', error);
+        newFileUpload.value.canceled = true;
 
         // Step 4 (Optional): Abort Multipart Upload
         if (UploadId) {

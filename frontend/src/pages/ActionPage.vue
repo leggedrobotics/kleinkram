@@ -39,15 +39,46 @@
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
                         <label for="action_name">Action Name</label>
-                        <q-input
-                            v-model="action_name"
-                            name="action_name"
+                        <q-select
+                            v-model="select"
+                            label="Select a Template or name a new one. (Confirm with Enter)"
+                            :options="actionTemplatesRes"
+                            use-input
+                            input-debounce="20"
                             outlined
                             dense
-                            class="q-mb-sm"
                             clearable
-                            placeholder="Action Name"
-                        />
+                            class="full-width"
+                            @new-value="newValue"
+                            @input-value="filter = $event"
+                            @update:model-value="selectTemplate($event)"
+                        >
+                            <template v-slot:selected>
+                                <div
+                                    v-if="
+                                        editingTemplate && editingTemplate.name
+                                    "
+                                >
+                                    {{ editingTemplate.name }}&Tab;v{{
+                                        editingTemplate.version
+                                    }}
+                                </div>
+                            </template>
+                            <template v-slot:option="scope">
+                                <q-item v-bind="scope.itemProps">
+                                    <q-item-section>
+                                        <q-item-label>{{
+                                            scope.opt.name
+                                        }}</q-item-label>
+                                        <q-item-label caption
+                                            >v{{
+                                                scope.opt.version
+                                            }}</q-item-label
+                                        >
+                                    </q-item-section>
+                                </q-item>
+                            </template>
+                        </q-select>
                     </div>
 
                     <div>
@@ -55,25 +86,34 @@
                         <q-select
                             name="project"
                             :model-value="selected_project?.name"
+                            :options="projects"
+                            option-label="name"
+                            option-value="uuid"
                             placeholder="Project"
                             outlined
                             dense
                             class="q-mb-sm"
-                            disable
                             style="background-color: #f4f4f4"
+                            @update:model-value="
+                                (a) => handler.setProjectUUID(a.uuid)
+                            "
                         />
                     </div>
                     <div>
                         <label for="mission">Mission</label>
                         <q-select
                             :model-value="selected_mission?.name"
+                            :options="missions"
+                            option-label="name"
                             placeholder="Mission"
                             name="mission"
                             outlined
                             dense
                             class="q-mb-sm"
-                            disable
                             style="background-color: #f4f4f4"
+                            @update:model-value="
+                                (a) => handler.setMissionUUID(a.uuid)
+                            "
                         />
                     </div>
                 </div>
@@ -82,15 +122,16 @@
                 >
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
-                        <label for="action_name">Define the Action</label>
+                        <label for="docker_image">Define the Action</label>
                         <q-input
-                            name="action_name"
-                            v-model="image_name"
+                            name="docker_image"
+                            v-model="editingTemplate.image.name"
                             outlined
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Docker Image"
+                            v-if="editingTemplate.image"
                         />
                     </div>
 
@@ -113,13 +154,13 @@
                         <label for="action_command">Command</label>
                         <q-input
                             name="action_command"
-                            model-value="Default Entrypoint"
+                            v-model="editingTemplate.command"
                             outlined
-                            readonly
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Command"
+                            v-if="editingTemplate"
                         />
                     </div>
                 </div>
@@ -161,12 +202,19 @@
                         <label for="gpu">GPU Acceleration</label>
                         <q-select
                             name="gpu"
-                            v-model="gpu_model"
+                            v-model="
+                                editingTemplate.runtime_requirements.gpu_model
+                                    .name
+                            "
                             :options="options"
+                            option-value="value"
+                            option-label="label"
                             label="GPU Acceleration"
                             class="q-mb-sm"
+                            map-options
                             outlined
                             dense
+                            v-if="editingTemplate"
                         />
                     </div>
                 </div>
@@ -174,6 +222,13 @@
                 <q-separator />
 
                 <div class="flex row justify-end q-mt-lg">
+                    <q-btn
+                        flat
+                        @click="() => saveAsTemplate()"
+                        class="bg-button-secondary text-on-color q-mx-sm"
+                        label="Save as Template"
+                        :disable="!isModified"
+                    />
                     <q-btn
                         flat
                         @click="submitAnalysis"
@@ -284,30 +339,52 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 
-import { useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import ActionsTable from 'components/Actions.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { createAnalysis } from 'src/services/mutations/action';
+import {
+    createActionTemplate,
+    createAnalysis,
+    createNewActionTemplateVersion,
+} from 'src/services/mutations/action';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import TitleSection from 'components/TitleSection.vue';
+import { listActionTemplates } from 'src/services/queries/action';
+import { ActionTemplate } from 'src/types/ActionTemplate';
 
 const search = ref('');
 const createAction = ref(false);
 
-const action_name = ref('');
+const select: Ref<undefined | ActionTemplate> = ref(undefined);
+const filter = ref('');
 const image_name = ref('rslethz/action:latest');
 const options = [
     { label: 'no GPU', value: 'no-gpu' },
     { label: 'GPU needed', value: 'GPU needed' },
 ];
-const gpu_model = ref(options[0]);
+const queryClient = useQueryClient();
+
+const editingTemplate = ref(
+    new ActionTemplate(
+        '',
+        null,
+        null,
+        null,
+        { name: 'rslethz/action:latest' },
+        null,
+        '',
+        1,
+        '',
+        { gpu_model: { name: options[0].value } },
+    ),
+);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -326,6 +403,94 @@ const selected_mission = computed(() =>
     ),
 );
 
+const actionTemplateKey = computed(() => ['actionTemplates', filter.value]);
+const { data: actionTemplatesRes } = useQuery({
+    queryKey: actionTemplateKey,
+    queryFn: () => listActionTemplates(filter.value),
+});
+
+async function saveAsTemplate() {
+    let res: undefined;
+    if (isModified.value && editingTemplate.value.uuid) {
+        res = await updateTemplate(true);
+    } else {
+        res = await createTemplate(true);
+    }
+    editingTemplate.value = res;
+    select.value = res.clone();
+}
+
+const { mutateAsync: createTemplate } = useMutation({
+    mutationFn: (searchable: boolean) =>
+        createActionTemplate({
+            name: editingTemplate.value.name,
+            command: editingTemplate.value.command,
+            docker_image: editingTemplate.value.image.name,
+            gpu_model:
+                editingTemplate.value.runtime_requirements.gpu_model.name,
+            searchable,
+        }),
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'actionTemplates';
+            },
+        });
+        Notify.create({
+            group: false,
+            message: 'Template created',
+            color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            group: false,
+            message: `Error: ${error.response.data.message}`,
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+});
+
+const { mutateAsync: updateTemplate } = useMutation({
+    mutationFn: (searchable: boolean) =>
+        createNewActionTemplateVersion({
+            uuid: editingTemplate.value.uuid,
+            name: editingTemplate.value.name,
+            command: editingTemplate.value.command,
+            docker_image: editingTemplate.value.image.name,
+            gpu_model:
+                editingTemplate.value.runtime_requirements.gpu_model.name,
+            searchable,
+        }),
+    onSuccess: (newVal) => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return query.queryKey[0] === 'actionTemplates';
+            },
+        });
+        Notify.create({
+            group: false,
+            message: `Template updated: ${newVal.name} v${newVal.version}`,
+            color: 'positive',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+    onError: (error) => {
+        Notify.create({
+            group: false,
+            message: `Error: ${error.response.data.message}`,
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+    },
+});
+
 // Fetch projects
 const projectsReturn = useQuery<[Project[], number]>({
     queryKey: ['projects'],
@@ -334,6 +499,34 @@ const projectsReturn = useQuery<[Project[], number]>({
 const projects = computed(() =>
     projectsReturn.data.value ? projectsReturn.data.value[0] : [],
 );
+
+const isModified = computed(() => {
+    if (!select.value) {
+        return true;
+    }
+    const sameName = editingTemplate.value.name === select.value?.name;
+    const sameImage =
+        editingTemplate.value?.image?.name === select.value?.image?.name;
+    const sameCommand =
+        editingTemplate.value?.command === select.value?.command;
+    const sameGPU =
+        editingTemplate.value?.runtime_requirements?.gpu_model?.name ===
+        select.value?.runtime_requirements?.gpu_model?.name;
+
+    return !(sameName && sameImage && sameCommand && sameGPU);
+});
+
+function newValue(val: string, done: Function) {
+    const existingTemplate = actionTemplatesRes.value.find(
+        (template: ActionTemplate) => template.name === val,
+    );
+    if (existingTemplate) {
+        editingTemplate.value = existingTemplate.clone();
+        select.value = existingTemplate;
+    }
+    editingTemplate.value.name = val;
+    done(editingTemplate);
+}
 
 // Fetch missions
 const queryKeyMissions = computed(() => [
@@ -346,7 +539,7 @@ const { data: _missions } = useQuery<[Mission[], number]>({
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
-const submitAnalysis = () => {
+async function submitAnalysis() {
     console.log(
         `Submit new action: ${selected_project.value?.uuid}, ${selected_mission.value?.uuid}, ${image_name.value}`,
     );
@@ -364,8 +557,7 @@ const submitAnalysis = () => {
         });
         return;
     }
-
-    if (!image_name.value.startsWith('rslethz/')) {
+    if (!editingTemplate.value.image.name.startsWith('rslethz/')) {
         Notify.create({
             group: false,
             message: 'The image name must start with "rslethz/"',
@@ -377,15 +569,21 @@ const submitAnalysis = () => {
     }
 
     // post: the input should be valid now
+    let res = editingTemplate.value;
 
+    if (isModified.value && editingTemplate.value.uuid) {
+        res = await updateTemplate(false);
+    } else if (!editingTemplate.value.uuid) {
+        res = await createTemplate(false);
+    }
+    editingTemplate.value = res;
+    select.value = res.clone();
     // send the action request to the backend and show a notification
     createAnalysis({
-        action_name: action_name.value,
-        docker_image: image_name.value,
-        mission_uuid: selected_mission.value.uuid,
-        gpu_model: gpu_model.value.value,
+        missionUUID: selected_mission.value.uuid,
+        templateUUID: res.uuid,
     })
-        .then(() => {
+        .then((res) => {
             Notify.create({
                 group: false,
                 message: 'Analysis submitted',
@@ -403,5 +601,27 @@ const submitAnalysis = () => {
                 timeout: 2000,
             });
         });
-};
+}
+function selectTemplate(template: ActionTemplate) {
+    if (!template) {
+        editingTemplate.value = new ActionTemplate(
+            '',
+            null,
+            null,
+            null,
+            { name: 'rslethz/action:latest' },
+            null,
+            '',
+            1,
+            '',
+            { gpu_model: { name: options[0].value } },
+        );
+        select.value = undefined;
+        return;
+    }
+    if (template.hasOwnProperty('_rawValue')) {
+        return;
+    }
+    editingTemplate.value = template.clone();
+}
 </script>

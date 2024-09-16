@@ -22,7 +22,14 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ data?.docker_image }}
+                                {{ data?.template.image.name }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Name</td>
+                            <td class="q-table__cell">
+                                {{ data?.template.name }}
+                                v{{ data?.template.version }}
                             </td>
                         </tr>
                         <tr>

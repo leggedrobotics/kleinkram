@@ -8,7 +8,7 @@ import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import env from '@common/env';
-import { externalMinio, getInfoFromMinio } from '../minioHelper';
+import { externalMinio, getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
 import { JWTUser } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
@@ -51,17 +51,21 @@ export class QueueService {
         private user_service: UserService,
     ) {}
 
-    async addActionQueue(action_details: SubmittedAction) {
-        await this.actionQueue.add('actionProcessQueue', action_details, {
-            jobId: action_details.uuid,
-            backoff: {
-                delay: 60 * 1_000, // 60 seconds
-                type: 'exponential',
+    async addActionQueue(actionUUID: string) {
+        await this.actionQueue.add(
+            'actionProcessQueue',
+            { uuid: actionUUID },
+            {
+                jobId: actionUUID,
+                backoff: {
+                    delay: 60 * 1_000, // 60 seconds
+                    type: 'exponential',
+                },
+                removeOnComplete: true,
+                removeOnFail: false,
+                attempts: 60, // one hour of attempts
             },
-            removeOnComplete: true,
-            removeOnFail: false,
-            attempts: 60, // one hour of attempts
-        });
+        );
     }
 
     async createDrive(driveCreate: DriveCreate, user: JWTUser) {
@@ -257,5 +261,95 @@ export class QueueService {
             },
             relations: ['creator'],
         });
+    }
+
+    async delete(missionUUID: string, queueUUID: string) {
+        const queue = await this.queueRepository.findOneOrFail({
+            where: { uuid: queueUUID, mission: { uuid: missionUUID } },
+            relations: ['mission', 'mission.project'],
+        });
+        if (
+            queue.state >= FileState.PROCESSING &&
+            queue.state < FileState.COMPLETED
+        ) {
+            throw new ConflictException('Cannot delete file while processing');
+        }
+        const waitingJobs = await this.fileProcessingQueue.getWaiting();
+        const jobToRemove = waitingJobs.find(
+            (job) => job.data.queueUuid === queueUUID,
+        );
+        if (!jobToRemove) {
+            logger.debug('Job not found');
+        } else {
+            console.log('Removing job:', jobToRemove.data.queueUuid);
+            await jobToRemove.remove();
+        }
+        await this.queueRepository.remove(queue);
+
+        const file = await this.fileRepository.findOne({
+            where: { filename: queue.filename, mission: { uuid: missionUUID } },
+        });
+        if (!file) {
+            return;
+        }
+        const minioPath = `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`;
+        const minioBucket =
+            file.type === FileType.BAG
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME;
+        try {
+            await internalMinio.removeObject(minioBucket, minioPath);
+        } catch (err) {
+            logger.log(err);
+        }
+        await this.fileRepository.remove(file);
+        if (file.type === FileType.BAG) {
+            const mcap = await this.fileRepository.findOne({
+                where: {
+                    filename: queue.filename.replace('.bag', '.mcap'),
+                    mission: { uuid: missionUUID },
+                },
+            });
+            if (mcap) {
+                try {
+                    await internalMinio.removeObject(
+                        minioBucket,
+                        minioPath.replace('.bag', '.mcap'),
+                    );
+                } catch (err) {
+                    logger.log(err);
+                }
+                await this.fileRepository.remove(mcap);
+            }
+        }
+    }
+
+    async exists(missionUUID: string, queueUUID: string) {
+        return this.queueRepository.exists({
+            where: { uuid: queueUUID, mission: { uuid: missionUUID } },
+        });
+    }
+
+    async cancelProcessing(queueUUID: string, missionUUID: string) {
+        const queue = await this.queueRepository.findOneOrFail({
+            where: { uuid: queueUUID, mission: { uuid: missionUUID } },
+            relations: ['mission', 'mission.project'],
+        });
+        console.log(queue.state);
+        if (queue.state >= FileState.PROCESSING) {
+            throw new ConflictException('File is not in processing state');
+        }
+        const waitingJobs = await this.fileProcessingQueue.getWaiting();
+        const jobToRemove = waitingJobs.find(
+            (job) => job.data.queueUuid === queueUUID,
+        );
+        if (!jobToRemove) {
+            logger.debug('Job not found');
+        } else {
+            console.log('Removing job:', jobToRemove.data.queueUuid);
+            await jobToRemove.remove();
+        }
+        queue.state = FileState.CANCELED;
+        await this.queueRepository.save(queue);
     }
 }

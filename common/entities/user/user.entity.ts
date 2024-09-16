@@ -16,6 +16,7 @@ import { UserRole } from '../../enum';
 import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
 import Action from '../action/action.entity';
+import ActionTemplate from '../action/actionTemplate.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -52,6 +53,12 @@ export default class User extends BaseEntity {
 
     @OneToMany(() => Action, (action) => action.mission)
     submittedActions: Action[];
+
+    @OneToMany(
+        () => ActionTemplate,
+        (actionTemplate) => actionTemplate.createdBy,
+    )
+    templates: ActionTemplate[];
 
     @OneToMany(() => Tag, (tag) => tag.creator)
     tags: Tag[];

@@ -1,6 +1,7 @@
 import axios from 'src/api/axios';
 import { Action } from 'src/types/Action';
 import { User } from 'src/types/User';
+import { ActionTemplate } from 'src/types/ActionTemplate';
 
 export const getActions = async (
     missionUUID: string,
@@ -17,7 +18,7 @@ export const getActions = async (
         descending,
     };
 
-    const response = await axios.get('/action/list', { params });
+    const response = await axios.get('/action/listActions', { params });
     if (response.data.length < 2) {
         return [[], 0];
     }
@@ -34,6 +35,19 @@ export const getActions = async (
             res.createdBy.deletedAt,
         );
 
+        const template = new ActionTemplate(
+            res.template.uuid,
+            res.template.createdAt,
+            res.template.updatedAt,
+            res.template.deletedAt,
+            res.template.image,
+            user,
+            res.template.name,
+            res.template.version,
+            res.template.command,
+            res.template.runtime_requirements,
+        );
+
         return new Action(
             res.uuid,
             new Date(res.createdAt),
@@ -41,9 +55,8 @@ export const getActions = async (
             new Date(res.deletedAt),
             res.state,
             res.state_cause,
-            res.image.name,
-            res.docker_image_sha,
             null,
+            template,
             user,
         );
     });
@@ -68,6 +81,19 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.createdBy.deletedAt,
     );
 
+    const template = new ActionTemplate(
+        response.data.template.uuid,
+        new Date(response.data.template.createdAt),
+        new Date(response.data.template.updatedAt),
+        new Date(response.data.template.deletedAt),
+        response.data.template.image,
+        undefined,
+        response.data.template.name,
+        response.data.template.version,
+        response.data.template.command,
+        response.data.template.runtime_requirements,
+    );
+    console.log('template', template);
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),
@@ -75,9 +101,8 @@ export const actionDetails = async (action_uuid: string) => {
         new Date(response.data.deletedAt),
         response.data.state,
         response.data.state_cause,
-        response.data.image.name,
-        response.data.docker_image_sha,
         null,
+        template,
         user,
         response.data.logs,
         response.data.runner_info.hostname,
@@ -85,4 +110,40 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.executionStartedAt,
         response.data.executionEndedAt,
     );
+};
+
+export const listActionTemplates = async (search: string) => {
+    const params = {};
+    if (search) {
+        console.log('search', search);
+        params['search'] = search;
+    }
+    const response = await axios.get('/action/listTemplates', {
+        params,
+    });
+    return response.data[0].map((res: any) => {
+        const user = new User(
+            res.createdBy.uuid,
+            res.createdBy.name,
+            res.createdBy.email,
+            res.createdBy.role,
+            res.createdBy.avatarUrl,
+            [],
+            res.createdBy.createdAt,
+            res.createdBy.updatedAt,
+            res.createdBy.deletedAt,
+        );
+        return new ActionTemplate(
+            res.uuid,
+            res.createdAt,
+            res.updatedAt,
+            res.deletedAt,
+            res.image,
+            user,
+            res.name,
+            res.version,
+            res.command,
+            res.runtime_requirements,
+        );
+    });
 };

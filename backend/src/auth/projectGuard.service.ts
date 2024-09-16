@@ -27,6 +27,9 @@ export class ProjectGuardService {
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!projectUUID || !userUUID) {
+            return false;
+        }
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
@@ -52,6 +55,9 @@ export class ProjectGuardService {
         projectName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        if (!projectName || !userUUID) {
+            return false;
+        }
         const project = await this.projectRepository.findOne({
             where: { name: projectName },
         });
@@ -62,6 +68,9 @@ export class ProjectGuardService {
     }
 
     async canCreateProject(userUUID: string) {
+        if (!userUUID) {
+            return false;
+        }
         const user = await this.userService.findOneByUUID(userUUID);
         if (!user) {
             return false;

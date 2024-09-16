@@ -41,7 +41,7 @@ export const searchAccessGroups = async (
     if (member) {
         params['member'] = true;
     }
-    const response = await axios.get('/access/searchAccessGroup', {
+    const response = await axios.get('/access/filtered', {
         params,
     });
     if (!response.data) {

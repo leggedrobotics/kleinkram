@@ -689,6 +689,9 @@ export class FileService {
             }),
         );
     }
+    async exists(fileUUID: string) {
+        return this.fileRepository.exists({ where: { uuid: fileUUID } });
+    }
 }
 
 function parseMinioMetrics(metricsText) {

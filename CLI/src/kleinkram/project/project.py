@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing_extensions import Annotated
 
 import httpx
 import typer
@@ -20,7 +20,7 @@ def list_projects():
     """
     try:
         client = AuthenticatedClient()
-        response = client.get("/project")
+        response = client.get("/project/filtered")
         response.raise_for_status()
         projects = response.json()[0]
         print("Projects:")

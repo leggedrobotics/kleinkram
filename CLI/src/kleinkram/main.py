@@ -9,7 +9,7 @@ from rich import print
 from rich.table import Table
 from typer.core import TyperGroup
 from typer.models import Context
-from typing_extensions import Annotated
+from typing_extensions import Annotated, List
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.auth.auth import login, setCliKey, logout
@@ -45,7 +45,7 @@ class OrderCommands(TyperGroup):
     https://github.com/tiangolo/typer/discussions/855#discussioncomment-9824582) and adapted to our use case.
     """
 
-    def list_commands(self, _ctx: Context) -> list[str]:
+    def list_commands(self, _ctx: Context) -> List[str]:
         order = list(CommandPanel)
         grouped_commands = {
             name: getattr(command, "rich_help_panel")

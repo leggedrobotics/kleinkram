@@ -7,6 +7,7 @@
                 :mission="mission"
                 ref="createFileRef"
                 :uploads="uploads"
+                v-model:ready="ready"
             />
         </template>
 
@@ -15,6 +16,7 @@
                 flat
                 label="Create File"
                 class="bg-button-primary"
+                :disable="!ready"
                 @click="
                     () => {
                         createFileRef?.createFileAction();
@@ -36,7 +38,7 @@ import { Ref, ref } from 'vue';
 import { FileUpload } from 'src/types/FileUpload';
 
 const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
-
+const ready = ref(false);
 const props = defineProps<{
     mission?: Mission;
     uploads: Ref<FileUpload[]>;

@@ -22,6 +22,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('queue')
 export class QueueController {
@@ -66,5 +67,23 @@ export class QueueController {
         @QueryUUID('uuid') uuid: string, //Mission UUID
     ) {
         return this.queueService.forFile(filename, uuid);
+    }
+
+    @Delete(':uuid')
+    @CanWriteMissionByBody()
+    async delete(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @ParamUUID('uuid') uuid: string,
+    ) {
+        return this.queueService.delete(missionUUID, uuid);
+    }
+
+    @Post('cancelProcessing')
+    @CanWriteMissionByBody()
+    async cancelProcessing(
+        @BodyUUID('queueUUID') queueUUID: string,
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
+        return this.queueService.cancelProcessing(queueUUID, missionUUID);
     }
 }

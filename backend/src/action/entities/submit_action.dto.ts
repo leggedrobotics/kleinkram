@@ -4,11 +4,19 @@ export class SubmitAction {
     @IsUUID()
     missionUUID: string;
 
+    @IsUUID()
+    templateUUID: string;
+}
+
+export class CreateActionTemplate {
     @IsString()
-    docker_image: string;
+    name: string;
 
     @IsString()
-    action_name: string;
+    command: string;
+
+    @IsString()
+    docker_image: string;
 
     @IsString()
     gpu_model: string;

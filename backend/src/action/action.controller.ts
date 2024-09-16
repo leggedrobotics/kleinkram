@@ -1,14 +1,6 @@
-import {
-    Body,
-    ConflictException,
-    Controller,
-    Get,
-    Post,
-    Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
 import { ActionQuery, SubmitAction } from './entities/submit_action.dto';
-import { QueueService } from '../queue/queue.service';
 import {
     CanCreateAction,
     CanReadAction,
@@ -21,53 +13,43 @@ import {
     QuerySkip,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { RuntimeRequirements } from '@common/types';
-import { SubmittedAction } from '@common/entities/action/action.entity';
+import Action from '@common/entities/action/action.entity';
+import {
+    CreateTemplateDto,
+    UpdateTemplateDto,
+} from './entities/createTemplate.dto';
 
 @Controller('action')
 export class ActionController {
-    constructor(
-        private readonly actionService: ActionService,
-        private readonly queueService: QueueService,
-    ) {}
+    constructor(private readonly actionService: ActionService) {}
 
     @Post('submit')
     @CanCreateAction()
     async createActionRun(
         @Body() dto: SubmitAction,
         @addJWTUser() user: JWTUser,
-    ) {
-        if (!dto.docker_image.startsWith('rslethz/')) {
-            throw new ConflictException(
-                'Docker image must start with rslethz/',
-            );
-        }
-
-        const runtime_requirements: RuntimeRequirements = {
-            gpu_model:
-                dto.gpu_model !== 'no-gpu'
-                    ? {
-                          name: 'Nvidia',
-                          memory: 0,
-                          compute_capability: '',
-                      }
-                    : null,
-        };
-        const action = await this.actionService.submit(
-            dto,
-            runtime_requirements,
-            user,
-        );
-
-        await this.queueService.addActionQueue({
-            uuid: action.uuid,
-            runtime_requirements,
-            state: action.state,
-            image: action.image,
-        });
-        return action.uuid;
+    ): Promise<Action> {
+        return this.actionService.submit(dto, user);
     }
-    @Get('list')
+
+    @Post('createTemplate')
+    @LoggedIn()
+    async createTemplate(
+        @Body() dto: CreateTemplateDto,
+        @addJWTUser() user: JWTUser,
+    ) {
+        return this.actionService.createTemplate(dto, user);
+    }
+
+    @Post('createNewVersion')
+    @LoggedIn()
+    async createNewVersion(
+        @Body() dto: UpdateTemplateDto,
+        @addJWTUser() user: JWTUser,
+    ) {
+        return this.actionService.createNewVersion(dto, user);
+    }
+    @Get('listActions')
     @LoggedIn()
     async list(
         @Query() dto: ActionQuery,
@@ -77,7 +59,7 @@ export class ActionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QueryOptionalBoolean('descending') descending: boolean,
     ) {
-        return this.actionService.list(
+        return this.actionService.listActions(
             dto.mission_uuid,
             user.uuid,
             skip,
@@ -85,6 +67,17 @@ export class ActionController {
             sortBy,
             descending,
         );
+    }
+
+    @Get('listTemplates')
+    @LoggedIn()
+    async listTemplates(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QuerySkip('take') take: number,
+        @QueryOptionalString('search') search: string,
+    ) {
+        return this.actionService.listTemplates(skip, take, search);
     }
 
     @Get('details')

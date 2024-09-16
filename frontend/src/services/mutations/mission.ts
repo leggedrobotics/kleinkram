@@ -24,9 +24,7 @@ export const moveMission = async (missionUUID: string, projectUUID: string) => {
 };
 
 export const deleteMission = async (mission: Mission) => {
-    const response = await axios.delete('/mission', {
-        data: { uuid: mission.uuid },
-    });
+    const response = await axios.delete(`/mission/${mission.uuid}`);
     return response.data;
 };
 

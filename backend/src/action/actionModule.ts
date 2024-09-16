@@ -17,11 +17,13 @@ import { UserService } from '../user/user.service';
 import Tag from '@common/entities/tag/tag.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             Action,
+            ActionTemplate,
             Apikey,
             User,
             AccessGroup,

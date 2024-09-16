@@ -6,3 +6,5 @@ CLI/dist
 **/node_modules/**
 **/venv/**
 backend/migration/.env
+
+**/swagger-spec.json

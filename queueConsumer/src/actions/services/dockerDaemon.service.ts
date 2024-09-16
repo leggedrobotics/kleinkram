@@ -42,6 +42,7 @@ export type ContainerStartOptions = {
     limits?: Partial<ContainerLimits>;
     needs_gpu?: boolean;
     environment?: ContainerEnv;
+    command?: string;
 };
 
 export const dockerDaemonErrorHandler = (error: Error) => {
@@ -151,13 +152,16 @@ export class DockerDaemon {
                 ? 'Creating container with GPU support'
                 : 'Creating container without GPU support',
         );
-
+        console.log(container_options.command);
         const container_create_options: Dockerode.ContainerCreateOptions = {
             Image: container_options.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + container_options.name,
             Env: Object.entries(container_options.environment).map(
                 ([key, value]) => `${key}=${value}`,
             ),
+            Cmd: container_options.command
+                ? container_options.command.split(' ')
+                : [],
 
             HostConfig: {
                 ...(needs_gpu ? add_gpu_capabilities : {}),

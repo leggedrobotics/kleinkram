@@ -29,7 +29,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamString } from '../validation/paramDecorators';
+import { ParamString, ParamUUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
 
 @Controller('mission')
@@ -96,10 +96,10 @@ export class MissionController {
         return this.missionService.findOneByUUID(uuid);
     }
 
-    @Get('filteredByProjectName/:projectName')
+    @Get('filteredByProjectName')
     @LoggedIn()
     async filteredByProjectName(
-        @ParamString('projectName') projectName: string,
+        @QueryString('projectName') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addJWTUser() user: JWTUser,
@@ -121,9 +121,9 @@ export class MissionController {
         return this.missionService.moveMission(missionUUID, projectUUID);
     }
 
-    @Delete()
+    @Delete(':uuid')
     @CanDeleteMission()
-    async deleteMission(@BodyUUID('uuid') uuid: string) {
+    async deleteMission(@ParamUUID('uuid') uuid: string) {
         return this.missionService.deleteMission(uuid);
     }
 

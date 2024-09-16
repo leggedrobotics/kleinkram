@@ -27,11 +27,11 @@ ls -la
 echo ""
 echo "generate 1_000 lines of fake log messages"
 echo ""
-for i in {1..1000}; do
+for i in {1..10}; do
   echo "log message $i"
   echo "🚀 Rocket" 1>&2
 done
 
-sleep 1000
+sleep 5
 
 exit 0

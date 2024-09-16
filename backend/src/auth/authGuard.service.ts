@@ -15,6 +15,9 @@ export class AuthGuardService {
     ) {}
 
     async canAddUserToAccessGroup(userUUID: string, accessGroupUUID: string) {
+        if (!userUUID || !accessGroupUUID) {
+            return false;
+        }
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });

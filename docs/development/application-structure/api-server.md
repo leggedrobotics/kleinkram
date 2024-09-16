@@ -32,8 +32,8 @@ identically:
 -   `module` - The module contains the configuration for the module.
 -   `controller` - The controller handles the incoming requests and outgoing responses.
 -   `service` - The service handles the business logic.
--   `entities/` - The class definition for the entity. Defines the fields in the database. Can also contain .dto files for
-    the data transfer objects.
+-   `entities/` - Contains .dto files for the data transfer objects. The entities are moved to the toplevel 'common'
+    folder as they are shared with the queue-processor.
 
 Each entity should inherit from the `BaseEntity` class. This class adds basic fields
 like `uuid`, `createdAt`, `deletedAt`, and `updatedAt`.
@@ -53,7 +53,7 @@ The API should remain stateless (besides the database connections). This will al
 API.
 
 The API should never handle files directly. These files can be to large and slow down the API. Instead, the API should
-use presigned URLs to Minio so that files are directly uploaded to & downloaded from Minio.
+use issue temporary credential for Minio so that files are directly uploaded to & downloaded from Minio.
 
 Similarly, the API should never do heavy processing. Tasks that require this should be offloaded to the QueingService.
 The QueingService will then schedule the task.

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing_extensions import Annotated
 
 import httpx
 import typer
@@ -59,7 +59,7 @@ def delete_tag(
 
     try:
         client = AuthenticatedClient()
-        response = client.delete("/tag/deleteTag", params={"uuid": taguuid})
+        response = client.delete(f"/tag/{taguuid}")
         if response.status_code < 400:
             print("Deleted tag")
         else:

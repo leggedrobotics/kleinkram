@@ -39,8 +39,9 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-
+        console.log('TokenOrUserGuard');
         if (request.cookies[CookieNames.CLI_KEY]) {
+            console.log('CLI key: ', request.cookies[CookieNames.CLI_KEY]);
             const token = await this.tokenRepository
                 .findOneOrFail({
                     where: {
@@ -188,7 +189,8 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const projectUUID = request.query.uuid || request.body.uuid;
+        const projectUUID =
+            request.query.uuid || request.body.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(
             user.uuid,
             projectUUID,
@@ -213,7 +215,7 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const projectUUID = request.query.uuid;
+        const projectUUID = request.query.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(
             user.uuid,
             projectUUID,
@@ -238,7 +240,7 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const fileUUID = request.body.uuid;
+        const fileUUID = request.query.uuid || request.body.uuid;
         return this.fileGuardService.canAccessFile(
             user.uuid,
             fileUUID,
@@ -356,7 +358,7 @@ export class CanDeleteMissionGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const missionUUID = request.body.uuid;
+        const missionUUID = request.body.uuid || request.param.uuid;
         return this.missionGuardService.canAccessMission(
             user.uuid,
             missionUUID,
@@ -426,7 +428,7 @@ export class DeleteTagGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const taguuid = request.body.uuid;
+        const taguuid = request.body.uuid || request.param.uuid;
         return this.missionGuardService.canTagMission(
             user.uuid,
             taguuid,
@@ -641,7 +643,7 @@ export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const accessGroupUUID = request.body.uuid;
+        const accessGroupUUID = request.body.uuid || request.params.uuid;
         return this.authGuardService.canAddUserToAccessGroup(
             user.uuid,
             accessGroupUUID,
