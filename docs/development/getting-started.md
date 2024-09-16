@@ -73,9 +73,10 @@ docker compose up --build --watch
     :::
 
 4. You can now open the projects:
-   - frontend at [http://localhost:8003](http://localhost:8003).
-   - minio console at [http://localhost:9001](http://localhost:9001).
-   - documentation at [http://localhost:4000](http://localhost:4000).
+
+    - frontend at [http://localhost:8003](http://localhost:8003).
+    - minio console at [http://localhost:9001](http://localhost:9001).
+    - documentation at [http://localhost:4000](http://localhost:4000).
 
 5. In order to enable code completion and linting in your IDE, you may need to install additional tools.
 

@@ -8,7 +8,7 @@ For more information see the [QueingService Documentation](./queuingService/READ
 The Queue Processor also uses NestJS & TypeORM. But with `@nestjs/bull` for Queuing. The Documentation can be
 found [here](https://docs.nestjs.com/techniques/queues).
 
-As it connects directly to the Postres Database it needs to use the same schema. Thus the entities, enums and 
+As it connects directly to the Postres Database it needs to use the same schema. Thus the entities, enums and
 environment variables are in the `common` folder.
 
 ## Structure

@@ -4,7 +4,6 @@ import { isAuthenticated } from 'src/services/auth';
 import ROUTES, { PUBLIC_ROUTES } from 'src/router/routes';
 
 let routerInstance: Router;
-
 export default boot(({ router }) => {
     routerInstance = router;
 
@@ -21,15 +20,21 @@ export default boot(({ router }) => {
             return;
         }
 
-        // redirect to error page is also fine
-        if (!Object.values(ROUTES).some((route) => route.path === to.path)) {
-            return;
-        }
-
         // check if the user is authenticated, if not redirect to login page
         const auth = await isAuthenticated();
         if (!auth && to.path !== ROUTES.LOGIN.path) {
+            // Save the target route to redirect after login
+            localStorage.setItem('redirectAfterLogin', to.fullPath);
             return ROUTES.LOGIN.path;
+        }
+
+        if (to.path === ROUTES.LANDING.path) {
+            const redirectAfterLogin =
+                localStorage.getItem('redirectAfterLogin');
+            if (redirectAfterLogin) {
+                // If a target after login is saved, redirect to it
+                return redirectAfterLogin;
+            }
         }
         if (auth && to.path === ROUTES.LOGIN.path) {
             return ROUTES.DASHBOARD.path;

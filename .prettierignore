@@ -8,3 +8,4 @@
 **/yarn-error.log
 **/.vscode
 **/.vitepress
+**/__generated__endpoints.json
