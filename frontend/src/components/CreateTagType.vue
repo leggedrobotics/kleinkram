@@ -65,13 +65,10 @@ const createTagTypeAction = async () => {
         });
         return;
     }
-    const cache = queryClient.getQueryCache();
-    const filtered = cache
-        .getAll()
-        .filter((query) => query.queryKey[0] === 'tagTypes');
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries(query.queryKey);
+    await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'tagTypes',
     });
+
     Notify.create({
         message: `Tag Type ${tagName.value} created`,
         color: 'positive',

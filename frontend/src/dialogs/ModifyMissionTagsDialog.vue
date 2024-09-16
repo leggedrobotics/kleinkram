@@ -26,6 +26,7 @@ import { ref, Ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
+import { DataType } from 'src/enums/TAG_TYPES';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
@@ -41,7 +42,11 @@ watch(
         if (newMission) {
             tagValues.value = {};
             newMission.tags.forEach((tag) => {
-                tagValues.value[tag.type.uuid] = tag.asString();
+                if (tag.type.type === DataType.BOOLEAN) {
+                    tagValues.value[tag.type.uuid] = tag.BOOLEAN;
+                } else {
+                    tagValues.value[tag.type.uuid] = tag.asString();
+                }
             });
         }
     },
