@@ -91,6 +91,12 @@
         />
     </q-card-section>
 </template>
+<style lang="scss">
+.q-field__prepend {
+    pointer-events: none;
+}
+</style>
+
 <script setup lang="ts">
 import { computed, inject, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { Notify } from 'quasar';
