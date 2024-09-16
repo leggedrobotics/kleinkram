@@ -14,12 +14,12 @@
         "@aws-sdk/client-s3": "^3.637.0",
         "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.55.4",
-        "axios": "^1.7.4",
+        "axios": "^1.7.7",
         "date-fns": "^3.6.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
         "p-limit": "^6.1.0",
-        "postcss": "^8.1.0",
+        "postcss": "^8.4.47",
         "quasar": "^2.16.11",
         "vue": "^3.4.38",
         "vue-echarts": "^7.0.3",
@@ -28,7 +28,7 @@
     },
     "devDependencies": {
         "@quasar/app-vite": "1.9.5",
-        "@types/node": "^22.5.0",
+        "@types/node": "^22.5.5",
         "autoprefixer": "^10.4.20",
         "typescript": "^5.5.4"
     },
