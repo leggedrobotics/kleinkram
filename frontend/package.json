@@ -15,7 +15,7 @@
         "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.55.4",
         "axios": "^1.7.7",
-        "date-fns": "^3.6.0",
+        "date-fns": "^4.0.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
         "p-limit": "^6.1.0",
