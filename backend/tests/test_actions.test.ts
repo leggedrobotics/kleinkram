@@ -64,7 +64,7 @@ describe('Verify Action', () => {
                 },
                 body: JSON.stringify({
                     command: 'echo "Hello World"',
-                    image: 'rslethz/action:latest',
+                    image: 'rslethz/action:file-hash-latest',
                     name: 'test-template',
                     runtime_requirements: {
                         gpu_model: {
