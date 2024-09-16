@@ -9,7 +9,6 @@
         <template #actions>
             <q-btn
                 flat
-                :disable="selected.length === 0"
                 label="Save"
                 class="bg-button-primary"
                 @click="

@@ -60,6 +60,9 @@ const { mutate: _updateMissionTags } = useMutation({
         queryClient.invalidateQueries({
             queryKey: ['mission', props.mission.uuid],
         });
+        queryClient.invalidateQueries({
+            queryKey: ['missions'],
+        });
         onDialogOK();
     },
 });

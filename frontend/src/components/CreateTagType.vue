@@ -15,7 +15,7 @@
     <q-btn-dropdown
         v-model="ddr_open"
         :label="selectedDataType || 'Data Type'"
-        class="q-uploader--bordered full-width full-height q-mb-lg"
+        class="q-uploader--bordered full-width q-mb-lg"
         flat
         clearable
         required
