@@ -14,7 +14,6 @@ export type ContainerLog = {
 };
 
 export type Image = {
-    name: string;
     sha: string | null;
     repo_digests: string[] | null;
 };
@@ -82,4 +81,7 @@ export default class Action extends BaseEntity {
 
     @ManyToOne(() => ActionTemplate, (actionTemplate) => actionTemplate.actions)
     template: ActionTemplate;
+
+    @Column({ type: 'json', nullable: true })
+    image: Image;
 }

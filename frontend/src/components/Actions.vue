@@ -176,7 +176,7 @@ const columns = [
         align: 'left',
         sortable: false,
         field: (row: Action) =>
-            row.template?.image.name ? row.template.image.name : 'N/A',
+            row.template?.image_name ? row.template.image_name : 'N/A',
     },
     {
         name: 'name',

@@ -557,7 +557,7 @@ async function submitAnalysis() {
         });
         return;
     }
-    if (!editingTemplate.value.image.name.startsWith('rslethz/')) {
+    if (!editingTemplate.value.image_name.startsWith('rslethz/')) {
         Notify.create({
             group: false,
             message: 'The image name must start with "rslethz/"',

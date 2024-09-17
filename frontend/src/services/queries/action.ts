@@ -40,7 +40,7 @@ export const getActions = async (
             res.template.createdAt,
             res.template.updatedAt,
             res.template.deletedAt,
-            res.template.image,
+            res.template.image_name,
             user,
             res.template.name,
             res.template.version,
@@ -59,6 +59,7 @@ export const getActions = async (
             res.uploading_artifacts,
             null,
             template,
+            res.image,
             user,
         );
     });
@@ -88,14 +89,13 @@ export const actionDetails = async (action_uuid: string) => {
         new Date(response.data.template.createdAt),
         new Date(response.data.template.updatedAt),
         new Date(response.data.template.deletedAt),
-        response.data.template.image,
+        response.data.template.image_name,
         undefined,
         response.data.template.name,
         response.data.template.version,
         response.data.template.command,
         response.data.template.runtime_requirements,
     );
-    console.log('template', template);
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),
@@ -105,9 +105,9 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.state_cause,
         response.data.artifact_url,
         response.data.uploading_artifacts,
-
         null,
         template,
+        response.data.image,
         user,
         response.data.logs,
         response.data.runner_info.hostname,
@@ -143,7 +143,7 @@ export const listActionTemplates = async (search: string) => {
             res.createdAt,
             res.updatedAt,
             res.deletedAt,
-            res.image,
+            res.image_name,
             user,
             res.name,
             res.version,

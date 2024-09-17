@@ -98,6 +98,7 @@ export class DockerDaemon {
     ): Promise<{
         container: Dockerode.Container;
         repo_digests: string[];
+        sha: string;
     }> {
         // merge the given container limitations with the default ones
         if (!container_options) container_options = {};
@@ -154,7 +155,7 @@ export class DockerDaemon {
             );
         }
         const repo_digests = details.RepoDigests;
-
+        const sha = '';
         const needs_gpu = container_options.needs_gpu || false;
         const add_gpu_capabilities = {
             DeviceRequests: [
@@ -228,7 +229,7 @@ export class DockerDaemon {
             container_options.limits.max_runtime,
         );
 
-        return { container, repo_digests };
+        return { container, repo_digests, sha };
     }
 
     /**

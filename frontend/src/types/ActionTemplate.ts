@@ -10,14 +10,9 @@ type RuntimeRequirements = {
     gpu_model?: GPUModel | null;
     cpu_model?: string | null;
 };
-export type Image = {
-    name: string;
-    sha: string | null;
-    repo_digests: string[] | null;
-};
 
 export class ActionTemplate extends BaseEntity {
-    image: Image;
+    image_name: string;
     createdBy: User;
     name: string;
     version: number;
@@ -29,7 +24,7 @@ export class ActionTemplate extends BaseEntity {
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
-        image: Image,
+        image_name: string,
         createdBy: User,
         name: string,
         version: number,
@@ -37,7 +32,7 @@ export class ActionTemplate extends BaseEntity {
         runtime_requirements: RuntimeRequirements,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
-        this.image = image;
+        this.image_name = image_name;
         this.version = version;
         this.createdBy = createdBy;
         this.name = name;
@@ -46,11 +41,6 @@ export class ActionTemplate extends BaseEntity {
     }
 
     clone(): ActionTemplate {
-        const image = {
-            name: this.image.name,
-            sha: this.image.sha,
-            repo_digests: this.image.repo_digests,
-        };
         const existing_gpu_model = this.runtime_requirements.gpu_model;
         const runtime_requirements = {
             gpu_model: {
@@ -65,7 +55,7 @@ export class ActionTemplate extends BaseEntity {
             this.createdAt,
             this.updatedAt,
             this.deletedAt,
-            image,
+            this.image_name,
             this.createdBy,
             this.name,
             this.version,

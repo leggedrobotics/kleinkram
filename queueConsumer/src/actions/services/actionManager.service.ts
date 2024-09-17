@@ -77,9 +77,9 @@ export class ActionManagerService {
         const needs_gpu =
             action.template.runtime_requirements.gpu_model !== null &&
             action.template.runtime_requirements.gpu_model.name !== 'no-gpu';
-        const { container, repo_digests } =
+        const { container, repo_digests, sha } =
             await this.containerDaemon.start_container({
-                docker_image: action.template.image.name,
+                docker_image: action.template.image_name,
                 name: action.uuid,
                 limits: {
                     max_runtime: 5 * 60 * 1_000, // 5 minutes
@@ -92,7 +92,7 @@ export class ActionManagerService {
             });
 
         // capture runner information
-        action.template.image.repo_digests = repo_digests;
+        action.image = { repo_digests, sha };
         await this.setContainerInfo(action, container);
         await this.actionRepository.save(action);
 
