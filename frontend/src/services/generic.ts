@@ -1,6 +1,6 @@
 import { DataType } from 'src/enums/TAG_TYPES';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { FileState } from 'src/enums/QUEUE_ENUM';
+import { ActionState, FileState } from 'src/enums/QUEUE_ENUM';
 import { FileEntity } from 'src/types/FileEntity';
 import { downloadFile } from 'src/services/queries/file';
 
@@ -141,5 +141,20 @@ export async function _downloadFiles(files: FileEntity[]) {
         a.click();
         document.body.removeChild(a);
         await new Promise((resolve) => setTimeout(resolve, 100)); // Delay of 100ms
+    }
+}
+
+export function getActionColor(state: ActionState) {
+    switch (state) {
+        case ActionState.DONE:
+            return 'green';
+        case ActionState.FAILED:
+            return 'red';
+        case ActionState.PENDING:
+            return 'orange';
+        case ActionState.PROCESSING:
+            return 'blue';
+        default:
+            return 'grey'; // Default color for unknown states
     }
 }

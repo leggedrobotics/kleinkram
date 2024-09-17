@@ -117,9 +117,24 @@ export class ActionManagerService {
 
         // wait for the container to stop
         await container.wait();
+        await this.containerDaemon.removeContainer(container.id, false);
         await this.setActionState(container, action);
-
         action.executionEndedAt = new Date();
+        action.uploading_artifacts = true;
+        await this.actionRepository.save(action);
+
+        const { container: artifact_upload_container, parentFolder } =
+            await this.containerDaemon.launchArtifactUploadContainer(
+                action.uuid,
+                `${action.template.name}-v${action.template.version}-${action.uuid}`,
+            );
+        await artifact_upload_container.wait();
+        action.uploading_artifacts = false;
+        await this.containerDaemon.removeContainer(
+            artifact_upload_container.id,
+            true,
+        );
+        action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
         return true; // mark the job as completed
@@ -299,7 +314,6 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
         // Kill Old Containers
         //////////////////////////////////////////////////////////////////////////////
-
         for (const container of running_action_containers) {
             // try to find corresponding action
             const uuid = container.Names[0].replace(
@@ -311,7 +325,6 @@ export class ActionManagerService {
                     uuid,
                 },
             });
-            const all_actions = await this.actionRepository.find();
 
             // kill action container if no corresponding action is found
             if (!action) {

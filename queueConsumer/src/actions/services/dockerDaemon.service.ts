@@ -6,6 +6,16 @@ import { ContainerLog } from '@common/entities/action/action.entity';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import process from 'node:process';
+import Env from '@common/env';
+import { createDriveFolder } from '../helper/driveHelper';
+import fs from 'node:fs';
+import {
+    CapDrop,
+    LogConfig,
+    NetworkMode,
+    PidsLimit,
+    SecurityOpt,
+} from '../helper/ContainerConfigs';
 
 export type ContainerLimits = {
     /**
@@ -50,6 +60,9 @@ export const dockerDaemonErrorHandler = (error: Error) => {
     logger.error(error.message);
     return null;
 };
+
+const artifactUploaderImage =
+    'rslethz/grandtour-datasets:artifact-uploader-latest';
 
 /**
  * The DockerDaemon class is responsible for managing the Docker daemon.
@@ -158,7 +171,6 @@ export class DockerDaemon {
                 ? 'Creating container with GPU support'
                 : 'Creating container without GPU support',
         );
-        console.log(container_options.command);
         const container_create_options: Dockerode.ContainerCreateOptions = {
             Image: container_options.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + container_options.name,
@@ -175,47 +187,21 @@ export class DockerDaemon {
                 NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
                 DiskQuota: container_options.limits.disk_quota,
 
-                // TODO: we should not use host network mode
-                //  as it can be a security risk! We should use a bridge network instead.
-                NetworkMode: 'host',
-
-                // As we are streaming the logs,
-                // we need to keep the logs at a reasonable size.
-                LogConfig: {
-                    Type: 'json-file',
-                    Config: {
-                        'max-size': '10m',
-                        'max-file': '1',
+                NetworkMode,
+                LogConfig,
+                CapDrop,
+                SecurityOpt,
+                PidsLimit,
+                // Define a unique volume
+                Mounts: [
+                    {
+                        Target: '/out', // Inside container
+                        Source: `vol-${container_options.name}`, // Volume name
+                        Type: 'volume', // Use Docker-managed volume
                     },
-                },
-
-                // For security reasons, we drop all default capabilities
-                // and only add the ones we really need.
-                CapDrop: [
-                    'CHOWN',
-                    'DAC_OVERRIDE',
-                    'FSETID',
-                    'FOWNER',
-                    'MKNOD',
-                    'NET_RAW',
-                    'SETGID',
-                    'SETUID',
-                    'SETFCAP',
-                    'SETPCAP',
-                    'NET_BIND_SERVICE',
-                    'SYS_CHROOT',
-                    'KILL',
-                    'AUDIT_WRITE',
                 ],
-
-                // we don't want to allow the container to escalate privileges
-                SecurityOpt: ['no-new-privileges'],
-
-                // limits the number of processes the container can create
-                // this helps to prevent fork bombs / bugs in the container
-                // and helps to keep the base system stable even if the container is compromised
-                PidsLimit: 256,
             },
+            Volumes: { '/out': {} },
         };
 
         const container = await this.docker
@@ -254,11 +240,13 @@ export class DockerDaemon {
      *
      * @param container
      * @param max_runtime_ms
+     * @param clear_volume - if true, the volume is removed after the container is stopped
      * @private
      */
     private killContainerAfterMaxRuntime(
         container: Dockerode.Container,
         max_runtime_ms: number,
+        clear_volume = false,
     ) {
         const cancel_timeout = setTimeout(async () => {
             logger.info(
@@ -270,12 +258,12 @@ export class DockerDaemon {
                 logger.info(
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
-                await this.killAndRemoveContainer(container.id);
+                await this.killAndRemoveContainer(container.id, clear_volume);
             }, 10_000);
 
             await this.stopContainer(container.id);
             clearTimeout(killTimout); // clear the kill timeout
-            await this.removeContainer(container.id);
+            await this.removeContainer(container.id, clear_volume);
         }, max_runtime_ms);
 
         container.wait().finally(() => {
@@ -315,9 +303,9 @@ export class DockerDaemon {
             .catch(dockerDaemonErrorHandler);
     }
 
-    async killAndRemoveContainer(container_id: string) {
+    async killAndRemoveContainer(container_id: string, clear_volume = false) {
         await this.killContainer(container_id);
-        await this.removeContainer(container_id);
+        await this.removeContainer(container_id, clear_volume);
     }
 
     async killContainer(container_id: string) {
@@ -327,11 +315,13 @@ export class DockerDaemon {
             .catch(dockerDaemonErrorHandler);
     }
 
-    async removeContainer(container_id: string) {
-        await this.docker
-            .getContainer(container_id)
-            .remove({ v: true })
-            .catch(dockerDaemonErrorHandler);
+    async removeContainer(container_id: string, clear_volume = false) {
+        const container = this.docker.getContainer(container_id);
+        if (container) {
+            container
+                .remove({ v: clear_volume })
+                .catch(dockerDaemonErrorHandler);
+        }
     }
 
     /**
@@ -412,5 +402,112 @@ export class DockerDaemon {
             dockerodeLogStream.on('end', () => observer.complete());
             dockerodeLogStream.on('error', (error) => observer.error(error));
         });
+    }
+
+    @tracing()
+    async launchArtifactUploadContainer(
+        container_id: string,
+        action_name: string,
+    ) {
+        const parentFolder = await createDriveFolder(action_name);
+
+        // merge the given container limitations with the default ones
+        const container_options = {
+            limits: defaultContainerLimitations,
+        };
+
+        logger.debug(
+            `Starting container with options: ${JSON.stringify(container_options)}`,
+        );
+
+        // check if docker socket is available
+        if (!this.docker || !(await this.docker.ping())) {
+            throw new Error('Docker socket not available or not responding');
+        }
+        let image = this.docker.getImage(artifactUploaderImage);
+        let details = await image.inspect().catch(dockerDaemonErrorHandler);
+        logger.info(`Checking if image ${artifactUploaderImage} exists...`);
+        if (!details) {
+            logger.info('Image does not exist, pulling image...');
+            const pull_res = await this.pull_image(artifactUploaderImage).catch(
+                (error) => {
+                    // cleanup error message
+                    error.message = error.message.replace(/\(.*?\)/g, '');
+                    error.message = error.message.replace(/ +/g, ' ').trim();
+
+                    logger.warn(`Failed to pull image: ${error.message}`);
+                },
+            );
+
+            logger.info(`Image pulled: ${pull_res}. Starting container...`);
+            image = this.docker.getImage(artifactUploaderImage);
+        }
+
+        // get image details
+        details = await image.inspect().catch(dockerDaemonErrorHandler);
+        if (!details) {
+            throw new Error(
+                `Image ${artifactUploaderImage} not found, could not start container!`,
+            );
+        }
+        const repo_digests = details.RepoDigests;
+        const google_key = fs.readFileSync(
+            Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
+            'utf-8',
+        );
+        const container_create_options: Dockerode.ContainerCreateOptions = {
+            Image: artifactUploaderImage,
+            name: 'kleinkram-artifact-uploader-' + container_id,
+            Env: [
+                'DRIVE_PARENT_FOLDER_ID=' + parentFolder,
+                'GOOGLE_KEY=' + google_key,
+            ],
+
+            HostConfig: {
+                Memory: container_options.limits.memory_limit, // memory limit in bytes
+                NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
+                DiskQuota: container_options.limits.disk_quota,
+                NetworkMode,
+                LogConfig,
+                CapDrop,
+                SecurityOpt,
+                PidsLimit,
+                Mounts: [
+                    {
+                        Target: '/out',
+                        Source: `vol-${container_id}`,
+                        Type: 'volume',
+                    },
+                ],
+            },
+            Volumes: { '/out': {} },
+        };
+
+        const container = await this.docker
+            .createContainer(container_create_options)
+            .catch((error) => {
+                // cleanup error message
+                error.message = error.message.replace(/\(.*?\)/g, '');
+                error.message = error.message.replace(/ +/g, ' ').trim();
+                logger.error(`Failed to create container: ${error.message}`);
+                throw error;
+            });
+
+        if (!container) {
+            throw new Error('Failed to create container');
+        }
+
+        logger.info('Container created! Starting container...');
+        await container.start();
+        logger.info(`Container started wit id: ${container.id}`);
+
+        // stop the container after max_runtime seconds
+        this.killContainerAfterMaxRuntime(
+            container,
+            container_options.limits.max_runtime,
+            true,
+        );
+
+        return { container, repo_digests, parentFolder };
     }
 }

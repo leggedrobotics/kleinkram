@@ -26,6 +26,8 @@ export class Action extends BaseEntity {
     executionEndedAt: Date | null;
 
     template: ActionTemplate;
+    artifactUrl: string;
+    artifact_uploading: boolean;
 
     constructor(
         uuid: string,
@@ -34,6 +36,8 @@ export class Action extends BaseEntity {
         deletedAt: Date | null,
         state: ActionState,
         state_cause: string,
+        artifactUrl: string,
+        artifact_uploading: boolean,
         mission: Mission | null,
         template: ActionTemplate,
         createdBy: User,
@@ -47,6 +51,8 @@ export class Action extends BaseEntity {
 
         this.state = state;
         this.state_cause = state_cause || '';
+        this.artifactUrl = artifactUrl;
+        this.artifact_uploading = artifact_uploading;
         this.mission = mission;
         this.logs = logs;
         this.createdBy = createdBy;

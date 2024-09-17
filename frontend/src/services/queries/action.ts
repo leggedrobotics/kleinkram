@@ -55,6 +55,8 @@ export const getActions = async (
             new Date(res.deletedAt),
             res.state,
             res.state_cause,
+            res.artifact_url,
+            res.uploading_artifacts,
             null,
             template,
             user,
@@ -101,6 +103,9 @@ export const actionDetails = async (action_uuid: string) => {
         new Date(response.data.deletedAt),
         response.data.state,
         response.data.state_cause,
+        response.data.artifact_url,
+        response.data.uploading_artifacts,
+
         null,
         template,
         user,

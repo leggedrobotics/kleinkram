@@ -8,3 +8,4 @@ CLI/dist
 backend/migration/.env
 
 **/swagger-spec.json
+queueConsumer/src/artifactUpload/anymal-grand-tour-3b7a5d0c8ef4.json

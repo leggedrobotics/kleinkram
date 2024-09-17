@@ -41,7 +41,7 @@
                         <tr>
                             <td class="q-table__cell">State</td>
                             <td class="q-table__cell">
-                                {{ data?.state }}
+                                <ActionBadge :action="data" v-if="data" />
                             </td>
                         </tr>
                         <tr>
@@ -78,6 +78,27 @@
                             <td class="q-table__cell">Runtime:</td>
                             <td class="q-table__cell">
                                 {{ data?.getRuntimeInMS() / 1000 }} seconds
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Artifact Files:</td>
+                            <td class="q-table__cell">
+                                <q-btn
+                                    v-if="!data?.artifact_uploading"
+                                    label="Open"
+                                    flat
+                                    dense
+                                    padding="6px"
+                                    color="icon-secondary"
+                                    class="button-border"
+                                    icon="sym_o_link"
+                                    @click="
+                                        () => openArtifactUrl(data?.artifactUrl)
+                                    "
+                                />
+                                <div style="font-style: italic" v-else>
+                                    Upload of artifacts in progress
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -163,6 +184,8 @@ import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
 import { ref } from 'vue';
+import { getActionColor } from 'src/services/generic';
+import ActionBadge from 'components/ActionBadge.vue';
 
 const tab = ref('info');
 
@@ -172,6 +195,10 @@ const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
 });
+
+function openArtifactUrl(url: string) {
+    window.open(url, '_blank');
+}
 </script>
 
 <style>

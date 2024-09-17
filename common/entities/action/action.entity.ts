@@ -70,6 +70,12 @@ export default class Action extends BaseEntity {
     @Column({ nullable: true })
     exit_code: number;
 
+    @Column({ nullable: true })
+    artifact_url: string;
+
+    @Column({ nullable: false, default: false })
+    uploading_artifacts: boolean;
+
     @OneToOne(() => Apikey)
     @JoinColumn()
     key: Apikey;
