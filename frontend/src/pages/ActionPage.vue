@@ -125,13 +125,13 @@
                         <label for="docker_image">Define the Action</label>
                         <q-input
                             name="docker_image"
-                            v-model="editingTemplate.image.name"
+                            v-model="editingTemplate.image_name"
                             outlined
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Docker Image"
-                            v-if="editingTemplate.image"
+                            v-if="editingTemplate.image_name"
                         />
                     </div>
 
@@ -377,7 +377,7 @@ const editingTemplate = ref(
         null,
         null,
         null,
-        { name: 'rslethz/action:latest' },
+        'rslethz/action:latest',
         null,
         '',
         1,
@@ -425,7 +425,7 @@ const { mutateAsync: createTemplate } = useMutation({
         createActionTemplate({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image.name,
+            docker_image: editingTemplate.value.image_name,
             gpu_model:
                 editingTemplate.value.runtime_requirements.gpu_model.name,
             searchable,
@@ -461,7 +461,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             uuid: editingTemplate.value.uuid,
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image.name,
+            docker_image: editingTemplate.value.image_name,
             gpu_model:
                 editingTemplate.value.runtime_requirements.gpu_model.name,
             searchable,
@@ -506,7 +506,7 @@ const isModified = computed(() => {
     }
     const sameName = editingTemplate.value.name === select.value?.name;
     const sameImage =
-        editingTemplate.value?.image?.name === select.value?.image?.name;
+        editingTemplate.value?.image_name === select.value?.image_name;
     const sameCommand =
         editingTemplate.value?.command === select.value?.command;
     const sameGPU =
@@ -609,7 +609,7 @@ function selectTemplate(template: ActionTemplate) {
             null,
             null,
             null,
-            { name: 'rslethz/action:latest' },
+            'rslethz/action:latest',
             null,
             '',
             1,
