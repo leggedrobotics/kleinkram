@@ -424,6 +424,7 @@ function deleteFilesCallback() {
     }).onOk(() => {
         const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
         _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+        deselect();
     });
 }
 function deselect() {
