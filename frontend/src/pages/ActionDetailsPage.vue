@@ -80,6 +80,24 @@
                                 {{ data?.getRuntimeInMS() / 1000 }} seconds
                             </td>
                         </tr>
+                        <tr>
+                            <td class="q-table__cell">Artifact Files:</td>
+                            <td class="q-table__cell">
+                                <q-btn
+                                    v-if="data?.artifactUrl"
+                                    label="Open"
+                                    flat
+                                    dense
+                                    padding="6px"
+                                    color="icon-secondary"
+                                    class="button-border"
+                                    icon="sym_o_link"
+                                    @click="
+                                        () => openArtifactUrl(data?.artifactUrl)
+                                    "
+                                />
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -172,6 +190,10 @@ const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
 });
+
+function openArtifactUrl(url: string) {
+    window.open(url, '_blank');
+}
 </script>
 
 <style>

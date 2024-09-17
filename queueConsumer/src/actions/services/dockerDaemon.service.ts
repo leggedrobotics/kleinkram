@@ -9,6 +9,13 @@ import process from 'node:process';
 import Env from '@common/env';
 import { createDriveFolder } from '../helper/driveHelper';
 import fs from 'node:fs';
+import {
+    CapDrop,
+    LogConfig,
+    NetworkMode,
+    PidsLimit,
+    SecurityOpt,
+} from '../helper/ContainerConfigs';
 
 export type ContainerLimits = {
     /**
@@ -177,46 +184,11 @@ export class DockerDaemon {
                 NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
                 DiskQuota: container_options.limits.disk_quota,
 
-                // TODO: we should not use host network mode
-                //  as it can be a security risk! We should use a bridge network instead.
-                NetworkMode: 'host',
-
-                // As we are streaming the logs,
-                // we need to keep the logs at a reasonable size.
-                LogConfig: {
-                    Type: 'json-file',
-                    Config: {
-                        'max-size': '10m',
-                        'max-file': '1',
-                    },
-                },
-
-                // For security reasons, we drop all default capabilities
-                // and only add the ones we really need.
-                CapDrop: [
-                    'CHOWN',
-                    'DAC_OVERRIDE',
-                    'FSETID',
-                    'FOWNER',
-                    'MKNOD',
-                    'NET_RAW',
-                    'SETGID',
-                    'SETUID',
-                    'SETFCAP',
-                    'SETPCAP',
-                    'NET_BIND_SERVICE',
-                    'SYS_CHROOT',
-                    'KILL',
-                    'AUDIT_WRITE',
-                ],
-
-                // we don't want to allow the container to escalate privileges
-                SecurityOpt: ['no-new-privileges'],
-
-                // limits the number of processes the container can create
-                // this helps to prevent fork bombs / bugs in the container
-                // and helps to keep the base system stable even if the container is compromised
-                PidsLimit: 256,
+                NetworkMode,
+                LogConfig,
+                CapDrop,
+                SecurityOpt,
+                PidsLimit,
                 // Define a unique volume
                 Mounts: [
                     {
@@ -494,47 +466,11 @@ export class DockerDaemon {
                 Memory: container_options.limits.memory_limit, // memory limit in bytes
                 NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
                 DiskQuota: container_options.limits.disk_quota,
-
-                // TODO: we should not use host network mode
-                //  as it can be a security risk! We should use a bridge network instead.
-                NetworkMode: 'host',
-
-                // As we are streaming the logs,
-                // we need to keep the logs at a reasonable size.
-                LogConfig: {
-                    Type: 'json-file',
-                    Config: {
-                        'max-size': '10m',
-                        'max-file': '1',
-                    },
-                },
-
-                // For security reasons, we drop all default capabilities
-                // and only add the ones we really need.
-                CapDrop: [
-                    'CHOWN',
-                    'DAC_OVERRIDE',
-                    'FSETID',
-                    'FOWNER',
-                    'MKNOD',
-                    'NET_RAW',
-                    'SETGID',
-                    'SETUID',
-                    'SETFCAP',
-                    'SETPCAP',
-                    'NET_BIND_SERVICE',
-                    'SYS_CHROOT',
-                    'KILL',
-                    'AUDIT_WRITE',
-                ],
-
-                // we don't want to allow the container to escalate privileges
-                SecurityOpt: ['no-new-privileges'],
-
-                // limits the number of processes the container can create
-                // this helps to prevent fork bombs / bugs in the container
-                // and helps to keep the base system stable even if the container is compromised
-                PidsLimit: 256,
+                NetworkMode,
+                LogConfig,
+                CapDrop,
+                SecurityOpt,
+                PidsLimit,
                 Mounts: [
                     {
                         Target: '/out',
