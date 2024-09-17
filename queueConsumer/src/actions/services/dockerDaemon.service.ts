@@ -7,6 +7,8 @@ import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import process from 'node:process';
 import Env from '@common/env';
+import { createDriveFolder } from '../helper/driveHelper';
+import fs from 'node:fs';
 
 export type ContainerLimits = {
     /**
@@ -339,10 +341,12 @@ export class DockerDaemon {
     }
 
     async removeContainer(container_id: string, clear_volume = false) {
-        await this.docker
-            .getContainer(container_id)
-            .remove({ v: clear_volume })
-            .catch(dockerDaemonErrorHandler);
+        const container = this.docker.getContainer(container_id);
+        if (container) {
+            container
+                .remove({ v: clear_volume })
+                .catch(dockerDaemonErrorHandler);
+        }
     }
 
     /**
@@ -430,6 +434,8 @@ export class DockerDaemon {
         container_id: string,
         action_name: string,
     ) {
+        const parentFolder = await createDriveFolder(action_name);
+
         // merge the given container limitations with the default ones
         const container_options = {
             limits: defaultContainerLimitations,
@@ -472,14 +478,18 @@ export class DockerDaemon {
             );
         }
         const repo_digests = details.RepoDigests;
-
+        const google_key = fs.readFileSync(
+            Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
+            'utf-8',
+        );
         const container_create_options: Dockerode.ContainerCreateOptions = {
             Image: 'rslethz/kleinkram-artifact-uploader',
             name: 'kleinkram-artifact-uploader-' + container_id,
             Env: [
-                'DRIVE_FOLDER_NAME=' + action_name,
-                'DRIVE_PARENT_FOLDER_ID=' + Env.GOOGLE_ARTIFACT_FOLDER_ID,
+                'DRIVE_PARENT_FOLDER_ID=' + parentFolder,
+                'GOOGLE_KEY=' + google_key,
             ],
+
             HostConfig: {
                 Memory: container_options.limits.memory_limit, // memory limit in bytes
                 NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
@@ -531,12 +541,6 @@ export class DockerDaemon {
                         Source: `vol-${container_id}`,
                         Type: 'volume',
                     },
-                    {
-                        Target: '/google-credentials.json',
-                        Source: Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
-                        Type: 'bind',
-                        ReadOnly: true,
-                    },
                 ],
             },
             Volumes: { '/out': {} },
@@ -567,6 +571,6 @@ export class DockerDaemon {
             true,
         );
 
-        return { container, repo_digests };
+        return { container, repo_digests, parentFolder };
     }
 }

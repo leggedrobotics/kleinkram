@@ -121,18 +121,17 @@ export class ActionManagerService {
         await this.setActionState(container, action);
 
         action.executionEndedAt = new Date();
-        const {
-            container: artifact_upload_container,
-            repo_digests: artifact_upload_digest,
-        } = await this.containerDaemon.launchArtifactUploadContainer(
-            action.uuid,
-            `${action.template.name}-v${action.template.version}-${action.uuid}`,
-        );
+        const { container: artifact_upload_container, parentFolder } =
+            await this.containerDaemon.launchArtifactUploadContainer(
+                action.uuid,
+                `${action.template.name}-v${action.template.version}-${action.uuid}`,
+            );
+        await artifact_upload_container.wait();
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
             true,
         );
-
+        action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
         return true; // mark the job as completed
