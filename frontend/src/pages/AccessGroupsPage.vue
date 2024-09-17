@@ -9,6 +9,7 @@
                         :label="prefilter.label"
                         class="q-uploader--bordered full-width full-height"
                         flat
+                        auto-close
                     >
                         <q-list>
                             <q-item
@@ -99,11 +100,22 @@
                                     </q-item>
 
                                     <q-item clickable v-ripple disabled>
+                                        <q-tooltip
+                                            v-if="
+                                                prefilter.value === 'personal'
+                                            "
+                                        >
+                                            You can't edit personal access
+                                            groups
+                                        </q-tooltip>
                                         <q-item-section>Edit</q-item-section>
                                     </q-item>
                                     <q-item
                                         clickable
                                         v-ripple
+                                        :disable="
+                                            prefilter.value === 'personal'
+                                        "
                                         @click="
                                             () =>
                                                 _deleteAccessGroup(
@@ -111,6 +123,14 @@
                                                 )
                                         "
                                     >
+                                        <q-tooltip
+                                            v-if="
+                                                prefilter.value === 'personal'
+                                            "
+                                        >
+                                            You can't delete personal access
+                                            groups
+                                        </q-tooltip>
                                         <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </q-list>
@@ -141,6 +161,7 @@ import {
     deleteAccessGroup,
 } from 'src/services/mutations/access';
 import ButtonGroup from 'components/ButtonGroup.vue';
+
 const $q = useQuasar();
 
 const queryClient = useQueryClient();
