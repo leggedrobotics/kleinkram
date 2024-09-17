@@ -196,6 +196,7 @@ import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
+import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
 
 const $router = useRouter();
 const $q = useQuasar();
@@ -209,7 +210,7 @@ const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
-const { isLoading, isError, data, error } = useQuery<FileEntity>({
+const { isLoading, data, error, isLoadingError } = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
     queryFn: () => fetchFile(file_uuid.value),
     retryDelay: 200,
@@ -225,6 +226,7 @@ const { isLoading, isError, data, error } = useQuery<FileEntity>({
         return false;
     },
 });
+registerNoPermissionErrorHandler(isLoadingError, file_uuid, 'file', error);
 
 const missionUUID = useMissionUUID();
 

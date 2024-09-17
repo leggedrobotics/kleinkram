@@ -7,6 +7,9 @@ import { filteredProjects, getProject } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/QueryHandler';
 import { getIsUploading } from 'src/services/queries/file';
+import { AxiosError } from 'axios';
+import ROUTES from 'src/router/routes';
+import { useQuasar } from 'quasar';
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,
@@ -26,15 +29,12 @@ export const useMissionQuery = (
 };
 export const useProjectQuery = (
     project_uuid: Ref<string | undefined>,
-): UseQueryReturnType<Project | null, Error> =>
-    useQuery<Project | null>({
+): UseQueryReturnType<Project, Error> =>
+    useQuery<Project>({
         queryKey: ['project', project_uuid ? project_uuid : ''],
-        queryFn: () => {
-            if (!project_uuid.value) return null;
-            return getProject(project_uuid.value as string).catch((e) => {
-                console.error(e);
-                return null;
-            });
+        queryFn: (): Promise<Project> => {
+            if (!project_uuid.value) return Promise.reject();
+            return getProject(project_uuid.value as string);
         },
         enabled: () => !!project_uuid.value,
     });
@@ -55,6 +55,50 @@ export const useAllProjectsQuery = (
         ],
         queryFn: () =>
             filteredProjects(take, skip, sortBy, descending, searchParams),
+    });
+};
+
+/**
+ * Register a handler for the case when the user does not have permission to access a resource
+ *
+ * Redirects the user to the 403 page if the error is a 403 error
+ *
+ * @param isLoadingError
+ * @param uuid
+ * @param resource_name
+ * @param error
+ */
+export const registerNoPermissionErrorHandler = (
+    isLoadingError: Ref<false, false> | Ref<true, true>,
+    uuid: Ref<string>,
+    resource_name: 'project' | 'mission' | 'file',
+    error: Ref<Error, Error> | Ref<null, null>,
+) => {
+    const $router = useRouter();
+    const $q = useQuasar();
+
+    watch([isLoadingError], async () => {
+        if (error.value instanceof AxiosError) {
+            const status_code =
+                error.value?.response?.data?.statusCode ||
+                `Could not load the ${resource_name}`;
+
+            if (status_code == 403)
+                await $router.push({
+                    name: ROUTES.ERROR_403.routeName,
+                    query: {
+                        message: `You are not authorized to access this ${resource_name}!`,
+                        uuid: uuid.value,
+                    },
+                });
+        } else {
+            $q.notify({
+                message: `Could not load the ${resource_name}, please try again!`,
+                color: 'negative',
+                position: 'top',
+                timeout: 2000,
+            });
+        }
     });
 };
 

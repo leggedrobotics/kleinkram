@@ -126,6 +126,13 @@ const ROUTES = {
         layout: () => import('layouts/NoTopNavLayout.vue'),
     }),
 
+    ERROR_403: routeWithLayout({
+        name: 'Error403Page',
+        path: '/error-403',
+        component: () => import('pages/Error403Page.vue'),
+        layout: () => import('layouts/MainLayout.vue'),
+    }),
+
     USER_PROFILE: routeWithLayout({
         name: 'UserProfilePage',
         path: '/user-profile',
@@ -170,6 +177,7 @@ export const PUBLIC_ROUTES: RouteRecordRaw[] = [
     ROUTES.LOGIN,
     ROUTES.HOME,
     ROUTES.ERROR_404,
+    ROUTES.ERROR_403,
 ];
 
 // check if all routes have unique names

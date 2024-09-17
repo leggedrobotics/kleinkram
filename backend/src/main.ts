@@ -55,6 +55,17 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
+        if (
+            exception.name === 'QueryFailedError' &&
+            exception.message.includes('invalid input syntax for type uuid')
+        ) {
+            response.status(400).json({
+                statusCode: 400,
+                message: 'Invalid UUID',
+            });
+            return;
+        }
+
         logger.error(
             `An error occurred on route ${host.getArgByIndex(0).url}!`,
         );

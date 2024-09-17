@@ -289,6 +289,7 @@
 <script setup lang="ts">
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import {
+    registerNoPermissionErrorHandler,
     useHandler,
     useMissionQuery,
     useProjectQuery,
@@ -367,8 +368,11 @@ function onFileTypeClicked(index: number) {
     fileTypeFilter.value = updatedFileTypeFilter;
 }
 
-const { data: project } = useProjectQuery(project_uuid);
-const { data: mission } = useMissionQuery(
+const {
+    data: mission,
+    isLoadingError,
+    error,
+} = useMissionQuery(
     mission_uuid,
     (error, query) => {
         Notify.create({
@@ -381,6 +385,12 @@ const { data: mission } = useMissionQuery(
         return false;
     },
     200,
+);
+registerNoPermissionErrorHandler(
+    isLoadingError,
+    mission_uuid,
+    'mission',
+    error,
 );
 
 const { mutate: _deleteFiles } = useMutation({
