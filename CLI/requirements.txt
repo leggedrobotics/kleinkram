@@ -8,4 +8,4 @@ black~=24.8.0
 requests~=2.32.3
 boto3~=1.35.14
 botocore~=1.35.19
-importlib-metadata~=8.4.0
+importlib-metadata~=8.5.0
