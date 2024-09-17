@@ -263,11 +263,13 @@ export class DockerDaemon {
      *
      * @param container
      * @param max_runtime_ms
+     * @param clear_volume - if true, the volume is removed after the container is stopped
      * @private
      */
     private killContainerAfterMaxRuntime(
         container: Dockerode.Container,
         max_runtime_ms: number,
+        clear_volume = false,
     ) {
         const cancel_timeout = setTimeout(async () => {
             logger.info(
@@ -279,12 +281,12 @@ export class DockerDaemon {
                 logger.info(
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
-                await this.killAndRemoveContainer(container.id);
+                await this.killAndRemoveContainer(container.id, clear_volume);
             }, 10_000);
 
             await this.stopContainer(container.id);
             clearTimeout(killTimout); // clear the kill timeout
-            await this.removeContainer(container.id);
+            await this.removeContainer(container.id, clear_volume);
         }, max_runtime_ms);
 
         container.wait().finally(() => {
@@ -562,6 +564,7 @@ export class DockerDaemon {
         this.killContainerAfterMaxRuntime(
             container,
             container_options.limits.max_runtime,
+            true,
         );
 
         return { container, repo_digests };
