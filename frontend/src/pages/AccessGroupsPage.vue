@@ -5,26 +5,32 @@
         <div class="q-my-lg">
             <div class="flex justify-between items-center">
                 <button-group>
-                    <q-btn-dropdown
-                        :label="prefilter.label"
-                        class="q-uploader--bordered full-width full-height"
-                        flat
-                        auto-close
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="option in prefilterOptions"
-                                :key="option.value"
-                                clickable
-                                v-ripple
-                                @click="() => (prefilter = option)"
-                            >
-                                <q-item-section
-                                    >{{ option.label }}
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
+                    <div style="width: 200px">
+                        <q-btn-dropdown
+                            :label="prefilter.label"
+                            class="q-uploader--bordered full-width full-height"
+                            flat
+                            auto-close
+                        >
+                            <q-list>
+                                <template
+                                    v-for="option in prefilterOptions"
+                                    :key="option.value"
+                                >
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="() => (prefilter = option)"
+                                    >
+                                        <q-item-section
+                                            >{{ option.label }}
+                                        </q-item-section>
+                                    </q-item>
+                                    <q-separator v-if="option.spacer_after" />
+                                </template>
+                            </q-list>
+                        </q-btn-dropdown>
+                    </div>
                 </button-group>
 
                 <button-group>
@@ -168,9 +174,9 @@ const queryClient = useQueryClient();
 const $router = useRouter();
 const prefilterOptions = [
     { label: 'All Groups', value: 'all' },
-    { label: 'Member', value: 'member' },
-    { label: 'Created', value: 'created' },
-    { label: 'User', value: 'personal' },
+    { label: 'Member Of', value: 'member' },
+    { label: 'Groups Created', value: 'created', spacer_after: true },
+    { label: 'All Users', value: 'personal' },
 ];
 const prefilter = ref(prefilterOptions[0]);
 
@@ -315,39 +321,18 @@ const accessGroupsColumns = [
         field: (row: AccessGroup) => row.name,
         format: (val: string) => `${val}`,
         sortable: true,
-        style: 'width:  60%; max-width: 60%; min-width: 10%;',
-    },
-    {
-        name: 'NrOfUsers',
-        required: true,
-        label: 'Nr of Users',
-        align: 'center',
-        field: (row: AccessGroup) => row.users.length,
-        format: (val: number) => `${val}`,
-        sortable: true,
-        style: 'width:  5%; max-width: 10%; min-width: 5%;',
-    },
-    {
-        name: 'NrOfProjects',
-        required: true,
-        label: 'Nr of Projects',
-        align: 'center',
-        field: (row: AccessGroup) =>
-            row.project_accesses.map((pa) => pa.project).flat().length,
-        format: (val: number) => `${val}`,
-        sortable: true,
-        style: 'width:  5%; max-width: 10%; min-width: 5%;',
+        style: 'width:  20%; max-width: 60%; min-width: 10%;',
     },
     {
         name: 'Creator',
         required: false,
-        label: 'Creator',
+        label: 'Group Creator',
         align: 'center',
         field: (row: AccessGroup) => row.creator?.name || '-',
         format: (val: string) => `${val}`,
         sortable: false,
-        style: 'width:  20%; max-width: 30%; min-width: 10%;',
     },
+
     {
         name: 'createdAt',
         required: true,
@@ -358,6 +343,29 @@ const accessGroupsColumns = [
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
+
+    {
+        name: 'NrOfUsers',
+        required: true,
+        label: 'Nr of Users',
+        align: 'center',
+        field: (row: AccessGroup) => row.users.length,
+        format: (val: number) => `${val}`,
+        sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 5%;',
+    },
+    {
+        name: 'NrOfProjects',
+        required: true,
+        label: 'Nr of Projects',
+        align: 'center',
+        field: (row: AccessGroup) =>
+            row.project_accesses.map((pa) => pa.project).flat().length,
+        format: (val: number) => `${val}`,
+        sortable: true,
+        style: 'width:  10%; max-width: 10%; min-width: 5%;',
+    },
+
     {
         name: 'accessgroupaction',
         label: ' ',
