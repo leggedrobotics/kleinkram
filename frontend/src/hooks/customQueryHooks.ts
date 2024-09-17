@@ -1,7 +1,7 @@
 import { ref, Ref, watch } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
-import { getMission } from 'src/services/queries/mission';
+import { getMission, getPermissions } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
@@ -10,6 +10,82 @@ import { getIsUploading } from 'src/services/queries/file';
 import { AxiosError } from 'axios';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+
+type Permissions = {
+    role: string;
+    default_permission: number;
+    projects: {
+        uuid: string;
+        access: number;
+    }[];
+    missions: {
+        uuid: string;
+        access: number;
+    }[];
+};
+
+export const usePermissionsQuery = (): UseQueryReturnType<
+    Permissions | null,
+    Error
+> => {
+    return useQuery<Permissions | null>({
+        queryKey: ['permissions'],
+        queryFn: () => {
+            return getPermissions();
+        },
+    });
+};
+
+const getPermissionForProject = (
+    project_uuid: string,
+    permissions: Permissions,
+): number => {
+    if (!permissions) return 0;
+    if (permissions.role === 'ADMIN') return 100;
+    const default_permission = permissions.default_permission;
+
+    const project = permissions.projects.find(
+        (p: { uuid: string; access: number }) => p.uuid === project_uuid,
+    );
+
+    const project_permission = project?.access || 0;
+    return Math.max(default_permission, project_permission);
+};
+
+export const canCreateProject = (
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (permissions.role === 'ADMIN') return true;
+    return permissions.default_permission >= AccessGroupRights.CREATE;
+};
+
+export const canModifyProject = (
+    project_uuid: string | undefined,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (!project_uuid) return false;
+
+    return (
+        getPermissionForProject(project_uuid, permissions) >=
+        AccessGroupRights.WRITE
+    );
+};
+
+export const canDeleteProject = (
+    project_uuid: string | undefined,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!project_uuid) return false;
+    if (!permissions) return false;
+
+    return (
+        getPermissionForProject(project_uuid, permissions) >=
+        AccessGroupRights.DELETE
+    );
+};
 
 export const useMissionQuery = (
     mission_uuid: Ref<string | undefined>,

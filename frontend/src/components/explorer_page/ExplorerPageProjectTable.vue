@@ -46,8 +46,8 @@
                                 :project_uuid="props.row.uuid"
                             >
                                 <q-item clickable v-ripple>
-                                    <q-item-section
-                                        >Edit Project
+                                    <q-item-section>
+                                        Edit Project
                                     </q-item-section>
                                 </q-item>
                             </EditProjectDialogOpener>
