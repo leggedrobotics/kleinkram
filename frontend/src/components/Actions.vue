@@ -41,24 +41,7 @@
                 </template>
 
                 <template v-else>
-                    <q-badge
-                        :color="getActionColor(props.row.state)"
-                        class="q-pa-sm"
-                        :style="
-                            props.row.artifact_uploading
-                                ? 'font-style: italic; color: #000000;'
-                                : ''
-                        "
-                    >
-                        <q-tooltip
-                            v-if="props.row.artifact_uploading"
-                            anchor="top middle"
-                            self="bottom middle"
-                        >
-                            Artifact upload in progress
-                        </q-tooltip>
-                        {{ props.row.state }}
-                    </q-badge>
+                    <ActionBadge :action="props.row" />
                 </template>
             </q-td>
         </template>
@@ -117,6 +100,7 @@ import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
+import ActionBadge from 'components/ActionBadge.vue';
 
 const router = useRouter();
 

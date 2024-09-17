@@ -41,12 +41,7 @@
                         <tr>
                             <td class="q-table__cell">State</td>
                             <td class="q-table__cell">
-                                <q-badge
-                                    :color="getActionColor(data?.state)"
-                                    class="q-pa-sm"
-                                >
-                                    {{ data?.state }}
-                                </q-badge>
+                                <ActionBadge :action="data" v-if="data" />
                             </td>
                         </tr>
                         <tr>
@@ -89,7 +84,7 @@
                             <td class="q-table__cell">Artifact Files:</td>
                             <td class="q-table__cell">
                                 <q-btn
-                                    v-if="data?.artifactUrl"
+                                    v-if="!data?.artifact_uploading"
                                     label="Open"
                                     flat
                                     dense
@@ -101,6 +96,9 @@
                                         () => openArtifactUrl(data?.artifactUrl)
                                     "
                                 />
+                                <div style="font-style: italic" v-else>
+                                    Upload of artifacts in progress
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -187,6 +185,7 @@ import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
 import { ref } from 'vue';
 import { getActionColor } from 'src/services/generic';
+import ActionBadge from 'components/ActionBadge.vue';
 
 const tab = ref('info');
 
