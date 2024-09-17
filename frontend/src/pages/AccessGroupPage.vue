@@ -87,7 +87,11 @@
                         >
                             <q-menu auto-close>
                                 <q-list>
-                                    <q-item clickable v-ripple disable>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="() => _rowClick(props.row.uuid)"
+                                    >
                                         <q-item-section
                                             >View Details
                                         </q-item-section>
@@ -217,6 +221,7 @@ import {
     removeUserFromAccessGroup,
 } from 'src/services/mutations/access';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import ROUTES from 'src/router/routes';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -372,5 +377,14 @@ const user_cols = [
         style: 'width: 5%',
     },
 ];
+
+const _rowClick = (uuid: string) => {
+    router?.push({
+        name: ROUTES.MISSIONS.routeName,
+        params: {
+            project_uuid: uuid,
+        },
+    });
+};
 </script>
 <style scoped></style>
