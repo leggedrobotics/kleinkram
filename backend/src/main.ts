@@ -18,11 +18,12 @@ import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as path from 'node:path';
+
 const packageJson = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
 );
 export const appVersion = packageJson.version;
+
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
@@ -46,9 +47,19 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
+        if (exception.name === 'PayloadTooLargeError') {
+            response.status(413).json({
+                statusCode: 413,
+                message: 'Payload too large',
+            });
+            return;
+        }
+
         logger.error(
             `An error occurred on route ${host.getArgByIndex(0).url}!`,
         );
+
+        logger.error(`exception of type ${exception.name}`);
         logger.error(exception.message);
         logger.error(exception.stack);
 
@@ -87,6 +98,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new NestLoggerWrapper(),
     });
+
     app.useGlobalInterceptors(new AddVersionInterceptor());
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
