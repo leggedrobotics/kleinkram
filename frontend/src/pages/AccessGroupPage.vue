@@ -88,12 +88,13 @@
                             <q-menu auto-close>
                                 <q-list>
                                     <q-item
+                                        style="width: 180px"
                                         clickable
                                         v-ripple
                                         @click="() => _rowClick(props.row.uuid)"
                                     >
                                         <q-item-section
-                                            >View Details
+                                            >View Project Details
                                         </q-item-section>
                                     </q-item>
                                     <q-item
@@ -173,6 +174,7 @@
                             <q-menu auto-close>
                                 <q-list>
                                     <q-item
+                                        style="width: 180px"
                                         clickable
                                         v-ripple
                                         @click=""
@@ -181,10 +183,16 @@
                                         <q-item-section
                                             >View Details
                                         </q-item-section>
+                                        <q-tooltip>
+                                            You can't view details of a user!
+                                        </q-tooltip>
                                     </q-item>
 
                                     <q-item clickable v-ripple disabled>
                                         <q-item-section>Edit</q-item-section>
+                                        <q-tooltip>
+                                            You can't edit a user!
+                                        </q-tooltip>
                                     </q-item>
                                     <q-item
                                         clickable
@@ -336,15 +344,30 @@ function openAddUser() {
     });
 }
 
+const rename_columns = (cols: any[], old_label: string, new_label: string) => {
+    cols.filter((col) => col.label === old_label).forEach((col) => {
+        col.label = new_label;
+    });
+};
+
+const drop_columns = (cols: any[], label: string) => {
+    return cols.filter((col) => col.label !== label);
+};
+
 const project_cols = computed(() => {
     {
-        const defaultCols = [...explorer_page_table_columns];
-        //add as the second to last column
+        let defaultCols = [...explorer_page_table_columns];
+        rename_columns(defaultCols, 'Creator', 'Project Creator');
+        rename_columns(defaultCols, 'Description', 'Project Description');
+        defaultCols = drop_columns(defaultCols, 'Created');
+
+        // add as the second to last column
         defaultCols.splice(defaultCols.length - 2, 1, {
             name: 'rights',
             required: true,
-            label: 'Rights',
-            align: 'center',
+            label: 'Group Rights',
+            style: 'max-width: 100px',
+            align: 'left',
             field: (row: any) => AccessGroupRights[row.rights],
         });
         return defaultCols;

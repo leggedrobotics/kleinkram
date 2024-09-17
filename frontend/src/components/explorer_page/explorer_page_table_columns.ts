@@ -71,6 +71,7 @@ export const explorer_page_table_columns: Array<ProjectColumnType> = [
     {
         name: 'projectaction',
         label: '',
+        style: 'width: 10px',
         align: 'center',
     },
 ];
