@@ -16,7 +16,6 @@ import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 import env from '@common/env';
-import fs from 'node:fs';
 
 @Injectable()
 export class ActionManagerService {
@@ -121,11 +120,12 @@ export class ActionManagerService {
         await this.setActionState(container, action);
 
         action.executionEndedAt = new Date();
-        await this.actionRepository.save(action);
         await this.containerDaemon.launchArtifactUploadContainer(
             action.uuid,
             `${action.template.name}-v${action.template.version}-${action.uuid}`,
         );
+        await this.actionRepository.save(action);
+
         return true; // mark the job as completed
     }
 
@@ -303,7 +303,6 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
         // Kill Old Containers
         //////////////////////////////////////////////////////////////////////////////
-        console.log(running_action_containers);
         for (const container of running_action_containers) {
             // try to find corresponding action
             const uuid = container.Names[0].replace(

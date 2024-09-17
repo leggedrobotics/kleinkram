@@ -324,9 +324,9 @@ export class DockerDaemon {
             .catch(dockerDaemonErrorHandler);
     }
 
-    async killAndRemoveContainer(container_id: string) {
+    async killAndRemoveContainer(container_id: string, clear_volume = false) {
         await this.killContainer(container_id);
-        await this.removeContainer(container_id);
+        await this.removeContainer(container_id, clear_volume);
     }
 
     async killContainer(container_id: string) {
@@ -336,10 +336,10 @@ export class DockerDaemon {
             .catch(dockerDaemonErrorHandler);
     }
 
-    async removeContainer(container_id: string) {
+    async removeContainer(container_id: string, clear_volume = false) {
         await this.docker
             .getContainer(container_id)
-            .remove({ v: false })
+            .remove({ v: clear_volume })
             .catch(dockerDaemonErrorHandler);
     }
 
