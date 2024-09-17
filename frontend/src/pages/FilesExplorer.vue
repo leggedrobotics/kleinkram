@@ -12,6 +12,11 @@
                             >
                                 <q-chip
                                     square
+                                    v-bind:style="[
+                                        tag.type.type == 'LINK'
+                                            ? { cursor: 'pointer' }
+                                            : {},
+                                    ]"
                                     color="gray"
                                     @mouseup="() => openLink(tag)"
                                 >
@@ -240,8 +245,8 @@
                         icon="sym_o_delete"
                         color="white"
                         @click="() => deleteFilesCallback()"
-                        >Delete</q-btn
-                    >
+                        >Delete
+                    </q-btn>
                     <q-btn
                         flat
                         dense
@@ -427,6 +432,7 @@ function deleteFilesCallback() {
         deselect();
     });
 }
+
 function deselect() {
     selectedFiles.value = [];
 }
