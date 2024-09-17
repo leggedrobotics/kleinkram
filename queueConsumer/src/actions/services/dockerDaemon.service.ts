@@ -61,6 +61,9 @@ export const dockerDaemonErrorHandler = (error: Error) => {
     return null;
 };
 
+const artifactUploaderImage =
+    'rslethz/grandtour-datasets:artifact-uploader-latest';
+
 /**
  * The DockerDaemon class is responsible for managing the Docker daemon.
  * It provides methods to start, stop, and get logs from containers.
@@ -421,32 +424,30 @@ export class DockerDaemon {
         if (!this.docker || !(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
-        let image = this.docker.getImage('rslethz/kleinkram-artifact-uploader');
+        let image = this.docker.getImage(artifactUploaderImage);
         let details = await image.inspect().catch(dockerDaemonErrorHandler);
-        logger.info(
-            `Checking if image 'rslethz/kleinkram-artifact-uploader' exists...`,
-        );
+        logger.info(`Checking if image ${artifactUploaderImage} exists...`);
         if (!details) {
             logger.info('Image does not exist, pulling image...');
-            const pull_res = await this.pull_image(
-                'rslethz/kleinkram-artifact-uploader',
-            ).catch((error) => {
-                // cleanup error message
-                error.message = error.message.replace(/\(.*?\)/g, '');
-                error.message = error.message.replace(/ +/g, ' ').trim();
+            const pull_res = await this.pull_image(artifactUploaderImage).catch(
+                (error) => {
+                    // cleanup error message
+                    error.message = error.message.replace(/\(.*?\)/g, '');
+                    error.message = error.message.replace(/ +/g, ' ').trim();
 
-                logger.warn(`Failed to pull image: ${error.message}`);
-            });
+                    logger.warn(`Failed to pull image: ${error.message}`);
+                },
+            );
 
             logger.info(`Image pulled: ${pull_res}. Starting container...`);
-            image = this.docker.getImage('rslethz/kleinkram-artifact-uploader');
+            image = this.docker.getImage(artifactUploaderImage);
         }
 
         // get image details
         details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
-                `Image 'rslethz/kleinkram-artifact-uploader' not found, could not start container!`,
+                `Image ${artifactUploaderImage} not found, could not start container!`,
             );
         }
         const repo_digests = details.RepoDigests;
@@ -455,7 +456,7 @@ export class DockerDaemon {
             'utf-8',
         );
         const container_create_options: Dockerode.ContainerCreateOptions = {
-            Image: 'rslethz/kleinkram-artifact-uploader',
+            Image: artifactUploaderImage,
             name: 'kleinkram-artifact-uploader-' + container_id,
             Env: [
                 'DRIVE_PARENT_FOLDER_ID=' + parentFolder,

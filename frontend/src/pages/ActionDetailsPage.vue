@@ -41,7 +41,12 @@
                         <tr>
                             <td class="q-table__cell">State</td>
                             <td class="q-table__cell">
-                                {{ data?.state }}
+                                <q-badge
+                                    :color="getActionColor(data?.state)"
+                                    class="q-pa-sm"
+                                >
+                                    {{ data?.state }}
+                                </q-badge>
                             </td>
                         </tr>
                         <tr>
@@ -181,6 +186,7 @@ import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
 import { ref } from 'vue';
+import { getActionColor } from 'src/services/generic';
 
 const tab = ref('info');
 

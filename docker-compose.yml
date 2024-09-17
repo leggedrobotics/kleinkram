@@ -196,6 +196,12 @@ services:
             - node_modules:/app/src/node_modules
             - swagger-spec:/app/src/docs/
 
+    artifactUploader:
+        image: rslethz/grandtour-datasets:artifact-uploader-latest
+        build:
+            context: queueConsumer/src/artifactUpload
+            dockerfile: Dockerfile
+
 volumes:
     db_data:
     minio_data:

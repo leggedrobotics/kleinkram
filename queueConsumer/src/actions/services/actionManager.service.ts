@@ -119,14 +119,17 @@ export class ActionManagerService {
         await container.wait();
         await this.containerDaemon.removeContainer(container.id, false);
         await this.setActionState(container, action);
-
         action.executionEndedAt = new Date();
+        action.uploading_artifacts = true;
+        await this.actionRepository.save(action);
+
         const { container: artifact_upload_container, parentFolder } =
             await this.containerDaemon.launchArtifactUploadContainer(
                 action.uuid,
                 `${action.template.name}-v${action.template.version}-${action.uuid}`,
             );
         await artifact_upload_container.wait();
+        action.uploading_artifacts = false;
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
             true,
