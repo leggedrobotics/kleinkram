@@ -63,7 +63,7 @@ export const dockerDaemonErrorHandler = (error: Error) => {
 };
 
 const artifactUploaderImage =
-    env.GOOGLE_ARTIFACT_FOLDER_ID ||
+    env.ARTIFACTS_UPLOADER_IMAGE ||
     'rslethz/grandtour-datasets:artifact-uploader-latest';
 
 /**
