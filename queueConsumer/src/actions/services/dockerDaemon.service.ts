@@ -313,8 +313,9 @@ export class DockerDaemon {
         let local_image_details = await local_image
             .inspect()
             .catch(dockerDaemonErrorHandler);
-        const local_last_change = new Date(local_image_details.Created);
+        let local_last_change = null;
         if (local_image_details) {
+            local_last_change = new Date(local_image_details.Created);
             logger.info(
                 `local image ${docker_image} exists and was last changed at ${local_last_change}`,
             );
@@ -323,10 +324,7 @@ export class DockerDaemon {
         logger.info(
             `remote image ${docker_image} was last changed at ${remote_last_change}`,
         );
-        if (
-            !local_image_details ||
-            remote_last_change > new Date(local_image_details.Created)
-        ) {
+        if (!local_image_details || remote_last_change > local_last_change) {
             logger.info(
                 'Image does not exist or is outdated, pulling image...',
             );

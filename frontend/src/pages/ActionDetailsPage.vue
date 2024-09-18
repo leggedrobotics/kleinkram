@@ -99,8 +99,21 @@
                                         () => openArtifactUrl(data?.artifactUrl)
                                     "
                                 />
-                                <div style="font-style: italic" v-else>
+                                <div
+                                    style="font-style: italic"
+                                    v-if="
+                                        data?.artifact_uploading &&
+                                        data?.state === ActionState.DONE
+                                    "
+                                >
                                     Upload of artifacts in progress
+                                </div>
+                                <div
+                                    style="font-style: italic"
+                                    v-if="data?.state !== ActionState.DONE"
+                                >
+                                    Artifacts will upload after the action
+                                    completed
                                 </div>
                             </td>
                         </tr>
