@@ -4,7 +4,6 @@ export default [
             semi: 'error',
             'prefer-const': 'error',
         },
-
     },
     {
         ignores: [
@@ -15,5 +14,5 @@ export default [
             '**/docs/.vitepress/**',
             '**/.venv/**',
         ],
-    }
+    },
 ];
