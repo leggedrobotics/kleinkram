@@ -116,41 +116,9 @@ export class DockerDaemon {
         logger.debug(
             `Starting container with options: ${JSON.stringify(container_options)}`,
         );
-
-        // assert that we only run rslethz images
-        if (!container_options.docker_image.startsWith('rslethz/')) {
-            throw new Error(
-                'Only images from the rslethz organization are allowed',
-            );
-        }
-
-        // check if docker socket is available
-        if (!this.docker || !(await this.docker.ping())) {
-            throw new Error('Docker socket not available or not responding');
-        }
-        let image = this.docker.getImage(container_options.docker_image);
-        let details = await image.inspect().catch(dockerDaemonErrorHandler);
-        logger.info(
-            `Checking if image ${container_options.docker_image} exists...`,
-        );
-        if (!details) {
-            logger.info('Image does not exist, pulling image...');
-            const pull_res = await this.pull_image(
-                container_options.docker_image,
-            ).catch((error) => {
-                // cleanup error message
-                error.message = error.message.replace(/\(.*?\)/g, '');
-                error.message = error.message.replace(/ +/g, ' ').trim();
-
-                logger.warn(`Failed to pull image: ${error.message}`);
-            });
-
-            logger.info(`Image pulled: ${pull_res}. Starting container...`);
-            image = this.docker.getImage(container_options.docker_image);
-        }
-
+        const image = await this.getImage(container_options.docker_image);
         // get image details
-        details = await image.inspect().catch(dockerDaemonErrorHandler);
+        const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
                 `Image ${container_options.docker_image} not found, could not start container!`,
@@ -297,6 +265,80 @@ export class DockerDaemon {
         return new Promise((res) =>
             this.docker.modem.followProgress(pullStream, res),
         );
+    }
+
+    @tracing()
+    private async getRemoteImageInfo(docker_image: string) {
+        if (!docker_image || docker_image === '') {
+            throw new Error('No docker image specified');
+        }
+        let url = `https://registry.hub.docker.com/v2/repositories/${docker_image}/tags/latest`;
+        if (docker_image.includes(':')) {
+            const [image, tag] = docker_image.split(':');
+            url = `https://registry.hub.docker.com/v2/repositories/${image}/tags/${tag}`;
+        }
+        try {
+            const basicAuth =
+                'Basic ' +
+                btoa(
+                    `${process.env.DOCKER_HUB_PASSWORD}:${process.env.DOCKER_HUB_USERNAME}`,
+                );
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    Authorization: basicAuth,
+                },
+            });
+            const res = await response.json();
+            return new Date(res.last_updated);
+        } catch (error) {
+            throw new Error('Failed to get image info');
+        }
+    }
+
+    @tracing()
+    private async getImage(docker_image: string) {
+        // assert that we only run rslethz images
+        if (!docker_image.startsWith('rslethz/')) {
+            throw new Error(
+                'Only images from the rslethz organization are allowed',
+            );
+        }
+
+        // check if docker socket is available
+        if (!this.docker || !(await this.docker.ping())) {
+            throw new Error('Docker socket not available or not responding');
+        }
+        let local_image = this.docker.getImage(docker_image);
+        let local_image_details = await local_image
+            .inspect()
+            .catch(dockerDaemonErrorHandler);
+        const local_last_change = new Date(local_image_details.Created);
+        if (local_image_details) {
+            logger.info(
+                `local image ${docker_image} exists and was last changed at ${local_last_change}`,
+            );
+        }
+        const remote_last_change = await this.getRemoteImageInfo(docker_image);
+        logger.info(
+            `remote image ${docker_image} was last changed at ${remote_last_change}`,
+        );
+        if (
+            !local_image_details ||
+            remote_last_change > new Date(local_image_details.Created)
+        ) {
+            logger.info(
+                'Image does not exist or is outdated, pulling image...',
+            );
+            await this.pull_image(docker_image).catch((error) => {
+                // cleanup error message
+                error.message = error.message.replace(/\(.*?\)/g, '');
+                error.message = error.message.replace(/ +/g, ' ').trim();
+                logger.warn(`Failed to pull image: ${error.message}`);
+            });
+            return this.docker.getImage(docker_image);
+        }
+        return local_image;
     }
 
     async stopContainer(container_id: string) {
@@ -500,9 +542,14 @@ export class DockerDaemon {
         const container = await this.docker
             .createContainer(container_create_options)
             .catch((error) => {
-                // cleanup error message
-                error.message = error.message.replace(/\(.*?\)/g, '');
-                error.message = error.message.replace(/ +/g, ' ').trim();
+                if (env.DEV) {
+                    // cleanup error message
+                    error.message = error.message.replace(/\(.*?\)/g, '');
+                    error.message = error.message.replace(/ +/g, ' ').trim();
+                } else {
+                    error.message =
+                        'Failed to launch artifact uploader container';
+                }
                 logger.error(`Failed to create container: ${error.message}`);
                 throw error;
             });

@@ -28,7 +28,7 @@ echo "generate 10 lines of fake log messages"
 echo ""
 for i in {1..10}; do
   echo "log message $i"
-  echo "🚀 Rocket" 1>&2
+  echo "✤ Rocket" 1>&2
 done
 
 exit 0

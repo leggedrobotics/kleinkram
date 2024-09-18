@@ -131,12 +131,11 @@
                             class="q-mb-sm"
                             clearable
                             placeholder="Docker Image"
-                            v-if="editingTemplate.image_name"
                         />
                     </div>
 
                     <div>
-                        <label for="action_trigger">Define the Action</label>
+                        <label for="action_trigger">Define the Trigger</label>
 
                         <q-input
                             name="action_trigger"

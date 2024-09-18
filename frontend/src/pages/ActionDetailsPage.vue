@@ -84,7 +84,10 @@
                             <td class="q-table__cell">Artifact Files:</td>
                             <td class="q-table__cell">
                                 <q-btn
-                                    v-if="!data?.artifact_uploading"
+                                    v-if="
+                                        !data?.artifact_uploading &&
+                                        data?.state === ActionState.DONE
+                                    "
                                     label="Open"
                                     flat
                                     dense
@@ -186,6 +189,7 @@ import TitleSection from 'components/TitleSection.vue';
 import { ref } from 'vue';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
+import { ActionState } from 'src/enums/QUEUE_ENUM';
 
 const tab = ref('info');
 
