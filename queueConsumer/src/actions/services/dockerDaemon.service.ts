@@ -268,35 +268,6 @@ export class DockerDaemon {
     }
 
     @tracing()
-    private async getRemoteImageInfo(docker_image: string) {
-        if (!docker_image || docker_image === '') {
-            throw new Error('No docker image specified');
-        }
-        let url = `https://registry.hub.docker.com/v2/repositories/${docker_image}/tags/latest`;
-        if (docker_image.includes(':')) {
-            const [image, tag] = docker_image.split(':');
-            url = `https://registry.hub.docker.com/v2/repositories/${image}/tags/${tag}`;
-        }
-        try {
-            const basicAuth =
-                'Basic ' +
-                btoa(
-                    `${process.env.DOCKER_HUB_PASSWORD}:${process.env.DOCKER_HUB_USERNAME}`,
-                );
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    Authorization: basicAuth,
-                },
-            });
-            const res = await response.json();
-            return new Date(res.last_updated);
-        } catch (error) {
-            throw new Error('Failed to get image info');
-        }
-    }
-
-    @tracing()
     private async getImage(docker_image: string) {
         // assert that we only run rslethz images
         if (!docker_image.startsWith('rslethz/')) {
@@ -309,34 +280,15 @@ export class DockerDaemon {
         if (!this.docker || !(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
-        let local_image = this.docker.getImage(docker_image);
-        let local_image_details = await local_image
-            .inspect()
-            .catch(dockerDaemonErrorHandler);
-        let local_last_change = null;
-        if (local_image_details) {
-            local_last_change = new Date(local_image_details.Created);
-            logger.info(
-                `local image ${docker_image} exists and was last changed at ${local_last_change}`,
-            );
-        }
-        const remote_last_change = await this.getRemoteImageInfo(docker_image);
-        logger.info(
-            `remote image ${docker_image} was last changed at ${remote_last_change}`,
-        );
-        if (!local_image_details || remote_last_change > local_last_change) {
-            logger.info(
-                'Image does not exist or is outdated, pulling image...',
-            );
-            await this.pull_image(docker_image).catch((error) => {
-                // cleanup error message
-                error.message = error.message.replace(/\(.*?\)/g, '');
-                error.message = error.message.replace(/ +/g, ' ').trim();
-                logger.warn(`Failed to pull image: ${error.message}`);
-            });
-            return this.docker.getImage(docker_image);
-        }
-        return local_image;
+
+        await this.pull_image(docker_image).catch((error) => {
+            // cleanup error message
+            error.message = error.message.replace(/\(.*?\)/g, '');
+            error.message = error.message.replace(/ +/g, ' ').trim();
+            logger.warn(`Failed to pull image: ${error.message}`);
+        });
+
+        return this.docker.getImage(docker_image);
     }
 
     async stopContainer(container_id: string) {
