@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram",
-    "version": "0.21.4",
+    "version": "0.21.5",
     "main": "index.js",
     "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
     "author": "Johann Schwabe <johann@schwabe.dev>",

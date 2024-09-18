@@ -6,7 +6,6 @@
         v-model="createAction"
         :width="496"
         style="bottom: 0 !important"
-        :breakpoint="1000"
         bordered
     >
         <div class="q-pa-lg flex row justify-between" style="height: 84px">
