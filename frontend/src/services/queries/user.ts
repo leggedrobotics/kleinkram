@@ -54,3 +54,8 @@ export const getMe = async (): Promise<User> => {
         new Date(user.deletedAt),
     );
 };
+
+export const getPermissions = async () => {
+    const response = await axios.get('/user/permissions');
+    return response.data;
+};

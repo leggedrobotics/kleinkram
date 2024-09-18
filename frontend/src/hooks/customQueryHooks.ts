@@ -1,7 +1,7 @@
 import { ref, Ref, watch } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
-import { getMission, getPermissions } from 'src/services/queries/mission';
+import { getMission } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
@@ -11,6 +11,7 @@ import { AxiosError } from 'axios';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { getPermissions } from 'src/services/queries/user';
 
 type Permissions = {
     role: string;
@@ -37,7 +38,7 @@ export const usePermissionsQuery = (): UseQueryReturnType<
     });
 };
 
-const getPermissionForProject = (
+export const getPermissionForProject = (
     project_uuid: string,
     permissions: Permissions,
 ): number => {
@@ -67,11 +68,8 @@ export const canModifyProject = (
 ): boolean => {
     if (!permissions) return false;
     if (!project_uuid) return false;
-
-    return (
-        getPermissionForProject(project_uuid, permissions) >=
-        AccessGroupRights.WRITE
-    );
+    const permission = getPermissionForProject(project_uuid, permissions);
+    return permission >= AccessGroupRights.WRITE;
 };
 
 export const canDeleteProject = (
@@ -80,11 +78,8 @@ export const canDeleteProject = (
 ): boolean => {
     if (!project_uuid) return false;
     if (!permissions) return false;
-
-    return (
-        getPermissionForProject(project_uuid, permissions) >=
-        AccessGroupRights.DELETE
-    );
+    const permission = getPermissionForProject(project_uuid, permissions);
+    return permission >= AccessGroupRights.DELETE;
 };
 
 export const useMissionQuery = (

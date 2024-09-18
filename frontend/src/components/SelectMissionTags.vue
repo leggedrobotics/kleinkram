@@ -102,17 +102,10 @@ import { Project } from 'src/types/Project';
 import { useQuery } from '@tanstack/vue-query';
 import { getTagTypes } from 'src/services/queries/tag';
 import { getProject } from 'src/services/queries/project';
-
-const props = defineProps({
-    tagValues: {
-        type: Object as () => Record<string, string>,
-        required: true,
-    },
-    projectUUID: {
-        type: Object as () => string,
-        required: true,
-    },
-});
+const props = defineProps<{
+    tagValues: Record<string, string>;
+    projectUUID: string;
+}>();
 
 const emit = defineEmits(['update:tagValues']);
 const ddr_open2 = ref(false);
@@ -161,6 +154,7 @@ watch(
             });
         }
     },
+    { immediate: true },
 );
 
 const availableAdditionalTags: Ref<TagType[]> = computed(() => {

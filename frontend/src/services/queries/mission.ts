@@ -6,11 +6,6 @@ import { TagType } from 'src/types/TagType';
 import { Tag } from 'src/types/Tag';
 import { FileEntity } from 'src/types/FileEntity';
 
-export const getPermissions = async () => {
-    const response = await axios.get('/user/permissions');
-    return response.data;
-};
-
 export const getMission = async (uuid: string): Promise<Mission> => {
     const response = await axios.get('/mission/one', { params: { uuid } });
     const mission = response.data;
