@@ -456,6 +456,17 @@ export class DockerDaemon {
             Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
             'utf-8',
         );
+
+        // assert non empty env variables
+        if (!google_key || google_key === '') {
+            throw new Error('Google key not found');
+        }
+
+        if (!parentFolder || parentFolder === '') {
+            throw new Error('Parent folder not found');
+        }
+
+        logger.info('Creating artifact uploader container...');
         const container_create_options: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
             name: 'kleinkram-artifact-uploader-' + container_id,
