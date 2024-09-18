@@ -94,7 +94,6 @@
                     :to="ROUTES.UPLOAD.path"
                     icon="sym_o_export_notes"
                     @mouseover="showOverlay = true"
-                    @mouseleave="showOverlay = true"
                 >
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
@@ -106,9 +105,8 @@
                     />
                     <q-menu
                         v-model="showOverlay"
-                        :offset="[0, 40]"
+                        :offset="[100, 40]"
                         style="min-width: 600px"
-                        v-if="uncompletedUploads.length > 0"
                     >
                         <q-card>
                             <q-card-section

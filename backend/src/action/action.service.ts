@@ -69,11 +69,7 @@ export class ActionService {
             createdBy: { uuid: user.uuid },
             name: data.name,
             runtime_requirements: data.runtime_requirements,
-            image: {
-                name: data.image,
-                sha: null,
-                repo_digests: null,
-            },
+            image_name: data.image,
             command: data.command,
             searchable: data.searchable,
         });
@@ -89,14 +85,12 @@ export class ActionService {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.uuid },
         });
-        console.log(template);
-        console.log(data);
         if (
             !template.searchable &&
             data.searchable &&
             template.runtime_requirements.gpu_model.name ===
                 data.runtime_requirements.gpu_model.name &&
-            template.image.name === data.image &&
+            template.image_name === data.image &&
             template.command === data.command
         ) {
             console.log('making template searchable');
@@ -115,11 +109,7 @@ export class ActionService {
         });
         template.name = data.name;
         template.runtime_requirements = data.runtime_requirements;
-        template.image = {
-            name: data.image,
-            sha: null,
-            repo_digests: null,
-        };
+        template.image_name = data.image;
         template.createdBy = dbuser;
         template.command = data.command;
         template.version = previousVersions[0].version + change;

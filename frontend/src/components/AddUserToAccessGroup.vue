@@ -5,6 +5,9 @@
             @input-value="
                 (val) => {
                     search = val;
+                    if (val.length > 0) {
+                        $refs.userSelect.showPopup(); // Ensure dropdown opens again
+                    }
                 }
             "
             use-input
@@ -12,6 +15,7 @@
             input-debounce="100"
             :options="foundUsers"
             option-label="name"
+            ref="userSelect"
             style="width: 80%"
         >
             <template v-slot:no-option>

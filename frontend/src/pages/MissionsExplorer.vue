@@ -147,7 +147,11 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useHandler, useProjectQuery } from 'src/hooks/customQueryHooks';
+import {
+    registerNoPermissionErrorHandler,
+    useHandler,
+    useProjectQuery,
+} from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import TitleSection from 'components/TitleSection.vue';
@@ -160,13 +164,18 @@ import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import { useProjectUUID } from 'src/hooks/utils';
 import { useQuasar } from 'quasar';
-import { logout } from 'src/services/auth';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 const $q = useQuasar();
 const project_uuid = useProjectUUID();
-const { data: project } = useProjectQuery(project_uuid);
+const { data: project, isLoadingError, error } = useProjectQuery(project_uuid);
+registerNoPermissionErrorHandler(
+    isLoadingError,
+    project_uuid,
+    'project',
+    error,
+);
 
 const search = computed({
     get: () => handler.value.search_params.name,

@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { QInput, useDialogPluginComponent } from 'quasar';
+import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
@@ -128,6 +128,7 @@ const tab = ref('meta_data');
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const selected: Ref<TagType[]> = ref([]);
+const $q = useQuasar();
 
 const queryKey = computed(() => [
     'tags',
@@ -230,6 +231,14 @@ const submitNewProject = async () => {
     )
         .then(() => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+
+            $q.notify({
+                message: 'Project created successfully',
+                color: 'positive',
+                position: 'bottom',
+                timeout: 2000,
+            });
+
             onDialogOK();
         })
         .catch((error: AxiosError<{ message: string; statusCode: number }>) => {

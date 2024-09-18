@@ -177,6 +177,12 @@ services:
             context: docs/.
             dockerfile: Dockerfile
 
+    artifactUploader:
+        image: rslethz/grandtour-datasets:artifact-uploader-latest-dev
+        build:
+            context: queueConsumer/src/artifactUpload
+            dockerfile: Dockerfile
+
 volumes:
     postgres_db_data:
     minio_data:

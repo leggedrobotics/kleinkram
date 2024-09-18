@@ -12,6 +12,11 @@
                             >
                                 <q-chip
                                     square
+                                    v-bind:style="[
+                                        tag.type.type == 'LINK'
+                                            ? { cursor: 'pointer' }
+                                            : {},
+                                    ]"
                                     color="gray"
                                     @mouseup="() => openLink(tag)"
                                 >
@@ -240,8 +245,8 @@
                         icon="sym_o_delete"
                         color="white"
                         @click="() => deleteFilesCallback()"
-                        >Delete</q-btn
-                    >
+                        >Delete
+                    </q-btn>
                     <q-btn
                         flat
                         dense
@@ -284,6 +289,7 @@
 <script setup lang="ts">
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import {
+    registerNoPermissionErrorHandler,
     useHandler,
     useMissionQuery,
     useProjectQuery,
@@ -362,8 +368,11 @@ function onFileTypeClicked(index: number) {
     fileTypeFilter.value = updatedFileTypeFilter;
 }
 
-const { data: project } = useProjectQuery(project_uuid);
-const { data: mission } = useMissionQuery(
+const {
+    data: mission,
+    isLoadingError,
+    error,
+} = useMissionQuery(
     mission_uuid,
     (error, query) => {
         Notify.create({
@@ -376,6 +385,12 @@ const { data: mission } = useMissionQuery(
         return false;
     },
     200,
+);
+registerNoPermissionErrorHandler(
+    isLoadingError,
+    mission_uuid,
+    'mission',
+    error,
 );
 
 const { mutate: _deleteFiles } = useMutation({
@@ -424,8 +439,10 @@ function deleteFilesCallback() {
     }).onOk(() => {
         const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
         _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+        deselect();
     });
 }
+
 function deselect() {
     selectedFiles.value = [];
 }

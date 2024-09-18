@@ -14,7 +14,6 @@ export type ContainerLog = {
 };
 
 export type Image = {
-    name: string;
     sha: string | null;
     repo_digests: string[] | null;
 };
@@ -70,10 +69,19 @@ export default class Action extends BaseEntity {
     @Column({ nullable: true })
     exit_code: number;
 
+    @Column({ nullable: true })
+    artifact_url: string;
+
+    @Column({ nullable: false, default: false })
+    uploading_artifacts: boolean;
+
     @OneToOne(() => Apikey)
     @JoinColumn()
     key: Apikey;
 
     @ManyToOne(() => ActionTemplate, (actionTemplate) => actionTemplate.actions)
     template: ActionTemplate;
+
+    @Column({ type: 'json', nullable: true })
+    image: Image;
 }

@@ -67,7 +67,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useHandler } from 'src/hooks/customQueryHooks';
+import { useHandler, usePermissionsQuery } from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ProjectsTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';

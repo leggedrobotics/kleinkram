@@ -83,15 +83,16 @@ async function onOk() {
     if (!props.mission || !selected_project.value) {
         return;
     }
+    const creating = Notify.create({
+        group: false,
+        message: `Moving mission ${props.mission.name} to project ${selected_project.value.name}`,
+        color: 'grey',
+        spinner: true,
+        timeout: 4000,
+        position: 'bottom',
+    });
+
     try {
-        const creating = Notify.create({
-            group: false,
-            message: `Moving mission ${props.mission.name} to project ${selected_project.value.name}`,
-            color: 'positive',
-            spinner: true,
-            timeout: 4000,
-            position: 'bottom',
-        });
         await moveMission(props.mission.uuid, selected_project.value.uuid);
         creating({
             message: `Mission ${props.mission.name} moved to project ${selected_project.value.name}`,
@@ -112,12 +113,11 @@ async function onOk() {
         });
     } catch (e) {
         console.error(e);
-        Notify.create({
+        creating({
             message: `Error moving mission ${props.mission.name} to project ${selected_project.value.name}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,
-            position: 'bottom',
         });
     }
     onDialogOK();

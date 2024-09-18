@@ -16,8 +16,10 @@
                 class="bg-button-primary"
                 @click="
                     () => {
-                        editProjectRef?.save();
-                        onDialogOK();
+                        editProjectRef
+                            ?.save_changes()
+                            .then(onDialogOK)
+                            .catch(() => {});
                     }
                 "
             />

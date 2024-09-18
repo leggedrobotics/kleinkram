@@ -5,6 +5,7 @@ import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
 import { JWTUser } from '../auth/paramDecorator';
 import Account from '@common/entities/auth/account.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 
 @Injectable()
 export class UserService {
@@ -12,6 +13,8 @@ export class UserService {
         @InjectRepository(User) private userRepository: Repository<User>,
         @InjectRepository(Account)
         private accountRepository: Repository<Account>,
+        @InjectRepository(ProjectAccessViewEntity)
+        private projectAccessView: Repository<ProjectAccessViewEntity>,
     ) {}
 
     async findOneByEmail(email: string) {
@@ -84,5 +87,43 @@ export class UserService {
             .skip(skip)
             .take(take)
             .getMany();
+    }
+
+    async permissions(jwt_user: JWTUser) {
+        let user = await this.userRepository.findOne({
+            where: {
+                uuid: jwt_user.uuid,
+                accessGroups: { inheriting: true },
+            },
+            relations: ['accessGroups'],
+        });
+
+        if (!user) {
+            user = await this.userRepository.findOneOrFail({
+                where: { uuid: jwt_user.uuid },
+            });
+        }
+
+        const role = user?.role;
+        const default_permission = user?.accessGroups?.length > 0 ? 10 : 0;
+
+        const projects: {
+            uuid: string;
+            access: number;
+        }[] = await this.projectAccessView
+            .createQueryBuilder('project')
+            .select('project.projectUUID', 'uuid')
+            .addSelect('MAX(project.rights)', 'access')
+            .where('project.userUUID = :userUUID', { userUUID: user.uuid })
+            .groupBy('project.projectUUID')
+            .getRawMany();
+
+        // TODO: Implement missions once we have mission level access control
+        const missions: {
+            uuid: string;
+            access: number;
+        }[] = [];
+
+        return { role, default_permission, projects, missions };
     }
 }

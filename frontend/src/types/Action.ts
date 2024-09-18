@@ -10,10 +10,15 @@ type ContainerLog = {
     type: 'stdout' | 'stderr';
 };
 
+export type Image = {
+    sha: string | null;
+    repo_digests: string[] | null;
+};
+
 export class Action extends BaseEntity {
     state: ActionState;
     state_cause: string;
-
+    image: Image;
     createdBy: User;
 
     mission: Mission | null;
@@ -26,6 +31,8 @@ export class Action extends BaseEntity {
     executionEndedAt: Date | null;
 
     template: ActionTemplate;
+    artifactUrl: string;
+    artifact_uploading: boolean;
 
     constructor(
         uuid: string,
@@ -34,8 +41,11 @@ export class Action extends BaseEntity {
         deletedAt: Date | null,
         state: ActionState,
         state_cause: string,
+        artifactUrl: string,
+        artifact_uploading: boolean,
         mission: Mission | null,
         template: ActionTemplate,
+        image: Image,
         createdBy: User,
         logs: ContainerLog[] | null = null,
         runner_hostname: string | null = null,
@@ -44,9 +54,11 @@ export class Action extends BaseEntity {
         executionEndedAt: string | null = null,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
-
+        this.image = image;
         this.state = state;
         this.state_cause = state_cause || '';
+        this.artifactUrl = artifactUrl;
+        this.artifact_uploading = artifact_uploading;
         this.mission = mission;
         this.logs = logs;
         this.createdBy = createdBy;
@@ -62,10 +74,6 @@ export class Action extends BaseEntity {
     }
 
     public getRuntimeInMS(): number {
-        console.log('getRuntime');
-        console.log(this.executionStartedAt);
-        console.log(this.executionEndedAt);
-
         if (!this.executionStartedAt || !this.executionEndedAt) {
             return 0;
         }

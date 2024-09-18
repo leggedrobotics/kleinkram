@@ -32,7 +32,7 @@
                         style="background: none; margin-left: -3px"
                     >
                         <q-badge
-                            :color="getColor(props.row.state)"
+                            :color="getActionColor(props.row.state)"
                             class="q-pa-sm"
                         >
                             {{ props.row.state }}
@@ -41,9 +41,7 @@
                 </template>
 
                 <template v-else>
-                    <q-badge :color="getColor(props.row.state)" class="q-pa-sm">
-                        {{ props.row.state }}
-                    </q-badge>
+                    <ActionBadge :action="props.row" />
                 </template>
             </q-td>
         </template>
@@ -101,6 +99,8 @@ import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
+import { getActionColor } from 'src/services/generic';
+import ActionBadge from 'components/ActionBadge.vue';
 
 const router = useRouter();
 
@@ -176,7 +176,7 @@ const columns = [
         align: 'left',
         sortable: false,
         field: (row: Action) =>
-            row.template?.image.name ? row.template.image.name : 'N/A',
+            row.template?.image_name ? row.template.image_name : 'N/A',
     },
     {
         name: 'name',
@@ -228,21 +228,6 @@ const columns = [
         sortable: false,
     },
 ];
-
-function getColor(state: ActionState) {
-    switch (state) {
-        case ActionState.DONE:
-            return 'green';
-        case ActionState.FAILED:
-            return 'red';
-        case ActionState.PENDING:
-            return 'orange';
-        case ActionState.PROCESSING:
-            return 'blue';
-        default:
-            return 'grey'; // Default color for unknown states
-    }
-}
 </script>
 
 <style scoped></style>

@@ -10,8 +10,8 @@ export default class ActionTemplate extends BaseEntity {
     @Column({ type: 'json' })
     runtime_requirements: RuntimeRequirements;
 
-    @Column({ type: 'json' })
-    image: Image;
+    @Column()
+    image_name: string;
 
     @Column()
     name: string;

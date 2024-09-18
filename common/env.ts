@@ -162,4 +162,16 @@ export default {
     get GOOGLE_KEY_FILE(): string {
         return asString(process.env.GOOGLE_KEY_FILE);
     },
+
+    get GOOGLE_ARTIFACT_FOLDER_ID(): string {
+        return asString(process.env.GOOGLE_ARTIFACT_FOLDER_ID);
+    },
+
+    get GOOGLE_ARTIFACT_UPLOADER_KEY_FILE(): string {
+        return asString(process.env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE);
+    },
+
+    get ARTIFACTS_UPLOADER_IMAGE(): string {
+        return asString(process.env.ARTIFACTS_UPLOADER_IMAGE);
+    },
 };

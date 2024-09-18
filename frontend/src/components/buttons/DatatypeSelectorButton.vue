@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { DataType } from 'src/enums/TAG_TYPES';
-import { ref, defineEmits, watch, PropType } from 'vue';
+import { ref, watch, PropType } from 'vue';
 import { icon } from 'src/services/generic';
 
 // Define the props and emits for the component

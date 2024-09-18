@@ -6,7 +6,6 @@
         v-model="createAction"
         :width="496"
         style="bottom: 0 !important"
-        :breakpoint="1000"
         bordered
     >
         <div class="q-pa-lg flex row justify-between" style="height: 84px">
@@ -125,18 +124,17 @@
                         <label for="docker_image">Define the Action</label>
                         <q-input
                             name="docker_image"
-                            v-model="editingTemplate.image.name"
+                            v-model="editingTemplate.image_name"
                             outlined
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Docker Image"
-                            v-if="editingTemplate.image"
                         />
                     </div>
 
                     <div>
-                        <label for="action_trigger">Define the Action</label>
+                        <label for="action_trigger">Define the Trigger</label>
 
                         <q-input
                             name="action_trigger"
@@ -377,7 +375,7 @@ const editingTemplate = ref(
         null,
         null,
         null,
-        { name: 'rslethz/action:latest' },
+        'rslethz/action:latest',
         null,
         '',
         1,
@@ -425,7 +423,7 @@ const { mutateAsync: createTemplate } = useMutation({
         createActionTemplate({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image.name,
+            docker_image: editingTemplate.value.image_name,
             gpu_model:
                 editingTemplate.value.runtime_requirements.gpu_model.name,
             searchable,
@@ -461,7 +459,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             uuid: editingTemplate.value.uuid,
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image.name,
+            docker_image: editingTemplate.value.image_name,
             gpu_model:
                 editingTemplate.value.runtime_requirements.gpu_model.name,
             searchable,
@@ -506,7 +504,7 @@ const isModified = computed(() => {
     }
     const sameName = editingTemplate.value.name === select.value?.name;
     const sameImage =
-        editingTemplate.value?.image?.name === select.value?.image?.name;
+        editingTemplate.value?.image_name === select.value?.image_name;
     const sameCommand =
         editingTemplate.value?.command === select.value?.command;
     const sameGPU =
@@ -557,7 +555,7 @@ async function submitAnalysis() {
         });
         return;
     }
-    if (!editingTemplate.value.image.name.startsWith('rslethz/')) {
+    if (!editingTemplate.value.image_name.startsWith('rslethz/')) {
         Notify.create({
             group: false,
             message: 'The image name must start with "rslethz/"',
@@ -609,7 +607,7 @@ function selectTemplate(template: ActionTemplate) {
             null,
             null,
             null,
-            { name: 'rslethz/action:latest' },
+            'rslethz/action:latest',
             null,
             '',
             1,

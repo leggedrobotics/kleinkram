@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
-import { JWTUser } from '../auth/paramDecorator';
-import { addJWTUser } from '../auth/paramDecorator';
+import { addJWTUser, JWTUser } from '../auth/paramDecorator';
 import {
     QuerySkip,
     QueryString,
@@ -55,5 +54,44 @@ export class UserController {
         @addJWTUser() user?: JWTUser,
     ) {
         return this.userService.search(user, search, skip, take);
+    }
+
+    /**
+     *
+     * Returns a JSON object describing the access rights of the
+     * currently logged in user.
+     *
+     * Examples:
+     *
+     * {
+     *     "role": "ADMIN",
+     * }
+     *
+     * {
+     *     "role": "USER",
+     *     "default_permission: "10",
+     *
+     *     // access rights to projects and missions above the default
+     *     // permission level
+     *     "projects": [
+     *        {
+     *          "uuid": "b1b4b3b4-1b3b-4b3b-1b3b-4b3b1b3b4b3b",
+     *          "access": "10"
+     *        }
+     *     ],
+     *     "missions": [
+     *        {
+     *         "uuid": "b1b4b3b4-1b3b-4b3b-1b3b-4b3b1b3b4b3b",
+     *         "access": "10"
+     *        }
+     *     ],
+     *
+     * }
+     *
+     */
+    @Get('permissions')
+    @LoggedIn()
+    async permissions(@addJWTUser() user?: JWTUser) {
+        return this.userService.permissions(user);
     }
 }
