@@ -7,6 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import process from 'node:process';
 import Env from '@common/env';
+import env from '@common/env';
 import { createDriveFolder } from '../helper/driveHelper';
 import fs from 'node:fs';
 import {
@@ -62,6 +63,7 @@ export const dockerDaemonErrorHandler = (error: Error) => {
 };
 
 const artifactUploaderImage =
+    env.GOOGLE_ARTIFACT_FOLDER_ID ||
     'rslethz/grandtour-datasets:artifact-uploader-latest';
 
 /**

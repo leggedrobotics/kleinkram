@@ -170,4 +170,8 @@ export default {
     get GOOGLE_ARTIFACT_UPLOADER_KEY_FILE(): string {
         return asString(process.env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE);
     },
+
+    get ARTIFACTS_UPLOADER_IMAGE(): string {
+        return asString(process.env.ARTIFACTS_UPLOADER_IMAGE);
+    },
 };
