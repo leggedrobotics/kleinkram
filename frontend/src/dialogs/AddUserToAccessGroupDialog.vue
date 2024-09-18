@@ -3,15 +3,18 @@
         <template #title> Add User to Access Group</template>
 
         <template #content>
-            <AddUserToAccessGroup :access_group="props.access_group" />
+            <AddUserToAccessGroup
+                :access_group="props.access_group"
+                ref="addUserRef"
+            />
         </template>
 
         <template #actions>
             <q-btn
                 flat
-                label="Add User"
+                label="Confirm"
                 class="bg-button-primary"
-                @click="onDialogOK"
+                @click="addUserToAccessGroupAction"
             />
         </template>
     </base-dialog>
@@ -20,12 +23,19 @@
 import { useDialogPluginComponent } from 'quasar';
 import AddUserToAccessGroup from 'components/AddUserToAccessGroup.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const addUserRef = ref<InstanceType<typeof AddUserToAccessGroup> | null>(null);
 
 const props = defineProps<{
     access_group: string;
 }>();
+
+function addUserToAccessGroupAction() {
+    addUserRef.value?.mutate();
+    onDialogOK();
+}
 </script>
 
 <style scoped></style>

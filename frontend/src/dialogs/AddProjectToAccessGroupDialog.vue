@@ -3,15 +3,18 @@
         <template #title> Add Project to Access Group</template>
 
         <template #content>
-            <AddProjectToAccessGroupDialog :access_group="props.access_group" />
+            <AddProjectToAccessGroupDialog
+                :access_group="props.access_group"
+                ref="addProjectRef"
+            />
         </template>
 
         <template #actions>
             <q-btn
                 flat
-                label="Add Project"
+                label="Confirm"
                 class="bg-button-primary"
-                @click="onDialogOK"
+                @click="addProjectToAccessGroupAction"
             />
         </template>
     </base-dialog>
@@ -21,12 +24,22 @@
 import { useDialogPluginComponent } from 'quasar';
 import AddProjectToAccessGroupDialog from 'src/components/AddProjectToAccessGroup.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+const addProjectRef = ref<InstanceType<
+    typeof AddProjectToAccessGroupDialog
+> | null>(null);
 
 const props = defineProps<{
     access_group: string;
 }>();
+
+function addProjectToAccessGroupAction() {
+    addProjectRef.value?.mutate();
+    onDialogOK();
+}
 </script>
 
 <style scoped></style>

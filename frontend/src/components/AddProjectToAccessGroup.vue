@@ -12,7 +12,7 @@
             input-debounce="100"
             :options="_foundUsers"
             option-label="name"
-            style="width: 60%"
+            style="width: 65%"
         >
             <template v-slot:no-option>
                 <q-item>
@@ -45,15 +45,7 @@
             v-model="accessRight"
             :options="options"
             label="Select Access Rights"
-            style="width: 20%"
-        />
-        <q-btn
-            color="primary"
-            outline
-            icon="sym_o_save"
-            label="Save"
-            @click="() => mutate()"
-            :disable="accessRight.value === AccessGroupRights.NONE"
+            style="width: 30%"
         />
     </div>
 </template>
@@ -121,6 +113,8 @@ const { mutate } = useMutation({
         });
     },
 });
+
+defineExpose({ mutate });
 </script>
 
 <style scoped></style>
