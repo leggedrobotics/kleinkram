@@ -124,9 +124,8 @@
                 class="bg-button-primary"
                 @click="
                     () => {
-                        createFileRef?.createFileAction().then(() => {
-                            onDialogOK();
-                        });
+                        createFileRef?.createFileAction();
+                        onDialogOK();
                     }
                 "
             />

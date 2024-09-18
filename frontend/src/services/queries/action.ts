@@ -83,6 +83,7 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.createdBy.updatedAt,
         response.data.createdBy.deletedAt,
     );
+    console.log(user);
 
     const template = new ActionTemplate(
         response.data.template.uuid,
@@ -96,6 +97,8 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.template.command,
         response.data.template.runtime_requirements,
     );
+    console.log(template);
+    console.log(response.data.runner_info);
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),
@@ -110,8 +113,8 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.image,
         user,
         response.data.logs,
-        response.data.runner_info.hostname,
-        response.data.runner_info.runtime_capabilities.cpu_model,
+        response.data.runner_info?.hostname,
+        response.data.runner_info?.runtime_capabilities.cpu_model,
         response.data.executionStartedAt,
         response.data.executionEndedAt,
     );
