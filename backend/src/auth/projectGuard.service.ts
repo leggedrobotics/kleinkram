@@ -27,6 +27,7 @@ export class ProjectGuardService {
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        console.log('CanAccessProject');
         if (!projectUUID || !userUUID) {
             return false;
         }
@@ -47,6 +48,11 @@ export class ProjectGuardService {
                 rights: MoreThanOrEqual(rights),
             },
         });
+        if (!res) {
+            console.log(
+                `User ${userUUID} does not have access to project ${projectUUID} with rights ${rights}`,
+            );
+        }
         return res;
     }
 

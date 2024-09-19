@@ -4,6 +4,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { Repository } from 'typeorm';
 import { UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
+import logger from '../logger';
 
 @Injectable()
 export class AuthGuardService {
@@ -16,6 +17,9 @@ export class AuthGuardService {
 
     async canAddUserToAccessGroup(userUUID: string, accessGroupUUID: string) {
         if (!userUUID || !accessGroupUUID) {
+            logger.error(
+                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User UUID (${userUUID}) not provided.`,
+            );
             return false;
         }
         const user = await this.userRepository.findOneOrFail({

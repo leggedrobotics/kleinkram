@@ -142,8 +142,8 @@
             >
             </q-table>
             <q-btn
-                v-if="!displayTopics && !data?.tentative"
-                label="Got to Mcap"
+                v-if="!displayTopics && !data?.tentative && !!mcap"
+                label="Go to Mcap"
                 icon="sym_o_turn_slight_right"
                 @click="redirectToMcap"
             >
@@ -254,6 +254,11 @@ const filesReturn = computed(() =>
 const displayTopics = computed(() => {
     return data.value?.type === FileType.MCAP && !data.value?.tentative;
 });
+const mcap = computed(() =>
+    filesReturn.value?.find((file: FileEntity) => {
+        return file.filename === data.value?.filename.replace('.bag', '.mcap');
+    }),
+);
 
 const columns = [
     {
@@ -280,16 +285,13 @@ const columns = [
 ];
 
 function redirectToMcap() {
-    const mcap = filesReturn.value?.find((file: FileEntity) => {
-        return file.filename === data.value?.filename.replace('.bag', '.mcap');
-    });
-    if (mcap) {
+    if (mcap.value) {
         $router.push({
             name: ROUTES.FILE.routeName,
             params: {
-                mission_uuid: mcap?.mission?.uuid,
-                project_uuid: mcap?.mission?.project?.uuid,
-                file_uuid: mcap?.uuid,
+                mission_uuid: mcap.value?.mission?.uuid,
+                project_uuid: mcap.value?.mission?.project?.uuid,
+                file_uuid: mcap.value?.uuid,
             },
         });
     }

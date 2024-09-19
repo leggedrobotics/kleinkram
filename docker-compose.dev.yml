@@ -178,7 +178,7 @@ services:
             dockerfile: Dockerfile
 
     artifactUploader:
-        image: rslethz/grandtour-datasets:artifact-uploader-latest-dev
+        image: rslethz/grandtour-datasetcs:artifact-uploader-latest-dev
         build:
             context: queueConsumer/src/artifactUpload
             dockerfile: Dockerfile

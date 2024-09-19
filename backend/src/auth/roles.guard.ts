@@ -240,7 +240,8 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const fileUUID = request.query.uuid || request.body.uuid;
+        const fileUUID =
+            request.query.uuid || request.body.uuid || request.params.uuid;
         return this.fileGuardService.canAccessFile(
             user.uuid,
             fileUUID,
@@ -358,7 +359,7 @@ export class CanDeleteMissionGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const missionUUID = request.body.uuid || request.param.uuid;
+        const missionUUID = request.body.uuid || request.params.uuid;
         return this.missionGuardService.canAccessMission(
             user.uuid,
             missionUUID,
