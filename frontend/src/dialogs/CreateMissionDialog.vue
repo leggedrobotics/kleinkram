@@ -111,6 +111,7 @@
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
+                :disable="!allRequiredTagsSet"
                 @click="
                     () => {
                         submitNewMission();
@@ -159,11 +160,12 @@ const project_uuid = ref(props.project_uuid);
 const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project, refetch } = useQuery<Project>({
-    queryKey: computed(() => ['project', project_uuid]),
-    queryFn: () => getProject(project_uuid.value as string),
-    enabled: computed(() => !!project_uuid.value),
-});
+const { data: project, refetch }: { data: Ref<Project>; refetch: Function } =
+    useQuery<Project>({
+        queryKey: computed(() => ['project', project_uuid]),
+        queryFn: () => getProject(project_uuid.value as string),
+        enabled: computed(() => !!project_uuid.value),
+    });
 
 // we load the new project if the project_uuid changes
 watch(project_uuid, () => refetch());
@@ -179,6 +181,14 @@ const { data: all_projects } = useQuery<[Project[], number]>({
 });
 
 const tagValues: Ref<Record<string, string>> = ref({});
+
+const allRequiredTagsSet = computed(() => {
+    return project?.value?.requiredTags.every(
+        (tag) =>
+            tagValues.value[tag.uuid] !== undefined &&
+            tagValues.value[tag.uuid] !== '',
+    );
+});
 
 const submitNewMission = async () => {
     if (!project.value) {
