@@ -33,7 +33,8 @@
         <template v-slot:buttons>
             <button-group>
                 <q-btn
-                    outline
+                    class="button-border"
+                    flat
                     color="primary"
                     icon="sym_o_analytics"
                     label="Actions"
@@ -51,7 +52,8 @@
                 </q-btn>
 
                 <q-btn
-                    outline
+                    class="button-border"
+                    flat
                     color="primary"
                     icon="sym_o_sell"
                     label="Metadata"
@@ -60,7 +62,7 @@
                     <q-tooltip> Manage Metadata Tags</q-tooltip>
                 </q-btn>
 
-                <q-btn icon="sym_o_more_vert" outline>
+                <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu auto-close style="width: 280px">
@@ -154,7 +156,8 @@
                 <q-btn-dropdown
                     clearable
                     dense
-                    outline
+                    class="button-border"
+                    flat
                     style="min-width: 220px"
                     :label="'File Types: ' + selectedFileTypes"
                 >
