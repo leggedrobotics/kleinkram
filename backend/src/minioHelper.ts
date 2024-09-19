@@ -110,7 +110,15 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
         fileType === FileType.BAG
             ? env.MINIO_BAG_BUCKET_NAME
             : env.MINIO_MCAP_BUCKET_NAME;
-    return internalMinio.statObject(bucketName, location);
+    try {
+        console.log('Getting file info:', bucketName, location);
+        return await internalMinio.statObject(bucketName, location);
+    } catch (e) {
+        if (e.code === 'NotFound') {
+            return null;
+        }
+        throw e;
+    }
 }
 
 export async function deleteFileMinio(bucketName: string, location: string) {
