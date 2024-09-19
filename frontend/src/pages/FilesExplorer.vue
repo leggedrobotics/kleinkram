@@ -448,7 +448,15 @@ function deselect() {
 }
 
 async function downloadCallback() {
-    await _downloadFiles(selectedFiles.value);
+    const failedDownloads = await _downloadFiles(selectedFiles.value);
+    if (failedDownloads.length > 0) {
+        Notify.create({
+            message: `Failed to download ${failedDownloads.length} file${failedDownloads.length !== 1 ? 's' : ''}: ${failedDownloads.join(', ')}`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    }
 }
 
 function openTagsDialog() {

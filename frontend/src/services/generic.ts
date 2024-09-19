@@ -127,13 +127,15 @@ export async function _downloadFile(fileUUID: string, filename: string) {
 
 export async function _downloadFiles(files: FileEntity[]) {
     const downloadPromises = files.map(async (file) => {
-        const url = await downloadFile(file.uuid, true);
-        return { url, filename: file.filename };
+        try {
+            const url = await downloadFile(file.uuid, true);
+            return { url, filename: file.filename };
+        } catch (e) {
+            return { url: '', filename: file.filename };
+        }
     });
     const downloadURLs = await Promise.all(downloadPromises);
-    console.log(downloadURLs);
-
-    for (const { url, filename } of downloadURLs) {
+    for (const { url, filename } of downloadURLs.filter((d) => d.url)) {
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -142,6 +144,7 @@ export async function _downloadFiles(files: FileEntity[]) {
         document.body.removeChild(a);
         await new Promise((resolve) => setTimeout(resolve, 100)); // Delay of 100ms
     }
+    return downloadURLs.filter((d) => !d.url).map((d) => d.filename);
 }
 
 export function getActionColor(state: ActionState) {
