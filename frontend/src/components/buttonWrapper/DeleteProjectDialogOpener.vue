@@ -9,8 +9,11 @@
     >
         <slot />
 
-        <q-tooltip v-if="!canDelete">
+        <q-tooltip v-if="!canDelete && !has_missions">
             You do not have permission to delete this project
+        </q-tooltip>
+        <q-tooltip v-else-if="has_missions">
+            You cannot delete a project with missions
         </q-tooltip>
     </div>
 </template>
@@ -29,14 +32,16 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-
-const { project_uuid } = defineProps({
-    project_uuid: String,
-});
+const props = defineProps<{
+    project_uuid: string;
+    has_missions: boolean;
+}>();
 
 const { data: permissions } = usePermissionsQuery();
-const canDelete = computed(() =>
-    canDeleteProject(project_uuid, permissions.value),
+const canDelete = computed(
+    () =>
+        canDeleteProject(props.project_uuid, permissions.value) &&
+        !props.has_missions,
 );
 
 const $q = useQuasar();
@@ -50,7 +55,7 @@ const deleteProject = () => {
         title: 'Delete Project',
         component: DeleteProjectDialog,
         componentProps: {
-            project_uuid,
+            project_uuid: props.project_uuid,
         },
     });
 };

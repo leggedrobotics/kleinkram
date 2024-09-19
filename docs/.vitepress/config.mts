@@ -52,6 +52,42 @@ export default withMermaid({
                     ],
                     collapsed: true,
                 },
+                {
+                    text: 'Access Control',
+                    collapsed: true,
+                    items: [
+                        {
+                            text: 'Concepts',
+                            link: '/usage/access-control/base-concepts',
+
+                        },
+                        {
+                            text: 'Project',
+                            link: '/usage/access-control/project',
+                        },
+                        {
+                            text: 'Mission',
+                            link: '/usage/access-control/mission',
+                        },
+                        {
+                            text: 'File',
+                            link: '/usage/access-control/file',
+                        },
+                        {
+                            text: 'Action',
+                            link: '/usage/access-control/action',
+                        },
+                        {
+                            text: 'Access Group',
+                            link: '/usage/access-control/access-group',
+                        },
+                        {
+                            text: 'Example',
+                            link: '/usage/access-control/example',
+                        }
+                    ],
+
+                },
 
                 {
                     text: 'CLI and API',
