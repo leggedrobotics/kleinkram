@@ -7,6 +7,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import User from '@common/entities/user/user.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
+import logger from '../logger';
 
 @Injectable()
 export class FileGuardService {
@@ -26,6 +27,9 @@ export class FileGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!fileUUID || !userUUID) {
+            logger.error(
+                `FileGuard: File UUID (${fileUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
         const user = await this.userRepository.findOne({
@@ -42,6 +46,7 @@ export class FileGuardService {
             relations: ['mission', 'mission.project'],
         });
         if (!file) {
+            console.log('File not found');
             return false;
         }
         const canAccessProject =
@@ -66,6 +71,9 @@ export class FileGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!filename || !userUUID) {
+            logger.error(
+                `FileGuard: Filename (${filename}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
         const file = await this.fileRepository.findOne({

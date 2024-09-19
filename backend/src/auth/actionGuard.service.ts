@@ -6,6 +6,7 @@ import { MissionGuardService } from './missionGuard.service';
 import User from '@common/entities/user/user.entity';
 import Action from '@common/entities/action/action.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
+import logger from '../logger';
 
 @Injectable()
 export class ActionGuardService {
@@ -24,6 +25,9 @@ export class ActionGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!actionUUID || !userUUID) {
+            logger.error(
+                `ActionGuard: actionUUID (${actionUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
         const user = await this.userRepository.findOne({
