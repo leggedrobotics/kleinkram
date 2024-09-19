@@ -16,7 +16,7 @@
             :options="foundUsers"
             option-label="name"
             ref="userSelect"
-            style="width: 80%"
+            class="full-width"
         >
             <template v-slot:no-option>
                 <q-item>
@@ -56,13 +56,6 @@
                 </q-item>
             </template>
         </q-select>
-        <q-btn
-            color="primary"
-            outline
-            icon="sym_o_save"
-            label="Save"
-            @click="() => mutate()"
-        />
     </div>
 </template>
 <script setup lang="ts">
@@ -112,6 +105,8 @@ const { mutate } = useMutation({
         });
     },
 });
+
+defineExpose({ mutate });
 </script>
 
 <style scoped></style>
