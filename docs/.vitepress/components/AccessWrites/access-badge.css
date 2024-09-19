@@ -1,0 +1,9 @@
+.access-badge {
+    width: 70px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: inline-block;
+    text-align: center;
+}
