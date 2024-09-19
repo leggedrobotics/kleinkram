@@ -4,7 +4,8 @@
         @mouseover="showTooltip"
         @mouseleave="hideTooltip"
     >
-        <slot name="default" />{{ hint ? '*' : '' }}
+        <slot name="default" />
+        {{ hint ? '*' : '' }}
         <div
             v-if="tooltipVisible && !!hint"
             class="tooltip"
