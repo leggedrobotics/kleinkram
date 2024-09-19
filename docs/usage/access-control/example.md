@@ -8,7 +8,8 @@ The chapter illustrate:
 -   Individual Access Rights
 -   Groups
 -   Admins
-    :::
+
+:::
 
 ## Organizational Units
 
