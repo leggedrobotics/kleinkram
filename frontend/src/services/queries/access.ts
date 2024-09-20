@@ -172,7 +172,6 @@ export const getProjectAccess = async (
     projectUUID: string,
     projectAccessUUID: string,
 ): Promise<ProjectAccess> => {
-    console.log(projectUUID);
     const response = await axios.get(`/access/projectAccess`, {
         params: { uuid: projectUUID, projectAccessUUID },
     });

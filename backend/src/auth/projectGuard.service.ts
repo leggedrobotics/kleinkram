@@ -47,7 +47,6 @@ export class ProjectGuardService {
                 rights: MoreThanOrEqual(rights),
             },
         });
-        console.log(res);
         if (!res) {
             console.log(
                 `User ${userUUID} does not have access to project ${projectUUID} with rights ${rights}`,
