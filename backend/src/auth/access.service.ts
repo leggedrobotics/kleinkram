@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
-import { ILike, Repository } from 'typeorm';
+import { EntityManager, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
@@ -19,6 +19,7 @@ export class AccessService {
         private projectRepository: Repository<Project>,
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
+        private readonly entityManager: EntityManager,
     ) {}
     async getAccessGroup(uuid: string, jwtuser: JWTUser) {
         return this.accessGroupRepository.findOneOrFail({
@@ -146,15 +147,30 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        const accessGroup = await this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['users'],
-        });
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-        accessGroup.users.push(user);
-        return this.accessGroupRepository.save(accessGroup);
+        return await this.entityManager.transaction(
+            async (transactionalEntityManager) => {
+                const accessGroup =
+                    await transactionalEntityManager.findOneOrFail(
+                        AccessGroup,
+                        {
+                            where: { uuid: accessGroupUUID },
+                            relations: ['users'],
+                        },
+                    );
+                await transactionalEntityManager
+                    .createQueryBuilder()
+                    .relation(AccessGroup, 'users')
+                    .of(accessGroup)
+                    .add(userUUID);
+                return await transactionalEntityManager.findOneOrFail(
+                    AccessGroup,
+                    {
+                        where: { uuid: accessGroupUUID },
+                        relations: ['users'],
+                    },
+                );
+            },
+        );
     }
 
     async removeUserFromAccessGroup(

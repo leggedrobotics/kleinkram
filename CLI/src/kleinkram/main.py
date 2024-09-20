@@ -22,7 +22,7 @@ from kleinkram.queue.queue import queue
 from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
-from .helper import uploadFiles, expand_and_match, canUploadMission
+from .helper import uploadFiles, expand_and_match, canUploadMission, promptForTags
 
 
 class CommandPanel(str, Enum):
@@ -168,32 +168,7 @@ def upload(
             tags = []
         tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
 
-        for required_tag in project_json["requiredTags"]:
-            if required_tag["name"] not in tags_dict:
-                while True:
-                    if required_tag["datatype"] in ["LOCATION", "STRING", "LINK"]:
-                        tag_value = typer.prompt("Provide value for required tag " + required_tag["name"])
-                        if tag_value != "":
-                            break
-                    elif required_tag["datatype"] == "BOOLEAN":
-                        tag_value = typer.confirm("Provide (y/N) for required tag " + required_tag["name"])
-                        break
-                    elif required_tag["datatype"] == "NUMBER":
-                        tag_value = typer.prompt("Provide number for required tag " + required_tag["name"])
-                        try:
-                            tag_value = float(tag_value)
-                            break
-                        except ValueError:
-                            typer.echo("Invalid number format. Please provide a number.")
-                    elif required_tag["datatype"] == "DATE":
-                        tag_value = typer.prompt("Provide date for required tag " + required_tag["name"])
-                        try:
-                            tag_value = datetime.strptime(tag_value, "%Y-%m-%d %H:%M:%S")
-                            break
-                        except ValueError:
-                            print("Invalid date format. Please use 'YYYY-MM-DD HH:MM:SS'")
-
-                tags_dict[required_tag["uuid"]] = tag_value
+        promptForTags(tags_dict, project_json["requiredTags"])
 
         get_mission_url = "/mission/byName"
         mission_response = client.get(get_mission_url, params={"name": mission})
