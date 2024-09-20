@@ -651,3 +651,29 @@ export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
         );
     }
 }
+
+@Injectable()
+export class IsAccessGroupCreatorByProjectAccessGuard extends AuthGuard('jwt') {
+    constructor(
+        private reflector: Reflector,
+        private authGuardService: AuthGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context);
+
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const projectAccessUUID =
+            request.body.projectAccessUUID || request.params.projectAccessUUID;
+        return this.authGuardService.isAccessGroupCreatorByProjectAccess(
+            user.uuid,
+            projectAccessUUID,
+        );
+    }
+}

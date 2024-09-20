@@ -9,7 +9,7 @@ from rich import print
 from rich.table import Table
 from typer.core import TyperGroup
 from typer.models import Context
-from typing_extensions import Annotated, List
+from typing_extensions import Annotated, List, Optional
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.auth.auth import login, setCliKey, logout
@@ -22,7 +22,7 @@ from kleinkram.queue.queue import queue
 from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
-from .helper import uploadFiles, expand_and_match
+from .helper import uploadFiles, expand_and_match, canUploadMission, promptForTags
 
 
 class CommandPanel(str, Enum):
@@ -116,13 +116,17 @@ def upload(
     mission: Annotated[
         str, typer.Option(prompt=True, help="Name of Mission to create")
     ],
+    tags: Annotated[
+        Optional[List[str]],
+        typer.Option(prompt=False, help="Tags to add to the mission"),
+    ] = None,
 ):
     """
     Upload files matching the path to a mission in a project.
 
     The mission name must be unique within the project and not yet created.\n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1"'\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1" --tags "0700946d-1d6a-4520-b263-0e177f49c35b:LEE-H" --tags "1565118d-593c-4517-8c2d-9658452d9319:Dodo"'\n
 
     """
     files = expand_and_match(path)
@@ -147,7 +151,6 @@ def upload(
         get_project_url = "/project/byName"
         project_response = client.get(get_project_url, params={"name": project})
         if project_response.status_code >= 400:
-
             raise AccessDeniedException(
                 f"The project '{project}' does not exist or you do not have access to it.\n"
                 f"Consider using the following command to create a project: 'klein project create'\n",
@@ -158,6 +161,19 @@ def upload(
         if not project_json["uuid"]:
             print(f"Project not found: '{project}'")
             return
+
+        can_upload = canUploadMission(client, project_json["uuid"])
+        if not can_upload:
+            raise AccessDeniedException(
+                f"You do not have the required permissions to upload to project '{project}'\n",
+                "Access Denied",
+            )
+
+        if not tags:
+            tags = []
+        tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
+
+        promptForTags(tags_dict, project_json["requiredTags"])
 
         get_mission_url = "/mission/byName"
         mission_response = client.get(get_mission_url, params={"name": mission})
@@ -174,18 +190,33 @@ def upload(
         create_mission_url = "/mission/create"
         new_mission = client.post(
             create_mission_url,
-            json={"name": mission, "projectUUID": project_json["uuid"], "tags": []},
+            json={
+                "name": mission,
+                "projectUUID": project_json["uuid"],
+                "tags": tags_dict,
+            },
         )
-        new_mission.raise_for_status()
+        if new_mission.status_code >= 400:
+            raise ValueError(
+                "Failed to create mission. Status Code: "
+                + str(new_mission.status_code)
+                + "\n"
+                + new_mission.json()["message"]
+            )
         new_mission_data = new_mission.json()
 
         get_temporary_credentials = "/file/temporaryAccess"
-
         response_2 = client.post(
             get_temporary_credentials,
             json={"filenames": filenames, "missionUUID": new_mission_data["uuid"]},
         )
-        response_2.raise_for_status()
+        if response_2.status_code >= 400:
+            raise ValueError(
+                "Failed to get temporary credentials. Status Code: "
+                + str(response_2.status_code)
+                + "\n"
+                + response_2.json()["message"]
+            )
         temp_credentials = response_2.json()
         credential = temp_credentials["credentials"]
         confirmed_files = temp_credentials["files"]

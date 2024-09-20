@@ -10,7 +10,7 @@
             use-input
             multiple
             input-debounce="100"
-            :options="_foundUsers"
+            :options="_foundProjects"
             option-label="name"
             style="width: 65%"
         >
@@ -71,13 +71,13 @@ const queryClient = useQueryClient();
 const search = ref('');
 const accessRight = ref({ label: 'None', value: AccessGroupRights.NONE });
 const selected: Ref<User[]> = ref([]);
-const { data: foundUsers } = useQuery({
+const { data: foundProjects } = useQuery({
     queryKey: ['projects', search],
     queryFn: () =>
         filteredProjects(100, 0, 'name', true, { name: search.value }),
 });
-const _foundUsers = computed(() =>
-    foundUsers.value ? foundUsers.value[0] : [],
+const _foundProjects = computed(() =>
+    foundProjects.value ? foundProjects.value[0] : [],
 );
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
     label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],

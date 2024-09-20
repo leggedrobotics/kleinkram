@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
-import { ILike, Repository } from 'typeorm';
+import { EntityManager, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
@@ -19,6 +19,7 @@ export class AccessService {
         private projectRepository: Repository<Project>,
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
+        private readonly entityManager: EntityManager,
     ) {}
     async getAccessGroup(uuid: string, jwtuser: JWTUser) {
         return this.accessGroupRepository.findOneOrFail({
@@ -146,15 +147,30 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        const accessGroup = await this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['users'],
-        });
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-        accessGroup.users.push(user);
-        return this.accessGroupRepository.save(accessGroup);
+        return await this.entityManager.transaction(
+            async (transactionalEntityManager) => {
+                const accessGroup =
+                    await transactionalEntityManager.findOneOrFail(
+                        AccessGroup,
+                        {
+                            where: { uuid: accessGroupUUID },
+                            relations: ['users'],
+                        },
+                    );
+                await transactionalEntityManager
+                    .createQueryBuilder()
+                    .relation(AccessGroup, 'users')
+                    .of(accessGroup)
+                    .add(userUUID);
+                return await transactionalEntityManager.findOneOrFail(
+                    AccessGroup,
+                    {
+                        where: { uuid: accessGroupUUID },
+                        relations: ['users'],
+                    },
+                );
+            },
+        );
     }
 
     async removeUserFromAccessGroup(
@@ -307,5 +323,46 @@ export class AccessService {
 
         await this.accessGroupRepository.remove(accessGroup);
         return;
+    }
+
+    async getProjectAccess(
+        projectUUID: string,
+        projectAccessUUID: string,
+        jwtuser: JWTUser,
+    ) {
+        return this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+            relations: ['project'],
+        });
+    }
+
+    async updateProjectAccess(
+        projectUUID: string,
+        projectAccessUUID: string,
+        rights: AccessGroupRights,
+        jwtuser: JWTUser,
+    ) {
+        const projectAccess = await this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+        });
+
+        if (rights === AccessGroupRights.DELETE) {
+            const canDelete = await this.canModifyAccessGroup(
+                projectUUID,
+                { uuid: jwtuser.uuid },
+                AccessGroupRights.DELETE,
+            );
+            if (!canDelete) {
+                throw new ConflictException(
+                    'User cannot grant delete rights without having delete rights himself/herself',
+                );
+            }
+        }
+
+        projectAccess.rights = rights;
+        await this.projectAccessRepository.save(projectAccess);
+        return this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+        });
     }
 }

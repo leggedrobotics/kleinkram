@@ -10,7 +10,9 @@ import {
 import { AccessService } from './access.service';
 import {
     CanAddUserToAccessGroup,
+    CanReadProject,
     CanWriteProject,
+    IsAccessGroupCreatorByProjectAccess,
     LoggedIn,
 } from './roles.decorator';
 import { addJWTUser, JWTUser } from './paramDecorator';
@@ -157,5 +159,36 @@ export class AccessController {
         @addJWTUser() user?: JWTUser,
     ) {
         return this.accessService.deleteAccessGroup(uuid);
+    }
+
+    @Get('projectAccess')
+    @CanReadProject()
+    async getProjectAccess(
+        @QueryString('uuid') uuid: string,
+        @QueryString('projectAccessUUID') projectAccessUUID: string,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.getProjectAccess(
+            uuid,
+            projectAccessUUID,
+            user,
+        );
+    }
+
+    @Post('updateProjectAccess')
+    @CanWriteProject()
+    @IsAccessGroupCreatorByProjectAccess()
+    async updateProjectAccess(
+        @BodyUUID('uuid') uuid: string,
+        @BodyUUID('projectAccessUUID') projectAccessUUID: string,
+        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
+        @addJWTUser() user?: JWTUser,
+    ) {
+        return this.accessService.updateProjectAccess(
+            uuid,
+            projectAccessUUID,
+            rights,
+            user,
+        );
     }
 }

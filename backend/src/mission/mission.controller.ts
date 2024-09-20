@@ -42,6 +42,7 @@ export class MissionController {
         @Body() createMission: CreateMission,
         @addJWTUser() user: JWTUser,
     ) {
+        console.log('createMission', createMission);
         return this.missionService.create(createMission, user);
     }
 

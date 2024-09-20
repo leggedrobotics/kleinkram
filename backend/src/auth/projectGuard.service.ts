@@ -27,7 +27,6 @@ export class ProjectGuardService {
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        console.log('CanAccessProject');
         if (!projectUUID || !userUUID) {
             return false;
         }
