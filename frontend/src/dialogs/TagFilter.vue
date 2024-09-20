@@ -111,11 +111,11 @@ const convertedTagValues = computed(() => {
 
         switch (tagType.type) {
             case DataType.BOOLEAN:
-                if (!(tagValues.value[key].value in ['true', 'false'])) {
+                if (tagValues.value[key].value === undefined) {
                     break;
                 }
                 converted[key] = {
-                    value: tagValues.value[key].value === 'true',
+                    value: tagValues.value[key].value,
                     name: tagValues.value[key].name,
                 };
 

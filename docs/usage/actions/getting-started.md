@@ -43,7 +43,7 @@ klein login --key $APIKEY
 echo "Download data from mission with UUID $MISSION_UUID"
 mkdir data
 klein mission byUUID $MISSION_UUID          # get the mission details
-klein mission download $MISSION_UUID ./data # download the files of the mission
+klein mission download $MISSION_UUID /out # download the files of the mission
 
 echo "List files of mission with UUID $MISSION_UUID"
 cd ./data || exit 1
@@ -52,6 +52,11 @@ ls -la
 ```
 
 :::
+
+## Artifacts
+
+When the docker container terminates, successfully or not, all files within the `/out` directory are uploaded to google drive.
+A link, granting access to the respective folder is provided in the action's result. Don't put excessively large files in the /out directory or the upload will time out.
 
 ## Push Actions to Docker Hub
 

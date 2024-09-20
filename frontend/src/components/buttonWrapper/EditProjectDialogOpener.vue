@@ -25,6 +25,7 @@ import { useQuasar } from 'quasar';
 import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import {
     canModifyProject,
+    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed, watch } from 'vue';
@@ -37,6 +38,10 @@ const { project_uuid } = defineProps({
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyProject(project_uuid, permissions.value),
+);
+
+const permissionValue = computed(() =>
+    getPermissionForProject(project_uuid, permissions.value),
 );
 
 const editProjectDialog = () => {

@@ -2,6 +2,7 @@ import {
     BadRequestException,
     ConflictException,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,8 @@ import {
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredentials,
+    getInfoFromMinio,
+    internalMinio,
     moveFile,
 } from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
@@ -464,7 +467,11 @@ export class FileService {
         if (file.uuid === undefined || file.uuid !== uuid) {
             throw new Error('File not found');
         }
-
+        const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
+        const stats = await getInfoFromMinio(file.type, location);
+        if (!stats) {
+            throw new NotFoundException('File not found');
+        }
         return await externalMinio.presignedUrl(
             'GET',
             file.type === FileType.MCAP

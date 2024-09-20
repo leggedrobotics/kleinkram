@@ -90,13 +90,12 @@ const submitNewProject = async () => {
         });
         return;
     }
-    const cache = queryClient.getQueryCache();
-    const filtered = cache
-        .getAll()
-        .filter((query) => query.queryKey[0] === 'projects');
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries(query.queryKey);
+    await queryClient.invalidateQueries({
+        predicate: (query) =>
+            query.queryKey[0] === 'projects' ||
+            query.queryKey[0] === 'permissions',
     });
+
     Notify.create({
         message: `Project ${projectName.value} created`,
         color: 'positive',

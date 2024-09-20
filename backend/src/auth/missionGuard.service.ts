@@ -9,6 +9,7 @@ import { ProjectGuardService } from './projectGuard.service';
 import Tag from '@common/entities/tag/tag.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import { isUUID } from 'class-validator';
+import logger from '../logger';
 
 @Injectable()
 export class MissionGuardService {
@@ -32,6 +33,9 @@ export class MissionGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (isUUID(userUUID) === false || isUUID(missionUUID) === false) {
+            logger.error(
+                `MissionGuard: missionUUID (${missionUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
 
@@ -75,6 +79,9 @@ export class MissionGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!missionName || !userUUID) {
+            logger.error(
+                `MissionGuard: missionName (${missionName}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
         const mission = await this.missionRepository.findOne({
@@ -92,6 +99,9 @@ export class MissionGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!tagUUID || !userUUID) {
+            logger.error(
+                `MissionGuard: tagUUID (${tagUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+            );
             return false;
         }
         const user = await this.userRepository.findOne({

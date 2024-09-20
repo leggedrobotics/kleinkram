@@ -26,7 +26,6 @@
             />
         </template>
     </base-dialog>
-    >
 </template>
 
 <script setup lang="ts">

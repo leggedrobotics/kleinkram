@@ -55,6 +55,7 @@
                             </edit-project-dialog-opener>
                             <DeleteProjectDialogOpener
                                 :project_uuid="project_uuid"
+                                :has_missions="project?.missions.length > 0"
                             >
                                 <q-item
                                     clickable

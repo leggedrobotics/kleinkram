@@ -70,6 +70,7 @@
                             </manage-project-dialog-opener>
                             <DeleteProjectDialogOpener
                                 :project_uuid="props.row.uuid"
+                                :has_missions="props.row.missions.length > 0"
                             >
                                 <q-item clickable v-ripple>
                                     <q-item-section>Delete</q-item-section>
