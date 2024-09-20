@@ -54,6 +54,7 @@ ls -la
 :::
 
 ## Artifacts
+
 When the docker container terminates, successfully or not, all files within the `/out` directory are uploaded to google drive.
 A link, granting access to the respective folder is provided in the action's result. Don't put excessively large files in the /out directory or the upload will time out.
 
