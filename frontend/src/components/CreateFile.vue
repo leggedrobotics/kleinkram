@@ -419,7 +419,7 @@ async function uploadFileMultipart(
                 UploadId,
                 Body: partBlob,
             });
-            const maxRetries = 30;
+            const maxRetries = 60;
             let retries = 0;
             while (retries < maxRetries) {
                 try {
@@ -428,7 +428,7 @@ async function uploadFileMultipart(
                     parts.push({ PartNumber: partNumber, ETag });
                     break;
                 } catch (error) {
-                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
                     console.error('Error uploading part:', error);
                     retries++;
                     if (retries === maxRetries) {
