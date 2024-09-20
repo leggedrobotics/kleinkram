@@ -9,7 +9,6 @@ import Read from '../components/AccessWrites/Read.vue';
 import Creator from '../components/AccessWrites/Creator.vue';
 
 export default {
-    ...DefaultTheme,
     enhanceApp({ app }) {
         // Register the Redoc component globally
         app.component('Module', Module);
@@ -20,4 +19,5 @@ export default {
         app.component('Any', Any);
         app.component('Creator', Creator);
     },
+    extends: DefaultTheme,
 };

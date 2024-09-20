@@ -1,7 +1,9 @@
 <template>
-    <AccessRight :hint="props.hint" class="access-right-view">
-        Read</AccessRight
-    >
+    <ClientOnly>
+        <AccessRight :hint="props.hint" class="access-right-view">
+            Read
+        </AccessRight>
+    </ClientOnly>
 </template>
 
 <script setup lang="ts">

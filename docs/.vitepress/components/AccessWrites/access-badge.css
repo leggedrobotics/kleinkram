@@ -1,5 +1,6 @@
 .access-badge {
-    width: 70px;
+
+    width: auto;
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 0.9rem;
