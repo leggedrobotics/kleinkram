@@ -10,7 +10,7 @@ export default class Tag extends BaseEntity {
     @Column({ nullable: true })
     STRING: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'double precision' })
     NUMBER: number;
 
     @Column({ nullable: true })
