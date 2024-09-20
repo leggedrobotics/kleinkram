@@ -167,3 +167,35 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
         new Date(group.deletedAt),
     );
 };
+
+export const getProjectAccess = async (
+    projectUUID: string,
+    projectAccessUUID: string,
+): Promise<ProjectAccess> => {
+    console.log(projectUUID);
+    const response = await axios.get(`/access/projectAccess`, {
+        params: { uuid: projectUUID, projectAccessUUID },
+    });
+    const access = response.data;
+    const project = new Project(
+        access.project.uuid,
+        access.project.name,
+        access.project.description,
+        [],
+        undefined,
+        undefined,
+        undefined,
+        new Date(access.project.createdAt),
+        new Date(access.project.updatedAt),
+        new Date(access.project.deletedAt),
+    );
+    return new ProjectAccess(
+        access.uuid,
+        access.rights,
+        undefined,
+        project,
+        new Date(access.createdAt),
+        new Date(access.updatedAt),
+        new Date(access.deletedAt),
+    );
+};

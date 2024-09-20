@@ -71,3 +71,16 @@ export const deleteAccessGroup = async (accessGroupUUID: string) => {
     const response = await axios.delete(`/access/${accessGroupUUID}`);
     return response.data;
 };
+
+export const updateProjectAccess = async (
+    projectUUID: string,
+    projectAccessUUID: string,
+    rights: AccessGroupRights,
+) => {
+    const response = await axios.post('/access/updateProjectAccess', {
+        projectAccessUUID: projectAccessUUID,
+        rights,
+        uuid: projectUUID,
+    });
+    return response.data;
+};
