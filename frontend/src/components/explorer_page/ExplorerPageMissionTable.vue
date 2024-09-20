@@ -123,6 +123,7 @@ import { useRouter } from 'vue-router';
 import { useProjectUUID } from 'src/hooks/utils';
 import { Mission } from 'src/types/Mission';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
+const $emit = defineEmits(['update:selected']);
 
 const props = defineProps({
     url_handler: {
@@ -224,4 +225,10 @@ function missingTagsText(row: Mission) {
     }
     return `${_missionTags.length} Tags missing`;
 }
+watch(
+    () => selected.value,
+    (newVal) => {
+        $emit('update:selected', newVal);
+    },
+);
 </script>

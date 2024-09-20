@@ -13,6 +13,7 @@ import {
     AdminOnly,
     CanDeleteMission,
     CanMoveMission,
+    CanReadManyMissions,
     CanReadMission,
     CanReadMissionByName,
     CanReadProject,
@@ -26,11 +27,12 @@ import {
     QueryOptionalString,
     QuerySkip,
     QueryString,
+    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamString, ParamUUID } from '../validation/paramDecorators';
-import { BodyUUID } from '../validation/bodyDecorators';
+import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 
 @Controller('mission')
 export class MissionController {
@@ -42,7 +44,6 @@ export class MissionController {
         @Body() createMission: CreateMission,
         @addJWTUser() user: JWTUser,
     ) {
-        console.log('createMission', createMission);
         return this.missionService.create(createMission, user);
     }
 
@@ -135,5 +136,11 @@ export class MissionController {
         @Body('tags') tags: Record<string, string>,
     ) {
         return this.missionService.updateTags(missionUUID, tags);
+    }
+
+    @Get('many')
+    @CanReadManyMissions()
+    async getManyMissions(@QueryStringArray('uuids') uuids: string[]) {
+        return this.missionService.findMany(uuids);
     }
 }

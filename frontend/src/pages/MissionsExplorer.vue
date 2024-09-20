@@ -80,8 +80,11 @@
         </template>
     </title-section>
 
-    <div class="q-my-lg">
-        <div class="flex justify-between items-center">
+    <div>
+        <div
+            class="q-my-lg flex justify-between items-center"
+            v-if="selectedMissions.length === 0"
+        >
             <h2 class="text-h4 q-mb-xs">All Missions of {{ project?.name }}</h2>
 
             <button-group>
@@ -120,6 +123,70 @@
                 </create-mission-dialog-opener>
             </button-group>
         </div>
+        <div class="q-py-lg" v-else style="background: blue">
+            <ButtonGroupOverlay>
+                <template v-slot:start>
+                    <div style="margin: 0; font-size: 14pt; color: white">
+                        {{ selectedMissions.length }}
+                        {{
+                            selectedMissions.length === 1
+                                ? 'mission'
+                                : 'missions'
+                        }}
+                        selected
+                    </div>
+                </template>
+                <template v-slot:end>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_analytics"
+                        color="white"
+                        @click="openMultiActions"
+                    >
+                        Actions
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_move_down"
+                        color="white"
+                        disable
+                    >
+                        Move
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_download"
+                        color="white"
+                        disable
+                    >
+                        Download
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_delete"
+                        color="white"
+                        disable
+                        >Delete
+                    </q-btn>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        icon="sym_o_close"
+                        color="white"
+                        @click="() => deselect()"
+                    />
+                </template>
+            </ButtonGroupOverlay>
+        </div>
 
         <div style="padding-top: 10px">
             <Suspense>
@@ -142,6 +209,7 @@
                 <explorer-page-mission-table
                     :url_handler="handler"
                     v-if="handler"
+                    v-model:selected="selectedMissions"
                 />
             </Suspense>
         </div>
@@ -156,7 +224,7 @@ import {
 import { useQueryClient } from '@tanstack/vue-query';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import TitleSection from 'components/TitleSection.vue';
-import { computed } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
@@ -165,6 +233,8 @@ import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import { useProjectUUID } from 'src/hooks/utils';
 import { useQuasar } from 'quasar';
+import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
+import { FileEntity } from 'src/types/FileEntity';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -177,6 +247,8 @@ registerNoPermissionErrorHandler(
     'project',
     error,
 );
+
+const selectedMissions: Ref<FileEntity[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.search_params.name,
@@ -198,5 +270,13 @@ function openConfigureTags(projectUUID: string) {
             projectUUID: projectUUID,
         },
     });
+}
+
+function deselect() {
+    selectedMissions.value = [];
+}
+
+function openMultiActions() {
+    console.log('openMultiActions');
 }
 </script>

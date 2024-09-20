@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
@@ -259,5 +259,12 @@ export class MissionService {
                 );
             }),
         );
+    }
+
+    async findMany(uuids: string[]): Promise<Mission[]> {
+        return this.missionRepository.find({
+            where: { uuid: In(uuids) },
+            relations: ['project', 'creator'],
+        });
     }
 }

@@ -25,6 +25,7 @@ import {
     DeleteFileGuard,
     AddUserToAccessGroupGuard,
     IsAccessGroupCreatorByProjectAccessGuard,
+    CanReadManyMissionsGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -200,5 +201,12 @@ export function IsAccessGroupCreatorByProjectAccess() {
     return applyDecorators(
         SetMetadata('IsAccessGroupCreatorByProjectAccess', true),
         UseGuards(IsAccessGroupCreatorByProjectAccessGuard),
+    );
+}
+
+export function CanReadManyMissions() {
+    return applyDecorators(
+        SetMetadata('CanReadManyMissions', true),
+        UseGuards(CanReadManyMissionsGuard),
     );
 }

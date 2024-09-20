@@ -89,7 +89,6 @@ export const QueryStringArray = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
-
         const object = plainToInstance(StringArrayValidate, { value });
         await validateOrReject(object).catch((errors) => {
             throw new BadRequestException(
