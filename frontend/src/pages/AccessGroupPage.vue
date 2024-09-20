@@ -101,6 +101,22 @@
                                         clickable
                                         v-ripple
                                         @click="
+                                            () =>
+                                                changeRights(
+                                                    props.row.uuid,
+                                                    props.row
+                                                        .project_access_uuid,
+                                                )
+                                        "
+                                    >
+                                        <q-item-section
+                                            >Change rights</q-item-section
+                                        >
+                                    </q-item>
+                                    <q-item
+                                        clickable
+                                        v-ripple
+                                        @click="
                                             () => _removeProject(props.row.uuid)
                                         "
                                     >
@@ -230,6 +246,7 @@ import {
 } from 'src/services/mutations/access';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
+import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -322,6 +339,7 @@ const project_rows = computed(() => {
         return {
             ...project.project,
             rights: project.rights,
+            project_access_uuid: project.uuid,
         };
     });
 });
@@ -331,6 +349,16 @@ function openAddProject() {
         component: AddProjectToAccessGroupDialog,
         componentProps: {
             access_group: uuid.value,
+        },
+    });
+}
+
+function changeRights(project_uuid: string, project_access_uuid: string) {
+    $q.dialog({
+        component: ChangeAccessRightsDialog,
+        componentProps: {
+            project_uuid: project_uuid,
+            project_access_uuid,
         },
     });
 }

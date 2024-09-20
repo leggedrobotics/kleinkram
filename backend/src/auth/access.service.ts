@@ -324,4 +324,45 @@ export class AccessService {
         await this.accessGroupRepository.remove(accessGroup);
         return;
     }
+
+    async getProjectAccess(
+        projectUUID: string,
+        projectAccessUUID: string,
+        jwtuser: JWTUser,
+    ) {
+        return this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+            relations: ['project'],
+        });
+    }
+
+    async updateProjectAccess(
+        projectUUID: string,
+        projectAccessUUID: string,
+        rights: AccessGroupRights,
+        jwtuser: JWTUser,
+    ) {
+        const projectAccess = await this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+        });
+
+        if (rights === AccessGroupRights.DELETE) {
+            const canDelete = await this.canModifyAccessGroup(
+                projectUUID,
+                { uuid: jwtuser.uuid },
+                AccessGroupRights.DELETE,
+            );
+            if (!canDelete) {
+                throw new ConflictException(
+                    'User cannot grant delete rights without having delete rights himself/herself',
+                );
+            }
+        }
+
+        projectAccess.rights = rights;
+        await this.projectAccessRepository.save(projectAccess);
+        return this.projectAccessRepository.findOneOrFail({
+            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+        });
+    }
 }

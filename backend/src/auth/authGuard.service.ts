@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
+import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Injectable()
 export class AuthGuardService {
@@ -35,6 +36,34 @@ export class AuthGuardService {
         return await this.accessGroupRepository.exists({
             where: { uuid: accessGroupUUID, creator: { uuid: userUUID } },
             relations: ['users'],
+        });
+    }
+
+    async isAccessGroupCreatorByProjectAccess(
+        userUUID: string,
+        projectAccessUUID: string,
+    ) {
+        if (!userUUID || !projectAccessUUID) {
+            logger.error(
+                `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User UUID (${userUUID}) not provided.`,
+            );
+            return false;
+        }
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        return await this.accessGroupRepository.exists({
+            where: {
+                project_accesses: { uuid: projectAccessUUID },
+                creator: { uuid: userUUID },
+            },
         });
     }
 }

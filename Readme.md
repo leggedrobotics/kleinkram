@@ -12,5 +12,5 @@ way to store and retrieve bags and mcaps. Kleinkram is developed by the Robotics
 
 ## Getting Started
 
-Consult the [Getting Started](https://docs.datasets.leggedrobotics.com/usage/getting-started) guide for users or
-the [Getting Started](https://docs.datasets.leggedrobotics.com/development/getting-started) guide for developers.
+Consult the [Getting Started](https://docs.datasets.leggedrobotics.com/usage/getting-started.html) guide for users or
+the [Getting Started](https://docs.datasets.leggedrobotics.com/development/getting-started.html) guide for developers.
