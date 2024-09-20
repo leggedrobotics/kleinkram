@@ -2,8 +2,10 @@ import glob
 import os
 import queue
 import threading
+from datetime import datetime
 from functools import partial
 
+import typer
 from botocore.config import Config
 from typing_extensions import Dict
 import boto3
@@ -117,7 +119,7 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
     else:
         minio_endpoint = api_endpoint.replace("api", "minio")
 
-    config = Config(retries = {
+    config = Config(retries={
         'max_attempts': 10,
         'mode': 'standard'
     })
@@ -168,6 +170,7 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
             print(f"Error uploading {filename}: {e}")
             _queue.task_done()
 
+
 def canUploadMission(client: AuthenticatedClient, project_uuid: str):
     permissions = client.get("/user/permissions")
     permissions.raise_for_status()
@@ -175,6 +178,35 @@ def canUploadMission(client: AuthenticatedClient, project_uuid: str):
     for_project = filter(lambda x: x["uuid"] == project_uuid, permissions_json["projects"])
     max_for_project = max(map(lambda x: x["access"], for_project))
     return max_for_project >= 10
+
+
+def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
+    for required_tag in requiredTags:
+        if required_tag["name"] not in setTags:
+            while True:
+                if required_tag["datatype"] in ["LOCATION", "STRING", "LINK"]:
+                    tag_value = typer.prompt("Provide value for required tag " + required_tag["name"])
+                    if tag_value != "":
+                        break
+                elif required_tag["datatype"] == "BOOLEAN":
+                    tag_value = typer.confirm("Provide (y/N) for required tag " + required_tag["name"])
+                    break
+                elif required_tag["datatype"] == "NUMBER":
+                    tag_value = typer.prompt("Provide number for required tag " + required_tag["name"])
+                    try:
+                        tag_value = float(tag_value)
+                        break
+                    except ValueError:
+                        typer.echo("Invalid number format. Please provide a number.")
+                elif required_tag["datatype"] == "DATE":
+                    tag_value = typer.prompt("Provide date for required tag " + required_tag["name"])
+                    try:
+                        tag_value = datetime.strptime(tag_value, "%Y-%m-%d %H:%M:%S")
+                        break
+                    except ValueError:
+                        print("Invalid date format. Please use 'YYYY-MM-DD HH:MM:SS'")
+
+            setTags[required_tag["uuid"]] = tag_value
 
 
 if __name__ == "__main__":

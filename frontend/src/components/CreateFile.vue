@@ -98,7 +98,7 @@
 </style>
 
 <script setup lang="ts">
-import { computed, inject, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { Notify } from 'quasar';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -122,7 +122,6 @@ import {
 import pLimit from 'p-limit';
 import ENV from 'src/env';
 import { FileUpload } from 'src/types/FileUpload';
-import axios from 'src/api/axios';
 import { existsFile } from 'src/services/queries/file';
 
 const emit = defineEmits(['update:ready']);
@@ -420,7 +419,7 @@ async function uploadFileMultipart(
                 UploadId,
                 Body: partBlob,
             });
-            const maxRetries = 5;
+            const maxRetries = 30;
             let retries = 0;
             while (retries < maxRetries) {
                 try {
@@ -447,8 +446,7 @@ async function uploadFileMultipart(
                 UploadId,
                 MultipartUpload: { Parts: parts },
             });
-        const resi = await minioClient.send(completeMultipartUploadCommand);
-        return resi;
+        return await minioClient.send(completeMultipartUploadCommand);
     } catch (error) {
         console.error('Multipart upload failed:', error);
         newFileUpload.value.canceled = true;
@@ -465,6 +463,7 @@ async function uploadFileMultipart(
             await minioClient.send(abortMultipartUploadCommand);
             console.log('Multipart upload aborted.');
         }
+        await cancelUploads([fileUUID], selected_mission.value?.uuid);
 
         throw error;
     }
