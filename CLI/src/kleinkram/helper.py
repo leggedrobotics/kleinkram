@@ -119,10 +119,7 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
     else:
         minio_endpoint = api_endpoint.replace("api", "minio")
 
-    config = Config(retries={
-        'max_attempts': 10,
-        'mode': 'standard'
-    })
+    config = Config(retries={"max_attempts": 10, "mode": "standard"})
     s3 = session.resource("s3", endpoint_url=minio_endpoint, config=config)
 
     _queue = queue.Queue()
@@ -175,7 +172,9 @@ def canUploadMission(client: AuthenticatedClient, project_uuid: str):
     permissions = client.get("/user/permissions")
     permissions.raise_for_status()
     permissions_json = permissions.json()
-    for_project = filter(lambda x: x["uuid"] == project_uuid, permissions_json["projects"])
+    for_project = filter(
+        lambda x: x["uuid"] == project_uuid, permissions_json["projects"]
+    )
     max_for_project = max(map(lambda x: x["access"], for_project))
     return max_for_project >= 10
 
@@ -185,21 +184,29 @@ def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
         if required_tag["name"] not in setTags:
             while True:
                 if required_tag["datatype"] in ["LOCATION", "STRING", "LINK"]:
-                    tag_value = typer.prompt("Provide value for required tag " + required_tag["name"])
+                    tag_value = typer.prompt(
+                        "Provide value for required tag " + required_tag["name"]
+                    )
                     if tag_value != "":
                         break
                 elif required_tag["datatype"] == "BOOLEAN":
-                    tag_value = typer.confirm("Provide (y/N) for required tag " + required_tag["name"])
+                    tag_value = typer.confirm(
+                        "Provide (y/N) for required tag " + required_tag["name"]
+                    )
                     break
                 elif required_tag["datatype"] == "NUMBER":
-                    tag_value = typer.prompt("Provide number for required tag " + required_tag["name"])
+                    tag_value = typer.prompt(
+                        "Provide number for required tag " + required_tag["name"]
+                    )
                     try:
                         tag_value = float(tag_value)
                         break
                     except ValueError:
                         typer.echo("Invalid number format. Please provide a number.")
                 elif required_tag["datatype"] == "DATE":
-                    tag_value = typer.prompt("Provide date for required tag " + required_tag["name"])
+                    tag_value = typer.prompt(
+                        "Provide date for required tag " + required_tag["name"]
+                    )
                     try:
                         tag_value = datetime.strptime(tag_value, "%Y-%m-%d %H:%M:%S")
                         break

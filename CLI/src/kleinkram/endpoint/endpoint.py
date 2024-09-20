@@ -32,7 +32,9 @@ def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use"
     print()
     print("Endpoint set to: " + endpoint)
     if tokenfile.endpoint not in tokenfile.tokens:
-        print("Not authenticated on this endpoint, please execute 'klein login' to authenticate.")
+        print(
+            "Not authenticated on this endpoint, please execute 'klein login' to authenticate."
+        )
 
 
 @endpoint.command("get")

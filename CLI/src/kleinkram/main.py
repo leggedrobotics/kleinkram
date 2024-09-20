@@ -75,14 +75,14 @@ app = ErrorHandledTyper(
 
 @app.callback()
 def version(
-        version: bool = typer.Option(
-            None,
-            "--version",
-            "-v",
-            callback=version_callback,
-            is_eager=True,
-            help="Print the version and exit",
-        )
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Print the version and exit",
+    )
 ):
     pass
 
@@ -109,14 +109,17 @@ def download():
 
 @app.command("upload", rich_help_panel=CommandPanel.CoreCommands)
 def upload(
-        path: Annotated[
-            str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
-        ],
-        project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
-        mission: Annotated[
-            str, typer.Option(prompt=True, help="Name of Mission to create")
-        ],
-        tags: Annotated[Optional[List[str]], typer.Option(prompt=False, help="Tags to add to the mission")] = None,
+    path: Annotated[
+        str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+    ],
+    project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
+    mission: Annotated[
+        str, typer.Option(prompt=True, help="Name of Mission to create")
+    ],
+    tags: Annotated[
+        Optional[List[str]],
+        typer.Option(prompt=False, help="Tags to add to the mission"),
+    ] = None,
 ):
     """
     Upload files matching the path to a mission in a project.
@@ -159,10 +162,12 @@ def upload(
             print(f"Project not found: '{project}'")
             return
 
-        can_upload = canUploadMission(client, project_json['uuid'])
+        can_upload = canUploadMission(client, project_json["uuid"])
         if not can_upload:
             raise AccessDeniedException(
-                f"You do not have the required permissions to upload to project '{project}'\n", "Access Denied")
+                f"You do not have the required permissions to upload to project '{project}'\n",
+                "Access Denied",
+            )
 
         if not tags:
             tags = []
@@ -185,12 +190,19 @@ def upload(
         create_mission_url = "/mission/create"
         new_mission = client.post(
             create_mission_url,
-            json={"name": mission, "projectUUID": project_json["uuid"], "tags": tags_dict},
+            json={
+                "name": mission,
+                "projectUUID": project_json["uuid"],
+                "tags": tags_dict,
+            },
         )
         if new_mission.status_code >= 400:
             raise ValueError(
-                "Failed to create mission. Status Code: " + str(new_mission.status_code) + "\n" + new_mission.json()[
-                    "message"])
+                "Failed to create mission. Status Code: "
+                + str(new_mission.status_code)
+                + "\n"
+                + new_mission.json()["message"]
+            )
         new_mission_data = new_mission.json()
 
         get_temporary_credentials = "/file/temporaryAccess"
@@ -200,8 +212,11 @@ def upload(
         )
         if response_2.status_code >= 400:
             raise ValueError(
-                "Failed to get temporary credentials. Status Code: " + str(response_2.status_code) + "\n" + response_2.json()[
-                    "message"])
+                "Failed to get temporary credentials. Status Code: "
+                + str(response_2.status_code)
+                + "\n"
+                + response_2.json()["message"]
+            )
         temp_credentials = response_2.json()
         credential = temp_credentials["credentials"]
         confirmed_files = temp_credentials["files"]
