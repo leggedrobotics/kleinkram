@@ -420,9 +420,23 @@ async function uploadFileMultipart(
                 UploadId,
                 Body: partBlob,
             });
-            const { ETag } = await minioClient.send(uploadPartCommand);
-            newFileUpload.value.uploaded += partBlob.size;
-            parts.push({ PartNumber: partNumber, ETag });
+            const maxRetries = 5;
+            let retries = 0;
+            while (retries < maxRetries) {
+                try {
+                    const { ETag } = await minioClient.send(uploadPartCommand);
+                    newFileUpload.value.uploaded += partBlob.size;
+                    parts.push({ PartNumber: partNumber, ETag });
+                    break;
+                } catch (error) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    console.error('Error uploading part:', error);
+                    retries++;
+                    if (retries === maxRetries) {
+                        throw error;
+                    }
+                }
+            }
         }
 
         // Step 3: Complete Multipart Upload

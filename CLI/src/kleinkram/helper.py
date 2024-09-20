@@ -3,6 +3,8 @@ import os
 import queue
 import threading
 from functools import partial
+
+from botocore.config import Config
 from typing_extensions import Dict
 import boto3
 
@@ -114,7 +116,12 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
         minio_endpoint = "http://localhost:9000"
     else:
         minio_endpoint = api_endpoint.replace("api", "minio")
-    s3 = session.resource("s3", endpoint_url=minio_endpoint)
+
+    config = Config(retries = {
+        'max_attempts': 10,
+        'mode': 'standard'
+    })
+    s3 = session.resource("s3", endpoint_url=minio_endpoint, config=config)
 
     _queue = queue.Queue()
     for file in files.items():
@@ -160,6 +167,14 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
         except Exception as e:
             print(f"Error uploading {filename}: {e}")
             _queue.task_done()
+
+def canUploadMission(client: AuthenticatedClient, project_uuid: str):
+    permissions = client.get("/user/permissions")
+    permissions.raise_for_status()
+    permissions_json = permissions.json()
+    for_project = filter(lambda x: x["uuid"] == project_uuid, permissions_json["projects"])
+    max_for_project = max(map(lambda x: x["access"], for_project))
+    return max_for_project >= 10
 
 
 if __name__ == "__main__":

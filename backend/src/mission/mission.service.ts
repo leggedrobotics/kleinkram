@@ -36,15 +36,20 @@ export class MissionService {
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
         });
-        if (
-            project.requiredTags.some(
-                (tagType: TagType) =>
-                    !createMission.tags[tagType.uuid] ||
-                    createMission.tags[tagType.uuid] === '',
-            )
-        ) {
+
+        const missingTags = project.requiredTags.filter(
+            (tagType: TagType) =>
+                createMission.tags[tagType.uuid] === undefined &&
+                createMission.tags[tagType.uuid] === '' &&
+                createMission.tags[tagType.uuid] === null,
+        );
+        if (missingTags.length > 0) {
+            const missingTagNames = missingTags
+                .map((tagType: TagType) => tagType.name)
+                .join(', ');
             throw new ConflictException(
-                'All required tags must be provided for the mission',
+                'All required tags must be provided for the mission. Missing tags: ' +
+                    missingTagNames,
             );
         }
         const mission = this.missionRepository.create({
