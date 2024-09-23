@@ -38,7 +38,6 @@
                     :label="selected_mission?.name || 'Select a Mission'"
                     class="q-uploader--bordered"
                     flat
-                    clearable
                     required
                 >
                     <q-list>
@@ -96,7 +95,7 @@
     </div>
 
     <div>
-        <template v-if="selected_project && selected_mission">
+        <template v-if="selected_project">
             <ActionsTable :handler="handler"></ActionsTable>
         </template>
         <template v-else>

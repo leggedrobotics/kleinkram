@@ -79,7 +79,11 @@
             </button-group>
         </template>
     </title-section>
-
+    <ActionConfiguration
+        :open="createAction"
+        @close="createAction = false"
+        :mission_uuids="selected_mission_uuids"
+    />
     <div>
         <div
             class="q-my-lg flex justify-between items-center"
@@ -235,12 +239,15 @@ import { useProjectUUID } from 'src/hooks/utils';
 import { useQuasar } from 'quasar';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import { FileEntity } from 'src/types/FileEntity';
+import ActionConfiguration from 'components/ActionConfiguration.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 const $q = useQuasar();
 const project_uuid = useProjectUUID();
 const { data: project, isLoadingError, error } = useProjectQuery(project_uuid);
+const createAction = ref(false);
+
 registerNoPermissionErrorHandler(
     isLoadingError,
     project_uuid,
@@ -255,6 +262,10 @@ const search = computed({
     set: (value: string) => {
         handler.value.setSearch({ name: value });
     },
+});
+
+const selected_mission_uuids = computed(() => {
+    return selectedMissions.value.map((mission) => mission.uuid);
 });
 
 function refresh() {
@@ -277,6 +288,6 @@ function deselect() {
 }
 
 function openMultiActions() {
-    console.log('openMultiActions');
+    createAction.value = true;
 }
 </script>
