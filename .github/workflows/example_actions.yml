@@ -1,0 +1,20 @@
+name: Build example actions in /examples
+
+on:
+    push:
+        branches: ['main', 'dev']
+        paths:
+            - 'examples/**'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v2
+            - name: Determine build environment
+              run: echo "::set-output name=env::${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
+              id: set-env
+
+            - name: Build the Docker compose
+              run: sh examples/buildPush.sh ${{ steps.set-env.outputs.env }}

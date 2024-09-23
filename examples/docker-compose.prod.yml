@@ -1,0 +1,12 @@
+services:
+    exampleAction:
+        image: rslethz/action:simple-latest
+        container_name: exampleAction
+        build:
+            context: actions
+
+    exampleActionGPU:
+        image: rslethz/action:simple-gpu-latest
+        container_name: exampleActionGPU
+        build:
+            context: actions-gpu
