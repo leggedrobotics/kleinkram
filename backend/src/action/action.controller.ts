@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
-import { ActionQuery, SubmitAction } from './entities/submit_action.dto';
+import {
+    ActionQuery,
+    SubmitAction,
+    SubmitActionMulti,
+} from './entities/submit_action.dto';
 import {
     CanCreateAction,
     CanReadAction,
@@ -32,6 +36,15 @@ export class ActionController {
         return this.actionService.submit(dto, user);
     }
 
+    @Post('multiSubmit')
+    @LoggedIn()
+    async multiSubmit(
+        @Body() dto: SubmitActionMulti,
+        @addJWTUser() user: JWTUser,
+    ) {
+        return this.actionService.multiSubmit(dto, user);
+    }
+
     @Post('createTemplate')
     @LoggedIn()
     async createTemplate(
@@ -60,6 +73,7 @@ export class ActionController {
         @QueryOptionalBoolean('descending') descending: boolean,
     ) {
         return this.actionService.listActions(
+            dto.project_uuid,
             dto.mission_uuid,
             user.uuid,
             skip,

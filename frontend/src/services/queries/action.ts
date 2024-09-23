@@ -2,8 +2,10 @@ import axios from 'src/api/axios';
 import { Action } from 'src/types/Action';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
+import { Mission } from 'src/types/Mission';
 
 export const getActions = async (
+    projectUUID: string,
     missionUUID: string,
     take: number,
     skip: number,
@@ -11,6 +13,7 @@ export const getActions = async (
     descending: boolean,
 ): Promise<[Action[], number]> => {
     const params = {
+        project_uuid: projectUUID,
         mission_uuid: missionUUID,
         take,
         skip,
@@ -48,6 +51,18 @@ export const getActions = async (
             res.template.runtime_requirements,
         );
 
+        const mission = new Mission(
+            res.mission.uuid,
+            res.mission.name,
+            undefined,
+            [],
+            [],
+            undefined,
+            new Date(res.mission.createdAt),
+            new Date(res.mission.updatedAt),
+            new Date(res.mission.deletedAt),
+        );
+
         return new Action(
             res.uuid,
             new Date(res.createdAt),
@@ -57,7 +72,7 @@ export const getActions = async (
             res.state_cause,
             res.artifact_url,
             res.uploading_artifacts,
-            null,
+            mission,
             template,
             res.image,
             user,
