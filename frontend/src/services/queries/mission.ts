@@ -9,13 +9,23 @@ import { FileEntity } from 'src/types/FileEntity';
 export const getMission = async (uuid: string): Promise<Mission> => {
     const response = await axios.get('/mission/one', { params: { uuid } });
     const mission = response.data;
+    const requiredTags = mission.project.requiredTags.map((tagType: any) => {
+        return new TagType(
+            tagType.uuid,
+            tagType.name,
+            tagType.datatype,
+            new Date(tagType.createdAt),
+            new Date(tagType.updatedAt),
+            new Date(tagType.deletedAt),
+        );
+    });
     const project = new Project(
         mission.project.uuid,
         mission.project.name,
         mission.project.description,
         [],
         undefined,
-        undefined,
+        requiredTags,
         undefined,
         new Date(mission.project.createdAt),
         new Date(mission.project.updatedAt),

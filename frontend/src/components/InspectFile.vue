@@ -2,16 +2,7 @@
     <title-section :title="`File: ${data?.filename || 'Loading...'}`">
         <template v-slot:buttons>
             <button-group>
-                <q-btn
-                    outline
-                    color="primary"
-                    icon="sym_o_edit"
-                    label="Edit File"
-                    @click="editFile"
-                    :disable="data?.tentative"
-                >
-                    <q-tooltip> Edit File</q-tooltip>
-                </q-btn>
+                <edit-file-button :file="data" v-if="data" />
 
                 <q-btn
                     outline
@@ -197,6 +188,7 @@ import TitleSection from 'components/TitleSection.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
+import EditFileButton from 'components/buttons/EditFileButton.vue';
 
 const $router = useRouter();
 const $q = useQuasar();
@@ -306,16 +298,6 @@ async function _copyLink() {
         color: 'positive',
         position: 'bottom',
         timeout: 2000,
-    });
-}
-
-function editFile() {
-    $q.dialog({
-        component: EditFile,
-        componentProps: {
-            file_uuid: props.uuid,
-        },
-        persistent: true,
     });
 }
 

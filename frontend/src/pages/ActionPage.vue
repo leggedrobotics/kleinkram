@@ -1,11 +1,7 @@
 <template>
     <title-section title="Mission Analysis"></title-section>
 
-    <ActionConfiguration
-        :open="createAction"
-        @close="createAction = false"
-        :mission_uuids="['ffffc34f-3d6e-4fd8-ade4-2b6217e1fd19']"
-    />
+    <ActionConfiguration :open="createAction" @close="createAction = false" />
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">

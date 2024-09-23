@@ -1,6 +1,6 @@
 <template>
     <div
-        @click="deleteFile"
+        @click="moveMission"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
@@ -22,13 +22,16 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import {
     canModifyMission,
+    canModifyProject,
+    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed, watch } from 'vue';
+import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { Mission } from 'src/types/Mission';
-import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 
 const $q = useQuasar();
 const props = defineProps<{
@@ -43,16 +46,14 @@ const canModify = computed(() =>
     ),
 );
 
-const deleteFile = () => {
+function moveMission() {
     if (!canModify.value) return;
     $q.dialog({
-        title: 'Delete File',
-        component: DeleteMissionDialog,
-        componentProps: {
-            mission_uuid: props.mission.uuid,
-        },
+        title: 'Move mission',
+        component: MoveMission,
+        persistent: false,
+        style: 'max-width: 1500px',
+        componentProps: { mission: props.mission },
     });
-};
+}
 </script>
-
-<style scoped></style>
