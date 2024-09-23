@@ -90,9 +90,6 @@ export class ProjectGuardService {
             .andWhere('users.uuid = :user', { user: user.uuid })
             .andWhere('access_group.personal = false')
             .andWhere('access_group.inheriting = true')
-            .andWhere('access_group.rights >= :rights', {
-                rights: AccessGroupRights.WRITE,
-            })
             .getExists();
     }
 }
