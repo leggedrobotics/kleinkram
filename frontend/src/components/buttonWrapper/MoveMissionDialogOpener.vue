@@ -22,14 +22,11 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import {
     canModifyMission,
-    canModifyProject,
-    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { Mission } from 'src/types/Mission';
 
