@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SubmitAction } from './entities/submit_action.dto';
+import { SubmitAction, SubmitActionMulti } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
@@ -47,6 +47,17 @@ export class ActionService {
 
         await this.queueService.addActionQueue(action.uuid);
         return action;
+    }
+
+    async multiSubmit(data: SubmitActionMulti, user: JWTUser) {
+        return Promise.all(
+            data.missionUUIDs.map((uuid) =>
+                this.submit(
+                    { missionUUID: uuid, templateUUID: data.templateUUID },
+                    user,
+                ),
+            ),
+        );
     }
 
     async createTemplate(data: CreateTemplateDto, user: JWTUser) {
@@ -132,6 +143,7 @@ export class ActionService {
     }
 
     async listActions(
+        project_uuid: string,
         mission_uuid: string,
         userUUID: string,
         skip: number,
@@ -144,7 +156,12 @@ export class ActionService {
         });
         if (user.role === UserRole.ADMIN) {
             return this.actionRepository.findAndCount({
-                where: { mission: { uuid: mission_uuid } },
+                where: {
+                    mission: {
+                        uuid: mission_uuid,
+                        project: { uuid: project_uuid },
+                    },
+                },
                 relations: [
                     'mission',
                     'mission.project',
@@ -156,20 +173,23 @@ export class ActionService {
                 take,
             });
         }
-        return addAccessConstraints(
-            this.actionRepository
-                .createQueryBuilder('action')
-                .leftJoinAndSelect('action.mission', 'mission')
-                .leftJoinAndSelect('mission.project', 'project')
-                .leftJoinAndSelect('action.template', 'template')
-                .where('mission.uuid IN (:...uuids)', {
-                    uuids: mission_uuid.split(','),
-                })
-                .skip(skip)
-                .take(take)
-                .orderBy('action.' + sortBy, descending ? 'DESC' : 'ASC'),
-            userUUID,
-        )
+
+        const baseQuery = this.actionRepository
+            .createQueryBuilder('action')
+            .leftJoinAndSelect('action.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('action.template', 'template')
+            .andWhere('project.uuid = :project_uuid', { project_uuid })
+            .skip(skip)
+            .take(take)
+            .orderBy('action.' + sortBy, descending ? 'DESC' : 'ASC');
+
+        if (mission_uuid) {
+            baseQuery.andWhere('mission.uuid = :mission_uuid', {
+                mission_uuid,
+            });
+        }
+        return addAccessConstraints(baseQuery, userUUID)
             .leftJoinAndSelect('action.createdBy', 'createdBy')
             .getManyAndCount();
     }

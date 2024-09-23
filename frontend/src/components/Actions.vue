@@ -119,6 +119,7 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
     queryKey: actionKey,
     queryFn: () =>
         getActions(
+            props.handler.project_uuid as string,
             props.handler.mission_uuid as string,
             props.handler.take,
             props.handler.skip,
@@ -126,7 +127,7 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
             props.handler.descending,
         ),
     staleTime: 0,
-    refetchInterval: 1000,
+    refetchInterval: 4000,
 });
 
 const tableRef: Ref<QTable | null> = ref(null);
@@ -177,6 +178,13 @@ const columns = [
         sortable: false,
         field: (row: Action) =>
             row.template?.image_name ? row.template.image_name : 'N/A',
+    },
+    {
+        name: 'mission',
+        label: 'Mission',
+        align: 'left',
+        sortable: false,
+        field: (row: Action) => row.mission?.name || 'N/A',
     },
     {
         name: 'name',

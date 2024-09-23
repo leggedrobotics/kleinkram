@@ -14,6 +14,7 @@
                     name="meta_data"
                     label="Mission Details*"
                     style="color: #222"
+                    :disable="missionCreated"
                 />
                 <q-tab
                     name="tags"
@@ -24,8 +25,14 @@
                             : '')
                     "
                     style="color: #222"
+                    :disable="missionCreated"
                 />
-                <q-tab name="upload" label="Upload Data" style="color: #222" />
+                <q-tab
+                    name="upload"
+                    label="Upload Data"
+                    style="color: #222"
+                    :disable="!missionCreated"
+                />
             </q-tabs>
         </template>
         <template #content>
@@ -102,7 +109,7 @@
                 v-if="tab_selection === 'meta_data'"
                 flat
                 label="Next"
-                :disable="!missionName"
+                :disable="missionName.length < 3"
                 @click="tab_selection = 'tags'"
                 class="bg-button-primary"
             />
@@ -188,6 +195,10 @@ const allRequiredTagsSet = computed(() => {
             tagValues.value[tag.uuid] !== undefined &&
             tagValues.value[tag.uuid] !== '',
     );
+});
+
+const missionCreated = computed(() => {
+    return !!newMission.value;
 });
 
 const submitNewMission = async () => {
