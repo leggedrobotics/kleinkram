@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { ILike, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubmitAction, SubmitActionMulti } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
@@ -199,5 +199,33 @@ export class ActionService {
             where: { uuid: action_uuid },
             relations: ['mission', 'mission.project', 'createdBy', 'template'],
         });
+    }
+
+    async runningActions(userUUID: string, skip: number, take: number) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
+        const baseQuery = this.actionRepository
+            .createQueryBuilder('action')
+            .leftJoinAndSelect('action.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('action.template', 'template')
+            .leftJoinAndSelect('action.createdBy', 'createdBy')
+            .where(
+                new Brackets((qb) => {
+                    qb.where('action.state = :state', {
+                        state: ActionState.PENDING,
+                    }).orWhere('action.state = :state', {
+                        state: ActionState.PROCESSING,
+                    });
+                }),
+            )
+            .take(take)
+            .skip(skip);
+        if (user.role !== UserRole.ADMIN) {
+            addAccessConstraints(baseQuery, userUUID);
+        }
+        return baseQuery.getManyAndCount();
     }
 }

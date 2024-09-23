@@ -168,3 +168,59 @@ export const listActionTemplates = async (search: string) => {
         );
     });
 };
+
+export const getRunningActions = async () => {
+    const response = await axios.get('/action/running', {
+        params: { skip: 0, take: 10 },
+    });
+    return response.data[0].map((res: any) => {
+        const user = new User(
+            res.createdBy.uuid,
+            res.createdBy.name,
+            res.createdBy.email,
+            res.createdBy.role,
+            res.createdBy.avatarUrl,
+            [],
+            res.createdBy.createdAt,
+            res.createdBy.updatedAt,
+            res.createdBy.deletedAt,
+        );
+        const template = new ActionTemplate(
+            res.template.uuid,
+            res.template.createdAt,
+            res.template.updatedAt,
+            res.template.deletedAt,
+            res.template.image_name,
+            user,
+            res.template.name,
+            res.template.version,
+            res.template.command,
+            res.template.runtime_requirements,
+        );
+        const mission = new Mission(
+            res.mission.uuid,
+            res.mission.name,
+            undefined,
+            [],
+            [],
+            undefined,
+            new Date(res.mission.createdAt),
+            new Date(res.mission.updatedAt),
+            new Date(res.mission.deletedAt),
+        );
+        return new Action(
+            res.uuid,
+            new Date(res.createdAt),
+            new Date(res.updatedAt),
+            new Date(res.deletedAt),
+            res.state,
+            res.state_cause,
+            res.artifact_url,
+            res.uploading_artifacts,
+            mission,
+            template,
+            res.image,
+            user,
+        );
+    });
+};
