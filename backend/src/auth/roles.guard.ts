@@ -174,6 +174,31 @@ export class ReadProjectByNameGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
+export class CreateInProjectByBodyGuard extends AuthGuard('jwt') {
+    constructor(
+        private projectGuardService: ProjectGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request?.user?.uuid) {
+            return false;
+        }
+        const user = request.user;
+        const projectUUID = request.body.projectUUID;
+        return this.projectGuardService.canAccessProject(
+            user.uuid,
+            projectUUID,
+            AccessGroupRights.CREATE,
+        );
+    }
+}
+
+@Injectable()
 export class WriteProjectGuard extends AuthGuard('jwt') {
     constructor(
         private projectGuardService: ProjectGuardService,
@@ -251,7 +276,7 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CreateProjectGuard extends AuthGuard('jwt') {
+export class CreateGuard extends AuthGuard('jwt') {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -266,7 +291,7 @@ export class CreateProjectGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        return this.projectGuardService.canCreateProject(user.uuid);
+        return this.projectGuardService.canCreate(user.uuid);
     }
 }
 
@@ -343,6 +368,31 @@ export class ReadMissionByNameGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
+export class CreateInMissionByBodyGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context); // Ensure the user is authenticated first
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUID = request.body.missionUUID;
+        return this.missionGuardService.canAccessMission(
+            user.uuid,
+            missionUUID,
+            AccessGroupRights.CREATE,
+        );
+    }
+}
+
+@Injectable()
 export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
     constructor(
         private missionGuardService: MissionGuardService,
@@ -383,7 +433,10 @@ export class CanDeleteMissionGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const missionUUID = request.body.uuid || request.params.uuid;
+        const missionUUID =
+            request.body.uuid ||
+            request.params.uuid ||
+            request.body.missionUUID;
         return this.missionGuardService.canAccessMission(
             user.uuid,
             missionUUID,
@@ -457,7 +510,7 @@ export class DeleteTagGuard extends AuthGuard('jwt') {
         return this.missionGuardService.canTagMission(
             user.uuid,
             taguuid,
-            AccessGroupRights.DELETE,
+            AccessGroupRights.WRITE,
         );
     }
 }
@@ -489,7 +542,7 @@ export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
         return this.missionGuardService.canAccessMission(
             user.uuid,
             queue.mission.uuid,
-            AccessGroupRights.WRITE,
+            AccessGroupRights.CREATE,
         );
     }
 }
@@ -620,8 +673,8 @@ export class ReadActionGuard extends AuthGuard('jwt') {
             return false;
         }
         const user = request.user;
-        const fileUUID = request.query.uuid;
-        return this.actionGuardService.canAccessAction(user.uuid, fileUUID);
+        const actionUUID = request.query.uuid;
+        return this.actionGuardService.canAccessAction(user.uuid, actionUUID);
     }
 }
 
@@ -648,6 +701,37 @@ export class CreateActionGuard extends AuthGuard('jwt') {
             missionUUID,
             AccessGroupRights.CREATE,
         );
+    }
+}
+
+@Injectable()
+export class CreateActionsGuard extends AuthGuard('jwt') {
+    constructor(
+        private reflector: Reflector,
+        private missionGuardService: MissionGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context);
+
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUIDs = request.body.missionUUIDs;
+        const allCanAccess = await Promise.all(
+            missionUUIDs.map((missionUUID) =>
+                this.missionGuardService.canAccessMission(
+                    user.uuid,
+                    missionUUID,
+                    AccessGroupRights.CREATE,
+                ),
+            ),
+        );
+        return allCanAccess.every((canAccess) => canAccess);
     }
 }
 

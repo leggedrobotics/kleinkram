@@ -43,11 +43,14 @@ export class FileGuardService {
         }
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUUID },
-            relations: ['mission', 'mission.project'],
+            relations: ['mission', 'mission.project', 'creator'],
         });
         if (!file) {
             console.log('File not found');
             return false;
+        }
+        if (file.creator.uuid === userUUID) {
+            return true;
         }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(

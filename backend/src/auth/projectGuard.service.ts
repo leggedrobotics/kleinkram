@@ -72,7 +72,7 @@ export class ProjectGuardService {
         return this.canAccessProject(userUUID, project.uuid, rights);
     }
 
-    async canCreateProject(userUUID: string) {
+    async canCreate(userUUID: string) {
         if (!userUUID) {
             return false;
         }

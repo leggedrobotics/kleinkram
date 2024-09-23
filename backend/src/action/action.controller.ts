@@ -6,7 +6,9 @@ import {
     SubmitActionMulti,
 } from './entities/submit_action.dto';
 import {
+    CanCreate,
     CanCreateAction,
+    CanCreateActions,
     CanReadAction,
     LoggedIn,
 } from '../auth/roles.decorator';
@@ -37,7 +39,7 @@ export class ActionController {
     }
 
     @Post('multiSubmit')
-    @LoggedIn()
+    @CanCreateActions()
     async multiSubmit(
         @Body() dto: SubmitActionMulti,
         @addJWTUser() user: JWTUser,
@@ -46,7 +48,7 @@ export class ActionController {
     }
 
     @Post('createTemplate')
-    @LoggedIn()
+    @CanCreate()
     async createTemplate(
         @Body() dto: CreateTemplateDto,
         @addJWTUser() user: JWTUser,
@@ -55,7 +57,7 @@ export class ActionController {
     }
 
     @Post('createNewVersion')
-    @LoggedIn()
+    @CanCreate()
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
         @addJWTUser() user: JWTUser,

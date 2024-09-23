@@ -179,6 +179,7 @@ export class ActionService {
             .leftJoinAndSelect('action.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('action.template', 'template')
+            .leftJoinAndSelect('action.createdBy', 'createdBy')
             .andWhere('project.uuid = :project_uuid', { project_uuid })
             .skip(skip)
             .take(take)
@@ -189,9 +190,7 @@ export class ActionService {
                 mission_uuid,
             });
         }
-        return addAccessConstraints(baseQuery, userUUID)
-            .leftJoinAndSelect('action.createdBy', 'createdBy')
-            .getManyAndCount();
+        return addAccessConstraints(baseQuery, userUUID).getManyAndCount();
     }
 
     async details(action_uuid: string) {

@@ -10,8 +10,7 @@ import {
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import {
-    AdminOnly,
-    CanCreateProject,
+    CanCreate,
     CanDeleteProject,
     CanReadProject,
     CanReadProjectByName,
@@ -81,7 +80,7 @@ export class ProjectController {
     }
 
     @Post('create')
-    @CanCreateProject()
+    @CanCreate()
     async createProject(
         @Body() dto: CreateProject,
         @addJWTUser() user?: JWTUser,

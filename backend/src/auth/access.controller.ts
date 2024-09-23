@@ -1,26 +1,19 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Post,
-    Query,
-} from '@nestjs/common';
+import { Controller, Delete, Get, Post } from '@nestjs/common';
 import { AccessService } from './access.service';
 import {
-    CanAddUserToAccessGroup,
+    IsAccessGroupCreator,
+    CanCreate,
     CanReadProject,
     CanWriteProject,
     IsAccessGroupCreatorByProjectAccess,
     LoggedIn,
+    CanDeleteProject,
 } from './roles.decorator';
 import { addJWTUser, JWTUser } from './paramDecorator';
 import { AccessGroupRights } from '@common/enum';
 import {
     BodyAccessGroupRights,
     BodyName,
-    BodyString,
     BodyUUID,
 } from '../validation/bodyDecorators';
 import {
@@ -28,7 +21,6 @@ import {
     QueryOptionalString,
     QuerySkip,
     QueryString,
-    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
@@ -47,7 +39,7 @@ export class AccessController {
     }
 
     @Post('create')
-    @LoggedIn()
+    @CanCreate()
     async createAccessGroup(
         @BodyName('name') name: string,
         @addJWTUser() user: JWTUser,
@@ -61,7 +53,7 @@ export class AccessController {
         @QueryUUID('uuid') uuid: string,
         @addJWTUser() user?: JWTUser,
     ) {
-        return this.accessService.canModifyAccessGroup(uuid, user);
+        return this.accessService.hasProjectRights(uuid, user);
     }
 
     @Post('addUserToProject')
@@ -81,7 +73,7 @@ export class AccessController {
     }
 
     @Post('addUserToAccessGroup')
-    @CanAddUserToAccessGroup()
+    @IsAccessGroupCreator()
     async addUserToAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
@@ -91,7 +83,7 @@ export class AccessController {
     }
 
     @Post('removeUserFromAccessGroup')
-    @CanAddUserToAccessGroup()
+    @IsAccessGroupCreator()
     async removeUserFromAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
@@ -139,7 +131,7 @@ export class AccessController {
     }
 
     @Post('removeAccessGroupFromProject')
-    @CanWriteProject()
+    @CanDeleteProject()
     async removeAccessGroupFromProject(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('accessGroupUUID') accessGroupUUID: string,
@@ -153,7 +145,7 @@ export class AccessController {
     }
 
     @Delete(':uuid')
-    @CanAddUserToAccessGroup()
+    @IsAccessGroupCreator()
     async deleteAccessGroup(
         @ParamUUID('uuid') uuid: string,
         @addJWTUser() user?: JWTUser,

@@ -14,7 +14,9 @@ import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
+    CanCreateInMissionByBody,
     CanDeleteFile,
+    CanDeleteMission,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
@@ -194,7 +196,7 @@ export class FileController {
     }
 
     @Post('temporaryAccess')
-    @CanWriteMissionByBody()
+    @CanCreateInMissionByBody()
     async getTemporaryAccess(
         @addJWTUser() user: JWTUser,
         @Body() body: CreatePreSignedURLSDto,
@@ -217,7 +219,7 @@ export class FileController {
     }
 
     @Post('deleteMultiple')
-    @CanWriteMissionByBody()
+    @CanDeleteMission()
     async deleteMultiple(
         @BodyUUIDArray('uuids') uuids: string[],
         @BodyUUID('missionUUID') missionUUID: string,

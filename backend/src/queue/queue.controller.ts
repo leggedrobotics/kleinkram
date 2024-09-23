@@ -4,7 +4,9 @@ import { DriveCreate } from './entities/drive-create.dto';
 import logger from '../logger';
 import {
     AdminOnly,
+    CanCreateInMissionByBody,
     CanCreateQueueByBody,
+    CanDeleteMission,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
@@ -29,7 +31,7 @@ export class QueueController {
     constructor(private readonly queueService: QueueService) {}
 
     @Post('createdrive')
-    @CanWriteMissionByBody()
+    @CanCreateInMissionByBody()
     async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
         return this.queueService.createDrive(body, user);
     }
@@ -70,7 +72,7 @@ export class QueueController {
     }
 
     @Delete(':uuid')
-    @CanWriteMissionByBody()
+    @CanDeleteMission()
     async delete(
         @BodyUUID('missionUUID') missionUUID: string,
         @ParamUUID('uuid') uuid: string,
@@ -79,7 +81,7 @@ export class QueueController {
     }
 
     @Post('cancelProcessing')
-    @CanWriteMissionByBody()
+    @CanDeleteMission()
     async cancelProcessing(
         @BodyUUID('queueUUID') queueUUID: string,
         @BodyUUID('missionUUID') missionUUID: string,
