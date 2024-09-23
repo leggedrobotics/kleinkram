@@ -47,8 +47,8 @@ export class AccessService {
         });
         return this.accessGroupRepository.save(new_group);
     }
-    async canModifyAccessGroup(
-        uuid: string,
+    async hasProjectRights(
+        projectUUID: string,
         user: JWTUser,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
     ): Promise<boolean> {
@@ -63,7 +63,7 @@ export class AccessService {
             .leftJoin('project.project_accesses', 'projectAccesses')
             .leftJoin('projectAccesses.accessGroup', 'accessGroup')
             .leftJoin('accessGroup.users', 'users')
-            .where('project.uuid = :uuid', { uuid })
+            .where('project.uuid = :uuid', { uuid: projectUUID })
             .andWhere('users.uuid = :user_uuid', { user_uuid: user.uuid })
             .andWhere('projectAccesses.rights >= :rights', {
                 rights: rights,
@@ -94,9 +94,11 @@ export class AccessService {
         const personalAccessGroup = dbuser.accessGroups.find(
             (accessGroup) => accessGroup.personal,
         );
-        const canUpdate =
-            (await this.canModifyAccessGroup(projectUUID, user, rights)) ||
-            modifyingUser.role === UserRole.ADMIN;
+        const canUpdate = await this.hasProjectRights(
+            projectUUID,
+            user,
+            rights,
+        );
         if (rights === AccessGroupRights.DELETE && !canUpdate) {
             throw new ConflictException(
                 'User cannot grant delete rights without having delete rights himself/herself',
@@ -240,7 +242,7 @@ export class AccessService {
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canModifyAccessGroup(
+            const canDelete = await this.hasProjectRights(
                 projectUUID,
                 { uuid: jwtuser.uuid },
                 AccessGroupRights.DELETE,
@@ -292,7 +294,7 @@ export class AccessService {
         accessGroupUUID: string,
         jwtuser: JWTUser,
     ): Promise<AccessGroup> {
-        const canDelete = await this.canModifyAccessGroup(
+        const canDelete = await this.hasProjectRights(
             projectUUID,
             { uuid: jwtuser.uuid },
             AccessGroupRights.DELETE,
@@ -347,7 +349,7 @@ export class AccessService {
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canModifyAccessGroup(
+            const canDelete = await this.hasProjectRights(
                 projectUUID,
                 { uuid: jwtuser.uuid },
                 AccessGroupRights.DELETE,

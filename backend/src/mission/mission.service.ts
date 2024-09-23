@@ -88,7 +88,12 @@ export class MissionService {
         search?: string,
         descending?: boolean,
         sortBy?: string,
+        userUUID?: string,
     ): Promise<[Mission[], number]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
         const query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
@@ -108,6 +113,9 @@ export class MissionService {
         }
         if (sortBy) {
             query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        if (user.role !== UserRole.ADMIN) {
+            addAccessConstraints(query, userUUID);
         }
         return query.getManyAndCount();
     }

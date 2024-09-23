@@ -7,7 +7,6 @@ import {
     ReadProjectGuard,
     WriteProjectGuard,
     ReadProjectByNameGuard,
-    CreateProjectGuard,
     DeleteProjectGuard,
     ReadMissionGuard,
     ReadMissionByNameGuard,
@@ -26,6 +25,10 @@ import {
     AddUserToAccessGroupGuard,
     IsAccessGroupCreatorByProjectAccessGuard,
     CanReadManyMissionsGuard,
+    CreateActionsGuard,
+    CreateGuard,
+    CreateInMissionByBodyGuard,
+    CreateInProjectByBodyGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -73,6 +76,13 @@ export function CanReadProjectByName() {
     );
 }
 
+export function CanCreateInProjectByBody() {
+    return applyDecorators(
+        SetMetadata('CanCreateInProjectByBody', true),
+        UseGuards(CreateInProjectByBodyGuard),
+    );
+}
+
 export function CanWriteProject() {
     return applyDecorators(
         SetMetadata('CanWriteProject', true),
@@ -87,10 +97,10 @@ export function CanDeleteProject() {
     );
 }
 
-export function CanCreateProject() {
+export function CanCreate() {
     return applyDecorators(
-        SetMetadata('CanCreateProject', true),
-        UseGuards(CreateProjectGuard),
+        SetMetadata('CanCreate', true),
+        UseGuards(CreateGuard),
     );
 }
 
@@ -135,6 +145,13 @@ export function CanWriteFile() {
     );
 }
 
+export function CanCreateInMissionByBody() {
+    return applyDecorators(
+        SetMetadata('CanReadMissionByBody', true),
+        UseGuards(CreateInMissionByBodyGuard),
+    );
+}
+
 export function CanWriteMissionByBody() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
@@ -175,7 +192,12 @@ export function CanCreateAction() {
         UseGuards(CreateActionGuard),
     );
 }
-
+export function CanCreateActions() {
+    return applyDecorators(
+        SetMetadata('CanCreateActions', true),
+        UseGuards(CreateActionsGuard),
+    );
+}
 export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),
@@ -190,9 +212,9 @@ export function CanDeleteTag() {
     );
 }
 
-export function CanAddUserToAccessGroup() {
+export function IsAccessGroupCreator() {
     return applyDecorators(
-        SetMetadata('CanAddUserToAccessGroup', true),
+        SetMetadata('IsAccessGroupCreator', true),
         UseGuards(AddUserToAccessGroupGuard),
     );
 }

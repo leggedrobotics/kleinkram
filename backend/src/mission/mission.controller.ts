@@ -11,6 +11,8 @@ import { MissionService } from './mission.service';
 import { CreateMission } from './entities/create-mission.dto';
 import {
     AdminOnly,
+    CanCreateInMissionByBody,
+    CanCreateInProjectByBody,
     CanDeleteMission,
     CanMoveMission,
     CanReadManyMissions,
@@ -39,7 +41,7 @@ export class MissionController {
     constructor(private readonly missionService: MissionService) {}
 
     @Post('create')
-    @LoggedIn()
+    @CanCreateInProjectByBody()
     async createMission(
         @Body() createMission: CreateMission,
         @addJWTUser() user: JWTUser,
@@ -48,7 +50,7 @@ export class MissionController {
     }
 
     @Get('filtered')
-    @CanReadProject()
+    @LoggedIn()
     async filteredMissions(
         @QueryUUID('uuid') uuid: string,
         @QueryOptionalString('search') search: string,
@@ -56,6 +58,7 @@ export class MissionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
+        @addJWTUser() user: JWTUser,
     ) {
         return this.missionService.findMissionByProject(
             uuid,
@@ -64,6 +67,7 @@ export class MissionController {
             search,
             descending,
             sortBy,
+            user.uuid,
         );
     }
 
