@@ -255,6 +255,7 @@ import { getMissions, missionsOfProject } from 'src/services/queries/mission';
 import {
     createActionTemplate,
     createAnalysis,
+    createMultipleAnalysis,
     createNewActionTemplateVersion,
 } from 'src/services/mutations/action';
 import { useHandler } from 'src/hooks/customQueryHooks';
@@ -450,7 +451,10 @@ async function submitAnalysis() {
     // validate input (this will also be performed on the backend)
     // the user must select a project and a mission
     // the image name must start with 'rslethz/'
-    if (!selected_project.value || !selected_mission.value) {
+    if (
+        !hasMissionUUIDs.value &&
+        (!selected_project.value || !selected_mission.value)
+    ) {
         Notify.create({
             group: false,
             message: 'Please select a project and a mission',
@@ -481,11 +485,21 @@ async function submitAnalysis() {
     }
     editingTemplate.value = res;
     select.value = res.clone();
+
+    let createPromise: undefined | Project<void> = undefined;
+    if (hasMissionUUIDs.value) {
+        createPromise = createMultipleAnalysis({
+            missionUUIDs: allMissionUUIDs.value,
+            templateUUID: res.uuid,
+        });
+    } else {
+        createPromise = createAnalysis({
+            missionUUID: selected_mission.value.uuid,
+            templateUUID: res.uuid,
+        });
+    }
     // send the action request to the backend and show a notification
-    createAnalysis({
-        missionUUID: selected_mission.value.uuid,
-        templateUUID: res.uuid,
-    })
+    createPromise
         .then((res) => {
             Notify.create({
                 group: false,
