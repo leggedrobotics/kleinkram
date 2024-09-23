@@ -294,6 +294,7 @@ const createFileAction = async () => {
                             spinner: false,
                             timeout: 6000,
                         });
+                        newFileUpload.value.canceled = true;
                         return;
                     }
 
@@ -312,6 +313,7 @@ const createFileAction = async () => {
                         );
                     } catch (e) {
                         console.error('err', e);
+                        newFileUpload.value.canceled = true;
                         Notify.create({
                             message: `Upload of File ${filename} failed: ${e}`,
                             color: 'negative',

@@ -9,6 +9,14 @@ export const createAnalysis = async (action: {
     return response.data;
 };
 
+export const createMultipleAnalysis = async (action: {
+    missionUUIDs: string[];
+    templateUUID: string;
+}) => {
+    const response = await axios.post('/action/multiSubmit', action);
+    return response.data;
+};
+
 export const createActionTemplate = async (template: {
     name: string;
     command: string;

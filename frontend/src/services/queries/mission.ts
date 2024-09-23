@@ -195,3 +195,53 @@ export const missionsOfProject = async (
     });
     return [res, total];
 };
+
+export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
+    const response = await axios.get('/mission/many', { params: { uuids } });
+    const data = response.data;
+    if (data.length === 0) {
+        return [];
+    }
+    const users: Record<string, User> = {};
+    return data.map((mission: any) => {
+        const project = new Project(
+            mission.project.uuid,
+            mission.project.name,
+            mission.project.description,
+            [],
+            undefined,
+            undefined,
+            undefined,
+            new Date(mission.project.createdAt),
+            new Date(mission.project.updatedAt),
+            new Date(mission.project.deletedAt),
+        );
+        let missionCreator: User | undefined = users[mission.creator.uuid];
+        if (!missionCreator) {
+            missionCreator = new User(
+                mission.creator.uuid,
+                mission.creator.name,
+                mission.creator.email,
+                mission.creator.role,
+                mission.creator.avatarUrl,
+                [],
+                new Date(mission.creator.createdAt),
+                new Date(mission.creator.updatedAt),
+                new Date(mission.creator.deletedAt),
+            );
+            users[mission.creator.uuid] = missionCreator;
+        }
+
+        return new Mission(
+            mission.uuid,
+            mission.name,
+            project,
+            [],
+            undefined,
+            missionCreator,
+            new Date(mission.createdAt),
+            new Date(mission.updatedAt),
+            new Date(mission.deletedAt),
+        );
+    });
+};

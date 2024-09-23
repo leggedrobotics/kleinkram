@@ -18,8 +18,8 @@ import { MissionGuardService } from './missionGuard.service';
 import { FileGuardService } from './fileGuard.service';
 import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
-import logger from '../logger';
 import { AuthGuardService } from './authGuard.service';
+
 @Injectable()
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
@@ -290,6 +290,30 @@ export class ReadMissionGuard extends AuthGuard('jwt') {
         return this.missionGuardService.canAccessMission(
             user.uuid,
             missionUUID,
+        );
+    }
+}
+
+@Injectable()
+export class CanReadManyMissionsGuard extends AuthGuard('jwt') {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        await super.canActivate(context);
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            return false;
+        }
+        const user = request.user;
+        const missionUUIDs = request.query.uuids;
+        return await this.missionGuardService.canReadManyMissions(
+            user.uuid,
+            missionUUIDs,
         );
     }
 }
