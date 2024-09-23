@@ -85,6 +85,16 @@ export class ActionController {
         );
     }
 
+    @Get('running')
+    @LoggedIn()
+    async runningActions(
+        @addJWTUser() user: JWTUser,
+        @QuerySkip('skip') skip: number,
+        @QuerySkip('take') take: number,
+    ) {
+        return this.actionService.runningActions(user.uuid, skip, take);
+    }
+
     @Get('listTemplates')
     @LoggedIn()
     async listTemplates(
