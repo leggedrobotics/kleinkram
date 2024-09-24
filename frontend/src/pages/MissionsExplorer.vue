@@ -8,16 +8,19 @@
 
         <template v-slot:buttons>
             <button-group>
-                <q-btn
-                    outline
-                    color="primary"
-                    icon="sym_o_sell"
-                    label="Metadata"
-                    :disable="!project_uuid"
-                    @click="() => openConfigureTags(project_uuid as string)"
+                <ConfigureTagsDialogOpener
+                    :project_uuid="project_uuid"
+                    v-if="project_uuid"
                 >
-                    <q-tooltip> Manage Metadata Tags</q-tooltip>
-                </q-btn>
+                    <q-btn
+                        outline
+                        color="primary"
+                        icon="sym_o_sell"
+                        label="Metadata"
+                        :disable="!project_uuid"
+                    >
+                    </q-btn>
+                </ConfigureTagsDialogOpener>
 
                 <q-btn icon="sym_o_more_vert" outline>
                     <q-tooltip> More Actions</q-tooltip>
@@ -240,6 +243,7 @@ import { useQuasar } from 'quasar';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import { FileEntity } from 'src/types/FileEntity';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
+import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -271,15 +275,6 @@ const selected_mission_uuids = computed(() => {
 function refresh() {
     queryClient.invalidateQueries({
         queryKey: ['missions'],
-    });
-}
-
-function openConfigureTags(projectUUID: string) {
-    $q.dialog({
-        component: ModifyProjectTagsDialog,
-        componentProps: {
-            projectUUID: projectUUID,
-        },
     });
 }
 
