@@ -20,22 +20,17 @@ export class ActionGuardService {
     ) {}
 
     async canAccessAction(
-        userUUID: string,
+        user: User,
         actionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!actionUUID || !userUUID) {
+        if (!actionUUID || !user) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `ActionGuard: actionUUID (${actionUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
-            return false;
-        }
+
         if (user.role === UserRole.ADMIN) {
             return true;
         }
@@ -45,7 +40,7 @@ export class ActionGuardService {
         });
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
-                userUUID,
+                user,
                 action.mission.project.uuid,
                 rights,
             );
@@ -53,7 +48,7 @@ export class ActionGuardService {
             return true;
         }
         return this.missionGuardService.canAccessMission(
-            userUUID,
+            user,
             action.mission.uuid,
             rights,
         );

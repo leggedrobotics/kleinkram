@@ -16,16 +16,13 @@ export class AuthGuardService {
         private userRepository: Repository<User>,
     ) {}
 
-    async canAddUserToAccessGroup(userUUID: string, accessGroupUUID: string) {
-        if (!userUUID || !accessGroupUUID) {
+    async canAddUserToAccessGroup(user: User, accessGroupUUID: string) {
+        if (!user || !accessGroupUUID) {
             logger.error(
-                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User UUID (${userUUID}) not provided.`,
+                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User (${user}) not provided.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
         if (!user) {
             return false;
         }
@@ -34,35 +31,28 @@ export class AuthGuardService {
         }
 
         return await this.accessGroupRepository.exists({
-            where: { uuid: accessGroupUUID, creator: { uuid: userUUID } },
+            where: { uuid: accessGroupUUID, creator: { uuid: user.uuid } },
             relations: ['users'],
         });
     }
 
     async isAccessGroupCreatorByProjectAccess(
-        userUUID: string,
+        user: User,
         projectAccessUUID: string,
     ) {
-        if (!userUUID || !projectAccessUUID) {
+        if (!user || !projectAccessUUID) {
             logger.error(
-                `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User UUID (${userUUID}) not provided.`,
+                `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user}) not provided.`,
             );
-            return false;
-        }
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
             return false;
         }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-
         return await this.accessGroupRepository.exists({
             where: {
                 project_accesses: { uuid: projectAccessUUID },
-                creator: { uuid: userUUID },
+                creator: { uuid: user.uuid },
             },
         });
     }

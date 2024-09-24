@@ -22,22 +22,17 @@ export class FileGuardService {
         private missionGuardService: MissionGuardService,
     ) {}
     async canAccessFile(
-        userUUID: string,
+        user: User,
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!fileUUID || !userUUID) {
+        if (!fileUUID || !user) {
             logger.error(
-                `FileGuard: File UUID (${fileUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUID (${fileUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
-            return false;
-        }
+
         if (user.role === UserRole.ADMIN) {
             return true;
         }
@@ -49,12 +44,12 @@ export class FileGuardService {
             console.log('File not found');
             return false;
         }
-        if (file.creator.uuid === userUUID) {
+        if (file.creator.uuid === user.uuid) {
             return true;
         }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
-                userUUID,
+                user,
                 file.mission.project.uuid,
                 rights,
             );
@@ -62,26 +57,26 @@ export class FileGuardService {
             return true;
         }
         return this.missionGuardService.canAccessMission(
-            userUUID,
+            user,
             file.mission.uuid,
             rights,
         );
     }
 
     async canAccessFileByName(
-        userUUID: string,
+        user: User,
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!filename || !userUUID) {
+        if (!filename || !user) {
             logger.error(
-                `FileGuard: Filename (${filename}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `FileGuard: Filename (${filename}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
         const file = await this.fileRepository.findOne({
             where: { filename: filename },
         });
-        return this.canAccessFile(userUUID, file.uuid, rights);
+        return this.canAccessFile(user, file.uuid, rights);
     }
 }

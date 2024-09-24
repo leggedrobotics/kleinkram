@@ -17,7 +17,6 @@ import {
     WriteMissionByBodyGuard,
     CreateQueueByBodyGuard,
     ReadActionGuard,
-    CreateActionGuard,
     AddTagGuard,
     DeleteTagGuard,
     CanDeleteMissionGuard,
@@ -186,12 +185,6 @@ export function CanReadAction() {
     );
 }
 
-export function CanCreateAction() {
-    return applyDecorators(
-        SetMetadata('CanCreateAction', true),
-        UseGuards(CreateActionGuard),
-    );
-}
 export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
