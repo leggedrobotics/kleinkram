@@ -181,7 +181,14 @@ export const QueryProjectSortBy = createParamDecorator(
         }
 
         // check if value is a valid field
-        const fields = ['uuid', 'name', 'description', 'creator', 'createdAt'];
+        const fields = [
+            'uuid',
+            'name',
+            'description',
+            'creator',
+            'createdAt',
+            'updatedAt',
+        ];
 
         if (!fields.includes(value)) {
             throw new BadRequestException('Parameter is not a valid field');
