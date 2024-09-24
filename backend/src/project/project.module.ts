@@ -18,17 +18,13 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
     imports: [
         TypeOrmModule.forFeature([
             Project,
-            User,
-            Apikey,
             Account,
             AccessGroup,
             TagType,
             ProjectAccess,
-            ProjectAccessViewEntity,
-            MissionAccessViewEntity,
         ]),
     ],
-    providers: [ProjectService, UserService, ProjectGuardService],
+    providers: [ProjectService],
     exports: [ProjectService],
     controllers: [ProjectController],
 })

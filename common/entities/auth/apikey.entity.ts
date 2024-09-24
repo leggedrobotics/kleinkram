@@ -3,6 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import { KeyTypes } from '../../enum';
 import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
+import User from '../user/user.entity';
 
 @Entity()
 export default class Apikey extends BaseEntity {
@@ -22,4 +23,9 @@ export default class Apikey extends BaseEntity {
         onDelete: 'CASCADE',
     })
     action: Action;
+
+    @ManyToOne(() => User, (user) => user.api_keys, {
+        onDelete: 'CASCADE',
+    })
+    user: User;
 }

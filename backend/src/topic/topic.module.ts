@@ -6,7 +6,7 @@ import { TopicController } from './topic.controller';
 import User from '@common/entities/user/user.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Topic, User])],
+    imports: [TypeOrmModule.forFeature([Topic])],
     providers: [TopicService],
     controllers: [TopicController],
     exports: [TopicService],

@@ -19,6 +19,7 @@ import { FileGuardService } from './fileGuard.service';
 import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
 import { AuthGuardService } from './authGuard.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -39,9 +40,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        console.log('TokenOrUserGuard');
         if (request.cookies[CookieNames.CLI_KEY]) {
-            console.log('CLI key: ', request.cookies[CookieNames.CLI_KEY]);
             const token = await this.tokenRepository
                 .findOneOrFail({
                     where: {
@@ -377,8 +376,10 @@ export class CreateInMissionByBodyGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        await super.canActivate(context); // Ensure the user is authenticated first
         const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            await super.canActivate(context); // Ensure the user is authenticated first
+        }
         if (!request.user) {
             return false;
         }

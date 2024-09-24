@@ -26,7 +26,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, JWTUser } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 
@@ -46,7 +46,7 @@ export class ProjectController {
     @Get('filtered')
     @LoggedIn()
     async allProjects(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryProjectSortBy('sortBy') sortBy?: string,
@@ -81,10 +81,7 @@ export class ProjectController {
 
     @Post('create')
     @CanCreate()
-    async createProject(
-        @Body() dto: CreateProject,
-        @addJWTUser() user?: JWTUser,
-    ) {
+    async createProject(@Body() dto: CreateProject, @addUser() user?: JWTUser) {
         return this.projectService.create(dto, user);
     }
 

@@ -12,7 +12,7 @@ import {
     CanReadAction,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
@@ -33,7 +33,7 @@ export class ActionController {
     @CanCreateAction()
     async createActionRun(
         @Body() dto: SubmitAction,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ): Promise<Action> {
         return this.actionService.submit(dto, user);
     }
@@ -42,7 +42,7 @@ export class ActionController {
     @CanCreateActions()
     async multiSubmit(
         @Body() dto: SubmitActionMulti,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.actionService.multiSubmit(dto, user);
     }
@@ -51,7 +51,7 @@ export class ActionController {
     @CanCreate()
     async createTemplate(
         @Body() dto: CreateTemplateDto,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.actionService.createTemplate(dto, user);
     }
@@ -60,7 +60,7 @@ export class ActionController {
     @CanCreate()
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.actionService.createNewVersion(dto, user);
     }
@@ -68,7 +68,7 @@ export class ActionController {
     @LoggedIn()
     async list(
         @Query() dto: ActionQuery,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('sortBy') sortBy: string,
@@ -88,7 +88,7 @@ export class ActionController {
     @Get('running')
     @LoggedIn()
     async runningActions(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
     ) {
@@ -98,7 +98,7 @@ export class ActionController {
     @Get('listTemplates')
     @LoggedIn()
     async listTemplates(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('search') search: string,

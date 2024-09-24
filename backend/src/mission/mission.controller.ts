@@ -23,7 +23,7 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
@@ -44,7 +44,7 @@ export class MissionController {
     @CanCreateInProjectByBody()
     async createMission(
         @Body() createMission: CreateMission,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.missionService.create(createMission, user);
     }
@@ -58,7 +58,7 @@ export class MissionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.missionService.findMissionByProject(
             uuid,
@@ -80,7 +80,7 @@ export class MissionController {
     @Get('all')
     @LoggedIn()
     async allMissions(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -97,7 +97,7 @@ export class MissionController {
     @TokenOrUser()
     async getMissionByUUID(
         @QueryUUID('uuid') uuid: string,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.missionService.findOneByUUID(uuid);
     }
@@ -108,7 +108,7 @@ export class MissionController {
         @QueryString('projectName') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.missionService.filteredByProjectName(
             projectName,

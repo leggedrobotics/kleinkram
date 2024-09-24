@@ -23,14 +23,10 @@ import FileEntity from '@common/entities/file/file.entity';
         TypeOrmModule.forFeature([
             QueueEntity,
             Mission,
-            User,
-            Apikey,
             Account,
             AccessGroup,
             Project,
             Tag,
-            ProjectAccessViewEntity,
-            MissionAccessViewEntity,
             FileEntity,
         ]),
         BullModule.registerQueue({
@@ -40,12 +36,7 @@ import FileEntity from '@common/entities/file/file.entity';
             name: 'action-queue',
         }),
     ],
-    providers: [
-        QueueService,
-        UserService,
-        MissionGuardService,
-        ProjectGuardService,
-    ],
+    providers: [QueueService],
     controllers: [QueueController],
     exports: [QueueService],
 })

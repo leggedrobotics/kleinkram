@@ -9,8 +9,9 @@ from rich.table import Table
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
+from kleinkram.helper import expand_and_match
 
-mission = typer.Typer(
+missionCommands = typer.Typer(
     name="mission",
     help="Mission operations",
     no_args_is_help=True,
@@ -18,7 +19,7 @@ mission = typer.Typer(
 )
 
 
-@mission.command("tag")
+@missionCommands.command("tag")
 def addTag(
     mission_uuid: Annotated[str, typer.Argument()],
     tagtype_uuid: Annotated[str, typer.Argument()],
@@ -43,7 +44,7 @@ def addTag(
         raise e
 
 
-@mission.command("list")
+@missionCommands.command("list")
 def list_missions(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
     verbose: Optional[bool] = typer.Option(
@@ -111,7 +112,7 @@ def list_missions(
         console.print(table)
 
 
-@mission.command("byUUID")
+@missionCommands.command("byUUID")
 def mission_by_uuid(
     uuid: Annotated[str, typer.Argument()],
     json: Optional[bool] = typer.Option(False, help="Output as JSON"),
@@ -151,7 +152,7 @@ def mission_by_uuid(
         console.print(table)
 
 
-@mission.command("download")
+@missionCommands.command("download")
 def download(
     mission_uuid: Annotated[str, typer.Argument()],
     local_path: Annotated[str, typer.Argument()],
@@ -197,3 +198,47 @@ def download(
                 if chunk:  # Filter out keep-alive new chunks
                     f.write(chunk)
             print(f"   Downloaded {filename}")
+
+@missionCommands.command("upload")
+def upload(
+    path: Annotated[
+        str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+    ],
+    mission: Annotated[
+        str, typer.Option(prompt=True, help="UUID of Mission to create")
+    ],
+):
+    """
+    Upload files matching the path to a mission in a project.
+
+    The mission name must be unique within the project and already created.\n
+    Examples:\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1" '\n
+
+    """
+    files = expand_and_match(path)
+    filenames = list(
+        map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
+    )
+    if not filenames:
+        raise ValueError("No files found matching the given path.")
+
+    print(
+        f"Uploading the following files to mission '{mission}':"
+    )
+    filepaths = {}
+    for path in files:
+        if not os.path.isdir(path):
+            filepaths[path.split("/")[-1]] = path
+            typer.secho(f" - {path}", fg=typer.colors.RESET)
+
+    try:
+        client = AuthenticatedClient()
+        print(filenames)
+        res = client.post("/file/temporaryAccess", json={"missionUUID": mission, "filenames": filenames})
+        print(res)
+    except Exception as e:
+        print(e)
+        print("Failed to upload files")
+        raise e
+

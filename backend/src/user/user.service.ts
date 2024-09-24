@@ -6,13 +6,12 @@ import { UserRole } from '@common/enum';
 import { JWTUser } from '../auth/paramDecorator';
 import Account from '@common/entities/auth/account.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectRepository(User) private userRepository: Repository<User>,
-        @InjectRepository(Account)
-        private accountRepository: Repository<Account>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
     ) {}
@@ -125,5 +124,12 @@ export class UserService {
         }[] = [];
 
         return { role, default_permission, projects, missions };
+    }
+
+    async findOneByApiKey(apikey: string) {
+        return this.userRepository.findOneOrFail({
+            where: { api_keys: { apikey } },
+            relations: ['api_keys'],
+        });
     }
 }

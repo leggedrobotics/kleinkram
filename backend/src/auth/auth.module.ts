@@ -3,7 +3,6 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
 import { AuthController } from './auth.controller';
-import { UserService } from '../user/user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
@@ -12,8 +11,7 @@ import {
     LoggedInUserGuard,
     TokenOrUserGuard,
 } from './roles.guard';
-import Apikey from '@common/entities/auth/apikey.entity';
-import User from '@common/entities/user/user.entity';
+
 import Account from '@common/entities/auth/account.entity';
 import Project from '@common/entities/project/project.entity';
 import Mission from '@common/entities/mission/mission.entity';
@@ -31,11 +29,10 @@ import { AccessController } from './access.controller';
 import FileEntity from '@common/entities/file/file.entity';
 import { AuthGuardService } from './authGuard.service';
 
+@Global()
 @Module({
     imports: [
         TypeOrmModule.forFeature([
-            Apikey,
-            User,
             AccessGroup,
             Account,
             Project,
@@ -59,7 +56,6 @@ import { AuthGuardService } from './authGuard.service';
         AuthService,
         AccessService,
         GoogleStrategy,
-        UserService,
         ProjectGuardService,
         MissionGuardService,
         AuthGuardService,
@@ -69,6 +65,16 @@ import { AuthGuardService } from './authGuard.service';
         TokenOrUserGuard,
     ],
     controllers: [AuthController, AccessController],
-    exports: [AdminOnlyGuard, LoggedInUserGuard, TokenOrUserGuard],
+    exports: [
+        AdminOnlyGuard,
+        LoggedInUserGuard,
+        TokenOrUserGuard,
+        ProjectGuardService,
+        MissionGuardService,
+        TypeOrmModule.forFeature([
+            ProjectAccessViewEntity,
+            MissionAccessViewEntity,
+        ]),
+    ],
 })
 export class AuthModule {}

@@ -25,7 +25,7 @@ import {
     LoggedIn,
     TokenOrUser,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, JWTUser } from '../auth/paramDecorator';
 import {
     QueryBoolean,
     QueryOptionalBoolean,
@@ -41,7 +41,7 @@ import {
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
-import { CreatePreSignedURLSDto } from '../queue/entities/createPreSignedURLS.dto';
+import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 
 @Controller('file')
 export class FileController {
@@ -50,7 +50,7 @@ export class FileController {
     @Get('all')
     @LoggedIn()
     async allFiles(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -66,7 +66,7 @@ export class FileController {
         @QueryOptionalRecord('tags') tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
@@ -95,7 +95,7 @@ export class FileController {
         @QueryTake('take') take: number,
         @QueryOptionalString('sort') sort: string,
         @QueryOptionalBoolean('desc') desc: boolean,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return await this.fileService.findFiltered(
             fileName,
@@ -128,7 +128,6 @@ export class FileController {
     @Get('downloadWithToken')
     @TokenOrUser()
     async downloadWithToken(@QueryUUID('uuid') uuid: string) {
-        logger.debug('downloadWithTo' + 'ken', uuid);
         return this.fileService.generateDownloadForToken(uuid);
     }
 
@@ -191,16 +190,17 @@ export class FileController {
 
     @Get('isUploading')
     @LoggedIn()
-    async isUploading(@addJWTUser() user: JWTUser) {
+    async isUploading(@addUser() user: JWTUser) {
         return this.fileService.isUploading(user.uuid);
     }
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
     async getTemporaryAccess(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
         @Body() body: CreatePreSignedURLSDto,
     ) {
+        console.log(user);
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
@@ -213,7 +213,7 @@ export class FileController {
     async cancelUpload(
         @BodyUUIDArray('uuids') uuids: string[],
         @BodyUUID('missionUUID') missionUUID: string,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: JWTUser,
     ) {
         return this.fileService.cancelUpload(uuids, missionUUID, user.uuid);
     }
