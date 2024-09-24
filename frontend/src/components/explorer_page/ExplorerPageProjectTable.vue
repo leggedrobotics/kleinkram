@@ -51,13 +51,15 @@
                                     </q-item-section>
                                 </q-item>
                             </EditProjectDialogOpener>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="() => openConfigureTags(props.row.uuid)"
+                            <ConfigureTagsDialogOpener
+                                :project_uuid="props.row.uuid"
                             >
-                                <q-item-section>Configure Tags</q-item-section>
-                            </q-item>
+                                <q-item clickable v-ripple>
+                                    <q-item-section
+                                        >Configure Tags</q-item-section
+                                    >
+                                </q-item>
+                            </ConfigureTagsDialogOpener>
 
                             <manage-project-dialog-opener
                                 :project_uuid="props.row.uuid"
@@ -97,6 +99,7 @@ import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
+import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 
 const $q = useQuasar();
 

@@ -1,6 +1,6 @@
 <template>
     <div
-        @click="deleteFile"
+        @click="clicked"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
@@ -9,7 +9,7 @@
     >
         <slot />
         <q-tooltip v-if="!canModify">
-            You do not have permission to move this mission
+            You do not have permission to modify this project
         </q-tooltip>
     </div>
 </template>
@@ -22,37 +22,35 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import {
-    canModifyMission,
+    canModifyProject,
+    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed, watch } from 'vue';
-import { Mission } from 'src/types/Mission';
-import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
+import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: Mission;
+    project_uuid: string;
 }>();
+
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canModifyMission(
-        props.mission.uuid,
-        props.mission.project?.uuid,
-        permissions.value,
-    ),
+    canModifyProject(props.project_uuid, permissions.value),
 );
 
-const deleteFile = () => {
+const clicked = () => {
+    // abort if the user cannot modify the project
     if (!canModify.value) return;
+    console.log(props.project_uuid);
+    // open the dialog
     $q.dialog({
-        title: 'Delete File',
-        component: DeleteMissionDialog,
+        component: ModifyProjectTagsDialog,
         componentProps: {
-            mission_uuid: props.mission.uuid,
+            projectUUID: props.project_uuid,
         },
     });
 };
 </script>
-
-<style scoped></style>

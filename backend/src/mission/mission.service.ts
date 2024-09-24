@@ -77,7 +77,14 @@ export class MissionService {
     async findOne(uuid: string): Promise<Mission> {
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'files', 'creator', 'tags', 'tags.tagType'],
+            relations: [
+                'project',
+                'files',
+                'creator',
+                'tags',
+                'tags.tagType',
+                'project.requiredTags',
+            ],
         });
     }
 

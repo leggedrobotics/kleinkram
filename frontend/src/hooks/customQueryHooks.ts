@@ -54,6 +54,22 @@ export const getPermissionForProject = (
     return Math.max(default_permission, project_permission);
 };
 
+export const getPermissionForMission = (
+    mission_uuid: string,
+    permissions: Permissions,
+): number => {
+    if (!permissions) return 0;
+    if (permissions.role === 'ADMIN') return 100;
+    const default_permission = permissions.default_permission;
+
+    const mission = permissions.missions.find(
+        (m: { uuid: string; access: number }) => m.uuid === mission_uuid,
+    );
+
+    const mission_permission = mission?.access || 0;
+    return Math.max(default_permission, mission_permission);
+};
+
 export const canCreateProject = (
     permissions: Permissions | null | undefined,
 ): boolean => {
@@ -70,6 +86,48 @@ export const canModifyProject = (
     if (!project_uuid) return false;
     const permission = getPermissionForProject(project_uuid, permissions);
     return permission >= AccessGroupRights.WRITE;
+};
+
+export const canModifyMission = (
+    mission_uuid: string | undefined,
+    project_uuid: string | undefined,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (!mission_uuid && !project_uuid) return false;
+    const mission_permission = getPermissionForMission(
+        mission_uuid,
+        permissions,
+    );
+    const project_permission = getPermissionForProject(
+        project_uuid,
+        permissions,
+    );
+    return (
+        Math.max(mission_permission, project_permission) >=
+        AccessGroupRights.WRITE
+    );
+};
+
+export const canDeleteMission = (
+    mission_uuid: string | undefined,
+    project_uuid: string | undefined,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (!mission_uuid && !project_uuid) return false;
+    const mission_permission = getPermissionForMission(
+        mission_uuid,
+        permissions,
+    );
+    const project_permission = getPermissionForProject(
+        project_uuid,
+        permissions,
+    );
+    return (
+        Math.max(mission_permission, project_permission) >=
+        AccessGroupRights.DELETE
+    );
 };
 
 export const canDeleteProject = (

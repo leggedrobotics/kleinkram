@@ -1,24 +1,18 @@
 <template>
-    <div
-        @click="deleteFile"
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
-        }"
+    <q-btn
+        class="button-border"
+        flat
+        color="primary"
+        icon="sym_o_sell"
+        label="Metadata"
+        @click="openTagsDialog"
+        :disable="!canModify"
     >
-        <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to move this mission
-        </q-tooltip>
-    </div>
+        <q-tooltip> Manage Metadata Tags</q-tooltip>
+    </q-btn>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
+<style scoped></style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -28,7 +22,7 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed, watch } from 'vue';
 import { Mission } from 'src/types/Mission';
-import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
+import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
 
 const $q = useQuasar();
 const props = defineProps<{
@@ -43,16 +37,14 @@ const canModify = computed(() =>
     ),
 );
 
-const deleteFile = () => {
-    if (!canModify.value) return;
+function openTagsDialog() {
     $q.dialog({
-        title: 'Delete File',
-        component: DeleteMissionDialog,
+        component: ModifyMissionTagsDialog,
         componentProps: {
-            mission_uuid: props.mission.uuid,
+            mission: props.mission,
         },
     });
-};
+}
 </script>
 
 <style scoped></style>

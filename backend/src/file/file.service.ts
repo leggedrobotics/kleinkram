@@ -517,7 +517,13 @@ export class FileService {
         }
         return this.fileRepository.findAndCount({
             where,
-            relations: ['mission', 'topics', 'creator', 'mission.creator'],
+            relations: [
+                'mission',
+                'topics',
+                'creator',
+                'mission.creator',
+                'mission.project',
+            ],
             take,
             skip,
         });

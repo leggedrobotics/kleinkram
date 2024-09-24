@@ -51,23 +51,14 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
 
-                <q-btn
-                    class="button-border"
-                    flat
-                    color="primary"
-                    icon="sym_o_sell"
-                    label="Metadata"
-                    @click="openTagsDialog"
-                >
-                    <q-tooltip> Manage Metadata Tags</q-tooltip>
-                </q-btn>
+                <MissionMetadataOpener :mission="mission" v-if="mission" />
 
                 <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu auto-close style="width: 280px">
                         <q-list>
-                            <move-mission-dialog-opener
+                            <MoveMissionDialogOpener
                                 v-if="mission"
                                 :mission="mission"
                             >
@@ -81,7 +72,7 @@
                                         </q-item-section>
                                     </q-item-section>
                                 </q-item>
-                            </move-mission-dialog-opener>
+                            </MoveMissionDialogOpener>
 
                             <q-item clickable v-close-popup disable>
                                 <q-item-section avatar>
@@ -105,9 +96,7 @@
                                 </q-item-section>
                             </q-item>
 
-                            <delete-mission-dialog-opener
-                                :mission_uuid="mission.uuid"
-                            >
+                            <delete-mission-dialog-opener :mission="mission">
                                 <q-item
                                     clickable
                                     v-close-popup
@@ -299,7 +288,6 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
-import MoveMissionDialogOpener from 'components/buttons/MoveMissionButton.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
@@ -317,7 +305,8 @@ import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
 import { _downloadFiles } from 'src/services/generic';
 import { Tag } from 'src/types/Tag';
 import { DataType } from 'src/enums/TAG_TYPES';
-import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
+import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
+import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -460,14 +449,5 @@ async function downloadCallback() {
             position: 'bottom',
         });
     }
-}
-
-function openTagsDialog() {
-    $q.dialog({
-        component: ModifyMissionTagsDialog,
-        componentProps: {
-            mission: mission.value,
-        },
-    });
 }
 </script>
