@@ -7,6 +7,7 @@ import User from '@common/entities/user/user.entity';
 import Action from '@common/entities/action/action.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class ActionGuardService {
@@ -51,6 +52,28 @@ export class ActionGuardService {
             user,
             action.mission.uuid,
             rights,
+        );
+    }
+    async canKeyAccessAction(
+        apikey: Apikey,
+        actionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!actionUUID) {
+            logger.error(
+                `ActionGuard: actionUUID (${actionUUID}) not provided. Requesting ${rights} access.`,
+            );
+        }
+        const action = await this.actionRepository.findOne({
+            where: { uuid: actionUUID },
+            relations: ['mission'],
+        });
+        if (!action) {
+            return false;
+        }
+        return (
+            apikey.mission.uuid === action.mission.uuid &&
+            rights <= apikey.rights
         );
     }
 }

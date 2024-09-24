@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
@@ -10,6 +10,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import { isUUID } from 'class-validator';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class MissionGuardService {
@@ -96,6 +97,21 @@ export class MissionGuardService {
         return this.canAccessMission(user, tag.mission.uuid, accessRights);
     }
 
+    async canKeyTagMission(
+        apikey: Apikey,
+        tagUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!tagUUID) {
+            throw new ConflictException('Tag UUID not provided');
+        }
+        const tag = await this.tagRepository.findOne({
+            where: { uuid: tagUUID },
+            relations: ['mission'],
+        });
+        return this.canKeyAccessMission(apikey, tag.mission.uuid, rights);
+    }
+
     async canReadManyMissions(
         user: User,
         missionUUIDs: string[],
@@ -149,5 +165,27 @@ export class MissionGuardService {
                 rights: MoreThanOrEqual(rights),
             },
         });
+    }
+
+    async canKeyAccessMission(
+        apikey: Apikey,
+        missionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        return apikey.mission.uuid === missionUUID && apikey.rights >= rights;
+    }
+
+    async canKeyAccessMissionByName(
+        apikey: Apikey,
+        missionName: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!missionName) {
+            throw new ConflictException('Mission name not provided');
+        }
+        const mission = await this.missionRepository.findOne({
+            where: { name: missionName },
+        });
+        return this.canKeyAccessMission(apikey, mission.uuid, rights);
     }
 }

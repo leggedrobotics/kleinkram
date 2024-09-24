@@ -12,7 +12,6 @@ import { AccessGroupRights, CookieNames, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
-import Account from '@common/entities/auth/account.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
 import { FileGuardService } from './fileGuard.service';
@@ -24,6 +23,20 @@ import { AuthGuardService } from './authGuard.service';
 export class PublicGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
         return true; // Always allow access
+    }
+}
+
+export class BaseGuard extends AuthGuard('jwt') {
+    async getUser(context: ExecutionContext) {
+        const request = context.switchToHttp().getRequest();
+        if (!request.user) {
+            await super.canActivate(context); // Ensure the user is authenticated first by reading JWT
+        }
+        const { user, apiKey } = request.user;
+        if (!user) {
+            throw new UnauthorizedException('User not logged in');
+        }
+        return { user, apiKey, request };
     }
 }
 
@@ -60,7 +73,7 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
             }
         } else {
             await super.canActivate(context);
-            const user = request.user;
+            const user = request.user.user;
             if (!user) {
                 throw new UnauthorizedException('User not logged in');
             }
@@ -80,38 +93,28 @@ export class TokenOrUserGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class LoggedInUserGuard extends AuthGuard('jwt') {
+export class LoggedInUserGuard extends BaseGuard {
     constructor(private reflector: Reflector) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        await this.getUser(context); // Will throw if not logged in
         return true;
     }
 }
 
 @Injectable()
-export class AdminOnlyGuard extends AuthGuard('jwt') {
+export class AdminOnlyGuard extends BaseGuard {
     constructor(private reflector: Reflector) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys are never admins');
         }
 
         if (user.role !== UserRole.ADMIN) {
@@ -123,7 +126,7 @@ export class AdminOnlyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class ReadProjectGuard extends AuthGuard('jwt') {
+export class ReadProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -132,21 +135,18 @@ export class ReadProjectGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
+        const { user, apiKey, request } = await this.getUser(context);
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot read projects');
         }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+
         const projectUUID = request.query.uuid;
         return this.projectGuardService.canAccessProject(user, projectUUID);
     }
 }
 
 @Injectable()
-export class ReadProjectByNameGuard extends AuthGuard('jwt') {
+export class ReadProjectByNameGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -155,13 +155,10 @@ export class ReadProjectByNameGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot read projects');
         }
         const projectName = request.query.name;
         return this.projectGuardService.canAccessProjectByName(
@@ -172,7 +169,7 @@ export class ReadProjectByNameGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CreateInProjectByBodyGuard extends AuthGuard('jwt') {
+export class CreateInProjectByBodyGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -181,13 +178,10 @@ export class CreateInProjectByBodyGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot read projects');
         }
         const projectUUID = request.body.projectUUID;
         return this.projectGuardService.canAccessProject(
@@ -199,7 +193,7 @@ export class CreateInProjectByBodyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class WriteProjectGuard extends AuthGuard('jwt') {
+export class WriteProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -208,13 +202,10 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot write projects');
         }
         const projectUUID =
             request.query.uuid || request.body.uuid || request.params.uuid;
@@ -227,7 +218,7 @@ export class WriteProjectGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class DeleteProjectGuard extends AuthGuard('jwt') {
+export class DeleteProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -236,13 +227,10 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot delete projects');
         }
         const projectUUID = request.query.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(
@@ -254,7 +242,7 @@ export class DeleteProjectGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class DeleteFileGuard extends AuthGuard('jwt') {
+export class DeleteFileGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private reflector: Reflector,
@@ -263,16 +251,18 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
+
         const fileUUID =
             request.query.uuid || request.body.uuid || request.params.uuid;
+
+        if (apiKey) {
+            return this.fileGuardService.canKeyAccessFile(
+                apiKey,
+                fileUUID,
+                AccessGroupRights.DELETE,
+            );
+        }
         return this.fileGuardService.canAccessFile(
             user,
             fileUUID,
@@ -282,7 +272,7 @@ export class DeleteFileGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CreateGuard extends AuthGuard('jwt') {
+export class CreateGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private reflector: Reflector,
@@ -291,20 +281,16 @@ export class CreateGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot create projects');
         }
         return this.projectGuardService.canCreate(user);
     }
 }
 
 @Injectable()
-export class ReadMissionGuard extends AuthGuard('jwt') {
+export class ReadMissionGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -313,21 +299,22 @@ export class ReadMissionGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
+
         const missionUUID = request.query.uuid;
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                AccessGroupRights.READ,
+            );
+        }
         return this.missionGuardService.canAccessMission(user, missionUUID);
     }
 }
 
 @Injectable()
-export class CanReadManyMissionsGuard extends AuthGuard('jwt') {
+export class CanReadManyMissionsGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -336,13 +323,11 @@ export class CanReadManyMissionsGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
+        const { user, apiKey, request } = await this.getUser(context);
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot read many missions',
+            );
         }
         const missionUUIDs = request.query.uuids;
         return await this.missionGuardService.canReadManyMissions(
@@ -353,7 +338,7 @@ export class CanReadManyMissionsGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class ReadMissionByNameGuard extends AuthGuard('jwt') {
+export class ReadMissionByNameGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -362,15 +347,17 @@ export class ReadMissionByNameGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
+
         const missionName = request.query.name;
+
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMissionByName(
+                apiKey,
+                missionName,
+                AccessGroupRights.READ,
+            );
+        }
         return this.missionGuardService.canAccessMissionByName(
             user,
             missionName,
@@ -379,7 +366,7 @@ export class ReadMissionByNameGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CreateInMissionByBodyGuard extends AuthGuard('jwt') {
+export class CreateInMissionByBodyGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -388,15 +375,16 @@ export class CreateInMissionByBodyGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
+
         const missionUUID = request.body.missionUUID;
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                AccessGroupRights.CREATE,
+            );
+        }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
@@ -406,7 +394,7 @@ export class CreateInMissionByBodyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
+export class WriteMissionByBodyGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -415,15 +403,15 @@ export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const missionUUID = request.body.missionUUID;
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                AccessGroupRights.WRITE,
+            );
+        }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
@@ -433,7 +421,7 @@ export class WriteMissionByBodyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CanDeleteMissionGuard extends AuthGuard('jwt') {
+export class CanDeleteMissionGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -442,18 +430,18 @@ export class CanDeleteMissionGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const missionUUID =
             request.body.uuid ||
             request.params.uuid ||
             request.body.missionUUID;
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                AccessGroupRights.DELETE,
+            );
+        }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
@@ -463,7 +451,7 @@ export class CanDeleteMissionGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class AddTagGuard extends AuthGuard('jwt') {
+export class AddTagGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         @InjectRepository(Apikey) private apikeyRepository: Repository<Apikey>,
@@ -473,15 +461,15 @@ export class AddTagGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const missionUUID = request.body.mission;
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                AccessGroupRights.WRITE,
+            );
+        }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
@@ -491,7 +479,7 @@ export class AddTagGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class DeleteTagGuard extends AuthGuard('jwt') {
+export class DeleteTagGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -500,15 +488,16 @@ export class DeleteTagGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const taguuid = request.body.uuid || request.param.uuid;
+
+        if (apiKey) {
+            return this.missionGuardService.canKeyTagMission(
+                apiKey,
+                taguuid,
+                AccessGroupRights.DELETE,
+            );
+        }
         return this.missionGuardService.canTagMission(
             user,
             taguuid,
@@ -518,7 +507,7 @@ export class DeleteTagGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
+export class CreateQueueByBodyGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         @InjectRepository(Queue)
@@ -529,19 +518,23 @@ export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const queueUUID = request.body.uuid;
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID },
             relations: ['mission'],
         });
+        if (!queue) {
+            throw new BadRequestException('Queue not found');
+        }
+
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                queue.mission.uuid,
+                AccessGroupRights.CREATE,
+            );
+        }
 
         return this.missionGuardService.canAccessMission(
             user,
@@ -552,7 +545,7 @@ export class CreateQueueByBodyGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class MoveMissionToProjectGuard extends AuthGuard('jwt') {
+export class MoveMissionToProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
@@ -562,16 +555,12 @@ export class MoveMissionToProjectGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const missionUUID = request.query.missionUUID;
         const projectUUID = request.query.projectUUID;
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot move missions');
+        }
         return (
             (await this.projectGuardService.canAccessProject(
                 user,
@@ -588,7 +577,7 @@ export class MoveMissionToProjectGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class ReadFileGuard extends AuthGuard('jwt') {
+export class ReadFileGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private reflector: Reflector,
@@ -597,15 +586,15 @@ export class ReadFileGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const fileUUID = request.query.uuid;
+        if (apiKey) {
+            return this.fileGuardService.canKeyAccessFile(
+                apiKey,
+                fileUUID,
+                AccessGroupRights.READ,
+            );
+        }
         return this.fileGuardService.canAccessFile(
             user,
             fileUUID,
@@ -615,7 +604,7 @@ export class ReadFileGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class ReadFileByNameGuard extends AuthGuard('jwt') {
+export class ReadFileByNameGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private reflector: Reflector,
@@ -624,15 +613,15 @@ export class ReadFileByNameGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const filename = request.query.name;
+        if (apiKey) {
+            return this.fileGuardService.canKeyAccessFileByName(
+                apiKey,
+                filename,
+                AccessGroupRights.READ,
+            );
+        }
         return this.fileGuardService.canAccessFileByName(
             user,
             filename,
@@ -642,7 +631,7 @@ export class ReadFileByNameGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class WriteFileGuard extends AuthGuard('jwt') {
+export class WriteFileGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private reflector: Reflector,
@@ -651,15 +640,15 @@ export class WriteFileGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const fileUUID = request.query.uuid;
+        if (apiKey) {
+            return this.fileGuardService.canKeyAccessFile(
+                apiKey,
+                fileUUID,
+                AccessGroupRights.WRITE,
+            );
+        }
         return this.fileGuardService.canAccessFile(
             user,
             fileUUID,
@@ -669,7 +658,7 @@ export class WriteFileGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class ReadActionGuard extends AuthGuard('jwt') {
+export class ReadActionGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private actionGuardService: ActionGuardService,
@@ -678,21 +667,21 @@ export class ReadActionGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            await super.canActivate(context); // Ensure the user is authenticated first
-        }
-        const user = request.user;
-        if (!user) {
-            throw new UnauthorizedException('User not logged in');
-        }
+        const { user, apiKey, request } = await this.getUser(context);
         const actionUUID = request.query.uuid;
+        if (apiKey) {
+            return this.actionGuardService.canKeyAccessAction(
+                apiKey,
+                actionUUID,
+                AccessGroupRights.READ,
+            );
+        }
         return this.actionGuardService.canAccessAction(user, actionUUID);
     }
 }
 
 @Injectable()
-export class CreateActionsGuard extends AuthGuard('jwt') {
+export class CreateActionsGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private missionGuardService: MissionGuardService,
@@ -701,14 +690,21 @@ export class CreateActionsGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        await super.canActivate(context);
-
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            return false;
-        }
-        const user = request.user;
+        const { user, apiKey, request } = await this.getUser(context);
         const missionUUIDs = request.body.missionUUIDs;
+
+        if (apiKey) {
+            const allCanAccess = await Promise.all(
+                missionUUIDs.map((missionUUID) =>
+                    this.missionGuardService.canKeyAccessMission(
+                        apiKey,
+                        missionUUID,
+                        AccessGroupRights.CREATE,
+                    ),
+                ),
+            );
+            return allCanAccess.every((canAccess) => canAccess);
+        }
         const allCanAccess = await Promise.all(
             missionUUIDs.map((missionUUID) =>
                 this.missionGuardService.canAccessMission(
@@ -723,7 +719,7 @@ export class CreateActionsGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
+export class AddUserToAccessGroupGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private authGuardService: AuthGuardService,
@@ -732,14 +728,14 @@ export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        await super.canActivate(context);
-
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            return false;
-        }
-        const user = request.user;
+        const { user, apiKey, request } = await this.getUser(context);
         const accessGroupUUID = request.body.uuid || request.params.uuid;
+
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot add users to access groups',
+            );
+        }
         return this.authGuardService.canAddUserToAccessGroup(
             user,
             accessGroupUUID,
@@ -748,7 +744,7 @@ export class AddUserToAccessGroupGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class IsAccessGroupCreatorByProjectAccessGuard extends AuthGuard('jwt') {
+export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private authGuardService: AuthGuardService,
@@ -757,13 +753,13 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        await super.canActivate(context);
+        const { user, apiKey, request } = await this.getUser(context);
 
-        const request = context.switchToHttp().getRequest();
-        if (!request.user) {
-            return false;
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot check access group creator',
+            );
         }
-        const user = request.user;
         const projectAccessUUID =
             request.body.projectAccessUUID || request.params.projectAccessUUID;
         return this.authGuardService.isAccessGroupCreatorByProjectAccess(

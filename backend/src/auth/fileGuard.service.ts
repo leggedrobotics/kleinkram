@@ -8,6 +8,7 @@ import User from '@common/entities/user/user.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class FileGuardService {
@@ -78,5 +79,39 @@ export class FileGuardService {
             where: { filename: filename },
         });
         return this.canAccessFile(user, file.uuid, rights);
+    }
+
+    async canKeyAccessFileByName(
+        apikey: Apikey,
+        filename: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!filename) {
+            logger.error(
+                `FileGuard: Filename (${filename}) not provided. Requesting ${rights} access.`,
+            );
+            return false;
+        }
+        const file = await this.fileRepository.findOne({
+            where: { filename: filename },
+        });
+        return this.canKeyAccessFile(apikey, file.uuid, rights);
+    }
+
+    async canKeyAccessFile(
+        apiKey: Apikey,
+        fileUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const file = await this.fileRepository.findOne({
+            where: { uuid: fileUUID },
+            relations: ['mission'],
+        });
+        if (!file) {
+            return false;
+        }
+        return (
+            apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
+        );
     }
 }

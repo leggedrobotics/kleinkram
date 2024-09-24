@@ -14,6 +14,7 @@ export class UserService {
         @InjectRepository(User) private userRepository: Repository<User>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
+        @InjectRepository(Apikey) private apikeyRepository: Repository<Apikey>,
     ) {}
 
     async findOneByEmail(email: string) {
@@ -127,9 +128,14 @@ export class UserService {
     }
 
     async findOneByApiKey(apikey: string) {
-        return this.userRepository.findOneOrFail({
+        const user = this.userRepository.findOneOrFail({
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
         });
+        const apiKey = await this.apikeyRepository.findOneOrFail({
+            where: { apikey },
+            relations: ['mission', 'action'],
+        });
+        return { user, apiKey };
     }
 }

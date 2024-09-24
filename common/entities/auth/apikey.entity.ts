@@ -1,6 +1,6 @@
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { KeyTypes } from '../../enum';
+import { AccessGroupRights, KeyTypes } from '../../enum';
 import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
 import User from '../user/user.entity';
@@ -28,4 +28,7 @@ export default class Apikey extends BaseEntity {
         onDelete: 'CASCADE',
     })
     user: User;
+
+    @Column()
+    rights: AccessGroupRights;
 }
