@@ -3,6 +3,7 @@ import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
+import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 
 type ContainerLog = {
     timestamp: string;
@@ -32,7 +33,7 @@ export class Action extends BaseEntity {
 
     template: ActionTemplate;
     artifactUrl: string;
-    artifact_uploading: boolean;
+    artifacts: ArtifactState;
 
     constructor(
         uuid: string,
@@ -42,7 +43,7 @@ export class Action extends BaseEntity {
         state: ActionState,
         state_cause: string,
         artifactUrl: string,
-        artifact_uploading: boolean,
+        artifacts: ArtifactState,
         mission: Mission | null,
         template: ActionTemplate,
         image: Image,
@@ -58,7 +59,7 @@ export class Action extends BaseEntity {
         this.state = state;
         this.state_cause = state_cause || '';
         this.artifactUrl = artifactUrl;
-        this.artifact_uploading = artifact_uploading;
+        this.artifacts = artifacts;
         this.mission = mission;
         this.logs = logs;
         this.createdBy = createdBy;
