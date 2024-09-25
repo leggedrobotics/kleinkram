@@ -137,7 +137,7 @@
                                             You can't delete personal access
                                             groups
                                         </q-tooltip>
-                                        <q-item-section>Delete</q-item-section>
+                                        <q-item-section>Remove</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
