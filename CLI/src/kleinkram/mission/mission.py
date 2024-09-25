@@ -124,7 +124,7 @@ def mission_by_uuid(
 
     Can be run with API Key or with login.
     """
-    url = "/mission/byUUID"
+    url = "/mission/one"
     client = AuthenticatedClient()
     response = client.get(url, params={"uuid": uuid})
 
@@ -132,7 +132,7 @@ def mission_by_uuid(
         response.raise_for_status()
     except httpx.HTTPError:
         raise AccessDeniedException(
-            f"Failed to fetch mission."
+            f"Failed to fetch mission. "
             f"Consider using the following command to list all missions: 'klein mission list --verbose'\n",
             f"{response.json()['message']} ({response.status_code})",
         )

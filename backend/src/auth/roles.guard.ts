@@ -41,58 +41,6 @@ export class BaseGuard extends AuthGuard('jwt') {
 }
 
 @Injectable()
-export class TokenOrUserGuard extends AuthGuard('jwt') {
-    constructor(
-        @InjectRepository(Apikey) private tokenRepository: Repository<Apikey>,
-        private reflector: Reflector,
-        private missionGuardService: MissionGuardService,
-    ) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        if (request.cookies[CookieNames.CLI_KEY]) {
-            const token = await this.tokenRepository
-                .findOneOrFail({
-                    where: {
-                        apikey: request.cookies[CookieNames.CLI_KEY],
-                    },
-                    relations: ['mission'],
-                })
-                .catch(() => {
-                    console.log(
-                        'Invalid key: ',
-                        request.cookies[CookieNames.CLI_KEY],
-                    );
-                    throw new ForbiddenException('Invalid key!');
-                });
-
-            if (request.query.uuid != token.mission.uuid) {
-                throw new ForbiddenException('Invalid key?');
-            }
-        } else {
-            await super.canActivate(context);
-            const user = request.user.user;
-            if (!user) {
-                throw new UnauthorizedException('User not logged in');
-            }
-            if (!user.uuid) {
-                throw new BadRequestException('Missing User / UUID');
-            }
-            const canAccess = await this.missionGuardService.canAccessMission(
-                request.user.uuid,
-                request.query.uuid,
-            );
-            if (!canAccess) {
-                throw new ForbiddenException('User does not have access');
-            }
-        }
-        return true;
-    }
-}
-
-@Injectable()
 export class LoggedInUserGuard extends BaseGuard {
     constructor(private reflector: Reflector) {
         super();
@@ -100,6 +48,24 @@ export class LoggedInUserGuard extends BaseGuard {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         await this.getUser(context); // Will throw if not logged in
+        return true;
+    }
+}
+
+@Injectable()
+export class UserGuard extends BaseGuard {
+    constructor(private reflector: Reflector) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { apiKey } = await this.getUser(context); // Will throw if not logged in
+        console.log(apiKey);
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot access user only data',
+            );
+        }
         return true;
     }
 }

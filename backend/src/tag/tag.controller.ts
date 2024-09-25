@@ -21,7 +21,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
-import { addUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 
 @Controller('tag')
 export class TagController {
@@ -32,7 +32,7 @@ export class TagController {
     async createTagType(
         @BodyString('name') name: string,
         @BodyDataType('type') type: DataType,
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.tagService.create(name, type);
     }

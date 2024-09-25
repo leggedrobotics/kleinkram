@@ -16,13 +16,15 @@ export default class Apikey extends BaseEntity {
 
     @ManyToOne(() => Mission, (mission) => mission.api_keys, {
         onDelete: 'CASCADE',
+        eager: true,
     })
     mission: Mission;
 
-    @OneToOne(() => Action, {
+    @OneToOne(() => Action, (action) => action.key, {
         onDelete: 'CASCADE',
+        nullable: true,
     })
-    action: Action;
+    action: Action | null;
 
     @ManyToOne(() => User, (user) => user.api_keys, {
         onDelete: 'CASCADE',

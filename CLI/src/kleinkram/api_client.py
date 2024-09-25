@@ -47,6 +47,7 @@ class AuthenticatedClient(httpx.Client):
         self.cookies.set(AUTH_TOKEN, new_access_token)
 
     def request(self, method, url, *args, **kwargs):
+        print(f"Requesting {method} {url}")
         response = super().request(
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )

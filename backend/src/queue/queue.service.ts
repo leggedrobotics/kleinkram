@@ -10,7 +10,7 @@ import { Queue } from 'bull';
 import env from '@common/env';
 import { externalMinio, getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
-import { JWTUser } from '../auth/paramDecorator';
+import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
@@ -68,11 +68,11 @@ export class QueueService {
         );
     }
 
-    async createDrive(driveCreate: DriveCreate, user: JWTUser) {
+    async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.user_service.findOneByUUID(user.uuid);
+        const creator = await this.user_service.findOneByUUID(auth.user.uuid);
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
 
         const newQueue = this.queueRepository.create({
@@ -97,9 +97,9 @@ export class QueueService {
     async handleFileUpload(
         filenames: string[],
         missionUUID: string,
-        user: JWTUser,
+        auth: AuthRes,
     ) {
-        const creator = await this.user_service.findOneByUUID(user.uuid);
+        const creator = await this.user_service.findOneByUUID(auth.user.uuid);
         const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
         const filteredFilenames = filenames.filter(
             (filename) =>

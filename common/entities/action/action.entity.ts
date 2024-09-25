@@ -75,7 +75,7 @@ export default class Action extends BaseEntity {
     @Column({ nullable: false, default: false })
     uploading_artifacts: boolean;
 
-    @OneToOne(() => Apikey)
+    @OneToOne(() => Apikey, (apikey) => apikey.action)
     @JoinColumn()
     key: Apikey;
 

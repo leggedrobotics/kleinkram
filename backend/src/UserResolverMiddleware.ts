@@ -12,10 +12,6 @@ export class UserResolverMiddleware implements NestMiddleware {
             const key = req.cookies[CookieNames.CLI_KEY];
             if (key) {
                 req.user = await this.userService.findOneByApiKey(key);
-                console.log(
-                    'UserResolverMiddleware: user found by key',
-                    req.user,
-                );
             }
         }
         next();

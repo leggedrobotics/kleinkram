@@ -10,9 +10,9 @@ import {
     CanReadMissionByName,
     CanWriteMissionByBody,
     LoggedIn,
-    TokenOrUser,
+    UserOnly,
 } from '../auth/roles.decorator';
-import { addUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
@@ -24,6 +24,7 @@ import {
 } from '../validation/queryDecorators';
 import { ParamString, ParamUUID } from '../validation/paramDecorators';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
+import { UserGuard } from '../auth/roles.guard';
 
 @Controller('mission')
 export class MissionController {
@@ -33,13 +34,13 @@ export class MissionController {
     @CanCreateInProjectByBody()
     async createMission(
         @Body() createMission: CreateMission,
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.missionService.create(createMission, user);
     }
 
     @Get('filtered')
-    @LoggedIn()
+    @UserOnly()
     async filteredMissions(
         @QueryUUID('uuid') uuid: string,
         @QueryOptionalString('search') search: string,
@@ -47,7 +48,7 @@ export class MissionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.missionService.findMissionByProject(
             uuid,
@@ -56,7 +57,7 @@ export class MissionController {
             search,
             descending,
             sortBy,
-            user.uuid,
+            user.user.uuid,
         );
     }
 
@@ -67,13 +68,13 @@ export class MissionController {
     }
 
     @Get('all')
-    @LoggedIn()
+    @UserOnly()
     async allMissions(
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
-        return this.missionService.findAll(user.uuid, skip, take);
+        return this.missionService.findAll(user.user.uuid, skip, take);
     }
 
     @Get('byName')
@@ -82,26 +83,23 @@ export class MissionController {
         return this.missionService.findOneByName(name);
     }
 
-    @Get('byUUID')
-    @TokenOrUser()
-    async getMissionByUUID(
-        @QueryUUID('uuid') uuid: string,
-        @addUser() user: JWTUser,
-    ) {
-        return this.missionService.findOneByUUID(uuid);
+    @Get('download')
+    @CanReadMission()
+    async downloadWithToken(@QueryUUID('uuid') uuid: string) {
+        return this.missionService.download(uuid);
     }
 
     @Get('filteredByProjectName')
-    @LoggedIn()
+    @UserOnly()
     async filteredByProjectName(
         @QueryString('projectName') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.missionService.filteredByProjectName(
             projectName,
-            user.uuid,
+            user.user.uuid,
             skip,
             take,
         );

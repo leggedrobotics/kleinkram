@@ -16,6 +16,7 @@ import {
     CanReadProjectByName,
     CanWriteProject,
     LoggedIn,
+    UserOnly,
 } from '../auth/roles.decorator';
 import {
     QueryOptionalBoolean,
@@ -26,7 +27,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { addUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 
@@ -44,9 +45,9 @@ export class ProjectController {
      * @param searchParams
      */
     @Get('filtered')
-    @LoggedIn()
+    @UserOnly()
     async allProjects(
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryProjectSortBy('sortBy') sortBy?: string,
@@ -81,7 +82,7 @@ export class ProjectController {
 
     @Post('create')
     @CanCreate()
-    async createProject(@Body() dto: CreateProject, @addUser() user?: JWTUser) {
+    async createProject(@Body() dto: CreateProject, @addUser() user?: AuthRes) {
         return this.projectService.create(dto, user);
     }
 

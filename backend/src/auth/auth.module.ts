@@ -6,11 +6,7 @@ import { AuthController } from './auth.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
-import {
-    AdminOnlyGuard,
-    LoggedInUserGuard,
-    TokenOrUserGuard,
-} from './roles.guard';
+import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
 
 import Account from '@common/entities/auth/account.entity';
 import Project from '@common/entities/project/project.entity';
@@ -62,13 +58,11 @@ import { AuthGuardService } from './authGuard.service';
         JwtStrategy,
         AdminOnlyGuard,
         LoggedInUserGuard,
-        TokenOrUserGuard,
     ],
     controllers: [AuthController, AccessController],
     exports: [
         AdminOnlyGuard,
         LoggedInUserGuard,
-        TokenOrUserGuard,
         ProjectGuardService,
         MissionGuardService,
         TypeOrmModule.forFeature([

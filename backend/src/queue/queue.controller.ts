@@ -8,7 +8,7 @@ import {
     CanReadMission,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { addUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import { BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
@@ -26,7 +26,7 @@ export class QueueController {
 
     @Post('createdrive')
     @CanCreateInMissionByBody()
-    async createDrive(@Body() body: DriveCreate, @addUser() user: JWTUser) {
+    async createDrive(@Body() body: DriveCreate, @addUser() user: AuthRes) {
         return this.queueService.createDrive(body, user);
     }
 
@@ -43,14 +43,14 @@ export class QueueController {
         @QueryOptionalString('stateFilter') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         const date = new Date(startDate);
 
         return this.queueService.active(
             date,
             stateFilter,
-            user.uuid,
+            user.user.uuid,
             skip,
             take,
         );
