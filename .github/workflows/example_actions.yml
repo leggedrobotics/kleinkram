@@ -17,5 +17,5 @@ jobs:
               id: set-env
 
             - name: Build the Docker compose
-              run: sh examples/buildPush.sh ${{ steps.set-env.outputs.env }}
+              run: sh buildPush.sh ${{ steps.set-env.outputs.env }}
               working-directory: examples
