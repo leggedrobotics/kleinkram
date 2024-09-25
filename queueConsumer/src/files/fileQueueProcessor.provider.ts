@@ -17,11 +17,7 @@ import {
     getMetadata,
     listFiles,
 } from './helper/driveHelper';
-import {
-    downloadMinioFile,
-    getInfoFromMinio,
-    uploadFile,
-} from './helper/minioHelper';
+import { downloadMinioFile, uploadFile } from './helper/minioHelper';
 import logger from '../logger';
 import { traceWrapper, tracing } from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
@@ -423,11 +419,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             });
 
             logger.debug(`File ${originalFileName} converted successfully`);
-            const fileInfo = await getInfoFromMinio(
-                FileType.MCAP,
-                full_pathname,
-            );
-            mcapFileEntity.size = fileInfo.size;
+            mcapFileEntity.size = fs.statSync(tmp_file_name_mcap).size;
             mcapFileEntity.tentative = false;
             mcapFileEntity = await this.fileRepository.save(mcapFileEntity);
         }
@@ -542,34 +534,15 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     file.name.endsWith('.mcap') ||
                     file.mimeType === 'application/vnd.google-apps.folder'
                 ) {
-                    const exists = await this.queueRepository.exists({
-                        where: {
-                            filename: file.name,
-                            mission: { uuid: queue.mission.uuid },
-                        },
+                    const newQueue = this.queueRepository.create({
+                        filename: file.name,
+                        identifier: file.id,
+                        state: FileState.AWAITING_PROCESSING,
+                        location: FileLocation.DRIVE,
+                        mission: queue.mission,
+                        creator: queue.creator,
                     });
-                    let newQueue: QueueEntity;
-                    if (exists) {
-                        newQueue = this.queueRepository.create({
-                            filename: file.name,
-                            identifier: file.id,
-                            state: FileState.ERROR,
-                            location: FileLocation.DRIVE,
-                            mission: queue.mission,
-                            creator: queue.creator,
-                        });
-                        await this.queueRepository.save(newQueue);
-                        return;
-                    } else {
-                        newQueue = this.queueRepository.create({
-                            filename: file.name,
-                            identifier: file.id,
-                            state: FileState.AWAITING_PROCESSING,
-                            location: FileLocation.DRIVE,
-                            mission: queue.mission,
-                            creator: queue.creator,
-                        });
-                    }
+
                     await this.queueRepository.save(newQueue);
 
                     await this.fileQueue.add('processDriveFile', {
