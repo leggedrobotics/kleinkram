@@ -56,13 +56,7 @@
                         @click="() => refetchAccessGroups()"
                     />
 
-                    <q-btn
-                        flat
-                        class="bg-button-secondary text-on-color"
-                        label="Create Access Group"
-                        icon="sym_o_add"
-                        @click="() => createAccessGroupDialog()"
-                    />
+                    <CreateAccessGroupDialogOpener />
                 </button-group>
             </div>
 
@@ -116,29 +110,13 @@
                                         </q-tooltip>
                                         <q-item-section>Edit</q-item-section>
                                     </q-item>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        :disable="
-                                            prefilter.value === 'personal'
-                                        "
-                                        @click="
-                                            () =>
-                                                _deleteAccessGroup(
-                                                    props.row.uuid,
-                                                )
-                                        "
-                                    >
-                                        <q-tooltip
-                                            v-if="
-                                                prefilter.value === 'personal'
-                                            "
-                                        >
-                                            You can't delete personal access
-                                            groups
-                                        </q-tooltip>
-                                        <q-item-section>Delete</q-item-section>
-                                    </q-item>
+                                    <DeleteAccessGroup :accessGroup="props.row">
+                                        <q-item clickable v-ripple>
+                                            <q-item-section
+                                                >Delete</q-item-section
+                                            >
+                                        </q-item>
+                                    </DeleteAccessGroup>
                                 </q-list>
                             </q-menu>
                         </q-btn>
@@ -160,13 +138,10 @@ import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
-import CreateAccessGroupDialog from 'src/dialogs/CreateAccessGroupDialog.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import {
-    createAccessGroup,
-    deleteAccessGroup,
-} from 'src/services/mutations/access';
 import ButtonGroup from 'components/ButtonGroup.vue';
+import DeleteAccessGroup from 'components/buttonWrapper/DeleteAccessGroup.vue';
+import CreateAccessGroupDialogOpener from 'components/buttonWrapper/CreateAccessGroupDialogOpener.vue';
 
 const $q = useQuasar();
 
@@ -247,68 +222,10 @@ const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value[0] : [],
 );
 
-const { mutate: _createAccessGroup } = useMutation({
-    mutationFn: (name: string) => createAccessGroup(name),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
-            predicate: (query) => {
-                return query.queryKey[0] === 'accessGroups';
-            },
-        });
-        Notify.create({
-            message: 'Access Group Created',
-            color: 'positive',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-    onError: (error) => {
-        Notify.create({
-            message: 'Error creating Access Group',
-            color: 'negative',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-});
-
-const { mutate: _deleteAccessGroup } = useMutation({
-    mutationFn: (uuid: string) => deleteAccessGroup(uuid),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
-            predicate: (query) => {
-                return query.queryKey[0] === 'accessGroups';
-            },
-        });
-        Notify.create({
-            message: 'Access Group Deleted',
-            color: 'positive',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-    onError: (error) => {
-        Notify.create({
-            message: 'Error deleting Access Group',
-            color: 'negative',
-            position: 'bottom',
-            timeout: 2000,
-        });
-    },
-});
-
 async function rowClick(event: any, row: AccessGroup) {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,
         params: { uuid: row.uuid },
-    });
-}
-
-async function createAccessGroupDialog() {
-    $q.dialog({
-        component: CreateAccessGroupDialog,
-    }).onOk((name: string) => {
-        _createAccessGroup(name);
     });
 }
 

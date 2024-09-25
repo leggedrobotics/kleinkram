@@ -217,7 +217,7 @@
                                             () => _removeUser(props.row.uuid)
                                         "
                                     >
-                                        <q-item-section>Delete</q-item-section>
+                                        <q-item-section>Remove</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
