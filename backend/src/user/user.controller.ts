@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AdminOnly, LoggedIn } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QuerySkip,
     QueryString,
@@ -13,8 +13,8 @@ export class UserController {
     constructor(private readonly userService: UserService) {}
 
     @Post('claimAdmin')
-    @LoggedIn()
-    async claimAdmin(@addJWTUser() user?: JWTUser) {
+    @UserOnly()
+    async claimAdmin(@addUser() user?: AuthRes) {
         return this.userService.claimAdmin(user);
     }
 
@@ -29,7 +29,7 @@ export class UserController {
 
     @Get('me')
     @LoggedIn()
-    async me(@addJWTUser() user?: JWTUser) {
+    async me(@addUser() user?: AuthRes) {
         return this.userService.me(user);
     }
 
@@ -51,7 +51,7 @@ export class UserController {
         @QueryString('search') search: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user?: JWTUser,
+        @addUser() user?: AuthRes,
     ) {
         return this.userService.search(user, search, skip, take);
     }
@@ -91,7 +91,7 @@ export class UserController {
      */
     @Get('permissions')
     @LoggedIn()
-    async permissions(@addJWTUser() user?: JWTUser) {
+    async permissions(@addUser() user?: AuthRes) {
         return this.userService.permissions(user);
     }
 }

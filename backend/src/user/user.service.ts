@@ -3,18 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
-import { JWTUser } from '../auth/paramDecorator';
+import { AuthRes } from '../auth/paramDecorator';
 import Account from '@common/entities/auth/account.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectRepository(User) private userRepository: Repository<User>,
-        @InjectRepository(Account)
-        private accountRepository: Repository<Account>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
+        @InjectRepository(Apikey) private apikeyRepository: Repository<Apikey>,
     ) {}
 
     async findOneByEmail(email: string) {
@@ -28,7 +28,7 @@ export class UserService {
         });
     }
 
-    async claimAdmin(jwt_user: JWTUser) {
+    async claimAdmin(auth: AuthRes) {
         const nrAdmins = await this.userRepository.count({
             where: { role: UserRole.ADMIN },
         });
@@ -36,7 +36,7 @@ export class UserService {
             throw new ForbiddenException('Admin already exists');
         }
         const user = await this.userRepository.findOneOrFail({
-            where: { uuid: jwt_user.uuid },
+            where: { uuid: auth.user.uuid },
         });
 
         user.role = UserRole.ADMIN;
@@ -44,9 +44,9 @@ export class UserService {
         return user;
     }
 
-    async me(jwt_user: JWTUser) {
+    async me(auth: AuthRes) {
         return await this.userRepository.findOneOrFail({
-            where: { uuid: jwt_user.uuid },
+            where: { uuid: auth.user.uuid },
             relations: ['accessGroups'],
         });
     }
@@ -73,7 +73,7 @@ export class UserService {
         return user;
     }
 
-    async search(user: JWTUser, search: string, skip: number, take: number) {
+    async search(user: AuthRes, search: string, skip: number, take: number) {
         // Ensure the search string is not empty or null
         if (!search) {
             return [];
@@ -89,10 +89,10 @@ export class UserService {
             .getMany();
     }
 
-    async permissions(jwt_user: JWTUser) {
+    async permissions(auth: AuthRes) {
         let user = await this.userRepository.findOne({
             where: {
-                uuid: jwt_user.uuid,
+                uuid: auth.user.uuid,
                 accessGroups: { inheriting: true },
             },
             relations: ['accessGroups'],
@@ -100,7 +100,7 @@ export class UserService {
 
         if (!user) {
             user = await this.userRepository.findOneOrFail({
-                where: { uuid: jwt_user.uuid },
+                where: { uuid: auth.user.uuid },
             });
         }
 
@@ -125,5 +125,17 @@ export class UserService {
         }[] = [];
 
         return { role, default_permission, projects, missions };
+    }
+
+    async findOneByApiKey(apikey: string) {
+        const user = await this.userRepository.findOneOrFail({
+            where: { api_keys: { apikey } },
+            relations: ['api_keys'],
+        });
+        const apiKey = await this.apikeyRepository.findOneOrFail({
+            where: { apikey },
+            relations: ['action'],
+        });
+        return { user, apiKey };
     }
 }

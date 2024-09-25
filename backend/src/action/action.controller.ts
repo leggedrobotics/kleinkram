@@ -7,12 +7,13 @@ import {
 } from './entities/submit_action.dto';
 import {
     CanCreate,
-    CanCreateAction,
     CanCreateActions,
+    CanCreateInMissionByBody,
     CanReadAction,
     LoggedIn,
+    UserOnly,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
@@ -30,10 +31,10 @@ export class ActionController {
     constructor(private readonly actionService: ActionService) {}
 
     @Post('submit')
-    @CanCreateAction()
+    @CanCreateInMissionByBody()
     async createActionRun(
         @Body() dto: SubmitAction,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ): Promise<Action> {
         return this.actionService.submit(dto, user);
     }
@@ -42,7 +43,7 @@ export class ActionController {
     @CanCreateActions()
     async multiSubmit(
         @Body() dto: SubmitActionMulti,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.actionService.multiSubmit(dto, user);
     }
@@ -51,7 +52,7 @@ export class ActionController {
     @CanCreate()
     async createTemplate(
         @Body() dto: CreateTemplateDto,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.actionService.createTemplate(dto, user);
     }
@@ -60,7 +61,7 @@ export class ActionController {
     @CanCreate()
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         return this.actionService.createNewVersion(dto, user);
     }
@@ -68,16 +69,20 @@ export class ActionController {
     @LoggedIn()
     async list(
         @Query() dto: ActionQuery,
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('sortBy') sortBy: string,
         @QueryOptionalBoolean('descending') descending: boolean,
     ) {
+        let mission_uuid = dto.mission_uuid;
+        if (auth.apikey) {
+            mission_uuid = auth.apikey.mission.uuid;
+        }
         return this.actionService.listActions(
             dto.project_uuid,
-            dto.mission_uuid,
-            user.uuid,
+            mission_uuid,
+            auth.user.uuid,
             skip,
             take,
             sortBy,
@@ -86,19 +91,19 @@ export class ActionController {
     }
 
     @Get('running')
-    @LoggedIn()
+    @UserOnly()
     async runningActions(
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
     ) {
-        return this.actionService.runningActions(user.uuid, skip, take);
+        return this.actionService.runningActions(auth.user.uuid, skip, take);
     }
 
     @Get('listTemplates')
     @LoggedIn()
     async listTemplates(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('search') search: string,

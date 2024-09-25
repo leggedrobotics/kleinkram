@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
@@ -7,16 +7,11 @@ import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 
+@Global()
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            User,
-            Apikey,
-            Account,
-            ProjectAccessViewEntity,
-        ]),
-    ],
+    imports: [TypeOrmModule.forFeature([User, Apikey, Account])],
     controllers: [UserController],
     providers: [UserService],
+    exports: [UserService, TypeOrmModule.forFeature([User, Apikey])],
 })
 export class UserModule {}

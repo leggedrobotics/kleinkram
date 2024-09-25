@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { CanWriteProject, LoggedIn } from './roles.decorator';
+import { CanWriteProject, LoggedIn, UserOnly } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
@@ -95,7 +95,7 @@ export class AuthController {
     }
 
     @Get('validate-token')
-    @LoggedIn()
+    @UserOnly()
     validateToken(@Req() req: Request, @Res() res: Response) {
         // If we reach here, the token is valid
         res.status(200).json({ message: 'Token is valid' });

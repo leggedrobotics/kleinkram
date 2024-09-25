@@ -6,7 +6,12 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import { ActionState, KeyTypes } from '@common/enum';
+import {
+    AccessGroupRights,
+    ActionState,
+    ArtifactState,
+    KeyTypes,
+} from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
@@ -43,7 +48,9 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
+            rights: AccessGroupRights.WRITE, // todo read from frontend
             key_type: KeyTypes.CONTAINER,
+            user: action.createdBy,
         });
         return new DisposableAPIKey(
             await this.apikeyRepository.save(apiKey),
@@ -120,7 +127,7 @@ export class ActionManagerService {
         await this.containerDaemon.removeContainer(container.id, false);
         await this.setActionState(container, action);
         action.executionEndedAt = new Date();
-        action.uploading_artifacts = true;
+        action.artifacts = ArtifactState.UPLOADING;
         await this.actionRepository.save(action);
 
         const { container: artifact_upload_container, parentFolder } =
@@ -129,7 +136,7 @@ export class ActionManagerService {
                 `${action.template.name}-v${action.template.version}-${action.uuid}`,
             );
         await artifact_upload_container.wait();
-        action.uploading_artifacts = false;
+        action.artifacts = ArtifactState.UPLOADED;
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
             true,

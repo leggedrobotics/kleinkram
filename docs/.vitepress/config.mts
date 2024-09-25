@@ -209,6 +209,16 @@ export default withMermaid({
                             text: 'Base Concepts',
                             link: '/development/access-control/base-concepts',
                         },
+                        {
+                            text: 'Implementation',
+                            link: '/development/access-control/implementation',
+                            items: [
+                                {
+                                    text: 'Access Filtering',
+                                    link: '/development/access-control/addAccessConstraints'
+                                },
+                            ]
+                        }
                     ],
                     collapsed: true,
                 },

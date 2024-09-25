@@ -1,20 +1,14 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
-import logger from '../logger';
 import {
-    AdminOnly,
     CanCreateInMissionByBody,
     CanCreateQueueByBody,
     CanDeleteMission,
-    CanReadFile,
-    CanReadFileByName,
     CanReadMission,
-    CanWriteMissionByBody,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
-import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import { BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
@@ -32,7 +26,7 @@ export class QueueController {
 
     @Post('createdrive')
     @CanCreateInMissionByBody()
-    async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
+    async createDrive(@Body() body: DriveCreate, @addUser() user: AuthRes) {
         return this.queueService.createDrive(body, user);
     }
 
@@ -49,14 +43,14 @@ export class QueueController {
         @QueryOptionalString('stateFilter') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         const date = new Date(startDate);
 
         return this.queueService.active(
             date,
             stateFilter,
-            user.uuid,
+            user.user.uuid,
             skip,
             take,
         );

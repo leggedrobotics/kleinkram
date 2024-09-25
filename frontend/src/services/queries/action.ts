@@ -71,7 +71,7 @@ export const getActions = async (
             res.state,
             res.state_cause,
             res.artifact_url,
-            res.uploading_artifacts,
+            res.artifacts,
             mission,
             template,
             res.image,
@@ -111,7 +111,6 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.template.command,
         response.data.template.runtime_requirements,
     );
-
     return new Action(
         response.data.uuid,
         new Date(response.data.createdAt),
@@ -120,7 +119,7 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.state,
         response.data.state_cause,
         response.data.artifact_url,
-        response.data.uploading_artifacts,
+        response.data.artifacts,
         null,
         template,
         response.data.image,
@@ -216,7 +215,7 @@ export const getRunningActions = async () => {
             res.state,
             res.state_cause,
             res.artifact_url,
-            res.uploading_artifacts,
+            res.artifacts,
             mission,
             template,
             res.image,

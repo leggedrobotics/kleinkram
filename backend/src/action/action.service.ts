@@ -6,7 +6,7 @@ import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/enum';
 import { addAccessConstraints } from '../auth/authHelper';
-import { JWTUser } from '../auth/paramDecorator';
+import { AuthRes } from '../auth/paramDecorator';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import { QueueService } from '../queue/queue.service';
 import {
@@ -26,14 +26,14 @@ export class ActionService {
         private readonly queueService: QueueService,
     ) {}
 
-    async submit(data: SubmitAction, user: JWTUser): Promise<Action> {
+    async submit(data: SubmitAction, auth: AuthRes): Promise<Action> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.templateUUID },
         });
 
         let action = this.actionRepository.create({
             mission: { uuid: data.missionUUID },
-            createdBy: { uuid: user.uuid },
+            createdBy: { uuid: auth.user.uuid },
             state: ActionState.PENDING,
             template,
         });
@@ -49,7 +49,7 @@ export class ActionService {
         return action;
     }
 
-    async multiSubmit(data: SubmitActionMulti, user: JWTUser) {
+    async multiSubmit(data: SubmitActionMulti, user: AuthRes) {
         return Promise.all(
             data.missionUUIDs.map((uuid) =>
                 this.submit(
@@ -60,7 +60,7 @@ export class ActionService {
         );
     }
 
-    async createTemplate(data: CreateTemplateDto, user: JWTUser) {
+    async createTemplate(data: CreateTemplateDto, auth: AuthRes) {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
@@ -77,7 +77,7 @@ export class ActionService {
             );
         }
         const template = this.actionTemplateRepository.create({
-            createdBy: { uuid: user.uuid },
+            createdBy: { uuid: auth.user.uuid },
             name: data.name,
             runtime_requirements: data.runtime_requirements,
             image_name: data.image,
@@ -87,7 +87,7 @@ export class ActionService {
         return this.actionTemplateRepository.save(template);
     }
 
-    async createNewVersion(data: UpdateTemplateDto, user: JWTUser) {
+    async createNewVersion(data: UpdateTemplateDto, auth: AuthRes) {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
@@ -109,7 +109,7 @@ export class ActionService {
             return this.actionTemplateRepository.save(template);
         }
         const dbuser = await this.userRepository.findOneOrFail({
-            where: { uuid: user.uuid },
+            where: { uuid: auth.user.uuid },
         });
         const direction = data.searchable ? 'DESC' : 'ASC';
         const change = data.searchable ? 1 : -1;

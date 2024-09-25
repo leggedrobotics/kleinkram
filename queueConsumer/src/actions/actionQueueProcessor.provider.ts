@@ -11,7 +11,7 @@ import {
 import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ActionState } from '@common/enum';
+import { ActionState, ArtifactState } from '@common/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
 import { RuntimeCapability, RuntimeRequirements } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
@@ -87,7 +87,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async process_action(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
-            relations: ['template', 'mission', 'mission.project'],
+            relations: ['template', 'mission', 'mission.project', 'createdBy'],
         });
         this.checkRuntimeCapability(action.template.runtime_requirements);
         return await this.actionController.processAction(action);
@@ -177,6 +177,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
         action.state = ActionState.FAILED;
         action.state_cause = error.message;
+        action.artifacts = ArtifactState.ERROR;
         await this.actionRepository.save(action);
     }
 

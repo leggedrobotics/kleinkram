@@ -56,7 +56,11 @@ def list_files(
             url,
             params=params,
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            raise AccessDeniedException(
+                f"Failed to fetch files: {response.json()['message']} ({response.status_code})",
+                "Access Denied",
+            )
         data = response.json()
         missions_by_project_uuid = {}
         files_by_mission_uuid = {}

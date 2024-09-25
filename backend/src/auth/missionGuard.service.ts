@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
@@ -10,6 +10,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import { isUUID } from 'class-validator';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class MissionGuardService {
@@ -28,37 +29,34 @@ export class MissionGuardService {
     ) {}
 
     async canAccessMission(
-        userUUID: string,
+        user: User,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (isUUID(userUUID) === false || isUUID(missionUUID) === false) {
+        if (isUUID(missionUUID) === false) {
             logger.error(
-                `MissionGuard: missionUUID (${missionUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: missionUUID (${missionUUID}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
 
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
         if (!user) {
             return false;
         }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        return await this.canUserAccessMission(userUUID, missionUUID, rights);
+        return await this.canUserAccessMission(user, missionUUID, rights);
     }
 
     async canAccessMissionByName(
-        userUUID: string,
+        user: User,
         missionName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!missionName || !userUUID) {
+        if (!missionName || !user) {
             logger.error(
-                `MissionGuard: missionName (${missionName}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: missionName (${missionName}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -68,26 +66,21 @@ export class MissionGuardService {
         if (!mission) {
             return true;
         }
-        return this.canAccessMission(userUUID, mission.uuid, rights);
+        return this.canAccessMission(user, mission.uuid, rights);
     }
 
     async canTagMission(
-        userUUID: string,
+        user: User,
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!tagUUID || !userUUID) {
+        if (!tagUUID || !user) {
             logger.error(
-                `MissionGuard: tagUUID (${tagUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: tagUUID (${tagUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
-            return false;
-        }
+
         if (user.role === UserRole.ADMIN) {
             return true;
         }
@@ -101,23 +94,35 @@ export class MissionGuardService {
         if (rights !== AccessGroupRights.READ) {
             accessRights = AccessGroupRights.WRITE;
         }
-        return this.canAccessMission(userUUID, tag.mission.uuid, accessRights);
+        return this.canAccessMission(user, tag.mission.uuid, accessRights);
+    }
+
+    async canKeyTagMission(
+        apikey: Apikey,
+        tagUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!tagUUID) {
+            throw new ConflictException('Tag UUID not provided');
+        }
+        const tag = await this.tagRepository.findOne({
+            where: { uuid: tagUUID },
+            relations: ['mission'],
+        });
+        return this.canKeyAccessMission(apikey, tag.mission.uuid, rights);
     }
 
     async canReadManyMissions(
-        userUUID: string,
+        user: User,
         missionUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!missionUUIDs || !userUUID) {
+        if (!missionUUIDs || !user) {
             logger.error(
-                `MissionGuard: missionUUIDs (${missionUUIDs}) or User UUID (${userUUID}) not provided. Requesting READ access.`,
+                `MissionGuard: missionUUIDs (${missionUUIDs}) or User (${user}) not provided. Requesting READ access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
         if (!user) {
             return false;
         }
@@ -126,14 +131,14 @@ export class MissionGuardService {
         }
         const res = await Promise.all(
             missionUUIDs.map(async (missionUUID) =>
-                this.canUserAccessMission(userUUID, missionUUID, rights),
+                this.canUserAccessMission(user, missionUUID, rights),
             ),
         );
         return res.every((r) => r);
     }
 
     async canUserAccessMission(
-        userUUID: string,
+        user: User,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
@@ -146,7 +151,7 @@ export class MissionGuardService {
         }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
-                userUUID,
+                user,
                 mission.project.uuid,
                 rights,
             );
@@ -156,9 +161,31 @@ export class MissionGuardService {
         return this.missionAccessView.exists({
             where: {
                 missionUUID,
-                userUUID,
+                userUUID: user.uuid,
                 rights: MoreThanOrEqual(rights),
             },
         });
+    }
+
+    async canKeyAccessMission(
+        apikey: Apikey,
+        missionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        return apikey.mission.uuid === missionUUID && apikey.rights >= rights;
+    }
+
+    async canKeyAccessMissionByName(
+        apikey: Apikey,
+        missionName: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!missionName) {
+            throw new ConflictException('Mission name not provided');
+        }
+        const mission = await this.missionRepository.findOne({
+            where: { name: missionName },
+        });
+        return this.canKeyAccessMission(apikey, mission.uuid, rights);
     }
 }

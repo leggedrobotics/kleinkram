@@ -7,6 +7,7 @@ import User from '@common/entities/user/user.entity';
 import Action from '@common/entities/action/action.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class ActionGuardService {
@@ -20,22 +21,17 @@ export class ActionGuardService {
     ) {}
 
     async canAccessAction(
-        userUUID: string,
+        user: User,
         actionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!actionUUID || !userUUID) {
+        if (!actionUUID || !user) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `ActionGuard: actionUUID (${actionUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
-            return false;
-        }
+
         if (user.role === UserRole.ADMIN) {
             return true;
         }
@@ -45,7 +41,7 @@ export class ActionGuardService {
         });
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
-                userUUID,
+                user,
                 action.mission.project.uuid,
                 rights,
             );
@@ -53,9 +49,31 @@ export class ActionGuardService {
             return true;
         }
         return this.missionGuardService.canAccessMission(
-            userUUID,
+            user,
             action.mission.uuid,
             rights,
+        );
+    }
+    async canKeyAccessAction(
+        apikey: Apikey,
+        actionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!actionUUID) {
+            logger.error(
+                `ActionGuard: actionUUID (${actionUUID}) not provided. Requesting ${rights} access.`,
+            );
+        }
+        const action = await this.actionRepository.findOne({
+            where: { uuid: actionUUID },
+            relations: ['mission'],
+        });
+        if (!action) {
+            return false;
+        }
+        return (
+            apikey.mission.uuid === action.mission.uuid &&
+            rights <= apikey.rights
         );
     }
 }

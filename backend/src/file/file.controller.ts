@@ -21,11 +21,10 @@ import {
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
-    CanWriteMissionByBody,
     LoggedIn,
-    TokenOrUser,
+    UserOnly,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryBoolean,
     QueryOptionalBoolean,
@@ -41,24 +40,24 @@ import {
 import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
-import { CreatePreSignedURLSDto } from '../queue/entities/createPreSignedURLS.dto';
+import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 
 @Controller('file')
 export class FileController {
     constructor(private readonly fileService: FileService) {}
 
     @Get('all')
-    @LoggedIn()
+    @UserOnly()
     async allFiles(
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
-        return await this.fileService.findAll(user.uuid, take, skip);
+        return await this.fileService.findAll(auth.user.uuid, take, skip);
     }
 
     @Get('filteredByNames')
-    @LoggedIn()
+    @UserOnly()
     async filteredByNames(
         @QueryOptionalString('projectName') projectName: string,
         @QueryOptionalString('missionName') missionName: string,
@@ -66,13 +65,13 @@ export class FileController {
         @QueryOptionalRecord('tags') tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
             missionName,
             topics,
-            user.uuid,
+            auth.user.uuid,
             take,
             skip,
             tags,
@@ -95,19 +94,23 @@ export class FileController {
         @QueryTake('take') take: number,
         @QueryOptionalString('sort') sort: string,
         @QueryOptionalBoolean('desc') desc: boolean,
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
     ) {
+        let _missionUUID = missionUUID;
+        if (auth.apikey) {
+            _missionUUID = auth.apikey.mission.uuid;
+        }
         return await this.fileService.findFiltered(
             fileName,
             projectUUID,
-            missionUUID,
+            _missionUUID,
             startDate,
             endDate,
             topics,
             andOr,
             fileTypes,
             JSON.parse(tags),
-            user.uuid,
+            auth.user.uuid,
             take,
             skip,
             sort,
@@ -123,13 +126,6 @@ export class FileController {
     ) {
         logger.debug('download ' + uuid + ': expires=' + expires);
         return this.fileService.generateDownload(uuid, expires);
-    }
-
-    @Get('downloadWithToken')
-    @TokenOrUser()
-    async downloadWithToken(@QueryUUID('uuid') uuid: string) {
-        logger.debug('downloadWithTo' + 'ken', uuid);
-        return this.fileService.generateDownloadForToken(uuid);
     }
 
     @Get('one')
@@ -191,31 +187,36 @@ export class FileController {
 
     @Get('isUploading')
     @LoggedIn()
-    async isUploading(@addJWTUser() user: JWTUser) {
-        return this.fileService.isUploading(user.uuid);
+    async isUploading(@addUser() auth: AuthRes) {
+        return this.fileService.isUploading(auth.user.uuid);
     }
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
     async getTemporaryAccess(
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
         @Body() body: CreatePreSignedURLSDto,
     ) {
+        console.log(auth);
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
-            user.uuid,
+            auth.user.uuid,
         );
     }
 
     @Post('cancelUpload')
-    @LoggedIn() //Push back authentication to the queue to accelerate the request
+    @UserOnly() //Push back authentication to the queue to accelerate the request
     async cancelUpload(
         @BodyUUIDArray('uuids') uuids: string[],
         @BodyUUID('missionUUID') missionUUID: string,
-        @addJWTUser() user: JWTUser,
+        @addUser() auth: AuthRes,
     ) {
-        return this.fileService.cancelUpload(uuids, missionUUID, user.uuid);
+        return this.fileService.cancelUpload(
+            uuids,
+            missionUUID,
+            auth.user.uuid,
+        );
     }
 
     @Post('deleteMultiple')

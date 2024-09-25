@@ -23,44 +23,38 @@ export class ProjectGuardService {
     ) {}
 
     async canAccessProject(
-        userUUID: string,
+        user: User,
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!projectUUID || !userUUID) {
+        if (!projectUUID || !user) {
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
 
-        if (!user) {
-            return false;
-        }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
         const res = await this.projectAccessView.exists({
             where: {
                 projectUUID,
-                userUUID,
+                userUUID: user.uuid,
                 rights: MoreThanOrEqual(rights),
             },
         });
         if (!res) {
             console.log(
-                `User ${userUUID} does not have access to project ${projectUUID} with rights ${rights}`,
+                `User ${user.name} does not have access to project ${projectUUID} with rights ${rights}`,
             );
         }
         return res;
     }
 
     async canAccessProjectByName(
-        userUUID: string,
+        user: User,
         projectName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!projectName || !userUUID) {
+        if (!projectName || !user) {
             return false;
         }
         const project = await this.projectRepository.findOne({
@@ -69,14 +63,10 @@ export class ProjectGuardService {
         if (!project) {
             return false;
         }
-        return this.canAccessProject(userUUID, project.uuid, rights);
+        return this.canAccessProject(user, project.uuid, rights);
     }
 
-    async canCreate(userUUID: string) {
-        if (!userUUID) {
-            return false;
-        }
-        const user = await this.userService.findOneByUUID(userUUID);
+    async canCreate(user: User) {
         if (!user) {
             return false;
         }

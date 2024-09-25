@@ -85,8 +85,8 @@
                             <td class="q-table__cell">
                                 <q-btn
                                     v-if="
-                                        !data?.artifact_uploading &&
-                                        data?.state === ActionState.DONE
+                                        data?.artifacts ===
+                                        ArtifactState.UPLOADED
                                     "
                                     label="Open"
                                     flat
@@ -99,21 +99,8 @@
                                         () => openArtifactUrl(data?.artifactUrl)
                                     "
                                 />
-                                <div
-                                    style="font-style: italic"
-                                    v-if="
-                                        data?.artifact_uploading &&
-                                        data?.state === ActionState.DONE
-                                    "
-                                >
-                                    Upload of artifacts in progress
-                                </div>
-                                <div
-                                    style="font-style: italic"
-                                    v-if="data?.state !== ActionState.DONE"
-                                >
-                                    Artifacts will upload after the action
-                                    completed
+                                <div v-else>
+                                    {{ artifactState }}
                                 </div>
                             </td>
                         </tr>
@@ -193,16 +180,14 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 
-// print the id of the action mission (extracted from the route)
 import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
-import { ref } from 'vue';
-import { getActionColor } from 'src/services/generic';
+import { computed, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
-import { ActionState } from 'src/enums/QUEUE_ENUM';
+import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 
 const tab = ref('info');
 
@@ -216,6 +201,14 @@ const { data } = useQuery<Action>({
 function openArtifactUrl(url: string) {
     window.open(url, '_blank');
 }
+
+const artifactState = computed(() => {
+    if (data?.artifacts === ArtifactState.UPLOADING) {
+        return 'Uploading...';
+    } else if (data?.artifacts === ArtifactState.FAILED) {
+        return 'N/A';
+    }
+});
 </script>
 
 <style>

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
@@ -18,6 +18,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import access_config from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
 import { BullModule } from '@nestjs/bull';
+import { UserResolverMiddleware } from './UserResolverMiddleware';
 
 @Module({
     imports: [
@@ -64,7 +65,11 @@ import { BullModule } from '@nestjs/bull';
     ],
     providers: [DBDumper],
 })
-export class AppModule {}
+export class AppModule {
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(UserResolverMiddleware).forRoutes('*');
+    }
+}
 
 export type AccessGroupConfig = {
     emails: [{ email: string; access_groups: string[] }];

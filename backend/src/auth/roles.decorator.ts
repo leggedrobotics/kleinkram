@@ -3,7 +3,6 @@ import {
     PublicGuard,
     LoggedInUserGuard,
     AdminOnlyGuard,
-    TokenOrUserGuard,
     ReadProjectGuard,
     WriteProjectGuard,
     ReadProjectByNameGuard,
@@ -17,7 +16,6 @@ import {
     WriteMissionByBodyGuard,
     CreateQueueByBodyGuard,
     ReadActionGuard,
-    CreateActionGuard,
     AddTagGuard,
     DeleteTagGuard,
     CanDeleteMissionGuard,
@@ -29,6 +27,7 @@ import {
     CreateGuard,
     CreateInMissionByBodyGuard,
     CreateInProjectByBodyGuard,
+    UserGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -47,18 +46,19 @@ export function LoggedIn() {
     );
 }
 
+// Logged-in user route decorator (not API key)
+export function UserOnly() {
+    return applyDecorators(
+        SetMetadata('isLoggedIn', true),
+        UseGuards(UserGuard),
+    );
+}
+
 // Admin-only route decorator
 export function AdminOnly() {
     return applyDecorators(
         SetMetadata('isAdmin', true),
         UseGuards(AdminOnlyGuard),
-    );
-}
-
-export function TokenOrUser() {
-    return applyDecorators(
-        SetMetadata('isTokenOrUser', true),
-        UseGuards(TokenOrUserGuard),
     );
 }
 
@@ -186,12 +186,6 @@ export function CanReadAction() {
     );
 }
 
-export function CanCreateAction() {
-    return applyDecorators(
-        SetMetadata('CanCreateAction', true),
-        UseGuards(CreateActionGuard),
-    );
-}
 export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
