@@ -18,3 +18,4 @@ jobs:
 
             - name: Build the Docker compose
               run: sh examples/buildPush.sh ${{ steps.set-env.outputs.env }}
+              working-directory: examples
