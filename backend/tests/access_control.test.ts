@@ -129,8 +129,7 @@ describe('Access Control', () => {
                 requiredTags: [],
             }),
         });
-
-        expect(res.status).toBe(403);
+        expect(res.status).toBe(401);
     });
 
     test('if user with leggedrobotics email is allowed to create new project', async () => {

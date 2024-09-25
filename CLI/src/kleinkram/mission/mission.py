@@ -170,7 +170,7 @@ def download(
         raise ValueError(f"Local path '{local_path}' is not empty, but must be empty.")
 
     client = AuthenticatedClient()
-    response = client.get("/file/downloadWithToken", params={"uuid": mission_uuid})
+    response = client.get("/mission/download", params={"uuid": mission_uuid})
 
     try:
         response.raise_for_status()

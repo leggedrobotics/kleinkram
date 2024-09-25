@@ -87,7 +87,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async process_action(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
-            relations: ['template', 'mission', 'mission.project'],
+            relations: ['template', 'mission', 'mission.project', 'createdBy'],
         });
         this.checkRuntimeCapability(action.template.runtime_requirements);
         return await this.actionController.processAction(action);

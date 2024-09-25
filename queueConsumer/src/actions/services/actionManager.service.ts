@@ -6,7 +6,7 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import { ActionState, KeyTypes } from '@common/enum';
+import { AccessGroupRights, ActionState, KeyTypes } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
@@ -43,7 +43,9 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
+            rights: AccessGroupRights.WRITE, // todo read from frontend
             key_type: KeyTypes.CONTAINER,
+            user: action.createdBy,
         });
         return new DisposableAPIKey(
             await this.apikeyRepository.save(apiKey),
