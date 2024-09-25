@@ -9,7 +9,7 @@ from rich.table import Table
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
-from kleinkram.helper import expand_and_match
+from kleinkram.helper import expand_and_match, uploadFiles
 
 missionCommands = typer.Typer(
     name="mission",
@@ -234,9 +234,21 @@ def upload(
 
     try:
         client = AuthenticatedClient()
-        print(filenames)
         res = client.post("/file/temporaryAccess", json={"missionUUID": mission, "filenames": filenames})
-        print(res)
+        if res.status_code >= 400:
+            raise ValueError("Failed to get temporary access. Status code: " + str(res.status_code) + " Message: " + res.json()['message'])
+
+        temp_credentials = res.json()
+        credential = temp_credentials["credentials"]
+        confirmed_files = temp_credentials["files"]
+        for _file in filenames:
+            if not _file in confirmed_files.keys():
+                raise Exception(
+                    "Could not upload File '" + _file + "'. Is the filename unique? "
+                )
+            confirmed_files[_file]["filepath"] = filepaths[_file]
+        if len(confirmed_files.keys()) > 0:
+            uploadFiles(confirmed_files, credential, 4)
     except Exception as e:
         print(e)
         print("Failed to upload files")

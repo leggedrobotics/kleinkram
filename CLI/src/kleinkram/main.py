@@ -226,7 +226,7 @@ def upload(
         for _file in filenames:
             if not _file in confirmed_files.keys():
                 raise Exception(
-                    "Could not upload File '" + file + "'. Is the filename unique? "
+                    "Could not upload File '" + _file + "'. Is the filename unique? "
                 )
             confirmed_files[_file]["filepath"] = filepaths[_file]
         if len(confirmed_files.keys()) > 0:
