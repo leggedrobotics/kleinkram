@@ -8,8 +8,11 @@
         }"
     >
         <slot />
-        <q-tooltip v-if="!canModify">
+        <q-tooltip v-if="!canModify && props.mission.files.length === 0">
             You do not have permission to move this mission
+        </q-tooltip>
+        <q-tooltip v-if="!canModify && props.mission.files.length > 0">
+            You cannot delete a mission with files
         </q-tooltip>
     </div>
 </template>
@@ -35,13 +38,16 @@ const props = defineProps<{
     mission: Mission;
 }>();
 const { data: permissions } = usePermissionsQuery();
-const canModify = computed(() =>
-    canModifyMission(
+const canModify = computed(() => {
+    if (props.mission.files.length > 0) {
+        return false;
+    }
+    return canModifyMission(
         props.mission.uuid,
         props.mission.project?.uuid,
         permissions.value,
-    ),
-);
+    );
+});
 
 const deleteFile = () => {
     if (!canModify.value) return;
