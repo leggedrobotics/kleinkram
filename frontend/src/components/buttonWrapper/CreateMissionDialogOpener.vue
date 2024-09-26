@@ -1,5 +1,12 @@
 <template>
-    <div @click="createNewMission">
+    <div
+        @click="createNewMission"
+        :class="{
+            disabled: !canCreate,
+            'cursor-pointer': !canCreate,
+            'cursor-not-allowed': canCreate,
+        }"
+    >
         <slot />
     </div>
 </template>
@@ -8,7 +15,12 @@
 import CreateMissionDialog from 'src/dialogs/CreateMissionDialog.vue';
 import { useQuasar } from 'quasar';
 import { FileUpload } from 'src/types/FileUpload';
-import { inject, Ref } from 'vue';
+import { computed, inject, Ref } from 'vue';
+import {
+    canCreateMission,
+    canCreateProject,
+    usePermissionsQuery,
+} from 'src/hooks/customQueryHooks';
 
 const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
 
@@ -16,7 +28,14 @@ const $q = useQuasar();
 
 const uploads = inject('uploads') as Ref<FileUpload[]>;
 
-const createNewMission = () =>
+const { data: permissions } = usePermissionsQuery();
+const canCreate = computed(() => {
+    if (!project_uuid) return true;
+    return canCreateMission(project_uuid, permissions.value);
+});
+
+const createNewMission = () => {
+    if (!canCreate.value) return;
     $q.dialog({
         title: 'Create new mission',
         component: CreateMissionDialog,
@@ -25,4 +44,5 @@ const createNewMission = () =>
             uploads,
         },
     });
+};
 </script>

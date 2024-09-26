@@ -4,7 +4,7 @@
 
         <template #content>
             <AddUserToAccessGroup
-                :access_group="props.access_group"
+                :access_group_uuid="props.access_group_uuid"
                 ref="addUserRef"
             />
         </template>
@@ -29,7 +29,7 @@ const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const addUserRef = ref<InstanceType<typeof AddUserToAccessGroup> | null>(null);
 
 const props = defineProps<{
-    access_group: string;
+    access_group_uuid: string;
 }>();
 
 function addUserToAccessGroupAction() {
