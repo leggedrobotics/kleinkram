@@ -89,7 +89,7 @@ const { mutate } = useMutation({
             selected.value.map(async (project) => {
                 return addAccessGroupToProject(
                     project.uuid,
-                    props.access_group,
+                    props.access_group_uuid,
                     accessRight.value.value,
                 );
             }),
@@ -102,7 +102,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', props.access_group],
+            queryKey: ['AccessGroup', props.access_group_uuid],
         });
     },
     onError: () => {

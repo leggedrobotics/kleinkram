@@ -154,13 +154,17 @@
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
 
-                    <q-btn
-                        flat
-                        class="bg-button-secondary text-on-color"
-                        label="Add User"
-                        icon="sym_o_add"
-                        @click="openAddUser"
-                    />
+                    <AddUserDialogOpener
+                        v-if="accessGroup"
+                        :accessGroup="accessGroup"
+                    >
+                        <q-btn
+                            flat
+                            class="bg-button-secondary text-on-color"
+                            label="Add User"
+                            icon="sym_o_add"
+                        />
+                    </AddUserDialogOpener>
                 </button-group>
             </div>
             <q-table
@@ -247,6 +251,7 @@ import ROUTES from 'src/router/routes';
 import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
+import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -325,15 +330,6 @@ const project_rows = computed(() => {
 function openAddProject() {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
-        componentProps: {
-            access_group: uuid.value,
-        },
-    });
-}
-
-function openAddUser() {
-    $q.dialog({
-        component: AddUserToAccessGroupDialog,
         componentProps: {
             access_group: uuid.value,
         },
