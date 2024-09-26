@@ -159,6 +159,17 @@ export class ProjectService {
             creator: creator,
             requiredTags: tagTypes,
         });
+
+        const access_groups_default_ids = access_groups_default.map(
+            (ag) => ag.uuid,
+        );
+        const deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
+            if ('accessGroupUUID' in ag) {
+                return !access_groups_default_ids.includes(ag.accessGroupUUID);
+            } else {
+                return ag.userUUID !== auth.user.uuid;
+            }
+        });
         const transactedProject = await this.dataSource.transaction(
             async (manager) => {
                 const savedProject = await manager.save(Project, newProject);
@@ -171,7 +182,7 @@ export class ProjectService {
                 if (project.accessGroups) {
                     await this.createSpecifiedAccessGroups(
                         manager,
-                        project.accessGroups,
+                        deduplicatedAccessGroups,
                         savedProject,
                     );
                 }
@@ -349,5 +360,29 @@ export class ProjectService {
                 return manager.save(ProjectAccess, projectAccess);
             }),
         );
+    }
+
+    async getDefaultRights(auth: AuthRes) {
+        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const rights = creator.accessGroups.filter(
+            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
+        );
+        return rights.map((right) => {
+            const name = right.name;
+            const accessGroupUUID = right.uuid;
+            let _rights = AccessGroupRights.WRITE;
+            if (right.inheriting) {
+                _rights = this.config.access_groups.find(
+                    (group) => group.uuid === right.uuid,
+                ).rights;
+            } else if (right.personal) {
+                _rights = AccessGroupRights.DELETE;
+            }
+            return {
+                name,
+                accessGroupUUID,
+                rights: _rights,
+            };
+        });
     }
 }
