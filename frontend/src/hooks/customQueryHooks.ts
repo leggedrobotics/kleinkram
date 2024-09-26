@@ -78,6 +78,15 @@ export const canCreateProject = (
     return permissions.default_permission >= AccessGroupRights.CREATE;
 };
 
+export const canCreateMission = (
+    project_uuid: string | undefined,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (!project_uuid) return false;
+    const permission = getPermissionForProject(project_uuid, permissions);
+    return permission >= AccessGroupRights.CREATE;
+};
 export const canModifyProject = (
     project_uuid: string | undefined,
     permissions: Permissions | null | undefined,
