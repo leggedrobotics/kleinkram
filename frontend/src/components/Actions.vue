@@ -63,13 +63,7 @@
                             <q-item
                                 clickable
                                 v-ripple
-                                @click="
-                                    router.push(
-                                        ROUTES.ACTION.path +
-                                            '/' +
-                                            props.row.uuid,
-                                    )
-                                "
+                                @click="router.push('action/' + props.row.uuid)"
                             >
                                 <q-item-section>View Details </q-item-section>
                             </q-item>

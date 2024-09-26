@@ -116,7 +116,7 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import {
-    getPermissionForMission,
+    canLaunchInMission,
     useHandler,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
@@ -141,7 +141,7 @@ const dropdownNewFileMission = ref(false);
 
 const handler = useHandler();
 
-const perimissions = usePermissionsQuery();
+const { data: permissions } = usePermissionsQuery();
 const selected_project = computed(() =>
     projects.value.find(
         (project: Project) => project.uuid === handler.value.project_uuid,
@@ -156,10 +156,7 @@ const selected_mission = computed(() =>
 
 const canCreate = computed(() =>
     selected_mission.value
-        ? getPermissionForMission(
-              selected_mission.value?.uuid,
-              perimissions.value,
-          )
+        ? canLaunchInMission(selected_mission.value, permissions.value)
         : true,
 );
 

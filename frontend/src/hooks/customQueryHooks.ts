@@ -139,6 +139,26 @@ export const canDeleteMission = (
     );
 };
 
+export const canLaunchInMission = (
+    mission: Mission | null,
+    permissions: Permissions | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (!mission) return false;
+    const mission_permission = getPermissionForMission(
+        mission?.uuid as string,
+        permissions,
+    );
+    const project_permission = getPermissionForProject(
+        mission?.project?.uuid as string,
+        permissions,
+    );
+    return (
+        Math.max(mission_permission, project_permission) >=
+        AccessGroupRights.CREATE
+    );
+};
+
 export const canDeleteProject = (
     project_uuid: string | undefined,
     permissions: Permissions | null | undefined,
