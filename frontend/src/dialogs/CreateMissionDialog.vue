@@ -210,6 +210,7 @@ const submitNewMission = async () => {
         project.value.uuid,
         tagValues.value,
     ).catch((e) => {
+        tab_selection.value = 'meta_data';
         isInErrorState.value = true;
         errorMessage.value = e.response.data.message;
     });
