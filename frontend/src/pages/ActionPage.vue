@@ -84,8 +84,13 @@
                     class="bg-button-secondary text-on-color"
                     label="Create Action"
                     @click="() => (createAction = true)"
+                    :disable="!canCreate"
                     icon="sym_o_add"
-                />
+                >
+                    <q-tooltip v-if="!canCreate">
+                        Creating Actions requires Create rights on the mission.
+                    </q-tooltip>
+                </q-btn>
             </button-group>
         </div>
     </div>
@@ -110,7 +115,11 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import {
+    getPermissionForMission,
+    useHandler,
+    usePermissionsQuery,
+} from 'src/hooks/customQueryHooks';
 import TitleSection from 'components/TitleSection.vue';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
@@ -132,6 +141,7 @@ const dropdownNewFileMission = ref(false);
 
 const handler = useHandler();
 
+const perimissions = usePermissionsQuery();
 const selected_project = computed(() =>
     projects.value.find(
         (project: Project) => project.uuid === handler.value.project_uuid,
@@ -142,6 +152,15 @@ const selected_mission = computed(() =>
     missions.value.find(
         (mission: Mission) => mission.uuid === handler.value.mission_uuid,
     ),
+);
+
+const canCreate = computed(() =>
+    selected_mission.value
+        ? getPermissionForMission(
+              selected_mission.value?.uuid,
+              perimissions.value,
+          )
+        : true,
 );
 
 // Fetch projects
