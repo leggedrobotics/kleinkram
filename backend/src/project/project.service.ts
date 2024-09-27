@@ -163,13 +163,19 @@ export class ProjectService {
         const access_groups_default_ids = access_groups_default.map(
             (ag) => ag.uuid,
         );
-        const deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
-            if ('accessGroupUUID' in ag) {
-                return !access_groups_default_ids.includes(ag.accessGroupUUID);
-            } else {
-                return ag.userUUID !== auth.user.uuid;
-            }
-        });
+
+        let deduplicatedAccessGroups = [];
+        if (project.accessGroups) {
+            deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
+                if ('accessGroupUUID' in ag) {
+                    return !access_groups_default_ids.includes(
+                        ag.accessGroupUUID,
+                    );
+                } else {
+                    return ag.userUUID !== auth.user.uuid;
+                }
+            });
+        }
         const transactedProject = await this.dataSource.transaction(
             async (manager) => {
                 const savedProject = await manager.save(Project, newProject);
