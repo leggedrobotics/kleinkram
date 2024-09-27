@@ -101,6 +101,7 @@ services:
     bullconsumer:
         image: rslethz/grandtour-datasets:bull-consumer-latest
         container_name: bullconsumer
+        hostname: 'DO_NOT_CHANGE'
         build:
             context: .
             dockerfile: queueConsumer/prod.Dockerfile

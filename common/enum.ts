@@ -25,6 +25,7 @@ export enum ActionState {
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     FAILED = 'FAILED',
+    UNPROCESSABLE = 'UNPROCESSABLE',
 }
 
 export enum KeyTypes {

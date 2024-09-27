@@ -65,13 +65,13 @@
                         <tr>
                             <td class="q-table__cell">Runner CPU Model:</td>
                             <td class="q-table__cell">
-                                {{ data?.runner_cpu_model || 'N/A' }}
+                                {{ data?.worker.cpuModel || 'N/A' }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Runner Hostname:</td>
                             <td class="q-table__cell">
-                                {{ data?.runner_hostname || 'N/A' }}
+                                {{ data?.worker.name || 'N/A' }}
                             </td>
                         </tr>
                         <tr v-if="data && data?.getRuntimeInMS() != 0">

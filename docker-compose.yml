@@ -99,6 +99,7 @@ services:
     bullconsumer:
         image: rslethz/grandtour-datasets:bull-consumer-latest
         container_name: bullconsumer
+        hostname: GUGUS
         build:
             context: .
             dockerfile: queueConsumer/Dockerfile
