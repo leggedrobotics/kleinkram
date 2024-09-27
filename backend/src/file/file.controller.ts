@@ -197,7 +197,6 @@ export class FileController {
         @addUser() auth: AuthRes,
         @Body() body: CreatePreSignedURLSDto,
     ) {
-        console.log(auth);
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,

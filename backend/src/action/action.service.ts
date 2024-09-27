@@ -42,10 +42,21 @@ export class ActionService {
         // return the created action mission
         action = await this.actionRepository.findOne({
             where: { uuid: action.uuid },
-            relations: ['mission', 'mission.project'],
+            relations: ['mission', 'mission.project', 'template'],
         });
 
-        await this.queueService.addActionQueue(action.uuid);
+        const res = await this.queueService.addActionQueue(
+            action.uuid,
+            action.template.runtime_requirements,
+        );
+        console.log('res', res);
+        if (!res) {
+            action.state = ActionState.UNPROCESSABLE;
+            await this.actionRepository.save(action);
+            throw new ConflictException(
+                'No worker available with the required hardware capabilities',
+            );
+        }
         return action;
     }
 

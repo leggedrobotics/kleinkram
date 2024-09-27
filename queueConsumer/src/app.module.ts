@@ -24,12 +24,12 @@ import { ActionQueueProcessorProvider } from './actions/actionQueueProcessor.pro
 import { DockerDaemon } from './actions/services/dockerDaemon.service';
 import { ContainerCleanupService } from './actions/services/cleanupContainers.service';
 import { ActionManagerService } from './actions/services/actionManager.service';
-import { RuntimeCapabilitiesService } from './actions/services/runtime-capabilities.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/fileCleanupQueueProcessor.provider';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
+import Worker from '@common/entities/worker/worker.entity';
 
 @Module({
     imports: [
@@ -45,7 +45,7 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
         }),
 
         BullModule.registerQueue({
-            name: 'action-queue',
+            name: `action-queue`,
         }),
         BullModule.registerQueue({
             name: 'file-cleanup',
@@ -87,6 +87,7 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
                         MissionAccess,
                         ProjectAccessViewEntity,
                         MissionAccessViewEntity,
+                        Worker,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -109,6 +110,7 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
             MissionAccess,
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
+            Worker,
         ]),
         ScheduleModule.forRoot(),
     ],
@@ -119,7 +121,6 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,
-        RuntimeCapabilitiesService,
     ],
 })
 export class AppModule {}

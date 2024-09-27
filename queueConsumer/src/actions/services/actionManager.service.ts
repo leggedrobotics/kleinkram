@@ -19,7 +19,6 @@ import Apikey from '@common/entities/auth/apikey.entity';
 import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
-import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 import env from '@common/env';
 
 @Injectable()
@@ -33,7 +32,6 @@ export class ActionManagerService {
         private actionRepository: Repository<Action>,
         @InjectRepository(Apikey)
         private apikeyRepository: Repository<Apikey>,
-        private runtimeCapabilitiesService: RuntimeCapabilitiesService,
     ) {}
 
     /**
@@ -170,8 +168,7 @@ export class ActionManagerService {
         };
         action.runner_info = {
             hostname: container_details?.Config?.Hostname || 'N/A',
-            runtime_capabilities:
-                this.runtimeCapabilitiesService.getRuntimeCapabilities(),
+            runtime_capabilities: undefined,
         };
         action.logs = [];
     }

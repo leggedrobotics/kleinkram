@@ -17,6 +17,8 @@ import Tag from '@common/entities/tag/tag.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import FileEntity from '@common/entities/file/file.entity';
+import Worker from '@common/entities/worker/worker.entity';
+import Action from '@common/entities/action/action.entity';
 
 @Module({
     imports: [
@@ -28,6 +30,8 @@ import FileEntity from '@common/entities/file/file.entity';
             Project,
             Tag,
             FileEntity,
+            Worker,
+            Action,
         ]),
         BullModule.registerQueue({
             name: 'file-queue',
