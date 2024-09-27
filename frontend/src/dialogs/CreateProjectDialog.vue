@@ -109,6 +109,7 @@ import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { TagType } from 'src/types/TagType';
 import ConfigureTags from 'components/ConfigureTags.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { getDefaultAccessGroups } from 'src/services/queries/project';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);
@@ -140,6 +141,11 @@ const { data: tags } = useQuery({
     queryFn: async () => {
         return getFilteredTagTypes(tagSearch.value, selectedDataType.value);
     },
+});
+
+const { data: defaultRights } = useQuery({
+    queryKey: ['defaultRights'],
+    queryFn: getDefaultAccessGroups,
 });
 
 const usersToAdd = ref<
@@ -257,7 +263,11 @@ const submitNewProject = async () => {
 };
 
 const accessRightsRows = computed(() => {
-    return [...usersToAdd.value, ...accessGroupsToAdd.value];
+    return [
+        ...usersToAdd.value,
+        ...accessGroupsToAdd.value,
+        ...defaultRights.value,
+    ];
 });
 
 const AccessRightsColumns = [

@@ -30,6 +30,8 @@ import {
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
+import { AccessGroupRights } from '@common/enum';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Controller('project')
 export class ProjectController {
@@ -127,5 +129,15 @@ export class ProjectController {
         @Body('tagTypeUUIDs') tagTypeUUIDs: string[],
     ) {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+    }
+
+    @Get('getDefaultRights')
+    @LoggedIn()
+    async getDefaultRights(
+        @addUser() user: AuthRes,
+    ): Promise<
+        { name: string; accessGroupUUID: string; rights: AccessGroupRights }[]
+    > {
+        return this.projectService.getDefaultRights(user);
     }
 }

@@ -166,3 +166,8 @@ export const getProject = async (uuid: string): Promise<Project> => {
         new Date(project.deletedAt),
     );
 };
+
+export const getDefaultAccessGroups = async (): Promise<AccessGroup[]> => {
+    const response = await axios.get('/project/getDefaultRights');
+    return response.data;
+};
