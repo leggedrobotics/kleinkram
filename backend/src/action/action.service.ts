@@ -13,6 +13,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
+import { addActionQueue } from '@common/schedulingLogic';
 
 @Injectable()
 export class ActionService {
@@ -42,10 +43,19 @@ export class ActionService {
         // return the created action mission
         action = await this.actionRepository.findOne({
             where: { uuid: action.uuid },
-            relations: ['mission', 'mission.project'],
+            relations: ['mission', 'mission.project', 'template'],
         });
-
-        await this.queueService.addActionQueue(action.uuid);
+        const res = await this.queueService._addActionQueue(
+            action,
+            action.template.runtime_requirements,
+        );
+        if (!res) {
+            action.state = ActionState.UNPROCESSABLE;
+            await this.actionRepository.save(action);
+            throw new ConflictException(
+                'No worker available with the required hardware capabilities',
+            );
+        }
         return action;
     }
 
@@ -196,7 +206,13 @@ export class ActionService {
     async details(action_uuid: string) {
         return await this.actionRepository.findOneOrFail({
             where: { uuid: action_uuid },
-            relations: ['mission', 'mission.project', 'createdBy', 'template'],
+            relations: [
+                'mission',
+                'mission.project',
+                'createdBy',
+                'template',
+                'worker',
+            ],
         });
     }
 

@@ -13,10 +13,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, ArtifactState } from '@common/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
-import { RuntimeCapability, RuntimeRequirements } from '@common/types';
+import { RuntimeRequirements } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';
-import { RuntimeCapabilitiesService } from './services/runtime-capabilities.service';
+import Worker from '@common/entities/worker/worker.entity';
+import { createWorker } from './helper/hardwareDetect';
+import os from 'node:os';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { addActionQueue } from '@common/schedulingLogic';
 
 /**
  * The ActionQueueProcessor class is responsible for processing
@@ -29,30 +33,39 @@ import { RuntimeCapabilitiesService } from './services/runtime-capabilities.serv
  *
  * The ActionQueueProcessor designed to run in a distributed environment,
  * where multiple instances of the processor can run concurrently. However,
- * as the ActionController which is used to process the jobs is not designed
+ * as the ActionController which is used to process the jobs
  * connects to the local Docker daemon, it is recommended to run only one
  * instance of the processor per machine.
  *
  */
-@Processor('action-queue')
+@Processor(`action-queue`)
 @Injectable()
 export class ActionQueueProcessorProvider implements OnModuleInit {
-    private runtime_capabilities: RuntimeCapability = undefined;
+    private worker: Worker;
 
     constructor(
-        @InjectQueue('action-queue')
+        @InjectQueue(`action-queue`)
         private readonly analysisQueue: Queue,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
         private actionController: ActionManagerService,
-        private runtimeCapabilitiesService: RuntimeCapabilitiesService,
+        @InjectRepository(Worker)
+        private workerRepository: Repository<Worker>,
     ) {}
 
     async onModuleInit() {
         logger.debug('Setting hardware capabilities...');
-        this.runtime_capabilities =
-            this.runtimeCapabilitiesService.getRuntimeCapabilities();
-
+        console.log(os.hostname());
+        let worker = await this.workerRepository.findOne({
+            where: { name: os.hostname() },
+        });
+        if (worker && worker.reachable === false) {
+            worker.reachable = true;
+            worker = await this.workerRepository.save(worker);
+        } else if (!worker) {
+            worker = await createWorker(this.workerRepository);
+        }
+        this.worker = worker;
         logger.debug('Connecting to Redis...');
         await this.analysisQueue.isReady().catch((error) => {
             logger.error('Failed to connect to Redis:', error);
@@ -72,18 +85,10 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
      *
      */
     private checkRuntimeCapability(runtime_requirements: RuntimeRequirements) {
-        if (
-            !!runtime_requirements.gpu_model &&
-            !this.runtime_capabilities.gpu_model
-        ) {
-            throw new HardwareDependencyError(
-                runtime_requirements,
-                this.runtime_capabilities,
-            );
-        }
+        return true;
     }
 
-    @Process({ concurrency: 5, name: 'actionProcessQueue' })
+    @Process({ concurrency: 5, name: `actionProcessQueue-${os.hostname()}` })
     async process_action(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
@@ -108,6 +113,28 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async onFailed(job: Job<SubmittedAction>, error: any) {
         if (error instanceof HardwareDependencyError) {
             await this.handleHardwareDependencyError(job, error);
+            return;
+        }
+
+        if (
+            error.message.startsWith(
+                'Missing process handler for job type actionProcessQueue-',
+            )
+        ) {
+            logger.error(
+                `Processor for job ${job.id} of type ${job.name} not found.`,
+            );
+            const action = await this.actionRepository.findOne({
+                where: { uuid: job.data.uuid },
+                relations: ['template'],
+            });
+            await addActionQueue(
+                action,
+                action.template.runtime_requirements,
+                this.workerRepository,
+                this.actionRepository,
+                this.analysisQueue,
+            );
             return;
         }
 
@@ -169,16 +196,21 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             `Job ${job.id} of type ${job.name} failed with error: ${error.message}.`,
         );
         logger.error(error.stack);
+        try {
+            // update the state of the action in the database
+            const action = await this.actionRepository.findOneOrFail({
+                where: { uuid: job.id as string },
+            });
 
-        // update the state of the action in the database
-        const action = await this.actionRepository.findOneOrFail({
-            where: { uuid: job.id as string },
-        });
-
-        action.state = ActionState.FAILED;
-        action.state_cause = error.message;
-        action.artifacts = ArtifactState.ERROR;
-        await this.actionRepository.save(action);
+            action.state = ActionState.FAILED;
+            action.state_cause = error.message;
+            action.artifacts = ArtifactState.ERROR;
+            await this.actionRepository.save(action);
+        } catch (e) {
+            logger.error(
+                `Failed to update action state in database: ${e.message}`,
+            );
+        }
     }
 
     /**
@@ -206,5 +238,13 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         if (isActionDirty) {
             await this.actionRepository.save(action);
         }
+    }
+
+    @Cron(CronExpression.EVERY_MINUTE)
+    async healthCheck() {
+        this.worker.lastSeen = new Date();
+        this.worker.reachable = true;
+        await this.workerRepository.save(this.worker);
+        console.log('Health checked');
     }
 }

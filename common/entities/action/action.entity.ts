@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToMany,
+    OneToOne,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
@@ -6,6 +13,7 @@ import { ActionState, ArtifactState } from '../../enum';
 import User from '../user/user.entity';
 import { RuntimeCapability, RuntimeRequirements } from '../../types';
 import ActionTemplate from './actionTemplate.entity';
+import Worker from '../worker/worker.entity';
 
 export type ContainerLog = {
     timestamp: string;
@@ -42,9 +50,6 @@ export default class Action extends BaseEntity {
 
     @Column({ type: 'json', nullable: true })
     container: Container;
-
-    @Column({ type: 'json', nullable: true })
-    runner_info: RunnerInfo;
 
     @ManyToOne(() => User, (user) => user.submittedActions)
     createdBy: User;
@@ -84,4 +89,7 @@ export default class Action extends BaseEntity {
 
     @Column({ type: 'json', nullable: true })
     image: Image;
+
+    @ManyToOne(() => Worker, (worker) => worker.actions, { nullable: true })
+    worker: Worker;
 }

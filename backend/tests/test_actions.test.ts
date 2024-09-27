@@ -29,7 +29,6 @@ describe('Verify Action', () => {
 
         const user_id = await mock_db_user('internal@leggedrobotics.com');
         const user = await get_user_from_db(user_id);
-
         // create project
         const project_uuid = await create_project_using_post(
             {
@@ -94,6 +93,7 @@ describe('Verify Action', () => {
                 } as SubmitAction),
             },
         );
+
         // check if the request was successful
         expect(action_submission.status).toBeLessThan(300);
 

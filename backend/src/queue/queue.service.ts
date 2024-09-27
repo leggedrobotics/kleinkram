@@ -1,21 +1,24 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, MoreThan, Repository } from 'typeorm';
+import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
+import Worker from '@common/entities/worker/worker.entity';
+import { addActionQueue, findWorkerForAction } from '@common/schedulingLogic';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
 import env from '@common/env';
-import { externalMinio, getInfoFromMinio, internalMinio } from '../minioHelper';
+import { getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
 import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
-import { SubmittedAction } from '@common/entities/action/action.entity';
-
+import { Queue } from 'bull';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import Action from '@common/entities/action/action.entity';
+import { RuntimeRequirements } from '@common/types';
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
     const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
@@ -49,24 +52,11 @@ export class QueueService {
         @InjectQueue('file-queue') private fileProcessingQueue: Queue,
         @InjectQueue('action-queue') private actionQueue: Queue,
         private user_service: UserService,
+        @InjectRepository(Worker)
+        private workerRepository: Repository<Worker>,
+        @InjectRepository(Action)
+        private actionRepository: Repository<Action>,
     ) {}
-
-    async addActionQueue(actionUUID: string) {
-        await this.actionQueue.add(
-            'actionProcessQueue',
-            { uuid: actionUUID },
-            {
-                jobId: actionUUID,
-                backoff: {
-                    delay: 60 * 1_000, // 60 seconds
-                    type: 'exponential',
-                },
-                removeOnComplete: true,
-                removeOnFail: false,
-                attempts: 60, // one hour of attempts
-            },
-        );
-    }
 
     async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
         const mission = await this.missionRepository.findOneOrFail({
@@ -92,78 +82,6 @@ export class QueueService {
                 logger.error(err);
             });
         logger.debug('added to queue');
-    }
-
-    async handleFileUpload(
-        filenames: string[],
-        missionUUID: string,
-        auth: AuthRes,
-    ) {
-        const creator = await this.user_service.findOneByUUID(auth.user.uuid);
-        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
-        const filteredFilenames = filenames.filter(
-            (filename) =>
-                (filename.endsWith('.bag') || filename.endsWith('.mcap')) &&
-                filenameRegex.test(filename),
-        );
-        const mission = await this.missionRepository.findOneOrFail({
-            where: { uuid: missionUUID },
-            relations: ['project'],
-        });
-
-        const expiry = 2 * 60 * 60;
-        const urlPromises = filenames.map(async (filename) => {
-            const fileType = filename.endsWith('.bag')
-                ? FileType.BAG
-                : FileType.MCAP;
-            const location = `${mission.project.name}/${mission.name}/${filename}`;
-            const tentativeFile = this.fileRepository.create({
-                date: new Date(),
-                size: 0,
-                filename,
-                mission,
-                creator,
-                type: fileType,
-                tentative: true,
-            });
-            try {
-                await this.fileRepository.save(tentativeFile);
-                const minioURL = await externalMinio.presignedPutObject(
-                    fileType === FileType.BAG
-                        ? env.MINIO_BAG_BUCKET_NAME
-                        : env.MINIO_MCAP_BUCKET_NAME,
-                    location,
-                    expiry,
-                );
-                const newQueue = this.queueRepository.create({
-                    filename,
-                    identifier: location,
-                    state: FileState.AWAITING_UPLOAD,
-                    location: FileLocation.MINIO,
-                    mission,
-                    creator,
-                });
-                await this.queueRepository.save(newQueue);
-                return {
-                    filename,
-                    minioURL,
-                    uuid: newQueue.uuid,
-                };
-            } catch (error) {
-                return {
-                    filename,
-                    minioURL: null,
-                    uuid: null,
-                    error: 'Non-unique filename',
-                };
-            }
-        });
-
-        const urls = await Promise.all(urlPromises);
-        return urls.reduce((acc, { filename, minioURL, uuid, error }) => {
-            acc[filename] = { url: minioURL, uuid, error };
-            return acc;
-        }, {});
     }
 
     async confirmUpload(uuid: string) {
@@ -335,7 +253,6 @@ export class QueueService {
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
             relations: ['mission', 'mission.project'],
         });
-        console.log(queue.state);
         if (queue.state >= FileState.PROCESSING) {
             throw new ConflictException('File is not in processing state');
         }
@@ -351,5 +268,64 @@ export class QueueService {
         }
         queue.state = FileState.CANCELED;
         await this.queueRepository.save(queue);
+    }
+
+    async _addActionQueue(
+        action: Action,
+        runtime_requirements: RuntimeRequirements,
+    ) {
+        console.log('Adding action to queue');
+        console.log(action);
+        console.log(runtime_requirements);
+        return await addActionQueue(
+            action,
+            runtime_requirements,
+            this.workerRepository,
+            this.actionRepository,
+            this.actionQueue,
+        );
+    }
+
+    @Cron(CronExpression.EVERY_MINUTE)
+    async healthCheck() {
+        const workers = await this.workerRepository.find({
+            where: {
+                reachable: true,
+                lastSeen: LessThan(
+                    new Date(new Date().getTime() - 5 * 60 * 1000),
+                ),
+            },
+        });
+        const waitingJobs = await this.actionQueue.getJobs([
+            'active',
+            'delayed',
+            'waiting',
+        ]);
+
+        await Promise.all(
+            workers.map(async (worker) => {
+                const jobsToReschedule = waitingJobs.filter((job) =>
+                    job.name.endsWith(worker.name),
+                );
+                await Promise.all(
+                    jobsToReschedule.map(async (job) => {
+                        const action = await this.actionRepository.findOne({
+                            where: { uuid: job.data.uuid },
+                            relations: ['template'],
+                        });
+                        await job.remove();
+                        await addActionQueue(
+                            action,
+                            action.template.runtime_requirements,
+                            this.workerRepository,
+                            this.actionRepository,
+                            this.actionQueue,
+                        );
+                    }),
+                );
+                worker.reachable = false;
+                await this.workerRepository.save(worker);
+            }),
+        );
     }
 }

@@ -60,7 +60,6 @@ export class UserGuard extends BaseGuard {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { apiKey } = await this.getUser(context); // Will throw if not logged in
-        console.log(apiKey);
         if (apiKey) {
             throw new UnauthorizedException(
                 'CLI Keys cannot access user only data',
