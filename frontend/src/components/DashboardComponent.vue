@@ -14,6 +14,7 @@
         <RecentProjects />
         <Storage />
         <RunningActions />
+        <Worker />
     </div>
 </template>
 
@@ -24,6 +25,7 @@ import { getUser, isAuthenticated } from 'src/services/auth';
 import Storage from 'components/Storage.vue';
 import RecentProjects from 'components/RecentProjects.vue';
 import RunningActions from 'components/RunningActions.vue';
+import Worker from 'components/Worker.vue';
 
 const is_authenticated = await isAuthenticated();
 
