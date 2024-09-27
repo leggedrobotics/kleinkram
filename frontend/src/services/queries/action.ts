@@ -250,22 +250,25 @@ export const getRunningActions = async () => {
             new Date(res.mission.updatedAt),
             new Date(res.mission.deletedAt),
         );
-        const worker = new Worker(
-            res.worker.uuid,
-            res.worker.name,
-            res.worker.createdAt,
-            res.worker.updatedAt,
-            res.worker.deletedAt,
-            res.worker.cpuMemory,
-            res.worker.hasGPU,
-            res.worker.gpuModel,
-            res.worker.gpuMemory,
-            res.worker.cpuCores,
-            res.worker.cpuModel,
-            res.worker.storage,
-            res.worker.lastSeen,
-            res.worker.reachable,
-        );
+        let worker = null;
+        if (res.worker) {
+            worker = new Worker(
+                res.worker.uuid,
+                res.worker.name,
+                res.worker.createdAt,
+                res.worker.updatedAt,
+                res.worker.deletedAt,
+                res.worker.cpuMemory,
+                res.worker.hasGPU,
+                res.worker.gpuModel,
+                res.worker.gpuMemory,
+                res.worker.cpuCores,
+                res.worker.cpuModel,
+                res.worker.storage,
+                res.worker.lastSeen,
+                res.worker.reachable,
+            );
+        }
         return new Action(
             res.uuid,
             new Date(res.createdAt),
