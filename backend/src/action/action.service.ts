@@ -13,6 +13,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
+import { addActionQueue } from '@common/schedulingLogic';
 
 @Injectable()
 export class ActionService {
@@ -44,12 +45,10 @@ export class ActionService {
             where: { uuid: action.uuid },
             relations: ['mission', 'mission.project', 'template'],
         });
-
-        const res = await this.queueService.addActionQueue(
-            action.uuid,
+        const res = await this.queueService._addActionQueue(
+            action,
             action.template.runtime_requirements,
         );
-        console.log('res', res);
         if (!res) {
             action.state = ActionState.UNPROCESSABLE;
             await this.actionRepository.save(action);
@@ -207,7 +206,13 @@ export class ActionService {
     async details(action_uuid: string) {
         return await this.actionRepository.findOneOrFail({
             where: { uuid: action_uuid },
-            relations: ['mission', 'mission.project', 'createdBy', 'template'],
+            relations: [
+                'mission',
+                'mission.project',
+                'createdBy',
+                'template',
+                'worker',
+            ],
         });
     }
 

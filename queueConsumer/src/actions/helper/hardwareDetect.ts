@@ -49,6 +49,7 @@ export async function createWorker(workerRepository: Repository<Worker>) {
         storage,
         reachable,
         lastSeen: new Date(),
+        actions: [],
     });
     return await workerRepository.save(newWorker);
 }

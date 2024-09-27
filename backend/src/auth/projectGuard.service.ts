@@ -43,7 +43,7 @@ export class ProjectGuardService {
         });
         if (!res) {
             console.log(
-                `User ${user.name} does not have access to project ${projectUUID} with rights ${rights}`,
+                `User ${user.name} (${user.uuid}) does not have access to project ${projectUUID} with rights ${rights}`,
             );
         }
         return res;

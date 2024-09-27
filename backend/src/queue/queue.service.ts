@@ -5,19 +5,20 @@ import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
+import { addActionQueue, findWorkerForAction } from '@common/schedulingLogic';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import env from '@common/env';
-import { externalMinio, getInfoFromMinio, internalMinio } from '../minioHelper';
+import { getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
 import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
 import { Queue } from 'bull';
-import { RuntimeRequirements } from '@common/types';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Action from '@common/entities/action/action.entity';
+import { RuntimeRequirements } from '@common/types';
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
     const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
@@ -56,48 +57,6 @@ export class QueueService {
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
     ) {}
-
-    async findWorkerForAction(runtime_requirements: RuntimeRequirements) {
-        const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
-        const worker = await this.workerRepository.find({
-            where: { reachable: true, hasGPU: needsGPU },
-        });
-        const waiting = await this.actionQueue.getWaiting();
-        const nrJobs = {};
-        waiting.forEach((job) => {
-            const name = job.name.replace('actionProcessQueue-', '');
-            if (nrJobs[name]) {
-                nrJobs[name] += 1;
-            } else {
-                nrJobs[name] = 1;
-            }
-        });
-        return worker.sort((a, b) => nrJobs[a.name] - nrJobs[b.name])[0];
-    }
-    async addActionQueue(
-        actionUUID: string,
-        runtime_requirements: RuntimeRequirements,
-    ) {
-        const worker = await this.findWorkerForAction(runtime_requirements);
-        if (!worker) {
-            return;
-        }
-        console.log('Worker:', worker);
-        return await this.actionQueue.add(
-            `actionProcessQueue-${worker.name}`,
-            { uuid: actionUUID },
-            {
-                jobId: actionUUID,
-                backoff: {
-                    delay: 60 * 1_000, // 60 seconds
-                    type: 'exponential',
-                },
-                removeOnComplete: true,
-                removeOnFail: false,
-                attempts: 60, // one hour of attempts
-            },
-        );
-    }
 
     async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
         const mission = await this.missionRepository.findOneOrFail({
@@ -311,6 +270,22 @@ export class QueueService {
         await this.queueRepository.save(queue);
     }
 
+    async _addActionQueue(
+        action: Action,
+        runtime_requirements: RuntimeRequirements,
+    ) {
+        console.log('Adding action to queue');
+        console.log(action);
+        console.log(runtime_requirements);
+        return await addActionQueue(
+            action,
+            runtime_requirements,
+            this.workerRepository,
+            this.actionRepository,
+            this.actionQueue,
+        );
+    }
+
     @Cron(CronExpression.EVERY_MINUTE)
     async healthCheck() {
         const workers = await this.workerRepository.find({
@@ -339,9 +314,12 @@ export class QueueService {
                             relations: ['template'],
                         });
                         await job.remove();
-                        await this.addActionQueue(
-                            action.uuid,
+                        await addActionQueue(
+                            action,
                             action.template.runtime_requirements,
+                            this.workerRepository,
+                            this.actionRepository,
+                            this.actionQueue,
                         );
                     }),
                 );

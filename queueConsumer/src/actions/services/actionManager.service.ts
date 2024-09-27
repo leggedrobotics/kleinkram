@@ -166,10 +166,6 @@ export class ActionManagerService {
         action.container = {
             id: container_id,
         };
-        action.runner_info = {
-            hostname: container_details?.Config?.Hostname || 'N/A',
-            runtime_capabilities: undefined,
-        };
         action.logs = [];
     }
 

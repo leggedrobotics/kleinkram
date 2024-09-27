@@ -25,8 +25,7 @@ export class Action extends BaseEntity {
     mission: Mission | null;
     logs: ContainerLog[] | null;
 
-    runner_hostname: string | null;
-    runner_cpu_model: string | null;
+    worker: Worker | null;
 
     executionStartedAt: Date | null;
     executionEndedAt: Date | null;
@@ -49,8 +48,7 @@ export class Action extends BaseEntity {
         image: Image,
         createdBy: User,
         logs: ContainerLog[] | null = null,
-        runner_hostname: string | null = null,
-        runner_cpu_model: string | null = null,
+        worker: Worker | null = null,
         executionStartedAt: string | null = null,
         executionEndedAt: string | null = null,
     ) {
@@ -63,8 +61,7 @@ export class Action extends BaseEntity {
         this.mission = mission;
         this.logs = logs;
         this.createdBy = createdBy;
-        this.runner_hostname = runner_hostname;
-        this.runner_cpu_model = runner_cpu_model;
+        this.worker = worker;
         this.template = template;
         this.executionStartedAt = executionStartedAt
             ? new Date(executionStartedAt)

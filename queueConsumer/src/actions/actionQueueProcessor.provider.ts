@@ -1,10 +1,5 @@
 import logger from '../logger';
-import {
-    BeforeApplicationShutdown,
-    Injectable,
-    OnModuleDestroy,
-    OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
     InjectQueue,
     OnQueueActive,
@@ -25,6 +20,7 @@ import Worker from '@common/entities/worker/worker.entity';
 import { createWorker } from './helper/hardwareDetect';
 import os from 'node:os';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { addActionQueue } from '@common/schedulingLogic';
 
 /**
  * The ActionQueueProcessor class is responsible for processing
@@ -44,9 +40,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
  */
 @Processor(`action-queue`)
 @Injectable()
-export class ActionQueueProcessorProvider
-    implements OnModuleInit, BeforeApplicationShutdown, OnModuleDestroy
-{
+export class ActionQueueProcessorProvider implements OnModuleInit {
     private worker: Worker;
 
     constructor(
@@ -122,6 +116,28 @@ export class ActionQueueProcessorProvider
             return;
         }
 
+        if (
+            error.message.startsWith(
+                'Missing process handler for job type actionProcessQueue-',
+            )
+        ) {
+            logger.error(
+                `Processor for job ${job.id} of type ${job.name} not found.`,
+            );
+            const action = await this.actionRepository.findOne({
+                where: { uuid: job.data.uuid },
+                relations: ['template'],
+            });
+            await addActionQueue(
+                action,
+                action.template.runtime_requirements,
+                this.workerRepository,
+                this.actionRepository,
+                this.analysisQueue,
+            );
+            return;
+        }
+
         await this.handleUnexpectedError(job, error);
     }
 
@@ -180,16 +196,21 @@ export class ActionQueueProcessorProvider
             `Job ${job.id} of type ${job.name} failed with error: ${error.message}.`,
         );
         logger.error(error.stack);
+        try {
+            // update the state of the action in the database
+            const action = await this.actionRepository.findOneOrFail({
+                where: { uuid: job.id as string },
+            });
 
-        // update the state of the action in the database
-        const action = await this.actionRepository.findOneOrFail({
-            where: { uuid: job.id as string },
-        });
-
-        action.state = ActionState.FAILED;
-        action.state_cause = error.message;
-        action.artifacts = ArtifactState.ERROR;
-        await this.actionRepository.save(action);
+            action.state = ActionState.FAILED;
+            action.state_cause = error.message;
+            action.artifacts = ArtifactState.ERROR;
+            await this.actionRepository.save(action);
+        } catch (e) {
+            logger.error(
+                `Failed to update action state in database: ${e.message}`,
+            );
+        }
     }
 
     /**
@@ -217,17 +238,6 @@ export class ActionQueueProcessorProvider
         if (isActionDirty) {
             await this.actionRepository.save(action);
         }
-    }
-
-    async beforeApplicationShutdown(signal?: string): Promise<any> {
-        this.worker.reachable = false;
-        console.log('Shutting down...');
-        await this.workerRepository.save(this.worker);
-    }
-    async onModuleDestroy() {
-        this.worker.reachable = false;
-        console.log('Destroying...');
-        await this.workerRepository.save(this.worker);
     }
 
     @Cron(CronExpression.EVERY_MINUTE)
