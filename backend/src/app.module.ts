@@ -19,6 +19,7 @@ import access_config from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
 import { BullModule } from '@nestjs/bull';
 import { UserResolverMiddleware } from './UserResolverMiddleware';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
     imports: [
@@ -55,6 +56,7 @@ import { UserResolverMiddleware } from './UserResolverMiddleware';
         PassportModule,
         ActionModule,
         TagModule,
+        WorkerModule,
         ScheduleModule.forRoot(),
         BullModule.forRoot({
             redis: {
