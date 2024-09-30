@@ -18,6 +18,7 @@ echo "🚀 Rocket"
 
 klein endpoint set $ENDPOINT
 klein login --key $APIKEY
+klein --version
 klein mission byUUID $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
