@@ -55,12 +55,12 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
     async onModuleInit() {
         logger.debug('Setting hardware capabilities...');
-        console.log(os.hostname());
         let worker = await this.workerRepository.findOne({
             where: { name: os.hostname() },
         });
         if (worker && worker.reachable === false) {
             worker.reachable = true;
+            worker.lastSeen = new Date();
             worker = await this.workerRepository.save(worker);
         } else if (!worker) {
             worker = await createWorker(this.workerRepository);
