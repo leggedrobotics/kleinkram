@@ -198,10 +198,10 @@
   resolved "https://registry.yarnpkg.com/@lukeed/csprng/-/csprng-1.1.0.tgz#1e3e4bd05c1cc7a0b2ddbd8a03f39f6e4b5e6cfe"
   integrity sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==
 
-"@mcap/core@^2.1.1":
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/@mcap/core/-/core-2.1.2.tgz#63a0949302b4116655c06db94336e46cabf7494f"
-  integrity sha512-eHqc58JDapioD9o6ydY1FKhNut5VEWKOOxU6ern4ZDrWdYtjIjg4iT/EJakrR9WH9spQz+E/KK2PQHgd2JRj4w==
+"@mcap/core@^2.1.5":
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/@mcap/core/-/core-2.1.5.tgz#cf7e0d4fca3874e8827338dd108239d5ca801d83"
+  integrity sha512-qkD7RfHCyNe+1r/rzCx1I3C+dRA/TKGFBRXoWGKEU4yslLj/mkdKt51RVUA4ESlJky+w03cfmD2N+TLq1UnOaA==
   dependencies:
     "@foxglove/crc" "^0.0.3"
     heap-js "^2.2.0"
