@@ -71,7 +71,7 @@
                         <tr>
                             <td class="q-table__cell">Runner Hostname:</td>
                             <td class="q-table__cell">
-                                {{ data?.worker?.name || 'N/A' }}
+                                {{ data?.worker?.hostname || 'N/A' }}
                             </td>
                         </tr>
                         <tr v-if="data && data?.getRuntimeInMS() != 0">
@@ -203,10 +203,14 @@ function openArtifactUrl(url: string) {
 }
 
 const artifactState = computed(() => {
-    if (data?.artifacts === ArtifactState.UPLOADING) {
+    console.log(data?.artifacts);
+    console.log(data.value);
+    if (data.value?.artifacts === ArtifactState.UPLOADING) {
         return 'Uploading...';
-    } else if (data?.artifacts === ArtifactState.FAILED) {
+    } else if (data.value?.artifacts === ArtifactState.ERROR) {
         return 'N/A';
+    } else if (data.value?.artifacts === ArtifactState.AWAITING_ACTION) {
+        return 'Waiting action completion...';
     }
 });
 </script>

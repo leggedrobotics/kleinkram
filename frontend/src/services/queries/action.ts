@@ -67,7 +67,8 @@ export const getActions = async (
         if (res.worker) {
             worker = new Worker(
                 res.worker.uuid,
-                res.worker.name,
+                res.worker.identifier,
+                res.worker.hostname,
                 res.worker.createdAt,
                 res.worker.updatedAt,
                 res.worker.deletedAt,
@@ -136,7 +137,8 @@ export const actionDetails = async (action_uuid: string) => {
         if (response.data.worker) {
             worker = new Worker(
                 response.data.worker.uuid,
-                response.data.worker.name,
+                response.data.worker.identifier,
+                response.data.worker.hostname,
                 response.data.worker.createdAt,
                 response.data.worker.updatedAt,
                 response.data.worker.deletedAt,
@@ -151,7 +153,7 @@ export const actionDetails = async (action_uuid: string) => {
                 response.data.worker.reachable,
             );
         }
-
+        console.log(response.data);
         return new Action(
             response.data.uuid,
             new Date(response.data.createdAt),
@@ -254,7 +256,8 @@ export const getRunningActions = async () => {
         if (res.worker) {
             worker = new Worker(
                 res.worker.uuid,
-                res.worker.name,
+                res.worker.identifier,
+                res.worker.hostname,
                 res.worker.createdAt,
                 res.worker.updatedAt,
                 res.worker.deletedAt,

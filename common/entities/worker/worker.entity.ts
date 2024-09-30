@@ -5,7 +5,10 @@ import Action from '../action/action.entity';
 @Entity()
 export default class Worker extends BaseEntity {
     @Column({ unique: true })
-    name: string;
+    identifier: string;
+
+    @Column()
+    hostname: string;
 
     @Column()
     cpuMemory: number;

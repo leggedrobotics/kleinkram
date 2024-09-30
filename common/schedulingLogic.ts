@@ -33,7 +33,9 @@ export async function findWorkerForAction(
             nrJobs[name] = 1;
         }
     });
-    return worker.sort((a, b) => nrJobs[a.name] - nrJobs[b.name])[0];
+    return worker.sort(
+        (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
+    )[0];
 }
 export async function addActionQueue(
     action: Action,
@@ -53,7 +55,7 @@ export async function addActionQueue(
     action.worker = worker;
     await actionRepository.save(action);
     return await actionQueue.add(
-        `actionProcessQueue-${worker.name}`,
+        `actionProcessQueue-${worker.identifier}`,
         { uuid: action.uuid },
         {
             jobId: action.uuid,

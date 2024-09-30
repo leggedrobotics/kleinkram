@@ -1,7 +1,8 @@
 import { BaseEntity } from 'src/types/BaseEntity';
 
 export class Worker extends BaseEntity {
-    name: string;
+    identifier: string;
+    hostname: string;
     cpuMemory: number;
     hasGPU: boolean;
     gpuModel: string | null;
@@ -14,7 +15,8 @@ export class Worker extends BaseEntity {
 
     constructor(
         uuid: string,
-        name: string,
+        identifier: string,
+        hostname: string,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -29,7 +31,8 @@ export class Worker extends BaseEntity {
         reachable: boolean,
     ) {
         super(uuid, createdAt, updatedAt, deletedAt);
-        this.name = name;
+        this.identifier = identifier;
+        this.hostname = hostname;
         this.cpuMemory = cpuMemory;
         this.hasGPU = hasGPU;
         this.gpuModel = gpuModel;

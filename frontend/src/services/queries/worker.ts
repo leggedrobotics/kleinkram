@@ -6,7 +6,8 @@ export async function allWorkers(): Promise<[Worker[], number]> {
     const worker = response.data[0].map((worker) => {
         return new Worker(
             worker.uuid,
-            worker.name,
+            worker.identifier,
+            worker.hostname,
             new Date(worker.createdAt),
             new Date(worker.updatedAt),
             new Date(worker.deletedAt),

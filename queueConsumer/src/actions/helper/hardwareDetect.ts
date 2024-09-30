@@ -2,6 +2,7 @@ import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import Worker from '@common/entities/worker/worker.entity';
 import fs from 'fs';
+import Docker from 'dockerode';
 const util = require('util');
 
 export async function createWorker(workerRepository: Repository<Worker>) {
@@ -32,15 +33,19 @@ export async function createWorker(workerRepository: Repository<Worker>) {
     ); // Convert bytes to GB
 
     // Gather Hostname (assuming this will be the worker's unique name)
-    const hostname = await si.osInfo();
-    const name = hostname.hostname;
+    const name = (await si.osInfo()).hostname;
+
+    const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+    const info = await docker.info();
+    const hostname = info.Name;
 
     // Assume "reachable" is true since we're creating the worker entity on the current machine
     const reachable = true;
 
     // Create and save the Worker entity
     const newWorker = workerRepository.create({
-        name,
+        identifier: name,
+        hostname,
         cpuMemory,
         hasGPU,
         gpuModel,

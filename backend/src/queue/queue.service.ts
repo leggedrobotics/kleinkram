@@ -5,7 +5,7 @@ import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
-import { addActionQueue, findWorkerForAction } from '@common/schedulingLogic';
+import { addActionQueue } from '@common/schedulingLogic';
 import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import env from '@common/env';
@@ -305,7 +305,7 @@ export class QueueService {
         await Promise.all(
             workers.map(async (worker) => {
                 const jobsToReschedule = waitingJobs.filter((job) =>
-                    job.name.endsWith(worker.name),
+                    job.name.endsWith(worker.identifier),
                 );
                 await Promise.all(
                     jobsToReschedule.map(async (job) => {

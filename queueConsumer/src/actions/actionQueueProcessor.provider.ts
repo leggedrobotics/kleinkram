@@ -56,7 +56,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async onModuleInit() {
         logger.debug('Setting hardware capabilities...');
         let worker = await this.workerRepository.findOne({
-            where: { name: os.hostname() },
+            where: { identifier: os.hostname() },
         });
         if (worker && worker.reachable === false) {
             worker.reachable = true;
