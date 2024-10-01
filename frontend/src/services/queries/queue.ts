@@ -82,3 +82,8 @@ export const getQueueForFile = async (
         );
     });
 };
+
+export const bullQueue = async () => {
+    const response = await axios.get('/queue/bullQueue');
+    return response.data;
+};
