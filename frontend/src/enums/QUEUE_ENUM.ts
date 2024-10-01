@@ -18,6 +18,7 @@ export enum FileLocation {
 
 export enum ActionState {
     PENDING = 'PENDING',
+    STARTING = 'STARTING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     FAILED = 'FAILED',
