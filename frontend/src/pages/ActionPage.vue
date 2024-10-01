@@ -103,6 +103,8 @@
             <div class="text">Please select a project and a mission to...</div>
         </template>
     </div>
+
+    <BullQueue v-if="permissions?.role === ROLE.ADMIN" />
 </template>
 
 <script setup lang="ts">
@@ -123,6 +125,8 @@ import {
 import TitleSection from 'components/TitleSection.vue';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
+import BullQueue from 'components/BullQueue.vue';
+import ROLE from 'src/enums/USER_ROLES';
 
 const search = ref('');
 const createAction = ref(false);

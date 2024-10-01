@@ -25,6 +25,10 @@ export async function findWorkerForAction(
         );
     }
 
+    if (worker.length === 0) {
+        return;
+    }
+
     const waiting = await actionQueue.getWaiting();
     const nrJobs = {};
     waiting.forEach((job) => {

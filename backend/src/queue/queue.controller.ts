@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
 import {
+    AdminOnly,
     CanCreateInMissionByBody,
     CanCreateQueueByBody,
     CanDeleteMission,
@@ -81,5 +82,17 @@ export class QueueController {
         @BodyUUID('missionUUID') missionUUID: string,
     ) {
         return this.queueService.cancelProcessing(queueUUID, missionUUID);
+    }
+
+    @Get('bullQueue')
+    @AdminOnly()
+    async bullQueue() {
+        return this.queueService.bullQueue();
+    }
+
+    @Post('stopJob')
+    @AdminOnly()
+    async stopJob(@BodyUUID('jobId') jobId: string) {
+        return this.queueService.stopJob(jobId);
     }
 }

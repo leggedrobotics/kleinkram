@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
@@ -6,7 +6,13 @@ import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import { addActionQueue } from '@common/schedulingLogic';
-import { FileLocation, FileState, FileType, UserRole } from '@common/enum';
+import {
+    ActionState,
+    FileLocation,
+    FileState,
+    FileType,
+    UserRole,
+} from '@common/enum';
 import { InjectQueue } from '@nestjs/bull';
 import env from '@common/env';
 import { getInfoFromMinio, internalMinio } from '../minioHelper';
@@ -19,6 +25,7 @@ import { Queue } from 'bull';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Action from '@common/entities/action/action.entity';
 import { RuntimeRequirements } from '@common/types';
+
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
     const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
@@ -283,6 +290,47 @@ export class QueueService {
             this.actionRepository,
             this.actionQueue,
         );
+    }
+
+    async bullQueue() {
+        const jobs = await this.actionQueue.getJobs([
+            'active',
+            'delayed',
+            'waiting',
+            'completed',
+            'failed',
+            'paused',
+        ]);
+        return await Promise.all(
+            jobs.map(async (job) => {
+                console.log(job.id);
+                const action = await this.actionRepository.findOne({
+                    where: { uuid: job.id as string },
+                    relations: ['template'],
+                });
+                console.log(action);
+                return { job, action };
+            }),
+        );
+    }
+
+    async stopJob(jobId: string) {
+        const job = await this.actionQueue.getJob(jobId);
+        if (!job) {
+            throw new ConflictException('Job not found');
+        }
+        try {
+            await job.remove();
+        } catch (err) {
+            logger.log(err);
+        }
+        const action = await this.actionRepository.findOne({
+            where: { uuid: jobId },
+        });
+        if (action) {
+            action.state = ActionState.FAILED;
+            await this.actionRepository.save(action);
+        }
     }
 
     @Cron(CronExpression.EVERY_MINUTE)

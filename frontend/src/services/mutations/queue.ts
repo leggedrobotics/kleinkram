@@ -44,3 +44,8 @@ export const cancelProcessing = async (queueUUID: string, missionUUID) => {
     });
     return response.data;
 };
+
+export const stopQueue = async (queueUUID: string) => {
+    const response = await axios.post(`/queue/stopJob`, { jobId: queueUUID });
+    return response.data;
+};
