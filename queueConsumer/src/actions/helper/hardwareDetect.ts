@@ -3,6 +3,8 @@ import { Repository } from 'typeorm';
 import Worker from '@common/entities/worker/worker.entity';
 import fs from 'fs';
 import Docker from 'dockerode';
+import logger from '../../logger';
+
 const util = require('util');
 
 export async function createWorker(workerRepository: Repository<Worker>) {
@@ -67,6 +69,18 @@ const getGpuModels = async () => {
     const path = '/proc/driver/nvidia/gpus/';
 
     try {
+        // verify if docker socket has nvidia runtime
+        // if not, return empty array
+        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        const info = await docker.info();
+        const runtimes = info.Runtimes;
+        const hasNvidiaRuntime = runtimes && runtimes['nvidia'] !== undefined;
+        if (!hasNvidiaRuntime) {
+            logger.debug('No NVIDIA runtime found in Docker');
+            return [];
+        }
+
+        // extract GPU model information from the files in the /proc/driver/nvidia/gpus/ directory
         const files = await readdir(path);
         const modelPromises = files.map(async (file) => {
             const filepath = `${path}${file}/information`;
