@@ -268,7 +268,7 @@ const search = ref('');
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
-const image_name = ref('rslethz/action:latest');
+const image_name = ref('rslethz/action:simple-latest');
 const options = [
     { label: 'no GPU', value: 'no-gpu' },
     { label: 'GPU needed', value: 'GPU needed' },
@@ -294,7 +294,7 @@ const editingTemplate = ref(
         null,
         null,
         null,
-        'rslethz/action:latest',
+        'rslethz/action:simple-latest',
         null,
         '',
         1,
@@ -556,7 +556,7 @@ function selectTemplate(template: ActionTemplate) {
             null,
             null,
             null,
-            'rslethz/action:latest',
+            'rslethz/action:simple-dev',
             null,
             '',
             1,

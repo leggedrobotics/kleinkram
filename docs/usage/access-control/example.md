@@ -32,7 +32,7 @@ Also she can add & remove tags to the mission. Or she could rename the mission, 
 To run compute on the files Marie uploaded to the mission, she can create an Action Template and launch it as an Action on the mission.
 But Marie can also view & use the Action Templates of Hans, as those only require <Any/> rights. The Action Marie launches can
 only be stopped by her as the <Creator/> or by Hans as he has <Delete/> rights on the Project, thus on the mission and thus on the action.
-To show Marie how to launch actions, Hans can launches the example action template 'rslethz/action:latest' on the "_Decaf_" mission.
+To show Marie how to launch actions, Hans can launches the example action template 'rslethz/action:simple-latest' on the "_Decaf_" mission.
 As Marie has <Modify/> rights on the mission, she can see the action and its results, but she cannot stop or delete it.
 
 While Marie as the creator of here files in the "_Decaf_" mission has the rights to move them out of the mission, she has no rights to any other mission
