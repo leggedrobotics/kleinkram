@@ -113,7 +113,7 @@ def download():
 @app.command("upload", rich_help_panel=CommandPanel.CoreCommands)
 def upload(
     path: Annotated[
-        str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+        List[str], typer.Option(prompt=True, help="Path to files to upload, Regex supported")
     ],
     project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
     mission: Annotated[
@@ -128,11 +128,14 @@ def upload(
     Upload files matching the path to a mission in a project.
 
     The mission name must be unique within the project and not yet created.\n
+    Multiple paths can be given by using the option multiple times.\n
     Examples:\n
         - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1" --tags "0700946d-1d6a-4520-b263-0e177f49c35b:LEE-H" --tags "1565118d-593c-4517-8c2d-9658452d9319:Dodo"'\n
 
     """
-    files = expand_and_match(path)
+    files = []
+    for p in path:
+        files.extend(expand_and_match(p))
     filenames = list(
         map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
     )
