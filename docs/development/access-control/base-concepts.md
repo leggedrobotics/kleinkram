@@ -51,6 +51,7 @@ These default groups can be configured in the configuration file: `backend/acces
 ```
 
 ## How Access is Checked?
+
 Below is the default check for access rights. For the case of authentication using Api Keys, as used in actions, a different flow is used.
 
 ```mermaid
