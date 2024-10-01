@@ -128,6 +128,20 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 where: { uuid: job.data.uuid },
                 relations: ['template'],
             });
+            const extractedIdentifier = error.message
+                ?.split(' ')[6]
+                ?.split('-')[1];
+            if (extractedIdentifier) {
+                console.log('deactivating worker: ', extractedIdentifier);
+                const worker = await this.workerRepository.findOne({
+                    where: { identifier: extractedIdentifier },
+                });
+                if (worker) {
+                    worker.reachable = false;
+                    await this.workerRepository.save(worker);
+                }
+            }
+            await job.remove();
             await addActionQueue(
                 action,
                 action.template.runtime_requirements,

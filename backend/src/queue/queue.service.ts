@@ -274,9 +274,8 @@ export class QueueService {
         action: Action,
         runtime_requirements: RuntimeRequirements,
     ) {
-        console.log('Adding action to queue');
-        console.log(action);
-        console.log(runtime_requirements);
+        console.log(`Adding action to queue: ${action.template.name}`);
+
         return await addActionQueue(
             action,
             runtime_requirements,
@@ -292,7 +291,7 @@ export class QueueService {
             where: {
                 reachable: true,
                 lastSeen: LessThan(
-                    new Date(new Date().getTime() - 5 * 60 * 1000),
+                    new Date(new Date().getTime() - 2 * 60 * 1000),
                 ),
             },
         });

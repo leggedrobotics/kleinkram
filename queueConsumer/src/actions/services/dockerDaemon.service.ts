@@ -90,12 +90,14 @@ export class DockerDaemon {
      *
      * @private
      * @param container_options
+     * @param start
      * @returns the container object
      * @throws Error if the docker image is not from the rslethz organization
      *
      */
     @tracing()
     async start_container(
+        start: () => Promise<void>,
         container_options?: Partial<ContainerStartOptions>,
     ): Promise<{
         container: Dockerode.Container;
@@ -174,7 +176,7 @@ export class DockerDaemon {
             },
             Volumes: { '/out': {} },
         };
-
+        await start();
         const container = await this.docker
             .createContainer(container_create_options)
             .catch((error) => {

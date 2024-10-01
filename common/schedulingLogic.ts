@@ -9,18 +9,20 @@ export async function findWorkerForAction(
     actionQueue: any,
 ) {
     const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
-    console.log('needsGPU', needsGPU);
     let worker = await workerRepository.find({
         where: { reachable: true, hasGPU: needsGPU },
     });
-    console.log('worker', worker);
+    console.log(
+        `Available Worker (GPU: ${needsGPU}): ${worker.map((a) => a.identifier).join(', ')}`,
+    );
 
     if (worker.length === 0 && !needsGPU) {
-        console.log('no worker found, trying without GPU');
         worker = await workerRepository.find({
             where: { reachable: true },
         });
-        console.log('worker', worker);
+        console.log(
+            `Alternative Worker (GPU: any): ${worker.map((a) => a.identifier).join(', ')}`,
+        );
     }
 
     const waiting = await actionQueue.getWaiting();
@@ -33,9 +35,12 @@ export async function findWorkerForAction(
             nrJobs[name] = 1;
         }
     });
-    return worker.sort(
+    const res = worker.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];
+
+    console.log('selected worker', res.identifier);
+    return res;
 }
 export async function addActionQueue(
     action: Action,
@@ -54,18 +59,22 @@ export async function addActionQueue(
     }
     action.worker = worker;
     await actionRepository.save(action);
-    return await actionQueue.add(
-        `actionProcessQueue-${worker.identifier}`,
-        { uuid: action.uuid },
-        {
-            jobId: action.uuid,
-            backoff: {
-                delay: 60 * 1_000, // 60 seconds
-                type: 'exponential',
+    try {
+        return await actionQueue.add(
+            `actionProcessQueue-${worker.identifier}`,
+            { uuid: action.uuid },
+            {
+                jobId: action.uuid,
+                backoff: {
+                    delay: 60 * 1_000, // 60 seconds
+                    type: 'exponential',
+                },
+                removeOnComplete: true,
+                removeOnFail: false,
+                attempts: 60, // one hour of attempts
             },
-            removeOnComplete: true,
-            removeOnFail: false,
-            attempts: 60, // one hour of attempts
-        },
-    );
+        );
+    } catch (e) {
+        console.error(e);
+    }
 }
