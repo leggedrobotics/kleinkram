@@ -22,6 +22,7 @@ export enum UserRole {
 
 export enum ActionState {
     PENDING = 'PENDING',
+    STARTING = 'STARTING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     FAILED = 'FAILED',

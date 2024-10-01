@@ -56,3 +56,4 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /grandtourdatasets-5295745f7fab.json
 /anymal-grand-tour-3b7a5d0c8ef4.json
+/src/artifactUpload/.idea/

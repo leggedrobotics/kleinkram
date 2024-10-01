@@ -65,8 +65,8 @@ export class ActionManagerService {
         if (action.state !== ActionState.PENDING)
             throw new Error(`Action state is not 'PENDING'`);
 
-        // set state to 'RUNNING'
-        action.state = ActionState.PROCESSING;
+        // set state to 'STARTING'
+        action.state = ActionState.STARTING;
         action.state_cause = 'Action is currently running...';
         await this.actionRepository.save(action);
 
@@ -83,18 +83,24 @@ export class ActionManagerService {
             action.template.runtime_requirements.gpu_model !== null &&
             action.template.runtime_requirements.gpu_model.name !== 'no-gpu';
         const { container, repo_digests, sha } =
-            await this.containerDaemon.start_container({
-                docker_image: action.template.image_name,
-                name: action.uuid,
-                limits: {
-                    max_runtime: 5 * 60 * 1_000, // 5 minutes
-                    cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
-                    memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+            await this.containerDaemon.start_container(
+                async () => {
+                    action.state = ActionState.PROCESSING;
+                    await this.actionRepository.save(action);
                 },
-                needs_gpu,
-                environment: env_variables,
-                command: action.template.command,
-            });
+                {
+                    docker_image: action.template.image_name,
+                    name: action.uuid,
+                    limits: {
+                        max_runtime: 5 * 60 * 1_000, // 5 minutes
+                        cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
+                        memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+                    },
+                    needs_gpu,
+                    environment: env_variables,
+                    command: action.template.command,
+                },
+            );
 
         // capture runner information
         action.image = { repo_digests, sha };

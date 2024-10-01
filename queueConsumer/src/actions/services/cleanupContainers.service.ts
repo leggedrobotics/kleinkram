@@ -11,7 +11,6 @@ export class ContainerCleanupService {
     @Cron(CronExpression.EVERY_30_SECONDS)
     @tracing('cleanup_containers')
     async handleCron() {
-        logger.debug('Cleaning up containers...');
         await this.actionManager.cleanupContainers();
     }
 }

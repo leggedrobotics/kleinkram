@@ -42,12 +42,12 @@
                     <span
                         class="worker-status"
                         :style="
-                            isOnline(singleWorker)
+                            singleWorker.reachable
                                 ? 'color: green'
                                 : 'color: red'
                         "
                         >{{
-                            isOnline(singleWorker) ? 'Online' : 'Offline'
+                            singleWorker.reachable ? 'Online' : 'Offline'
                         }}</span
                     >
                 </div>
@@ -73,10 +73,6 @@ const worker: ComputedRef<Worker[]> = computed(() => {
 });
 const online = computed(() => worker.value.filter((w) => w.reachable));
 const offline = computed(() => worker.value.filter((w) => !w.reachable));
-
-function isOnline(worker: Worker): boolean {
-    return new Date().getTime() - worker.lastSeen.getTime() < 1000 * 60 * 2;
-}
 </script>
 
 <style scoped>
