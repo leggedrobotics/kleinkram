@@ -508,6 +508,13 @@ async function submitAnalysis() {
                 position: 'bottom',
                 timeout: 2000,
             });
+
+            // flush actions cache
+            queryClient.invalidateQueries({
+                predicate: (query) => {
+                    return query.queryKey[0] === 'action_mission';
+                },
+            });
         })
         .catch((error) => {
             Notify.create({

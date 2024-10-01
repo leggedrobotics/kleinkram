@@ -196,6 +196,7 @@ const $route = useRoute();
 const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
+    refetchInterval: 5_000,
 });
 
 function openArtifactUrl(url: string) {
