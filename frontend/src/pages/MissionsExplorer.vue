@@ -128,6 +128,15 @@
                         icon="sym_o_add"
                     />
                 </create-mission-dialog-opener>
+                <UploadMissionFolder>
+                    <q-btn
+                        flat
+                        style="height: 100%"
+                        class="bg-button-secondary text-on-color"
+                        label="Upload Mission Folder"
+                        icon="sym_o_add"
+                    />
+                </UploadMissionFolder>
             </button-group>
         </div>
         <div class="q-py-lg" v-else style="background: blue">
@@ -244,6 +253,7 @@ import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import { FileEntity } from 'src/types/FileEntity';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
+import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
