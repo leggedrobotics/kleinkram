@@ -128,6 +128,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 where: { uuid: job.data.uuid },
                 relations: ['template'],
             });
+            console.log('Missing processor Error: ', error.message);
             const extractedIdentifier = error.message
                 ?.split(' ')[6]
                 ?.split('-')[1];

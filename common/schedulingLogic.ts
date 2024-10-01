@@ -2,6 +2,7 @@ import { RuntimeRequirements } from './types';
 import Action from './entities/action/action.entity';
 import Worker from './entities/worker/worker.entity';
 import { Repository } from 'typeorm';
+import { ActionState } from './enum';
 
 export async function findWorkerForAction(
     runtime_requirements: RuntimeRequirements,
@@ -59,6 +60,8 @@ export async function addActionQueue(
         actionQueue,
     );
     if (!worker) {
+        action.state = ActionState.UNPROCESSABLE;
+        await actionRepository.save(action);
         return;
     }
     action.worker = worker;
