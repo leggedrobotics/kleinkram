@@ -199,6 +199,7 @@ def download(
                     f.write(chunk)
             print(f"   Downloaded {filename}")
 
+
 @missionCommands.command("upload")
 def upload(
     path: Annotated[
@@ -223,9 +224,7 @@ def upload(
     if not filenames:
         raise ValueError("No files found matching the given path.")
 
-    print(
-        f"Uploading the following files to mission '{mission}':"
-    )
+    print(f"Uploading the following files to mission '{mission}':")
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
@@ -234,9 +233,17 @@ def upload(
 
     try:
         client = AuthenticatedClient()
-        res = client.post("/file/temporaryAccess", json={"missionUUID": mission, "filenames": filenames})
+        res = client.post(
+            "/file/temporaryAccess",
+            json={"missionUUID": mission, "filenames": filenames},
+        )
         if res.status_code >= 400:
-            raise ValueError("Failed to get temporary access. Status code: " + str(res.status_code) + " Message: " + res.json()['message'])
+            raise ValueError(
+                "Failed to get temporary access. Status code: "
+                + str(res.status_code)
+                + " Message: "
+                + res.json()["message"]
+            )
 
         temp_credentials = res.json()
         credential = temp_credentials["credentials"]
@@ -253,4 +260,3 @@ def upload(
         print(e)
         print("Failed to upload files")
         raise e
-
