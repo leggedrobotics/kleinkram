@@ -3,11 +3,9 @@ import {
     PublicGuard,
     LoggedInUserGuard,
     AdminOnlyGuard,
-    TokenOrUserGuard,
     ReadProjectGuard,
     WriteProjectGuard,
     ReadProjectByNameGuard,
-    CreateProjectGuard,
     DeleteProjectGuard,
     ReadMissionGuard,
     ReadMissionByNameGuard,
@@ -18,7 +16,6 @@ import {
     WriteMissionByBodyGuard,
     CreateQueueByBodyGuard,
     ReadActionGuard,
-    CreateActionGuard,
     AddTagGuard,
     DeleteTagGuard,
     CanDeleteMissionGuard,
@@ -26,6 +23,11 @@ import {
     AddUserToAccessGroupGuard,
     IsAccessGroupCreatorByProjectAccessGuard,
     CanReadManyMissionsGuard,
+    CreateActionsGuard,
+    CreateGuard,
+    CreateInMissionByBodyGuard,
+    CreateInProjectByBodyGuard,
+    UserGuard,
 } from './roles.guard';
 
 // Public route decorator
@@ -44,18 +46,19 @@ export function LoggedIn() {
     );
 }
 
+// Logged-in user route decorator (not API key)
+export function UserOnly() {
+    return applyDecorators(
+        SetMetadata('isLoggedIn', true),
+        UseGuards(UserGuard),
+    );
+}
+
 // Admin-only route decorator
 export function AdminOnly() {
     return applyDecorators(
         SetMetadata('isAdmin', true),
         UseGuards(AdminOnlyGuard),
-    );
-}
-
-export function TokenOrUser() {
-    return applyDecorators(
-        SetMetadata('isTokenOrUser', true),
-        UseGuards(TokenOrUserGuard),
     );
 }
 
@@ -73,6 +76,13 @@ export function CanReadProjectByName() {
     );
 }
 
+export function CanCreateInProjectByBody() {
+    return applyDecorators(
+        SetMetadata('CanCreateInProjectByBody', true),
+        UseGuards(CreateInProjectByBodyGuard),
+    );
+}
+
 export function CanWriteProject() {
     return applyDecorators(
         SetMetadata('CanWriteProject', true),
@@ -87,10 +97,10 @@ export function CanDeleteProject() {
     );
 }
 
-export function CanCreateProject() {
+export function CanCreate() {
     return applyDecorators(
-        SetMetadata('CanCreateProject', true),
-        UseGuards(CreateProjectGuard),
+        SetMetadata('CanCreate', true),
+        UseGuards(CreateGuard),
     );
 }
 
@@ -135,6 +145,13 @@ export function CanWriteFile() {
     );
 }
 
+export function CanCreateInMissionByBody() {
+    return applyDecorators(
+        SetMetadata('CanReadMissionByBody', true),
+        UseGuards(CreateInMissionByBodyGuard),
+    );
+}
+
 export function CanWriteMissionByBody() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
@@ -169,13 +186,12 @@ export function CanReadAction() {
     );
 }
 
-export function CanCreateAction() {
+export function CanCreateActions() {
     return applyDecorators(
-        SetMetadata('CanCreateAction', true),
-        UseGuards(CreateActionGuard),
+        SetMetadata('CanCreateActions', true),
+        UseGuards(CreateActionsGuard),
     );
 }
-
 export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),
@@ -190,9 +206,9 @@ export function CanDeleteTag() {
     );
 }
 
-export function CanAddUserToAccessGroup() {
+export function IsAccessGroupCreator() {
     return applyDecorators(
-        SetMetadata('CanAddUserToAccessGroup', true),
+        SetMetadata('IsAccessGroupCreator', true),
         UseGuards(AddUserToAccessGroupGuard),
     );
 }

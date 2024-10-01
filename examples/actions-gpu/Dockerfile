@@ -16,7 +16,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Install kleinkram as CLI
 RUN pip install --upgrade pip && \
-    pip install kleinkram --force-reinstall
+    pip install kleinkram --pre --force-reinstall
 
 # Install additional Python packages for GPU acceleration (e.g., TensorFlow or PyTorch)
 # Uncomment the one you need or add your own:

@@ -68,7 +68,7 @@ import { User } from 'src/types/User';
 import { Notify } from 'quasar';
 import { canAddAccessGroup } from 'src/services/queries/access';
 const props = defineProps<{
-    access_group: string;
+    access_group_uuid: string;
 }>();
 const queryClient = useQueryClient();
 
@@ -83,7 +83,7 @@ const { mutate } = useMutation({
     mutationFn: () => {
         return Promise.all(
             selected.value.map(async (user) => {
-                return addUserToAccessGroup(user.uuid, props.access_group);
+                return addUserToAccessGroup(user.uuid, props.access_group_uuid);
             }),
         );
     },
@@ -94,7 +94,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', props.access_group],
+            queryKey: ['AccessGroup', props.access_group_uuid],
         });
     },
     onError: () => {

@@ -97,31 +97,29 @@
                                             >View Project Details
                                         </q-item-section>
                                     </q-item>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="
-                                            () =>
-                                                changeRights(
-                                                    props.row.uuid,
-                                                    props.row
-                                                        .project_access_uuid,
-                                                )
+
+                                    <ChangeProjectRightsDialogOpener
+                                        :projectUUID="props.row.uuid"
+                                        :projectAccessUUID="
+                                            props.row.project_access_uuid
                                         "
                                     >
-                                        <q-item-section
-                                            >Change rights</q-item-section
-                                        >
-                                    </q-item>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="
-                                            () => _removeProject(props.row.uuid)
-                                        "
+                                        <q-item clickable v-ripple>
+                                            <q-item-section>
+                                                Change rights
+                                            </q-item-section>
+                                        </q-item>
+                                    </ChangeProjectRightsDialogOpener>
+                                    <RemoveProjectDialogOpener
+                                        :access-group="accessGroup"
+                                        :projectUUID="props.row.uuid"
                                     >
-                                        <q-item-section>Remove</q-item-section>
-                                    </q-item>
+                                        <q-item clickable v-ripple>
+                                            <q-item-section>
+                                                Remove
+                                            </q-item-section>
+                                        </q-item>
+                                    </RemoveProjectDialogOpener>
                                 </q-list>
                             </q-menu>
                         </q-btn>
@@ -156,13 +154,17 @@
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
 
-                    <q-btn
-                        flat
-                        class="bg-button-secondary text-on-color"
-                        label="Add User"
-                        icon="sym_o_add"
-                        @click="openAddUser"
-                    />
+                    <AddUserDialogOpener
+                        v-if="accessGroup"
+                        :accessGroup="accessGroup"
+                    >
+                        <q-btn
+                            flat
+                            class="bg-button-secondary text-on-color"
+                            label="Add User"
+                            icon="sym_o_add"
+                        />
+                    </AddUserDialogOpener>
                 </button-group>
             </div>
             <q-table
@@ -217,7 +219,7 @@
                                             () => _removeUser(props.row.uuid)
                                         "
                                     >
-                                        <q-item-section>Delete</q-item-section>
+                                        <q-item-section>Remove</q-item-section>
                                     </q-item>
                                 </q-list>
                             </q-menu>
@@ -247,6 +249,9 @@ import {
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
 import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
+import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
+import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
+import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -277,28 +282,6 @@ const { data: accessGroup, refetch } = useQuery({
     queryKey: ['AccessGroup', uuid],
     queryFn: async () => {
         return getAccessGroup(uuid.value as string);
-    },
-});
-
-const { mutate: _removeProject } = useMutation({
-    mutationFn: (projectUUID) =>
-        removeAccessGroupFromProject(projectUUID, uuid.value),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', uuid],
-        });
-        Notify.create({
-            message: 'Project removed from access group',
-            color: 'positive',
-            position: 'bottom',
-        });
-    },
-    onError: () => {
-        Notify.create({
-            message: 'Error removing project from access group',
-            color: 'negative',
-            position: 'bottom',
-        });
     },
 });
 
@@ -347,25 +330,6 @@ const project_rows = computed(() => {
 function openAddProject() {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
-        componentProps: {
-            access_group: uuid.value,
-        },
-    });
-}
-
-function changeRights(project_uuid: string, project_access_uuid: string) {
-    $q.dialog({
-        component: ChangeAccessRightsDialog,
-        componentProps: {
-            project_uuid: project_uuid,
-            project_access_uuid,
-        },
-    });
-}
-
-function openAddUser() {
-    $q.dialog({
-        component: AddUserToAccessGroupDialog,
         componentProps: {
             access_group: uuid.value,
         },

@@ -211,7 +211,6 @@ export const filesOfMission = async (
         take,
         skip,
     };
-    console.log('fileType', fileType);
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
     const response = await axios.get('file/ofMission', {
@@ -239,10 +238,22 @@ export const filesOfMission = async (
         );
         users[data[0].mission.creator.uuid] = missionCreator;
     }
+    const project = new Project(
+        data[0].mission.project.uuid,
+        data[0].mission.project.name,
+        data[0].mission.project.description,
+        [],
+        undefined,
+        undefined,
+        undefined,
+        new Date(data[0].mission.project.createdAt),
+        new Date(data[0].mission.project.updatedAt),
+        new Date(data[0].mission.project.deletedAt),
+    );
     const mission = new Mission(
         missionUUID,
         data[0].mission.name,
-        undefined,
+        project,
         [],
         [],
         missionCreator,

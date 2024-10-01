@@ -22,10 +22,11 @@ export enum UserRole {
 
 export enum ActionState {
     PENDING = 'PENDING',
+    STARTING = 'STARTING',
     PROCESSING = 'PROCESSING',
     DONE = 'DONE',
     FAILED = 'FAILED',
-    UPLOADING_ARTIFACTS = 'UPLOADING_ARTIFACTS',
+    UNPROCESSABLE = 'UNPROCESSABLE',
 }
 
 export enum KeyTypes {
@@ -61,4 +62,11 @@ export enum DataType {
     DATE = 'DATE',
     LOCATION = 'LOCATION',
     LINK = 'LINK',
+}
+
+export enum ArtifactState {
+    AWAITING_ACTION = 10,
+    UPLOADING = 20,
+    UPLOADED = 30,
+    ERROR = 40,
 }

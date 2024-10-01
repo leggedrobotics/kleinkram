@@ -1,0 +1,49 @@
+<template>
+    <q-btn
+        outline
+        color="primary"
+        icon="sym_o_edit"
+        label="Edit File"
+        @click="editFile"
+        :disable="file?.tentative || !canModify"
+    >
+        <q-tooltip> Edit File</q-tooltip>
+    </q-btn>
+</template>
+<script setup lang="ts">
+import { useQuasar } from 'quasar';
+import {
+    canModifyMission,
+    usePermissionsQuery,
+} from 'src/hooks/customQueryHooks';
+import { computed } from 'vue';
+import { FileEntity } from 'src/types/FileEntity';
+import EditFile from 'components/EditFile.vue';
+
+const $q = useQuasar();
+const props = defineProps<{
+    file: FileEntity;
+}>();
+const { data: permissions } = usePermissionsQuery();
+const canModify = computed(() => {
+    if (!props.file) return false;
+    return canModifyMission(
+        props.file.mission.uuid,
+        props.file.mission.project?.uuid,
+        permissions.value,
+    );
+});
+
+function editFile() {
+    if (!canModify.value) return;
+    $q.dialog({
+        component: EditFile,
+        componentProps: {
+            file_uuid: props.file.uuid,
+        },
+        persistent: true,
+    });
+}
+</script>
+
+<style scoped></style>

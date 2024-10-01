@@ -5,15 +5,6 @@
         <template #content>
             <AccessRights :project_uuid="props.project_uuid" />
         </template>
-
-        <template #actions>
-            <q-btn
-                flat
-                label="Save Access Rights"
-                class="bg-button-primary"
-                @click="onDialogOK"
-            />
-        </template>
     </base-dialog>
 </template>
 <script setup lang="ts">

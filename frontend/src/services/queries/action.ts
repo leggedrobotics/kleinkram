@@ -3,6 +3,7 @@ import { Action } from 'src/types/Action';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { Mission } from 'src/types/Mission';
+import { Worker } from 'src/types/Worker';
 
 export const getActions = async (
     projectUUID: string,
@@ -62,7 +63,26 @@ export const getActions = async (
             new Date(res.mission.updatedAt),
             new Date(res.mission.deletedAt),
         );
-
+        let worker = null;
+        if (res.worker) {
+            worker = new Worker(
+                res.worker.uuid,
+                res.worker.identifier,
+                res.worker.hostname,
+                res.worker.createdAt,
+                res.worker.updatedAt,
+                res.worker.deletedAt,
+                res.worker.cpuMemory,
+                res.worker.hasGPU,
+                res.worker.gpuModel,
+                res.worker.gpuMemory,
+                res.worker.cpuCores,
+                res.worker.cpuModel,
+                res.worker.storage,
+                res.worker.lastSeen,
+                res.worker.reachable,
+            );
+        }
         return new Action(
             res.uuid,
             new Date(res.createdAt),
@@ -71,11 +91,13 @@ export const getActions = async (
             res.state,
             res.state_cause,
             res.artifact_url,
-            res.uploading_artifacts,
+            res.artifacts,
             mission,
             template,
             res.image,
             user,
+            null,
+            worker,
         );
     });
     return [resi, response.data[1]];
@@ -98,7 +120,6 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.createdBy.updatedAt,
         response.data.createdBy.deletedAt,
     );
-
     const template = new ActionTemplate(
         response.data.template.uuid,
         new Date(response.data.template.createdAt),
@@ -111,26 +132,49 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.template.command,
         response.data.template.runtime_requirements,
     );
-
-    return new Action(
-        response.data.uuid,
-        new Date(response.data.createdAt),
-        new Date(response.data.updatedAt),
-        new Date(response.data.deletedAt),
-        response.data.state,
-        response.data.state_cause,
-        response.data.artifact_url,
-        response.data.uploading_artifacts,
-        null,
-        template,
-        response.data.image,
-        user,
-        response.data.logs,
-        response.data.runner_info?.hostname,
-        response.data.runner_info?.runtime_capabilities.cpu_model,
-        response.data.executionStartedAt,
-        response.data.executionEndedAt,
-    );
+    try {
+        let worker = null;
+        if (response.data.worker) {
+            worker = new Worker(
+                response.data.worker.uuid,
+                response.data.worker.identifier,
+                response.data.worker.hostname,
+                response.data.worker.createdAt,
+                response.data.worker.updatedAt,
+                response.data.worker.deletedAt,
+                response.data.worker.cpuMemory,
+                response.data.worker.hasGPU,
+                response.data.worker.gpuModel,
+                response.data.worker.gpuMemory,
+                response.data.worker.cpuCores,
+                response.data.worker.cpuModel,
+                response.data.worker.storage,
+                response.data.worker.lastSeen,
+                response.data.worker.reachable,
+            );
+        }
+        console.log(response.data);
+        return new Action(
+            response.data.uuid,
+            new Date(response.data.createdAt),
+            new Date(response.data.updatedAt),
+            new Date(response.data.deletedAt),
+            response.data.state,
+            response.data.state_cause,
+            response.data.artifact_url,
+            response.data.artifacts,
+            null,
+            template,
+            response.data.image,
+            user,
+            response.data.logs,
+            worker,
+            response.data.executionStartedAt,
+            response.data.executionEndedAt,
+        );
+    } catch (e) {
+        console.log(e);
+    }
 };
 
 export const listActionTemplates = async (search: string) => {
@@ -165,6 +209,84 @@ export const listActionTemplates = async (search: string) => {
             res.version,
             res.command,
             res.runtime_requirements,
+        );
+    });
+};
+
+export const getRunningActions = async () => {
+    const response = await axios.get('/action/running', {
+        params: { skip: 0, take: 10 },
+    });
+    return response.data[0].map((res: any) => {
+        const user = new User(
+            res.createdBy.uuid,
+            res.createdBy.name,
+            res.createdBy.email,
+            res.createdBy.role,
+            res.createdBy.avatarUrl,
+            [],
+            res.createdBy.createdAt,
+            res.createdBy.updatedAt,
+            res.createdBy.deletedAt,
+        );
+        const template = new ActionTemplate(
+            res.template.uuid,
+            res.template.createdAt,
+            res.template.updatedAt,
+            res.template.deletedAt,
+            res.template.image_name,
+            user,
+            res.template.name,
+            res.template.version,
+            res.template.command,
+            res.template.runtime_requirements,
+        );
+        const mission = new Mission(
+            res.mission.uuid,
+            res.mission.name,
+            undefined,
+            [],
+            [],
+            undefined,
+            new Date(res.mission.createdAt),
+            new Date(res.mission.updatedAt),
+            new Date(res.mission.deletedAt),
+        );
+        let worker = null;
+        if (res.worker) {
+            worker = new Worker(
+                res.worker.uuid,
+                res.worker.identifier,
+                res.worker.hostname,
+                res.worker.createdAt,
+                res.worker.updatedAt,
+                res.worker.deletedAt,
+                res.worker.cpuMemory,
+                res.worker.hasGPU,
+                res.worker.gpuModel,
+                res.worker.gpuMemory,
+                res.worker.cpuCores,
+                res.worker.cpuModel,
+                res.worker.storage,
+                res.worker.lastSeen,
+                res.worker.reachable,
+            );
+        }
+        return new Action(
+            res.uuid,
+            new Date(res.createdAt),
+            new Date(res.updatedAt),
+            new Date(res.deletedAt),
+            res.state,
+            res.state_cause,
+            res.artifact_url,
+            res.artifacts,
+            mission,
+            template,
+            res.image,
+            user,
+            null,
+            worker,
         );
     });
 };

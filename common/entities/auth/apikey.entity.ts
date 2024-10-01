@@ -1,8 +1,9 @@
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { KeyTypes } from '../../enum';
+import { AccessGroupRights, KeyTypes } from '../../enum';
 import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
+import User from '../user/user.entity';
 
 @Entity()
 export default class Apikey extends BaseEntity {
@@ -15,11 +16,21 @@ export default class Apikey extends BaseEntity {
 
     @ManyToOne(() => Mission, (mission) => mission.api_keys, {
         onDelete: 'CASCADE',
+        eager: true,
     })
     mission: Mission;
 
-    @OneToOne(() => Action, {
+    @OneToOne(() => Action, (action) => action.key, {
+        onDelete: 'CASCADE',
+        nullable: true,
+    })
+    action: Action | null;
+
+    @ManyToOne(() => User, (user) => user.api_keys, {
         onDelete: 'CASCADE',
     })
-    action: Action;
+    user: User;
+
+    @Column()
+    rights: AccessGroupRights;
 }

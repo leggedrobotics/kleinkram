@@ -10,13 +10,13 @@ import {
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import {
-    AdminOnly,
-    CanCreateProject,
+    CanCreate,
     CanDeleteProject,
     CanReadProject,
     CanReadProjectByName,
     CanWriteProject,
     LoggedIn,
+    UserOnly,
 } from '../auth/roles.decorator';
 import {
     QueryOptionalBoolean,
@@ -27,9 +27,11 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
+import { AccessGroupRights } from '@common/enum';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Controller('project')
 export class ProjectController {
@@ -45,9 +47,9 @@ export class ProjectController {
      * @param searchParams
      */
     @Get('filtered')
-    @LoggedIn()
+    @UserOnly()
     async allProjects(
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryProjectSortBy('sortBy') sortBy?: string,
@@ -81,11 +83,8 @@ export class ProjectController {
     }
 
     @Post('create')
-    @CanCreateProject()
-    async createProject(
-        @Body() dto: CreateProject,
-        @addJWTUser() user?: JWTUser,
-    ) {
+    @CanCreate()
+    async createProject(@Body() dto: CreateProject, @addUser() user?: AuthRes) {
         return this.projectService.create(dto, user);
     }
 
@@ -130,5 +129,15 @@ export class ProjectController {
         @Body('tagTypeUUIDs') tagTypeUUIDs: string[],
     ) {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+    }
+
+    @Get('getDefaultRights')
+    @LoggedIn()
+    async getDefaultRights(
+        @addUser() user: AuthRes,
+    ): Promise<
+        { name: string; accessGroupUUID: string; rights: AccessGroupRights }[]
+    > {
+        return this.projectService.getDefaultRights(user);
     }
 }

@@ -16,7 +16,7 @@ from kleinkram.auth.auth import login, setCliKey, logout
 from kleinkram.endpoint.endpoint import endpoint
 from kleinkram.error_handling import ErrorHandledTyper, AccessDeniedException
 from kleinkram.file.file import file
-from kleinkram.mission.mission import mission
+from kleinkram.mission.mission import missionCommands
 from kleinkram.project.project import project
 from kleinkram.queue.queue import queue
 from kleinkram.tag.tag import tag
@@ -33,7 +33,10 @@ class CommandPanel(str, Enum):
 
 def version_callback(value: bool):
     if value:
-        _version = importlib.metadata.version("kleinkram")
+        try:
+            _version = importlib.metadata.version("kleinkram")
+        except importlib.metadata.PackageNotFoundError:
+            _version = "local"
         typer.echo(f"CLI Version: {_version}")
         raise typer.Exit()
 
@@ -88,7 +91,7 @@ def version(
 
 
 app.add_typer(project, rich_help_panel=CommandPanel.Commands)
-app.add_typer(mission, rich_help_panel=CommandPanel.Commands)
+app.add_typer(missionCommands, rich_help_panel=CommandPanel.Commands)
 
 app.add_typer(topic, rich_help_panel=CommandPanel.Commands)
 app.add_typer(file, rich_help_panel=CommandPanel.Commands)
@@ -223,7 +226,7 @@ def upload(
         for _file in filenames:
             if not _file in confirmed_files.keys():
                 raise Exception(
-                    "Could not upload File '" + file + "'. Is the filename unique? "
+                    "Could not upload File '" + _file + "'. Is the filename unique? "
                 )
             confirmed_files[_file]["filepath"] = filepaths[_file]
         if len(confirmed_files.keys()) > 0:

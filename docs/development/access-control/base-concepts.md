@@ -16,7 +16,7 @@ The access control is based on groups. Each user can be a member of multiple gro
 
 ### Personal Group
 
-Each user is member of at least one group, i.e. the group with `personal_group:<uuid>`. This group is unique to each
+Each user is member of at least one group, i.e. the group with `personal_group:<name>`. This group is unique to each
 user and is created when the user is created. Only the user itself is member of this group. No other user can be member
 of this group.
 
@@ -51,6 +51,8 @@ These default groups can be configured in the configuration file: `backend/acces
 ```
 
 ## How Access is Checked?
+
+Below is the default check for access rights. For the case of authentication using Api Keys, as used in actions, a different flow is used.
 
 ```mermaid
 graph TD

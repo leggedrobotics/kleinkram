@@ -482,23 +482,6 @@ export class FileService {
         );
     }
 
-    async generateDownloadForToken(missionUUID: string) {
-        const mission = await this.missionRepository.findOneOrFail({
-            where: { uuid: missionUUID },
-            relations: ['files', 'project'],
-        });
-        return await Promise.all(
-            mission.files.map((f) =>
-                externalMinio.presignedUrl(
-                    'GET',
-                    env.MINIO_BAG_BUCKET_NAME,
-                    `${mission.project.name}/${mission.name}/${f.filename}`,
-                    4 * 60 * 60,
-                ),
-            ),
-        );
-    }
-
     async findByMission(
         missionUUID: string,
         take: number,
@@ -517,7 +500,13 @@ export class FileService {
         }
         return this.fileRepository.findAndCount({
             where,
-            relations: ['mission', 'topics', 'creator', 'mission.creator'],
+            relations: [
+                'mission',
+                'topics',
+                'creator',
+                'mission.creator',
+                'mission.project',
+            ],
             take,
             skip,
         });
@@ -664,6 +653,14 @@ export class FileService {
         } catch (err) {
             console.error(err);
         }
+    }
+
+    async getTemporaryAccessCLI(
+        filenames: string[],
+        missionUUID: string,
+        apiKey: string,
+    ) {
+        console.log('API KEY: ', apiKey);
     }
 
     async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {

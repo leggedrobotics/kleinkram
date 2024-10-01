@@ -17,6 +17,7 @@ import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
 import Action from '../action/action.entity';
 import ActionTemplate from '../action/actionTemplate.entity';
+import Apikey from '../auth/apikey.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -62,4 +63,7 @@ export default class User extends BaseEntity {
 
     @OneToMany(() => Tag, (tag) => tag.creator)
     tags: Tag[];
+
+    @OneToMany(() => Apikey, (apikey) => apikey.user)
+    api_keys: Apikey[];
 }

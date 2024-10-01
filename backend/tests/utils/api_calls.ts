@@ -156,7 +156,6 @@ export async function upload_file(
         ) {
             break;
         }
-
         await new Promise((r) => setTimeout(r, 1000));
     }
 

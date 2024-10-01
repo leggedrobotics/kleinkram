@@ -1,5 +1,5 @@
 <template>
-    <q-card style="height: 350px; width: 350px" class="flex">
+    <q-card style="height: 350px; width: 350px" class="flex" flat>
         <q-card-section style="width: 350px">
             <v-chart
                 :option="option"

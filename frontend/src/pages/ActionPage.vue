@@ -1,11 +1,7 @@
 <template>
     <title-section title="Mission Analysis"></title-section>
 
-    <ActionConfiguration
-        :open="createAction"
-        @close="createAction = false"
-        :mission_uuids="['ffffc34f-3d6e-4fd8-ade4-2b6217e1fd19']"
-    />
+    <ActionConfiguration :open="createAction" @close="createAction = false" />
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
@@ -88,8 +84,13 @@
                     class="bg-button-secondary text-on-color"
                     label="Create Action"
                     @click="() => (createAction = true)"
+                    :disable="!canCreate"
                     icon="sym_o_add"
-                />
+                >
+                    <q-tooltip v-if="!canCreate">
+                        Creating Actions requires Create rights on the mission.
+                    </q-tooltip>
+                </q-btn>
             </button-group>
         </div>
     </div>
@@ -102,6 +103,8 @@
             <div class="text">Please select a project and a mission to...</div>
         </template>
     </div>
+
+    <BullQueue v-if="permissions?.role === ROLE.ADMIN" />
 </template>
 
 <script setup lang="ts">
@@ -114,10 +117,16 @@ import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import {
+    canLaunchInMission,
+    useHandler,
+    usePermissionsQuery,
+} from 'src/hooks/customQueryHooks';
 import TitleSection from 'components/TitleSection.vue';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
+import BullQueue from 'components/BullQueue.vue';
+import ROLE from 'src/enums/USER_ROLES';
 
 const search = ref('');
 const createAction = ref(false);
@@ -136,6 +145,7 @@ const dropdownNewFileMission = ref(false);
 
 const handler = useHandler();
 
+const { data: permissions } = usePermissionsQuery();
 const selected_project = computed(() =>
     projects.value.find(
         (project: Project) => project.uuid === handler.value.project_uuid,
@@ -146,6 +156,12 @@ const selected_mission = computed(() =>
     missions.value.find(
         (mission: Mission) => mission.uuid === handler.value.mission_uuid,
     ),
+);
+
+const canCreate = computed(() =>
+    selected_mission.value
+        ? canLaunchInMission(selected_mission.value, permissions.value)
+        : true,
 );
 
 // Fetch projects

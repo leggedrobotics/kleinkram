@@ -8,6 +8,7 @@ import User from '@common/entities/user/user.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import logger from '../logger';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class FileGuardService {
@@ -22,36 +23,34 @@ export class FileGuardService {
         private missionGuardService: MissionGuardService,
     ) {}
     async canAccessFile(
-        userUUID: string,
+        user: User,
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!fileUUID || !userUUID) {
+        if (!fileUUID || !user) {
             logger.error(
-                `FileGuard: File UUID (${fileUUID}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUID (${fileUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
-        const user = await this.userRepository.findOne({
-            where: { uuid: userUUID },
-        });
-        if (!user) {
-            return false;
-        }
+
         if (user.role === UserRole.ADMIN) {
             return true;
         }
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUUID },
-            relations: ['mission', 'mission.project'],
+            relations: ['mission', 'mission.project', 'creator'],
         });
         if (!file) {
             console.log('File not found');
             return false;
         }
+        if (file.creator.uuid === user.uuid) {
+            return true;
+        }
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
-                userUUID,
+                user,
                 file.mission.project.uuid,
                 rights,
             );
@@ -59,26 +58,60 @@ export class FileGuardService {
             return true;
         }
         return this.missionGuardService.canAccessMission(
-            userUUID,
+            user,
             file.mission.uuid,
             rights,
         );
     }
 
     async canAccessFileByName(
-        userUUID: string,
+        user: User,
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!filename || !userUUID) {
+        if (!filename || !user) {
             logger.error(
-                `FileGuard: Filename (${filename}) or User UUID (${userUUID}) not provided. Requesting ${rights} access.`,
+                `FileGuard: Filename (${filename}) or User (${user}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
         const file = await this.fileRepository.findOne({
             where: { filename: filename },
         });
-        return this.canAccessFile(userUUID, file.uuid, rights);
+        return this.canAccessFile(user, file.uuid, rights);
+    }
+
+    async canKeyAccessFileByName(
+        apikey: Apikey,
+        filename: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!filename) {
+            logger.error(
+                `FileGuard: Filename (${filename}) not provided. Requesting ${rights} access.`,
+            );
+            return false;
+        }
+        const file = await this.fileRepository.findOne({
+            where: { filename: filename },
+        });
+        return this.canKeyAccessFile(apikey, file.uuid, rights);
+    }
+
+    async canKeyAccessFile(
+        apiKey: Apikey,
+        fileUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        const file = await this.fileRepository.findOne({
+            where: { uuid: fileUUID },
+            relations: ['mission'],
+        });
+        if (!file) {
+            return false;
+        }
+        return (
+            apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
+        );
     }
 }

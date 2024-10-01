@@ -14,12 +14,6 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
 import CreateProjectDialog from 'src/dialogs/CreateProjectDialog.vue';
 import { useQuasar } from 'quasar';

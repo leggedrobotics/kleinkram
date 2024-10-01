@@ -155,8 +155,12 @@ export function getActionColor(state: ActionState) {
             return 'red';
         case ActionState.PENDING:
             return 'orange';
+        case ActionState.STARTING:
+            return 'blue-4';
         case ActionState.PROCESSING:
             return 'blue';
+        case ActionState.UNPROCESSABLE:
+            return 'purple';
         default:
             return 'grey'; // Default color for unknown states
     }

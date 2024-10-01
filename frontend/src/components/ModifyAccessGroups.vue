@@ -12,57 +12,68 @@
         <div class="row" style="margin-top: 15px">
             <b>Individual Users</b>
         </div>
-        <div class="row" v-for="user in foundUsers">
-            <div class="col-4 flex flex-center">
-                {{ user.name }}
-            </div>
-            <div class="col-4 flex flex-center">
-                {{ user.email }}
-            </div>
-            <div class="col-2 flex flex-center">
-                <q-select
-                    v-model="rights[user.uuid]"
-                    :options="options"
-                    style="width: 100%"
-                />
-            </div>
-            <div class="col-2 flex flex-center">
-                <q-btn
-                    label="Update"
-                    color="primary"
-                    @click="() => addUserToProject(user.uuid, user.name)"
-                    :disable="!rights[user.uuid]"
-                />
-            </div>
-        </div>
+        <q-table
+            v-if="foundUsers && foundUsers.length > 0"
+            :rows="foundUsers || []"
+            :columns="columns"
+            hide-bottom
+            flat
+            bordered
+        >
+            <template v-slot:body-cell-name="_props">
+                <q-td :props="_props" style="width: 150px">
+                    {{ _props.row.name }}
+                </q-td>
+            </template>
+            <template v-slot:body-cell-rights="_props">
+                <q-td :props="_props" style="width: 150px">
+                    <q-select
+                        v-model="rights[_props.row.uuid]"
+                        :options="options"
+                        @update:model-value="
+                            () =>
+                                addUserToProject(
+                                    _props.row.uuid,
+                                    _props.row.name,
+                                )
+                        "
+                    />
+                </q-td>
+            </template>
+        </q-table>
+
         <div class="row">
             <b>Access Groups</b>
         </div>
-        <div class="row" v-for="accessGroup in foundAccessGroups">
-            <div class="col-8 flex flex-center">
-                {{ accessGroup.name }}
-            </div>
-            <div class="col-2 flex flex-center">
-                <q-select
-                    v-model="rights[accessGroup.uuid]"
-                    :options="options"
-                />
-            </div>
-            <div class="col-2 flex flex-center">
-                <q-btn
-                    label="Update"
-                    color="primary"
-                    @click="
-                        () =>
-                            addAccessGroupToProject(
-                                accessGroup.uuid,
-                                accessGroup.name,
-                            )
-                    "
-                    :disable="!rights[accessGroup.uuid]"
-                />
-            </div>
-        </div>
+        <q-table
+            v-if="foundAccessGroups && foundAccessGroups.length > 0"
+            :rows="foundAccessGroup || []"
+            :columns="columns"
+            hide-bottom
+            flat
+            bordered
+        >
+            <template v-slot:body-cell-name="_props">
+                <q-td :props="_props" style="width: 150px">
+                    {{ _props.row.name }}
+                </q-td>
+            </template>
+            <template v-slot:body-cell-rights="_props">
+                <q-td :props="_props" style="width: 150px">
+                    <q-select
+                        v-model="rights[_props.row.uuid]"
+                        :options="options"
+                        @update:model-value="
+                            () =>
+                                addAccessGroupToProject(
+                                    _props.row.uuid,
+                                    _props.row.name,
+                                )
+                        "
+                    />
+                </q-td>
+            </template>
+        </q-table>
     </div>
 </template>
 
@@ -73,6 +84,7 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import { useQuery } from '@tanstack/vue-query';
 import { searchUsers } from 'src/services/queries/user';
 import { searchAccessGroups } from 'src/services/queries/access';
+import { QTable } from 'quasar';
 
 const props = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;
@@ -120,6 +132,23 @@ function addUserToProject(userUUID: string, name: string) {
         name,
     });
 }
+
+const columns = [
+    {
+        name: 'name',
+        required: true,
+        label: 'Name',
+        align: 'left',
+    },
+    {
+        name: 'rights',
+        required: true,
+        label: 'Rights',
+        align: 'left',
+        field: 'rights',
+        format: (val: string) => val,
+    },
+];
 </script>
 
 <style scoped></style>

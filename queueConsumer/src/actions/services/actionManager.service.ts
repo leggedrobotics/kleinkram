@@ -6,7 +6,12 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import { ActionState, KeyTypes } from '@common/enum';
+import {
+    AccessGroupRights,
+    ActionState,
+    ArtifactState,
+    KeyTypes,
+} from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
@@ -14,7 +19,6 @@ import Apikey from '@common/entities/auth/apikey.entity';
 import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
-import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 import env from '@common/env';
 
 @Injectable()
@@ -28,7 +32,6 @@ export class ActionManagerService {
         private actionRepository: Repository<Action>,
         @InjectRepository(Apikey)
         private apikeyRepository: Repository<Apikey>,
-        private runtimeCapabilitiesService: RuntimeCapabilitiesService,
     ) {}
 
     /**
@@ -43,7 +46,9 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
+            rights: AccessGroupRights.WRITE, // todo read from frontend
             key_type: KeyTypes.CONTAINER,
+            user: action.createdBy,
         });
         return new DisposableAPIKey(
             await this.apikeyRepository.save(apiKey),
@@ -60,8 +65,8 @@ export class ActionManagerService {
         if (action.state !== ActionState.PENDING)
             throw new Error(`Action state is not 'PENDING'`);
 
-        // set state to 'RUNNING'
-        action.state = ActionState.PROCESSING;
+        // set state to 'STARTING'
+        action.state = ActionState.STARTING;
         action.state_cause = 'Action is currently running...';
         await this.actionRepository.save(action);
 
@@ -78,18 +83,24 @@ export class ActionManagerService {
             action.template.runtime_requirements.gpu_model !== null &&
             action.template.runtime_requirements.gpu_model.name !== 'no-gpu';
         const { container, repo_digests, sha } =
-            await this.containerDaemon.start_container({
-                docker_image: action.template.image_name,
-                name: action.uuid,
-                limits: {
-                    max_runtime: 5 * 60 * 1_000, // 5 minutes
-                    cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
-                    memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+            await this.containerDaemon.start_container(
+                async () => {
+                    action.state = ActionState.PROCESSING;
+                    await this.actionRepository.save(action);
                 },
-                needs_gpu,
-                environment: env_variables,
-                command: action.template.command,
-            });
+                {
+                    docker_image: action.template.image_name,
+                    name: action.uuid,
+                    limits: {
+                        max_runtime: 5 * 60 * 1_000, // 5 minutes
+                        cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
+                        memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+                    },
+                    needs_gpu,
+                    environment: env_variables,
+                    command: action.template.command,
+                },
+            );
 
         // capture runner information
         action.image = { repo_digests, sha };
@@ -120,7 +131,7 @@ export class ActionManagerService {
         await this.containerDaemon.removeContainer(container.id, false);
         await this.setActionState(container, action);
         action.executionEndedAt = new Date();
-        action.uploading_artifacts = true;
+        action.artifacts = ArtifactState.UPLOADING;
         await this.actionRepository.save(action);
 
         const { container: artifact_upload_container, parentFolder } =
@@ -129,7 +140,7 @@ export class ActionManagerService {
                 `${action.template.name}-v${action.template.version}-${action.uuid}`,
             );
         await artifact_upload_container.wait();
-        action.uploading_artifacts = false;
+        action.artifacts = ArtifactState.UPLOADED;
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
             true,
@@ -160,11 +171,6 @@ export class ActionManagerService {
         action.executionStartedAt = new Date(container_details.Created);
         action.container = {
             id: container_id,
-        };
-        action.runner_info = {
-            hostname: container_details?.Config?.Hostname || 'N/A',
-            runtime_capabilities:
-                this.runtimeCapabilitiesService.getRuntimeCapabilities(),
         };
         action.logs = [];
     }

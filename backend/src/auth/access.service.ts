@@ -5,7 +5,7 @@ import { EntityManager, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
-import { JWTUser } from './paramDecorator';
+import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class AccessService {
         private projectAccessRepository: Repository<ProjectAccess>,
         private readonly entityManager: EntityManager,
     ) {}
-    async getAccessGroup(uuid: string, jwtuser: JWTUser) {
+    async getAccessGroup(uuid: string, jwtuser: AuthRes) {
         return this.accessGroupRepository.findOneOrFail({
             where: { uuid },
             relations: [
@@ -33,9 +33,9 @@ export class AccessService {
             ],
         });
     }
-    async createAccessGroup(name: string, jwtuser: JWTUser) {
+    async createAccessGroup(name: string, auth: AuthRes) {
         const user = await this.userRepository.findOneOrFail({
-            where: { uuid: jwtuser.uuid },
+            where: { uuid: auth.user.uuid },
         });
 
         const new_group = this.accessGroupRepository.create({
@@ -47,13 +47,13 @@ export class AccessService {
         });
         return this.accessGroupRepository.save(new_group);
     }
-    async canModifyAccessGroup(
-        uuid: string,
-        user: JWTUser,
+    async hasProjectRights(
+        projectUUID: string,
+        auth: AuthRes,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
     ): Promise<boolean> {
         const dbuser = await this.userRepository.findOneOrFail({
-            where: { uuid: user.uuid },
+            where: { uuid: auth.user.uuid },
         });
         if (dbuser.role === UserRole.ADMIN) {
             return true;
@@ -63,8 +63,8 @@ export class AccessService {
             .leftJoin('project.project_accesses', 'projectAccesses')
             .leftJoin('projectAccesses.accessGroup', 'accessGroup')
             .leftJoin('accessGroup.users', 'users')
-            .where('project.uuid = :uuid', { uuid })
-            .andWhere('users.uuid = :user_uuid', { user_uuid: user.uuid })
+            .where('project.uuid = :uuid', { uuid: projectUUID })
+            .andWhere('users.uuid = :user_uuid', { user_uuid: auth.user.uuid })
             .andWhere('projectAccesses.rights >= :rights', {
                 rights: rights,
             })
@@ -75,7 +75,7 @@ export class AccessService {
         projectUUID: string,
         userUUID: string,
         rights: AccessGroupRights,
-        user: JWTUser,
+        auth: AuthRes,
     ): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
@@ -87,16 +87,18 @@ export class AccessService {
         });
 
         const modifyingUser = await this.userRepository.findOneOrFail({
-            where: { uuid: user.uuid },
+            where: { uuid: auth.user.uuid },
             relations: ['accessGroups'],
         });
 
         const personalAccessGroup = dbuser.accessGroups.find(
             (accessGroup) => accessGroup.personal,
         );
-        const canUpdate =
-            (await this.canModifyAccessGroup(projectUUID, user, rights)) ||
-            modifyingUser.role === UserRole.ADMIN;
+        const canUpdate = await this.hasProjectRights(
+            projectUUID,
+            auth,
+            rights,
+        );
         if (rights === AccessGroupRights.DELETE && !canUpdate) {
             throw new ConflictException(
                 'User cannot grant delete rights without having delete rights himself/herself',
@@ -193,7 +195,7 @@ export class AccessService {
         personal: boolean,
         creator: boolean,
         member: boolean,
-        user: JWTUser,
+        auth: AuthRes,
         skip: number,
         take: number,
     ) {
@@ -205,11 +207,11 @@ export class AccessService {
             where['personal'] = true;
         }
         if (creator) {
-            where['creator'] = { uuid: user.uuid };
+            where['creator'] = { uuid: auth.user.uuid };
         }
         if (member) {
             // user in in users of access group
-            where['users'] = { uuid: user.uuid };
+            where['users'] = { uuid: auth.user.uuid };
         }
         return this.accessGroupRepository.findAndCount({
             where,
@@ -228,7 +230,7 @@ export class AccessService {
         projectUUID: string,
         accessGroupUUID: string,
         rights: AccessGroupRights,
-        jwtuser: JWTUser,
+        auth: AuthRes,
     ): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
@@ -240,9 +242,9 @@ export class AccessService {
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canModifyAccessGroup(
+            const canDelete = await this.hasProjectRights(
                 projectUUID,
-                { uuid: jwtuser.uuid },
+                auth,
                 AccessGroupRights.DELETE,
             );
             if (!canDelete) {
@@ -290,11 +292,11 @@ export class AccessService {
     async removeAccessGroupFromProject(
         projectUUID: string,
         accessGroupUUID: string,
-        jwtuser: JWTUser,
+        auth: AuthRes,
     ): Promise<AccessGroup> {
-        const canDelete = await this.canModifyAccessGroup(
+        const canDelete = await this.hasProjectRights(
             projectUUID,
-            { uuid: jwtuser.uuid },
+            auth,
             AccessGroupRights.DELETE,
         );
         if (!canDelete) {
@@ -328,7 +330,7 @@ export class AccessService {
     async getProjectAccess(
         projectUUID: string,
         projectAccessUUID: string,
-        jwtuser: JWTUser,
+        jwtuser: AuthRes,
     ) {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
@@ -340,16 +342,16 @@ export class AccessService {
         projectUUID: string,
         projectAccessUUID: string,
         rights: AccessGroupRights,
-        jwtuser: JWTUser,
+        auth: AuthRes,
     ) {
         const projectAccess = await this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.canModifyAccessGroup(
+            const canDelete = await this.hasProjectRights(
                 projectUUID,
-                { uuid: jwtuser.uuid },
+                auth,
                 AccessGroupRights.DELETE,
             );
             if (!canDelete) {

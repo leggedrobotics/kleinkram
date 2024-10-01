@@ -1,18 +1,15 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { DriveCreate } from './entities/drive-create.dto';
-import logger from '../logger';
 import {
     AdminOnly,
+    CanCreateInMissionByBody,
     CanCreateQueueByBody,
-    CanReadFile,
-    CanReadFileByName,
+    CanDeleteMission,
     CanReadMission,
-    CanWriteMissionByBody,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { addJWTUser, JWTUser } from '../auth/paramDecorator';
-import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 import { BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
@@ -29,8 +26,8 @@ export class QueueController {
     constructor(private readonly queueService: QueueService) {}
 
     @Post('createdrive')
-    @CanWriteMissionByBody()
-    async createDrive(@Body() body: DriveCreate, @addJWTUser() user: JWTUser) {
+    @CanCreateInMissionByBody()
+    async createDrive(@Body() body: DriveCreate, @addUser() user: AuthRes) {
         return this.queueService.createDrive(body, user);
     }
 
@@ -47,14 +44,14 @@ export class QueueController {
         @QueryOptionalString('stateFilter') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addJWTUser() user: JWTUser,
+        @addUser() user: AuthRes,
     ) {
         const date = new Date(startDate);
 
         return this.queueService.active(
             date,
             stateFilter,
-            user.uuid,
+            user.user.uuid,
             skip,
             take,
         );
@@ -70,7 +67,7 @@ export class QueueController {
     }
 
     @Delete(':uuid')
-    @CanWriteMissionByBody()
+    @CanDeleteMission()
     async delete(
         @BodyUUID('missionUUID') missionUUID: string,
         @ParamUUID('uuid') uuid: string,
@@ -79,11 +76,23 @@ export class QueueController {
     }
 
     @Post('cancelProcessing')
-    @CanWriteMissionByBody()
+    @CanDeleteMission()
     async cancelProcessing(
         @BodyUUID('queueUUID') queueUUID: string,
         @BodyUUID('missionUUID') missionUUID: string,
     ) {
         return this.queueService.cancelProcessing(queueUUID, missionUUID);
+    }
+
+    @Get('bullQueue')
+    @AdminOnly()
+    async bullQueue() {
+        return this.queueService.bullQueue();
+    }
+
+    @Post('stopJob')
+    @AdminOnly()
+    async stopJob(@BodyUUID('jobId') jobId: string) {
+        return this.queueService.stopJob(jobId);
     }
 }

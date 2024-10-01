@@ -576,7 +576,7 @@ function missionSelected(mission: Mission) {
     if (hasMissionUUIDs.value) {
         addedMissions.value.push(mission.uuid);
     } else {
-        handler.setMissionUUID(mission.uuid);
+        handler.value.setMissionUUID(mission.uuid);
     }
 }
 

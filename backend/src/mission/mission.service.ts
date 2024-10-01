@@ -4,9 +4,9 @@ import { Brackets, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
-import { JWTUser } from '../auth/paramDecorator';
+import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
-import { moveMissionFilesInMinio } from '../minioHelper';
+import { externalMinio, moveMissionFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
 import { FileType, UserRole } from '@common/enum';
 import Tag from '@common/entities/tag/tag.entity';
@@ -29,9 +29,9 @@ export class MissionService {
 
     async create(
         createMission: CreateMission,
-        user: JWTUser,
+        auth: AuthRes,
     ): Promise<Mission> {
-        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
@@ -77,7 +77,15 @@ export class MissionService {
     async findOne(uuid: string): Promise<Mission> {
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'files', 'creator', 'tags', 'tags.tagType'],
+            relations: [
+                'project',
+                'files',
+                'creator',
+                'tags',
+                'tags.tagType',
+                'project.requiredTags',
+                'files.topics',
+            ],
         });
     }
 
@@ -88,7 +96,12 @@ export class MissionService {
         search?: string,
         descending?: boolean,
         sortBy?: string,
+        userUUID?: string,
     ): Promise<[Mission[], number]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
         const query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
@@ -108,6 +121,9 @@ export class MissionService {
         }
         if (sortBy) {
             query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        if (user.role !== UserRole.ADMIN) {
+            addAccessConstraints(query, userUUID);
         }
         return query.getManyAndCount();
     }
@@ -180,13 +196,6 @@ export class MissionService {
 
     async findOneByName(name: string): Promise<Mission> {
         return this.missionRepository.findOne({ where: { name } });
-    }
-
-    async findOneByUUID(uuid: string): Promise<Mission> {
-        return this.missionRepository.findOneOrFail({
-            where: { uuid },
-            relations: ['project', 'files', 'creator', 'files.topics'],
-        });
     }
 
     async moveMission(
@@ -266,5 +275,22 @@ export class MissionService {
             where: { uuid: In(uuids) },
             relations: ['project', 'creator'],
         });
+    }
+
+    async download(missionUUID: string) {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['files', 'project'],
+        });
+        return await Promise.all(
+            mission.files.map((f) =>
+                externalMinio.presignedUrl(
+                    'GET',
+                    env.MINIO_BAG_BUCKET_NAME,
+                    `${mission.project.name}/${mission.name}/${f.filename}`,
+                    4 * 60 * 60,
+                ),
+            ),
+        );
     }
 }

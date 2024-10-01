@@ -4,7 +4,7 @@
 
         <template #content>
             <AddProjectToAccessGroupDialog
-                :access_group="props.access_group"
+                :access_group="props.access_group_uuid"
                 ref="addProjectRef"
             />
         </template>

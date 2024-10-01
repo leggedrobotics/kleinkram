@@ -4,7 +4,7 @@ import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
 import logger from '../logger';
-import { JWTUser } from '../auth/paramDecorator';
+import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 
@@ -39,7 +39,7 @@ export class ProjectService {
     }
 
     async findAll(
-        user: JWTUser,
+        auth: AuthRes,
         skip: number,
         take: number,
         sortBy: string,
@@ -50,11 +50,11 @@ export class ProjectService {
         take = Number(take);
         skip = Number(skip);
 
-        logger.debug('Finding all projects as user: ', user.uuid);
+        logger.debug('Finding all projects as user: ', auth.user.uuid);
         logger.debug('Skip ' + skip + ' Take ' + take);
 
         const db_user = await this.userRepository.findOne({
-            where: { uuid: user.uuid },
+            where: { uuid: auth.user.uuid },
         });
 
         let baseQuery = this.projectRepository
@@ -71,7 +71,7 @@ export class ProjectService {
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
                 })
-                .andWhere('users.uuid = :uuid', { uuid: user.uuid });
+                .andWhere('users.uuid = :uuid', { uuid: auth.user.uuid });
         }
 
         // add sorting
@@ -133,7 +133,7 @@ export class ProjectService {
         });
     }
 
-    async create(project: CreateProject, user: JWTUser): Promise<Project> {
+    async create(project: CreateProject, auth: AuthRes): Promise<Project> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
         });
@@ -142,7 +142,7 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
-        const creator = await this.userservice.findOneByUUID(user.uuid);
+        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
         const access_groups_default = creator.accessGroups.filter(
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );
@@ -159,6 +159,23 @@ export class ProjectService {
             creator: creator,
             requiredTags: tagTypes,
         });
+
+        const access_groups_default_ids = access_groups_default.map(
+            (ag) => ag.uuid,
+        );
+
+        let deduplicatedAccessGroups = [];
+        if (project.accessGroups) {
+            deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
+                if ('accessGroupUUID' in ag) {
+                    return !access_groups_default_ids.includes(
+                        ag.accessGroupUUID,
+                    );
+                } else {
+                    return ag.userUUID !== auth.user.uuid;
+                }
+            });
+        }
         const transactedProject = await this.dataSource.transaction(
             async (manager) => {
                 const savedProject = await manager.save(Project, newProject);
@@ -171,7 +188,7 @@ export class ProjectService {
                 if (project.accessGroups) {
                     await this.createSpecifiedAccessGroups(
                         manager,
-                        project.accessGroups,
+                        deduplicatedAccessGroups,
                         savedProject,
                     );
                 }
@@ -349,5 +366,29 @@ export class ProjectService {
                 return manager.save(ProjectAccess, projectAccess);
             }),
         );
+    }
+
+    async getDefaultRights(auth: AuthRes) {
+        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const rights = creator.accessGroups.filter(
+            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
+        );
+        return rights.map((right) => {
+            const name = right.name;
+            const accessGroupUUID = right.uuid;
+            let _rights = AccessGroupRights.WRITE;
+            if (right.inheriting) {
+                _rights = this.config.access_groups.find(
+                    (group) => group.uuid === right.uuid,
+                ).rights;
+            } else if (right.personal) {
+                _rights = AccessGroupRights.DELETE;
+            }
+            return {
+                name,
+                accessGroupUUID,
+                rights: _rights,
+            };
+        });
     }
 }

@@ -50,9 +50,7 @@
                     >
                         <q-list>
                             <q-item
-                                v-for="_project in !!all_projects
-                                    ? all_projects[0]
-                                    : []"
+                                v-for="_project in projectsWithCreateWrite"
                                 :key="_project.uuid"
                                 clickable
                                 @click="
@@ -153,6 +151,13 @@ import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
+import { getPermissions } from 'src/services/queries/user';
+import {
+    canCreateMission,
+    getPermissionForProject,
+    usePermissionsQuery,
+} from 'src/hooks/customQueryHooks';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -186,6 +191,13 @@ const { data: all_projects } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
+const permissions = usePermissionsQuery();
+const projectsWithCreateWrite = computed(() => {
+    if (!all_projects?.value) return [];
+    return all_projects?.value[0].filter((project: Project) =>
+        canCreateMission(project.uuid, permissions),
+    );
+});
 
 const tagValues: Ref<Record<string, string>> = ref({});
 
@@ -210,6 +222,7 @@ const submitNewMission = async () => {
         project.value.uuid,
         tagValues.value,
     ).catch((e) => {
+        tab_selection.value = 'meta_data';
         isInErrorState.value = true;
         errorMessage.value = e.response.data.message;
     });

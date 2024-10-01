@@ -1,7 +1,7 @@
 FROM python:latest
 
 # install kleinkram as CLI
-RUN pip install kleinkram --force-reinstall
+RUN pip install kleinkram --pre --force-reinstall
 
 # copy entrypoint and make it executable
 COPY ./entrypoint.sh /entrypoint.sh

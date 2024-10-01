@@ -1,7 +1,12 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { TagService } from './tag.service';
 import { DataType } from '@common/enum';
-import { CanAddTag, CanDeleteTag, LoggedIn } from '../auth/roles.decorator';
+import {
+    CanAddTag,
+    CanCreate,
+    CanDeleteTag,
+    LoggedIn,
+} from '../auth/roles.decorator';
 import {
     BodyDataType,
     BodyNotNull,
@@ -16,16 +21,18 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import { addUser, AuthRes } from '../auth/paramDecorator';
 
 @Controller('tag')
 export class TagController {
     constructor(private readonly tagService: TagService) {}
 
     @Post('create')
-    @LoggedIn()
+    @CanCreate()
     async createTagType(
         @BodyString('name') name: string,
         @BodyDataType('type') type: DataType,
+        @addUser() user: AuthRes,
     ) {
         return this.tagService.create(name, type);
     }

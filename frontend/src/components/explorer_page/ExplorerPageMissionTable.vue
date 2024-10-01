@@ -83,20 +83,22 @@
                             </q-item>
                             <q-item clickable v-ripple disabled>
                                 <q-item-section>Edit Metadata</q-item-section>
+                                <q-tooltip>
+                                    Edit Metadata is not yet implemented
+                                </q-tooltip>
                             </q-item>
                             <q-item clickable v-ripple disabled>
                                 <q-item-section>Manage Access</q-item-section>
+                                <q-tooltip>
+                                    Manage Access is not yet implemented
+                                </q-tooltip>
                             </q-item>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="moveMission(props.row)"
-                            >
-                                <q-item-section>Move</q-item-section>
-                            </q-item>
-                            <DeleteMissionDialogOpener
-                                :mission_uuid="props.row.uuid"
-                            >
+                            <MoveMissionDialogOpener :mission="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>Move</q-item-section>
+                                </q-item>
+                            </MoveMissionDialogOpener>
+                            <DeleteMissionDialogOpener :mission="props.row">
                                 <q-item clickable v-ripple>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
@@ -123,6 +125,7 @@ import { useRouter } from 'vue-router';
 import { useProjectUUID } from 'src/hooks/utils';
 import { Mission } from 'src/types/Mission';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
+import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 const $emit = defineEmits(['update:selected']);
 
 const props = defineProps({
