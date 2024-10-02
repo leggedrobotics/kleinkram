@@ -9,6 +9,7 @@ type GPUModel = {
 type RuntimeRequirements = {
     gpu_model?: GPUModel | null;
     cpu_model?: string | null;
+    memory?: number | null;
 };
 
 export class ActionTemplate extends BaseEntity {
@@ -49,6 +50,7 @@ export class ActionTemplate extends BaseEntity {
                 compute_capability: existing_gpu_model.compute_capability,
             },
             cpu_model: this.runtime_requirements.cpu_model,
+            memory: this.runtime_requirements.memory,
         };
         return new ActionTemplate(
             this.uuid,

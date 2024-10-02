@@ -7,6 +7,7 @@ type GPUModel = {
 type RuntimeDescription = {
     gpu_model?: GPUModel | null;
     cpu_model?: string | null;
+    memory?: number;
 };
 export type RuntimeCapability = RuntimeDescription;
 export type RuntimeRequirements = RuntimeDescription;
