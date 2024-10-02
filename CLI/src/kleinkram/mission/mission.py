@@ -1,5 +1,5 @@
 import os
-from typing_extensions import Annotated, Optional
+from typing_extensions import Annotated, Optional, List
 
 import httpx
 import requests
@@ -203,7 +203,7 @@ def download(
 @missionCommands.command("upload")
 def upload(
     path: Annotated[
-        str, typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+        List[str], typer.Option(prompt=True, help="Path to files to upload, Regex supported")
     ],
     mission: Annotated[
         str, typer.Option(prompt=True, help="UUID of Mission to create")
@@ -212,12 +212,16 @@ def upload(
     """
     Upload files matching the path to a mission in a project.
 
-    The mission name must be unique within the project and already created.\n
+    The mission name must be unique within the project and already created.
+    Multiple paths can be given by using the option multiple times.\n
+    \n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1" '\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
 
     """
-    files = expand_and_match(path)
+    files = []
+    for p in path:
+        files.extend(expand_and_match(p))
     filenames = list(
         map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
     )
