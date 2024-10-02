@@ -212,11 +212,9 @@
                                     .name
                             "
                             :options="options"
-                            option-value="value"
-                            option-label="label"
                             label="GPU Acceleration"
                             class="q-mb-sm"
-                            map-options
+                            emit-value
                             outlined
                             dense
                             v-if="editingTemplate"
