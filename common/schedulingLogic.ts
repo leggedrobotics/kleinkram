@@ -7,7 +7,7 @@ import { ActionState } from './enum';
 export async function findWorkerForAction(
     runtime_requirements: RuntimeRequirements,
     workerRepository: Repository<Worker>,
-    actionQueue: any,
+    actionQueues: Record<string, any>,
 ) {
     const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
     let worker = await workerRepository.find({
@@ -30,7 +30,14 @@ export async function findWorkerForAction(
         return;
     }
 
-    const waiting = await actionQueue.getWaiting();
+    const waiting = [];
+    await Promise.all(
+        Object.values(actionQueues).map(async (action) => {
+            const jobs = await action.getWaiting();
+            waiting.push(...jobs);
+        }),
+    );
+    console.log(waiting);
     const nrJobs = {};
     waiting.forEach((job) => {
         const name = job.name.replace('actionProcessQueue-', '');
@@ -43,8 +50,7 @@ export async function findWorkerForAction(
     const res = worker.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];
-
-    console.log('selected worker', res.identifier);
+    // return worker[Math.floor(Math.random() * worker.length)];
     return res;
 }
 export async function addActionQueue(
@@ -52,25 +58,28 @@ export async function addActionQueue(
     runtime_requirements: RuntimeRequirements,
     workerRepository: any,
     actionRepository: any,
-    actionQueue: any,
+    actionQueues: Record<string, any>,
     logger: any = undefined,
 ) {
     const worker = await findWorkerForAction(
         runtime_requirements,
         workerRepository,
-        actionQueue,
+        actionQueues,
     );
-    logger.debug(`Selected worker: ${worker.hostname}`);
+    logger.debug(`Selected worker: ${worker.identifier}`);
     if (!worker) {
         action.state = ActionState.UNPROCESSABLE;
         await actionRepository.save(action);
         return;
     }
+    logger.debug('Worker found');
     action.worker = worker;
     await actionRepository.save(action);
     try {
-        return await actionQueue.add(
-            `actionProcessQueue-${worker.identifier}`,
+        logger.debug('trying to add');
+        logger.debug(actionQueues[worker.identifier].name);
+        const res = await actionQueues[worker.identifier].add(
+            `action`,
             { uuid: action.uuid },
             {
                 jobId: action.uuid,
@@ -83,6 +92,8 @@ export async function addActionQueue(
                 attempts: 60, // one hour of attempts
             },
         );
+        logger.debug('done:', res);
+        return res;
     } catch (e) {
         console.error(e);
     }
