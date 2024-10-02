@@ -113,7 +113,8 @@ def download():
 @app.command("upload", rich_help_panel=CommandPanel.CoreCommands)
 def upload(
     path: Annotated[
-        List[str], typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+        List[str],
+        typer.Option(prompt=True, help="Path to files to upload, Regex supported"),
     ],
     project: Annotated[str, typer.Option(prompt=True, help="Name of Project")],
     mission: Annotated[
