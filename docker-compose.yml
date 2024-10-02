@@ -124,6 +124,7 @@ services:
         depends_on:
             - database
             - loki
+            - main
 
     prometheus:
         image: prom/prometheus
