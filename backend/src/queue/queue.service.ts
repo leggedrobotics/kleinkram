@@ -335,6 +335,7 @@ export class QueueService implements OnModuleInit {
                 jobs.push(..._jobs);
             }),
         );
+        logger.debug('done');
         return await Promise.all(
             jobs.map(async (job) => {
                 const action = await this.actionRepository.findOne({
