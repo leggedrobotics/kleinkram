@@ -303,12 +303,10 @@ export class QueueService {
         ]);
         return await Promise.all(
             jobs.map(async (job) => {
-                console.log(job.id);
                 const action = await this.actionRepository.findOne({
                     where: { uuid: job.id as string },
                     relations: ['template'],
                 });
-                console.log(action);
                 return { job, action };
             }),
         );
