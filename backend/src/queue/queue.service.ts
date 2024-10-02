@@ -329,6 +329,8 @@ export class QueueService implements OnModuleInit {
         const jobs = [];
         await Promise.all(
             Object.values(this.actionQueues).map(async (queue) => {
+                logger.debug(`getting from Queue: ${queue.name}`);
+                logger.debug(`Queue state: ${queue.client.status}`);
                 const _jobs = await queue.getJobs(jobTypes);
                 jobs.push(..._jobs);
             }),
