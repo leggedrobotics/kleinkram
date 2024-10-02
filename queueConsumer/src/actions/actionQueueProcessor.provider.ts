@@ -93,6 +93,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             where: { uuid: job.data.uuid },
             relations: ['template', 'mission', 'mission.project', 'createdBy'],
         });
+        action.worker = this.worker;
         this.checkRuntimeCapability(action.template.runtime_requirements);
         return await this.actionController.processAction(action);
     }
