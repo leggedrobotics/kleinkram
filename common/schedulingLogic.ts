@@ -53,12 +53,14 @@ export async function addActionQueue(
     workerRepository: any,
     actionRepository: any,
     actionQueue: any,
+    logger: any = undefined,
 ) {
     const worker = await findWorkerForAction(
         runtime_requirements,
         workerRepository,
         actionQueue,
     );
+    logger.debug(`Selected worker: ${worker.hostname}`);
     if (!worker) {
         action.state = ActionState.UNPROCESSABLE;
         await actionRepository.save(action);

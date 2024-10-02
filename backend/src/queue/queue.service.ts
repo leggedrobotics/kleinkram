@@ -281,7 +281,7 @@ export class QueueService {
         action: Action,
         runtime_requirements: RuntimeRequirements,
     ) {
-        console.log(`Adding action to queue: ${action.template.name}`);
+        logger.debug(`Adding action to queue: ${action.template.name}`);
 
         return await addActionQueue(
             action,
@@ -289,6 +289,7 @@ export class QueueService {
             this.workerRepository,
             this.actionRepository,
             this.actionQueue,
+            logger,
         );
     }
 
@@ -365,6 +366,7 @@ export class QueueService {
                             this.workerRepository,
                             this.actionRepository,
                             this.actionQueue,
+                            logger,
                         );
                     }),
                 );

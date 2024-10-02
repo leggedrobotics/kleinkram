@@ -111,6 +111,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
     @OnQueueFailed()
     async onFailed(job: Job<SubmittedAction>, error: any) {
+        logger.error(
+            `Error processing job ${job.id} of type ${job.name}. Error handled by ${os.hostname()}`,
+        );
         if (error instanceof HardwareDependencyError) {
             await this.handleHardwareDependencyError(job, error);
             return;
@@ -128,12 +131,11 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 where: { uuid: job.data.uuid },
                 relations: ['template'],
             });
-            console.log('Missing processor Error: ', error.message);
             const extractedIdentifier = error.message
                 ?.split(' ')[6]
                 ?.split('-')[1];
             if (extractedIdentifier) {
-                console.log('deactivating worker: ', extractedIdentifier);
+                logger.debug(`deactivating worker: ${extractedIdentifier}`);
                 const worker = await this.workerRepository.findOne({
                     where: { identifier: extractedIdentifier },
                 });
@@ -149,6 +151,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 this.workerRepository,
                 this.actionRepository,
                 this.analysisQueue,
+                logger,
             );
             return;
         }
