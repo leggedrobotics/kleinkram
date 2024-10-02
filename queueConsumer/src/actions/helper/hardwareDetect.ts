@@ -7,6 +7,19 @@ import logger from '../../logger';
 
 const util = require('util');
 
+export async function getDiskSpace() {
+    const diskData = await si.fsSize();
+    // Convert bytes to GB
+    return Math.round(
+        diskData.reduce(
+            (acc, disk) =>
+                disk.type === 'overlay' ? acc : acc + disk.available,
+            0,
+        ) /
+            (1024 * 1024 * 1024),
+    );
+}
+
 export async function createWorker(workerRepository: Repository<Worker>) {
     // Gather CPU information
     const cpuData = await si.cpu();
@@ -24,15 +37,7 @@ export async function createWorker(workerRepository: Repository<Worker>) {
     const gpuMemory = 0; // Not available in the current implementation
 
     // Gather Disk storage information
-    const diskData = await si.fsSize();
-    const storage = Math.round(
-        diskData.reduce(
-            (acc, disk) =>
-                disk.type === 'overlay' ? acc : acc + disk.available,
-            0,
-        ) /
-            (1024 * 1024 * 1024),
-    ); // Convert bytes to GB
+    const storage = await getDiskSpace();
 
     // Gather Hostname (assuming this will be the worker's unique name)
     const name = (await si.osInfo()).hostname;

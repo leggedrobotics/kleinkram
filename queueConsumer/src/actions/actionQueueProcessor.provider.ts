@@ -17,7 +17,7 @@ import { RuntimeRequirements } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';
 import Worker from '@common/entities/worker/worker.entity';
-import { createWorker } from './helper/hardwareDetect';
+import { createWorker, getDiskSpace } from './helper/hardwareDetect';
 import os from 'node:os';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { addActionQueue } from '@common/schedulingLogic';
@@ -262,6 +262,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async healthCheck() {
         this.worker.lastSeen = new Date();
         this.worker.reachable = true;
+        this.worker.storage = await getDiskSpace();
         await this.workerRepository.save(this.worker);
         console.log('Health checked');
     }
