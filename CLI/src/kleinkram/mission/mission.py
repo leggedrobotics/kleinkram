@@ -203,7 +203,8 @@ def download(
 @missionCommands.command("upload")
 def upload(
     path: Annotated[
-        List[str], typer.Option(prompt=True, help="Path to files to upload, Regex supported")
+        List[str],
+        typer.Option(prompt=True, help="Path to files to upload, Regex supported"),
     ],
     mission: Annotated[
         str, typer.Option(prompt=True, help="UUID of Mission to create")
