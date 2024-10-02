@@ -1,6 +1,6 @@
 <template>
-    <q-card style="height: 350px; width: 350px" class="flex" flat>
-        <q-card-section style="width: 350px">
+    <q-card style="background-color: white" class="flex" flat>
+        <q-card-section style="width: 100%">
             <v-chart
                 :option="option"
                 style="width: 100%; height: 100%"
@@ -69,6 +69,7 @@ const option = computed(() => {
             show: true,
             data: ['Storage', 'Inodes'],
             bottom: 0,
+            left: 0,
         },
         series: [
             {

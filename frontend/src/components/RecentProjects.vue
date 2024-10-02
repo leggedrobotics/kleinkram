@@ -1,7 +1,7 @@
 <template>
     <div class="projects-container">
         <!-- Static Row with Title and Arrows -->
-        <q-card class="full-width q-pa-md header-row" flat style="height: 15%">
+        <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
             <div class="arrow-buttons">
                 <q-btn
@@ -19,39 +19,49 @@
             </div>
         </q-card>
 
+        <q-separator />
+
         <!-- Scrollable Card Section -->
-        <div ref="cardWrapper" class="card-wrapper" style="height: 85%">
-            <div class="card" v-for="project in projects" :key="project.uuid">
-                <q-card
-                    flat
-                    style="height: 100%"
-                    @click="() => goToProject(project.uuid)"
-                >
-                    <q-card-section class="q-mb-sm" style="max-height: 20%">
-                        <h4
-                            class="q-my-sm"
-                            style="padding-top: 0; padding-bottom: 0"
-                        >
-                            {{ project.name }}
-                        </h4>
-                    </q-card-section>
-                    <q-card-section
-                        class="q-my-sm"
-                        style="padding-top: 0; padding-bottom: 0; height: 50%"
+        <div ref="cardWrapper" class="card-wrapper">
+            <template v-for="project in projects" :key="project.uuid">
+                <div class="card">
+                    <q-card
+                        flat
+                        style="height: 100%"
+                        @click="() => goToProject(project.uuid)"
                     >
-                        {{ project.description }}
-                    </q-card-section>
-                    <q-card-section style="max-height: 30%">
-                        Updated {{ timeAgo(project) }}
-                    </q-card-section>
-                </q-card>
-            </div>
+                        <q-card-section class="q-mb-sm" style="max-height: 20%">
+                            <h4
+                                class="q-my-sm"
+                                style="padding-top: 0; padding-bottom: 0"
+                            >
+                                {{ project.name }}
+                            </h4>
+                        </q-card-section>
+                        <q-card-section
+                            class="q-my-sm"
+                            style="
+                                padding-top: 0;
+                                padding-bottom: 0;
+                                height: 50%;
+                            "
+                        >
+                            {{ project.description }}
+                        </q-card-section>
+                        <q-card-section style="max-height: 30%">
+                            Updated {{ timeAgo(project) }}
+                        </q-card-section>
+                    </q-card>
+                </div>
+
+                <q-separator vertical />
+            </template>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, computed } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
@@ -112,17 +122,16 @@ nextTick(() => {
 
 <style scoped>
 .projects-container {
-    max-width: 910px; /* Adjust to fit your design */
-    margin: 0 auto;
-    position: relative;
-    max-height: 350px;
+    grid-column: span 2;
+    background-color: white;
+    display: grid;
+    grid-template-rows: 50px 2px auto;
 }
 
 .header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 3px; /* Spacing between header and cards */
 }
 
 .arrow-buttons {
@@ -132,18 +141,23 @@ nextTick(() => {
 
 .card-wrapper {
     display: flex;
-    gap: 3px; /* Spacing between cards */
     overflow-x: auto; /* Enable horizontal scrolling */
-    height: 100%;
     margin-top: 0;
     padding-top: 0;
     scrollbar-width: none;
 }
 
 .card {
-    flex: 0 0 300px; /* Fixed width of the card */
     min-width: 300px; /* Prevent card from shrinking */
-    max-height: 100%;
+    cursor: pointer;
+}
+
+.q-card {
+    border-radius: 0;
+}
+
+.card .q-card:hover {
+    background-color: #e0e0e0;
 }
 
 .scroll-button {

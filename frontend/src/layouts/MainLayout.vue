@@ -10,7 +10,7 @@
             <q-page-container
                 style="
                     width: auto;
-                    height: 100vh;
+                    min-height: 100vh;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
