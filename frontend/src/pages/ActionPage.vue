@@ -133,7 +133,7 @@ const createAction = ref(false);
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
-const image_name = ref('rslethz/action:latest');
+const image_name = ref('rslethz/action:simple-latest');
 const options = [
     { label: 'no GPU', value: 'no-gpu' },
     { label: 'GPU needed', value: 'GPU needed' },

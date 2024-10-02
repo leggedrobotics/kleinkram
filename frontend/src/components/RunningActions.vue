@@ -1,7 +1,10 @@
 <template>
-    <div class="projects-container">
+    <div
+        class="projects-container"
+        style="grid-column: span 2; background-color: white; display: grid"
+    >
         <!-- Static Row with Title and Arrows -->
-        <q-card class="full-width q-pa-md header-row" flat style="height: 15%">
+        <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Running Actions</span>
             <div class="arrow-buttons">
                 <q-btn
@@ -13,11 +16,12 @@
             </div>
         </q-card>
 
+        <q-separator />
+
         <!-- Scrollable Card Section -->
         <div
             ref="cardWrapper"
             class="card-wrapper"
-            style="height: 85%"
             v-if="actions && actions.length > 0"
         >
             <q-table
@@ -136,17 +140,16 @@ const columns = [
 
 <style scoped>
 .projects-container {
-    max-width: 910px; /* Adjust to fit your design */
-    margin: 0 auto;
-    position: relative;
-    max-height: 350px;
+    grid-column: 1 / 3;
+    background-color: white;
+    display: grid;
+    grid-template-rows: 50px 2px auto;
 }
 
 .header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 3px; /* Spacing between header and cards */
 }
 
 .arrow-buttons {

@@ -17,10 +17,9 @@ import { RuntimeRequirements } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';
 import Worker from '@common/entities/worker/worker.entity';
-import { createWorker } from './helper/hardwareDetect';
+import { createWorker, getDiskSpace } from './helper/hardwareDetect';
 import os from 'node:os';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { addActionQueue } from '@common/schedulingLogic';
 
 /**
  * The ActionQueueProcessor class is responsible for processing
@@ -38,13 +37,13 @@ import { addActionQueue } from '@common/schedulingLogic';
  * instance of the processor per machine.
  *
  */
-@Processor(`action-queue`)
+@Processor(`action-queue-${os.hostname()}`)
 @Injectable()
 export class ActionQueueProcessorProvider implements OnModuleInit {
     private worker: Worker;
 
     constructor(
-        @InjectQueue(`action-queue`)
+        @InjectQueue(`action-queue-${os.hostname()}`)
         private readonly analysisQueue: Queue,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
@@ -88,7 +87,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         return true;
     }
 
-    @Process({ concurrency: 5, name: `actionProcessQueue-${os.hostname()}` })
+    @Process({ concurrency: 2, name: `action` })
     async process_action(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
@@ -111,44 +110,11 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
     @OnQueueFailed()
     async onFailed(job: Job<SubmittedAction>, error: any) {
+        logger.error(
+            `Error processing job ${job.id} of type ${job.name}. Error handled by ${os.hostname()}`,
+        );
         if (error instanceof HardwareDependencyError) {
             await this.handleHardwareDependencyError(job, error);
-            return;
-        }
-
-        if (
-            error.message.startsWith(
-                'Missing process handler for job type actionProcessQueue-',
-            )
-        ) {
-            logger.error(
-                `Processor for job ${job.id} of type ${job.name} not found.`,
-            );
-            const action = await this.actionRepository.findOne({
-                where: { uuid: job.data.uuid },
-                relations: ['template'],
-            });
-            const extractedIdentifier = error.message
-                ?.split(' ')[6]
-                ?.split('-')[1];
-            if (extractedIdentifier) {
-                console.log('deactivating worker: ', extractedIdentifier);
-                const worker = await this.workerRepository.findOne({
-                    where: { identifier: extractedIdentifier },
-                });
-                if (worker) {
-                    worker.reachable = false;
-                    await this.workerRepository.save(worker);
-                }
-            }
-            await job.remove();
-            await addActionQueue(
-                action,
-                action.template.runtime_requirements,
-                this.workerRepository,
-                this.actionRepository,
-                this.analysisQueue,
-            );
             return;
         }
 
@@ -258,6 +224,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async healthCheck() {
         this.worker.lastSeen = new Date();
         this.worker.reachable = true;
+        this.worker.storage = await getDiskSpace();
         await this.workerRepository.save(this.worker);
         console.log('Health checked');
     }

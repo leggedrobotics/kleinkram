@@ -30,6 +30,7 @@ import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.
 import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
+import os from 'node:os';
 
 @Module({
     imports: [
@@ -45,7 +46,7 @@ import Worker from '@common/entities/worker/worker.entity';
         }),
 
         BullModule.registerQueue({
-            name: `action-queue`,
+            name: `action-queue-${os.hostname()}`,
         }),
         BullModule.registerQueue({
             name: 'file-cleanup',

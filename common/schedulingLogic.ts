@@ -2,17 +2,19 @@ import { RuntimeRequirements } from './types';
 import Action from './entities/action/action.entity';
 import Worker from './entities/worker/worker.entity';
 import { Repository } from 'typeorm';
+import { ActionState } from './enum';
 
 export async function findWorkerForAction(
     runtime_requirements: RuntimeRequirements,
     workerRepository: Repository<Worker>,
-    actionQueue: any,
+    actionQueues: Record<string, any>,
+    logger: any,
 ) {
     const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
     let worker = await workerRepository.find({
         where: { reachable: true, hasGPU: needsGPU },
     });
-    console.log(
+    logger.debug(
         `Available Worker (GPU: ${needsGPU}): ${worker.map((a) => a.identifier).join(', ')}`,
     );
 
@@ -20,7 +22,7 @@ export async function findWorkerForAction(
         worker = await workerRepository.find({
             where: { reachable: true },
         });
-        console.log(
+        logger.debug(
             `Alternative Worker (GPU: any): ${worker.map((a) => a.identifier).join(', ')}`,
         );
     }
@@ -29,21 +31,17 @@ export async function findWorkerForAction(
         return;
     }
 
-    const waiting = await actionQueue.getWaiting();
     const nrJobs = {};
-    waiting.forEach((job) => {
-        const name = job.name.replace('actionProcessQueue-', '');
-        if (nrJobs[name]) {
-            nrJobs[name] += 1;
-        } else {
-            nrJobs[name] = 1;
-        }
-    });
+    await Promise.all(
+        Object.entries(actionQueues).map(async ([name, queue]) => {
+            nrJobs[name] = await queue.count();
+        }),
+    );
+    logger.debug('jobDistribution: ', nrJobs);
     const res = worker.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];
-
-    console.log('selected worker', res.identifier);
+    // return worker[Math.floor(Math.random() * worker.length)];
     return res;
 }
 export async function addActionQueue(
@@ -51,21 +49,30 @@ export async function addActionQueue(
     runtime_requirements: RuntimeRequirements,
     workerRepository: any,
     actionRepository: any,
-    actionQueue: any,
+    actionQueues: Record<string, any>,
+    logger: any = undefined,
 ) {
     const worker = await findWorkerForAction(
         runtime_requirements,
         workerRepository,
-        actionQueue,
+        actionQueues,
+        logger,
     );
+    logger.debug(`Selected worker: ${worker.identifier}`);
     if (!worker) {
+        action.state = ActionState.UNPROCESSABLE;
+        await actionRepository.save(action);
         return;
     }
+    logger.debug('Worker found');
     action.worker = worker;
     await actionRepository.save(action);
     try {
-        return await actionQueue.add(
-            `actionProcessQueue-${worker.identifier}`,
+        logger.debug(
+            `trying to add to queue: ${actionQueues[worker.identifier].name}`,
+        );
+        return await actionQueues[worker.identifier].add(
+            `action`,
             { uuid: action.uuid },
             {
                 jobId: action.uuid,

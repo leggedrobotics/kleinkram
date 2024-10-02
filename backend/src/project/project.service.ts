@@ -50,9 +50,6 @@ export class ProjectService {
         take = Number(take);
         skip = Number(skip);
 
-        logger.debug('Finding all projects as user: ', auth.user.uuid);
-        logger.debug('Skip ' + skip + ' Take ' + take);
-
         const db_user = await this.userRepository.findOne({
             where: { uuid: auth.user.uuid },
         });
@@ -79,7 +76,6 @@ export class ProjectService {
             sortBy &&
             ['name', 'createdAt', 'updatedAt', 'creator'].includes(sortBy) // SQL Sanitization
         ) {
-            console.log('Sorting by ' + sortBy + ' descending: ' + descending);
             baseQuery = baseQuery.orderBy(
                 `project.${sortBy}`,
                 descending ? 'DESC' : 'ASC',
@@ -87,7 +83,6 @@ export class ProjectService {
         }
 
         if (!!searchParams) {
-            console.log('Searching for: ' + searchParams);
             Object.keys(searchParams).forEach((key, index) => {
                 if (!['name', 'creator.uuid'].includes(key)) {
                     return;
@@ -233,7 +228,6 @@ export class ProjectService {
                 }),
             );
         }
-        console.log('updating: ', project.name, project.description);
         await this.projectRepository.update(uuid, {
             name: project.name,
             description: project.description,

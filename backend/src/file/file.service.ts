@@ -3,6 +3,7 @@ import {
     ConflictException,
     Injectable,
     NotFoundException,
+    OnModuleInit,
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,11 +36,12 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import Queue from 'bull';
+import { redis } from '../consts';
 
 @Injectable()
-export class FileService {
+export class FileService implements OnModuleInit {
+    private fileCleanupQueue: Queue.Queue;
     constructor(
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
@@ -54,8 +56,13 @@ export class FileService {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
-        @InjectQueue('file-cleanup') private fileCleanupQueue: Queue,
     ) {}
+
+    onModuleInit(): any {
+        this.fileCleanupQueue = new Queue('action-queue', {
+            redis,
+        });
+    }
 
     async findAll(userUUID: string, take: number, skip: number) {
         const user = await this.userRepository.findOneOrFail({
