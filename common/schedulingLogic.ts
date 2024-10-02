@@ -37,7 +37,6 @@ export async function findWorkerForAction(
             waiting.push(...jobs);
         }),
     );
-    console.log(waiting);
     const nrJobs = {};
     waiting.forEach((job) => {
         const name = job.name.replace('actionProcessQueue-', '');
@@ -76,9 +75,10 @@ export async function addActionQueue(
     action.worker = worker;
     await actionRepository.save(action);
     try {
-        logger.debug('trying to add');
-        logger.debug(actionQueues[worker.identifier].name);
-        const res = await actionQueues[worker.identifier].add(
+        logger.debug(
+            `trying to add to queue: ${actionQueues[worker.identifier].name}`,
+        );
+        return await actionQueues[worker.identifier].add(
             `action`,
             { uuid: action.uuid },
             {
@@ -92,8 +92,6 @@ export async function addActionQueue(
                 attempts: 60, // one hour of attempts
             },
         );
-        logger.debug('done:', res);
-        return res;
     } catch (e) {
         console.error(e);
     }
