@@ -18,6 +18,9 @@ export async function findWorkerForAction(
     };
     let worker = await workerRepository.find({
         where: defaultWhere,
+        order: {
+            hostname: 'DESC',
+        },
     });
     logger.debug(
         `Available Worker (GPU: ${needsGPU}): ${worker.map((a) => a.identifier).join(', ')}`,
