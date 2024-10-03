@@ -1413,21 +1413,6 @@
   resolved "https://registry.yarnpkg.com/@napi-rs/snappy-win32-x64-msvc/-/snappy-win32-x64-msvc-7.2.2.tgz#4f598d3a5d50904d9f72433819f68b21eaec4f7d"
   integrity sha512-a43cyx1nK0daw6BZxVcvDEXxKMFLSBSDTAhsFD0VqSKcC7MGUBMaqyoWUcMiI7LBSz4bxUmxDWKfCYzpEmeb3w==
 
-"@nestjs/bull-shared@^10.2.1":
-  version "10.2.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/bull-shared/-/bull-shared-10.2.1.tgz#64123b663ff1cda7e5635291fc552c9a2ec232bb"
-  integrity sha512-zvnTvSq6OJ92omcsFUwaUmPbM3PRgWkIusHPB5TE3IFS7nNdM3OwF+kfe56sgKjMtQQMe/56lok0S04OtPMX5Q==
-  dependencies:
-    tslib "2.6.3"
-
-"@nestjs/bull@^10.1.1":
-  version "10.2.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/bull/-/bull-10.2.1.tgz#808568a4db1d848def3ff435a59ad8ec326bc6f2"
-  integrity sha512-y7AII50p+FoyAZP3OKXgi0QCFUFGJ4X7G3L2Arw3BtLsEYvLxTaRB1DPv5a80LYp8Pj4xisIzF4gNv3hfkuErw==
-  dependencies:
-    "@nestjs/bull-shared" "^10.2.1"
-    tslib "2.6.3"
-
 "@nestjs/cli@^10.4.4":
   version "10.4.4"
   resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-10.4.4.tgz#6fed6fa3259417ea3dc0b62a3888e4aedbaa1642"

@@ -133,7 +133,7 @@ const createAction = ref(false);
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
-const image_name = ref('rslethz/action:latest');
+const image_name = ref('rslethz/action:simple-latest');
 const options = [
     { label: 'no GPU', value: 'no-gpu' },
     { label: 'GPU needed', value: 'GPU needed' },
@@ -166,7 +166,7 @@ const canCreate = computed(() =>
 
 // Fetch projects
 const projectsReturn = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
+    queryKey: ['projects', 500, 0, 'name', false],
     queryFn: () => filteredProjects(500, 0, 'name', false),
 });
 const projects = computed(() =>

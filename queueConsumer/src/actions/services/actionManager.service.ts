@@ -94,7 +94,11 @@ export class ActionManagerService {
                     limits: {
                         max_runtime: 5 * 60 * 1_000, // 5 minutes
                         cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
-                        memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+                        memory_limit:
+                            (action.template.runtime_requirements.memory || 2) *
+                            1024 *
+                            1024 *
+                            1024, // min 2 GB
                     },
                     needs_gpu,
                     environment: env_variables,
@@ -148,7 +152,7 @@ export class ActionManagerService {
         action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
-        return true; // mark the job as completed
+        return true; // Mark the job as completed
     }
 
     /**

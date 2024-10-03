@@ -17,7 +17,6 @@ import { TagModule } from './tag/tag.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import access_config from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
-import { BullModule } from '@nestjs/bull';
 import { UserResolverMiddleware } from './UserResolverMiddleware';
 import { WorkerModule } from './worker/worker.module';
 
@@ -58,12 +57,6 @@ import { WorkerModule } from './worker/worker.module';
         TagModule,
         WorkerModule,
         ScheduleModule.forRoot(),
-        BullModule.forRoot({
-            redis: {
-                host: 'redis',
-                port: 6379,
-            },
-        }),
     ],
     providers: [DBDumper],
 })

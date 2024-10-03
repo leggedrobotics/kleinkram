@@ -1,20 +1,11 @@
 <template>
     <title-section :title="`Good Morning, ${user?.name}`" />
 
-    <div
-        class="q-mt-lg"
-        style="
-            display: inline-grid;
-            width: 100%;
-            grid-template-columns: auto auto auto auto auto;
-            gap: 24px;
-            height: 350px;
-        "
-    >
+    <div class="q-mt-lg q-mb-lg dashboard-grid">
         <RecentProjects />
         <Storage />
-        <RunningActions />
         <Worker />
+        <RunningActions />
     </div>
 </template>
 
@@ -35,3 +26,27 @@ const { data: user } = useQuery({
     enabled: is_authenticated,
 });
 </script>
+
+<style scoped>
+.dashboard-grid {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, 350px);
+    gap: 24px;
+}
+
+@media (min-width: 800px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, 350px);
+    }
+}
+
+@media (min-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-rows: repeat(2, 350px);
+    }
+}
+</style>

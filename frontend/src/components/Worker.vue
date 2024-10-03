@@ -1,57 +1,66 @@
 <template>
-    <div class="q-pa-md">
+    <div style="grid-row: span 2; grid-column: span 1; background-color: white">
         <!-- Top row with Device Availability -->
         <q-card class="full-width q-pa-md" flat>
             <span style="font-size: larger">Device Availability</span>
         </q-card>
 
+        <q-separator />
+
         <!-- Flexbox row with two columns (online and offline) -->
         <div class="row-container q-mt-xs">
-            <q-card flat class="flex-card">
+            <q-card flat class="flex-card q-my-lg">
                 <div class="q-pa-md">{{ online.length }} Online</div>
             </q-card>
-            <q-card flat class="flex-card">
+            <q-separator vertical />
+
+            <q-card flat class="flex-card q-my-lg">
                 <div class="q-pa-md">{{ offline.length }} Offline</div>
             </q-card>
         </div>
 
+        <q-separator />
+
         <div class="q-mt-xs">
-            <q-card
-                class="full-width q-pa-md row-container"
-                flat
+            <template
                 v-for="singleWorker in worker"
                 :key="singleWorker.hostname"
             >
-                <div
-                    class="row-container"
-                    style="align-items: center; width: 100%"
-                >
-                    <q-icon name="sym_o_dns" size="20px" />
-                    <span class="worker-name">{{ singleWorker.hostname }}</span>
-
-                    <q-icon
-                        name="sym_o_developer_board"
-                        size="20px"
-                        :class="singleWorker.hasGPU ? '' : 'crossed-out'"
+                <q-card class="full-width q-pa-md row-container" flat>
+                    <div
+                        class="row-container"
+                        style="align-items: center; width: 100%"
                     >
-                        <q-tooltip>
-                            {{ singleWorker.hasGPU ? 'Has GPU' : 'No GPU' }}
-                        </q-tooltip>
-                    </q-icon>
+                        <q-icon name="sym_o_dns" size="20px" />
+                        <span class="worker-name">{{
+                            singleWorker.hostname
+                        }}</span>
 
-                    <span
-                        class="worker-status"
-                        :style="
-                            singleWorker.reachable
-                                ? 'color: green'
-                                : 'color: red'
-                        "
-                        >{{
-                            singleWorker.reachable ? 'Online' : 'Offline'
-                        }}</span
-                    >
-                </div>
-            </q-card>
+                        <q-icon
+                            name="sym_o_developer_board"
+                            size="20px"
+                            :class="singleWorker.hasGPU ? '' : 'crossed-out'"
+                        >
+                            <q-tooltip>
+                                {{ singleWorker.hasGPU ? 'Has GPU' : 'No GPU' }}
+                            </q-tooltip>
+                        </q-icon>
+
+                        <span
+                            class="worker-status"
+                            :style="
+                                singleWorker.reachable
+                                    ? 'color: green'
+                                    : 'color: red'
+                            "
+                            >{{
+                                singleWorker.reachable ? 'Online' : 'Offline'
+                            }}</span
+                        >
+                    </div>
+                </q-card>
+                <q-separator />
+            </template>
         </div>
     </div>
 </template>

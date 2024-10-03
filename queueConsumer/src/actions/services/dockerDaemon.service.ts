@@ -41,7 +41,7 @@ const defaultContainerLimitations: ContainerLimits = {
     max_runtime: 60 * 60 * 1_000, // 1 hour
     memory_limit: 1024 * 1024 * 1024, // 1GB
     cpu_limit: 1000000000, // CPU limit in nano CPUs
-    disk_quota: 10737418240,
+    disk_quota: 40737418240,
 };
 
 export type ContainerEnv = {

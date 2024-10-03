@@ -178,15 +178,16 @@
                     style="gap: 12px; margin-top: 16px"
                 >
                     <div>
-                        <label for="memory">Memory Allocation</label>
+                        <label for="memory">Memory Allocation (GB)</label>
                         <q-select
                             name="memory"
-                            model-value="2GB RAM"
-                            :options="[]"
-                            placholder="Memory Allocation"
+                            v-model="
+                                editingTemplate.runtime_requirements.memory
+                            "
+                            :options="memoryOptions"
+                            placholder="Memory Allocation (GB)"
                             outlined
                             class="q-mb-sm"
-                            readonly
                             dense
                         />
                     </div>
@@ -212,11 +213,9 @@
                                     .name
                             "
                             :options="options"
-                            option-value="value"
-                            option-label="label"
                             label="GPU Acceleration"
                             class="q-mb-sm"
-                            map-options
+                            emit-value
                             outlined
                             dense
                             v-if="editingTemplate"
@@ -268,7 +267,7 @@ const search = ref('');
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
-const image_name = ref('rslethz/action:latest');
+const image_name = ref('rslethz/action:simple-latest');
 const options = [
     { label: 'no GPU', value: 'no-gpu' },
     { label: 'GPU needed', value: 'GPU needed' },
@@ -294,12 +293,12 @@ const editingTemplate = ref(
         null,
         null,
         null,
-        'rslethz/action:latest',
+        'rslethz/action:simple-latest',
         null,
         '',
         1,
         '',
-        { gpu_model: { name: options[0].value } },
+        { gpu_model: { name: options[0].value }, memory: 2 },
     ),
 );
 // QUERYING ####################################################################
@@ -378,8 +377,7 @@ const { mutateAsync: createTemplate } = useMutation({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
             docker_image: editingTemplate.value.image_name,
-            gpu_model:
-                editingTemplate.value.runtime_requirements.gpu_model.name,
+            runtime_requirements: editingTemplate.value.runtime_requirements,
             searchable,
         }),
     onSuccess: () => {
@@ -397,9 +395,10 @@ const { mutateAsync: createTemplate } = useMutation({
         });
     },
     onError: (error) => {
+        console.error(error);
         Notify.create({
             group: false,
-            message: `Error: ${error.response.data.message}`,
+            message: `Error: ${error?.response?.data.message}`,
             color: 'negative',
             position: 'bottom',
             timeout: 2000,
@@ -414,8 +413,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
             docker_image: editingTemplate.value.image_name,
-            gpu_model:
-                editingTemplate.value.runtime_requirements.gpu_model.name,
+            runtime_requirements: editingTemplate.value.runtime_requirements,
             searchable,
         }),
     onSuccess: (newVal) => {
@@ -508,6 +506,13 @@ async function submitAnalysis() {
                 position: 'bottom',
                 timeout: 2000,
             });
+
+            // flush actions cache
+            queryClient.invalidateQueries({
+                predicate: (query) => {
+                    return query.queryKey[0] === 'action_mission';
+                },
+            });
         })
         .catch((error) => {
             Notify.create({
@@ -534,7 +539,11 @@ const isModified = computed(() => {
         editingTemplate.value?.runtime_requirements?.gpu_model?.name ===
         select.value?.runtime_requirements?.gpu_model?.name;
 
-    return !(sameName && sameImage && sameCommand && sameGPU);
+    const sameMemory =
+        editingTemplate.value?.runtime_requirements?.memory ===
+        select.value?.runtime_requirements?.memory;
+
+    return !(sameName && sameImage && sameCommand && sameGPU && sameMemory);
 });
 
 function newValue(val: string, done: Function) {
@@ -556,12 +565,12 @@ function selectTemplate(template: ActionTemplate) {
             null,
             null,
             null,
-            'rslethz/action:latest',
+            'rslethz/action:simple-dev',
             null,
             '',
             1,
             '',
-            { gpu_model: { name: options[0].value } },
+            { gpu_model: { name: options[0].value }, memory: 2 },
         );
         select.value = undefined;
         return;
@@ -587,6 +596,8 @@ function canRemoveMission(mission_uuid: string) {
 function removeMission(uuid: string) {
     addedMissions.value = addedMissions.value.filter((id) => id !== uuid);
 }
+
+const memoryOptions = [1, 2, 4, 8, 12, 16, 32];
 
 watch(
     () => props.open,
