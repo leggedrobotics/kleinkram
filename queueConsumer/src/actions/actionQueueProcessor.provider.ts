@@ -243,10 +243,14 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_MINUTE)
     async healthCheck() {
-        this.worker.lastSeen = new Date();
-        this.worker.reachable = true;
-        this.worker.storage = await getDiskSpace();
-        await this.workerRepository.save(this.worker);
-        console.log('Health checked');
+        return this.workerRepository.manager.transaction(async (manager) => {
+            const worker = await manager.findOne(Worker, {
+                where: { uuid: this.worker.uuid },
+            });
+            worker.lastSeen = new Date();
+            worker.reachable = true;
+            worker.storage = await getDiskSpace();
+            this.worker = await manager.save(worker);
+        });
     }
 }
