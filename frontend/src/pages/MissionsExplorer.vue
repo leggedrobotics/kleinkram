@@ -118,7 +118,15 @@
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
-
+                <UploadMissionFolder :project_uuid="project_uuid">
+                    <q-btn
+                        flat
+                        style="height: 100%"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_drive_folder_upload"
+                    />
+                </UploadMissionFolder>
                 <create-mission-dialog-opener :project_uuid="project_uuid">
                     <q-btn
                         flat
@@ -128,15 +136,6 @@
                         icon="sym_o_add"
                     />
                 </create-mission-dialog-opener>
-                <UploadMissionFolder :project_uuid="project_uuid">
-                    <q-btn
-                        flat
-                        style="height: 100%"
-                        class="bg-button-secondary text-on-color"
-                        label="Upload Mission Folder"
-                        icon="sym_o_add"
-                    />
-                </UploadMissionFolder>
             </button-group>
         </div>
         <div class="q-py-lg" v-else style="background: blue">

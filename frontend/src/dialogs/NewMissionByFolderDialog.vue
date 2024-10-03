@@ -1,6 +1,6 @@
 <template>
     <base-dialog title="New Mission" ref="dialogRef">
-        <template #title> New Mission</template>
+        <template #title> Upload Folder</template>
 
         <template #tabs>
             <q-tabs
@@ -32,7 +32,11 @@
         <template #content>
             <q-tab-panels v-model="tab_selection">
                 <q-tab-panel name="meta_data" style="min-height: 280px">
-                    <p>Project: {{ project?.name }}</p>
+                    <p>
+                        Project:<b style="margin-left: 10px">{{
+                            project?.name
+                        }}</b>
+                    </p>
 
                     <label for="missionName">Mission Name *</label>
                     <q-input
@@ -50,13 +54,18 @@
                         :error-message="errorMessage"
                         v-on:update:model-value="isInErrorState = false"
                     />
-
+                    <input
+                        type="file"
+                        webkitdirectory
+                        style="display: none"
+                        ref="HTMLinput"
+                        @change="handle"
+                    />
                     <q-file
                         outlined
-                        v-model="files"
-                        webkitdirectory
-                        accept="."
                         style="min-width: 300px"
+                        v-model="files"
+                        @click="transferClick"
                     >
                         <template #prepend>
                             <q-icon name="sym_o_attach_file" />
@@ -103,24 +112,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, onMounted, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import { filteredProjects, getProject } from 'src/services/queries/project';
+import { getProject } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
-import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
-import { getPermissions } from 'src/services/queries/user';
-import {
-    canCreateMission,
-    getPermissionForProject,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { usePermissionsQuery } from 'src/hooks/customQueryHooks';
+import { createFileAction, getOnMount } from 'src/services/fileService';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -130,6 +133,7 @@ const props = defineProps<{
     uploads: Ref<FileUpload[]>;
 }>();
 
+const HTMLinput = ref();
 const project_uuid = ref(props.project_uuid);
 const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
@@ -148,6 +152,7 @@ watch(project_uuid, () => refetch());
 const missionName = ref('');
 const isInErrorState = ref(false);
 const errorMessage = ref('');
+const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 
 const permissions = usePermissionsQuery();
 
@@ -164,6 +169,18 @@ const allRequiredTagsSet = computed(() => {
 const missionCreated = computed(() => {
     return !!newMission.value;
 });
+
+function handle(a) {
+    files.value = a.target.files;
+    if (files.value.length > 0) {
+        missionName.value = files.value[0].webkitRelativePath.split('/')[0];
+    }
+}
+
+function transferClick(e) {
+    e.preventDefault();
+    HTMLinput.value.click();
+}
 
 const submitNewMission = async () => {
     if (!project.value) {
@@ -200,10 +217,24 @@ const submitNewMission = async () => {
         color: 'positive',
         spinner: false,
         timeout: 4000,
-        position: 'top-right',
+        position: 'bottom',
     });
+    const created = createFileAction(
+        newMission.value,
+        newMission.value?.project,
+        [...files.value].filter(
+            (file: File) =>
+                file.name.endsWith('.bag') || file.name.endsWith('.mcap'),
+        ),
+        queryClient,
+        uploadingFiles,
+        props.uploads,
+    );
+    onDialogOK();
+    await created;
     missionName.value = '';
     tagValues.value = {};
-    tab_selection.value = 'upload';
 };
+
+onMounted(getOnMount(uploadingFiles, newMission));
 </script>

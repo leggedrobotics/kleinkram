@@ -78,7 +78,7 @@ const { mutate } = useMutation({
         Notify.create({
             message: 'Failed to kill job',
             color: 'negative',
-            position: 'top-right',
+            position: 'bottom',
         });
     },
     onSettled: () => {

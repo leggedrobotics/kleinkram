@@ -248,7 +248,7 @@ const submitNewMission = async () => {
         color: 'positive',
         spinner: false,
         timeout: 4000,
-        position: 'top-right',
+        position: 'bottom',
     });
     missionName.value = '';
     tagValues.value = {};
