@@ -134,14 +134,14 @@ export class ActionManagerService {
             container.id,
         );
 
+        // wait for the container to stop
+        await container.wait();
+
         // update action state based on container exit code
         action = await this.actionRepository.findOneOrFail({
             where: { uuid: action.uuid },
             relations: ['worker', 'template'],
         });
-
-        // wait for the container to stop
-        await container.wait();
         await this.containerDaemon.removeContainer(container.id, true);
         await this.setActionState(container, action);
         action.executionEndedAt = new Date();
