@@ -16,7 +16,6 @@ export async function findWorkerForAction(
         hasGPU: needsGPU,
         cpuMemory: MoreThanOrEqual(runtime_requirements.memory + 1), // +1 as OS requires at least 1GB
     };
-    console.log('defaultWhere: ', defaultWhere);
     let worker = await workerRepository.find({
         where: defaultWhere,
     });
@@ -73,8 +72,13 @@ export async function addActionQueue(
     logger.debug(`Selected worker: ${worker.identifier}`);
 
     logger.debug('Worker found');
-    action.worker = worker;
-    await actionRepository.save(action);
+    await actionRepository
+        .createQueryBuilder()
+        .update()
+        .set({ worker })
+        .where('uuid = :uuid', { uuid: action.uuid })
+        .execute();
+
     try {
         logger.debug(
             `trying to add to queue: ${actionQueues[worker.identifier].name}`,

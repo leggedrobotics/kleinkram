@@ -92,13 +92,28 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async process_action(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
-            relations: ['template', 'mission', 'mission.project', 'createdBy'],
+            relations: [
+                'template',
+                'mission',
+                'mission.project',
+                'createdBy',
+                'worker',
+            ],
         });
         if (!this.worker) {
             logger.error('Worker not found');
         }
-        action.worker = this.worker;
-        await this.actionRepository.save(action);
+        if (this.worker.uuid !== action.worker.uuid) {
+            await this.actionRepository
+                .createQueryBuilder()
+                .update()
+                .set({ worker: this.worker })
+                .where('uuid = :uuid', { uuid: action.uuid })
+                .execute();
+            logger.warn(
+                `Action ${action.uuid} reassigned to worker ${this.worker.identifier}`,
+            );
+        }
         this.checkRuntimeCapability(action.template.runtime_requirements);
         return await this.actionController.processAction(action);
     }
