@@ -23,8 +23,8 @@ import env from '@common/env';
 
 @Injectable()
 export class ActionManagerService {
-    // we will write logs to the database every 1 second
-    private static LOG_WRITE_BATCH_TIME = 1_000;
+    // we will write logs to the database every 100 millisecond
+    private static LOG_WRITE_BATCH_TIME = 100;
 
     constructor(
         private containerDaemon: DockerDaemon,
