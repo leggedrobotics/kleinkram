@@ -540,8 +540,8 @@ const isModified = computed(() => {
         select.value?.runtime_requirements?.gpu_model?.name;
 
     const sameMemory =
-        editingTemplate.value?.runtime_requirements.memory ===
-        select.value?.runtime_requirements.memory;
+        editingTemplate.value?.runtime_requirements?.memory ===
+        select.value?.runtime_requirements?.memory;
 
     return !(sameName && sameImage && sameCommand && sameGPU && sameMemory);
 });

@@ -166,7 +166,7 @@ const canCreate = computed(() =>
 
 // Fetch projects
 const projectsReturn = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
+    queryKey: ['projects', 500, 0, 'name', false],
     queryFn: () => filteredProjects(500, 0, 'name', false),
 });
 const projects = computed(() =>
