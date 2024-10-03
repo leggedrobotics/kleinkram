@@ -16,3 +16,9 @@ services:
         container_name: exampleBigMemory
         build:
             context: actions-big-memory
+
+    exampleDiskSpace:
+        image: rslethz/action:simple-disk-space-dev
+        container_name: exampleDiskSpace
+        build:
+            context: actions-disk-space
