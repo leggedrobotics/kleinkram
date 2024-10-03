@@ -174,7 +174,9 @@ export class DockerDaemon {
                     },
                 ],
             },
-            Volumes: { '/out': {} },
+            Volumes: {
+                '/tmp_disk': {},
+            },
         };
         await start();
         const container = await this.docker
@@ -321,6 +323,21 @@ export class DockerDaemon {
         }
     }
 
+    async removeVolume(container_id: string) {
+        const volume_name = `vol-${container_id}`;
+        const volume = this.docker.getVolume(volume_name);
+
+        // try to remove volume, if in use wait and try again
+        await volume.remove().catch(async (error) => {
+            if (error.message.includes('volume is in use')) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                await volume.remove().catch(dockerDaemonErrorHandler);
+            } else {
+                dockerDaemonErrorHandler(error);
+            }
+        });
+    }
+
     /**
      * Parse a log line from a container.
      *
@@ -444,7 +461,7 @@ export class DockerDaemon {
         details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
-                `Image ${artifactUploaderImage} not found, could not start container!`,
+                `Crashed during Artifacts upload. Image ${artifactUploaderImage} not found!`,
             );
         }
         const repo_digests = details.RepoDigests;
@@ -488,7 +505,6 @@ export class DockerDaemon {
                     },
                 ],
             },
-            Volumes: { '/out': {} },
         };
 
         const container = await this.docker

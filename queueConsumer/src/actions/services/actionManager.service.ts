@@ -132,7 +132,7 @@ export class ActionManagerService {
 
         // wait for the container to stop
         await container.wait();
-        await this.containerDaemon.removeContainer(container.id, false);
+        await this.containerDaemon.removeContainer(container.id, true);
         await this.setActionState(container, action);
         action.executionEndedAt = new Date();
         action.artifacts = ArtifactState.UPLOADING;
@@ -147,8 +147,8 @@ export class ActionManagerService {
         action.artifacts = ArtifactState.UPLOADED;
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
-            true,
         );
+        await this.containerDaemon.removeVolume(action.uuid);
         action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
