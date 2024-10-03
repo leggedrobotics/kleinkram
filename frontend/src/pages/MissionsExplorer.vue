@@ -128,7 +128,7 @@
                         icon="sym_o_add"
                     />
                 </create-mission-dialog-opener>
-                <UploadMissionFolder>
+                <UploadMissionFolder :project_uuid="project_uuid">
                     <q-btn
                         flat
                         style="height: 100%"
