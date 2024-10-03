@@ -128,7 +128,17 @@ export class ActionManagerService {
             );
         }
 
-        await this.processContainerLogs(logsObservable, action, container.id);
+        await this.processContainerLogs(
+            logsObservable,
+            action.uuid,
+            container.id,
+        );
+
+        // update action state based on container exit code
+        action = await this.actionRepository.findOneOrFail({
+            where: { uuid: action.uuid },
+            relations: ['worker', 'template'],
+        });
 
         // wait for the container to stop
         await container.wait();
@@ -188,19 +198,19 @@ export class ActionManagerService {
      * container_id and action_uuid.
      *
      * @param logsObservable
-     * @param action
+     * @param action_uuid
      * @param container_id
      * @private
      */
     private async processContainerLogs(
         logsObservable: Observable<ContainerLog>,
-        action: Action,
+        action_uuid: string,
         container_id: string,
     ) {
         const container_logger = logger.child({
             labels: {
                 container_id: container_id,
-                action_uuid: action?.uuid || 'unknown',
+                action_uuid: action_uuid || 'unknown',
             },
         });
 
@@ -213,8 +223,19 @@ export class ActionManagerService {
                 ),
                 bufferTime(ActionManagerService.LOG_WRITE_BATCH_TIME),
                 concatMap(async (next_log_batch: ContainerLog[]) => {
-                    action.logs.push(...next_log_batch);
-                    await this.actionRepository.save(action);
+                    // new transaction for each batch
+                    await this.actionRepository.manager.transaction(
+                        async (manager) => {
+                            const _action = await manager.findOneOrFail(
+                                Action,
+                                {
+                                    where: { uuid: action_uuid },
+                                },
+                            );
+                            _action.logs.push(...next_log_batch);
+                            await manager.save(_action);
+                        },
+                    );
                 }),
             ),
         ).catch((err) => {
