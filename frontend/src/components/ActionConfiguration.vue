@@ -597,7 +597,7 @@ function removeMission(uuid: string) {
     addedMissions.value = addedMissions.value.filter((id) => id !== uuid);
 }
 
-const memoryOptions = [1, 2, 4, 8, 12, 16, 32];
+const memoryOptions = [1, 2, 4, 6, 8, 12, 16, 20, 24, 28];
 
 watch(
     () => props.open,
