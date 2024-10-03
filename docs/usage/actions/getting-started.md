@@ -55,8 +55,10 @@ ls -la
 
 ## Artifacts
 
-When the docker container terminates, successfully or not, all files within the `/out` directory are uploaded to google drive.
-A link, granting access to the respective folder is provided in the action's result. Don't put excessively large files in the /out directory or the upload will time out.
+When the docker container terminates, successfully or not, all files within the `/out` directory are uploaded to google
+drive.
+A link, granting access to the respective folder is provided in the action's result. Don't put excessively large files
+in the /out directory or the upload will time out.
 
 ## Push Actions to Docker Hub
 
@@ -73,6 +75,15 @@ docker build -t rslethz/my-action .
 # push the image
 docker push rslethz/my-action
 ```
+
+## Storage, Disk Space and Memory
+
+By default, all files stored inside a Kleinkram action live in the host's memory and count towards the memory limit of
+the action. We provide the `/tmp_disk` directory which is a mounted volume from the host's disk. Files stored
+inside `/tmp_disk` do not count towards the memory limit of the action.
+
+All data stored inside a Kleinkram action is deleted after the action finishes. If you want to keep data as an artifact,
+you need to store it in the `/out` directory. See the [Artifacts](#artifacts) section for more information.
 
 ## Submit and Run a Kleinkram Action
 
