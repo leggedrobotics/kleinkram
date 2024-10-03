@@ -52,6 +52,7 @@
             hide-bottom
             flat
             bordered
+            binary-state-sort
         >
             <template v-slot:body-cell-name="_props">
                 <q-td :props="_props" style="width: 150px">
