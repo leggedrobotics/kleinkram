@@ -1,7 +1,7 @@
 import { RuntimeRequirements } from './types';
 import Action from './entities/action/action.entity';
 import Worker from './entities/worker/worker.entity';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { ActionState } from './enum';
 
 export async function findWorkerForAction(
@@ -11,16 +11,23 @@ export async function findWorkerForAction(
     logger: any,
 ) {
     const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
+    const defaultWhere = {
+        reachable: true,
+        hasGPU: needsGPU,
+        cpuMemory: MoreThanOrEqual(runtime_requirements.memory + 1), // +1 as OS requires at least 1GB
+    };
+    console.log('defaultWhere: ', defaultWhere);
     let worker = await workerRepository.find({
-        where: { reachable: true, hasGPU: needsGPU },
+        where: defaultWhere,
     });
     logger.debug(
         `Available Worker (GPU: ${needsGPU}): ${worker.map((a) => a.identifier).join(', ')}`,
     );
 
     if (worker.length === 0 && !needsGPU) {
+        defaultWhere.hasGPU = true;
         worker = await workerRepository.find({
-            where: { reachable: true },
+            where: defaultWhere,
         });
         logger.debug(
             `Alternative Worker (GPU: any): ${worker.map((a) => a.identifier).join(', ')}`,
@@ -58,12 +65,13 @@ export async function addActionQueue(
         actionQueues,
         logger,
     );
-    logger.debug(`Selected worker: ${worker.identifier}`);
     if (!worker) {
         action.state = ActionState.UNPROCESSABLE;
         await actionRepository.save(action);
         return;
     }
+    logger.debug(`Selected worker: ${worker.identifier}`);
+
     logger.debug('Worker found');
     action.worker = worker;
     await actionRepository.save(action);

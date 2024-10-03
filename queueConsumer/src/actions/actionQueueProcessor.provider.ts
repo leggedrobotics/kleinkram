@@ -70,6 +70,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             logger.error('Failed to connect to Redis:', error);
             throw error;
         });
+        logger.debug('Status: ' + this.analysisQueue.client.status);
     }
 
     /**
@@ -93,7 +94,11 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             where: { uuid: job.data.uuid },
             relations: ['template', 'mission', 'mission.project', 'createdBy'],
         });
+        if (!this.worker) {
+            logger.error('Worker not found');
+        }
         action.worker = this.worker;
+        await this.actionRepository.save(action);
         this.checkRuntimeCapability(action.template.runtime_requirements);
         return await this.actionController.processAction(action);
     }

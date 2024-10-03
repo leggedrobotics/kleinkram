@@ -24,6 +24,7 @@ services:
 
         depends_on:
             - database
+            - bullconsumer
 
     database:
         image: postgres:13
@@ -124,7 +125,7 @@ services:
         depends_on:
             - database
             - loki
-            - main
+            - redis
 
     prometheus:
         image: prom/prometheus

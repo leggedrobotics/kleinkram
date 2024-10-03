@@ -87,6 +87,15 @@ export class QueueService implements OnModuleInit {
         } catch (e) {
             console.error(e);
         }
+        await Promise.all(
+            Object.values(this.actionQueues).map(async (queue) => {
+                logger.debug(
+                    `Waiting for ${queue.name} to be ready. Is ${queue.client.status}`,
+                );
+                await queue.isReady();
+            }),
+        );
+        logger.debug('All queues are ready');
     }
 
     async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
@@ -329,13 +338,13 @@ export class QueueService implements OnModuleInit {
         const jobs = [];
         await Promise.all(
             Object.values(this.actionQueues).map(async (queue) => {
-                logger.debug(`getting from Queue: ${queue.name}`);
-                logger.debug(`Queue state: ${queue.client.status}`);
+                if (queue.client.status !== 'ready') {
+                    logger.error(`Queue ${queue.name} is not ready`);
+                }
                 const _jobs = await queue.getJobs(jobTypes);
                 jobs.push(..._jobs);
             }),
         );
-        logger.debug('done');
         return await Promise.all(
             jobs.map(async (job) => {
                 const action = await this.actionRepository.findOne({
@@ -436,6 +445,7 @@ export class QueueService implements OnModuleInit {
             if (!this.actionQueues[worker.identifier]) {
                 this.actionQueues[worker.identifier] = new Queue(
                     `action-queue-${worker.identifier}`,
+                    { redis },
                 );
             }
         });
