@@ -71,6 +71,7 @@ describe('Verify Action', () => {
                             memory: 0,
                             compute_capability: '',
                         },
+                        memory: 2,
                     },
                     searchable: true,
                 }),
