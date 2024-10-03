@@ -331,7 +331,7 @@ function openAddProject() {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
         componentProps: {
-            access_group: uuid.value,
+            access_group_uuid: uuid.value,
         },
     });
 }

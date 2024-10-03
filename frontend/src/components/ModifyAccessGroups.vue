@@ -47,11 +47,12 @@
         </div>
         <q-table
             v-if="foundAccessGroups && foundAccessGroups.length > 0"
-            :rows="foundAccessGroup || []"
+            :rows="foundAccessGroups || []"
             :columns="columns"
             hide-bottom
             flat
             bordered
+            binary-state-sort
         >
             <template v-slot:body-cell-name="_props">
                 <q-td :props="_props" style="width: 150px">
