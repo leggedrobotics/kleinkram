@@ -64,7 +64,7 @@ import { canAddAccessGroup } from 'src/services/queries/access';
 import { filteredProjects } from 'src/services/queries/project';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 const props = defineProps<{
-    access_group: string;
+    access_group_uuid: string;
 }>();
 const queryClient = useQueryClient();
 

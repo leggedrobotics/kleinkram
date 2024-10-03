@@ -47,7 +47,7 @@
         </div>
         <q-table
             v-if="foundAccessGroups && foundAccessGroups.length > 0"
-            :rows="foundAccessGroup || []"
+            :rows="foundAccessGroups || []"
             :columns="columns"
             hide-bottom
             flat
