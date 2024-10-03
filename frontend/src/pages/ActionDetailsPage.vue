@@ -9,7 +9,16 @@
                 active-color="primary"
             >
                 <q-tab name="info" label="Details" style="color: #222" />
-                <q-tab name="logs" label="Logs" style="color: #222" />
+                <q-tab
+                    name="logs"
+                    label="Logs"
+                    style="color: #222"
+                    :disable="!data?.logs || data?.logs.length === 0"
+                >
+                    <q-tooltip v-if="!data?.logs || data?.logs.length === 0">
+                        <span>No logs available</span>
+                    </q-tooltip>
+                </q-tab>
             </q-tabs>
         </template>
     </title-section>
