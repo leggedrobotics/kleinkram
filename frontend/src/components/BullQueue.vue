@@ -54,16 +54,16 @@ const cols = [
         field: (row) => row.job.progress,
     },
     {
-        name: 'delay',
-        label: 'Delay',
-        align: 'left',
-        field: (row) => row.job.delay,
-    },
-    {
         name: 'timestamp',
         label: 'Timestamp',
         align: 'left',
         field: (row) => new Date(row.job.timestamp).toLocaleString(),
+    },
+    {
+        name: 'state',
+        label: 'State',
+        align: 'left',
+        field: (row) => row.job.state,
     },
     {
         name: 'kill',

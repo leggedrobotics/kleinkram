@@ -335,7 +335,7 @@ export class QueueService implements OnModuleInit {
             'failed',
             'paused',
         ];
-        const jobs = [];
+        const jobs: Queue.Job[] = [];
         await Promise.all(
             Object.values(this.actionQueues).map(async (queue) => {
                 if (queue.client.status !== 'ready') {
@@ -351,7 +351,13 @@ export class QueueService implements OnModuleInit {
                     where: { uuid: job.id as string },
                     relations: ['template'],
                 });
-                return { job, action };
+                const jobInfo = {};
+                jobInfo['state'] = await job.getState();
+                jobInfo['progress'] = await job.progress();
+                jobInfo['timestamp'] = job.timestamp;
+                jobInfo['name'] = job.name;
+                jobInfo['id'] = job.id;
+                return { job: jobInfo, action };
             }),
         );
     }
@@ -392,6 +398,10 @@ export class QueueService implements OnModuleInit {
         await Promise.all(
             workers.map(async (worker) => {
                 if (this.actionQueues[worker.identifier]) {
+                    logger.debug(`${worker.identifier} is now unreachable`);
+                    worker.reachable = false;
+
+                    await this.workerRepository.save(worker);
                     const actionQueue = this.actionQueues[worker.identifier];
                     try {
                         logger.debug('beforeJobGetting');
@@ -424,18 +434,15 @@ export class QueueService implements OnModuleInit {
                                 }
                             }),
                         );
+                        if (this.actionQueues[worker.identifier]) {
+                            delete this.actionQueues[worker.identifier];
+                        }
                     } catch (e) {
                         logger.error(e);
                         console.log('error');
                         return;
                     }
                 }
-                logger.debug(`${worker.identifier} is now unreachable`);
-                worker.reachable = false;
-                if (this.actionQueues[worker.identifier]) {
-                    delete this.actionQueues[worker.identifier];
-                }
-                await this.workerRepository.save(worker);
             }),
         );
         const activeWorker = await this.workerRepository.find({

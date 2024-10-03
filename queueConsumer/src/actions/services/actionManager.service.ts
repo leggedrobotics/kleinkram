@@ -152,7 +152,7 @@ export class ActionManagerService {
         action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
-        return true; // mark the job as completed
+        return true; // Mark the job as completed
     }
 
     /**
