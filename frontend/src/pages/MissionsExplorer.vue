@@ -118,7 +118,15 @@
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
-
+                <UploadMissionFolder :project_uuid="project_uuid">
+                    <q-btn
+                        flat
+                        style="height: 100%"
+                        color="icon-secondary"
+                        class="button-border"
+                        icon="sym_o_drive_folder_upload"
+                    />
+                </UploadMissionFolder>
                 <create-mission-dialog-opener :project_uuid="project_uuid">
                     <q-btn
                         flat
@@ -244,6 +252,7 @@ import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import { FileEntity } from 'src/types/FileEntity';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
+import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

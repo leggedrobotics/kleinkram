@@ -211,6 +211,7 @@ export class FileController {
         @BodyUUID('missionUUID') missionUUID: string,
         @addUser() auth: AuthRes,
     ) {
+        logger.debug('cancelUpload ' + uuids);
         return this.fileService.cancelUpload(
             uuids,
             missionUUID,
