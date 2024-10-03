@@ -246,7 +246,6 @@ export class ActionManagerService {
                 'Container failed to run. The docker run command did ' +
                 'not execute successfully. Please open an issue ' +
                 'problem persists.';
-            return;
         } else if (exit_code === 139) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -254,7 +253,6 @@ export class ActionManagerService {
                 'Container was terminated by the operating system via SIGSEGV signal. ' +
                 'This usually happens when the container tries to access memory ' +
                 'it is not allowed to access.';
-            return;
         } else if (exit_code === 143) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -262,7 +260,6 @@ export class ActionManagerService {
                 'Container was terminated by the operating system via SIGTERM signal. ' +
                 'This usually happens when the container is stopped due to approaching ' +
                 'time limit.';
-            return;
         } else if (exit_code === 137) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -270,12 +267,14 @@ export class ActionManagerService {
                 'Container was immediately terminated by the operating ' +
                 'system via SIGKILL signal. This usually happens when the ' +
                 'container exceeds the memory limit or reaches the time CPU limit.';
-            return;
+        } else {
+            action.state_cause = `Container exited with code ${exit_code}`;
+            action.state =
+                exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
+            action.exit_code = exit_code;
         }
-
-        action.state_cause = `Container exited with code ${exit_code}`;
-        action.state = exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
-        action.exit_code = exit_code;
+        logger.warn(`Action ${action.uuid} has failed with exit code 125`);
+        logger.warn(action.state_cause);
     }
 
     /**

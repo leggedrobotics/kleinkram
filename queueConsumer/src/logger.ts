@@ -26,6 +26,7 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: QUEUE_CONSUMER_LABEL,
+                container_id: process.env.HOSTNAME,
             },
             json: true,
             format: winston.format.json(),
