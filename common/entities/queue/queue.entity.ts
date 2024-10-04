@@ -1,5 +1,5 @@
 import BaseEntity from '../base-entity.entity';
-import { FileLocation, FileState } from '../../enum';
+import { FileLocation, QueueState } from '../../enum';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
@@ -14,10 +14,10 @@ export default class QueueEntity extends BaseEntity {
 
     @Column({
         type: 'enum',
-        enum: FileState,
-        default: FileState.AWAITING_UPLOAD,
+        enum: QueueState,
+        default: QueueState.AWAITING_UPLOAD,
     })
-    state: FileState;
+    state: QueueState;
 
     @ManyToOne(() => Mission, (project) => project.queues, {
         onDelete: 'CASCADE',

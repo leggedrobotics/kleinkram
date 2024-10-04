@@ -9,7 +9,6 @@ import {
     CanReadMission,
     CanReadMissionByName,
     CanWriteMissionByBody,
-    LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
@@ -24,7 +23,6 @@ import {
 } from '../validation/queryDecorators';
 import { ParamString, ParamUUID } from '../validation/paramDecorators';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
-import { UserGuard } from '../auth/roles.guard';
 
 @Controller('mission')
 export class MissionController {

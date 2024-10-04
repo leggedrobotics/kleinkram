@@ -3,6 +3,7 @@ import FileEntity from '../../entities/file/file.entity';
 import Mission from '../../entities/mission/mission.entity';
 import User from '../../entities/user/user.entity';
 import { extendedFaker } from '../../faker_extended';
+import { FileState } from '../../enum';
 
 export type FileContext = {
     mission: Mission;
@@ -17,7 +18,7 @@ define(FileEntity, (_, context: Partial<FileContext> = {}) => {
     file.mission = context?.mission || null;
     file.size = extendedFaker.number.int({ min: 0, max: 2e12 }); // 0 bytes to 2 TB
     file.creator = context?.user || null;
-    file.tentative = false;
+    file.state = FileState.OK;
     file.topics = [];
     return file;
 });

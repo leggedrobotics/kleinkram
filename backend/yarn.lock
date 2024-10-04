@@ -6673,7 +6673,7 @@ redis-parser@^3.0.0:
   dependencies:
     redis-errors "^1.0.0"
 
-reflect-metadata@^0.2.0, reflect-metadata@^0.2.1:
+reflect-metadata@^0.2.0:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.2.2.tgz#400c845b6cba87a21f2c65c4aeb158f4fa4d9c5b"
   integrity sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==
@@ -7423,10 +7423,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
-typeorm@^0.3.20:
-  version "0.3.20"
-  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.20.tgz#4b61d737c6fed4e9f63006f88d58a5e54816b7ab"
-  integrity sha512-sJ0T08dV5eoZroaq9uPKBoNcGslHBR4E4y+EBHs//SiGbblGe7IeduP/IH4ddCcj0qp3PHwDwGnuvqEAnKlq/Q==
+typeorm@^0.3.21-dev.e7649d2:
+  version "0.3.21-dev.e7649d2"
+  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.21-dev.e7649d2.tgz#9bacbda28918b5471a4222b1f92b733436b90921"
+  integrity sha512-9EdizYpuoUYHwmeSoZY4bAUG26T2neA2hUb7d6//xKmLtbb4GdmD7nJejIbFxJ2+M0KIjG/9Bh4wbcaOMljN3Q==
   dependencies:
     "@sqltools/formatter" "^1.2.5"
     app-root-path "^3.1.0"
@@ -7438,7 +7438,6 @@ typeorm@^0.3.20:
     dotenv "^16.0.3"
     glob "^10.3.10"
     mkdirp "^2.1.3"
-    reflect-metadata "^0.2.1"
     sha.js "^2.4.11"
     tslib "^2.5.0"
     uuid "^9.0.0"

@@ -12,14 +12,6 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import {
-    deleteFileMinio,
-    externalMinio,
-    generateTemporaryCredentials,
-    getInfoFromMinio,
-    internalMinio,
-    moveFile,
-} from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import {
@@ -27,6 +19,7 @@ import {
     FileLocation,
     FileState,
     FileType,
+    QueueState,
     UserRole,
 } from '@common/enum';
 import User from '@common/entities/user/user.entity';
@@ -38,6 +31,14 @@ import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
 import { redis } from '../consts';
+import {
+    deleteFileMinio,
+    externalMinio,
+    generateTemporaryCredentials,
+    getInfoFromMinio,
+    moveFile,
+} from '@common/minio_helper';
+import Credentials from 'minio/dist/main/Credentials';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -49,7 +50,6 @@ export class FileService implements OnModuleInit {
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
-        @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private readonly dataSource: DataSource,
         @InjectRepository(TagType)
@@ -583,7 +583,7 @@ export class FileService implements OnModuleInit {
         return this.queueRepository
             .findOne({
                 where: {
-                    state: LessThan(FileState.COMPLETED),
+                    state: LessThan(QueueState.COMPLETED),
                     creator: { uuid: userUUID },
                 },
             })
@@ -594,7 +594,7 @@ export class FileService implements OnModuleInit {
         filenames: string[],
         missionUUID: string,
         userUUID: string,
-    ) {
+    ): Promise<{ credentials: Credentials; files: Record<string, any> }> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -615,7 +615,7 @@ export class FileService implements OnModuleInit {
                     mission,
                     creator: user,
                     type: fileType,
-                    tentative: true,
+                    state: FileState.UPLOADING,
                 });
                 try {
                     const savedFile =
@@ -625,7 +625,7 @@ export class FileService implements OnModuleInit {
                     const newQueue = this.queueRepository.create({
                         filename,
                         identifier: location,
-                        state: FileState.AWAITING_UPLOAD,
+                        state: QueueState.AWAITING_UPLOAD,
                         location: FileLocation.MINIO,
                         mission,
                         creator: user,
@@ -660,14 +660,6 @@ export class FileService implements OnModuleInit {
         } catch (err) {
             console.error(err);
         }
-    }
-
-    async getTemporaryAccessCLI(
-        filenames: string[],
-        missionUUID: string,
-        apiKey: string,
-    ) {
-        console.log('API KEY: ', apiKey);
     }
 
     async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {

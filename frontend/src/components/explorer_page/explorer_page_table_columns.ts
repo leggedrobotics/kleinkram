@@ -135,6 +135,13 @@ export const mission_columns: Array<ProjectColumnType> = [
 
 export const file_columns: Array<ProjectColumnType> = [
     {
+        name: 'state',
+        required: true,
+        label: 'Health',
+        style: 'width: 10px',
+        align: 'center',
+    },
+    {
         name: 'name',
         required: true,
         label: 'File',
@@ -159,11 +166,13 @@ export const file_columns: Array<ProjectColumnType> = [
         format: formatSize,
         sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
             a.size - b.size,
+        style: 'width: 40px',
     },
     {
         name: 'fileaction',
         required: true,
-        label: 'Action',
+        label: '',
+        style: 'width: 10px',
         align: 'center',
     },
 ];

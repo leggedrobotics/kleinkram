@@ -22,7 +22,7 @@
             <q-inner-loading showing color="primary" />
         </template>
         <template v-slot:body-cell="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+            <q-td :props="props">
                 <q-tooltip v-if="props.row.tentative"
                     >This file has not yet completed uploading
                 </q-tooltip>
@@ -30,8 +30,27 @@
                 {{ props.value }}
             </q-td>
         </template>
+        <template v-slot:body-cell-state="props">
+            <q-td :props="props">
+                <q-icon
+                    :name="getIcon(props.row.state)"
+                    :color="getColor(props.row.state)"
+                    size="20px"
+                >
+                    <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
+                </q-icon>
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+                />
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+                />
+            </q-td>
+        </template>
         <template v-slot:body-cell-fileaction="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+            <q-td :props="props">
                 <q-btn
                     flat
                     round
@@ -97,6 +116,7 @@ import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpe
 import { _downloadFile, getTentativeRowStyle } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
+import { FileState } from 'src/enums/FILE_ENUM';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -146,6 +166,51 @@ const { data: rawData, isLoading } = useQuery({
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
 const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+
+function getIcon(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'sym_o_check_circle';
+        case FileState.ERROR:
+            return 'sym_o_error';
+        case FileState.UPLOADING:
+            return 'sym_o_arrow_upload_progress';
+        case FileState.CORRUPTED:
+            return 'sym_o_sentiment_very_dissatisfied';
+        case FileState.MOVING:
+            return 'sym_o_move_up';
+    }
+}
+
+function getColor(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'positive';
+        case FileState.ERROR:
+            return 'negative';
+        case FileState.UPLOADING:
+            return 'warning';
+        case FileState.CORRUPTED:
+            return 'negative';
+        case FileState.MOVING:
+            return 'warning';
+    }
+}
+
+function getTooltip(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'File is OK';
+        case FileState.ERROR:
+            return 'File has an error';
+        case FileState.UPLOADING:
+            return 'File is uploading';
+        case FileState.CORRUPTED:
+            return 'File is corrupted';
+        case FileState.MOVING:
+            return 'File is currently moving';
+    }
+}
 
 watch(
     () => total.value,
