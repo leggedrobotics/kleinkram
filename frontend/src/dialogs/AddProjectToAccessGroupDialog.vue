@@ -4,7 +4,7 @@
 
         <template #content>
             <AddProjectToAccessGroupDialog
-                :access_group="props.access_group_uuid"
+                :access_group_uuid="props.access_group_uuid"
                 ref="addProjectRef"
             />
         </template>
@@ -33,7 +33,7 @@ const addProjectRef = ref<InstanceType<
 > | null>(null);
 
 const props = defineProps<{
-    access_group: string;
+    access_group_uuid: string;
 }>();
 
 function addProjectToAccessGroupAction() {
