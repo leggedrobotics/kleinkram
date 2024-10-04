@@ -27,6 +27,7 @@ import env from '@common/env';
 import { FileLocation, FileState, FileType, QueueState } from '@common/enum';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
+import { calculateFileHash } from './helper/hashHelper';
 
 const fs_promises = require('fs').promises;
 
@@ -136,7 +137,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queue.state = QueueState.DOWNLOADING;
         queue = await this.queueRepository.save(queue);
 
-        await traceWrapper(async () => {
+        const filehash = await traceWrapper(async () => {
             return await downloadMinioFile(
                 sourceIsBag
                     ? env.MINIO_BAG_BUCKET_NAME
@@ -145,6 +146,13 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 tmp_file_name,
             );
         }, 'downloadMinioFile')();
+        let bagHash = '';
+        let mcapHash = '';
+        if (sourceIsBag) {
+            bagHash = filehash;
+        } else {
+            mcapHash = filehash;
+        }
 
         queue.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         queue = await this.queueRepository.save(queue);
@@ -191,6 +199,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     throw error;
                 },
             );
+            mcapHash = await calculateFileHash(tmp_file_name_mcap);
 
             // ------------- Upload to Minio -------------
             queue.state = QueueState.UPLOADING;
@@ -215,6 +224,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             job.data.tmp_files.push(mcap_temp_file_name); // saved for cleanup
 
             mcapFileEntity.size = fs.statSync(mcap_temp_file_name).size;
+            mcapFileEntity.hash = mcapHash;
         } else {
             mcapFileEntity = existingFileEntity;
         }
@@ -234,10 +244,12 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // Update recording date
         ////////////////////////////////////////////////////////////////
         if (sourceIsBag) {
+            bagFileEntity.hash = bagHash;
             bagFileEntity.date = date;
             bagFileEntity.state = FileState.OK;
             await this.fileRepository.save(bagFileEntity);
         }
+        mcapFileEntity.hash = mcapHash;
         mcapFileEntity.date = date;
         mcapFileEntity.state = FileState.OK;
         await this.fileRepository.save(mcapFileEntity);
@@ -307,7 +319,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queueEntity.state = QueueState.DOWNLOADING;
         await this.queueRepository.save(queueEntity);
 
-        await traceWrapper(async () => {
+        const filehash = await traceWrapper(async () => {
             return await downloadDriveFile(
                 queueEntity.identifier,
                 tmp_file_name,
@@ -329,6 +341,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             queueEntity,
             tmp_file_name,
             originalFileName,
+            filehash,
         );
         return true; // return true to indicate that the job is done
     }
@@ -339,6 +352,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queueEntity: QueueEntity,
         tmpFileName: string,
         originalFileName: string,
+        filehash: string,
     ) {
         // validate that the tmp file exists
         if (!fs.existsSync(tmpFileName))
@@ -368,6 +382,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             creator: queueEntity.creator,
             type: sourceIsBag ? FileType.BAG : FileType.MCAP,
             state: FileState.UPLOADING,
+            hash: filehash,
         });
         const savedFileEntity = await this.fileRepository.save(newFileEntity);
         if (sourceIsBag) {
@@ -410,6 +425,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 },
             );
 
+            const mcapHash = await calculateFileHash(tmp_file_name_mcap);
+
             // ------------- Upload to Minio -------------
             queueEntity.state = QueueState.UPLOADING;
             await this.queueRepository.save(queueEntity);
@@ -431,6 +448,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             logger.debug(`File ${originalFileName} converted successfully`);
             mcapFileEntity.size = fs.statSync(tmp_file_name_mcap).size;
             mcapFileEntity.state = FileState.OK;
+            mcapFileEntity.hash = mcapHash;
             mcapFileEntity = await this.fileRepository.save(mcapFileEntity);
         }
         queueEntity.state = QueueState.UPLOADING;

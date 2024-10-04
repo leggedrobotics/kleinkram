@@ -1,9 +1,9 @@
-import { Client, CopyConditions } from 'minio';
+import { Client } from 'minio';
 import env from '@common/env';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
-import { FileType } from '@common/enum';
+import * as crypto from 'crypto';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -32,51 +32,26 @@ export async function downloadMinioFile(
     bucketName: string,
     fileName: string,
     tmp_file_name: string,
-): Promise<boolean> {
-    return await traceWrapper(async (): Promise<boolean> => {
+): Promise<string> {
+    return await traceWrapper(async (): Promise<string> => {
+        const hash = crypto.createHash('sha256');
         logger.debug('Downloading file from Minio...');
         const fileStream = await minio.getObject(bucketName, fileName);
         const writeStream = fs.createWriteStream(tmp_file_name);
+
+        fileStream.on('data', (chunk) => {
+            hash.update(chunk);
+        });
         fileStream.pipe(writeStream);
         return new Promise((resolve, reject) => {
             writeStream.on('finish', () => {
+                const fileHash = hash.digest('hex');
                 logger.debug('File downloaded from Minio');
-                resolve(true);
+                resolve(fileHash);
             });
             writeStream.on('error', (err) => {
                 reject(err);
             });
         });
     }, 'downloadMinioFile')();
-}
-
-export async function deleteMinioFile(
-    bucketName: string,
-    fileName: string,
-): Promise<void> {
-    await traceWrapper(async (): Promise<void> => {
-        await minio.removeObject(bucketName, fileName);
-    }, 'deleteMinioFile')();
-}
-
-export async function copyMinioFile(
-    sourceBucket: string,
-    destBucket: string,
-    fileName: string,
-) {
-    const sourceKey = `${sourceBucket}/${fileName}`;
-    return minio.copyObject(
-        env.MINIO_BAG_BUCKET_NAME,
-        fileName,
-        sourceKey,
-        new CopyConditions(),
-    );
-}
-
-export async function getInfoFromMinio(fileType: FileType, location: string) {
-    const bucketName =
-        fileType === FileType.BAG
-            ? env.MINIO_BAG_BUCKET_NAME
-            : env.MINIO_MCAP_BUCKET_NAME;
-    return minio.statObject(bucketName, location);
 }
