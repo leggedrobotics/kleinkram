@@ -4,7 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { Job } from 'bull';
-import { AccessGroupRights, FileState, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    FileState,
+    QueueState,
+    UserRole,
+} from '@common/enum';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import User from '@common/entities/user/user.entity';
 import Mission from '@common/entities/mission/mission.entity';
@@ -58,7 +63,7 @@ export class FileCleanupQueueProcessorProvider {
                 if (!file) {
                     return;
                 }
-                if (!file.tentative) {
+                if (file.state === FileState.OK) {
                     return;
                 }
                 const queue = await this.queueRepository.findOne({
@@ -67,7 +72,7 @@ export class FileCleanupQueueProcessorProvider {
                         mission: { uuid: file.mission.uuid },
                     },
                 });
-                queue.state = FileState.CANCELED;
+                queue.state = QueueState.CANCELED;
                 await this.queueRepository.save(queue);
                 await this.fileRepository.remove(file);
                 return;

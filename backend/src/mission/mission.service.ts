@@ -8,12 +8,12 @@ import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { externalMinio, moveMissionFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { FileType, UserRole } from '@common/enum';
-import Tag from '@common/entities/tag/tag.entity';
+import { FileState, UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
 import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
+import FileEntity from '@common/entities/file/file.entity';
 
 @Injectable()
 export class MissionService {
@@ -23,6 +23,8 @@ export class MissionService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
+        @InjectRepository(FileEntity)
+        private fileRepository: Repository<FileEntity>,
         private userservice: UserService,
         private tagservice: TagService,
     ) {}
@@ -216,7 +218,15 @@ export class MissionService {
                 'Mission with this name already exists in the project',
             );
         }
+
         mission.project = newProject;
+        await this.missionRepository.save(mission);
+        await Promise.all(
+            mission.files.map((f) => {
+                f.state = FileState.MOVING;
+                this.missionRepository.save(f);
+            }),
+        );
         await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
             mission.project.name,
@@ -227,7 +237,16 @@ export class MissionService {
             mission.project.name,
             env.MINIO_MCAP_BUCKET_NAME,
         );
-        return this.missionRepository.save(mission);
+        await Promise.all(
+            mission.files.map((f) => {
+                f.state = FileState.OK;
+                this.missionRepository.save(f);
+            }),
+        );
+        return await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['project', 'files'],
+        });
     }
 
     async deleteMission(uuid: string): Promise<Mission> {

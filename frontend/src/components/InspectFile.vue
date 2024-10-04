@@ -163,7 +163,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
-import { FileType } from 'src/enums/FILE_ENUM';
+import { FileState, FileType } from 'src/enums/FILE_ENUM';
 import ROUTES from 'src/router/routes';
 import { FileEntity } from 'src/types/FileEntity';
 import {
@@ -244,7 +244,9 @@ const filesReturn = computed(() =>
 );
 
 const displayTopics = computed(() => {
-    return data.value?.type === FileType.MCAP && !data.value?.tentative;
+    return (
+        data.value?.type === FileType.MCAP && data.value?.state === FileState.OK
+    );
 });
 const mcap = computed(() =>
     filesReturn.value?.find((file: FileEntity) => {

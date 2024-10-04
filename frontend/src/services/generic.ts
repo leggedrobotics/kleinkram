@@ -1,8 +1,9 @@
 import { DataType } from 'src/enums/TAG_TYPES';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { ActionState, FileState } from 'src/enums/QUEUE_ENUM';
+import { ActionState, QueueState } from 'src/enums/QUEUE_ENUM';
 import { FileEntity } from 'src/types/FileEntity';
 import { downloadFile } from 'src/services/queries/file';
+import { FileState } from 'src/enums/FILE_ENUM';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -35,23 +36,23 @@ export function getAccessRightDescription(value: AccessGroupRights): string {
     return accessGroupRightsMap[value] || 'Unknown';
 }
 
-export function getColor(state: FileState) {
+export function getColor(state: QueueState) {
     switch (state) {
-        case FileState.COMPLETED:
+        case QueueState.COMPLETED:
             return 'green';
-        case FileState.ERROR:
-        case FileState.CANCELED:
+        case QueueState.ERROR:
+        case QueueState.CANCELED:
             return 'red';
-        case FileState.AWAITING_PROCESSING:
+        case QueueState.AWAITING_PROCESSING:
             return 'yellow';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
+        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case QueueState.UPLOADING:
+        case QueueState.DOWNLOADING:
+        case QueueState.PROCESSING:
             return 'blue';
-        case FileState.AWAITING_UPLOAD:
+        case QueueState.AWAITING_UPLOAD:
             return 'purple';
-        case FileState.CORRUPTED:
+        case QueueState.CORRUPTED:
             return 'orange';
 
         default:
@@ -59,51 +60,51 @@ export function getColor(state: FileState) {
     }
 }
 
-export function getSimpleFileStateName(state: FileState) {
+export function getSimpleFileStateName(state: QueueState) {
     switch (state) {
-        case FileState.COMPLETED:
+        case QueueState.COMPLETED:
             return 'Completed';
-        case FileState.ERROR:
+        case QueueState.ERROR:
             return 'Error';
-        case FileState.CANCELED:
+        case QueueState.CANCELED:
             return 'Canceled';
-        case FileState.AWAITING_PROCESSING:
+        case QueueState.AWAITING_PROCESSING:
             return 'Awaiting Processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
-        case FileState.UPLOADING:
-        case FileState.DOWNLOADING:
-        case FileState.PROCESSING:
+        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case QueueState.UPLOADING:
+        case QueueState.DOWNLOADING:
+        case QueueState.PROCESSING:
             return 'Processing';
-        case FileState.AWAITING_UPLOAD:
+        case QueueState.AWAITING_UPLOAD:
             return 'Awaiting Upload';
-        case FileState.CORRUPTED:
+        case QueueState.CORRUPTED:
             return 'Corrupted';
         default:
             return 'Unknown'; // Default color for unknown states
     }
 }
 
-export function getDetailedFileState(state: FileState) {
+export function getDetailedFileState(state: QueueState) {
     switch (state) {
-        case FileState.COMPLETED:
+        case QueueState.COMPLETED:
             return 'File has been processed and is ready for download';
-        case FileState.ERROR:
+        case QueueState.ERROR:
             return 'An error occurred during processing';
-        case FileState.CANCELED:
+        case QueueState.CANCELED:
             return 'File upload was canceled';
-        case FileState.AWAITING_PROCESSING:
+        case QueueState.AWAITING_PROCESSING:
             return 'File is awaiting processing';
-        case FileState.CONVERTING_AND_EXTRACTING_TOPICS:
+        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
             return 'File is being converted and topics are being extracted';
-        case FileState.UPLOADING:
+        case QueueState.UPLOADING:
             return 'File is being uploaded';
-        case FileState.PROCESSING:
+        case QueueState.PROCESSING:
             return 'File is being processed';
-        case FileState.AWAITING_UPLOAD:
+        case QueueState.AWAITING_UPLOAD:
             return 'File is awaiting upload';
-        case FileState.CORRUPTED:
+        case QueueState.CORRUPTED:
             return 'File is corrupted';
-        case FileState.DOWNLOADING:
+        case QueueState.DOWNLOADING:
             return 'File is being downloaded';
         default:
             return 'Unknown'; // Default color for unknown states
@@ -112,7 +113,7 @@ export function getDetailedFileState(state: FileState) {
 
 export function getTentativeRowStyle(row: FileEntity) {
     return {
-        backgroundColor: row.tentative ? '#ffdbcb' : '',
+        backgroundColor: row.state !== FileState.OK ? '#ffdbcb' : '',
     };
 }
 export async function _downloadFile(fileUUID: string, filename: string) {

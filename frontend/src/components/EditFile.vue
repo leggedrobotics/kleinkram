@@ -167,7 +167,7 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
@@ -177,6 +177,7 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { updateFile } from 'src/services/mutations/file';
 import { Mission } from 'src/types/Mission';
+import { FileState } from 'src/enums/FILE_ENUM';
 
 const props = defineProps<{
     file_uuid: string;
@@ -213,6 +214,7 @@ watch(
                 [],
                 newValue.size,
                 newValue.type,
+                FileState.UPLOADING,
                 newValue.createdAt,
                 newValue.updatedAt,
                 newValue.deletedAt,
