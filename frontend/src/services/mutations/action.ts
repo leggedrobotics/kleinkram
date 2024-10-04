@@ -21,7 +21,7 @@ export const createActionTemplate = async (template: {
     name: string;
     command: string;
     docker_image: string;
-    gpu_model: string;
+    runtime_requirements: Record<string, any>;
     searchable: boolean;
 }) => {
     console.log(template);
@@ -29,13 +29,7 @@ export const createActionTemplate = async (template: {
         name: template.name,
         command: template.command,
         image: template.docker_image,
-        runtime_requirements: {
-            gpu_model: {
-                name: template.gpu_model,
-                memory: 0,
-                compute_capability: '',
-            },
-        },
+        runtime_requirements: template.runtime_requirements,
         searchable: template.searchable,
     });
     const res = response.data;
@@ -58,7 +52,7 @@ export const createNewActionTemplateVersion = async (template: {
     name: string;
     command: string;
     docker_image: string;
-    gpu_model: string;
+    runtime_requirements: template.runtime_requirements;
     searchable: boolean;
 }) => {
     const response = await axios.post('/action/createNewVersion', {
@@ -66,13 +60,7 @@ export const createNewActionTemplateVersion = async (template: {
         name: template.name,
         command: template.command,
         image: template.docker_image,
-        runtime_requirements: {
-            gpu_model: {
-                name: template.gpu_model,
-                memory: 0,
-                compute_capability: '',
-            },
-        },
+        runtime_requirements: template.runtime_requirements,
         searchable: template.searchable,
     });
     const res = response.data;

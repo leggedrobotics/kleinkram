@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Project from '../project/project.entity';
 import FileEntity from '../file/file.entity';
@@ -9,6 +9,7 @@ import Tag from '../tag/tag.entity';
 import MissionAccess from '../auth/mission_access.entity';
 import Action from '../action/action.entity';
 
+@Unique(['name', 'project'])
 @Entity()
 export default class Mission extends BaseEntity {
     @Column()

@@ -7,22 +7,16 @@ import { TopicService } from '../topic/topic.service';
 import Topic from '@common/entities/topic/topic.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
-import User from '@common/entities/user/user.entity';
-import Apikey from '@common/entities/auth/apikey.entity';
+
 import { MissionService } from '../mission/mission.service';
-import { UserService } from '../user/user.service';
 import Account from '@common/entities/auth/account.entity';
-import { MissionGuardService } from '../auth/missionGuard.service';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { ProjectGuardService } from '../auth/projectGuard.service';
 import { FileGuardService } from '../auth/fileGuard.service';
 import { TagService } from '../tag/tag.service';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { BullModule } from '@nestjs/bull';
 
 @Module({
     imports: [
@@ -37,9 +31,6 @@ import { BullModule } from '@nestjs/bull';
             Tag,
             TagType,
         ]),
-        BullModule.registerQueue({
-            name: 'file-cleanup',
-        }),
     ],
     providers: [
         FileService,

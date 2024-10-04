@@ -1,15 +1,13 @@
 <template>
     <q-badge
         :color="
-            action.artifact_uploading
-                ? 'transparent'
-                : getActionColor(action.state)
+            is_artifact_uploading ? 'transparent' : getActionColor(action.state)
         "
-        :style="action.artifact_uploading ? 'color: #000;' : ''"
+        :style="is_artifact_uploading ? 'color: #000;' : ''"
         class="q-pa-sm button-border"
     >
         <q-tooltip
-            v-if="action.artifact_uploading"
+            v-if="is_artifact_uploading"
             anchor="top middle"
             self="bottom middle"
         >
@@ -20,10 +18,15 @@
 </template>
 <script setup lang="ts">
 import { Action } from 'src/types/Action';
+import { getActionColor } from 'src/services/generic';
+import { computed } from 'vue';
 
 const props = defineProps<{
     action: Action;
 }>();
-import { getActionColor } from 'src/services/generic';
+
+const is_artifact_uploading = computed(
+    () => 10 < props.action.artifacts && props.action.artifacts < 30,
+);
 </script>
 <style scoped></style>

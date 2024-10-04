@@ -9,7 +9,16 @@
                 active-color="primary"
             >
                 <q-tab name="info" label="Details" style="color: #222" />
-                <q-tab name="logs" label="Logs" style="color: #222" />
+                <q-tab
+                    name="logs"
+                    label="Logs"
+                    style="color: #222"
+                    :disable="!data?.logs || data?.logs.length === 0"
+                >
+                    <q-tooltip v-if="!data?.logs || data?.logs.length === 0">
+                        <span>No logs available</span>
+                    </q-tooltip>
+                </q-tab>
             </q-tabs>
         </template>
     </title-section>
@@ -196,6 +205,7 @@ const $route = useRoute();
 const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
+    refetchInterval: 5_000,
 });
 
 function openArtifactUrl(url: string) {

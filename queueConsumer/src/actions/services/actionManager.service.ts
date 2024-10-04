@@ -23,8 +23,8 @@ import env from '@common/env';
 
 @Injectable()
 export class ActionManagerService {
-    // we will write logs to the database every 1 second
-    private static LOG_WRITE_BATCH_TIME = 1_000;
+    // we will write logs to the database every 100 millisecond
+    private static LOG_WRITE_BATCH_TIME = 100;
 
     constructor(
         private containerDaemon: DockerDaemon,
@@ -94,7 +94,11 @@ export class ActionManagerService {
                     limits: {
                         max_runtime: 5 * 60 * 1_000, // 5 minutes
                         cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
-                        memory_limit: 2 * 1024 * 1024 * 1024, // 2 GB
+                        memory_limit:
+                            (action.template.runtime_requirements.memory || 2) *
+                            1024 *
+                            1024 *
+                            1024, // min 2 GB
                     },
                     needs_gpu,
                     environment: env_variables,
@@ -124,11 +128,21 @@ export class ActionManagerService {
             );
         }
 
-        await this.processContainerLogs(logsObservable, action, container.id);
+        await this.processContainerLogs(
+            logsObservable,
+            action.uuid,
+            container.id,
+        );
 
         // wait for the container to stop
         await container.wait();
-        await this.containerDaemon.removeContainer(container.id, false);
+
+        // update action state based on container exit code
+        action = await this.actionRepository.findOneOrFail({
+            where: { uuid: action.uuid },
+            relations: ['worker', 'template'],
+        });
+        await this.containerDaemon.removeContainer(container.id, true);
         await this.setActionState(container, action);
         action.executionEndedAt = new Date();
         action.artifacts = ArtifactState.UPLOADING;
@@ -143,12 +157,12 @@ export class ActionManagerService {
         action.artifacts = ArtifactState.UPLOADED;
         await this.containerDaemon.removeContainer(
             artifact_upload_container.id,
-            true,
         );
+        await this.containerDaemon.removeVolume(action.uuid);
         action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
-        return true; // mark the job as completed
+        return true; // Mark the job as completed
     }
 
     /**
@@ -184,19 +198,19 @@ export class ActionManagerService {
      * container_id and action_uuid.
      *
      * @param logsObservable
-     * @param action
+     * @param action_uuid
      * @param container_id
      * @private
      */
     private async processContainerLogs(
         logsObservable: Observable<ContainerLog>,
-        action: Action,
+        action_uuid: string,
         container_id: string,
     ) {
         const container_logger = logger.child({
             labels: {
                 container_id: container_id,
-                action_uuid: action?.uuid || 'unknown',
+                action_uuid: action_uuid || 'unknown',
             },
         });
 
@@ -209,8 +223,19 @@ export class ActionManagerService {
                 ),
                 bufferTime(ActionManagerService.LOG_WRITE_BATCH_TIME),
                 concatMap(async (next_log_batch: ContainerLog[]) => {
-                    action.logs.push(...next_log_batch);
-                    await this.actionRepository.save(action);
+                    // new transaction for each batch
+                    await this.actionRepository.manager.transaction(
+                        async (manager) => {
+                            const _action = await manager.findOneOrFail(
+                                Action,
+                                {
+                                    where: { uuid: action_uuid },
+                                },
+                            );
+                            _action.logs.push(...next_log_batch);
+                            await manager.save(_action);
+                        },
+                    );
                 }),
             ),
         ).catch((err) => {
@@ -242,7 +267,6 @@ export class ActionManagerService {
                 'Container failed to run. The docker run command did ' +
                 'not execute successfully. Please open an issue ' +
                 'problem persists.';
-            return;
         } else if (exit_code === 139) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -250,7 +274,6 @@ export class ActionManagerService {
                 'Container was terminated by the operating system via SIGSEGV signal. ' +
                 'This usually happens when the container tries to access memory ' +
                 'it is not allowed to access.';
-            return;
         } else if (exit_code === 143) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -258,7 +281,6 @@ export class ActionManagerService {
                 'Container was terminated by the operating system via SIGTERM signal. ' +
                 'This usually happens when the container is stopped due to approaching ' +
                 'time limit.';
-            return;
         } else if (exit_code === 137) {
             action.state = ActionState.FAILED;
             action.exit_code = exit_code;
@@ -266,12 +288,14 @@ export class ActionManagerService {
                 'Container was immediately terminated by the operating ' +
                 'system via SIGKILL signal. This usually happens when the ' +
                 'container exceeds the memory limit or reaches the time CPU limit.';
-            return;
+        } else {
+            action.state_cause = `Container exited with code ${exit_code}`;
+            action.state =
+                exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
+            action.exit_code = exit_code;
         }
-
-        action.state_cause = `Container exited with code ${exit_code}`;
-        action.state = exit_code == 0 ? ActionState.DONE : ActionState.FAILED;
-        action.exit_code = exit_code;
+        logger.warn(`Action ${action.uuid} has failed with exit code 125`);
+        logger.warn(action.state_cause);
     }
 
     /**

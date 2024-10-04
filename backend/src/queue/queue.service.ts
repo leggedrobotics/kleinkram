@@ -1,11 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
-import { addActionQueue } from '@common/schedulingLogic';
 import {
     ActionState,
     FileLocation,
@@ -13,7 +12,6 @@ import {
     FileType,
     UserRole,
 } from '@common/enum';
-import { InjectQueue } from '@nestjs/bull';
 import env from '@common/env';
 import { getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
@@ -21,10 +19,13 @@ import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
-import { Queue } from 'bull';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Action from '@common/entities/action/action.entity';
 import { RuntimeRequirements } from '@common/types';
+
+import Queue from 'bull';
+import { redis } from '../consts';
+import { addActionQueue } from '@common/schedulingLogic';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -48,7 +49,9 @@ function extractFileIdFromUrl(url: string): string | null {
 }
 
 @Injectable()
-export class QueueService {
+export class QueueService implements OnModuleInit {
+    private actionQueues: Record<string, Queue.Queue>;
+    private fileQueue: Queue.Queue;
     constructor(
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
@@ -56,14 +59,44 @@ export class QueueService {
         private missionRepository: Repository<Mission>,
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
-        @InjectQueue('file-queue') private fileProcessingQueue: Queue,
-        @InjectQueue('action-queue') private actionQueue: Queue,
         private user_service: UserService,
         @InjectRepository(Worker)
         private workerRepository: Repository<Worker>,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
     ) {}
+
+    async onModuleInit() {
+        this.fileQueue = new Queue('file-queue', {
+            redis,
+        });
+        const availableWorker = await this.workerRepository.find({
+            where: { reachable: true },
+        });
+        this.actionQueues = {};
+        try {
+            await Promise.all(
+                availableWorker.map(async (worker) => {
+                    this.actionQueues[worker.identifier] = new Queue(
+                        `action-queue-${worker.identifier}`,
+                        { redis },
+                    );
+                    await this.actionQueues[worker.identifier].isReady();
+                }),
+            );
+        } catch (e) {
+            console.error(e);
+        }
+        await Promise.all(
+            Object.values(this.actionQueues).map(async (queue) => {
+                logger.debug(
+                    `Waiting for ${queue.name} to be ready. Is ${queue.client.status}`,
+                );
+                await queue.isReady();
+            }),
+        );
+        logger.debug('All queues are ready');
+    }
 
     async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
         const mission = await this.missionRepository.findOneOrFail({
@@ -81,7 +114,7 @@ export class QueueService {
             creator,
         });
         await this.queueRepository.save(newQueue);
-        await this.fileProcessingQueue
+        await this.fileQueue
             .add('processDriveFile', {
                 queueUuid: newQueue.uuid,
             })
@@ -122,7 +155,7 @@ export class QueueService {
         queue.state = FileState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);
 
-        await this.fileProcessingQueue.add('processMinioFile', {
+        await this.fileQueue.add('processMinioFile', {
             queueUuid: queue.uuid,
         });
     }
@@ -199,7 +232,7 @@ export class QueueService {
         ) {
             throw new ConflictException('Cannot delete file while processing');
         }
-        const waitingJobs = await this.fileProcessingQueue.getWaiting();
+        const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
             (job) => job.data.queueUuid === queueUUID,
         );
@@ -263,7 +296,7 @@ export class QueueService {
         if (queue.state >= FileState.PROCESSING) {
             throw new ConflictException('File is not in processing state');
         }
-        const waitingJobs = await this.fileProcessingQueue.getWaiting();
+        const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
             (job) => job.data.queueUuid === queueUUID,
         );
@@ -281,59 +314,77 @@ export class QueueService {
         action: Action,
         runtime_requirements: RuntimeRequirements,
     ) {
-        console.log(`Adding action to queue: ${action.template.name}`);
+        logger.debug(`Adding action to queue: ${action.template.name}`);
 
         return await addActionQueue(
             action,
             runtime_requirements,
             this.workerRepository,
             this.actionRepository,
-            this.actionQueue,
+            this.actionQueues,
+            logger,
         );
     }
 
     async bullQueue() {
-        const jobs = await this.actionQueue.getJobs([
+        const jobTypes: Queue.JobStatus[] = [
             'active',
             'delayed',
             'waiting',
             'completed',
             'failed',
             'paused',
-        ]);
+        ];
+        const jobs: Queue.Job[] = [];
+        await Promise.all(
+            Object.values(this.actionQueues).map(async (queue) => {
+                if (queue.client.status !== 'ready') {
+                    logger.error(`Queue ${queue.name} is not ready`);
+                }
+                const _jobs = await queue.getJobs(jobTypes);
+                jobs.push(..._jobs);
+            }),
+        );
         return await Promise.all(
             jobs.map(async (job) => {
-                console.log(job.id);
                 const action = await this.actionRepository.findOne({
                     where: { uuid: job.id as string },
                     relations: ['template'],
                 });
-                console.log(action);
-                return { job, action };
+                const jobInfo = {};
+                jobInfo['state'] = await job.getState();
+                jobInfo['progress'] = await job.progress();
+                jobInfo['timestamp'] = job.timestamp;
+                jobInfo['name'] = job.name;
+                jobInfo['id'] = job.id;
+                return { job: jobInfo, action };
             }),
         );
     }
 
     async stopJob(jobId: string) {
-        const job = await this.actionQueue.getJob(jobId);
-        if (!job) {
-            throw new ConflictException('Job not found');
-        }
-        try {
-            await job.remove();
-        } catch (err) {
-            logger.log(err);
-        }
         const action = await this.actionRepository.findOne({
             where: { uuid: jobId },
+            relations: ['worker'],
         });
         if (action) {
             action.state = ActionState.FAILED;
             await this.actionRepository.save(action);
+
+            const job =
+                await this.actionQueues[action.worker.identifier].getJob(jobId);
+            if (!job) {
+                throw new ConflictException('Job not found');
+            }
+            try {
+                await job.remove();
+            } catch (err) {
+                logger.log(err);
+            }
         }
     }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_30_SECONDS)
     async healthCheck() {
         const workers = await this.workerRepository.find({
             where: {
@@ -343,36 +394,67 @@ export class QueueService {
                 ),
             },
         });
-        const waitingJobs = await this.actionQueue.getJobs([
-            'active',
-            'delayed',
-            'waiting',
-        ]);
 
         await Promise.all(
             workers.map(async (worker) => {
-                const jobsToReschedule = waitingJobs.filter((job) =>
-                    job.name.endsWith(worker.identifier),
-                );
-                await Promise.all(
-                    jobsToReschedule.map(async (job) => {
-                        const action = await this.actionRepository.findOne({
-                            where: { uuid: job.data.uuid },
-                            relations: ['template'],
-                        });
-                        await job.remove();
-                        await addActionQueue(
-                            action,
-                            action.template.runtime_requirements,
-                            this.workerRepository,
-                            this.actionRepository,
-                            this.actionQueue,
+                if (this.actionQueues[worker.identifier]) {
+                    logger.debug(`${worker.identifier} is now unreachable`);
+                    worker.reachable = false;
+
+                    await this.workerRepository.save(worker);
+                    const actionQueue = this.actionQueues[worker.identifier];
+                    try {
+                        logger.debug('beforeJobGetting');
+                        const waitingJobs = await actionQueue.getJobs([
+                            'active',
+                            'delayed',
+                            'waiting',
+                        ]);
+
+                        logger.debug('waiting Jobs', waitingJobs);
+                        await Promise.all(
+                            waitingJobs.map(async (job) => {
+                                const action =
+                                    await this.actionRepository.findOne({
+                                        where: { uuid: job.data.uuid },
+                                        relations: ['template'],
+                                    });
+                                try {
+                                    await job.remove();
+                                    await addActionQueue(
+                                        action,
+                                        action.template.runtime_requirements,
+                                        this.workerRepository,
+                                        this.actionRepository,
+                                        this.actionQueues,
+                                        logger,
+                                    );
+                                } catch (e) {
+                                    logger.error(e);
+                                }
+                            }),
                         );
-                    }),
-                );
-                worker.reachable = false;
-                await this.workerRepository.save(worker);
+                        if (this.actionQueues[worker.identifier]) {
+                            delete this.actionQueues[worker.identifier];
+                        }
+                    } catch (e) {
+                        logger.error(e);
+                        console.log('error');
+                        return;
+                    }
+                }
             }),
         );
+        const activeWorker = await this.workerRepository.find({
+            where: { reachable: true },
+        });
+        activeWorker.map((worker) => {
+            if (!this.actionQueues[worker.identifier]) {
+                this.actionQueues[worker.identifier] = new Queue(
+                    `action-queue-${worker.identifier}`,
+                    { redis },
+                );
+            }
+        });
     }
 }

@@ -1,6 +1,6 @@
 <template>
     <base-dialog title="New Mission" ref="dialogRef">
-        <template #title> New Mission</template>
+        <template #title> Upload Folder</template>
 
         <template #tabs>
             <q-tabs
@@ -27,45 +27,16 @@
                     style="color: #222"
                     :disable="missionCreated"
                 />
-                <q-tab
-                    name="upload"
-                    label="Upload Data"
-                    style="color: #222"
-                    :disable="!missionCreated"
-                />
             </q-tabs>
         </template>
         <template #content>
             <q-tab-panels v-model="tab_selection">
                 <q-tab-panel name="meta_data" style="min-height: 280px">
-                    <label for="projectDescription">Project*</label>
-                    <q-btn-dropdown
-                        v-model="ddr_open"
-                        :disable="!!props?.project_uuid"
-                        :label="project?.name || 'Project'"
-                        class="q-uploader--bordered full-width full-height q-mb-lg"
-                        flat
-                        clearable
-                        required
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="_project in projectsWithCreateWrite"
-                                :key="_project.uuid"
-                                clickable
-                                @click="
-                                    project_uuid = _project.uuid;
-                                    ddr_open = false;
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ _project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
+                    <p>
+                        Project:<b style="margin-left: 10px">{{
+                            project?.name
+                        }}</b>
+                    </p>
 
                     <label for="missionName">Mission Name *</label>
                     <q-input
@@ -83,20 +54,33 @@
                         :error-message="errorMessage"
                         v-on:update:model-value="isInErrorState = false"
                     />
+                    <input
+                        type="file"
+                        webkitdirectory
+                        style="display: none"
+                        ref="HTMLinput"
+                        @change="handle"
+                    />
+                    <q-file
+                        outlined
+                        style="min-width: 300px"
+                        v-model="files"
+                        @click="transferClick"
+                    >
+                        <template #prepend>
+                            <q-icon name="sym_o_attach_file" />
+                        </template>
+
+                        <template #append>
+                            <q-icon name="sym_o_cancel" @click="files = []" />
+                        </template>
+                    </q-file>
                 </q-tab-panel>
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
                         :projectUUID="project.uuid"
                         @update:tagValues="(update) => (tagValues = update)"
-                    />
-                </q-tab-panel>
-                <q-tab-panel name="upload" style="min-width: 280px">
-                    <CreateFile
-                        v-if="newMission"
-                        :mission="newMission"
-                        :uploads="uploads"
-                        ref="createFileRef"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -123,54 +107,37 @@
                     }
                 "
             />
-            <q-btn
-                v-if="tab_selection === 'upload'"
-                flat
-                label="Upload & Exit"
-                class="bg-button-primary"
-                @click="
-                    () => {
-                        createFileRef?.createFileAction();
-                        onDialogOK();
-                    }
-                "
-            />
         </template>
     </base-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, onMounted, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import { filteredProjects, getProject } from 'src/services/queries/project';
+import { getProject } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
-import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
-import { getPermissions } from 'src/services/queries/user';
-import {
-    canCreateMission,
-    getPermissionForProject,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { usePermissionsQuery } from 'src/hooks/customQueryHooks';
+import { createFileAction, getOnMount } from 'src/services/fileService';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
-const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 
 const props = defineProps<{
     project_uuid: string | undefined;
     uploads: Ref<FileUpload[]>;
 }>();
 
+const HTMLinput = ref();
 const project_uuid = ref(props.project_uuid);
 const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
+const files = ref<File[]>([]);
 
 const { data: project, refetch }: { data: Ref<Project>; refetch: Function } =
     useQuery<Project>({
@@ -185,19 +152,9 @@ watch(project_uuid, () => refetch());
 const missionName = ref('');
 const isInErrorState = ref(false);
 const errorMessage = ref('');
-const ddr_open = ref(false);
+const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 
-const { data: all_projects } = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
-});
 const permissions = usePermissionsQuery();
-const projectsWithCreateWrite = computed(() => {
-    if (!all_projects?.value) return [];
-    return all_projects?.value[0].filter((project: Project) =>
-        canCreateMission(project.uuid, permissions),
-    );
-});
 
 const tagValues: Ref<Record<string, string>> = ref({});
 
@@ -212,6 +169,18 @@ const allRequiredTagsSet = computed(() => {
 const missionCreated = computed(() => {
     return !!newMission.value;
 });
+
+function handle(a) {
+    files.value = a.target.files;
+    if (files.value.length > 0) {
+        missionName.value = files.value[0].webkitRelativePath.split('/')[0];
+    }
+}
+
+function transferClick(e) {
+    e.preventDefault();
+    HTMLinput.value.click();
+}
 
 const submitNewMission = async () => {
     if (!project.value) {
@@ -250,8 +219,22 @@ const submitNewMission = async () => {
         timeout: 4000,
         position: 'bottom',
     });
+    const created = createFileAction(
+        newMission.value,
+        newMission.value?.project,
+        [...files.value].filter(
+            (file: File) =>
+                file.name.endsWith('.bag') || file.name.endsWith('.mcap'),
+        ),
+        queryClient,
+        uploadingFiles,
+        props.uploads,
+    );
+    onDialogOK();
+    await created;
     missionName.value = '';
     tagValues.value = {};
-    tab_selection.value = 'upload';
 };
+
+onMounted(getOnMount(uploadingFiles, newMission));
 </script>
