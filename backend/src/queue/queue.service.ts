@@ -14,7 +14,6 @@ import {
     UserRole,
 } from '@common/enum';
 import env from '@common/env';
-import { getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
 import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
@@ -27,6 +26,7 @@ import { RuntimeRequirements } from '@common/types';
 import Queue from 'bull';
 import { redis } from '../consts';
 import { addActionQueue } from '@common/schedulingLogic';
+import { getInfoFromMinio, internalMinio } from '@common/minio_helper';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments

@@ -3,7 +3,6 @@ import Project from '@common/entities/project/project.entity';
 import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from './entities/create-project.dto';
-import logger from '../logger';
 import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
@@ -14,8 +13,8 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { moveMissionFilesInMinio } from '../minioHelper';
 import env from '@common/env';
+import { moveMissionFilesInMinio } from '@common/minio_helper';
 
 @Injectable()
 export class ProjectService {

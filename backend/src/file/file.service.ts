@@ -12,13 +12,6 @@ import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
-import {
-    deleteFileMinio,
-    externalMinio,
-    generateTemporaryCredentials,
-    getInfoFromMinio,
-    moveFile,
-} from '../minioHelper';
 import Project from '@common/entities/project/project.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import {
@@ -38,6 +31,14 @@ import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
 import { redis } from '../consts';
+import {
+    deleteFileMinio,
+    externalMinio,
+    generateTemporaryCredentials,
+    getInfoFromMinio,
+    moveFile,
+} from '@common/minio_helper';
+import Credentials from 'minio/dist/main/Credentials';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -49,7 +50,6 @@ export class FileService implements OnModuleInit {
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
-        @InjectRepository(Topic) private topicRepository: Repository<Topic>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private readonly dataSource: DataSource,
         @InjectRepository(TagType)
@@ -594,7 +594,7 @@ export class FileService implements OnModuleInit {
         filenames: string[],
         missionUUID: string,
         userUUID: string,
-    ) {
+    ): Promise<{ credentials: Credentials; files: Record<string, any> }> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
