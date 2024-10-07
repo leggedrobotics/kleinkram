@@ -98,7 +98,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         );
     }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_DAY_AT_2AM)
     async synchronizeFileSystem() {
         try {
             await this.redlock.using([`lock:fs-sync`], 10000, async () => {
