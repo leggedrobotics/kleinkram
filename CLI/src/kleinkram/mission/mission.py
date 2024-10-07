@@ -1,4 +1,6 @@
 import os
+
+from botocore.utils import calculate_md5
 from typing_extensions import Annotated, Optional, List
 
 import httpx

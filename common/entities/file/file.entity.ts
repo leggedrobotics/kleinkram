@@ -37,4 +37,7 @@ export default class FileEntity extends BaseEntity {
 
     @Column({ default: FileState.OK })
     state: FileState;
+
+    @Column({ nullable: true })
+    hash: string;
 }
