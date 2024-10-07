@@ -298,7 +298,7 @@ async function uploadFileMultipart(
                 UploadId,
                 MultipartUpload: { Parts: parts },
             });
-        const finalMD5 = spark.end();
+        const finalMD5 = btoa(spark.end(true));
         console.log('Final MD5:', finalMD5);
         await minioClient.send(completeMultipartUploadCommand);
         return finalMD5;

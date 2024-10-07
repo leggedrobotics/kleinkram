@@ -111,11 +111,6 @@ export function getDetailedFileState(state: QueueState) {
     }
 }
 
-export function getTentativeRowStyle(row: FileEntity) {
-    return {
-        backgroundColor: row.state !== FileState.OK ? '#ffdbcb' : '',
-    };
-}
 export async function _downloadFile(fileUUID: string, filename: string) {
     const res = await downloadFile(fileUUID, true);
     const a = document.createElement('a');

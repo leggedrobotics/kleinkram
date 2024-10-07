@@ -111,7 +111,7 @@
             </q-td>
         </template>
         <template v-slot:body-cell-action="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+            <q-td :props="props">
                 <q-btn
                     flat
                     round
@@ -184,7 +184,6 @@ import {
     _downloadFile,
     getDetailedFileState,
     getSimpleFileStateName,
-    getTentativeRowStyle,
 } from '../services/generic';
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
