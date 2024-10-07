@@ -3411,6 +3411,13 @@ redis-parser@^3.0.0:
   dependencies:
     redis-errors "^1.0.0"
 
+redlock@^5.0.0-beta.2:
+  version "5.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/redlock/-/redlock-5.0.0-beta.2.tgz#a629c07e07d001c0fdd9f2efa614144c4416fe44"
+  integrity sha512-2RDWXg5jgRptDrB1w9O/JgSZC0j7y4SlaXnor93H/UJm/QyDiFgBKNtrh0TI6oCXqYSaSoXxFh6Sd3VtYfhRXw==
+  dependencies:
+    node-abort-controller "^3.0.1"
+
 reflect-metadata@0.2.2, reflect-metadata@^0.2.1:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.2.2.tgz#400c845b6cba87a21f2c65c4aeb158f4fa4d9c5b"

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
@@ -7,15 +7,28 @@ import { AuthRes } from '../auth/paramDecorator';
 import Account from '@common/entities/auth/account.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
+import { systemUser } from '@common/consts';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
     constructor(
         @InjectRepository(User) private userRepository: Repository<User>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
         @InjectRepository(Apikey) private apikeyRepository: Repository<Apikey>,
     ) {}
+
+    async onModuleInit(): Promise<void> {
+        await this.userRepository.manager.transaction(async (manager) => {
+            const existingSystemUser = await manager.findOne(User, {
+                where: { uuid: systemUser.uuid },
+            });
+            if (!existingSystemUser) {
+                const createdSystemUser = manager.create(User, systemUser);
+                await manager.save(createdSystemUser);
+            }
+        });
+    }
 
     async findOneByEmail(email: string) {
         return this.userRepository.findOne({ where: { email } });
