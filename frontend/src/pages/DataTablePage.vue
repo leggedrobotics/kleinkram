@@ -254,17 +254,27 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
-        <template v-slot:body-cell="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
-                <q-tooltip v-if="props.row.tentative"
-                    >This file has not yet completed uploading
-                </q-tooltip>
-
-                {{ props.value }}
+        <template v-slot:body-cell-state="props">
+            <q-td :props="props">
+                <q-icon
+                    :name="getIcon(props.row.state)"
+                    :color="getColorFileState(props.row.state)"
+                    size="20px"
+                >
+                    <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
+                </q-icon>
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+                />
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+                />
             </q-td>
         </template>
         <template v-slot:body-cell-action="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+            <q-td :props="props">
                 <q-btn
                     flat
                     round
@@ -333,7 +343,7 @@ import { fetchOverview } from 'src/services/queries/file';
 import TagFilter from 'src/dialogs/TagFilter.vue';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
-import { getTentativeRowStyle } from 'src/services/generic';
+import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 
@@ -508,6 +518,13 @@ watch(
 );
 
 const columns = [
+    {
+        name: 'state',
+        required: true,
+        label: 'Health',
+        style: 'width: 10px',
+        align: 'center',
+    },
     {
         name: 'project.name',
         required: true,

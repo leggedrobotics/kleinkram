@@ -161,3 +161,48 @@ export function getActionColor(state: ActionState) {
             return 'grey'; // Default color for unknown states
     }
 }
+
+export function getTooltip(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'File is OK';
+        case FileState.ERROR:
+            return 'File has an error';
+        case FileState.UPLOADING:
+            return 'File is uploading';
+        case FileState.CORRUPTED:
+            return 'File is corrupted';
+        case FileState.MOVING:
+            return 'File is currently moving';
+    }
+}
+
+export function getIcon(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'sym_o_check_circle';
+        case FileState.ERROR:
+            return 'sym_o_error';
+        case FileState.UPLOADING:
+            return 'sym_o_arrow_upload_progress';
+        case FileState.CORRUPTED:
+            return 'sym_o_sentiment_very_dissatisfied';
+        case FileState.MOVING:
+            return 'sym_o_move_up';
+    }
+}
+
+export function getColorFileState(state: FileState) {
+    switch (state) {
+        case FileState.OK:
+            return 'positive';
+        case FileState.ERROR:
+            return 'negative';
+        case FileState.UPLOADING:
+            return 'warning';
+        case FileState.CORRUPTED:
+            return 'negative';
+        case FileState.MOVING:
+            return 'warning';
+    }
+}
