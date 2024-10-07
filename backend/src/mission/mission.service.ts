@@ -14,7 +14,7 @@ import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { externalMinio } from '@common/minio_helper';
 import Queue from 'bull';
-import { redis } from '../consts';
+import { redis } from '@common/consts';
 
 @Injectable()
 export class MissionService implements OnModuleInit {

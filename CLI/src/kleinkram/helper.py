@@ -130,7 +130,6 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
     transferCallback = TransferCallback()
     failed_uploads = []
 
-
     for i in range(nrThreads):
         thread = threading.Thread(
             target=uploadFile, args=(_queue, s3, transferCallback, failed_uploads)
@@ -139,13 +138,18 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
         threads.append(thread)
     for thread in threads:
         thread.join()
-    if(len(failed_uploads) > 0):
+    if len(failed_uploads) > 0:
         print("Failed to upload the following files:")
         for file in failed_uploads:
             print(file)
 
 
-def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCallback, failed_uploads: List[str]):
+def uploadFile(
+    _queue: queue.Queue,
+    s3: BaseClient,
+    transferCallback: TransferCallback,
+    failed_uploads: List[str],
+):
     while True:
         try:
             filename, _file = _queue.get(timeout=3)
@@ -169,7 +173,10 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
                 )
 
                 client = AuthenticatedClient()
-                res = client.post("/queue/confirmUpload", json={"uuid": queueUUID, "md5": md5_checksum})
+                res = client.post(
+                    "/queue/confirmUpload",
+                    json={"uuid": queueUUID, "md5": md5_checksum},
+                )
                 res.raise_for_status()
             _queue.task_done()
         except queue.Empty:

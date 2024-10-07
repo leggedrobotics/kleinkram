@@ -30,7 +30,7 @@ import TagType from '@common/entities/tagType/tagType.entity';
 import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
-import { redis } from '../consts';
+import { redis } from '@common/consts';
 import {
     deleteFileMinio,
     externalMinio,

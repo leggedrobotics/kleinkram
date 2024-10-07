@@ -24,9 +24,9 @@ import Action from '@common/entities/action/action.entity';
 import { RuntimeRequirements } from '@common/types';
 
 import Queue from 'bull';
-import { redis } from '../consts';
 import { addActionQueue } from '@common/schedulingLogic';
 import { getInfoFromMinio, internalMinio } from '@common/minio_helper';
+import { redis } from '@common/consts';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
