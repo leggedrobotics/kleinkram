@@ -34,6 +34,7 @@ const fs_promises = require('fs').promises;
 type FileProcessorJob = Job<{
     queueUuid: string;
     tmp_files: string[];
+    md5?: string;
 }>;
 
 @Processor('file-queue')
@@ -128,6 +129,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
     async handleMinioFileProcessing(job: FileProcessorJob) {
         logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
         let queue = await this.startProcessing(job.data.queueUuid);
+        const md5 = job.data.md5;
         const sourceIsBag = queue.filename.endsWith('.bag');
 
         const uuid = crypto.randomUUID();
@@ -146,6 +148,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 tmp_file_name,
             );
         }, 'downloadMinioFile')();
+
         let bagHash = '';
         let mcapHash = '';
         if (sourceIsBag) {
@@ -171,6 +174,13 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 mission: { uuid: queue.mission.uuid },
             },
         });
+        if (md5 && md5 !== filehash) {
+            existingFileEntity.state = FileState.CORRUPTED;
+            await this.fileRepository.save(existingFileEntity);
+            throw new Error(
+                `File ${originalFileName} is corrupted: MD5 mismatch. Expected ${md5}, got ${filehash}`,
+            );
+        }
 
         // convert to bag and upload to minio
         if (sourceIsBag) {

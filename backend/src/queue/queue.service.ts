@@ -125,7 +125,7 @@ export class QueueService implements OnModuleInit {
         logger.debug('added to queue');
     }
 
-    async confirmUpload(uuid: string) {
+    async confirmUpload(uuid: string, md5: string) {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],
@@ -157,6 +157,7 @@ export class QueueService implements OnModuleInit {
 
         await this.fileQueue.add('processMinioFile', {
             queueUuid: queue.uuid,
+            md5,
         });
     }
 

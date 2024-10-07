@@ -3,7 +3,7 @@ import * as fs from 'fs';
 
 export async function calculateFileHash(
     filePath: string,
-    algorithm = 'sha256',
+    algorithm = 'md5',
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash(algorithm);
@@ -14,7 +14,7 @@ export async function calculateFileHash(
         });
 
         fileStream.on('end', () => {
-            const fileHash = hash.digest('hex'); // Finalize the hash calculation
+            const fileHash = hash.digest('base64'); // Finalize the hash calculation
             resolve(fileHash);
         });
 

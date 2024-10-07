@@ -34,7 +34,7 @@ export async function downloadMinioFile(
     tmp_file_name: string,
 ): Promise<string> {
     return await traceWrapper(async (): Promise<string> => {
-        const hash = crypto.createHash('sha256');
+        const hash = crypto.createHash('md5');
         logger.debug('Downloading file from Minio...');
         const fileStream = await minio.getObject(bucketName, fileName);
         const writeStream = fs.createWriteStream(tmp_file_name);
@@ -45,7 +45,7 @@ export async function downloadMinioFile(
         fileStream.pipe(writeStream);
         return new Promise((resolve, reject) => {
             writeStream.on('finish', () => {
-                const fileHash = hash.digest('hex');
+                const fileHash = hash.digest('base64');
                 logger.debug('File downloaded from Minio');
                 resolve(fileHash);
             });
