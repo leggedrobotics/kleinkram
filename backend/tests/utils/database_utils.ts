@@ -63,7 +63,7 @@ export const mock_db_user = async (
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(email);
-    const oauthID = hash.digest('base64');
+    const oauthID = hash.digest('hex');
 
     await create_new_user(
         config,
