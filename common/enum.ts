@@ -1,4 +1,4 @@
-export enum FileState {
+export enum QueueState {
     'AWAITING_UPLOAD' = 0,
     'AWAITING_PROCESSING' = 10,
     'PROCESSING' = 20,
@@ -69,4 +69,15 @@ export enum ArtifactState {
     UPLOADING = 20,
     UPLOADED = 30,
     ERROR = 40,
+}
+
+export enum FileState {
+    OK = 'OK',
+    CORRUPTED = 'CORRUPTED',
+    UPLOADING = 'UPLOADING',
+    MOVING = 'MOVING',
+    ERROR = 'ERROR',
+    CONVERSION_ERROR = 'CONVERSION_ERROR',
+    LOST = 'LOST',
+    FOUND = 'FOUND',
 }

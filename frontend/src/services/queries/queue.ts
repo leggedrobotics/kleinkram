@@ -1,11 +1,11 @@
 import axios from 'src/api/axios';
 import { User } from 'src/types/User';
 import { Queue } from 'src/types/Queue';
-import { FileState } from 'src/enums/QUEUE_ENUM';
+import { QueueState } from 'src/enums/QUEUE_ENUM';
 
 export const currentQueue = async (
     startDate: Date,
-    stateFilter: FileState[],
+    stateFilter: QueueState[],
 ) => {
     const params = {
         startDate: startDate.toISOString(),

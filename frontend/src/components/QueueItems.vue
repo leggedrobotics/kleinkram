@@ -63,7 +63,7 @@
                         @remove="removeItem(scope.opt)"
                         :tabindex="scope.tabindex"
                         dense
-                        :color="getColor(FileState[scope.opt] as FileState)"
+                        :color="getColor(QueueState[scope.opt] as QueueState)"
                     >
                         {{ scope.opt }}
                     </q-chip>
@@ -111,7 +111,7 @@
             </q-td>
         </template>
         <template v-slot:body-cell-action="props">
-            <q-td :props="props" :style="getTentativeRowStyle(props.row)">
+            <q-td :props="props">
                 <q-btn
                     flat
                     round
@@ -133,8 +133,8 @@
                                 @click="() => downloadFile(props.row)"
                                 :disable="
                                     props.row.state ===
-                                        FileState.AWAITING_UPLOAD ||
-                                    props.row.state === FileState.CANCELED
+                                        QueueState.AWAITING_UPLOAD ||
+                                    props.row.state === QueueState.CANCELED
                                 "
                             >
                                 <q-item-section>Download File</q-item-section>
@@ -152,7 +152,7 @@
                                 v-ripple
                                 :disable="
                                     props.row.state !==
-                                    FileState.AWAITING_PROCESSING
+                                    QueueState.AWAITING_PROCESSING
                                 "
                                 @click="() => _cancelProcessing(props.row)"
                             >
@@ -173,7 +173,7 @@ import { QTable, useQuasar } from 'quasar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { FileLocation, FileState } from 'src/enums/QUEUE_ENUM';
+import { FileLocation, QueueState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
 import { Project } from 'src/types/Project';
 import { currentQueue } from 'src/services/queries/queue';
@@ -184,7 +184,6 @@ import {
     _downloadFile,
     getDetailedFileState,
     getSimpleFileStateName,
-    getTentativeRowStyle,
 } from '../services/generic';
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
@@ -215,8 +214,8 @@ const selected = ref<Queue[]>([]);
 
 const fileStateFilter = ref<string[]>([]);
 
-const FileStateOptions = Object.keys(FileState).splice(
-    Object.keys(FileState).length / 2,
+const FileStateOptions = Object.keys(QueueState).splice(
+    Object.keys(QueueState).length / 2,
 ); //  WHY JAVASCRIPT, WHY?
 
 const removeItem = (value: string) => {
@@ -232,14 +231,14 @@ function clearSelection() {
 watch(fileStateFilter, () => {
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
-            FileState[a] > FileState[b] ? 1 : -1,
+            QueueState[a] > QueueState[b] ? 1 : -1,
         );
     }
 });
 
 const fileStateFilterEnums = computed(() => {
     if (!fileStateFilter.value) return [];
-    return fileStateFilter.value.map((state) => FileState[state]);
+    return fileStateFilter.value.map((state) => QueueState[state]);
 });
 
 const { data: queueEntries, isLoading } = useQuery<Project[]>({
@@ -305,7 +304,7 @@ function openDeleteFileDialog(queueEntry: Queue) {
 function rowClick(event: any, row: Queue) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
-    const isCompleted = row.state === FileState.COMPLETED;
+    const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
         findOneByNameAndMission(row.filename, row.mission.uuid).then(
             (file: FileEntity) => {
@@ -324,12 +323,12 @@ function rowClick(event: any, row: Queue) {
 
 function canDelete(row: Queue) {
     return (
-        row.state !== FileState.AWAITING_PROCESSING &&
-        row.state !== FileState.CANCELED &&
-        row.state !== FileState.COMPLETED &&
-        row.state !== FileState.ERROR &&
-        row.state !== FileState.CORRUPTED &&
-        row.state !== FileState.AWAITING_UPLOAD
+        row.state !== QueueState.AWAITING_PROCESSING &&
+        row.state !== QueueState.CANCELED &&
+        row.state !== QueueState.COMPLETED &&
+        row.state !== QueueState.ERROR &&
+        row.state !== QueueState.CORRUPTED &&
+        row.state !== QueueState.AWAITING_UPLOAD
     );
 }
 

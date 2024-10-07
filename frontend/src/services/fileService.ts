@@ -20,6 +20,7 @@ import { existsFile } from 'src/services/queries/file';
 import { Mission } from 'src/types/Mission';
 import { QueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
+import SparkMD5 from 'spark-md5';
 
 export async function createFileAction(
     selected_mission: Mission,
@@ -139,7 +140,7 @@ export async function createFileAction(
                     }
 
                     try {
-                        await uploadFileMultipart(
+                        const md5Hash = await uploadFileMultipart(
                             file,
                             reservedFilenames[filename].bucket,
                             reservedFilenames[filename].location,
@@ -150,6 +151,7 @@ export async function createFileAction(
 
                         return confirmUpload(
                             reservedFilenames[filename].queueUUID,
+                            md5Hash,
                         );
                     } catch (e) {
                         console.error('err', e);
@@ -244,6 +246,7 @@ async function uploadFileMultipart(
 
         const partSize = 50 * 1024 * 1024; // 50 MB per part
         const parts = [];
+        const spark = new SparkMD5.ArrayBuffer();
         for (
             let partNumber = 1, start = 0;
             start < file.size;
@@ -257,6 +260,10 @@ async function uploadFileMultipart(
             }
             const end = Math.min(start + partSize, file.size);
             const partBlob = file.slice(start, end);
+
+            const partBuffer = await partBlob.arrayBuffer();
+            spark.append(partBuffer);
+
             const uploadPartCommand = new UploadPartCommand({
                 Bucket: bucket,
                 Key: key,
@@ -291,7 +298,10 @@ async function uploadFileMultipart(
                 UploadId,
                 MultipartUpload: { Parts: parts },
             });
-        return await minioClient.send(completeMultipartUploadCommand);
+        const finalMD5 = btoa(spark.end(true));
+        console.log('Final MD5:', finalMD5);
+        await minioClient.send(completeMultipartUploadCommand);
+        return finalMD5;
     } catch (error) {
         console.error('Multipart upload failed:', error);
         newFileUpload.value.canceled = true;

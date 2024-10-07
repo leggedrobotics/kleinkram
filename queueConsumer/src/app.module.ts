@@ -31,6 +31,7 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
+import { MoveMissionProvider } from './moveMission/moveMission.provider';
 
 @Module({
     imports: [
@@ -50,6 +51,10 @@ import os from 'node:os';
         }),
         BullModule.registerQueue({
             name: 'file-cleanup',
+        }),
+
+        BullModule.registerQueue({
+            name: 'move',
         }),
 
         ConfigModule.forRoot({
@@ -119,6 +124,7 @@ import os from 'node:os';
         FileQueueProcessorProvider,
         ActionQueueProcessorProvider,
         FileCleanupQueueProcessorProvider,
+        MoveMissionProvider,
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,

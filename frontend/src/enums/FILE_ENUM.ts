@@ -3,3 +3,12 @@ export enum FileType {
     MCAP = 'MCAP',
     ALL = 'ALL',
 }
+
+export enum FileState {
+    OK = 'OK',
+    CORRUPTED = 'CORRUPTED',
+    UPLOADING = 'UPLOADING',
+    MOVING = 'MOVING',
+    ERROR = 'ERROR',
+    CONVERSION_ERROR = 'CONVERSION_ERROR',
+}

@@ -1,4 +1,4 @@
-import { FileState } from 'src/enums/QUEUE_ENUM';
+import { QueueState } from 'src/enums/QUEUE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
@@ -6,7 +6,7 @@ import { User } from 'src/types/User';
 export class Queue extends BaseEntity {
     identifier: string;
     filename: string;
-    state: FileState;
+    state: QueueState;
     location: string;
     mission: Mission;
     creator: User;
@@ -15,7 +15,7 @@ export class Queue extends BaseEntity {
         uuid: string,
         identifier: string,
         filename: string,
-        state: FileState,
+        state: QueueState,
         location: string,
         mission: Mission,
         creator: User,

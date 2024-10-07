@@ -10,10 +10,10 @@ import {
     FileLocation,
     FileState,
     FileType,
+    QueueState,
     UserRole,
 } from '@common/enum';
 import env from '@common/env';
-import { getInfoFromMinio, internalMinio } from '../minioHelper';
 import logger from '../logger';
 import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
@@ -24,8 +24,9 @@ import Action from '@common/entities/action/action.entity';
 import { RuntimeRequirements } from '@common/types';
 
 import Queue from 'bull';
-import { redis } from '../consts';
 import { addActionQueue } from '@common/schedulingLogic';
+import { getInfoFromMinio, internalMinio } from '@common/minio_helper';
+import { redis } from '@common/consts';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -108,7 +109,7 @@ export class QueueService implements OnModuleInit {
         const newQueue = this.queueRepository.create({
             filename: fileId,
             identifier: fileId,
-            state: FileState.AWAITING_PROCESSING,
+            state: QueueState.AWAITING_PROCESSING,
             location: FileLocation.DRIVE,
             mission,
             creator,
@@ -124,13 +125,13 @@ export class QueueService implements OnModuleInit {
         logger.debug('added to queue');
     }
 
-    async confirmUpload(uuid: string) {
+    async confirmUpload(uuid: string, md5: string) {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: uuid },
             relations: ['mission', 'mission.project'],
         });
 
-        if (queue.state !== FileState.AWAITING_UPLOAD) {
+        if (queue.state !== QueueState.AWAITING_UPLOAD) {
             throw new ConflictException('File is not in uploading state');
         }
         const file = await this.fileRepository.findOneOrFail({
@@ -147,16 +148,16 @@ export class QueueService implements OnModuleInit {
             await this.fileRepository.remove(file);
             throw new ConflictException('File not found in Minio');
         });
-
-        file.tentative = false;
+        if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
 
-        queue.state = FileState.AWAITING_PROCESSING;
+        queue.state = QueueState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);
 
         await this.fileQueue.add('processMinioFile', {
             queueUuid: queue.uuid,
+            md5,
         });
     }
 
@@ -227,8 +228,8 @@ export class QueueService implements OnModuleInit {
             relations: ['mission', 'mission.project'],
         });
         if (
-            queue.state >= FileState.PROCESSING &&
-            queue.state < FileState.COMPLETED
+            queue.state >= QueueState.PROCESSING &&
+            queue.state < QueueState.COMPLETED
         ) {
             throw new ConflictException('Cannot delete file while processing');
         }
@@ -293,7 +294,7 @@ export class QueueService implements OnModuleInit {
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
             relations: ['mission', 'mission.project'],
         });
-        if (queue.state >= FileState.PROCESSING) {
+        if (queue.state >= QueueState.PROCESSING) {
             throw new ConflictException('File is not in processing state');
         }
         const waitingJobs = await this.fileQueue.getWaiting();
@@ -306,7 +307,7 @@ export class QueueService implements OnModuleInit {
             console.log('Removing job:', jobToRemove.data.queueUuid);
             await jobToRemove.remove();
         }
-        queue.state = FileState.CANCELED;
+        queue.state = QueueState.CANCELED;
         await this.queueRepository.save(queue);
     }
 

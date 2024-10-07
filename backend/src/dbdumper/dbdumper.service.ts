@@ -4,8 +4,8 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { internalMinio } from '../minioHelper';
 import env from '@common/env';
+import { internalMinio } from '@common/minio_helper';
 
 const execAsync = promisify(exec);
 const unlinkAsync = promisify(fs.unlink);

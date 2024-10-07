@@ -1,4 +1,4 @@
-import { FileType } from 'src/enums/FILE_ENUM';
+import { FileState, FileType } from 'src/enums/FILE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
@@ -12,7 +12,7 @@ export class FileEntity extends BaseEntity {
     size: number;
     creator: User;
     type: FileType;
-    tentative: boolean;
+    state: FileState;
 
     constructor(
         uuid: string,
@@ -23,7 +23,7 @@ export class FileEntity extends BaseEntity {
         topics: Topic[],
         size: number,
         type: FileType,
-        tentative: boolean,
+        state: FileState,
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -36,6 +36,6 @@ export class FileEntity extends BaseEntity {
         this.filename = filename;
         this.topics = topics;
         this.type = type;
-        this.tentative = tentative;
+        this.state = state;
     }
 }

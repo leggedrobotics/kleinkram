@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
 import { Brackets, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,26 +6,33 @@ import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
 import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
-import { externalMinio, moveMissionFilesInMinio } from '../minioHelper';
 import { UserService } from '../user/user.service';
-import { FileType, UserRole } from '@common/enum';
-import Tag from '@common/entities/tag/tag.entity';
+import { UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
 import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
+import { externalMinio } from '@common/minio_helper';
+import Queue from 'bull';
+import { redis } from '@common/consts';
 
 @Injectable()
-export class MissionService {
+export class MissionService implements OnModuleInit {
+    private moveQueue: Queue.Queue;
     constructor(
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
+
         private userservice: UserService,
         private tagservice: TagService,
     ) {}
+
+    async onModuleInit() {
+        this.moveQueue = new Queue('move', { redis });
+    }
 
     async create(
         createMission: CreateMission,
@@ -194,40 +201,15 @@ export class MissionService {
             .getMany();
     }
 
-    async findOneByName(name: string): Promise<Mission> {
-        return this.missionRepository.findOne({ where: { name } });
+    async moveMission(missionUUID: string, projectUUID: string) {
+        return await this.moveQueue.add('mission', {
+            missionUUID,
+            projectUUID,
+        });
     }
 
-    async moveMission(
-        missionUUID: string,
-        projectUUID: string,
-    ): Promise<Mission> {
-        const mission = await this.missionRepository.findOneOrFail({
-            where: { uuid: missionUUID },
-            relations: ['project', 'files'],
-        });
-        const old_project = mission.project;
-        const newProject = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
-            relations: ['missions'],
-        });
-        if (newProject.missions.find((m) => m.name === mission.name)) {
-            throw new ConflictException(
-                'Mission with this name already exists in the project',
-            );
-        }
-        mission.project = newProject;
-        await moveMissionFilesInMinio(
-            `${old_project.name}/${mission.name}`,
-            mission.project.name,
-            env.MINIO_BAG_BUCKET_NAME,
-        );
-        await moveMissionFilesInMinio(
-            `${old_project.name}/${mission.name}`,
-            mission.project.name,
-            env.MINIO_MCAP_BUCKET_NAME,
-        );
-        return this.missionRepository.save(mission);
+    async findOneByName(name: string): Promise<Mission> {
+        return this.missionRepository.findOne({ where: { name } });
     }
 
     async deleteMission(uuid: string): Promise<Mission> {

@@ -2,6 +2,8 @@ import { google } from 'googleapis';
 import env from '@common/env';
 import logger from '../../logger';
 import * as fs from 'node:fs';
+import * as crypto from 'crypto';
+const hash = crypto.createHash('md5');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 const KEYFILEPATH = env.GOOGLE_KEY_FILE;
@@ -15,7 +17,7 @@ const drive = google.drive({ version: 'v3', auth });
 export async function downloadDriveFile(
     fileId: string,
     dest: string,
-): Promise<boolean> {
+): Promise<string> {
     const res = await drive.files.get(
         {
             fileId,
@@ -30,8 +32,12 @@ export async function downloadDriveFile(
     return await new Promise((resolve, reject) => {
         res.data
             .on('end', () => {
+                const fileHash = hash.digest('base64');
                 logger.debug('File downloaded successfully.');
-                resolve(true);
+                resolve(fileHash);
+            })
+            .on('data', (chunk) => {
+                hash.update(chunk);
             })
             .on('error', (err) => {
                 logger.debug(`Error downloading file: ${err}`);

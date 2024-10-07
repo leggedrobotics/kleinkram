@@ -10,7 +10,7 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
-import { BodyUUID } from '../validation/bodyDecorators';
+import { BodyString, BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
     QueryOptionalString,
@@ -33,8 +33,11 @@ export class QueueController {
 
     @Post('confirmUpload')
     @CanCreateQueueByBody()
-    async confirmUpload(@BodyUUID('uuid') uuid: string) {
-        return this.queueService.confirmUpload(uuid);
+    async confirmUpload(
+        @BodyUUID('uuid') uuid: string,
+        @BodyString('md5') md5: string,
+    ) {
+        return this.queueService.confirmUpload(uuid, md5);
     }
 
     @Get('active')

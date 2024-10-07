@@ -3,7 +3,7 @@ import { get_jwt_token } from './database_utils';
 import User from '@common/entities/user/user.entity';
 import { CreateMission } from '../../src/mission/entities/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { FileState } from '@common/enum';
+import { QueueState } from '@common/enum';
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
@@ -151,7 +151,7 @@ export async function upload_file(
             active.find(
                 (x: QueueEntity) =>
                     x.uuid === fileResponse['queueUUID'] &&
-                    x.state === FileState.COMPLETED,
+                    x.state === QueueState.COMPLETED,
             )
         ) {
             break;

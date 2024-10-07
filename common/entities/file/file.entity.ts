@@ -3,7 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import Topic from '../topic/topic.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import { FileType } from '../../enum';
+import { FileState, FileType } from '../../enum';
 
 @Entity()
 @Unique(['filename', 'mission'])
@@ -35,6 +35,9 @@ export default class FileEntity extends BaseEntity {
     @Column()
     type: FileType;
 
-    @Column()
-    tentative: boolean;
+    @Column({ default: FileState.OK })
+    state: FileState;
+
+    @Column({ nullable: true })
+    hash: string;
 }

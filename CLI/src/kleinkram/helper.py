@@ -7,7 +7,8 @@ from functools import partial
 
 import typer
 from botocore.config import Config
-from typing_extensions import Dict
+from botocore.utils import calculate_md5
+from typing_extensions import Dict, List
 import boto3
 
 import tqdm
@@ -127,18 +128,28 @@ def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: i
         _queue.put(file)
     threads = []
     transferCallback = TransferCallback()
+    failed_uploads = []
 
     for i in range(nrThreads):
         thread = threading.Thread(
-            target=uploadFile, args=(_queue, s3, transferCallback)
+            target=uploadFile, args=(_queue, s3, transferCallback, failed_uploads)
         )
         thread.start()
         threads.append(thread)
     for thread in threads:
         thread.join()
+    if len(failed_uploads) > 0:
+        print("Failed to upload the following files:")
+        for file in failed_uploads:
+            print(file)
 
 
-def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCallback):
+def uploadFile(
+    _queue: queue.Queue,
+    s3: BaseClient,
+    transferCallback: TransferCallback,
+    failed_uploads: List[str],
+):
     while True:
         try:
             filename, _file = _queue.get(timeout=3)
@@ -150,21 +161,29 @@ def uploadFile(_queue: queue.Queue, s3: BaseClient, transferCallback: TransferCa
                 multipart_chunksize=10 * 1024 * 1024, max_concurrency=5
             )
             with open(filepath, "rb") as f:
-                size = os.path.getsize(filepath)
-                transferCallback.add_file(filename, size)
+                md5_checksum = calculate_md5(f)
+                file_size = os.path.getsize(filepath)
+                transferCallback.add_file(filename, file_size)
                 callback_function = create_transfer_callback(transferCallback, filename)
                 s3.Bucket(bucket).upload_file(
-                    filepath, target_location, Config=config, Callback=callback_function
+                    filepath,
+                    target_location,
+                    Config=config,
+                    Callback=callback_function,
                 )
 
                 client = AuthenticatedClient()
-                res = client.post("/queue/confirmUpload", json={"uuid": queueUUID})
+                res = client.post(
+                    "/queue/confirmUpload",
+                    json={"uuid": queueUUID, "md5": md5_checksum},
+                )
                 res.raise_for_status()
             _queue.task_done()
         except queue.Empty:
             break
         except Exception as e:
             print(f"Error uploading {filename}: {e}")
+            failed_uploads.append(filepath)
             _queue.task_done()
 
 

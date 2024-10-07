@@ -1,7 +1,8 @@
-import { BucketItem, Client } from 'minio';
-import env from '@common/env';
-import { FileType } from '@common/enum';
+import env from './env';
+import { FileType } from './enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
+import { BucketItem, Client } from 'minio';
+import Credentials from 'minio/dist/main/Credentials';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -23,17 +24,39 @@ export const internalMinio: Client = new Client({
     secretKey: env.MINIO_SECRET_KEY,
 });
 
-export async function uploadToMinio(response: any, originalname: string) {
-    const filename = originalname.replace('.bag', '.mcap');
-    await internalMinio.putObject(
-        env.MINIO_BAG_BUCKET_NAME,
-        filename,
-        response.data,
-        undefined,
-        {
-            'Content-Type': 'application/octet-stream',
-        },
-    );
+//* srcPath: Project1/Run1
+//* destPath: Project2
+export async function moveMissionFilesInMinio(
+    srcPath: string,
+    destProject: string,
+    bucketName: string,
+) {
+    try {
+        const objects = await listObjects(bucketName, srcPath);
+        const mission = srcPath.split('/')[1];
+        await Promise.all(
+            objects.map(async (obj) => {
+                const filename = obj.name.split('/').slice(2).join('/');
+                const destName = `${destProject}/${mission}/${filename}`;
+                await moveFile(obj.name, destName, bucketName);
+            }),
+        );
+    } catch (err) {
+        console.error('Error moving files:', err);
+    }
+}
+
+export async function moveFile(
+    srcPath: string,
+    destPath: string,
+    bucketName: string,
+) {
+    try {
+        await copyObject(bucketName, srcPath, destPath);
+        await removeObject(bucketName, srcPath);
+    } catch (err) {
+        console.error('Error moving file:', err);
+    }
 }
 
 // Function to list objects in a bucket
@@ -45,6 +68,19 @@ async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
         stream.on('end', () => resolve(objects));
         stream.on('error', (err) => reject(err));
     });
+}
+
+export async function uploadToMinio(response: any, originalname: string) {
+    const filename = originalname.replace('.bag', '.mcap');
+    await internalMinio.putObject(
+        env.MINIO_BAG_BUCKET_NAME,
+        filename,
+        response.data,
+        undefined,
+        {
+            'Content-Type': 'application/octet-stream',
+        },
+    );
 }
 
 // Function to copy an object within the bucket
@@ -68,41 +104,6 @@ async function removeObject(
     objectName: string,
 ): Promise<void> {
     return internalMinio.removeObject(bucketName, objectName);
-}
-
-export async function moveFile(
-    srcPath: string,
-    destPath: string,
-    bucketName: string,
-) {
-    try {
-        await copyObject(bucketName, srcPath, destPath);
-        await removeObject(bucketName, srcPath);
-    } catch (err) {
-        console.error('Error moving file:', err);
-    }
-}
-
-//* srcPath: Project1/Run1
-//* destPath: Project2
-export async function moveMissionFilesInMinio(
-    srcPath: string,
-    destProject: string,
-    bucketName: string,
-) {
-    try {
-        const objects = await listObjects(bucketName, srcPath);
-        const mission = srcPath.split('/')[1];
-        await Promise.all(
-            objects.map(async (obj) => {
-                const filename = obj.name.split('/').slice(2).join('/');
-                const destName = `${destProject}/${mission}/${filename}`;
-                await moveFile(obj.name, destName, bucketName);
-            }),
-        );
-    } catch (err) {
-        console.error('Error moving files:', err);
-    }
 }
 
 export async function getInfoFromMinio(fileType: FileType, location: string) {
@@ -138,7 +139,9 @@ export function basePolicy(resources: string[]) {
     };
 }
 
-export async function generateTemporaryCredentials(filenames: string[]) {
+export async function generateTemporaryCredentials(
+    filenames: string[],
+): Promise<Credentials> {
     const prefix = filenames[0].split('/').slice(0, -1).join('/');
     console.log('prefix:', prefix);
     const resources = filenames.map((filename) => {
@@ -164,3 +167,4 @@ export async function generateTemporaryCredentials(filenames: string[]) {
 
     return await provider.getCredentials();
 }
+export { BucketItem };
