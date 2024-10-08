@@ -7,6 +7,12 @@ import { CookieNames } from '@common/enum';
 import env from '@common/env';
 import { UserService } from '../user/user.service';
 
+export class InvalidJwtTokenException extends Error {
+    constructor() {
+        super('Invalid JWT token');
+    }
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
@@ -28,8 +34,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     async validate(payload: any) {
         if (payload.uuid) {
-            const user = await this.userService.findOneByUUID(payload.uuid);
-            return { user };
+            try {
+                const user = await this.userService.findOneByUUID(payload.uuid);
+                return { user };
+            } catch (e) {
+                throw InvalidJwtTokenException;
+            }
         }
         return {
             uuid: payload.uuid,

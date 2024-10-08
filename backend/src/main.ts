@@ -18,6 +18,7 @@ import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { InvalidJwtTokenException } from './auth/jwt.strategy';
 
 const packageJson = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
@@ -43,6 +44,14 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(exception.getStatus()).json({
                 statusCode: exception.getStatus(),
                 message: exception.message,
+            });
+            return;
+        }
+
+        if (exception.name === 'InvalidJwtTokenException') {
+            response.status(401).json({
+                statusCode: 401,
+                message: 'Invalid JWT token. Are you logged in?',
             });
             return;
         }
