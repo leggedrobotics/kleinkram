@@ -1,5 +1,5 @@
 import os
-from typing_extensions import Optional, Annotated
+from typing_extensions import Optional, Annotated, List
 
 import httpx
 import requests
@@ -17,7 +17,7 @@ file = typer.Typer(
 
 @file.command('download')
 def download_file(
-    file_uuid: Annotated[list[str], typer.Option( help="UUIDs of the files")],
+    file_uuid: Annotated[List[str], typer.Option( help="UUIDs of the files")],
     local_path: Annotated[str, typer.Option( prompt=True, help="Local path to save the file",)],
 ):
     """
