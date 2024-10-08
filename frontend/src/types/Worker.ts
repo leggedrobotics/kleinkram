@@ -4,7 +4,6 @@ export class Worker extends BaseEntity {
     identifier: string;
     hostname: string;
     cpuMemory: number;
-    hasGPU: boolean;
     gpuModel: string | null;
     gpuMemory: number | null;
     cpuCores: number;
@@ -21,7 +20,6 @@ export class Worker extends BaseEntity {
         updatedAt: Date | null,
         deletedAt: Date | null,
         cpuMemory: number,
-        hasGPU: boolean,
         gpuModel: string | null,
         gpuMemory: number | null,
         cpuCores: number,
@@ -34,7 +32,6 @@ export class Worker extends BaseEntity {
         this.identifier = identifier;
         this.hostname = hostname;
         this.cpuMemory = cpuMemory;
-        this.hasGPU = hasGPU;
         this.gpuModel = gpuModel;
         this.gpuMemory = gpuMemory;
         this.cpuCores = cpuCores;

@@ -21,7 +21,10 @@ export const createActionTemplate = async (template: {
     name: string;
     command: string;
     docker_image: string;
-    runtime_requirements: Record<string, any>;
+    cpuCores: number;
+    cpuMemory: number;
+    gpuMemory: number;
+    maxRuntime: number;
     searchable: boolean;
 }) => {
     console.log(template);
@@ -29,7 +32,10 @@ export const createActionTemplate = async (template: {
         name: template.name,
         command: template.command,
         image: template.docker_image,
-        runtime_requirements: template.runtime_requirements,
+        cpuCores: template.cpuCores,
+        cpuMemory: template.cpuMemory,
+        gpuMemory: template.gpuMemory,
+        maxRuntime: template.maxRuntime,
         searchable: template.searchable,
     });
     const res = response.data;
@@ -43,7 +49,10 @@ export const createActionTemplate = async (template: {
         res.name,
         res.version,
         res.command,
-        res.runtime_requirements,
+        res.cpuCores,
+        res.cpuMemory,
+        res.gpuMemory,
+        res.maxRuntime,
     );
 };
 
@@ -52,7 +61,10 @@ export const createNewActionTemplateVersion = async (template: {
     name: string;
     command: string;
     docker_image: string;
-    runtime_requirements: template.runtime_requirements;
+    cpuCores: number;
+    cpuMemory: number;
+    gpuMemory: number;
+    maxRuntime: number;
     searchable: boolean;
 }) => {
     const response = await axios.post('/action/createNewVersion', {
@@ -60,7 +72,10 @@ export const createNewActionTemplateVersion = async (template: {
         name: template.name,
         command: template.command,
         image: template.docker_image,
-        runtime_requirements: template.runtime_requirements,
+        cpuCores: template.cpuCores,
+        cpuMemory: template.cpuMemory,
+        gpuMemory: template.gpuMemory,
+        maxRuntime: template.maxRuntime,
         searchable: template.searchable,
     });
     const res = response.data;
@@ -74,6 +89,9 @@ export const createNewActionTemplateVersion = async (template: {
         res.name,
         res.version,
         res.command,
-        res.runtime_requirements,
+        res.cpuCores,
+        res.cpuMemory,
+        res.gpuMemory,
+        res.maxRuntime,
     );
 };

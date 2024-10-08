@@ -28,9 +28,9 @@ export type ContainerLimits = {
      */
     memory_limit: number;
     /**
-     * The maximum CPU the container can use in nano CPUs.
+     * The maximum number of CPU cores.
      */
-    cpu_limit: number;
+    n_cpu: number;
     /**
      * The maximum disk space the container can use in bytes.
      */
@@ -40,7 +40,7 @@ export type ContainerLimits = {
 const defaultContainerLimitations: ContainerLimits = {
     max_runtime: 60 * 60 * 1_000, // 1 hour
     memory_limit: 1024 * 1024 * 1024, // 1GB
-    cpu_limit: 1000000000, // CPU limit in nano CPUs
+    n_cpu: 2, // CPU limit in nano CPUs
     disk_quota: 40737418240,
 };
 
@@ -157,7 +157,7 @@ export class DockerDaemon {
             HostConfig: {
                 ...(needs_gpu ? add_gpu_capabilities : {}),
                 Memory: container_options.limits.memory_limit, // memory limit in bytes
-                NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
+                NanoCpus: container_options.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
                 DiskQuota: container_options.limits.disk_quota,
 
                 NetworkMode,
@@ -490,7 +490,7 @@ export class DockerDaemon {
 
             HostConfig: {
                 Memory: container_options.limits.memory_limit, // memory limit in bytes
-                NanoCpus: container_options.limits.cpu_limit, // CPU limit in nano CPUs
+                NanoCpus: container_options.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
                 DiskQuota: container_options.limits.disk_quota,
                 NetworkMode,
                 LogConfig,

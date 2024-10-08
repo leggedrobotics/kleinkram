@@ -21,7 +21,7 @@ import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Action from '@common/entities/action/action.entity';
-import { RuntimeRequirements } from '@common/types';
+import { RuntimeDescription } from '@common/types';
 
 import Queue from 'bull';
 import { addActionQueue } from '@common/schedulingLogic';
@@ -313,7 +313,7 @@ export class QueueService implements OnModuleInit {
 
     async _addActionQueue(
         action: Action,
-        runtime_requirements: RuntimeRequirements,
+        runtime_requirements: RuntimeDescription,
     ) {
         logger.debug(`Adding action to queue: ${action.template.name}`);
 
@@ -422,9 +422,16 @@ export class QueueService implements OnModuleInit {
                                     });
                                 try {
                                     await job.remove();
+                                    const runtime_requirements = {
+                                        cpuCores: action.template.cpuCores,
+                                        cpuMemory: action.template.cpuMemory,
+                                        gpuMemory: action.template.gpuMemory,
+                                        maxRuntime: action.template.maxRuntime,
+                                    };
+
                                     await addActionQueue(
                                         action,
-                                        action.template.runtime_requirements,
+                                        runtime_requirements,
                                         this.workerRepository,
                                         this.actionRepository,
                                         this.actionQueues,

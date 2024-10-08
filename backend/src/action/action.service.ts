@@ -14,6 +14,7 @@ import {
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
 import { addActionQueue } from '@common/schedulingLogic';
+import { RuntimeDescription } from '@common/types';
 
 @Injectable()
 export class ActionService {
@@ -45,10 +46,12 @@ export class ActionService {
             where: { uuid: action.uuid },
             relations: ['mission', 'mission.project', 'template'],
         });
-        const res = await this.queueService._addActionQueue(
-            action,
-            action.template.runtime_requirements,
-        );
+        const res = await this.queueService._addActionQueue(action, {
+            cpuCores: template.cpuCores,
+            cpuMemory: template.cpuMemory,
+            gpuMemory: template.gpuMemory,
+            maxRuntime: template.maxRuntime,
+        } as RuntimeDescription);
         if (!res) {
             action.state = ActionState.UNPROCESSABLE;
             await this.actionRepository.save(action);
@@ -89,7 +92,10 @@ export class ActionService {
         const template = this.actionTemplateRepository.create({
             createdBy: { uuid: auth.user.uuid },
             name: data.name,
-            runtime_requirements: data.runtime_requirements,
+            cpuCores: data.cpuCores,
+            cpuMemory: data.cpuMemory,
+            gpuMemory: data.gpuMemory,
+            maxRuntime: data.maxRuntime,
             image_name: data.image,
             command: data.command,
             searchable: data.searchable,
@@ -109,10 +115,12 @@ export class ActionService {
         if (
             !template.searchable &&
             data.searchable &&
-            template.runtime_requirements.gpu_model.name ===
-                data.runtime_requirements.gpu_model.name &&
             template.image_name === data.image &&
-            template.command === data.command
+            template.command === data.command &&
+            template.cpuCores === data.cpuCores &&
+            template.cpuMemory === data.cpuMemory &&
+            template.gpuMemory === data.gpuMemory &&
+            template.maxRuntime === data.maxRuntime
         ) {
             console.log('making template searchable');
             template.searchable = true;
@@ -129,7 +137,9 @@ export class ActionService {
             take: 1,
         });
         template.name = data.name;
-        template.runtime_requirements = data.runtime_requirements;
+        template.cpuCores = data.cpuCores;
+        template.cpuMemory = data.cpuMemory;
+        template.gpuMemory = data.gpuMemory;
         template.image_name = data.image;
         template.createdBy = dbuser;
         template.command = data.command;

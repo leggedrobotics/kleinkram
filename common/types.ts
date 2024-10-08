@@ -1,13 +1,6 @@
-type GPUModel = {
-    name: string;
-    memory: number;
-    compute_capability: string;
+export type RuntimeDescription = {
+    cpuCores: number;
+    cpuMemory: number;
+    gpuMemory: number;
+    maxRuntime: number;
 };
-
-type RuntimeDescription = {
-    gpu_model?: GPUModel | null;
-    cpu_model?: string | null;
-    memory?: number;
-};
-export type RuntimeCapability = RuntimeDescription;
-export type RuntimeRequirements = RuntimeDescription;

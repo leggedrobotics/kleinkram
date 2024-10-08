@@ -34,7 +34,7 @@ export async function createWorker(workerRepository: Repository<Worker>) {
     const gpuModels = await getGpuModels();
     const hasGPU = gpuModels.length > 0;
     const gpuModel = hasGPU ? gpuModels[0] : null;
-    const gpuMemory = 0; // Not available in the current implementation
+    const gpuMemory = hasGPU ? 1000 : -1; // Not available in the current implementation
 
     // Gather Disk storage information
     const storage = await getDiskSpace();
@@ -50,11 +50,10 @@ export async function createWorker(workerRepository: Repository<Worker>) {
     const reachable = true;
 
     // Create and save the Worker entity
-    const newWorker = workerRepository.create({
+    return workerRepository.create({
         identifier: name,
         hostname,
         cpuMemory,
-        hasGPU,
         gpuModel,
         gpuMemory,
         cpuCores,
@@ -64,7 +63,6 @@ export async function createWorker(workerRepository: Repository<Worker>) {
         lastSeen: new Date(),
         actions: [],
     });
-    return await workerRepository.save(newWorker);
 }
 
 const readdir = util.promisify(fs.readdir);
