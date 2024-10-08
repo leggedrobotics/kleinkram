@@ -74,7 +74,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    disabled=""
+                    @click="queryClient.invalidateQueries('actions')"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
