@@ -11,6 +11,7 @@ import {
     Catch,
     ExceptionFilter,
     INestApplication,
+    PipeTransform,
     ValidationPipe,
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
@@ -94,7 +95,7 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
-class DelayPipe {
+class DelayPipe implements PipeTransform {
     constructor(private delay: number) {}
 
     async transform(value: any) {
