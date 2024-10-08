@@ -30,14 +30,19 @@ export const useToggle = (
 export const useProjectUUID = () => {
     const route = useRoute();
     return computed(() => {
-        return route.params.project_uuid as string;
+        return (
+            (route.params.project_uuid as string) ||
+            (route.query.project_uuid as string)
+        );
     });
 };
 
 export const useMissionUUID = () => {
     const route = useRoute();
     return computed(() => {
-        return route.params.mission_uuid as string;
+        return (
+            (route.params.mission_uuid as string) || route.query.mission_uuid
+        );
     });
 };
 
