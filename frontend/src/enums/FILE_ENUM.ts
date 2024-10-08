@@ -11,4 +11,6 @@ export enum FileState {
     MOVING = 'MOVING',
     ERROR = 'ERROR',
     CONVERSION_ERROR = 'CONVERSION_ERROR',
+    LOST = 'LOST',
+    FOUND = 'FOUND',
 }

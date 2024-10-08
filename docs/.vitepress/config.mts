@@ -11,7 +11,12 @@ export default withMermaid({
     mermaidPlugin: {
         class: "mermaid",
     },
-
+    head: [
+        [
+            'link',
+            { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined' }
+        ]
+    ],
     ignoreDeadLinks: true,
     themeConfig: {
         nav: [
@@ -95,6 +100,15 @@ export default withMermaid({
                     ],
                     collapsed: true,
                 },
+                {
+                    text: 'Files',
+                    items: [
+                        {
+                            text: 'Getting Started',
+                            link: '/usage/files/files',
+                        },
+                    ]
+                }
 
             ],
             '/development/': [
@@ -249,6 +263,10 @@ export default withMermaid({
                             link: '/development/testing/getting-started',
                         }
                     ]
+                },
+                {
+                    text: 'Cronjobs',
+                    link: '/development/Cron/CronJobs',
                 }
 
             ],
