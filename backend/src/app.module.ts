@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import {
+    Injectable,
+    MiddlewareConsumer,
+    Module,
+    NestMiddleware,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
@@ -19,6 +24,46 @@ import access_config from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
 import { UserResolverMiddleware } from './UserResolverMiddleware';
 import { WorkerModule } from './worker/worker.module';
+import { NextFunction, Request, Response } from 'express';
+import logger from './logger';
+import { CookieNames } from '@common/enum';
+import { ActionService } from './action/action.service';
+
+/**
+ *
+ * Logger middleware for audit logging.
+ * Logs every authenticated request made to the application.*
+ *
+ */
+@Injectable()
+export class AuditLoggerMiddleware implements NestMiddleware {
+    constructor(private actionService: ActionService) {}
+
+    use(req: Request, _: Response, next: NextFunction) {
+        if (!req || !req.cookies) {
+            next();
+            return;
+        }
+
+        const key = req.cookies[CookieNames.CLI_KEY];
+        if (!key) {
+            next();
+            return;
+        }
+
+        const auditLog = {
+            method: req.method,
+            url: req.originalUrl,
+        };
+
+        logger.debug(
+            `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
+        );
+
+        this.actionService.writeAuditLog(key, auditLog).then((r) => {});
+        next();
+    }
+}
 
 @Module({
     imports: [
@@ -62,7 +107,9 @@ import { WorkerModule } from './worker/worker.module';
 })
 export class AppModule {
     configure(consumer: MiddlewareConsumer) {
-        consumer.apply(UserResolverMiddleware).forRoutes('*');
+        consumer
+            .apply(UserResolverMiddleware, AuditLoggerMiddleware)
+            .forRoutes('*');
     }
 }
 

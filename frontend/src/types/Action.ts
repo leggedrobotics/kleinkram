@@ -24,6 +24,12 @@ export class Action extends BaseEntity {
 
     mission: Mission | null;
     logs: ContainerLog[] | null;
+    auditLogs:
+        | {
+              method: string;
+              url: string;
+          }[]
+        | null;
 
     worker: Worker | null;
 
@@ -48,6 +54,12 @@ export class Action extends BaseEntity {
         image: Image,
         createdBy: User,
         logs: ContainerLog[] | null = null,
+        auditLogs:
+            | {
+                  method: string;
+                  url: string;
+              }[]
+            | null = null,
         worker: Worker | null = null,
         executionStartedAt: string | null = null,
         executionEndedAt: string | null = null,
@@ -60,6 +72,7 @@ export class Action extends BaseEntity {
         this.artifacts = artifacts;
         this.mission = mission;
         this.logs = logs;
+        this.auditLogs = auditLogs;
         this.createdBy = createdBy;
         this.worker = worker;
         this.template = template;

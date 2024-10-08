@@ -13,7 +13,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
-import { addActionQueue } from '@common/schedulingLogic';
+import Apikey from '@common/entities/auth/apikey.entity';
 
 @Injectable()
 export class ActionService {
@@ -24,6 +24,8 @@ export class ActionService {
         private userRepository: Repository<User>,
         @InjectRepository(ActionTemplate)
         private actionTemplateRepository: Repository<ActionTemplate>,
+        @InjectRepository(Apikey)
+        private apikeyRepository: Repository<Apikey>,
         private readonly queueService: QueueService,
     ) {}
 
@@ -242,5 +244,32 @@ export class ActionService {
             addAccessConstraints(baseQuery, userUUID);
         }
         return baseQuery.getManyAndCount();
+    }
+
+    async writeAuditLog(
+        apiKey: string,
+        auditLog: {
+            method: string;
+            url: string;
+        },
+    ) {
+        await this.apikeyRepository.manager.transaction(async (manager) => {
+            const key = await manager.findOneOrFail(Apikey, {
+                where: { apikey: apiKey },
+                relations: ['action'],
+            });
+
+            const action = key.action;
+            if (!action) {
+                return;
+            }
+
+            if (!action.auditLogs) {
+                action.auditLogs = [];
+            }
+
+            action.auditLogs.push(auditLog);
+            await manager.save(action);
+        });
     }
 }
