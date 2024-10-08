@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { DataType } from 'src/enums/TAG_TYPES';
-import { ref, watch, defineProps, Ref, computed } from 'vue';
+import { ref, watch, Ref, computed } from 'vue';
 import { TagType } from 'src/types/TagType';
 import { Project } from 'src/types/Project';
 import { useQuery } from '@tanstack/vue-query';
