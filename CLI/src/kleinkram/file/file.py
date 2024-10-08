@@ -15,10 +15,17 @@ file = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 
-@file.command('download')
+
+@file.command("download")
 def download_file(
-    file_uuid: Annotated[List[str], typer.Option( help="UUIDs of the files")],
-    local_path: Annotated[str, typer.Option( prompt=True, help="Local path to save the file",)],
+    file_uuid: Annotated[List[str], typer.Option(help="UUIDs of the files")],
+    local_path: Annotated[
+        str,
+        typer.Option(
+            prompt=True,
+            help="Local path to save the file",
+        ),
+    ],
 ):
     """
     Download files by UUIDs to a local path.\n
@@ -35,7 +42,6 @@ def download_file(
     isDir = os.path.isdir(fixed_local_path)
     chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
 
-
     for file in file_uuid:
         response = client.get(
             url,
@@ -48,7 +54,7 @@ def download_file(
             )
         download_url = response.text
         if isDir:
-            filename = download_url.split("/")[6].split("?")[0] # Trust me bro
+            filename = download_url.split("/")[6].split("?")[0]  # Trust me bro
             filepath = os.path.join(fixed_local_path, filename)
         elif not isDir and len(file_uuid) == 1:
             filepath = fixed_local_path
@@ -63,6 +69,7 @@ def download_file(
                 if chunk:  # Filter out keep-alive new chunks
                     f.write(chunk)
             print(f"Completed")
+
 
 @file.command("list")
 def list_files(
