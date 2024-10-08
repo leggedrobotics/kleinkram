@@ -39,7 +39,7 @@
         "@opentelemetry/instrumentation-nestjs-core": "^0.39.0",
         "@opentelemetry/instrumentation-winston": "^0.40.0",
         "@opentelemetry/sdk-node": "^0.52.1",
-        "@opentelemetry/sdk-trace-base": "^1.15.1",
+        "@opentelemetry/sdk-trace-base": "^1.26.0",
         "@opentelemetry/sdk-trace-node": "^1.26.0",
         "@types/multer": "^1.4.11",
         "@types/passport-google-oauth20": "^2.0.16",
