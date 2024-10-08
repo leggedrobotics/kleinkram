@@ -15,6 +15,54 @@ file = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 
+@file.command('download')
+def download_file(
+    file_uuid: Annotated[list[str], typer.Option( help="UUIDs of the files")],
+    local_path: Annotated[str, typer.Option( prompt=True, help="Local path to save the file",)],
+):
+    """
+    Download files by UUIDs to a local path.\n
+    Examples:\n
+    klein file download --file-uuid="9d5a9..."  --file-uuid="9833f..." --local-path="~/Downloads" \n
+    klein file download --file-uuid="9d5a9..."  --local-path="~/Downloads/example.bag"
+
+    """
+    client = AuthenticatedClient()
+    url = f"/file/download"
+
+    fixed_local_path = os.path.expanduser(local_path)
+
+    isDir = os.path.isdir(fixed_local_path)
+    chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
+
+
+    for file in file_uuid:
+        response = client.get(
+            url,
+            params={"uuid": file, "expires": True},
+        )
+        if response.status_code >= 400:
+            raise AccessDeniedException(
+                f"Failed to download file: {response.json()['message']}",
+                "Status Code: " + str(response.status_code),
+            )
+        download_url = response.text
+        if isDir:
+            filename = download_url.split("/")[6].split("?")[0] # Trust me bro
+            filepath = os.path.join(fixed_local_path, filename)
+        elif not isDir and len(file_uuid) == 1:
+            filepath = fixed_local_path
+        else:
+            raise ValueError("Multiple files can only be downloaded to a directory")
+        if os.path.exists(filepath):
+            raise FileExistsError(f"File already exists: {filepath}")
+        print(f"Downloading to: {filepath}")
+        filestream = requests.get(download_url, stream=True)
+        with open(filepath, "wb") as f:
+            for chunk in filestream.iter_content(chunk_size=chunk_size):
+                if chunk:  # Filter out keep-alive new chunks
+                    f.write(chunk)
+            print(f"Completed")
 
 @file.command("list")
 def list_files(

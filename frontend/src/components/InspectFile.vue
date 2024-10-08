@@ -1,51 +1,87 @@
 <template>
     <title-section :title="`File: ${data?.filename || 'Loading...'}`">
         <template v-slot:buttons>
-            <button-group>
-                <edit-file-button :file="data" v-if="data" />
+            <div style="width: 340px">
+                <button-group>
+                    <edit-file-button :file="data" v-if="data" />
 
-                <q-btn
-                    outline
-                    icon="sym_o_download"
-                    label="Download"
-                    @click="() => _downloadFile(data?.uuid, data?.filename)"
-                    :disable="data?.tentative"
-                />
+                    <q-btn
+                        class="button-border"
+                        flat
+                        icon="sym_o_download"
+                        label="Download"
+                        @click="() => _downloadFile(data?.uuid, data?.filename)"
+                        :disable="data?.tentative"
+                    />
 
-                <q-btn
-                    outline
-                    icon="sym_o_more_vert"
-                    color="primary"
-                    class="cursor-pointer"
-                    @click.stop
-                >
-                    <q-menu auto-close>
-                        <q-list>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="(e) => _copyLink()"
-                                :disable="data?.tentative"
-                            >
-                                <q-item-section
-                                    >Copy public link
-                                </q-item-section>
-                            </q-item>
+                    <q-btn
+                        flat
+                        icon="sym_o_more_vert"
+                        color="primary"
+                        class="cursor-pointer button-border"
+                        @click.stop
+                    >
+                        <q-menu auto-close>
+                            <q-list>
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    @click="(e) => _copyLink()"
+                                    :disable="
+                                        data?.state === FileState.LOST ||
+                                        data?.state === FileState.ERROR
+                                    "
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_content_copy" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        Copy public link
+                                    </q-item-section>
+                                </q-item>
 
-                            <q-item clickable v-ripple>
-                                <q-item-section>
-                                    <DeleteFileDialogOpener
-                                        :file="data"
-                                        v-if="data"
-                                    >
-                                        Delete File
-                                    </DeleteFileDialogOpener>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-menu>
-                </q-btn>
-            </button-group>
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    :disable="!data?.hash"
+                                    @click="(e) => copyToClipboard(data?.hash)"
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_encrypted" />
+                                    </q-item-section>
+                                    <q-item-section> Copy MD5 </q-item-section>
+                                </q-item>
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    @click="() => copyToClipboard(data?.uuid)"
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_fingerprint" />
+                                    </q-item-section>
+                                    <q-item-section> Copy UUID </q-item-section>
+                                </q-item>
+                                <q-item clickable v-ripple style="color: red">
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_delete" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <DeleteFileDialogOpener
+                                            :file="data"
+                                            v-if="data"
+                                        >
+                                            Delete File
+                                        </DeleteFileDialogOpener>
+                                    </q-item-section>
+                                </q-item>
+                            </q-list>
+                        </q-menu>
+                    </q-btn>
+                </button-group>
+                <div class="flex row">
+                    <KleinDownloadFile :file="data" v-if="data" />
+                </div>
+            </div>
         </template>
 
         <template #subtitle>
@@ -89,6 +125,28 @@
                             >
                                 {{ data.creator.name }}
                             </div>
+                        </div>
+                    </div>
+                    <div class="col-1">
+                        <div class="text-placeholder">File State</div>
+
+                        <q-icon
+                            :name="getIcon(data?.state)"
+                            :color="getColorFileState(data?.state)"
+                            style="font-size: 24px"
+                        >
+                            <q-tooltip>
+                                {{ getTooltip(data?.state) }}
+                            </q-tooltip>
+                        </q-icon>
+                    </div>
+                    <div class="col-1">
+                        <div class="text-placeholder">Size</div>
+                        <div
+                            class="text-caption text-primary"
+                            style="font-size: 16px"
+                        >
+                            {{ data?.size ? formatSize(data?.size) : '...' }}
                         </div>
                     </div>
                 </div>
@@ -172,23 +230,25 @@ import {
     filesOfMission,
 } from 'src/services/queries/file';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import EditFile from 'components/EditFile.vue';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getQueueForFile } from 'src/services/queries/queue';
 import { Queue } from 'src/types/Queue';
 import {
     _downloadFile,
     getColor,
+    getColorFileState,
     getDetailedFileState,
+    getIcon,
     getSimpleFileStateName,
+    getTooltip,
 } from '../services/generic';
 import { useMissionUUID } from 'src/hooks/utils';
 import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
-import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
-import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissionTable.vue';
 import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
 import EditFileButton from 'components/buttons/EditFileButton.vue';
+import KleinDownloadFile from 'components/CLILinks/KleinDownloadFile.vue';
+import { formatSize } from 'src/services/generalFormatting';
 
 const $router = useRouter();
 const $q = useQuasar();
@@ -202,7 +262,17 @@ const file_uuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
-const { isLoading, data, error, isLoadingError } = useQuery<FileEntity>({
+const {
+    isLoading,
+    data,
+    error,
+    isLoadingError,
+}: {
+    isLoading: Ref<boolean>;
+    data: Ref<FileEntity>;
+    error: any;
+    isLoadingError: any;
+} = useQuery<FileEntity>({
     queryKey: ['file', file_uuid],
     queryFn: () => fetchFile(file_uuid.value),
     retryDelay: 200,

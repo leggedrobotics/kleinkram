@@ -214,6 +214,7 @@ watch(
                 [],
                 newValue.size,
                 newValue.type,
+                newValue.hash,
                 FileState.UPLOADING,
                 newValue.createdAt,
                 newValue.updatedAt,
