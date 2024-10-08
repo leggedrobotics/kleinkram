@@ -12,7 +12,6 @@ export async function allWorkers(): Promise<[Worker[], number]> {
             new Date(worker.updatedAt),
             new Date(worker.deletedAt),
             worker.cpuMemory,
-            worker.hasGPU,
             worker.gpuModel,
             worker.gpuMemory,
             worker.cpuCores,

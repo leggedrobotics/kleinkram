@@ -39,10 +39,16 @@
                         <q-icon
                             name="sym_o_developer_board"
                             size="20px"
-                            :class="singleWorker.hasGPU ? '' : 'crossed-out'"
+                            :class="
+                                singleWorker.gpuMemory > 0 ? '' : 'crossed-out'
+                            "
                         >
                             <q-tooltip>
-                                {{ singleWorker.hasGPU ? 'Has GPU' : 'No GPU' }}
+                                {{
+                                    singleWorker.gpuMemory > 0
+                                        ? 'Has GPU'
+                                        : 'No GPU'
+                                }}
                             </q-tooltip>
                         </q-icon>
 

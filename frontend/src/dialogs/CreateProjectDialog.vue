@@ -259,6 +259,7 @@ const submitNewProject = async () => {
 
             // abort the close of the dialog
             dialogRef.value?.show();
+            tab.value = 'meta_data';
         });
 };
 

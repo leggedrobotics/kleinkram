@@ -1,3 +1,4 @@
+import sys
 import typing
 
 import typer
@@ -20,7 +21,7 @@ class AccessDeniedException(Exception):
 
 
 def not_yet_implemented_handler(e: Exception):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         "This feature is not yet implemented, please check for updates.",
         title="Not Yet Implemented",
@@ -34,7 +35,7 @@ def not_yet_implemented_handler(e: Exception):
 
 
 def not_authenticated_handler(e: NotAuthenticatedException):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         f"{e.message}\n » Please run 'klein login' to authenticate.",
         title="Not Authenticated",
@@ -48,7 +49,7 @@ def not_authenticated_handler(e: NotAuthenticatedException):
 
 
 def access_denied_handler(e: AccessDeniedException):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         f"{e.message}\n » API Response: {e.api_error}",
         title="Access Denied",
@@ -62,7 +63,7 @@ def access_denied_handler(e: AccessDeniedException):
 
 
 def value_error_handler(e: Exception):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         str(e),
         title="Invalid Argument",
@@ -76,7 +77,7 @@ def value_error_handler(e: Exception):
 
 
 def http_status_error_handler(e: HTTPStatusError):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         f"An HTTP error occurred: {e}\n\n » Please report this error to the developers.",
         title="HTTP Status Error",
@@ -90,7 +91,7 @@ def http_status_error_handler(e: HTTPStatusError):
 
 
 def remote_down_handler(e: Exception):
-    console = Console()
+    console = Console(file=sys.stderr)
     panel = Panel(
         f"An error occurred while communicating with the remote server: {e}\n"
         f"\n » The server may be down or unreachable; please try again.",

@@ -11,9 +11,9 @@ import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
 import { ActionState, ArtifactState } from '../../enum';
 import User from '../user/user.entity';
-import { RuntimeCapability, RuntimeRequirements } from '../../types';
 import ActionTemplate from './actionTemplate.entity';
 import Worker from '../worker/worker.entity';
+import { RuntimeDescription } from '../../types';
 
 export type ContainerLog = {
     timestamp: string;
@@ -26,11 +26,6 @@ export type Image = {
     repo_digests: string[] | null;
 };
 
-export type RunnerInfo = {
-    hostname: string;
-    runtime_capabilities: RuntimeCapability;
-};
-
 export type Container = {
     id: string;
 };
@@ -38,7 +33,7 @@ export type Container = {
 export interface SubmittedAction {
     uuid: string;
     state: ActionState;
-    runtime_requirements: RuntimeRequirements;
+    runtime_requirements: RuntimeDescription;
     image: Image;
     command: string;
 }

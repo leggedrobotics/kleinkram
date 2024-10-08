@@ -1,8 +1,7 @@
-import { RuntimeRequirements } from '@common/types';
 import {
     IsBoolean,
-    IsDefined,
     IsNotEmpty,
+    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
@@ -21,8 +20,17 @@ export class CreateTemplateDto {
     @IsNotEmpty()
     image: string;
 
-    @IsDefined()
-    runtime_requirements: RuntimeRequirements;
+    @IsNumber()
+    cpuCores: number;
+
+    @IsNumber()
+    cpuMemory: number;
+
+    @IsNumber()
+    gpuMemory: number;
+
+    @IsNumber()
+    maxRuntime: number;
 
     @IsBoolean()
     searchable: boolean;

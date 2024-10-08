@@ -11,7 +11,7 @@
                 clearable
                 placeholder="Select start date"
                 class="q-pa-sm"
-                style="width: 49%"
+                style="width: 50%"
                 @clear="resetStartDate"
             >
                 <template v-slot:prepend>
@@ -35,16 +35,15 @@
                     </q-icon>
                 </template>
             </q-input>
-            <p class="flex flex-center" style="margin-bottom: 0">-</p>
+            <p class="flex flex-center" style="margin-bottom: 0; width: 0">-</p>
             <q-input
                 filled
                 v-model="endDates"
                 dense
-                outlined
                 clearable
                 placeholder="Select start date"
                 class="q-pa-sm"
-                style="width: 49%"
+                style="width: 50%"
                 @clear="resetEndDate"
             >
                 <template v-slot:prepend>
@@ -73,10 +72,10 @@
             <q-btn-dropdown
                 v-model="dd_open_projects"
                 :label="selected_project?.name || 'Filter by Project'"
-                outline
                 dense
                 clearable
-                class="full-width"
+                flat
+                class="full-width button-border"
             >
                 <q-list>
                     <q-item
@@ -99,10 +98,10 @@
             <q-btn-dropdown
                 v-model="dd_open_missions"
                 :label="selected_mission?.name || 'Filter by Mission'"
-                outline
                 dense
                 clearable
-                class="full-width"
+                flat
+                class="full-width button-border"
             >
                 <q-list>
                     <q-item
@@ -127,8 +126,8 @@
             <q-btn-dropdown
                 clearable
                 dense
-                outline
-                class="full-width full-height"
+                flat
+                class="full-width full-height button-border"
                 :label="'File Types: ' + selectedFileTypes"
             >
                 <q-list style="width: 100%">
@@ -185,8 +184,8 @@
             </q-select>
             <q-btn-dropdown
                 dense
-                outline
-                class="full-height"
+                flat
+                class="full-height button-border"
                 style="min-width: 60px"
             >
                 <template v-slot:label>
@@ -209,12 +208,12 @@
 
         <div class="col-3 q-pa-sm">
             <q-btn
-                outline
+                flat
                 text-color="black"
                 color="primary"
                 label="Tags"
                 icon="sym_o_filter_list"
-                class="full-width"
+                class="full-width button-border full-height"
                 @click="openTagFilterDialog"
             >
                 <q-chip
@@ -228,11 +227,11 @@
         </div>
         <div class="col-1 q-pa-sm">
             <q-btn
-                outline
+                flat
                 text-color="black"
                 label="Reset"
                 icon="sym_o_clear"
-                class="full-width"
+                class="full-width button-border full-height"
                 @click="resetFilter"
             />
         </div>

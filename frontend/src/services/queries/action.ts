@@ -49,7 +49,10 @@ export const getActions = async (
             res.template.name,
             res.template.version,
             res.template.command,
-            res.template.runtime_requirements,
+            res.template.cpuCores,
+            res.template.cpuMemory,
+            res.template.gpuMemory,
+            res.template.maxRuntime,
         );
 
         const mission = new Mission(
@@ -73,7 +76,6 @@ export const getActions = async (
                 res.worker.updatedAt,
                 res.worker.deletedAt,
                 res.worker.cpuMemory,
-                res.worker.hasGPU,
                 res.worker.gpuModel,
                 res.worker.gpuMemory,
                 res.worker.cpuCores,
@@ -130,7 +132,10 @@ export const actionDetails = async (action_uuid: string) => {
         response.data.template.name,
         response.data.template.version,
         response.data.template.command,
-        response.data.template.runtime_requirements,
+        response.data.template.cpuCores,
+        response.data.template.cpuMemory,
+        response.data.template.gpuMemory,
+        response.data.template.maxRuntime,
     );
     try {
         let worker = null;
@@ -143,7 +148,6 @@ export const actionDetails = async (action_uuid: string) => {
                 response.data.worker.updatedAt,
                 response.data.worker.deletedAt,
                 response.data.worker.cpuMemory,
-                response.data.worker.hasGPU,
                 response.data.worker.gpuModel,
                 response.data.worker.gpuMemory,
                 response.data.worker.cpuCores,
@@ -207,7 +211,10 @@ export const listActionTemplates = async (search: string) => {
             res.name,
             res.version,
             res.command,
-            res.runtime_requirements,
+            res.cpuCores,
+            res.cpuMemory,
+            res.gpuMemory,
+            res.maxRuntime,
         );
     });
 };
@@ -238,7 +245,10 @@ export const getRunningActions = async () => {
             res.template.name,
             res.template.version,
             res.template.command,
-            res.template.runtime_requirements,
+            res.template.cpuCores,
+            res.template.cpuMemory,
+            res.template.gpuMemory,
+            res.template.maxRuntime,
         );
         const mission = new Mission(
             res.mission.uuid,
@@ -261,7 +271,6 @@ export const getRunningActions = async () => {
                 res.worker.updatedAt,
                 res.worker.deletedAt,
                 res.worker.cpuMemory,
-                res.worker.hasGPU,
                 res.worker.gpuModel,
                 res.worker.gpuMemory,
                 res.worker.cpuCores,

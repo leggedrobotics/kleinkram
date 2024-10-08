@@ -174,6 +174,12 @@ export function getTooltip(state: FileState) {
             return 'File is corrupted';
         case FileState.MOVING:
             return 'File is currently moving';
+        case FileState.LOST:
+            return 'File cannot be found in storage';
+        case FileState.FOUND:
+            return 'File was recovered';
+        case FileState.CONVERSION_ERROR:
+            return 'File conversion failed';
     }
 }
 
@@ -189,6 +195,12 @@ export function getIcon(state: FileState) {
             return 'sym_o_sentiment_very_dissatisfied';
         case FileState.MOVING:
             return 'sym_o_move_up';
+        case FileState.LOST:
+            return 'sym_o_pulse_alert';
+        case FileState.FOUND:
+            return 'sym_o_helicopter';
+        case FileState.CONVERSION_ERROR:
+            return 'sym_o_conversion_path_off';
     }
 }
 
@@ -204,5 +216,11 @@ export function getColorFileState(state: FileState) {
             return 'negative';
         case FileState.MOVING:
             return 'warning';
+        case FileState.LOST:
+            return 'negative';
+        case FileState.FOUND:
+            return 'positive';
+        case FileState.CONVERSION_ERROR:
+            return 'negative';
     }
 }

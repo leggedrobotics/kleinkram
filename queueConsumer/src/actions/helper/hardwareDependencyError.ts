@@ -1,9 +1,9 @@
-import { RuntimeCapability, RuntimeRequirements } from '@common/types';
+import { RuntimeDescription } from '@common/types';
 
 export class HardwareDependencyError extends Error {
     constructor(
-        public readonly hardware_requirements: RuntimeRequirements,
-        public readonly hardware_capabilities: RuntimeCapability,
+        public readonly hardware_requirements: RuntimeDescription,
+        public readonly hardware_capabilities: RuntimeDescription,
     ) {
         super(
             `Hardware requirements not met. Required: ${JSON.stringify(

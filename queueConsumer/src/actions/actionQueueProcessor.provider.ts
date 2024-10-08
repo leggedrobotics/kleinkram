@@ -13,7 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, ArtifactState } from '@common/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
-import { RuntimeRequirements } from '@common/types';
+import { RuntimeDescription } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';
 import Worker from '@common/entities/worker/worker.entity';
@@ -54,15 +54,19 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
     async onModuleInit() {
         logger.debug('Setting hardware capabilities...');
+
+        const potentialWorker = await createWorker(this.workerRepository);
+
         let worker = await this.workerRepository.findOne({
-            where: { identifier: os.hostname() },
+            where: { hostname: potentialWorker.hostname },
         });
-        if (worker && worker.reachable === false) {
+        if (worker) {
             worker.reachable = true;
             worker.lastSeen = new Date();
+            worker.identifier = potentialWorker.identifier;
             worker = await this.workerRepository.save(worker);
         } else if (!worker) {
-            worker = await createWorker(this.workerRepository);
+            worker = await this.workerRepository.save(potentialWorker);
         }
         this.worker = worker;
         logger.debug('Connecting to Redis...');
@@ -84,7 +88,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
      * @throws HardwareDependencyError
      *
      */
-    private checkRuntimeCapability(runtime_requirements: RuntimeRequirements) {
+    private checkRuntimeCapability(runtime_requirements: RuntimeDescription) {
         return true;
     }
 
@@ -114,7 +118,12 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 `Action ${action.uuid} reassigned to worker ${this.worker.identifier}`,
             );
         }
-        this.checkRuntimeCapability(action.template.runtime_requirements);
+        this.checkRuntimeCapability({
+            cpuMemory: action.template.cpuMemory,
+            cpuCores: action.template.cpuCores,
+            gpuMemory: action.template.gpuMemory,
+            maxRuntime: action.template.maxRuntime,
+        });
         return await this.actionController.processAction(action);
     }
 

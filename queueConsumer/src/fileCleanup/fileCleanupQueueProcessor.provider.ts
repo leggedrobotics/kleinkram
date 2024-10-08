@@ -2,7 +2,13 @@ import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import FileEntity from '@common/entities/file/file.entity';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import {
+    IsNull,
+    LessThanOrEqual,
+    MoreThanOrEqual,
+    Not,
+    Repository,
+} from 'typeorm';
 import { Job, Queue } from 'bull';
 import {
     AccessGroupRights,
@@ -24,6 +30,7 @@ import { redis, systemUser } from '@common/consts';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import env from '@common/env';
 import { internalMinio } from '@common/minio_helper';
+import crypto from 'crypto';
 
 type CancelUploadJob = Job<{
     uuids: string[];
@@ -95,6 +102,78 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 await this.fileRepository.remove(file);
                 return;
             }),
+        );
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_3AM)
+    async fixFileHashes() {
+        const files = await this.fileRepository.find({
+            where: { hash: IsNull(), state: Not(FileState.LOST) },
+            relations: ['mission', 'mission.project'],
+        });
+        for (const file of files) {
+            await this.redlock.using(
+                [`lock:hash-repair-${file.uuid}`],
+                10000,
+                async () => {
+                    const hash = crypto.createHash('md5');
+
+                    const datastream = await internalMinio.getObject(
+                        file.type === FileType.BAG
+                            ? env.MINIO_BAG_BUCKET_NAME
+                            : env.MINIO_MCAP_BUCKET_NAME,
+                        `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
+                    );
+                    await new Promise((resolve, reject) => {
+                        datastream.on('error', (err) => {
+                            logger.error(err);
+                            resolve(void 0);
+                        });
+                        datastream.on('data', (chunk) => {
+                            hash.update(chunk);
+                        });
+                        datastream.on('end', async () => {
+                            file.hash = hash.digest('base64');
+                            await this.fileRepository.save(file);
+                            resolve(void 0);
+                        });
+                    });
+                },
+            );
+        }
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_1AM)
+    async cleanupFailedUploads() {
+        await this.redlock.using(
+            [`lock:cleanup-failed-uploads`],
+            10000,
+            async () => {
+                const failedUploads = await this.fileRepository.find({
+                    where: {
+                        state: FileState.UPLOADING,
+                        updatedAt: LessThanOrEqual(
+                            new Date(Date.now() - 1000 * 60 * 60 * 12),
+                        ),
+                    },
+                });
+                await Promise.all(
+                    failedUploads.map(async (file) => {
+                        file.state = FileState.ERROR;
+                        await this.fileRepository.save(file);
+                        const queue = await this.queueRepository.findOne({
+                            where: {
+                                filename: file.filename,
+                                mission: { uuid: file.mission.uuid },
+                            },
+                        });
+                        if (queue) {
+                            queue.state = QueueState.ERROR;
+                            await this.queueRepository.save(queue);
+                        }
+                    }),
+                );
+            },
         );
     }
 

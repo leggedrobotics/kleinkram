@@ -70,9 +70,7 @@
                                         <q-icon name="sym_o_delete" />
                                     </q-item-section>
                                     <q-item-section>
-                                        <q-item-section>
-                                            Delete Project
-                                        </q-item-section>
+                                        Delete Project
                                     </q-item-section>
                                 </q-item>
                             </DeleteProjectDialogOpener>

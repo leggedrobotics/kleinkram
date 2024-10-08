@@ -1,6 +1,7 @@
 <template>
     <q-btn
-        outline
+        class="button-border"
+        flat
         color="primary"
         icon="sym_o_edit"
         label="Edit File"

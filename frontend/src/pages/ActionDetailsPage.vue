@@ -111,6 +111,12 @@
                                 <div v-else>
                                     {{ artifactState }}
                                 </div>
+                                <br />
+                                <span style="color: #525252; font-size: 0.8em">
+                                    Artifacts are only be stored for 3 months.
+                                    Please download them if you need them for
+                                    longer.
+                                </span>
                             </td>
                         </tr>
                     </tbody>

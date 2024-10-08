@@ -1,20 +1,20 @@
-import { RuntimeRequirements } from './types';
+import { RuntimeDescription } from './types';
 import Action from './entities/action/action.entity';
 import Worker from './entities/worker/worker.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { ActionState } from './enum';
 
 export async function findWorkerForAction(
-    runtime_requirements: RuntimeRequirements,
+    runtime_requirements: RuntimeDescription,
     workerRepository: Repository<Worker>,
     actionQueues: Record<string, any>,
     logger: any,
 ) {
-    const needsGPU = runtime_requirements.gpu_model.name !== 'no-gpu';
     const defaultWhere = {
         reachable: true,
-        hasGPU: needsGPU,
-        cpuMemory: MoreThanOrEqual(runtime_requirements.memory + 1), // +1 as OS requires at least 1GB
+        cpuMemory: MoreThanOrEqual(runtime_requirements.cpuMemory + 1), // +1 as OS requires at least 1GB
+        cpuCores: MoreThanOrEqual(runtime_requirements.cpuCores),
+        gpuMemory: MoreThanOrEqual(runtime_requirements.gpuMemory),
     };
     let worker = await workerRepository.find({
         where: defaultWhere,
@@ -23,18 +23,8 @@ export async function findWorkerForAction(
         },
     });
     logger.debug(
-        `Available Worker (GPU: ${needsGPU}): ${worker.map((a) => a.identifier).join(', ')}`,
+        `Available Worker (GPU: ${runtime_requirements.gpuMemory}GB): ${worker.map((a) => a.identifier).join(', ')}`,
     );
-
-    if (worker.length === 0 && !needsGPU) {
-        defaultWhere.hasGPU = true;
-        worker = await workerRepository.find({
-            where: defaultWhere,
-        });
-        logger.debug(
-            `Alternative Worker (GPU: any): ${worker.map((a) => a.identifier).join(', ')}`,
-        );
-    }
 
     if (worker.length === 0) {
         return;
@@ -55,7 +45,7 @@ export async function findWorkerForAction(
 }
 export async function addActionQueue(
     action: Action,
-    runtime_requirements: RuntimeRequirements,
+    runtime_requirements: RuntimeDescription,
     workerRepository: any,
     actionRepository: any,
     actionQueues: Record<string, any>,
@@ -69,6 +59,8 @@ export async function addActionQueue(
     );
     if (!worker) {
         action.state = ActionState.UNPROCESSABLE;
+        action.state_cause =
+            'No worker available with the required hardware capabilities';
         await actionRepository.save(action);
         return;
     }

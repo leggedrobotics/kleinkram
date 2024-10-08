@@ -56,8 +56,10 @@
                 <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
 
-                    <q-menu auto-close style="width: 280px">
+                    <q-menu auto-close style="width: 320px">
                         <q-list>
+                            <klein-download-mission :mission="mission" />
+                            <q-separator class="q-ma-sm" />
                             <MoveMissionDialogOpener
                                 v-if="mission"
                                 :mission="mission"
@@ -67,9 +69,7 @@
                                         <q-icon name="sym_o_move_down" />
                                     </q-item-section>
                                     <q-item-section>
-                                        <q-item-section>
-                                            Move Mission
-                                        </q-item-section>
+                                        Move Mission
                                     </q-item-section>
                                 </q-item>
                             </MoveMissionDialogOpener>
@@ -210,6 +210,11 @@
                     </div>
                 </template>
                 <template v-slot:end>
+                    <klein-download-files
+                        :files="selectedFiles"
+                        style="max-width: 300px"
+                    />
+
                     <q-btn
                         flat
                         dense
@@ -284,7 +289,6 @@ import {
     registerNoPermissionErrorHandler,
     useHandler,
     useMissionQuery,
-    useProjectQuery,
 } from 'src/hooks/customQueryHooks';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
@@ -307,6 +311,8 @@ import { Tag } from 'src/types/Tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
+import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
+import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
