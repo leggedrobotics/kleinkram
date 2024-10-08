@@ -21,7 +21,7 @@
                 <q-btn
                     icon="sym_o_content_copy"
                     flat
-                    style="padding: 3px; color: #7cabff; rotate: 180deg"
+                    style="padding: 3px; color: white; rotate: 180deg"
                     @click.stop="clicked"
                 />
             </div>
