@@ -66,6 +66,9 @@ export default class Action extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     logs: ContainerLog[];
 
+    @Column({ type: 'json', nullable: true, default: [] })
+    auditLogs: any;
+
     @Column({ nullable: true })
     exit_code: number;
 

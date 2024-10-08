@@ -48,6 +48,7 @@ export class ActionManagerService {
             mission: { uuid: action.mission.uuid },
             rights: AccessGroupRights.WRITE, // todo read from frontend
             key_type: KeyTypes.CONTAINER,
+            action: action,
             user: action.createdBy,
         });
         return new DisposableAPIKey(

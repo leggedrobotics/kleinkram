@@ -99,6 +99,7 @@ export const getActions = async (
             res.image,
             user,
             null,
+            null,
             worker,
         );
     });
@@ -171,6 +172,7 @@ export const actionDetails = async (action_uuid: string) => {
             response.data.image,
             user,
             response.data.logs,
+            response.data.auditLogs,
             worker,
             response.data.executionStartedAt,
             response.data.executionEndedAt,
@@ -293,6 +295,7 @@ export const getRunningActions = async () => {
             template,
             res.image,
             user,
+            null,
             null,
             worker,
         );
