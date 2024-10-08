@@ -13,13 +13,10 @@ export default class Worker extends BaseEntity {
     @Column()
     cpuMemory: number;
 
-    @Column()
-    hasGPU: boolean;
-
     @Column({ nullable: true })
     gpuModel: string;
 
-    @Column({ nullable: true })
+    @Column({ default: -1 })
     gpuMemory: number;
 
     @Column()

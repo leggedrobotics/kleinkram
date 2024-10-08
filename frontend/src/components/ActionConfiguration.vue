@@ -173,48 +173,51 @@
                 <span class="text-h5" style="margin-top: 32px">
                     Compute Resources
                 </span>
-                <div
-                    class="flex column q-mb-lg"
-                    style="gap: 12px; margin-top: 16px"
-                >
-                    <div>
+                <div style="margin-top: 16px" class="flex">
+                    <div class="col-6">
                         <label for="memory">Memory Allocation (GB)</label>
-                        <q-select
+                        <q-input
                             name="memory"
-                            v-model="
-                                editingTemplate.runtime_requirements.memory
-                            "
-                            :options="memoryOptions"
+                            v-model="editingTemplate.cpuMemory"
+                            type="number"
                             placholder="Memory Allocation (GB)"
+                            class="q-ma-sm"
+                            style="margin: 1px"
                             outlined
-                            class="q-mb-sm"
                             dense
                         />
                     </div>
-                    <div>
+                    <div class="col-6">
                         <label for="cpu">CPU Core Allocation</label>
-                        <q-select
+                        <q-input
                             name="cpu"
-                            model-value="2 Cores"
-                            :options="[]"
-                            label="CPU Core Allocation"
+                            v-model="editingTemplate.cpuCores"
+                            type="number"
+                            style="margin: 1px"
                             outlined
-                            class="q-mb-sm"
-                            readonly
                             dense
                         />
                     </div>
-                    <div>
-                        <label for="gpu">GPU Acceleration</label>
-                        <q-select
+                    <div class="col-6">
+                        <label for="gpu">GPU Memory (-1 for no GPU)</label>
+                        <q-input
                             name="gpu"
-                            v-model="
-                                editingTemplate.runtime_requirements.gpu_model
-                                    .name
-                            "
-                            :options="options"
-                            label="GPU Acceleration"
-                            class="q-mb-sm"
+                            v-model="editingTemplate.gpuMemory"
+                            type="number"
+                            emit-value
+                            style="margin: 1px"
+                            outlined
+                            dense
+                            v-if="editingTemplate"
+                        />
+                    </div>
+                    <div class="col-6">
+                        <label for="gpu">Max Runtime (h)</label>
+                        <q-input
+                            name="gpu"
+                            v-model="editingTemplate.maxRuntime"
+                            type="number"
+                            style="margin: 1px"
                             emit-value
                             outlined
                             dense
@@ -223,7 +226,7 @@
                     </div>
                 </div>
 
-                <q-separator />
+                <q-separator class="q-my-md" />
 
                 <div class="flex row justify-end q-mt-lg">
                     <q-btn
@@ -287,7 +290,7 @@ const addedMissions = ref<string[]>([]);
 const allMissionUUIDs = computed(() => {
     return [...(props.mission_uuids || []), ...addedMissions.value];
 });
-const editingTemplate = ref(
+const editingTemplate: Ref<ActionTemplate> = ref(
     new ActionTemplate(
         '',
         null,
@@ -298,7 +301,10 @@ const editingTemplate = ref(
         '',
         1,
         '',
-        { gpu_model: { name: options[0].value }, memory: 2 },
+        2,
+        2,
+        -1,
+        2,
     ),
 );
 // QUERYING ####################################################################
@@ -377,7 +383,10 @@ const { mutateAsync: createTemplate } = useMutation({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
             docker_image: editingTemplate.value.image_name,
-            runtime_requirements: editingTemplate.value.runtime_requirements,
+            cpuCores: editingTemplate.value.cpuCores,
+            cpuMemory: editingTemplate.value.cpuMemory,
+            gpuMemory: editingTemplate.value.gpuMemory,
+            maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
         }),
     onSuccess: () => {
@@ -413,7 +422,10 @@ const { mutateAsync: updateTemplate } = useMutation({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
             docker_image: editingTemplate.value.image_name,
-            runtime_requirements: editingTemplate.value.runtime_requirements,
+            cpuCores: editingTemplate.value.cpuCores,
+            cpuMemory: editingTemplate.value.cpuMemory,
+            gpuMemory: editingTemplate.value.gpuMemory,
+            maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
         }),
     onSuccess: (newVal) => {
@@ -536,14 +548,24 @@ const isModified = computed(() => {
     const sameCommand =
         editingTemplate.value?.command === select.value?.command;
     const sameGPU =
-        editingTemplate.value?.runtime_requirements?.gpu_model?.name ===
-        select.value?.runtime_requirements?.gpu_model?.name;
+        editingTemplate.value?.gpuMemory === select.value?.gpuMemory;
 
     const sameMemory =
-        editingTemplate.value?.runtime_requirements?.memory ===
-        select.value?.runtime_requirements?.memory;
+        editingTemplate.value?.cpuMemory === select.value?.cpuMemory;
+    const sameCores =
+        editingTemplate.value?.cpuCores === select.value?.cpuCores;
+    const sameRuntime =
+        editingTemplate.value?.maxRuntime === select.value?.maxRuntime;
 
-    return !(sameName && sameImage && sameCommand && sameGPU && sameMemory);
+    return !(
+        sameName &&
+        sameImage &&
+        sameCommand &&
+        sameGPU &&
+        sameMemory &&
+        sameCores &&
+        sameRuntime
+    );
 });
 
 function newValue(val: string, done: Function) {
@@ -570,7 +592,10 @@ function selectTemplate(template: ActionTemplate) {
             '',
             1,
             '',
-            { gpu_model: { name: options[0].value }, memory: 2 },
+            2,
+            2,
+            -1,
+            2,
         );
         select.value = undefined;
         return;

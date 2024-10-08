@@ -79,9 +79,7 @@ export class ActionManagerService {
             ACTION_UUID: action.uuid,
             ENDPOINT: env.ENDPOINT,
         };
-        const needs_gpu =
-            action.template.runtime_requirements.gpu_model !== null &&
-            action.template.runtime_requirements.gpu_model.name !== 'no-gpu';
+        const needs_gpu = action.template.gpuMemory > 0;
         const { container, repo_digests, sha } =
             await this.containerDaemon.start_container(
                 async () => {
@@ -92,10 +90,11 @@ export class ActionManagerService {
                     docker_image: action.template.image_name,
                     name: action.uuid,
                     limits: {
-                        max_runtime: 5 * 60 * 1_000, // 5 minutes
-                        cpu_limit: 2 * 1000000000, // 2 CPU cores in nano cores
+                        max_runtime:
+                            action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
+                        n_cpu: action.template.cpuCores || 1,
                         memory_limit:
-                            (action.template.runtime_requirements.memory || 2) *
+                            (action.template.cpuMemory || 2) *
                             1024 *
                             1024 *
                             1024, // min 2 GB
