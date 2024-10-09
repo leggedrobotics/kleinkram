@@ -86,15 +86,11 @@
                 </q-menu>
             </q-btn>
 
-            <div style="margin: auto 10px auto 30px">
-                <q-btn
-                    round
-                    flat
-                    color="grey-8"
-                    :to="ROUTES.UPLOAD.path"
-                    icon="sym_o_export_notes"
-                    @mouseover="showOverlay = true"
-                >
+            <div
+                style="margin: auto 10px auto 30px"
+                @click="showOverlay = true"
+            >
+                <q-btn round flat color="grey-8" icon="sym_o_export_notes">
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
                         v-if="is_uploading"
@@ -105,10 +101,10 @@
                     />
                     <q-menu
                         v-model="showOverlay"
-                        :offset="[100, 40]"
-                        style="min-width: 600px"
+                        :offset="[110, 20]"
+                        style="width: 360px"
                     >
-                        <q-card>
+                        <div style="width: 360px">
                             <q-card-section
                                 style="
                                     padding-bottom: 5px;
@@ -172,7 +168,27 @@
                                     </div>
                                 </q-item>
                             </q-card-section>
-                        </q-card>
+
+                            <div
+                                style="
+                                    width: 100%;
+                                    display: flex;
+                                    margin-bottom: 8px;
+                                "
+                            >
+                                <q-btn
+                                    flat
+                                    full-width
+                                    outline
+                                    style="margin: 8px auto; width: 200px"
+                                    class="button-border"
+                                    color="grey-8"
+                                    label="Open Pending Uploads"
+                                    :to="ROUTES.UPLOAD.path"
+                                    @click="showOverlay = false"
+                                />
+                            </div>
+                        </div>
                     </q-menu>
                 </q-btn>
 
