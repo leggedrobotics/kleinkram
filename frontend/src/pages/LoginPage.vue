@@ -1,57 +1,93 @@
 <template>
-    <q-page class="flex flex-center bg-grey-2">
-        <q-card class="q-pa-md shadow-2 my_card" bordered>
-            <q-card-section class="text-center">
-                <div class="text-grey-9 text-h5 text-weight-bold">
-                    Sign in to Kleinkram
-                </div>
-                <div class="text-grey-8">Sign in below to access your data</div>
-            </q-card-section>
+    <div class="flex flex-center bg-grey-2" style="height: calc(100vh - 50px)">
+        <div
+            style="
+                border-radius: 0;
+                display: grid;
+                grid-template-columns: 48px 460px 48px;
+                grid-template-rows: 48px 460px 48px;
+            "
+        >
+            <div
+                style="
+                    border-bottom: 1px solid #e0e0e0;
+                    border-right: 1px solid #e0e0e0;
+                "
+            />
+            <div style="border-bottom: 1px solid #e0e0e0" />
+            <div
+                style="
+                    border-bottom: 1px solid #e0e0e0;
+                    border-left: 1px solid #e0e0e0;
+                "
+            />
 
-            <q-card-section>
-                <q-btn
-                    style="border-radius: 8px"
-                    color="dark"
-                    rounded
-                    size="md"
-                    label="Sign in with Google"
-                    class="full-width"
-                    @click="login()"
-                />
-            </q-card-section>
-
-            <q-card-section
-                class="text-center"
-                v-if="error_state === 'auth_flow_failed'"
+            <div style="border-right: 1px solid #e0e0e0" />
+            <div
+                style="
+                    background: white;
+                    display: flex;
+                    padding: 48px;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                "
             >
-                <div class="text-red text-weight-bold">{{ error_msg }}</div>
-            </q-card-section>
+                <div style="width: 100%">
+                    <img
+                        src="/logoRSL.png"
+                        style="height: 28px; margin-bottom: 48px"
+                    />
 
-            <q-card-section class="text-center q-pt-none">
-                <div class="text-grey-8">
-                    Don't want to sign in?
-                    <a
-                        href="/"
-                        class="text-dark text-weight-bold"
-                        style="text-decoration: none"
-                        >Back to Home.</a
+                    <h1
+                        style="
+                            font-size: 28px;
+                            font-weight: 400;
+                            margin-bottom: 48px;
+                            margin-top: 0;
+                            line-height: 36px;
+                        "
                     >
+                        Login to Kleinkram
+                    </h1>
+
+                    <q-btn
+                        class="button-border full-width"
+                        flat
+                        outline
+                        size="md"
+                        label="Login with Google"
+                        @click="login()"
+                    />
                 </div>
-            </q-card-section>
-        </q-card>
-    </q-page>
+            </div>
+            <div style="border-left: 1px solid #e0e0e0" />
+
+            <div
+                style="
+                    border-top: 1px solid #e0e0e0;
+                    border-right: 1px solid #e0e0e0;
+                "
+            />
+            <div style="border-top: 1px solid #e0e0e0" />
+            <div
+                style="
+                    border-top: 1px solid #e0e0e0;
+                    border-left: 1px solid #e0e0e0;
+                "
+            />
+        </div>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { login } from 'src/services/auth';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { getMe } from 'src/services/queries/user';
 import { watch } from 'vue';
 
-const $route = useRoute();
 const $router = useRouter();
-const { error_msg, error_state } = $route.query;
 
 const { data: me, error } = useQuery({
     queryKey: ['me'],
