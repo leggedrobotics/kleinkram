@@ -20,6 +20,7 @@ import {
 import { computed } from 'vue';
 import { FileEntity } from 'src/types/FileEntity';
 import EditFile from 'components/EditFile.vue';
+import NewEditFile from 'components/NewEditFile.vue';
 
 const $q = useQuasar();
 const props = defineProps<{
@@ -38,7 +39,7 @@ const canModify = computed(() => {
 function editFile() {
     if (!canModify.value) return;
     $q.dialog({
-        component: EditFile,
+        component: NewEditFile,
         componentProps: {
             file_uuid: props.file.uuid,
         },

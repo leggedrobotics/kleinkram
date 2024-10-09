@@ -7,13 +7,12 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, LessThan, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, In, LessThan, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
-import Topic from '@common/entities/topic/topic.entity';
 import {
     DataType,
     FileLocation,
@@ -39,6 +38,7 @@ import {
     moveFile,
 } from '@common/minio_helper';
 import Credentials from 'minio/dist/main/Credentials';
+import Category from '@common/entities/category/category.entity';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -56,6 +56,8 @@ export class FileService implements OnModuleInit {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
+        @InjectRepository(Category)
+        private categoryRepository: Repository<Category>,
     ) {}
 
     onModuleInit(): any {
@@ -375,7 +377,13 @@ export class FileService implements OnModuleInit {
     async findOne(uuid: string) {
         return this.fileRepository.findOne({
             where: { uuid },
-            relations: ['mission', 'topics', 'mission.project', 'creator'],
+            relations: [
+                'mission',
+                'topics',
+                'mission.project',
+                'creator',
+                'categories',
+            ],
         });
     }
 
@@ -435,6 +443,13 @@ export class FileService implements OnModuleInit {
             } else {
                 throw new Error('Project not found');
             }
+        }
+        if (file.categories) {
+            const cats = await this.categoryRepository.find({
+                where: { uuid: In(file.categories) },
+            });
+            console.log(cats);
+            db_file.categories = cats;
         }
 
         const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
@@ -513,6 +528,7 @@ export class FileService implements OnModuleInit {
                 'creator',
                 'mission.creator',
                 'mission.project',
+                'categories',
             ],
             take,
             skip,

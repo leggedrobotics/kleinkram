@@ -197,6 +197,7 @@ export const missionsOfProject = async (
                 file.type,
                 file.state,
                 file.hash,
+                file.categories,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
                 new Date(file.deletedAt),

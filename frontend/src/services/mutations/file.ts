@@ -24,6 +24,7 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
         mission_uuid: file.mission?.uuid,
         project_uuid: file.mission?.project?.uuid,
         date: file.date,
+        categories: file.categories.map((category) => category.uuid),
     });
     return response.data;
 };

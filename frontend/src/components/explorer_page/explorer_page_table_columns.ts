@@ -150,6 +150,12 @@ export const file_columns: Array<ProjectColumnType> = [
         format: (val: string) => `${val}`,
     },
     {
+        name: 'cats',
+        required: false,
+        label: 'Categories',
+        align: 'right',
+    },
+    {
         name: 'Created',
         required: true,
         label: 'Created',

@@ -40,6 +40,19 @@
                 />
             </q-td>
         </template>
+        <template v-slot:body-cell-cats="props">
+            <q-td :props="props">
+                <q-chip
+                    v-for="cat in props.row.categories"
+                    :key="cat.uuid"
+                    :label="cat.name"
+                    :color="hashUUIDtoColor(cat.uuid)"
+                    style="color: white"
+                    dense
+                    class="q-mr-sm"
+                />
+            </q-td>
+        </template>
         <template v-slot:body-cell-fileaction="props">
             <q-td :props="props">
                 <q-btn
@@ -109,6 +122,7 @@ import {
     getColorFileState,
     getIcon,
     getTooltip,
+    hashUUIDtoColor,
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';

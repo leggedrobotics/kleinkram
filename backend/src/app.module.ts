@@ -28,6 +28,8 @@ import { NextFunction, Request, Response } from 'express';
 import logger from './logger';
 import { CookieNames } from '@common/enum';
 import { ActionService } from './action/action.service';
+import Category from '@common/entities/category/category.entity';
+import { CategoryModule } from './category/category.module';
 
 /**
  *
@@ -101,6 +103,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
         ActionModule,
         TagModule,
         WorkerModule,
+        CategoryModule,
         ScheduleModule.forRoot(),
     ],
     providers: [DBDumper],

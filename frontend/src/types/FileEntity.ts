@@ -3,6 +3,7 @@ import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { Topic } from 'src/types/Topic';
+import { Category } from 'src/types/Category';
 
 export class FileEntity extends BaseEntity {
     filename: string;
@@ -14,6 +15,7 @@ export class FileEntity extends BaseEntity {
     type: FileType;
     state: FileState;
     hash: string;
+    categories: Category[];
 
     constructor(
         uuid: string,
@@ -26,6 +28,7 @@ export class FileEntity extends BaseEntity {
         type: FileType,
         state: FileState,
         hash: string,
+        categories: Category[],
         createdAt: Date | null,
         updatedAt: Date | null,
         deletedAt: Date | null,
@@ -40,5 +43,6 @@ export class FileEntity extends BaseEntity {
         this.type = type;
         this.state = state;
         this.hash = hash;
+        this.categories = categories;
     }
 }
