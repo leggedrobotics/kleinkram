@@ -147,7 +147,12 @@
                                         uploading
                                     </q-item-section>
                                 </q-item>
-                                <q-item v-for="upload in uploads.splice(0, 5)">
+                                <q-item
+                                    v-for="upload in uploads_without_completed.splice(
+                                        0,
+                                        5,
+                                    )"
+                                >
                                     <div class="row items-center">
                                         <q-icon
                                             name="sym_o_upload_file"
@@ -169,12 +174,17 @@
                                     </div>
                                 </q-item>
 
-                                <span v-if="uploads.length > 5">
+                                <span
+                                    v-if="uploads_without_completed.length > 5"
+                                >
                                     <q-item>
                                         <q-item-section>
                                             <span
                                                 >And
-                                                {{ uploads.length - 5 }}
+                                                {{
+                                                    uploads_without_completed.length -
+                                                    5
+                                                }}
                                                 more</span
                                             >
                                         </q-item-section>
@@ -332,6 +342,10 @@ const { data: user } = useQuery({
 });
 
 const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
+
+const uploads_without_completed = computed(() =>
+    uploads.value.filter((upload) => upload.value.getProgress() < 1),
+);
 
 const uncompletedUploads = computed(() =>
     uploads.value.filter(
