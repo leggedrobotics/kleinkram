@@ -213,8 +213,14 @@
                         <q-icon name="sym_o_account_circle" />
                     </q-avatar>
 
-                    <q-menu auto-close style="width: 280px">
-                        <q-list>
+                    <q-menu auto-close style="width: 280px; padding: 8px">
+                        <q-list
+                            style="
+                                gap: 4px;
+                                display: flex;
+                                flex-direction: column;
+                            "
+                        >
                             <q-item
                                 clickable
                                 v-close-popup
@@ -229,6 +235,7 @@
                                     </q-item-section>
                                 </q-item-section>
                             </q-item>
+
                             <q-separator />
 
                             <q-item disabled>
@@ -255,7 +262,10 @@
                                 class="text-error"
                             >
                                 <q-item-section avatar>
-                                    <q-icon name="sym_o_logout" />
+                                    <q-icon
+                                        name="sym_o_logout"
+                                        style="rotate: 180deg"
+                                    />
                                 </q-item-section>
                                 <q-item-section>
                                     <q-item-label>Log out</q-item-label>
@@ -343,3 +353,9 @@ const navigateTo = (path: string) => {
     $router.push(path);
 };
 </script>
+
+<style scoped>
+.q-item__section--avatar {
+    min-width: 0;
+}
+</style>
