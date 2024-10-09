@@ -30,14 +30,6 @@
                 >
                     <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
                 </q-icon>
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-                />
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-                />
             </q-td>
         </template>
         <template v-slot:body-cell-fileaction="props">
