@@ -80,6 +80,7 @@ export class FileService implements OnModuleInit {
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
                 .leftJoin('mission.project', 'project')
+                .orderBy('file.filename', 'ASC')
                 .skip(skip)
                 .take(take),
             userUUID,
@@ -181,6 +182,7 @@ export class FileService implements OnModuleInit {
             .leftJoinAndSelect('file.creator', 'creator')
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .orderBy('file.filename', 'ASC')
             .getMany();
     }
 
@@ -514,6 +516,7 @@ export class FileService implements OnModuleInit {
                 'mission.creator',
                 'mission.project',
             ],
+            order: { filename: 'ASC' },
             take,
             skip,
         });
