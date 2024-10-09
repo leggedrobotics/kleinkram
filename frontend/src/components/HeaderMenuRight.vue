@@ -103,7 +103,7 @@
                     <q-menu
                         v-model="showOverlay"
                         :offset="[110, 20]"
-                        style="width: 400px"
+                        style="width: 400px; overflow: hidden"
                     >
                         <div style="width: 400px">
                             <q-card-section
@@ -147,7 +147,7 @@
                                         uploading
                                     </q-item-section>
                                 </q-item>
-                                <q-item v-for="upload in uploads">
+                                <q-item v-for="upload in uploads.splice(0, 5)">
                                     <div class="row items-center">
                                         <q-icon
                                             name="sym_o_upload_file"
@@ -168,6 +168,18 @@
                                         </q-item-section>
                                     </div>
                                 </q-item>
+
+                                <span v-if="uploads.length > 5">
+                                    <q-item>
+                                        <q-item-section>
+                                            <span
+                                                >And
+                                                {{ uploads.length - 5 }}
+                                                more</span
+                                            >
+                                        </q-item-section>
+                                    </q-item>
+                                </span>
                             </q-card-section>
 
                             <div
