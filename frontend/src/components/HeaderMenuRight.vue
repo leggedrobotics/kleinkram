@@ -102,9 +102,9 @@
                     <q-menu
                         v-model="showOverlay"
                         :offset="[110, 20]"
-                        style="width: 360px"
+                        style="width: 400px"
                     >
-                        <div style="width: 360px">
+                        <div style="width: 400px">
                             <q-card-section
                                 style="
                                     padding-bottom: 5px;
