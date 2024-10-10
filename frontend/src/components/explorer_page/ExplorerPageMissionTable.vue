@@ -18,6 +18,13 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:loading>
             <q-inner-loading showing color="primary" />
         </template>
@@ -112,11 +119,10 @@
 </template>
 
 <script setup lang="ts">
-import { QTable, useQuasar } from 'quasar';
+import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { mission_columns } from 'components/explorer_page/explorer_page_table_columns';
-import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
@@ -223,3 +229,4 @@ watch(
     },
 );
 </script>
+<style scoped></style>
