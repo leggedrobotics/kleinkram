@@ -248,6 +248,7 @@ import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDia
 import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 import KleinDownloadMissions from 'components/CLILinks/KleinDownloadMissions.vue';
 import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
+import { Mission } from 'src/types/Mission';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -263,7 +264,7 @@ registerNoPermissionErrorHandler(
     error,
 );
 
-const selectedMissions: Ref<FileEntity[]> = ref([]);
+const selectedMissions: Ref<Mission[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.search_params.name,

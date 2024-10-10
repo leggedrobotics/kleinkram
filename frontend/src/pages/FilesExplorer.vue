@@ -297,15 +297,15 @@
                         padding="6px"
                         icon="sym_o_close"
                         color="white"
-                        @click="() => deselect()"
+                        @click="deselect"
                     />
                 </template>
             </ButtonGroupOverlay>
         </div>
         <div>
             <Suspense>
-                <ExplorerPageFilesTable
-                    :handler="handler"
+                <explorer-page-files-table
+                    :url_handler="handler"
                     v-model:selected="selectedFiles"
                     v-if="handler"
                 />
