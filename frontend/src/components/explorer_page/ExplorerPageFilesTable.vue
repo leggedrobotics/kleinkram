@@ -67,6 +67,13 @@
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <edit-file-dialog-opener :file="props.row">
+                                        Edit
+                                    </edit-file-dialog-opener>
+                                </q-item-section>
+                            </q-item>
                             <q-item
                                 clickable
                                 v-ripple
@@ -120,6 +127,7 @@ import {
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { Category } from 'src/types/Category';
+import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
