@@ -261,6 +261,13 @@ export class QueryURLHandler extends QueryHandler {
         this.writeURL();
     }
 
+    addCategory(category: string) {
+        if (!this.categories.includes(category)) {
+            super.addCategory(category);
+            this.writeURL();
+        }
+    }
+
     /**
      * Read the current state of the URL and update the query accordingly
      * Values not set in the URL will be set to the default values
