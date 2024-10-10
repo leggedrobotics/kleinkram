@@ -32,6 +32,7 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
 import { MoveMissionProvider } from './moveMission/moveMission.provider';
+import CategoryEntity from '@common/entities/category/category.entity';
 
 @Module({
     imports: [
@@ -94,6 +95,7 @@ import { MoveMissionProvider } from './moveMission/moveMission.provider';
                         ProjectAccessViewEntity,
                         MissionAccessViewEntity,
                         Worker,
+                        CategoryEntity,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -117,6 +119,7 @@ import { MoveMissionProvider } from './moveMission/moveMission.provider';
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
             Worker,
+            CategoryEntity,
         ]),
         ScheduleModule.forRoot(),
     ],

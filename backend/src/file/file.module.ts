@@ -17,6 +17,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 
 import QueueEntity from '@common/entities/queue/queue.entity';
+import Category from '@common/entities/category/category.entity';
 
 @Module({
     imports: [
@@ -30,6 +31,7 @@ import QueueEntity from '@common/entities/queue/queue.entity';
             AccessGroup,
             Tag,
             TagType,
+            Category,
         ]),
     ],
     providers: [

@@ -224,3 +224,34 @@ export function getColorFileState(state: FileState) {
             return 'negative';
     }
 }
+
+const colorPalette = [
+    'red',
+    'pink',
+    'purple',
+    'deep-purple',
+    'indigo',
+    'blue',
+    'light-blue',
+    'cyan',
+    'teal',
+    'green',
+    'light-green',
+    'lime',
+    'yellow',
+    'amber',
+    'orange',
+    'deep-orange',
+    'brown',
+    'grey',
+    'blue-grey',
+    'black',
+];
+
+export function hashUUIDtoColor(uuid: string): string {
+    const hash = uuid
+        .split('')
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const colorIndex = hash % colorPalette.length;
+    return colorPalette[colorIndex];
+}

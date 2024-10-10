@@ -32,6 +32,20 @@
                 </q-icon>
             </q-td>
         </template>
+        <template v-slot:body-cell-cats="props">
+            <q-td :props="props">
+                <q-chip
+                    v-for="cat in props.row.categories"
+                    :key="cat.uuid"
+                    :label="cat.name"
+                    :color="hashUUIDtoColor(cat.uuid)"
+                    style="color: white"
+                    dense
+                    class="q-mr-sm"
+                    @mousedown.stop="() => chipClicked(cat)"
+                />
+            </q-td>
+        </template>
         <template v-slot:body-cell-fileaction="props">
             <q-td :props="props">
                 <q-btn
@@ -52,6 +66,13 @@
                                 @click="(e) => onRowClick(e, props.row)"
                             >
                                 <q-item-section>View</q-item-section>
+                            </q-item>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <edit-file-dialog-opener :file="props.row">
+                                        Edit
+                                    </edit-file-dialog-opener>
+                                </q-item-section>
                             </q-item>
                             <q-item
                                 clickable
@@ -101,9 +122,12 @@ import {
     getColorFileState,
     getIcon,
     getTooltip,
+    hashUUIDtoColor,
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
+import { Category } from 'src/types/Category';
+import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -138,6 +162,7 @@ const queryKey = computed(() => [
     mission_uuid.value,
     props.handler.queryKey,
     props.handler.file_type,
+    props.handler?.categories,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -149,6 +174,7 @@ const { data: rawData, isLoading } = useQuery({
             props.handler.skip,
             props.handler.file_type,
             props.handler.search_params.name,
+            props.handler?.categories,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -174,6 +200,10 @@ const onRowClick = async (_: Event, row: any) => {
         },
     });
 };
+
+function chipClicked(cat: Category) {
+    console.log(cat.name);
+}
 watch(
     () => selected.value,
     (newVal) => {
