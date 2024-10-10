@@ -30,6 +30,8 @@ import { CookieNames } from '@common/enum';
 import { ActionService } from './action/action.service';
 import Category from '@common/entities/category/category.entity';
 import { CategoryModule } from './category/category.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import fs from 'node:fs';
 
 /**
  *
@@ -67,8 +69,19 @@ export class AuditLoggerMiddleware implements NestMiddleware {
     }
 }
 
+const packageJson = JSON.parse(
+    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
+);
+export const appVersion = packageJson.version;
+
 @Module({
     imports: [
+        PrometheusModule.register({
+            defaultLabels: {
+                app: 'backend',
+                version: appVersion,
+            },
+        }),
         ConfigModule.forRoot({
             isGlobal: true,
             load: [configuration, () => ({ accessConfig: access_config })],

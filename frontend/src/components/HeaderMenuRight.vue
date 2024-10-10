@@ -15,7 +15,7 @@
                     <q-icon
                         name="sym_o_add"
                         class="q-mx-xs"
-                        style="height: 36px"
+                        style="height: 36px; display: inline-flex"
                     />
                     <span class="q-mr-md"> New </span>
                 </div>
@@ -28,6 +28,7 @@
                     style="
                         background-color: #0f62fe;
                         height: 36px;
+                        display: inline-flex;
                         border-radius: 0 4px 4px 0;
                     "
                     name="sym_o_arrow_drop_down"
@@ -102,9 +103,9 @@
                     <q-menu
                         v-model="showOverlay"
                         :offset="[110, 20]"
-                        style="width: 360px"
+                        style="width: 400px; overflow: hidden"
                     >
-                        <div style="width: 360px">
+                        <div style="width: 400px">
                             <q-card-section
                                 style="
                                     padding-bottom: 5px;
@@ -146,7 +147,12 @@
                                         uploading
                                     </q-item-section>
                                 </q-item>
-                                <q-item v-for="upload in uploads">
+                                <q-item
+                                    v-for="upload in uploads_without_completed.splice(
+                                        0,
+                                        5,
+                                    )"
+                                >
                                     <div class="row items-center">
                                         <q-icon
                                             name="sym_o_upload_file"
@@ -167,6 +173,23 @@
                                         </q-item-section>
                                     </div>
                                 </q-item>
+
+                                <span
+                                    v-if="uploads_without_completed.length > 5"
+                                >
+                                    <q-item>
+                                        <q-item-section>
+                                            <span
+                                                >And
+                                                {{
+                                                    uploads_without_completed.length -
+                                                    5
+                                                }}
+                                                more</span
+                                            >
+                                        </q-item-section>
+                                    </q-item>
+                                </span>
                             </q-card-section>
 
                             <div
@@ -319,6 +342,10 @@ const { data: user } = useQuery({
 });
 
 const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
+
+const uploads_without_completed = computed(() =>
+    uploads.value.filter((upload) => upload.value.getProgress() < 1),
+);
 
 const uncompletedUploads = computed(() =>
     uploads.value.filter(

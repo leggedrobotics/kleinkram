@@ -1,6 +1,15 @@
+stream_over_http_enabled: true
+
 server:
     http_listen_port: 3200
     log_level: error
+
+query_frontend:
+    search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+    trace_by_id:
+        duration_slo: 5s
 
 distributor:
     receivers: # this configuration will listen on all ports and protocols that tempo is capable of.
@@ -10,11 +19,17 @@ distributor:
                 grpc:
 
 ingester:
-    max_block_duration: 30s # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+    trace_idle_period: 10s # The length of time after a trace has not received spans to consider it complete and flush it.
+    max_block_bytes: 1_000_000 # Cut the head block when it hits this size or
+    max_block_duration: 5m # this much time passes
 
+# The compactor block configures the compactor responsible for compacting TSDB blocks.
 compactor:
     compaction:
-        block_retention: 1m # overall Tempo trace retention. set for demo purposes
+        compaction_window: 1h # Blocks in this time window will be compacted together.
+        max_block_bytes: 100_000_000 # Maximum size of a compacted block.
+        block_retention: 1h # How long to keep blocks. Default is 14 days, this demo system is short-lived.
+        compacted_block_retention: 10m # How long to keep compacted blocks stored elsewhere.
 
 storage:
     trace:
@@ -24,5 +39,18 @@ storage:
         local:
             path: /tmp/tempo/blocks
 
+metrics_generator:
+    registry:
+        external_labels:
+            source: tempo
+            cluster: docker-compose
+    storage:
+        path: /tmp/tempo/generator/wal
+        remote_write:
+            - url: http://prometheus:9090/api/v1/write
+              send_exemplars: true
+
 overrides:
-    metrics_generator_processors: [service-graphs, span-metrics] # enables metrics generator
+    defaults:
+        metrics_generator:
+            processors: [service-graphs, span-metrics] # enables metrics generator
