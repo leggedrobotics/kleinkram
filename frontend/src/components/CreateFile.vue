@@ -107,7 +107,12 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProject } from 'src/services/queries/mission';
 
 import { FileUpload } from 'src/types/FileUpload';
-import { createFileAction, getOnMount } from 'src/services/fileService';
+import {
+    createFileAction,
+    driveUpload,
+    getOnMount,
+} from 'src/services/fileService';
+import { createDrive } from 'src/services/mutations/queue';
 
 const emit = defineEmits(['update:ready']);
 
@@ -135,7 +140,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 const ready = computed(() => {
     const hasProject = !!selected_project.value;
     const hasMission = !!selected_mission.value;
-    const hasFileOrDrive = files.value.length > 0 || drive_url.value;
+    const hasFileOrDrive = files.value.length > 0 || !!drive_url.value;
     return hasProject && hasMission && hasFileOrDrive;
 });
 
@@ -175,6 +180,9 @@ watchEffect(() => {
 });
 
 const createFile = async () => {
+    if (drive_url.value) {
+        return await driveUpload(selected_mission.value, drive_url);
+    }
     return await createFileAction(
         selected_mission.value,
         selected_project.value,

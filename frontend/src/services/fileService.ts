@@ -193,7 +193,10 @@ export async function createFileAction(
     }
 }
 
-async function driveUpload(selected_mission: Mission, drive_url: Ref<string>) {
+export async function driveUpload(
+    selected_mission: Mission,
+    drive_url: Ref<string>,
+) {
     if (!selected_mission) {
         return;
     }
