@@ -139,7 +139,6 @@ async function bootstrap() {
         optionsSuccessStatus: 204,
     });
 
-    app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
     const config = new DocumentBuilder()

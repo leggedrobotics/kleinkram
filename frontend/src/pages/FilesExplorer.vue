@@ -140,8 +140,55 @@
                     </div>
                 </template>
             </Suspense>
-
             <ButtonGroup>
+                <q-select
+                    v-model="selectedCategories"
+                    v-if="selectedCategories"
+                    multiple
+                    clearable
+                    dense
+                    option-label="name"
+                    option-value="uuid"
+                    :options="categories"
+                    placeholder="Select Categories"
+                    use-input
+                    @clear="selectedCategories = []"
+                    input-debounce="300"
+                    @input-value="filter = $event"
+                >
+                    <template v-slot:selected-item="props">
+                        <q-chip
+                            v-if="props.opt"
+                            removable
+                            @remove="props.removeAtIndex(props.index)"
+                            :color="hashUUIDtoColor(props.opt.uuid)"
+                            style="color: white; font-size: smaller"
+                        >
+                            {{ props.opt.name }}
+                        </q-chip>
+                    </template>
+                    <template v-slot:option="props">
+                        <q-item
+                            clickable
+                            v-ripple
+                            v-bind="props.itemProps"
+                            @click="props.toggleOption(props.opt)"
+                            dense
+                        >
+                            <q-item-section>
+                                <div>
+                                    <q-chip
+                                        dense
+                                        :color="hashUUIDtoColor(props.opt.uuid)"
+                                        :style="`color: white `"
+                                    >
+                                        {{ props.opt.name }}
+                                    </q-chip>
+                                </div>
+                            </q-item-section>
+                        </q-item>
+                    </template>
+                </q-select>
                 <q-btn-dropdown
                     clearable
                     dense
@@ -290,7 +337,7 @@ import {
     useHandler,
     useMissionQuery,
 } from 'src/hooks/customQueryHooks';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
@@ -306,13 +353,15 @@ import { FileEntity } from 'src/types/FileEntity';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
-import { _downloadFiles } from 'src/services/generic';
+import { _downloadFiles, hashUUIDtoColor } from 'src/services/generic';
 import { Tag } from 'src/types/Tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
+import { Category } from 'src/types/Category';
+import { getCategories } from 'src/services/queries/categories';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -339,13 +388,12 @@ const selectedFileTypes = computed(() => {
         .join(' & ');
 });
 
+const filter: Ref<string> = ref('');
+
 const selectedFiles: Ref<FileEntity[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
-        console.log(
-            fileTypeFilter.value[0].value && fileTypeFilter.value[1].value,
-        );
         if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
             handler.value.setFileType(FileType.ALL);
             return;
@@ -390,6 +438,43 @@ registerNoPermissionErrorHandler(
     'mission',
     error,
 );
+
+const queryKey = computed(() => [
+    'categories',
+    project_uuid.value,
+    filter.value,
+]);
+const { data: _categories } = useQuery<[Category[], number]>({
+    queryKey: queryKey,
+    queryFn: () => getCategories(project_uuid.value, filter.value),
+});
+const categories: Ref<Category[]> = computed(() =>
+    _categories.value ? _categories.value[0] : [],
+);
+
+const { data: _all_categories } = useQuery<[Category[], number]>({
+    queryKey: ['categories', project_uuid.value, ''],
+    queryFn: () => getCategories(project_uuid.value, ''),
+});
+const allCategories: Ref<Category[]> = computed(() =>
+    _all_categories.value ? _all_categories.value[0] : [],
+);
+
+const selectedCategories: Ref<Category[]> = computed({
+    get: () => {
+        if (!handler.value.categories) return [];
+        return handler.value.categories?.map((catUUID) =>
+            allCategories.value?.find((cat) => cat.uuid === catUUID),
+        );
+    },
+    set: (value: Category[]) => {
+        if (!value) {
+            handler.value.setCategories([]);
+            return;
+        }
+        handler.value.setCategories(value.map((cat) => cat.uuid));
+    },
+});
 
 const { mutate: _deleteFiles } = useMutation({
     mutationFn: (update: { fileUUIDs; missionUUID }) =>

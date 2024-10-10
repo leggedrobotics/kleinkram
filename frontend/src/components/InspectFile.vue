@@ -150,6 +150,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="row items-start">
+                    <q-chip
+                        v-for="cat in data?.categories"
+                        :key="cat.uuid"
+                        :label="cat.name"
+                        :color="hashUUIDtoColor(cat.uuid)"
+                        style="color: white; font-size: smaller"
+                    />
+                </div>
             </div>
         </template>
     </title-section>
@@ -241,6 +250,7 @@ import {
     getIcon,
     getSimpleFileStateName,
     getTooltip,
+    hashUUIDtoColor,
 } from '../services/generic';
 import { useMissionUUID } from 'src/hooks/utils';
 import { useRouter } from 'vue-router';

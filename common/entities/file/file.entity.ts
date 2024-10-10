@@ -1,9 +1,19 @@
-import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    JoinTable,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+    Unique,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Topic from '../topic/topic.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { FileState, FileType } from '../../enum';
+import CategoryEntity from '../category/category.entity';
 
 @Entity()
 @Unique(['filename', 'mission'])
@@ -40,4 +50,8 @@ export default class FileEntity extends BaseEntity {
 
     @Column({ nullable: true })
     hash: string;
+
+    @ManyToMany(() => CategoryEntity, (category) => category.files)
+    @JoinTable()
+    categories: CategoryEntity[];
 }

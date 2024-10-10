@@ -100,6 +100,24 @@ export const QueryStringArray = createParamDecorator(
     },
 );
 
+export const QueryOptionalStringArray = createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        const value = request.query[data];
+        if (value === undefined) {
+            return;
+        }
+        const object = plainToInstance(StringArrayValidate, { value });
+        await validateOrReject(object).catch((errors) => {
+            throw new BadRequestException(
+                `Parameter ${data} is not a valid String Array`,
+            );
+        });
+
+        return value;
+    },
+);
+
 export const QueryBoolean = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();

@@ -102,6 +102,7 @@ export const fetchOverview = async (
                 file.type,
                 file.state,
                 file.hash,
+                file.categories,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
                 new Date(file.deletedAt),
@@ -180,6 +181,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.type,
             file.state,
             file.hash,
+            file.categories,
             new Date(file.createdAt),
             new Date(file.updatedAt),
             new Date(file.deletedAt),
@@ -207,6 +209,7 @@ export const filesOfMission = async (
     skip: number,
     fileType?: FileType,
     filename?: string,
+    categories?: string[],
 ): Promise<[FileEntity[], number]> => {
     const params: Record<string, string | number> = {
         uuid: missionUUID,
@@ -215,6 +218,7 @@ export const filesOfMission = async (
     };
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
+    if (categories && categories.length > 0) params['categories'] = categories;
     const response = await axios.get('file/ofMission', {
         params,
     });
@@ -302,6 +306,7 @@ export const filesOfMission = async (
             file.type,
             file.state,
             file.hash,
+            file.categories,
             new Date(file.createdAt),
             new Date(file.updatedAt),
             new Date(file.deletedAt),
@@ -347,6 +352,7 @@ export const findOneByNameAndMission = async (
         file.type,
         file.state,
         file.hash,
+        file.categories,
         new Date(file.createdAt),
         new Date(file.updatedAt),
         new Date(file.deletedAt),

@@ -7,4 +7,5 @@ export class UpdateFile {
     @IsOptional() @IsUUID() mission_uuid?: string;
     @IsOptional() @IsUUID() project_uuid?: string;
     @IsDate() date: Date;
+    @IsOptional() @IsUUID('all', { each: true }) categories: string[];
 }

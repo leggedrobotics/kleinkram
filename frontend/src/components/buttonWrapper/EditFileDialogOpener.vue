@@ -1,16 +1,25 @@
 <template>
-    <q-btn
-        class="button-border"
-        flat
-        color="primary"
-        icon="sym_o_edit"
-        label="Edit File"
+    <div
         @click="editFile"
-        :disable="file?.tentative || !canModify"
+        :class="{
+            disabled: !canModify,
+            'cursor-pointer': !canModify,
+            'cursor-not-allowed': !canModify,
+        }"
     >
-        <q-tooltip> Edit File</q-tooltip>
-    </q-btn>
+        <slot />
+        <q-tooltip v-if="!canModify">
+            You do not have permission to modify this project
+        </q-tooltip>
+    </div>
 </template>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
+
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import {
@@ -47,5 +56,3 @@ function editFile() {
     });
 }
 </script>
-
-<style scoped></style>
