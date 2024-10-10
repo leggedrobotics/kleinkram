@@ -16,7 +16,7 @@ klein login --key $APIKEY
 klein mission byUUID $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
-klein mission download $MISSION_UUID /out
+klein mission download --mission-uuid $MISSION_UUID /out
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"
