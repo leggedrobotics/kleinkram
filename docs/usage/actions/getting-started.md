@@ -43,7 +43,7 @@ klein login --key $APIKEY
 echo "Download data from mission with UUID $MISSION_UUID"
 mkdir data
 klein mission byUUID $MISSION_UUID          # get the mission details
-klein mission download $MISSION_UUID /out # download the files of the mission
+klein mission download --mission-uuid $MISSION_UUID /out # download the files of the mission
 
 echo "List files of mission with UUID $MISSION_UUID"
 cd ./data || exit 1

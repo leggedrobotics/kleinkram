@@ -3,7 +3,6 @@ import env from '@common/env';
 import logger from '../../logger';
 import * as fs from 'node:fs';
 import * as crypto from 'crypto';
-const hash = crypto.createHash('md5');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 const KEYFILEPATH = env.GOOGLE_KEY_FILE;
@@ -27,6 +26,7 @@ export async function downloadDriveFile(
         { responseType: 'stream' },
     );
     const destStream = fs.createWriteStream(dest);
+    const hash = crypto.createHash('md5');
 
     logger.debug(`Downloading file to ${dest}`);
     return await new Promise((resolve, reject) => {

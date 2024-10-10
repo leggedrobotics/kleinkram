@@ -1,11 +1,4 @@
 /////////////////////////////////////////////////////////////////
-// Import latest Google Material Symbols Outlined font
-/////////////////////////////////////////////////////////////////
-
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
-
-/////////////////////////////////////////////////////////////////
 // app global css in SCSS form
 /////////////////////////////////////////////////////////////////
 
@@ -165,4 +158,19 @@ label {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.16px;
+}
+
+
+.checkbox-with-hitbox {
+    position: relative;
+}
+
+.checkbox-with-hitbox::before {
+    content: '';
+    position: absolute;
+    top: -10px; /* Adjust to increase hitbox upwards */
+    bottom: -10px; /* Adjust to increase hitbox downwards */
+    left: -15px; /* Adjust to increase hitbox to the left */
+    right: -20px; /* Adjust to increase hitbox to the right */
+    z-index: 1;
 }

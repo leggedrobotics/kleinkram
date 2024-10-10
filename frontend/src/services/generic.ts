@@ -131,16 +131,75 @@ export async function _downloadFiles(files: FileEntity[]) {
         }
     });
     const downloadURLs = await Promise.all(downloadPromises);
-    for (const { url, filename } of downloadURLs.filter((d) => d.url)) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Delay of 100ms
+    await downloadFiles(downloadURLs);
+}
+
+async function downloadFiles(files: { url: string; filename: string }[]) {
+    // Ensure that the File System Access API is supported
+    if (!window.showDirectoryPicker) {
+        throw new Error(
+            'File System Access API is not supported in this browser.',
+        );
     }
-    return downloadURLs.filter((d) => !d.url).map((d) => d.filename);
+
+    try {
+        // Open a directory picker so the user can select where to save the files
+        const directoryHandle = await window.showDirectoryPicker();
+
+        for (const { url, filename } of files) {
+            // Fetch the file using streaming
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                console.error(`Failed to fetch ${url}`);
+                continue;
+            }
+
+            // Create a file handle and writable stream for the file
+            const fileHandle = await directoryHandle.getFileHandle(filename, {
+                create: true,
+            });
+            const writableStream = await fileHandle.createWritable();
+
+            // Create a reader for the response body stream
+            const reader = response.body?.getReader();
+
+            if (!reader) {
+                throw new Error('Failed to create a stream reader.');
+            }
+
+            // Function to pump the stream chunks to the file
+            async function streamToFileSystem() {
+                let done: boolean;
+                let value: Uint8Array;
+
+                while (true) {
+                    // Read the next chunk from the stream
+                    const { done: streamDone, value: chunk } =
+                        await reader.read();
+                    done = streamDone;
+                    value = chunk;
+
+                    if (done) {
+                        break;
+                    }
+
+                    // Write the current chunk to the file
+                    await writableStream.write(value);
+                }
+            }
+
+            // Stream the file contents
+            await streamToFileSystem();
+
+            // Close the writable stream once done
+            await writableStream.close();
+
+            console.log(`Successfully saved ${filename}`);
+        }
+    } catch (error) {
+        console.error('Error during file download:', error);
+    }
 }
 
 export function getActionColor(state: ActionState) {

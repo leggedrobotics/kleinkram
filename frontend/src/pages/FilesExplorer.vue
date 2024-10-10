@@ -297,15 +297,15 @@
                         padding="6px"
                         icon="sym_o_close"
                         color="white"
-                        @click="() => deselect()"
+                        @click="deselect"
                     />
                 </template>
             </ButtonGroupOverlay>
         </div>
         <div>
             <Suspense>
-                <ExplorerPageFilesTable
-                    :handler="handler"
+                <explorer-page-files-table
+                    :url_handler="handler"
                     v-model:selected="selectedFiles"
                     v-if="handler"
                 />
@@ -531,10 +531,17 @@ function deselect() {
 }
 
 async function downloadCallback() {
-    const failedDownloads = await _downloadFiles(selectedFiles.value);
-    if (failedDownloads.length > 0) {
+    try {
+        await _downloadFiles(selectedFiles.value);
         Notify.create({
-            message: `Failed to download ${failedDownloads.length} file${failedDownloads.length !== 1 ? 's' : ''}: ${failedDownloads.join(', ')}`,
+            message: 'Files downloaded successfully',
+            color: 'positive',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    } catch (error) {
+        Notify.create({
+            message: `Error downloading files: ${error}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',

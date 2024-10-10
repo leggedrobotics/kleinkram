@@ -18,6 +18,13 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:loading>
             <q-inner-loading showing color="primary" />
         </template>
@@ -115,7 +122,7 @@ import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
-import { QueryURLHandler, TableRequest } from 'src/services/QueryHandler';
+import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import {
@@ -137,22 +144,25 @@ const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
 const props = defineProps({
-    handler: QueryURLHandler,
+    url_handler: {
+        type: QueryHandler,
+        required: true,
+    },
 });
 
 function setPagination(update: TableRequest) {
-    props.handler.setPage(update.pagination.page);
-    props.handler.setTake(update.pagination.rowsPerPage);
-    props.handler.setSort(update.pagination.sortBy);
-    props.handler.setDescending(update.pagination.descending);
+    props.url_handler.setPage(update.pagination.page);
+    props.url_handler.setTake(update.pagination.rowsPerPage);
+    props.url_handler.setSort(update.pagination.sortBy);
+    props.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.handler.page,
-        rowsPerPage: props.handler.take,
-        rowsNumber: props.handler.rowsNumber,
-        sortBy: props.handler.sortBy,
+        page: props.url_handler.page,
+        rowsPerPage: props.url_handler.take,
+        rowsNumber: props.url_handler.rowsNumber,
+        sortBy: props.url_handler.sortBy,
         descending: false,
     };
 });
@@ -161,9 +171,9 @@ const selected = ref([]);
 const queryKey = computed(() => [
     'files',
     mission_uuid.value,
-    props.handler.queryKey,
-    props.handler.file_type,
-    props.handler?.categories,
+    props.url_handler.queryKey,
+    props.url_handler.file_type,
+    props.url_handler?.categories,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -171,11 +181,11 @@ const { data: rawData, isLoading } = useQuery({
     queryFn: () =>
         filesOfMission(
             mission_uuid.value,
-            props.handler.take,
-            props.handler.skip,
-            props.handler.file_type,
-            props.handler.search_params.name,
-            props.handler?.categories,
+            props.url_handler.take,
+            props.url_handler.skip,
+            props.url_handler.file_type,
+            props.url_handler.search_params.name,
+            props.url_handler?.categories,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -185,7 +195,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
-            props.handler.rowsNumber = total.value;
+            props.url_handler.rowsNumber = total.value;
         }
     },
     { immediate: true },
@@ -203,7 +213,7 @@ const onRowClick = async (_: Event, row: any) => {
 };
 
 function chipClicked(cat: Category) {
-    props.handler?.addCategory(cat.uuid);
+    props.url_handler?.addCategory(cat.uuid);
 }
 watch(
     () => selected.value,
@@ -212,3 +222,8 @@ watch(
     },
 );
 </script>
+
+<style scoped>
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
+</style>
