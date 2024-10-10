@@ -5,3 +5,21 @@ scrape_configs:
     - job_name: 'tempo'
       static_configs:
           - targets: ['tempo:3200']
+
+    - job_name: minio-job
+      metrics_path: /minio/v2/metrics/cluster
+      scheme: http
+      static_configs:
+          - targets: ['minio:9000']
+
+    - job_name: minio-job-bucket
+      metrics_path: /minio/v2/metrics/bucket
+      scheme: http
+      static_configs:
+          - targets: ['minio:9000']
+
+    - job_name: 'backend'
+      scrape_interval: 1s
+      metrics_path: /metrics
+      static_configs:
+          - targets: ['main:3000']

@@ -27,6 +27,8 @@ import Queue from 'bull';
 import { addActionQueue } from '@common/schedulingLogic';
 import { getInfoFromMinio, internalMinio } from '@common/minio_helper';
 import { redis } from '@common/consts';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Gauge } from 'prom-client';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -53,6 +55,7 @@ function extractFileIdFromUrl(url: string): string | null {
 export class QueueService implements OnModuleInit {
     private actionQueues: Record<string, Queue.Queue>;
     private fileQueue: Queue.Queue;
+
     constructor(
         @InjectRepository(QueueEntity)
         private queueRepository: Repository<QueueEntity>,
@@ -65,6 +68,16 @@ export class QueueService implements OnModuleInit {
         private workerRepository: Repository<Worker>,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
+        @InjectMetric('backend_online_workers')
+        private onlineWorkers: Gauge<string>,
+        @InjectMetric('backend_pending_jobs')
+        private pendingJobs: Gauge<string>,
+        @InjectMetric('backend_active_jobs')
+        private activeJobs: Gauge<string>,
+        @InjectMetric('backend_completed_jobs')
+        private completedJobs: Gauge<string>,
+        @InjectMetric('backend_failed_jobs')
+        private failedJobs: Gauge<string>,
     ) {}
 
     async onModuleInit() {
@@ -463,6 +476,46 @@ export class QueueService implements OnModuleInit {
                     { redis },
                 );
             }
+        });
+
+        this.onlineWorkers.set({}, activeWorker.length);
+    }
+
+    @Cron(CronExpression.EVERY_SECOND)
+    async checkQueueState() {
+        const actionQueues = Object.values(this.actionQueues);
+        const job_counts = await Promise.all(
+            actionQueues.map(async (queue) => {
+                return await queue.getJobCounts();
+            }),
+        );
+        const jobs_count = await this.fileQueue.getJobCounts();
+
+        this.pendingJobs.set(
+            { queue: 'fileQueue' },
+            jobs_count.waiting + jobs_count.delayed,
+        );
+        this.activeJobs.set({ queue: 'fileQueue' }, jobs_count.active);
+        this.completedJobs.set({ queue: 'fileQueue' }, jobs_count.completed);
+        this.failedJobs.set({ queue: 'fileQueue' }, jobs_count.failed);
+
+        job_counts.forEach((count, index) => {
+            this.pendingJobs.set(
+                { queue: actionQueues[index].name },
+                count.waiting + count.delayed,
+            );
+            this.activeJobs.set(
+                { queue: actionQueues[index].name },
+                count.active,
+            );
+            this.completedJobs.set(
+                { queue: actionQueues[index].name },
+                count.completed,
+            );
+            this.failedJobs.set(
+                { queue: actionQueues[index].name },
+                count.failed,
+            );
         });
     }
 }

@@ -43,7 +43,17 @@ const ROUTES = {
     ACTION: routeWithLayout({
         name: 'ActionPage',
         path: '/actions',
-        breadcrumbs: [{ displayName: 'All Actions', to: undefined }],
+        breadcrumbs: [
+            { displayName: 'All Actions', to: '/actions' },
+            {
+                displayName: ':project_name',
+                to: '/project/:project_uuid/missions',
+            },
+            {
+                displayName: ':mission_name',
+                to: '/project/:project_uuid/mission/:mission_uuid/files',
+            },
+        ],
         component: () => import('pages/ActionPage.vue'),
         layout: () => import('layouts/MainLayout.vue'),
     }),

@@ -4,6 +4,7 @@ import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import TagType from '../tagType/tagType.entity';
 import ProjectAccess from '../auth/project_access.entity';
+import CategoryEntity from '../category/category.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
@@ -33,4 +34,7 @@ export default class Project extends BaseEntity {
         onDelete: 'CASCADE',
     })
     requiredTags: TagType[];
+
+    @OneToMany(() => CategoryEntity, (category) => category.project)
+    categories: CategoryEntity[];
 }

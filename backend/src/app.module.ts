@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import {
+    Injectable,
+    MiddlewareConsumer,
+    Module,
+    NestMiddleware,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
@@ -19,9 +24,64 @@ import access_config from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
 import { UserResolverMiddleware } from './UserResolverMiddleware';
 import { WorkerModule } from './worker/worker.module';
+import { NextFunction, Request, Response } from 'express';
+import logger from './logger';
+import { CookieNames } from '@common/enum';
+import { ActionService } from './action/action.service';
+import Category from '@common/entities/category/category.entity';
+import { CategoryModule } from './category/category.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import fs from 'node:fs';
+
+/**
+ *
+ * Logger middleware for audit logging.
+ * Logs every authenticated request made to the application.*
+ *
+ */
+@Injectable()
+export class AuditLoggerMiddleware implements NestMiddleware {
+    constructor(private actionService: ActionService) {}
+
+    use(req: Request, _: Response, next: NextFunction) {
+        if (!req || !req.cookies) {
+            next();
+            return;
+        }
+
+        const key = req.cookies[CookieNames.CLI_KEY];
+        if (!key) {
+            next();
+            return;
+        }
+
+        const auditLog = {
+            method: req.method,
+            url: req.originalUrl,
+        };
+
+        logger.debug(
+            `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
+        );
+
+        this.actionService.writeAuditLog(key, auditLog).then((r) => {});
+        next();
+    }
+}
+
+const packageJson = JSON.parse(
+    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
+);
+export const appVersion = packageJson.version;
 
 @Module({
     imports: [
+        PrometheusModule.register({
+            defaultLabels: {
+                app: 'backend',
+                version: appVersion,
+            },
+        }),
         ConfigModule.forRoot({
             isGlobal: true,
             load: [configuration, () => ({ accessConfig: access_config })],
@@ -56,13 +116,16 @@ import { WorkerModule } from './worker/worker.module';
         ActionModule,
         TagModule,
         WorkerModule,
+        CategoryModule,
         ScheduleModule.forRoot(),
     ],
     providers: [DBDumper],
 })
 export class AppModule {
     configure(consumer: MiddlewareConsumer) {
-        consumer.apply(UserResolverMiddleware).forRoutes('*');
+        consumer
+            .apply(UserResolverMiddleware, AuditLoggerMiddleware)
+            .forRoutes('*');
     }
 }
 

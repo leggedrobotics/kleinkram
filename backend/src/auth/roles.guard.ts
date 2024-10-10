@@ -606,7 +606,7 @@ export class WriteFileGuard extends BaseGuard {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
-        const fileUUID = request.query.uuid;
+        const fileUUID = request.query.uuid || request.body.uuid;
         if (apiKey) {
             return this.fileGuardService.canKeyAccessFile(
                 apiKey,

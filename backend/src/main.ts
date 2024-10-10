@@ -11,6 +11,7 @@ import {
     Catch,
     ExceptionFilter,
     INestApplication,
+    PipeTransform,
     ValidationPipe,
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
@@ -43,6 +44,14 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(exception.getStatus()).json({
                 statusCode: exception.getStatus(),
                 message: exception.message,
+            });
+            return;
+        }
+
+        if (exception.name === 'InvalidJwtTokenException') {
+            response.status(401).json({
+                statusCode: 401,
+                message: 'Invalid JWT token. Are you logged in?',
             });
             return;
         }
@@ -94,7 +103,7 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
-class DelayPipe {
+class DelayPipe implements PipeTransform {
     constructor(private delay: number) {}
 
     async transform(value: any) {
@@ -130,7 +139,6 @@ async function bootstrap() {
         optionsSuccessStatus: 204,
     });
 
-    app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new GlobalErrorFilter());
     app.useGlobalPipes(new DelayPipe(0));
     const config = new DocumentBuilder()

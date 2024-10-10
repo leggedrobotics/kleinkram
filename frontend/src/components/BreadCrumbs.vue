@@ -77,8 +77,8 @@ const { data: file } = useQuery({
     enabled: fileEnabled,
 });
 
-const resolved_crumbs = computed(() =>
-    crumbs.value?.map((crumb: PageBreadCrumb) => {
+const resolved_crumbs = computed(() => {
+    let _crumbs = crumbs.value?.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
                 ?.replace(':project_uuid', project_uuid.value)
@@ -89,8 +89,26 @@ const resolved_crumbs = computed(() =>
                 .replace(':mission_name', mission.value?.name || '')
                 .replace(':file_name', file.value?.filename || ''),
         };
-    }),
-);
+    });
+
+    if (!_crumbs) return [];
+
+    // remove crumbs with undefined values in to
+    const idx_of_first_undefined = _crumbs.findIndex((crumb: PageBreadCrumb) =>
+        crumb.to?.includes('undefined'),
+    );
+    _crumbs =
+        idx_of_first_undefined === -1
+            ? _crumbs
+            : _crumbs.slice(0, idx_of_first_undefined);
+
+    // remove link of crumb if it is the only crumb
+    if (_crumbs.length === 1) {
+        _crumbs[0].to = undefined;
+    }
+
+    return _crumbs;
+});
 
 const isClickable = (crumb: PageBreadCrumb) => {
     const idx = crumbs.value?.findIndex(

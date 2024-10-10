@@ -11,6 +11,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import Action from '@common/entities/action/action.entity';
+import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
 
 @Module({
     imports: [
@@ -26,7 +27,34 @@ import Action from '@common/entities/action/action.entity';
             Action,
         ]),
     ],
-    providers: [QueueService],
+    providers: [
+        QueueService,
+        makeGaugeProvider({
+            name: 'backend_online_workers',
+            help: 'Number of online workers',
+            labelNames: ['queue'],
+        }),
+        makeGaugeProvider({
+            name: 'backend_pending_jobs',
+            help: 'Number of pending jobs',
+            labelNames: ['queue'],
+        }),
+        makeGaugeProvider({
+            name: 'backend_active_jobs',
+            help: 'Number of active jobs',
+            labelNames: ['queue'],
+        }),
+        makeGaugeProvider({
+            name: 'backend_completed_jobs',
+            help: 'Number of completed jobs',
+            labelNames: ['queue'],
+        }),
+        makeGaugeProvider({
+            name: 'backend_failed_jobs',
+            help: 'Number of completed jobs',
+            labelNames: ['queue'],
+        }),
+    ],
     controllers: [QueueController],
     exports: [QueueService],
 })

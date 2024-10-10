@@ -21,6 +21,7 @@ export class QueryHandler {
     search_params: Record<string, string>;
     file_type?: FileType;
     rowsNumber: number;
+    categories: string[];
 
     constructor(
         page: number = DEFAULT_PAGINATION.page,
@@ -31,6 +32,7 @@ export class QueryHandler {
         mission_uuid?: string,
         search_params?: Record<string, string>,
         file_type?: FileType,
+        categories: string[],
     ) {
         this.page = page;
         this.take = take;
@@ -40,6 +42,7 @@ export class QueryHandler {
         this.mission_uuid = mission_uuid;
         this.search_params = search_params || DEFAULT_SEARCH;
         this.file_type = file_type || FileType.ALL;
+        this.categories = categories || [];
         this.rowsNumber = 0;
     }
 
@@ -107,6 +110,18 @@ export class QueryHandler {
         this.resetPagination();
     }
 
+    setCategories(categories: string[]) {
+        this.categories = categories;
+        this.resetPagination();
+    }
+
+    addCategory(category: string) {
+        if (!this.categories.includes(category)) {
+            this.categories.push(category);
+            this.resetPagination();
+        }
+    }
+
     resetPagination() {
         this.page = DEFAULT_PAGINATION.page;
     }
@@ -161,6 +176,7 @@ export class QueryURLHandler extends QueryHandler {
         mission_uuid?: string,
         search_params?: typeof DEFAULT_SEARCH,
         file_type?: FileType,
+        categories?: string[],
     ) {
         super(
             page,
@@ -171,6 +187,7 @@ export class QueryURLHandler extends QueryHandler {
             mission_uuid,
             search_params,
             file_type,
+            categories,
         );
         if (router) {
             this.setRouter(router);
@@ -239,6 +256,18 @@ export class QueryURLHandler extends QueryHandler {
         this.writeURL();
     }
 
+    setCategories(categories: string[]) {
+        super.setCategories(categories);
+        this.writeURL();
+    }
+
+    addCategory(category: string) {
+        if (!this.categories.includes(category)) {
+            super.addCategory(category);
+            this.writeURL();
+        }
+    }
+
     /**
      * Read the current state of the URL and update the query accordingly
      * Values not set in the URL will be set to the default values
@@ -268,6 +297,13 @@ export class QueryURLHandler extends QueryHandler {
         if (route.query.file_type)
             this.file_type = route.query.file_type as FileType;
         else this.file_type = DEFAULT_FILE_TYPE;
+        if (route.query.categories) {
+            if (Array.isArray(route.query.categories))
+                this.categories = route.query.categories as string[];
+            else {
+                this.categories = [route.query.categories];
+            }
+        }
     }
 
     /**
@@ -300,6 +336,8 @@ export class QueryURLHandler extends QueryHandler {
                 this.project_uuid && this.mission_uuid
                     ? this.file_type || undefined
                     : undefined,
+            categories:
+                this.categories.length > 0 ? this.categories : undefined,
         };
         this.router.push({ query: newQuery });
         this.internal_update = false;

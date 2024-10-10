@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
 import { CookieNames } from '@common/enum';
 import env from '@common/env';
+import { InvalidJwtTokenException } from './jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
@@ -110,6 +111,7 @@ export class AuthController {
 
         try {
             const payload = this.jwtService.verify(refreshToken);
+
             const user = await this.userService.findOneByUUID(payload.uuid);
             if (!user) {
                 return res
@@ -128,8 +130,7 @@ export class AuthController {
             });
             res.status(200).json({ message: 'Token refreshed' });
         } catch (e) {
-            console.log(e);
-            return res.status(401).json({ message: 'Invalid refresh token' });
+            throw InvalidJwtTokenException;
         }
     }
 

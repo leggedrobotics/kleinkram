@@ -15,7 +15,7 @@
                     <q-icon
                         name="sym_o_add"
                         class="q-mx-xs"
-                        style="height: 36px"
+                        style="height: 36px; display: inline-flex"
                     />
                     <span class="q-mr-md"> New </span>
                 </div>
@@ -28,6 +28,7 @@
                     style="
                         background-color: #0f62fe;
                         height: 36px;
+                        display: inline-flex;
                         border-radius: 0 4px 4px 0;
                     "
                     name="sym_o_arrow_drop_down"
@@ -86,15 +87,11 @@
                 </q-menu>
             </q-btn>
 
-            <div style="margin: auto 10px auto 30px">
-                <q-btn
-                    round
-                    flat
-                    color="grey-8"
-                    :to="ROUTES.UPLOAD.path"
-                    icon="sym_o_export_notes"
-                    @mouseover="showOverlay = true"
-                >
+            <div
+                style="margin: auto 10px auto 30px"
+                @click="showOverlay = true"
+            >
+                <q-btn round flat color="grey-8" icon="sym_o_export_notes">
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
                         v-if="is_uploading"
@@ -105,10 +102,10 @@
                     />
                     <q-menu
                         v-model="showOverlay"
-                        :offset="[100, 40]"
-                        style="min-width: 600px"
+                        :offset="[110, 20]"
+                        style="width: 400px; overflow: hidden"
                     >
-                        <q-card>
+                        <div style="width: 400px">
                             <q-card-section
                                 style="
                                     padding-bottom: 5px;
@@ -150,7 +147,12 @@
                                         uploading
                                     </q-item-section>
                                 </q-item>
-                                <q-item v-for="upload in uploads">
+                                <q-item
+                                    v-for="upload in uploads_without_completed.splice(
+                                        0,
+                                        5,
+                                    )"
+                                >
                                     <div class="row items-center">
                                         <q-icon
                                             name="sym_o_upload_file"
@@ -171,8 +173,45 @@
                                         </q-item-section>
                                     </div>
                                 </q-item>
+
+                                <span
+                                    v-if="uploads_without_completed.length > 5"
+                                >
+                                    <q-item>
+                                        <q-item-section>
+                                            <span
+                                                >And
+                                                {{
+                                                    uploads_without_completed.length -
+                                                    5
+                                                }}
+                                                more</span
+                                            >
+                                        </q-item-section>
+                                    </q-item>
+                                </span>
                             </q-card-section>
-                        </q-card>
+
+                            <div
+                                style="
+                                    width: 100%;
+                                    display: flex;
+                                    margin-bottom: 8px;
+                                "
+                            >
+                                <q-btn
+                                    flat
+                                    full-width
+                                    outline
+                                    style="margin: 8px auto; width: 200px"
+                                    class="button-border"
+                                    color="grey-8"
+                                    label="Open Pending Uploads"
+                                    :to="ROUTES.UPLOAD.path"
+                                    @click="showOverlay = false"
+                                />
+                            </div>
+                        </div>
                     </q-menu>
                 </q-btn>
 
@@ -213,8 +252,14 @@
                         <q-icon name="sym_o_account_circle" />
                     </q-avatar>
 
-                    <q-menu auto-close style="width: 280px">
-                        <q-list>
+                    <q-menu auto-close style="width: 280px; padding: 8px">
+                        <q-list
+                            style="
+                                gap: 4px;
+                                display: flex;
+                                flex-direction: column;
+                            "
+                        >
                             <q-item
                                 clickable
                                 v-close-popup
@@ -229,6 +274,7 @@
                                     </q-item-section>
                                 </q-item-section>
                             </q-item>
+
                             <q-separator />
 
                             <q-item disabled>
@@ -255,7 +301,10 @@
                                 class="text-error"
                             >
                                 <q-item-section avatar>
-                                    <q-icon name="sym_o_logout" />
+                                    <q-icon
+                                        name="sym_o_logout"
+                                        style="rotate: 180deg"
+                                    />
                                 </q-item-section>
                                 <q-item-section>
                                     <q-item-label>Log out</q-item-label>
@@ -293,6 +342,10 @@ const { data: user } = useQuery({
 });
 
 const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
+
+const uploads_without_completed = computed(() =>
+    uploads.value.filter((upload) => upload.value.getProgress() < 1),
+);
 
 const uncompletedUploads = computed(() =>
     uploads.value.filter(
@@ -343,3 +396,9 @@ const navigateTo = (path: string) => {
     $router.push(path);
 };
 </script>
+
+<style scoped>
+.q-item__section--avatar {
+    min-width: 0;
+}
+</style>
