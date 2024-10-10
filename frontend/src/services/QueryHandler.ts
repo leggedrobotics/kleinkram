@@ -261,6 +261,13 @@ export class QueryURLHandler extends QueryHandler {
         this.writeURL();
     }
 
+    addCategory(category: string) {
+        if (!this.categories.includes(category)) {
+            super.addCategory(category);
+            this.writeURL();
+        }
+    }
+
     /**
      * Read the current state of the URL and update the query accordingly
      * Values not set in the URL will be set to the default values
@@ -291,7 +298,11 @@ export class QueryURLHandler extends QueryHandler {
             this.file_type = route.query.file_type as FileType;
         else this.file_type = DEFAULT_FILE_TYPE;
         if (route.query.categories) {
-            this.categories = route.query.categories;
+            if (Array.isArray(route.query.categories))
+                this.categories = route.query.categories as string[];
+            else {
+                this.categories = [route.query.categories];
+            }
         }
     }
 

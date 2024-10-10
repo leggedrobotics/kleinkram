@@ -41,8 +41,9 @@
                     :color="hashUUIDtoColor(cat.uuid)"
                     style="color: white"
                     dense
+                    clickable
                     class="q-mr-sm"
-                    @mousedown.stop="() => chipClicked(cat)"
+                    @click.stop="() => chipClicked(cat)"
                 />
             </q-td>
         </template>
@@ -202,7 +203,7 @@ const onRowClick = async (_: Event, row: any) => {
 };
 
 function chipClicked(cat: Category) {
-    console.log(cat.name);
+    props.handler?.addCategory(cat.uuid);
 }
 watch(
     () => selected.value,
