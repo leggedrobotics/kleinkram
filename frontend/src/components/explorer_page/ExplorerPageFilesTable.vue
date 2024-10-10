@@ -50,6 +50,7 @@
                     style="color: white"
                     dense
                     class="q-mr-sm"
+                    @mousedown.stop="() => chipClicked(cat)"
                 />
             </q-td>
         </template>
@@ -126,6 +127,7 @@ import {
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
+import { Category } from 'src/types/Category';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -160,6 +162,7 @@ const queryKey = computed(() => [
     mission_uuid.value,
     props.handler.queryKey,
     props.handler.file_type,
+    props.handler?.categories,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -171,6 +174,7 @@ const { data: rawData, isLoading } = useQuery({
             props.handler.skip,
             props.handler.file_type,
             props.handler.search_params.name,
+            props.handler?.categories,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -196,6 +200,10 @@ const onRowClick = async (_: Event, row: any) => {
         },
     });
 };
+
+function chipClicked(cat: Category) {
+    console.log(cat.name);
+}
 watch(
     () => selected.value,
     (newVal) => {

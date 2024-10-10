@@ -328,7 +328,6 @@ import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 
-import EditMission from 'components/EditFile.vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import { formatSize } from 'src/services/generalFormatting';
@@ -345,6 +344,7 @@ import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpe
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
+import NewEditFile from 'components/NewEditFile.vue';
 
 const $router = useRouter();
 
@@ -606,7 +606,7 @@ const columns = [
 function openQDialog(file: FileEntity): void {
     $q.dialog({
         title: 'Profilbild wählen',
-        component: EditMission,
+        component: NewEditFile,
         componentProps: {
             file_uuid: file.uuid,
         },

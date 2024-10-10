@@ -209,6 +209,7 @@ export const filesOfMission = async (
     skip: number,
     fileType?: FileType,
     filename?: string,
+    categories?: string[],
 ): Promise<[FileEntity[], number]> => {
     const params: Record<string, string | number> = {
         uuid: missionUUID,
@@ -217,6 +218,7 @@ export const filesOfMission = async (
     };
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
+    if (categories && categories.length > 0) params['categories'] = categories;
     const response = await axios.get('file/ofMission', {
         params,
     });

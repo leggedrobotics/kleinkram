@@ -31,9 +31,11 @@ import {
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
+    QueryOptionalStringArray,
     QueryOptionalUUID,
     QuerySkip,
     QueryString,
+    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
@@ -148,6 +150,7 @@ export class FileController {
         @QueryTake('take') take: number,
         @QueryOptionalString('filename') filename: string,
         @QueryOptionalString('fileType') fileType: FileType,
+        @QueryOptionalStringArray('categories') categories: string[],
     ) {
         return this.fileService.findByMission(
             uuid,
@@ -155,6 +158,7 @@ export class FileController {
             skip,
             filename,
             fileType,
+            categories,
         );
     }
 

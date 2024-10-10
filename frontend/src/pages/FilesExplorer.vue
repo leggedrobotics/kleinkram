@@ -142,21 +142,23 @@
             </Suspense>
             <ButtonGroup>
                 <q-select
-                    v-model="selectedCategory"
+                    v-model="selectedCategories"
+                    v-if="selectedCategories"
                     multiple
                     clearable
                     dense
                     option-label="name"
                     option-value="uuid"
                     :options="categories"
-                    label="Select Categories"
+                    placeholder="Select Categories"
                     use-input
-                    @clear="selected = []"
+                    @clear="selectedCategories = []"
                     input-debounce="300"
                     @input-value="filter = $event"
                 >
                     <template v-slot:selected-item="props">
                         <q-chip
+                            v-if="props.opt"
                             removable
                             @remove="props.removeAtIndex(props.index)"
                             :color="hashUUIDtoColor(props.opt.uuid)"
@@ -178,7 +180,7 @@
                                     <q-chip
                                         dense
                                         :color="hashUUIDtoColor(props.opt.uuid)"
-                                        style="color: white"
+                                        :style="`color: white `"
                                     >
                                         {{ props.opt.name }}
                                     </q-chip>
@@ -386,16 +388,12 @@ const selectedFileTypes = computed(() => {
         .join(' & ');
 });
 
-const selectedCategory: Ref<Category[]> = ref([]);
 const filter: Ref<string> = ref('');
 
 const selectedFiles: Ref<FileEntity[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
-        console.log(
-            fileTypeFilter.value[0].value && fileTypeFilter.value[1].value,
-        );
         if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
             handler.value.setFileType(FileType.ALL);
             return;
@@ -453,6 +451,30 @@ const { data: _categories } = useQuery<[Category[], number]>({
 const categories: Ref<Category[]> = computed(() =>
     _categories.value ? _categories.value[0] : [],
 );
+
+const { data: _all_categories } = useQuery<[Category[], number]>({
+    queryKey: ['categories', project_uuid.value, ''],
+    queryFn: () => getCategories(project_uuid.value, ''),
+});
+const allCategories: Ref<Category[]> = computed(() =>
+    _all_categories.value ? _all_categories.value[0] : [],
+);
+
+const selectedCategories: Ref<Category[]> = computed({
+    get: () => {
+        if (!handler.value.categories) return [];
+        return handler.value.categories?.map((catUUID) =>
+            allCategories.value?.find((cat) => cat.uuid === catUUID),
+        );
+    },
+    set: (value: Category[]) => {
+        if (!value) {
+            handler.value.setCategories([]);
+            return;
+        }
+        handler.value.setCategories(value.map((cat) => cat.uuid));
+    },
+});
 
 const { mutate: _deleteFiles } = useMutation({
     mutationFn: (update: { fileUUIDs; missionUUID }) =>

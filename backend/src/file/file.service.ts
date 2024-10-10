@@ -510,6 +510,7 @@ export class FileService implements OnModuleInit {
         skip: number,
         filename?: string,
         fileType?: FileType,
+        categories?: string[],
     ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = {
             mission: { uuid: missionUUID },
@@ -520,19 +521,34 @@ export class FileService implements OnModuleInit {
         if (fileType) {
             where.type = fileType;
         }
-        return this.fileRepository.findAndCount({
+        if (categories && categories.length > 0) {
+            where.categories = { uuid: In(categories) };
+        }
+        const [resUUIDs, count] = await this.fileRepository.findAndCount({
+            select: ['uuid'],
             where,
-            relations: [
-                'mission',
-                'topics',
-                'creator',
-                'mission.creator',
-                'mission.project',
-                'categories',
-            ],
             take,
             skip,
         });
+        if (resUUIDs.length === 0) {
+            return [[], count];
+        }
+        const second_where = {
+            uuid: In(resUUIDs.map((file) => file.uuid)),
+        };
+
+        const files = await this.fileRepository.find({
+            where: second_where,
+            relations: [
+                'mission',
+                'mission.project',
+                'categories',
+                'mission.creator',
+                'topics',
+                'creator',
+            ],
+        });
+        return [files, count];
     }
 
     async findOneByName(missionUUID: string, name: string) {
