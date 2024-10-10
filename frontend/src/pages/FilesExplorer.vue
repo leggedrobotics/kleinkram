@@ -531,10 +531,17 @@ function deselect() {
 }
 
 async function downloadCallback() {
-    const failedDownloads = await _downloadFiles(selectedFiles.value);
-    if (failedDownloads.length > 0) {
+    try {
+        await _downloadFiles(selectedFiles.value);
         Notify.create({
-            message: `Failed to download ${failedDownloads.length} file${failedDownloads.length !== 1 ? 's' : ''}: ${failedDownloads.join(', ')}`,
+            message: 'Files downloaded successfully',
+            color: 'positive',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    } catch (error) {
+        Notify.create({
+            message: `Error downloading files: ${error}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',

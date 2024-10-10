@@ -159,3 +159,18 @@ label {
     line-height: 20px;
     letter-spacing: 0.16px;
 }
+
+
+.checkbox-with-hitbox {
+    position: relative;
+}
+
+.checkbox-with-hitbox::before {
+    content: '';
+    position: absolute;
+    top: -10px; /* Adjust to increase hitbox upwards */
+    bottom: -10px; /* Adjust to increase hitbox downwards */
+    left: -15px; /* Adjust to increase hitbox to the left */
+    right: -20px; /* Adjust to increase hitbox to the right */
+    z-index: 1;
+}

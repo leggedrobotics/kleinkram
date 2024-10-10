@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_frontend",
-    "version": "0.30.3",
+    "version": "0.30.4",
     "description": "Data storage of ROS bags",
     "productName": "Kleinkram",
     "author": "Johann Schwabe <johann@schwabe.dev>",
