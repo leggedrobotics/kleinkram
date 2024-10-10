@@ -150,6 +150,10 @@
                     </div>
                 </template>
                 <template v-slot:end>
+                    <KleinDownloadMissions
+                        :missions="selectedMissions"
+                        style="max-width: 400px"
+                    />
                     <q-btn
                         flat
                         dense
@@ -170,16 +174,7 @@
                     >
                         Move
                     </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_download"
-                        color="white"
-                        disable
-                    >
-                        Download
-                    </q-btn>
+
                     <q-btn
                         flat
                         dense
@@ -251,6 +246,9 @@ import { FileEntity } from 'src/types/FileEntity';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 import UploadMissionFolder from 'components/UploadMissionFolder.vue';
+import KleinDownloadMissions from 'components/CLILinks/KleinDownloadMissions.vue';
+import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
+import { Mission } from 'src/types/Mission';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -266,7 +264,7 @@ registerNoPermissionErrorHandler(
     error,
 );
 
-const selectedMissions: Ref<FileEntity[]> = ref([]);
+const selectedMissions: Ref<Mission[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.search_params.name,

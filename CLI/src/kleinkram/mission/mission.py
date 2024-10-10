@@ -156,8 +156,8 @@ def mission_by_uuid(
 
 @missionCommands.command("download")
 def download(
-    mission_uuid: Annotated[str, typer.Argument()],
-    local_path: Annotated[str, typer.Argument()],
+    mission_uuid: Annotated[List[str], typer.Option(help="UUIDs of Mission to download")],
+    local_path: Annotated[str, typer.Option()],
 ):
     """
 
@@ -172,34 +172,40 @@ def download(
         raise ValueError(f"Local path '{local_path}' is not empty, but must be empty.")
 
     client = AuthenticatedClient()
-    response = client.get("/mission/download", params={"uuid": mission_uuid})
+    for single_mission_uuid in mission_uuid:
+        response = client.get("/mission/download", params={"uuid": single_mission_uuid})
+        try:
+            response.raise_for_status()
+        except httpx.HTTPError as e:
+            raise AccessDeniedException(
+                f"Failed to download file."
+                f"Consider using the following command to list all missions: 'klein mission list --verbose'\n",
+                f"{response.json()['message']} ({response.status_code})",
+            )
 
-    try:
-        response.raise_for_status()
-    except httpx.HTTPError as e:
-        raise AccessDeniedException(
-            f"Failed to download file."
-            f"Consider using the following command to list all missions: 'klein mission list --verbose'\n",
-            f"{response.json()['message']} ({response.status_code})",
-        )
+        paths = response.json()
+        if(len(paths) == 0):
+            continue
+        mission_name = paths[0].split("/")[5] # Trust me bro
 
-    paths = response.json()
+        local_mission_path = os.path.join(local_path, mission_name)
+        os.mkdir(local_mission_path)
 
-    print(f"Downloading files to {local_path}:")
-    for path in paths:
+        print(f"Downloading files to {local_mission_path}:")
+        for path in paths:
 
-        filename = path.split("/")[-1].split("?")[0]
-        print(f" - {filename}")
+            filename = path.split("/")[-1].split("?")[0]
+            print(f" - {filename}")
 
-        response = requests.get(path, stream=True)  # Enable streaming mode
-        chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
+            response = requests.get(path, stream=True)  # Enable streaming mode
+            chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
 
-        # Open the file for writing in binary mode
-        with open(os.path.join(local_path, filename), "wb") as f:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:  # Filter out keep-alive new chunks
-                    f.write(chunk)
-            print(f"   Downloaded {filename}")
+            # Open the file for writing in binary mode
+            with open(os.path.join(local_mission_path, filename), "wb") as f:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if chunk:  # Filter out keep-alive new chunks
+                        f.write(chunk)
+                print(f"   Downloaded {filename}")
 
 
 @missionCommands.command("upload")

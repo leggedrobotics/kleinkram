@@ -23,7 +23,7 @@ klein mission byUUID $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
 mkdir data
-klein mission download $MISSION_UUID ./data
+klein mission download --mission-uuid $MISSION_UUID ./data
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"

@@ -199,18 +199,6 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-const $q = useQuasar();
-
-const moveMission = (mission: any) => {
-    $q.dialog({
-        title: 'Move mission',
-        component: MoveMission,
-        persistent: false,
-        style: 'max-width: 1500px',
-        componentProps: { mission: mission },
-    });
-};
-
 function missingTags(row: Mission) {
     const mapped = project.value.requiredTags.map((tagType) => {
         const setTypes = row.tags.map((tag) => tag.type);
