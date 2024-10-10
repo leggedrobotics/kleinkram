@@ -19,7 +19,6 @@ import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { InvalidJwtTokenException } from './auth/jwt.strategy';
 
 const packageJson = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),

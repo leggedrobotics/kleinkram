@@ -135,6 +135,7 @@ services:
         command:
             - '--config.file=/etc/prometheus/prometheus.yml'
             - '--storage.tsdb.path=/prometheus'
+            - '--web.enable-remote-write-receiver'
         ports:
             - '9090:9090'
         networks:
@@ -174,8 +175,14 @@ services:
         volumes:
             - logging-grafana-storage:/var/lib/grafana
             - ./observability/grafana/provisioning:/etc/grafana/provisioning
+            - ./observability/grafana/dashboards:/etc/dashboards
 
         environment:
+            # since this is a local dev environment, we disable login form and enable anonymous access
+            - GF_AUTH_ANONYMOUS_ENABLED=true
+            - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+            - GF_AUTH_DISABLE_LOGIN_FORM=true
+            # to keep our logs clean, we only log critical messages
             - GF_LOG_LEVEL=critical
         ports:
             - '9050:3000' # localhost:9050 for accessing grafana
