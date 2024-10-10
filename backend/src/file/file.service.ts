@@ -527,7 +527,7 @@ export class FileService implements OnModuleInit {
             where.categories = { uuid: In(categories) };
         }
         const [resUUIDs, count] = await this.fileRepository.findAndCount({
-            select: ['uuid'],
+            select: ['uuid', 'filename'],
             where,
             take,
             skip,
@@ -550,6 +550,7 @@ export class FileService implements OnModuleInit {
                 'topics',
                 'creator',
             ],
+            order: { filename: 'ASC' },
         });
         return [files, count];
     }
