@@ -93,18 +93,24 @@
                                         Manage Access
                                     </q-item-section>
                                 </q-item-section>
+                                <q-tooltip>
+                                    Manage Access on Mission Level is not
+                                    supported yet</q-tooltip
+                                >
                             </q-item>
 
-                            <q-item clickable v-close-popup disable>
-                                <q-item-section avatar>
-                                    <q-icon name="sym_o_edit" />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-section>
-                                        Edit Mission
+                            <EditMissionDialogOpener :mission="mission">
+                                <q-item clickable v-close-popup>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_edit" />
                                     </q-item-section>
-                                </q-item-section>
-                            </q-item>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Edit Mission
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </EditMissionDialogOpener>
 
                             <delete-mission-dialog-opener :mission="mission">
                                 <q-item
@@ -372,6 +378,7 @@ import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
 import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
+import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
