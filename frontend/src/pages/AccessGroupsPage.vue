@@ -74,7 +74,14 @@
             row-key="uuid"
             @rowClick="rowClick"
         >
-            <template v-slot:body-cell-accessgroupaction="props">
+            <template v-slot:body-selection="props">
+                    <q-checkbox
+                        v-model="props.selected"
+                        color="grey-8"
+                        class="checkbox-with-hitbox"
+                    />
+                </template>
+                <template v-slot:body-cell-accessgroupaction="props">
                 <q-td :props="props">
                     <q-btn
                         flat

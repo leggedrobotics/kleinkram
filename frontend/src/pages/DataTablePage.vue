@@ -253,6 +253,13 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:body-cell-state="props">
             <q-td :props="props">
                 <q-icon
