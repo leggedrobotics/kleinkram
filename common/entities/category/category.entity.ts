@@ -1,10 +1,18 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+    Unique,
+} from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Project from '../project/project.entity';
 import FileEntity from '../file/file.entity';
 import User from '../user/user.entity';
 
 @Entity()
+@Unique(['name', 'project'])
 export default class Category extends BaseEntity {
     @Column()
     name: string;

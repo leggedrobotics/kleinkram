@@ -151,54 +151,11 @@
                 </template>
             </Suspense>
             <ButtonGroup>
-                <q-select
-                    v-model="selectedCategories"
-                    v-if="selectedCategories"
-                    multiple
-                    clearable
-                    dense
-                    option-label="name"
-                    option-value="uuid"
-                    :options="categories"
-                    placeholder="Select Categories"
-                    use-input
-                    @clear="selectedCategories = []"
-                    input-debounce="300"
-                    @input-value="filter = $event"
-                >
-                    <template v-slot:selected-item="props">
-                        <q-chip
-                            v-if="props.opt"
-                            removable
-                            @remove="props.removeAtIndex(props.index)"
-                            :color="hashUUIDtoColor(props.opt.uuid)"
-                            style="color: white; font-size: smaller"
-                        >
-                            {{ props.opt.name }}
-                        </q-chip>
-                    </template>
-                    <template v-slot:option="props">
-                        <q-item
-                            clickable
-                            v-ripple
-                            v-bind="props.itemProps"
-                            @click="props.toggleOption(props.opt)"
-                            dense
-                        >
-                            <q-item-section>
-                                <div>
-                                    <q-chip
-                                        dense
-                                        :color="hashUUIDtoColor(props.opt.uuid)"
-                                        :style="`color: white `"
-                                    >
-                                        {{ props.opt.name }}
-                                    </q-chip>
-                                </div>
-                            </q-item-section>
-                        </q-item>
-                    </template>
-                </q-select>
+                <CategorySelector
+                    :selected="selectedCategories"
+                    :project_uuid="project_uuid"
+                    @update:selected="updateSelected"
+                />
                 <q-btn-dropdown
                     clearable
                     dense
@@ -271,7 +228,10 @@
                         :files="selectedFiles"
                         style="max-width: 300px"
                     />
-
+                    <OpenMultCategoryAdd
+                        :mission="mission"
+                        :files="selectedFiles"
+                    />
                     <q-btn
                         flat
                         dense
@@ -372,6 +332,8 @@ import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
 import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
+import CategorySelector from 'components/CategorySelector.vue';
+import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -557,5 +519,9 @@ async function downloadCallback() {
             position: 'bottom',
         });
     }
+}
+
+function updateSelected(value: Category[]) {
+    selectedCategories.value = value;
 }
 </script>
