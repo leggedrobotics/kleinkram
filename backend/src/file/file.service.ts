@@ -548,7 +548,6 @@ export class FileService implements OnModuleInit {
                 'mission.project',
                 'categories',
                 'mission.creator',
-                'topics',
                 'creator',
             ],
             order: { filename: 'ASC' },

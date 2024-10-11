@@ -86,14 +86,47 @@ export class MissionService implements OnModuleInit {
             where: { uuid },
             relations: [
                 'project',
-                'files',
                 'creator',
                 'tags',
                 'tags.tagType',
                 'project.requiredTags',
-                'files.topics',
             ],
         });
+    }
+
+    async findMissionByProjectMinimal(
+        projectUUID: string,
+        skip: number,
+        take: number,
+        search?: string,
+        descending?: boolean,
+        sortBy?: string,
+        userUUID?: string,
+    ): Promise<[Mission[], number]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
+        const query = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .where('project.uuid = :projectUUID', { projectUUID })
+            .take(take)
+            .skip(skip);
+
+        if (search) {
+            query.andWhere('mission.name ILIKE :search', {
+                search: `%${search}%`,
+            });
+        }
+        if (sortBy) {
+            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        if (user.role !== UserRole.ADMIN) {
+            addAccessConstraints(query, userUUID);
+        }
+        return query.getManyAndCount();
     }
 
     async findMissionByProject(
