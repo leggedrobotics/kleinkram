@@ -100,6 +100,13 @@
         v-model:selected="selected"
         selection="multiple"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:body-cell-Status="props">
             <q-td :props="props">
                 <q-badge :color="getColor(props.row.state)">
