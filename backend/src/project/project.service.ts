@@ -216,12 +216,12 @@ export class ProjectService {
                 db_project.missions.map(async (mission) => {
                     await moveMissionFilesInMinio(
                         `${db_project.name}/${mission.name}`,
-                        `${project.name}`,
+                        `${project.name}/${mission.name}`,
                         env.MINIO_BAG_BUCKET_NAME,
                     );
                     await moveMissionFilesInMinio(
                         `${db_project.name}/${mission.name}`,
-                        `${project.name}`,
+                        `${project.name}/${mission.name}`,
                         env.MINIO_MCAP_BUCKET_NAME,
                     );
                 }),

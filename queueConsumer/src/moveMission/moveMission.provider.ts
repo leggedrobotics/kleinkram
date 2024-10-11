@@ -52,12 +52,12 @@ export class MoveMissionProvider {
         );
         await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
-            mission.project.name,
+            `${mission.project.name}/${mission.name}`,
             env.MINIO_BAG_BUCKET_NAME,
         );
         await moveMissionFilesInMinio(
             `${old_project.name}/${mission.name}`,
-            mission.project.name,
+            `${mission.project.name}/${mission.name}`,
             env.MINIO_MCAP_BUCKET_NAME,
         );
         await Promise.all(

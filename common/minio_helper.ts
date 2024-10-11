@@ -25,19 +25,20 @@ export const internalMinio: Client = new Client({
 });
 
 //* srcPath: Project1/Run1
-//* destPath: Project2
+//* destPath: Project2/Run2
 export async function moveMissionFilesInMinio(
     srcPath: string,
-    destProject: string,
+    desPath: string,
     bucketName: string,
 ) {
     try {
         const objects = await listObjects(bucketName, srcPath);
-        const mission = srcPath.split('/')[1];
+        const destMission = desPath.split('/')[1];
+        const destProject = desPath.split('/')[0];
         await Promise.all(
             objects.map(async (obj) => {
                 const filename = obj.name.split('/').slice(2).join('/');
-                const destName = `${destProject}/${mission}/${filename}`;
+                const destName = `${destProject}/${destMission}/${filename}`;
                 await moveFile(obj.name, destName, bucketName);
             }),
         );

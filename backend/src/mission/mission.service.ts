@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
-import { Brackets, In, Repository } from 'typeorm';
+import { Brackets, ILike, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
@@ -12,7 +12,7 @@ import { TagService } from '../tag/tag.service';
 import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { externalMinio } from '@common/minio_helper';
+import { externalMinio, moveMissionFilesInMinio } from '@common/minio_helper';
 import Queue from 'bull';
 import { redis } from '@common/consts';
 
@@ -276,7 +276,38 @@ export class MissionService implements OnModuleInit {
         );
     }
 
-    updateName(uuid: string, name: string) {
-        return this.missionRepository.update({ uuid }, { name });
+    async updateName(uuid: string, name: string) {
+        const db_mission = await this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['files', 'project'],
+        });
+        const exists = await this.missionRepository.exists({
+            where: { name: ILike(name), uuid: Not(uuid) },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Mission with that name already exists',
+            );
+        }
+        if (db_mission.name !== name) {
+            await Promise.all(
+                db_mission.files.map(async (mission) => {
+                    await moveMissionFilesInMinio(
+                        `${db_mission.project.name}/${db_mission.name}`,
+                        `${db_mission.project.name}/${name}`,
+                        env.MINIO_BAG_BUCKET_NAME,
+                    );
+                    await moveMissionFilesInMinio(
+                        `${db_mission.project.name}/${db_mission.name}`,
+                        `${db_mission.project.name}/${name}`,
+                        env.MINIO_MCAP_BUCKET_NAME,
+                    );
+                }),
+            );
+        }
+        await this.missionRepository.update(uuid, {
+            name: name,
+        });
+        return this.missionRepository.findOne({ where: { uuid } });
     }
 }

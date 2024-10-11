@@ -22,7 +22,11 @@ export async function uploadFile(
 ) {
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        await minio.fPutObject(bucketName, fileName, tmp_file_path);
+        await minio.fPutObject(bucketName, '123', tmp_file_path, {
+            fileName: fileName,
+
+            'Content-Type': 'application/octet-stream',
+        });
         logger.debug('File uploaded to Minio in parts');
         return true;
     }, 'uploadFile')();
