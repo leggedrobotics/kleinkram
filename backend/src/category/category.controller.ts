@@ -4,9 +4,14 @@ import { QueryOptionalString, QueryUUID } from '../validation/queryDecorators';
 import {
     CanCreateInProjectByBody,
     CanReadProject,
+    CanWriteMissionByBody,
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
-import { BodyString, BodyUUID } from '../validation/bodyDecorators';
+import {
+    BodyString,
+    BodyUUID,
+    BodyUUIDArray,
+} from '../validation/bodyDecorators';
 
 @Controller('category')
 export class CategoryController {
@@ -30,5 +35,21 @@ export class CategoryController {
         @BodyUUID('projectUUID') projectUUID: string,
     ) {
         return this.categoryService.create(name, projectUUID, user);
+    }
+
+    @Post('addMany')
+    @CanWriteMissionByBody()
+    async addManyCategories(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUIDArray('files') files: string[],
+        @BodyUUIDArray('categories') categories: string[],
+        @addUser() user: AuthRes,
+    ) {
+        return this.categoryService.addManyCategories(
+            missionUUID,
+            files,
+            categories,
+            user,
+        );
     }
 }
