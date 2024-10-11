@@ -19,13 +19,13 @@ import { redis } from '@common/consts';
 @Injectable()
 export class MissionService implements OnModuleInit {
     private moveQueue: Queue.Queue;
+
     constructor(
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
-
         private userservice: UserService,
         private tagservice: TagService,
     ) {}
@@ -274,5 +274,9 @@ export class MissionService implements OnModuleInit {
                 ),
             ),
         );
+    }
+
+    updateName(uuid: string, name: string) {
+        return this.missionRepository.update({ uuid }, { name });
     }
 }

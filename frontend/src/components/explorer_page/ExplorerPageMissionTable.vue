@@ -88,6 +88,13 @@
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
+                            <EditMissionDialogOpener :mission="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section
+                                        >Edit Mission
+                                    </q-item-section>
+                                </q-item>
+                            </EditMissionDialogOpener>
                             <MissionMetadataOpener :mission="props.row">
                                 <q-item clickable v-ripple>
                                     <q-item-section>
@@ -95,12 +102,6 @@
                                     </q-item-section>
                                 </q-item>
                             </MissionMetadataOpener>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Manage Access</q-item-section>
-                                <q-tooltip>
-                                    Manage Access is not yet implemented
-                                </q-tooltip>
-                            </q-item>
                             <MoveMissionDialogOpener :mission="props.row">
                                 <q-item clickable v-ripple>
                                     <q-item-section>Move</q-item-section>
@@ -134,6 +135,7 @@ import { Mission } from 'src/types/Mission';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
+import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 

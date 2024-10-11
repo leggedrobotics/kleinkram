@@ -35,3 +35,11 @@ export const updateMissionTags = async (
     const response = await axios.post('/mission/tags', { missionUUID, tags });
     return response.data;
 };
+
+export const updateMissionName = async (missionUUID: string, name: string) => {
+    const response = await axios.post('/mission/updateName', {
+        missionUUID,
+        name,
+    });
+    return response.data;
+};

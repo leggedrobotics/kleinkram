@@ -21,8 +21,8 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamString, ParamUUID } from '../validation/paramDecorators';
-import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
+import { BodyUUID } from '../validation/bodyDecorators';
 
 @Controller('mission')
 export class MissionController {
@@ -35,6 +35,20 @@ export class MissionController {
         @addUser() user: AuthRes,
     ) {
         return this.missionService.create(createMission, user);
+    }
+
+    @Post('updateName')
+    @CanWriteMissionByBody()
+    async updateMissionName(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @Body('name') name: string,
+    ) {
+        // validate name
+        if (/^[\w\-_]{3,20}$/i.test(name) === false) {
+            throw new Error('Invalid name');
+        }
+
+        return this.missionService.updateName(missionUUID, name);
     }
 
     @Get('filtered')
