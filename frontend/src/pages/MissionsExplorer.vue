@@ -13,7 +13,8 @@
                     v-if="project_uuid"
                 >
                     <q-btn
-                        outline
+                        class="button-border"
+                        flat
                         color="primary"
                         icon="sym_o_sell"
                         label="Metadata"
@@ -22,7 +23,12 @@
                     </q-btn>
                 </ConfigureTagsDialogOpener>
 
-                <q-btn icon="sym_o_more_vert" outline>
+                <q-btn
+                    icon="sym_o_more_vert"
+                    class="button-border"
+                    flat
+                    color="primary"
+                >
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu auto-close style="width: 280px">
