@@ -128,7 +128,8 @@ export const mission_columns: Array<ProjectColumnType> = [
     },
     {
         name: 'missionaction',
-        label: 'Action',
+        label: '',
+        style: 'width: 10px',
         align: 'center',
     },
 ];
