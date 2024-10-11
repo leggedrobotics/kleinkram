@@ -216,7 +216,7 @@
                 text-color="black"
                 color="primary"
                 label="Tags"
-                icon="sym_o_filter_list"
+                icon="sym_o_sell"
                 class="full-width button-border full-height"
                 @click="openTagFilterDialog"
             >
