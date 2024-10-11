@@ -101,7 +101,10 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         // mark queue as done
         const queue = await this.getQueue(job);
-        queue.state = QueueState.COMPLETED;
+        queue.state =
+            queue.state < QueueState.COMPLETED
+                ? QueueState.COMPLETED
+                : queue.state;
         queue.processingDuration = job.finishedOn - job.processedOn;
         await this.queueRepository.save(queue);
 
@@ -349,10 +352,25 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         });
 
         if (exists) {
-            queueEntity.state = QueueState.ERROR;
+            queueEntity.state = QueueState.FILE_ALREADY_EXISTS;
+            queueEntity.filename = originalFileName;
             await this.queueRepository.save(queueEntity);
             logger.error(
                 `Job {${job.id}} file ${originalFileName} already exists`,
+            );
+            return false;
+        }
+
+        // reject files that are not .bag or .mcap
+        if (
+            !originalFileName.endsWith('.bag') &&
+            !originalFileName.endsWith('.mcap')
+        ) {
+            queueEntity.state = QueueState.UNSUPPORTED_FILE_TYPE;
+            queueEntity.filename = originalFileName;
+            await this.queueRepository.save(queueEntity);
+            logger.error(
+                `Job {${job.id}} file ${originalFileName} is not a .bag or .mcap file`,
             );
             return false;
         }
