@@ -6,7 +6,7 @@
         >
             <div>
                 <div class="q-pa-lg flex row justify-between">
-                    <h3 class="text-h3 q-ma-none">
+                    <h3 class="text-h3 q-ma-none" style="max-width: 80%">
                         <slot name="title"></slot>
                     </h3>
                     <q-btn
@@ -14,6 +14,7 @@
                         dense
                         padding="6px"
                         class="button-border"
+                        style="max-height: 40px"
                         icon="sym_o_close"
                         @click="onDialogCancel"
                     />

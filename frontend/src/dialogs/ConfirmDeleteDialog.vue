@@ -1,15 +1,14 @@
 <template>
-    <q-dialog ref="dialogRef">
-        <q-card
-            class="flex column q-pa-lg"
-            style="min-height: 300px; min-width: 600px"
+    <base-dialog ref="dialogRef">
+        <template #title>
+            Are you sure you want to delete the following
+            {{ filenames.length }}
+            {{ filenames.length === 1 ? 'file' : 'files' }}?</template
         >
+
+        <template #content>
             <div>
-                <p style="font-size: 16pt">
-                    Are you sure you want to delete the following
-                    {{ filenames.length }}
-                    {{ filenames.length === 1 ? 'file' : 'files' }}?
-                </p>
+                <p style="font-size: 16pt"></p>
                 <ul>
                     <li
                         v-for="filename in props.filenames.slice(0, 5)"
@@ -23,6 +22,9 @@
                     </li>
                 </ul>
             </div>
+        </template>
+
+        <template #actions>
             <div class="flex justify-end">
                 <q-btn flat label="Cancel" @click="onDialogCancel" />
                 <q-btn
@@ -33,12 +35,13 @@
                     icon="sym_o_delete"
                 />
             </div>
-        </q-card>
-    </q-dialog>
+        </template>
+    </base-dialog>
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import AddTag from 'components/AddTag.vue';
 
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
