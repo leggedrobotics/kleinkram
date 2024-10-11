@@ -6,7 +6,11 @@
         icon="sym_o_edit"
         label="Edit File"
         @click="editFile"
-        :disable="file?.tentative || !canModify"
+        :disable="
+            [FileState.LOST, FileState.UPLOADING, FileState.MOVING].indexOf(
+                file?.state,
+            ) !== -1 || !canModify
+        "
     >
         <q-tooltip> Edit File</q-tooltip>
     </q-btn>
@@ -19,8 +23,8 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import { FileEntity } from 'src/types/FileEntity';
-import EditFile from 'components/EditFile.vue';
 import NewEditFile from 'components/NewEditFile.vue';
+import { FileState } from 'src/enums/FILE_ENUM';
 
 const $q = useQuasar();
 const props = defineProps<{

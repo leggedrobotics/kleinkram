@@ -11,7 +11,13 @@
                         icon="sym_o_download"
                         label="Download"
                         @click="() => _downloadFile(data?.uuid, data?.filename)"
-                        :disable="data?.tentative"
+                        :disable="
+                            [
+                                FileState.LOST,
+                                FileState.UPLOADING,
+                                FileState.MOVING,
+                            ].indexOf(data?.state) !== -1
+                        "
                     />
 
                     <q-btn
@@ -200,13 +206,13 @@
             >
             </q-table>
             <q-btn
-                v-if="!displayTopics && !data?.tentative && !!mcap"
+                v-if="!displayTopics && data?.state === FileState.OK && !!mcap"
                 label="Go to Mcap"
                 icon="sym_o_turn_slight_right"
                 @click="redirectToMcap"
             >
             </q-btn>
-            <div v-if="data?.tentative">
+            <div v-if="data?.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
                 </h5>
