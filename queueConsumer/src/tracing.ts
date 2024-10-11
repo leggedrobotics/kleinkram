@@ -9,7 +9,7 @@ import { context, Exception, trace } from '@opentelemetry/api';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-import { TypeormInstrumentation } from 'opentelemetry-instrumentation-typeorm';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { QUEUE_CONSUMER_LABEL } from './logger';
 
 // Export the tracing
@@ -52,7 +52,7 @@ const sdk = new NodeSDK({
         new ExpressInstrumentation(),
         new FetchInstrumentation(),
         new WinstonInstrumentation(),
-        new TypeormInstrumentation(),
+        new PgInstrumentation(),
     ],
 });
 
