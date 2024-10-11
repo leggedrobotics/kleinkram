@@ -283,25 +283,14 @@ export const filesOfMission = async (
             );
             users[file.creator.uuid] = fileCreator;
         }
-        const topics = file.topics.map((topic: any) => {
-            return new Topic(
-                topic.uuid,
-                topic.name,
-                topic.type,
-                topic.nrMessages,
-                topic.frequency,
-                new Date(topic.createdAt),
-                new Date(topic.updatedAt),
-                new Date(topic.deletedAt),
-            );
-        });
+
         const newFile = new FileEntity(
             file.uuid,
             file.filename,
             mission,
             fileCreator,
             new Date(file.date),
-            topics,
+            [],
             file.size,
             file.type,
             file.state,

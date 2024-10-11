@@ -115,7 +115,7 @@ import ActionsTable from 'components/Actions.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import {
     canLaunchInMission,
@@ -180,7 +180,8 @@ const queryKeyMissions = computed(() => [
 ]);
 const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
-    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
+    queryFn: () =>
+        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 </script>
