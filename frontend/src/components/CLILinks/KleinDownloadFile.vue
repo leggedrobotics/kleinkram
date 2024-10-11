@@ -24,7 +24,7 @@
                     "
                 >
                     klein file download
-                    <span style="color: grey">
+                    <span style="opacity: 0.8">
                         --file-uuid="{{ props.file.uuid }}" --local-path="./{{
                             props.file.filename
                         }}"

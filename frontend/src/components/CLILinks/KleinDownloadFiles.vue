@@ -14,7 +14,7 @@
                     "
                 >
                     klein file download
-                    <span style="color: #b1b1b1">
+                    <span style="opacity: 0.8">
                         {{ fileArguments }} --local-path="."
                     </span>
                 </div>

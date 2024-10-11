@@ -257,7 +257,7 @@
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
-        <div class="q-py-lg" v-else style="background: blue">
+        <div class="q-py-lg" v-else style="background: #0f62fe">
             <ButtonGroupOverlay>
                 <template v-slot:start>
                     <div style="margin: 0; font-size: 14pt; color: white">

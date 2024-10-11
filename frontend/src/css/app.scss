@@ -153,6 +153,10 @@ label {
     font-size: 32px;
 }
 
+.q-table .selected {
+    background-color: #e7efff;
+}
+
 .help-text {
     color: $text-secondary;
     font-size: 14px;
