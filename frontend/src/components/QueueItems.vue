@@ -1,6 +1,6 @@
 <template>
     <div class="row">
-        <div class="col-6 q-pa-md">
+        <div class="col-6 q-py-md q-pr-md">
             <q-input filled v-model="startDate" hint="File Processing since: ">
                 <template v-slot:prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
@@ -49,7 +49,7 @@
                 </template>
             </q-input>
         </div>
-        <div class="col-6 q-pa-md">
+        <div class="col-6 q-py-md">
             <q-select
                 v-model="fileStateFilter"
                 multiple
@@ -88,7 +88,6 @@
     <q-table
         ref="tableRef"
         v-model:pagination="pagination"
-        title="File Processing Queue"
         :rows="queueEntries || []"
         :columns="columns"
         row-key="uuid"
