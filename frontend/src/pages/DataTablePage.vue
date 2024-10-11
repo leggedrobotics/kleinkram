@@ -95,6 +95,9 @@
             </q-btn-dropdown>
         </div>
         <div class="col-4 flex q-pa-sm">
+            <q-tooltip v-if="!handler.project_uuid" self="bottom middle">
+                Please select a project first
+            </q-tooltip>
             <q-btn-dropdown
                 v-model="dd_open_missions"
                 :label="selected_mission?.name || 'Filter by Mission'"
@@ -102,6 +105,7 @@
                 clearable
                 flat
                 class="full-width button-border"
+                :disable="!handler.project_uuid"
             >
                 <q-list>
                     <q-item
