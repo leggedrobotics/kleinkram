@@ -110,9 +110,9 @@
         <template #actions>
             <q-btn
                 label="Cancel"
-                color="secondary"
+                flat
                 @click="onDialogCancel"
-                class="q-mr-sm"
+                class="q-mr-sm button-border"
             />
             <q-btn
                 label="Save"

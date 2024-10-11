@@ -35,7 +35,7 @@
         <template #actions>
             <q-btn
                 label="Save"
-                color="primary"
+                class="bg-button-primary"
                 @click="addCategories"
                 :disable="selected.length === 0"
         /></template>
@@ -83,9 +83,7 @@ const { mutate } = useMutation({
             color: 'positive',
             position: 'bottom',
         });
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'files',
-        });
+        await queryClient.invalidateQueries(['files']);
     },
     onError: (error: Error) => {
         Notify.create({

@@ -11,6 +11,7 @@
         />
         <q-btn
             class="bg-button-primary q-my-md"
+            flat
             label="Add"
             icon="sym_o_add"
             style="width: 20%"

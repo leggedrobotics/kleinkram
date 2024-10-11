@@ -44,7 +44,8 @@
                 <div class="col-1">
                     <q-btn
                         label="Cancel"
-                        color="secondary"
+                        flat
+                        class="q-mr-sm button-border"
                         @click="onDialogOK"
                     />
                 </div>
