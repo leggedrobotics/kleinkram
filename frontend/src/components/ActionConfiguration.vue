@@ -253,7 +253,10 @@ import { computed, Ref, ref, watch } from 'vue';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { Mission } from 'src/types/Mission';
-import { getMissions, missionsOfProject } from 'src/services/queries/mission';
+import {
+    getMissions,
+    missionsOfProjectMinimal,
+} from 'src/services/queries/mission';
 import {
     createActionTemplate,
     createAnalysis,
@@ -346,7 +349,8 @@ const queryKeyMissions = computed(() => [
 ]);
 const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
-    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
+    queryFn: () =>
+        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 

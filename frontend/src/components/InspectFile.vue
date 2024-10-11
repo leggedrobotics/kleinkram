@@ -308,9 +308,19 @@ registerNoPermissionErrorHandler(isLoadingError, file_uuid, 'file', error);
 
 const missionUUID = useMissionUUID();
 
+const mcap_name = computed(() => data.value?.filename.replace('.bag', '.mcap'));
+const _queryKey = computed(() => ['files', missionUUID.value, mcap_name.value]);
+
 const { data: _filesReturn, refetch } = useQuery({
-    queryKey: ['files', missionUUID.value],
-    queryFn: () => filesOfMission(missionUUID.value || '', 100, 0),
+    queryKey: _queryKey,
+    queryFn: () =>
+        filesOfMission(
+            missionUUID.value || '',
+            100,
+            0,
+            FileType.MCAP,
+            mcap_name.value,
+        ),
     enabled() {
         return !!missionUUID.value;
     },
@@ -335,9 +345,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    filesReturn.value?.find((file: FileEntity) => {
-        return file.filename === data.value?.filename.replace('.bag', '.mcap');
-    }),
+    filesReturn.value.length > 0 ? filesReturn.value[0] : null,
 );
 
 const columns = [

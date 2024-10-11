@@ -51,6 +51,28 @@ export class MissionController {
         return this.missionService.updateName(missionUUID, name);
     }
 
+    @Get('filteredMinimal')
+    @UserOnly()
+    async filteredMissionsMinimal(
+        @QueryUUID('uuid') uuid: string,
+        @QueryOptionalString('search') search: string,
+        @QueryOptionalBoolean('descending') descending: boolean,
+        @QueryOptionalString('sortBy') sortBy: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @addUser() user: AuthRes,
+    ) {
+        return this.missionService.findMissionByProjectMinimal(
+            uuid,
+            skip,
+            take,
+            search,
+            descending,
+            sortBy,
+            user.user.uuid,
+        );
+    }
+
     @Get('filtered')
     @UserOnly()
     async filteredMissions(

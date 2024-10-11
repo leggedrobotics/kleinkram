@@ -338,7 +338,7 @@ import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
 import TagFilter from 'src/dialogs/TagFilter.vue';
@@ -403,7 +403,8 @@ const queryKeyMissions = computed(() => [
 ]);
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
-    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
+    queryFn: () =>
+        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 

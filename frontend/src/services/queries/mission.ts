@@ -77,6 +77,82 @@ export const getMission = async (uuid: string): Promise<Mission> => {
     );
 };
 
+export const missionsOfProjectMinimal = async (
+    projectUUID: string,
+    take: number = 100,
+    skip: number = 0,
+    sortBy: string = 'createdAt',
+    descending: boolean = false,
+    searchParams?: {
+        name: string;
+    },
+): Promise<[Mission[], number]> => {
+    if (!projectUUID) {
+        return [[], 0];
+    }
+    const params: Record<string, any> = {
+        uuid: projectUUID,
+        take,
+        skip,
+        sortBy,
+        descending,
+    };
+    if (searchParams && searchParams.name) {
+        params['search'] = searchParams.name;
+    }
+    const response = await axios.get(`/mission/filteredMinimal`, {
+        params,
+    });
+    const data = response.data[0];
+    const total = response.data[1];
+    if (data.length === 0) {
+        return [[], 0];
+    }
+    const users: Record<string, User> = {};
+    const res = data.map((mission: any) => {
+        const project = new Project(
+            mission.project.uuid,
+            mission.project.name,
+            mission.project.description,
+            [],
+            undefined,
+            undefined,
+            undefined,
+            new Date(mission.project.createdAt),
+            new Date(mission.project.updatedAt),
+            new Date(mission.project.deletedAt),
+        );
+        let missionCreator: User | undefined = users[mission.creator.uuid];
+        if (!missionCreator) {
+            missionCreator = new User(
+                mission.creator.uuid,
+                mission.creator.name,
+                mission.creator.email,
+                mission.creator.role,
+                mission.creator.avatarUrl,
+                [],
+                new Date(mission.creator.createdAt),
+                new Date(mission.creator.updatedAt),
+                new Date(mission.creator.deletedAt),
+            );
+            users[mission.creator.uuid] = missionCreator;
+        }
+
+        return new Mission(
+            mission.uuid,
+            mission.name,
+            project,
+            [],
+            [],
+            missionCreator,
+            new Date(mission.createdAt),
+            new Date(mission.updatedAt),
+            new Date(mission.deletedAt),
+        );
+    });
+    return [res, total];
+};
+
 export const missionsOfProject = async (
     projectUUID: string,
     take: number = 100,
