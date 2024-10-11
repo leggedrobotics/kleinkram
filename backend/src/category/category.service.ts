@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import FileEntity from '@common/entities/file/file.entity';
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import Project from '@common/entities/project/project.entity';
 import Category from '@common/entities/category/category.entity';
 import { AuthRes } from '../auth/paramDecorator';
 
@@ -11,10 +9,6 @@ export class CategoryService {
     constructor(
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
-        @InjectRepository(Project)
-        private projectRepository: Repository<Project>,
-        @InjectRepository(FileEntity)
-        private fileEntityRepository: Repository<FileEntity>,
     ) {}
 
     async getAll(projectUUID: string, filter?: string) {
