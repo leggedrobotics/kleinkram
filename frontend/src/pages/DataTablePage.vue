@@ -253,6 +253,13 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:body-cell-state="props">
             <q-td :props="props">
                 <q-icon
@@ -286,19 +293,11 @@
                 >
                     <q-menu auto-close>
                         <q-list>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="() => openQDialog(props.row)"
-                                :style="
-                                    props.row.tentative
-                                        ? 'pointer-events: none'
-                                        : ''
-                                "
-                                :disabled="props.row.tentative"
-                            >
-                                <q-item-section>Edit File</q-item-section>
-                            </q-item>
+                            <edit-file-dialog-opener :file="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>Edit File</q-item-section>
+                                </q-item>
+                            </edit-file-dialog-opener>
                             <q-item
                                 clickable
                                 v-ripple
@@ -345,6 +344,7 @@ import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 import NewEditFile from 'components/NewEditFile.vue';
+import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 
 const $router = useRouter();
 
@@ -599,19 +599,6 @@ const columns = [
         field: 'Edit',
     },
 ];
-
-/**
- * open a q-dialog with a file editor
- */
-function openQDialog(file: FileEntity): void {
-    $q.dialog({
-        title: 'Profilbild wählen',
-        component: NewEditFile,
-        componentProps: {
-            file_uuid: file.uuid,
-        },
-    });
-}
 
 function openTagFilterDialog() {
     $q.dialog({

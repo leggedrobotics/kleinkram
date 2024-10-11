@@ -196,7 +196,7 @@
             </ButtonGroupOverlay>
         </div>
 
-        <div style="padding-top: 10px">
+        <div>
             <Suspense>
                 <template #fallback>
                     <div style="width: 550px; height: 67px">
