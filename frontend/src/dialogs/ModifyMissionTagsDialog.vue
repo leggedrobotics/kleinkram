@@ -10,8 +10,8 @@
         </template>
         <template #actions>
             <q-btn
+                class="bg-button-primary"
                 label="Save"
-                color="primary"
                 @click="modifyTags"
                 :disable="tagValues === {}"
             />

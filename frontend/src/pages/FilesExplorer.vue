@@ -51,7 +51,17 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
 
-                <MissionMetadataOpener :mission="mission" v-if="mission" />
+                <MissionMetadataOpener :mission="mission" v-if="mission">
+                    <q-btn
+                        class="button-border"
+                        flat
+                        color="primary"
+                        icon="sym_o_sell"
+                        label="Metadata"
+                    >
+                        <q-tooltip> Manage Metadata Tags</q-tooltip>
+                    </q-btn>
+                </MissionMetadataOpener>
 
                 <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
