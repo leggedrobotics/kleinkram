@@ -43,6 +43,7 @@ import Category from '@common/entities/category/category.entity';
 @Injectable()
 export class FileService implements OnModuleInit {
     private fileCleanupQueue: Queue.Queue;
+
     constructor(
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
@@ -620,6 +621,11 @@ export class FileService implements OnModuleInit {
             .findOne({
                 where: {
                     state: LessThan(QueueState.COMPLETED),
+                    // pending uploads get canceled after 12 hours
+                    // however this cleanup is done asynchronously once a day
+                    createdAt: LessThan(
+                        new Date(Date.now() - 12 * 60 * 60 * 1000),
+                    ),
                     creator: { uuid: userUUID },
                 },
             })
@@ -728,6 +734,7 @@ export class FileService implements OnModuleInit {
             }),
         );
     }
+
     async exists(fileUUID: string) {
         return this.fileRepository.exists({ where: { uuid: fileUUID } });
     }
