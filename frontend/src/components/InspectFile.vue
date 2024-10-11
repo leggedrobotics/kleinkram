@@ -55,7 +55,7 @@
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_encrypted" />
                                     </q-item-section>
-                                    <q-item-section> Copy MD5 </q-item-section>
+                                    <q-item-section> Copy MD5</q-item-section>
                                 </q-item>
                                 <q-item
                                     clickable
@@ -65,7 +65,7 @@
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
                                     </q-item-section>
-                                    <q-item-section> Copy UUID </q-item-section>
+                                    <q-item-section> Copy UUID</q-item-section>
                                 </q-item>
                                 <q-item clickable v-ripple style="color: red">
                                     <q-item-section avatar>
@@ -205,13 +205,26 @@
                 :filter="filterKey"
             >
             </q-table>
-            <q-btn
+
+            <div
+                class="flex column"
                 v-if="!displayTopics && data?.state === FileState.OK && !!mcap"
-                label="Go to Mcap"
-                icon="sym_o_turn_slight_right"
-                @click="redirectToMcap"
             >
-            </q-btn>
+                <span class="q-my-sm">
+                    Kleinkram does ony extract topics for mcap files.
+                    <br />Please switch to the mcap file to see the topics.
+                </span>
+
+                <q-btn
+                    label="Go to Mcap"
+                    flat
+                    class="button-border"
+                    style="width: 350px"
+                    icon="sym_o_turn_slight_right"
+                    @click="redirectToMcap"
+                >
+                </q-btn>
+            </div>
             <div v-if="data?.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
