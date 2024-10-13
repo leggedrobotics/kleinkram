@@ -13,7 +13,7 @@ import {
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import pLimit from 'p-limit';
-import { Ref, ref } from 'vue';
+import { ref, Ref } from 'vue';
 import { FileUpload } from 'src/types/FileUpload';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
@@ -36,7 +36,7 @@ export async function createFileAction(
     const noti = Notify.create({
         group: false,
         message: 'Processing files...',
-        color: 'green-8',
+        color: 'positive',
         spinner: true,
         position: 'bottom',
         timeout: 0,
@@ -102,57 +102,53 @@ export async function createFileAction(
                     closeBtn: true,
                 });
             });
-        const credentials = tempCreds.credentials;
-        const reservedFilenames = tempCreds.files;
-        uploadingFiles.value = reservedFilenames;
+        uploadingFiles.value = filteredFilenames;
         const api = ENV.ENDPOINT;
         let minio_endpoint = api.replace('api', 'minio');
         if (api === 'http://localhost:3000') {
             minio_endpoint = 'http://localhost:9000';
         }
-        const minioClient = new S3Client({
-            endpoint: minio_endpoint,
-            forcePathStyle: true,
-            region: 'us-east-1',
-            credentials: {
-                accessKeyId: credentials.accessKey,
-                secretAccessKey: credentials.secretKey,
-                sessionToken: credentials.sessionToken,
-            },
+
+        await queryClient.invalidateQueries({
+            predicate: (query) => query.queryKey[0] === 'files',
         });
+
         const limit = pLimit(5);
+
+        const zip = (a, b) => a.map((k, i) => [k, b[i]]);
         await Promise.all(
-            Object.keys(reservedFilenames).map(async (filename) => {
-                const file = filesToRecord[filename];
-                const newFileUpload = ref(new FileUpload(filename, file.size));
+            zip(tempCreds, files).map(async (_file) => {
+                const file_access = _file[0];
+                const file = _file[1];
+
+                const credentials = file_access.accessCredentials;
+                const minioClient = new S3Client({
+                    endpoint: minio_endpoint,
+                    forcePathStyle: true,
+                    region: 'us-east-1',
+                    credentials: {
+                        accessKeyId: credentials.accessKey,
+                        secretAccessKey: credentials.secretKey,
+                        sessionToken: credentials.sessionToken,
+                    },
+                });
+
+                const newFileUpload = ref(
+                    new FileUpload(file.filename, file.size),
+                );
                 injectedFiles.value.push(newFileUpload);
                 return limit(async () => {
-                    if (!reservedFilenames[filename].success) {
-                        Notify.create({
-                            group: false,
-                            message: `Upload of File ${filename} failed: File with this Name already exists`,
-                            color: 'negative',
-                            spinner: false,
-                            timeout: 6000,
-                        });
-                        newFileUpload.value.canceled = true;
-                        return;
-                    }
-
                     try {
                         const md5Hash = await uploadFileMultipart(
                             file,
-                            reservedFilenames[filename].bucket,
-                            reservedFilenames[filename].location,
+                            file_access.bucket,
+                            file_access.fileUUID,
                             minioClient,
                             newFileUpload,
-                            reservedFilenames[filename].fileUUID,
+                            file_access.fileUUID,
                         );
 
-                        return confirmUpload(
-                            reservedFilenames[filename].queueUUID,
-                            md5Hash,
-                        );
+                        return confirmUpload(file_access.fileUUID, md5Hash);
                     } catch (e) {
                         console.error('err', e);
                         newFileUpload.value.canceled = true;
@@ -168,13 +164,14 @@ export async function createFileAction(
                 });
             }),
         );
+
         noti({
             message: `Files for Mission ${selected_mission?.name} uploaded`,
-            color: 'green-8',
+            color: 'positive',
             spinner: false,
             timeout: 5000,
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) =>
                 (query.queryKey[0] === 'files' &&
                     query.queryKey[1] === selected_mission.uuid) ||
@@ -193,21 +190,28 @@ export async function createFileAction(
     }
 }
 
+/**
+ * Import files from Google Drive.
+ *
+ * @param selected_mission the mission to import the files into
+ * @param drive_url the URL of the Google Drive folder to import
+ */
 export async function driveUpload(
     selected_mission: Mission,
     drive_url: Ref<string>,
 ) {
-    if (!selected_mission) {
-        return;
-    }
+    // abort if no mission is selected
+    if (!selected_mission) return;
+
     const noti = Notify.create({
         group: false,
         message: 'Processing files...',
-        color: 'green-8',
+        color: 'positive',
         spinner: true,
         position: 'bottom',
         timeout: 0,
     });
+
     await createDrive(selected_mission.uuid, drive_url.value)
         .then(() => {
             noti({
@@ -234,7 +238,6 @@ async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
     newFileUpload: Ref<FileUpload>,
-    fileUUID: string,
 ) {
     let UploadId: string | undefined;
     try {
@@ -256,7 +259,7 @@ async function uploadFileMultipart(
             partNumber++, start += partSize
         ) {
             if ((partNumber - 1) % 20 === 0) {
-                const queueExists = await existsFile(fileUUID);
+                const queueExists = await existsFile(key);
                 if (!queueExists) {
                     throw new Error('Upload was cancelled');
                 }
@@ -346,10 +349,7 @@ export function getOnMount(
                     isDone = true;
                 });
             const start = Date.now();
-            while (!isDone && Date.now() - start < 200) {
-                console.log(Date.now() - start);
-                console.log(isDone);
-            }
+            while (!isDone && Date.now() - start < 200) {}
         });
     };
 }

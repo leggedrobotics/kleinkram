@@ -4,18 +4,10 @@ import { Credentials } from 'minio';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
-    credentials: Credentials;
-    files: Record<
-        string,
-        {
-            bucket: string;
-            location: string;
-            fileUUID: string;
-            queueUUID: string;
-            success: boolean;
-        }
-    >;
-};
+    bucket: string;
+    fileUUID: string;
+    accessCredentials: Credentials;
+}[];
 
 export const updateFile = async ({ file }: { file: FileEntity }) => {
     const response = await axios.put(`/file/${file.uuid}`, {

@@ -93,7 +93,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 }
                 const queue = await this.queueRepository.findOne({
                     where: {
-                        filename: file.filename,
+                        display_name: file.filename,
                         mission: { uuid: file.mission.uuid },
                     },
                 });
@@ -163,7 +163,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         await this.fileRepository.save(file);
                         const queue = await this.queueRepository.findOne({
                             where: {
-                                filename: file.filename,
+                                display_name: file.filename,
                                 mission: { uuid: file.mission.uuid },
                             },
                         });
@@ -229,7 +229,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             });
                             const queue = this.queueRepository.create({
                                 identifier: file,
-                                filename: parts[2],
+                                display_name: parts[2],
                                 mission,
                                 state: QueueState.AWAITING_PROCESSING,
                                 location: FileLocation.MINIO,
