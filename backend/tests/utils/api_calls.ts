@@ -7,6 +7,8 @@ import { QueueState } from '@common/enum';
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
+import crypto from 'crypto';
+
 const FormData = require('form-data');
 
 export const create_project_using_post = async (
@@ -100,6 +102,8 @@ export async function upload_file(
     });
     const fileFile = Buffer.from(await blob.arrayBuffer());
     const file_hash = await crypto.subtle.digest('SHA-256', file.buffer);
+    const hash = crypto.createHash('md5');
+    hash.update(fileFile);
 
     const minioClient = new S3Client({
         endpoint: 'http://localhost:9000',
@@ -132,6 +136,7 @@ export async function upload_file(
             },
             body: JSON.stringify({
                 uuid: fileResponse['queueUUID'],
+                md5: hash.digest('base64'),
             }),
         },
     );

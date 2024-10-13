@@ -32,14 +32,12 @@ export const clearAllData = async () => {
         const tablesToClear = entities
             .filter((entity) => entity.tableName !== undefined)
             .filter((entity) => !entity.tableName.includes('view'))
+            .filter((entity) => !entity.tableName.includes('materialized'))
+            .filter((entity) => !entity.tableName.includes('worker'))
             .map((entity) => `"${entity.tableName}"`)
             .join(', ');
 
         await db.query(`TRUNCATE ${tablesToClear} CASCADE;`);
-        await db.query(
-            'INSERT INTO worker (uuid, "createdAt", "updatedAt", "deletedAt", "identifier", "hostname", "cpuMemory", "hasGPU", "gpuModel", "gpuMemory", "cpuCores", "cpuModel", storage, reachable, "lastSeen") ' +
-                "VALUES ('00000000-0000-0000-0000-000000000001', '2021-01-01T00:00:00.000Z', '2021-01-01T00:00:00.000Z', NULL, 'DO_NOT_CHANGE','DO_NOT_CHANGE', 16, false, '', 0, 3, 'Intel Core 2', 1000, true, '2021-01-01T00:00:00.000Z');",
-        );
     } catch (error) {
         throw new Error(`ERROR: Cleaning test database: ${error}`);
     }

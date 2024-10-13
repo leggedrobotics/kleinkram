@@ -62,23 +62,22 @@ describe('Verify Action', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    command: 'echo "Hello World"',
-                    image: 'rslethz/action:file-hash-latest',
                     name: 'test-template',
-                    runtime_requirements: {
-                        gpu_model: {
-                            name: 'no-gpu',
-                            memory: 0,
-                            compute_capability: '',
-                        },
-                        memory: 2,
-                    },
+                    command: '',
+                    image: 'rslethz/action:file-hash-latest',
+                    cpuCores: 2,
+                    cpuMemory: 2,
+                    gpuMemory: -1,
+                    maxRuntime: 2,
                     searchable: true,
                 }),
             },
         );
+
+        expect(create_template.status).toBeLessThan(300);
         const res = await create_template.json();
         const uuid = res.uuid;
+
         // start action container
         const action_submission = await fetch(
             `http://localhost:3000/action/submit`,

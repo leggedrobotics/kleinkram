@@ -20,11 +20,11 @@ klein mission byUUID $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
 mkdir data
-klein mission download --mission-uuid $MISSION_UUID ./data
+klein mission download --mission-uuid $MISSION_UUID --local-path ./data
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"
-cd ./data || exit 1
+cd ./data/test_mission || exit 1
 ls -la
 
 # compute 'SHA-256' hash of ./data/test_small.bag

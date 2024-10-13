@@ -7,6 +7,7 @@ describe('Anonymous users trigger 401', () => {
         '/auth/google', // anonymous users can login
         '/auth/google/callback', // anonymous users can login
         '/auth/logout', // anonymous users can logout
+        '/metrics', // anonymous users can access metrics
     ];
 
     const endpoints = get_endpoints();
