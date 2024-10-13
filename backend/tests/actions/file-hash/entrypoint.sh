@@ -24,7 +24,7 @@ klein mission download --mission-uuid $MISSION_UUID --local-path ./data
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"
-cd ./data/test_mission || exit 1
+cd ./data || exit 1
 ls -la
 
 # compute 'SHA-256' hash of ./data/test_small.bag

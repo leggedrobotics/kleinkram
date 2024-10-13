@@ -145,7 +145,6 @@ export async function createFileAction(
                             file_access.fileUUID,
                             minioClient,
                             newFileUpload,
-                            file_access.fileUUID,
                         );
 
                         return confirmUpload(file_access.fileUUID, md5Hash);

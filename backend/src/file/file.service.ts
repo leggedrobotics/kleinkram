@@ -716,7 +716,7 @@ export class FileService implements OnModuleInit {
                     }),
                 );
 
-                await this.queueRepository.save(
+                const queueEntity = await this.queueRepository.save(
                     this.queueRepository.create({
                         identifier: file.uuid,
                         display_name: filename,
@@ -734,6 +734,7 @@ export class FileService implements OnModuleInit {
                         file.uuid,
                         getBucketFromFileType(fileType),
                     ),
+                    queueUUID: queueEntity.uuid,
                 };
             }),
         );

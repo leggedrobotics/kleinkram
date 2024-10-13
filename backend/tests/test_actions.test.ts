@@ -129,6 +129,7 @@ describe('Verify Action', () => {
         }
 
         const file_hash_str = Buffer.from(file_hash).toString('hex');
+        console.log(file_hash_str);
 
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message);

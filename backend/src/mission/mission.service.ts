@@ -9,10 +9,9 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 import { UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
-import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { externalMinio } from '@common/minio_helper';
+import { externalMinio, getBucketFromFileType } from '@common/minio_helper';
 
 @Injectable()
 export class MissionService {
@@ -307,14 +306,19 @@ export class MissionService {
             relations: ['files', 'project'],
         });
         return await Promise.all(
-            mission.files.map((f) =>
-                externalMinio.presignedUrl(
+            mission.files.map(async (f) => ({
+                filename: f.filename,
+                link: await externalMinio.presignedUrl(
                     'GET',
-                    env.MINIO_BAG_BUCKET_NAME,
-                    `${mission.project.name}/${mission.name}/${f.filename}`,
+                    getBucketFromFileType(f.type),
+                    f.uuid,
                     4 * 60 * 60,
+                    {
+                        // set filename in response headers
+                        'response-content-disposition': `attachment; filename ="${f.filename}"`,
+                    },
                 ),
-            ),
+            })),
         );
     }
 

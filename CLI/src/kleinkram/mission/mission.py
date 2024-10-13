@@ -186,22 +186,17 @@ def download(
         paths = response.json()
         if(len(paths) == 0):
             continue
-        mission_name = paths[0].split("/")[5] # Trust me bro
 
-        local_mission_path = os.path.join(local_path, mission_name)
-        os.mkdir(local_mission_path)
-
-        print(f"Downloading files to {local_mission_path}:")
         for path in paths:
 
-            filename = path.split("/")[-1].split("?")[0]
+            filename = path['filename']
             print(f" - {filename}")
 
-            response = requests.get(path, stream=True)  # Enable streaming mode
+            response = requests.get(path['link'], stream=True)  # Enable streaming mode
             chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
 
             # Open the file for writing in binary mode
-            with open(os.path.join(local_mission_path, filename), "wb") as f:
+            with open(os.path.join(local_path, filename), "wb") as f:
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     if chunk:  # Filter out keep-alive new chunks
                         f.write(chunk)
