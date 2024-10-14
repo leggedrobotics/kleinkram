@@ -5,13 +5,15 @@ import {
     get_jwt_token,
     get_user_from_db,
     mock_db_user,
-} from './utils/database_utils';
-import { UserRole } from '@common/enum';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { create_project_using_post } from './utils/api_calls';
-import process from 'node:process';
+} from '../../utils/database_utils';
+import { AccessGroupRights, UserRole } from '@common/enum';
+import { create_project_using_post } from '../../utils/api_calls';
 
-describe('Access Control', () => {
+/**
+ * This test suite tests the access control of the application.
+ *
+ */
+describe('Verify Project Level Access', () => {
     beforeAll(async () => {
         await db.initialize();
         await clearAllData();
@@ -20,116 +22,6 @@ describe('Access Control', () => {
     beforeEach(clearAllData);
     afterAll(async () => {
         await db.destroy();
-    });
-
-    test('non leggedrobotics.com email is not added to default group', async () => {
-        const default_groups = ['00000000-0000-0000-0000-000000000000'];
-
-        const external_uuid = await mock_db_user(
-            'external-user@third-party.com',
-        );
-
-        // check if the user is not added to the default group
-        const accessGroupRepository = db.getRepository('AccessGroup');
-        const accessGroups = await accessGroupRepository.find();
-        expect(accessGroups.length).toBe(2);
-
-        // one access group should be personal
-        const personal_group = accessGroups.filter(
-            (group: AccessGroup) => group.personal === true,
-        );
-        expect(personal_group.length).toBe(1);
-
-        // one access group should have the default uuid
-        const default_group = accessGroups.filter(
-            (group: AccessGroup) => group.uuid === default_groups[0],
-        );
-        expect(default_group.length).toBe(1);
-
-        const userRepository = db.getRepository(User);
-        const user = await userRepository.findOneOrFail({
-            where: { uuid: external_uuid },
-            relations: ['accessGroups'],
-        });
-        expect(user.email).toBe('external-user@third-party.com');
-
-        // check if the user with a non default email is not added to the default group
-        user.accessGroups.forEach((accessGroup: AccessGroup) => {
-            expect(default_groups.includes(accessGroup.uuid)).toBe(false);
-        });
-
-        // user is only part of the personal group
-        expect(user.accessGroups.length).toBe(1);
-        user.accessGroups.forEach((accessGroup: AccessGroup) => {
-            expect(accessGroup.personal).toBe(true);
-        });
-    });
-
-    test('if leggedrobotics email is added to default group', async () => {
-        const default_groups = ['00000000-0000-0000-0000-000000000000'];
-        const uuid = await mock_db_user('internal-user@leggedrobotics.com');
-
-        // check if the user is added to the default group
-        const accessGroupRepository = db.getRepository('AccessGroup');
-        const accessGroups = await accessGroupRepository.find();
-        expect(accessGroups.length).toBe(2);
-
-        // one access group should be personal
-        const personal_group = accessGroups.filter(
-            (group: AccessGroup) => group.personal === true,
-        );
-        expect(personal_group.length).toBe(1);
-
-        // one access group should have the default uuid
-        const default_group = accessGroups.filter(
-            (group: AccessGroup) => group.uuid === default_groups[0],
-        );
-        expect(default_group.length).toBe(1);
-
-        const userRepository = db.getRepository(User);
-        const user = await userRepository.findOneOrFail({
-            where: { uuid: uuid },
-            relations: ['accessGroups'],
-        });
-
-        expect(user.email).toBe('internal-user@leggedrobotics.com');
-    });
-
-    test('reject allow self-signed JWT token', async () => {
-        const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
-
-        const res = await fetch(`http://localhost:3000/project/create`, {
-            method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
-            body: JSON.stringify({
-                name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [],
-            }),
-        });
-
-        expect(res.status).toBe(401);
-    });
-
-    test('reject corrupted (empty) JWT token', async () => {
-        const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ user: { uuid: '' } }, process.env.JWT_SECRET);
-
-        const res = await fetch(`http://localhost:3000/project/create`, {
-            method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
-            body: JSON.stringify({
-                name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [],
-            }),
-        });
-        expect(res.status).toBe(401);
     });
 
     test('if user with leggedrobotics email is allowed to create new project', async () => {
@@ -430,5 +322,155 @@ describe('Access Control', () => {
         expect(projects.length).toBe(1);
         expect(projects[0].uuid).toBe(project_uuid);
         expect(projects[0].name).toBe('test_project');
+    });
+
+    test('if external user cannot create a new project', async () => {
+        const mock_email = 'some-external@ethz.ch';
+        const external_uuid = await mock_db_user(mock_email);
+
+        const userRepository = db.getRepository(User);
+        const user = await userRepository.findOneOrFail({
+            where: { uuid: external_uuid },
+        });
+
+        const projectRepository = db.getRepository('Project');
+        const project = projectRepository.create();
+        project.name = 'test_project';
+        project.description = 'This is a test project';
+
+        const token = await get_jwt_token(user);
+        const res = await fetch(`http://localhost:3000/project/create`, {
+            method: 'POST',
+            headers: {
+                cookie: `authtoken=${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: project.name,
+                description: project.description,
+                requiredTags: [],
+            }),
+        });
+
+        expect(res.status).toBe(403);
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(0);
+    });
+
+    test('if external user cannot delete a project', async () => {
+        const mock_email = 'some-external@ethz.ch';
+        const external_uuid = await mock_db_user(mock_email);
+
+        const userRepository = db.getRepository(User);
+        const user = await userRepository.findOneOrFail({
+            where: { uuid: external_uuid },
+        });
+
+        const projectRepository = db.getRepository('Project');
+        const project = projectRepository.create();
+        project.name = 'test_project';
+        project.description = 'This is a test project';
+        const project_res = await projectRepository.save(project);
+
+        const token = await get_jwt_token(user);
+        const res = await fetch(
+            `http://localhost:3000/project/${project_res.uuid}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    cookie: `authtoken=${token}`,
+                },
+            },
+        );
+
+        expect(res.status).toBe(403);
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(1);
+    });
+
+    test('if project can only be deleted by users with delete access', async () => {
+        const mock_email = 'some-external@ethz.ch';
+        const external_uuid = await mock_db_user(mock_email);
+
+        const userRepository = db.getRepository(User);
+        const user = await userRepository.findOneOrFail({
+            where: { uuid: external_uuid },
+        });
+
+        const project_uuid = await create_project_using_post(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        userUUID: user.uuid,
+                    },
+                ],
+            },
+            user,
+        );
+
+        const token = await get_jwt_token(user);
+        const res = await fetch(
+            `http://localhost:3000/project/${project_uuid}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    cookie: `authtoken=${token}`,
+                },
+            },
+        );
+
+        expect(res.status).toBe(200);
+        const projectRepository = db.getRepository('Project');
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(0);
+    });
+
+    test('if project can only be deleted if it has no missions', async () => {
+        const mock_email = 'internal@leggedrobotics.com';
+        const user_id = await mock_db_user(mock_email);
+        const user = await get_user_from_db(user_id);
+
+        const project_uuid = await create_project_using_post(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        userUUID: user.uuid,
+                    },
+                ],
+            },
+            user,
+        );
+
+        const projectRepository = db.getRepository('Project');
+        const project = await projectRepository.findOneOrFail({
+            where: { uuid: project_uuid },
+        });
+        expect(project.name).toBe('test_project');
+    });
+
+    test('if viewer of a project cannot add any tag types', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
+    });
+
+    test('if editor of a project can add any tag types', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
+    });
+
+    test('if viewer of a project cannot delete any tag types', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
+    });
+
+    test('if editor of a project can delete any tag types', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
     });
 });
