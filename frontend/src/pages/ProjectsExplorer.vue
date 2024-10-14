@@ -3,8 +3,6 @@
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
-            <h2 class="text-h4 q-mb-xs">All Projects</h2>
-
             <button-group>
                 <q-btn-dropdown dense flat class="button-border q-px-sm">
                     <template v-slot:label>
@@ -27,7 +25,9 @@
                         </q-item>
                     </q-list>
                 </q-btn-dropdown>
+            </button-group>
 
+            <button-group>
                 <q-input
                     debounce="300"
                     placeholder="Search"
