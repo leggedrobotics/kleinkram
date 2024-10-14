@@ -20,7 +20,6 @@ import { existsFile } from 'src/services/queries/file';
 import { Mission } from 'src/types/Mission';
 import { QueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import SparkMD5 from 'spark-md5';
 
 export async function createFileAction(
     selected_mission: Mission,
