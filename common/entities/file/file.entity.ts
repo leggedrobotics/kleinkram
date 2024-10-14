@@ -6,13 +6,14 @@ import {
     ManyToMany,
     ManyToOne,
     OneToMany,
+    OneToOne,
     Unique,
 } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Topic from '../topic/topic.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import { FileState, FileType } from '../../enum';
+import { FileOrigin, FileState, FileType } from '../../enum';
 import CategoryEntity from '../category/category.entity';
 
 @Entity()
@@ -39,6 +40,9 @@ export default class FileEntity extends BaseEntity {
     })
     size: number;
 
+    /**
+     * The user who uploaded the file.
+     */
     @ManyToOne(() => User, (user) => user.files)
     creator: User;
 
@@ -54,4 +58,19 @@ export default class FileEntity extends BaseEntity {
     @ManyToMany(() => CategoryEntity, (category) => category.files)
     @JoinTable()
     categories: CategoryEntity[];
+
+    /**
+     * Saves the reference to the bag or mcap file the current file was converted
+     * to or from. May be null if the file was not converted or the reference is
+     * not available.
+     */
+    @OneToOne(() => FileEntity, (file) => file.relatedFile, {
+        nullable: true,
+        onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'related_file_uuid' })
+    relatedFile: FileEntity;
+
+    @Column({ nullable: true })
+    origin: FileOrigin;
 }

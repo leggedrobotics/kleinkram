@@ -16,6 +16,7 @@ import Project from '@common/entities/project/project.entity';
 import {
     DataType,
     FileLocation,
+    FileOrigin,
     FileState,
     FileType,
     QueueState,
@@ -728,6 +729,7 @@ export class FileService implements OnModuleInit {
                         creator: user,
                         type: fileType,
                         state: FileState.UPLOADING,
+                        origin: FileOrigin.UPLOAD,
                     }),
                 );
 
