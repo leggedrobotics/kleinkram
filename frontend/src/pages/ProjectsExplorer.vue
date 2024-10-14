@@ -6,7 +6,7 @@
             <h2 class="text-h4 q-mb-xs">All Projects</h2>
 
             <button-group>
-                <q-btn-dropdown dense flat class="button-border">
+                <q-btn-dropdown dense flat class="button-border q-px-sm">
                     <template v-slot:label>
                         {{ my_projects ? 'My Projects' : 'All Projects' }}
                     </template>
