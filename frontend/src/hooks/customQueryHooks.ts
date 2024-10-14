@@ -175,7 +175,7 @@ export const useMissionQuery = (
     retryDelay: number = 1000,
 ): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
-        queryKey: ['mission', !!mission_uuid.value ? mission_uuid : ''],
+        queryKey: ['mission', mission_uuid.value ? mission_uuid : ''],
         queryFn: () => {
             if (!mission_uuid.value) return null;
             return getMission(mission_uuid.value as string);

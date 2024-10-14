@@ -137,7 +137,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const sourceIsBag = queue.display_name.endsWith('.bag');
 
         const uuid = crypto.randomUUID();
-        let tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
+        const tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
         queue.state = QueueState.DOWNLOADING;
@@ -385,7 +385,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }
 
         const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
-        let tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
+        const tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
         queueEntity.state = QueueState.DOWNLOADING;
         await this.queueRepository.save(queueEntity);

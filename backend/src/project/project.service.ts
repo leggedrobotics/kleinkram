@@ -79,7 +79,7 @@ export class ProjectService {
             );
         }
 
-        if (!!searchParams) {
+        if (searchParams) {
             Object.keys(searchParams).forEach((key, index) => {
                 if (!['name', 'creator.uuid'].includes(key)) {
                     return;

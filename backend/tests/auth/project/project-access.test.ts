@@ -127,7 +127,7 @@ describe('Verify Project Level Access', () => {
 
         // check if project is created by reading the database
         const projectRepository = db.getRepository('Project');
-        let project = await projectRepository.findOneOrFail({
+        const project = await projectRepository.findOneOrFail({
             where: { uuid: project_uuid },
         });
         expect(project.name).toBe('test_project');
