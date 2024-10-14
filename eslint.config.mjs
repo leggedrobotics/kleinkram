@@ -18,7 +18,7 @@ export default tseslint.config(
         rules: {
             semi: 'error',
             'prefer-const': 'error',
-            'complexity': ['warn', { 'max': 4 }],
+            complexity: ['warn', { max: 4 }],
             '@typescript-eslint/no-unnecessary-condition': 'warn',
             '@typescript-eslint/no-floating-promises': 'warn',
             'no-shadow': 'warn',
@@ -27,8 +27,8 @@ export default tseslint.config(
         },
     },
     {
-        'files': ['backend/**/*.ts', 'queueConsumer/**/*.ts'],
-        'rules': {
+        files: ['backend/**/*.ts', 'queueConsumer/**/*.ts'],
+        rules: {
             'no-console': 'warn',
         },
     },
