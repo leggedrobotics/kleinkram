@@ -367,27 +367,3 @@ async function uploadFileMultipart(
         throw error;
     }
 }
-
-export function getOnMount(
-    uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    selected_mission: Ref<Mission | null>,
-) {
-    return () => {
-        window.addEventListener('beforeunload', async (e) => {
-            let isDone = false;
-            const uuids = Object.keys(uploadingFiles.value).map(
-                (filename) => uploadingFiles.value[filename].fileUUID,
-            );
-
-            cancelUploads(uuids, selected_mission.value?.uuid)
-                .then(() => {
-                    isDone = true;
-                })
-                .catch(() => {
-                    isDone = true;
-                });
-            const start = Date.now();
-            while (!isDone && Date.now() - start < 200) {}
-        });
-    };
-}
