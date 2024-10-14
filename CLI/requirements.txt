@@ -6,6 +6,6 @@ rich~=13.9.2
 tqdm~=4.66.4
 black~=24.8.0
 requests~=2.32.3
-boto3~=1.35.35
+boto3~=1.35.40
 botocore~=1.35.35
 importlib-metadata~=8.5.0
