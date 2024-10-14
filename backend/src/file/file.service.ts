@@ -820,9 +820,9 @@ export class FileService implements OnModuleInit {
                     }),
                 );
 
-                const bucket = getBucketFromFileType(files[0].type);
                 await Promise.all(
                     files.map(async (file) => {
+                        const bucket = getBucketFromFileType(file.type);
                         await deleteFileMinio(bucket, file.uuid).catch(
                             (error) => {
                                 if (error.code === 'NoSuchKey') {
