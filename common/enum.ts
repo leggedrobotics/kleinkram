@@ -9,6 +9,14 @@ export enum QueueState {
     'ERROR' = 40,
     'CORRUPTED' = 41,
     'CANCELED' = 42,
+    'UNSUPPORTED_FILE_TYPE' = 43,
+    'FILE_ALREADY_EXISTS' = 44,
+}
+
+export enum FileOrigin {
+    GOOGLE_DRIVE = 'GOOGLE_DRIVE',
+    UPLOAD = 'UPLOAD',
+    CONVERTED = 'CONVERTED',
 }
 
 export enum FileLocation {

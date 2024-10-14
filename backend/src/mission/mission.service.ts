@@ -1,6 +1,6 @@
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
-import { Brackets, In, Repository } from 'typeorm';
+import { Brackets, ILike, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
@@ -9,30 +9,25 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 import { UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
-import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { externalMinio } from '@common/minio_helper';
-import Queue from 'bull';
-import { redis } from '@common/consts';
+import {
+    addTagsToMinioObject,
+    externalMinio,
+    getBucketFromFileType,
+} from '@common/minio_helper';
 
 @Injectable()
-export class MissionService implements OnModuleInit {
-    private moveQueue: Queue.Queue;
+export class MissionService {
     constructor(
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
-
         private userservice: UserService,
         private tagservice: TagService,
     ) {}
-
-    async onModuleInit() {
-        this.moveQueue = new Queue('move', { redis });
-    }
 
     async create(
         createMission: CreateMission,
@@ -86,14 +81,47 @@ export class MissionService implements OnModuleInit {
             where: { uuid },
             relations: [
                 'project',
-                'files',
                 'creator',
                 'tags',
                 'tags.tagType',
                 'project.requiredTags',
-                'files.topics',
             ],
         });
+    }
+
+    async findMissionByProjectMinimal(
+        projectUUID: string,
+        skip: number,
+        take: number,
+        search?: string,
+        descending?: boolean,
+        sortBy?: string,
+        userUUID?: string,
+    ): Promise<[Mission[], number]> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+
+        const query = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .where('project.uuid = :projectUUID', { projectUUID })
+            .take(take)
+            .skip(skip);
+
+        if (search) {
+            query.andWhere('mission.name ILIKE :search', {
+                search: `%${search}%`,
+            });
+        }
+        if (sortBy) {
+            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+        }
+        if (user.role !== UserRole.ADMIN) {
+            addAccessConstraints(query, userUUID);
+        }
+        return query.getManyAndCount();
     }
 
     async findMissionByProject(
@@ -202,10 +230,43 @@ export class MissionService implements OnModuleInit {
     }
 
     async moveMission(missionUUID: string, projectUUID: string) {
-        return await this.moveQueue.add('mission', {
-            missionUUID,
-            projectUUID,
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
         });
+
+        // verify that the no mission with the same name exists in the project
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['files'],
+        });
+
+        const exists = await this.missionRepository.exists({
+            where: { name: mission.name, project: project },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Mission with that name already exists in the project',
+            );
+        }
+
+        const savedMission = await this.missionRepository.update(missionUUID, {
+            project: project,
+        });
+
+        await Promise.all(
+            mission.files.map(async (file) =>
+                addTagsToMinioObject(
+                    getBucketFromFileType(file.type),
+                    file.uuid,
+                    {
+                        missionUuid: missionUUID,
+                        projectUuid: projectUUID,
+                    },
+                ),
+            ),
+        );
+
+        return savedMission;
     }
 
     async findOneByName(name: string): Promise<Mission> {
@@ -265,14 +326,34 @@ export class MissionService implements OnModuleInit {
             relations: ['files', 'project'],
         });
         return await Promise.all(
-            mission.files.map((f) =>
-                externalMinio.presignedUrl(
+            mission.files.map(async (f) => ({
+                filename: f.filename,
+                link: await externalMinio.presignedUrl(
                     'GET',
-                    env.MINIO_BAG_BUCKET_NAME,
-                    `${mission.project.name}/${mission.name}/${f.filename}`,
+                    getBucketFromFileType(f.type),
+                    f.uuid,
                     4 * 60 * 60,
+                    {
+                        // set filename in response headers
+                        'response-content-disposition': `attachment; filename ="${f.filename}"`,
+                    },
                 ),
-            ),
+            })),
         );
+    }
+
+    async updateName(uuid: string, name: string) {
+        const exists = await this.missionRepository.exists({
+            where: { name: ILike(name), uuid: Not(uuid) },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Mission with that name already exists',
+            );
+        }
+        await this.missionRepository.update(uuid, {
+            name: name,
+        });
+        return this.missionRepository.findOne({ where: { uuid } });
     }
 }

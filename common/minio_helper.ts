@@ -3,6 +3,7 @@ import { FileType } from './enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import { BucketItem, Client } from 'minio';
 import Credentials from 'minio/dist/main/Credentials';
+import { Tags } from 'minio/dist/main/internal/type';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -24,41 +25,6 @@ export const internalMinio: Client = new Client({
     secretKey: env.MINIO_SECRET_KEY,
 });
 
-//* srcPath: Project1/Run1
-//* destPath: Project2
-export async function moveMissionFilesInMinio(
-    srcPath: string,
-    destProject: string,
-    bucketName: string,
-) {
-    try {
-        const objects = await listObjects(bucketName, srcPath);
-        const mission = srcPath.split('/')[1];
-        await Promise.all(
-            objects.map(async (obj) => {
-                const filename = obj.name.split('/').slice(2).join('/');
-                const destName = `${destProject}/${mission}/${filename}`;
-                await moveFile(obj.name, destName, bucketName);
-            }),
-        );
-    } catch (err) {
-        console.error('Error moving files:', err);
-    }
-}
-
-export async function moveFile(
-    srcPath: string,
-    destPath: string,
-    bucketName: string,
-) {
-    try {
-        await copyObject(bucketName, srcPath, destPath);
-        await removeObject(bucketName, srcPath);
-    } catch (err) {
-        console.error('Error moving file:', err);
-    }
-}
-
 // Function to list objects in a bucket
 async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
     return new Promise((resolve, reject) => {
@@ -68,19 +34,6 @@ async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
         stream.on('end', () => resolve(objects));
         stream.on('error', (err) => reject(err));
     });
-}
-
-export async function uploadToMinio(response: any, originalname: string) {
-    const filename = originalname.replace('.bag', '.mcap');
-    await internalMinio.putObject(
-        env.MINIO_BAG_BUCKET_NAME,
-        filename,
-        response.data,
-        undefined,
-        {
-            'Content-Type': 'application/octet-stream',
-        },
-    );
 }
 
 // Function to copy an object within the bucket
@@ -107,10 +60,7 @@ async function removeObject(
 }
 
 export async function getInfoFromMinio(fileType: FileType, location: string) {
-    const bucketName =
-        fileType === FileType.BAG
-            ? env.MINIO_BAG_BUCKET_NAME
-            : env.MINIO_MCAP_BUCKET_NAME;
+    const bucketName = getBucketFromFileType(fileType);
     try {
         console.log('Getting file info:', bucketName, location);
         return await internalMinio.statObject(bucketName, location);
@@ -122,49 +72,73 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
     }
 }
 
+export async function addTagsToMinioObject(
+    bucketName: string,
+    objectName: string,
+    tags: Tags,
+) {
+    return await internalMinio.setObjectTagging(bucketName, objectName, tags, {
+        versionId: 'null',
+    });
+}
+
+/**
+ * Get the bucket name from the file type
+ *
+ * @param fileType - The file type to get the bucket name for
+ *
+ */
+export function getBucketFromFileType(fileType: FileType): string {
+    if (Object.values(FileType).indexOf(fileType) === -1) {
+        throw new Error('Invalid file type');
+    }
+
+    return fileType === FileType.BAG
+        ? env.MINIO_BAG_BUCKET_NAME
+        : env.MINIO_MCAP_BUCKET_NAME;
+}
+
+/**
+ * Delete a file from the minio bucket
+ */
 export async function deleteFileMinio(bucketName: string, location: string) {
     return internalMinio.removeObject(bucketName, location);
 }
 
-export function basePolicy(resources: string[]) {
+export function basePolicy(resource: string) {
     return {
         Version: '2012-10-17',
         Statement: [
             {
                 Effect: 'Allow',
                 Action: ['s3:PutObject', 's3:AbortMultipartUpload'],
-                Resource: resources,
+                Resource: [resource],
             },
         ],
     };
 }
 
-export async function generateTemporaryCredentials(
-    filenames: string[],
+/**
+ * Generate temporary credential for the user to upload a file to the minio bucket.
+ * @param filename
+ * @param bucketName
+ */
+export async function generateTemporaryCredential(
+    filename: string,
+    bucketName: string,
 ): Promise<Credentials> {
-    const prefix = filenames[0].split('/').slice(0, -1).join('/');
-    console.log('prefix:', prefix);
-    const resources = filenames.map((filename) => {
-        if (filename.endsWith('.bag')) {
-            return `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${filename}`;
-        }
-        return `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${filename}`;
-    });
+    const resource = `arn:aws:s3:::${bucketName}/${filename}`;
 
-    const policy = basePolicy([
-        `arn:aws:s3:::${env.MINIO_BAG_BUCKET_NAME}/${prefix}/*`,
-        `arn:aws:s3:::${env.MINIO_MCAP_BUCKET_NAME}/${prefix}/*`,
-    ]); //TODO THIS IS NOT SAFE. MALICIOUS USER CAN OVERRIDE EXISTING FILES
     const provider = new AssumeRoleProvider({
         secretKey: env.MINIO_PASSWORD,
         accessKey: env.MINIO_USER,
         stsEndpoint: 'http://minio:9000',
         action: 'AssumeRole',
-        // policy: JSON.stringify(basePolicy(resources)),
-        policy: JSON.stringify(policy),
+        policy: JSON.stringify(basePolicy(resource)),
         durationSeconds: 60 * 60 * 4, // 4 hours
     });
 
     return await provider.getCredentials();
 }
+
 export { BucketItem };

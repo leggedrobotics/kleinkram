@@ -13,7 +13,8 @@
                     v-if="project_uuid"
                 >
                     <q-btn
-                        outline
+                        class="button-border"
+                        flat
                         color="primary"
                         icon="sym_o_sell"
                         label="Metadata"
@@ -22,7 +23,12 @@
                     </q-btn>
                 </ConfigureTagsDialogOpener>
 
-                <q-btn icon="sym_o_more_vert" outline>
+                <q-btn
+                    icon="sym_o_more_vert"
+                    class="button-border"
+                    flat
+                    color="primary"
+                >
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu auto-close style="width: 280px">
@@ -136,7 +142,7 @@
                 </create-mission-dialog-opener>
             </button-group>
         </div>
-        <div class="q-py-lg" v-else style="background: blue">
+        <div class="q-py-lg" v-else style="background: #0f62fe">
             <ButtonGroupOverlay>
                 <template v-slot:start>
                     <div style="margin: 0; font-size: 14pt; color: white">
@@ -196,7 +202,7 @@
             </ButtonGroupOverlay>
         </div>
 
-        <div style="padding-top: 10px">
+        <div>
             <Suspense>
                 <template #fallback>
                     <div style="width: 550px; height: 67px">

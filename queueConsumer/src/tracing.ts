@@ -9,7 +9,7 @@ import { context, Exception, trace } from '@opentelemetry/api';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-import { TypeormInstrumentation } from 'opentelemetry-instrumentation-typeorm';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { QUEUE_CONSUMER_LABEL } from './logger';
 
 // Export the tracing
@@ -52,7 +52,7 @@ const sdk = new NodeSDK({
         new ExpressInstrumentation(),
         new FetchInstrumentation(),
         new WinstonInstrumentation(),
-        new TypeormInstrumentation(),
+        new PgInstrumentation(),
     ],
 });
 
@@ -165,10 +165,10 @@ export function tracing<A extends unknown[], C>(
 
         if (typeof propertyKey === 'undefined') {
             // Decorator is applied to all methods of a class
-            Reflect.ownKeys(target?.prototype)?.forEach(
+            Reflect.ownKeys(target.prototype).forEach(
                 (methodName: string | symbol): void => {
                     const originalMethod: (...args: A) => C =
-                        target?.prototype[methodName];
+                        target.prototype[methodName];
                     if (typeof originalMethod === 'function') {
                         target.prototype[methodName] = applyWrap(
                             methodName,
@@ -180,7 +180,7 @@ export function tracing<A extends unknown[], C>(
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method
-            const originalMethod: (...args: A) => C = descriptor?.value;
+            const originalMethod: (...args: A) => C = descriptor.value;
             if (typeof originalMethod === 'function') {
                 descriptor.value = applyWrap(propertyKey, originalMethod);
             }

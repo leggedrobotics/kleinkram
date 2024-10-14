@@ -16,7 +16,7 @@
                     "
                 >
                     klein mission download
-                    <span style="color: grey">
+                    <span style="opacity: 0.8">
                         --mission-uuid="{{ props.mission.uuid }}"
                         --local-path="."
                     </span>

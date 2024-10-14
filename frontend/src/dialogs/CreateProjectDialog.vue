@@ -86,8 +86,9 @@
         </template>
         <template #actions>
             <q-btn
+                flat
                 label="Create Project"
-                color="primary"
+                class="bg-button-primary"
                 @click="submitNewProject"
                 :disable="!formIsValid"
             />

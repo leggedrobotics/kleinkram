@@ -1,18 +1,25 @@
 <template>
-    <q-btn
-        class="button-border"
-        flat
-        color="primary"
-        icon="sym_o_sell"
-        label="Metadata"
+    <div
         @click="openTagsDialog"
-        :disable="!canModify"
+        :class="{
+            disabled: !canModify,
+            'cursor-pointer': !canModify,
+            'cursor-not-allowed': canModify,
+        }"
     >
-        <q-tooltip> Manage Metadata Tags</q-tooltip>
-    </q-btn>
+        <slot />
+
+        <q-tooltip v-if="!canModify">
+            You need modify rights on the mission to edit its tags
+        </q-tooltip>
+    </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -38,6 +45,7 @@ const canModify = computed(() =>
 );
 
 function openTagsDialog() {
+    if (!canModify.value) return;
     $q.dialog({
         component: ModifyMissionTagsDialog,
         componentProps: {

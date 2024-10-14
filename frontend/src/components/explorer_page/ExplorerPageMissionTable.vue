@@ -88,18 +88,20 @@
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Edit Metadata</q-item-section>
-                                <q-tooltip>
-                                    Edit Metadata is not yet implemented
-                                </q-tooltip>
-                            </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Manage Access</q-item-section>
-                                <q-tooltip>
-                                    Manage Access is not yet implemented
-                                </q-tooltip>
-                            </q-item>
+                            <EditMissionDialogOpener :mission="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section
+                                        >Edit Mission
+                                    </q-item-section>
+                                </q-item>
+                            </EditMissionDialogOpener>
+                            <MissionMetadataOpener :mission="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>
+                                        Edit Metadata
+                                    </q-item-section>
+                                </q-item>
+                            </MissionMetadataOpener>
                             <MoveMissionDialogOpener :mission="props.row">
                                 <q-item clickable v-ripple>
                                     <q-item-section>Move</q-item-section>
@@ -132,6 +134,9 @@ import { useProjectUUID } from 'src/hooks/utils';
 import { Mission } from 'src/types/Mission';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
+import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
+import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
+
 const $emit = defineEmits(['update:selected']);
 
 const props = defineProps({
@@ -222,6 +227,7 @@ function missingTagsText(row: Mission) {
     }
     return `${_missionTags.length} Tags missing`;
 }
+
 watch(
     () => selected.value,
     (newVal) => {

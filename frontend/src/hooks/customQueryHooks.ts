@@ -146,11 +146,11 @@ export const canLaunchInMission = (
     if (!permissions) return false;
     if (!mission) return false;
     const mission_permission = getPermissionForMission(
-        mission?.uuid as string,
+        mission.uuid,
         permissions,
     );
     const project_permission = getPermissionForProject(
-        mission?.project?.uuid as string,
+        mission.project?.uuid as string,
         permissions,
     );
     return (
@@ -175,10 +175,10 @@ export const useMissionQuery = (
     retryDelay: number = 1000,
 ): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
-        queryKey: ['mission', !!mission_uuid.value ? mission_uuid : ''],
+        queryKey: ['mission', mission_uuid.value ? mission_uuid : ''],
         queryFn: () => {
             if (!mission_uuid.value) return null;
-            return getMission(mission_uuid.value as string);
+            return getMission(mission_uuid.value);
         },
         enabled: () => !!mission_uuid.value,
         retryDelay,
@@ -192,7 +192,7 @@ export const useProjectQuery = (
         queryKey: ['project', project_uuid ? project_uuid : ''],
         queryFn: (): Promise<Project> => {
             if (!project_uuid.value) return Promise.reject();
-            return getProject(project_uuid.value as string);
+            return getProject(project_uuid.value);
         },
         enabled: () => !!project_uuid.value,
     });
@@ -238,7 +238,7 @@ export const registerNoPermissionErrorHandler = (
     watch([isLoadingError], async () => {
         if (error.value instanceof AxiosError) {
             const status_code =
-                error.value?.response?.data?.statusCode ||
+                error.value.response?.data?.statusCode ||
                 `Could not load the ${resource_name}`;
 
             if (status_code == 403)

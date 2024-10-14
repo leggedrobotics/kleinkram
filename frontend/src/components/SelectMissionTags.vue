@@ -8,6 +8,9 @@
         :disabled="availableAdditionalTags.length === 0"
         v-model="ddr_open2"
     >
+        <q-tooltip v-if="availableAdditionalTags.length === 0">
+            All available tags types have been added.
+        </q-tooltip>
         <q-list>
             <q-item
                 v-for="tagtype in availableAdditionalTags"

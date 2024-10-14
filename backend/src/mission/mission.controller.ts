@@ -21,8 +21,8 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamString, ParamUUID } from '../validation/paramDecorators';
-import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
+import { ParamUUID } from '../validation/paramDecorators';
+import { BodyUUID } from '../validation/bodyDecorators';
 
 @Controller('mission')
 export class MissionController {
@@ -35,6 +35,42 @@ export class MissionController {
         @addUser() user: AuthRes,
     ) {
         return this.missionService.create(createMission, user);
+    }
+
+    @Post('updateName')
+    @CanWriteMissionByBody()
+    async updateMissionName(
+        @BodyUUID('missionUUID') missionUUID: string,
+        @Body('name') name: string,
+    ) {
+        // validate name
+        if (/^[\w\-_]{3,20}$/i.test(name) === false) {
+            throw new Error('Invalid name');
+        }
+
+        return this.missionService.updateName(missionUUID, name);
+    }
+
+    @Get('filteredMinimal')
+    @UserOnly()
+    async filteredMissionsMinimal(
+        @QueryUUID('uuid') uuid: string,
+        @QueryOptionalString('search') search: string,
+        @QueryOptionalBoolean('descending') descending: boolean,
+        @QueryOptionalString('sortBy') sortBy: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @addUser() user: AuthRes,
+    ) {
+        return this.missionService.findMissionByProjectMinimal(
+            uuid,
+            skip,
+            take,
+            search,
+            descending,
+            sortBy,
+            user.user.uuid,
+        );
     }
 
     @Get('filtered')

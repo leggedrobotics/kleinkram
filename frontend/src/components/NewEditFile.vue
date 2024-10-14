@@ -110,9 +110,9 @@
         <template #actions>
             <q-btn
                 label="Cancel"
-                color="secondary"
+                flat
                 @click="onDialogCancel"
-                class="q-mr-sm"
+                class="q-mr-sm button-border"
             />
             <q-btn
                 label="Save"
@@ -138,7 +138,7 @@ import { Project } from 'src/types/Project';
 import { FileEntity } from 'src/types/FileEntity';
 import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { updateFile } from 'src/services/mutations/file';
 import { Mission } from 'src/types/Mission';
 import { FileState } from 'src/enums/FILE_ENUM';
@@ -205,7 +205,7 @@ const projects = computed(() =>
 
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
+    queryFn: () => missionsOfProjectMinimal(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));

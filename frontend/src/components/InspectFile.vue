@@ -11,7 +11,13 @@
                         icon="sym_o_download"
                         label="Download"
                         @click="() => _downloadFile(data?.uuid, data?.filename)"
-                        :disable="data?.tentative"
+                        :disable="
+                            [
+                                FileState.LOST,
+                                FileState.UPLOADING,
+                                FileState.MOVING,
+                            ].indexOf(data?.state) !== -1
+                        "
                     />
 
                     <q-btn
@@ -49,7 +55,7 @@
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_encrypted" />
                                     </q-item-section>
-                                    <q-item-section> Copy MD5 </q-item-section>
+                                    <q-item-section> Copy MD5</q-item-section>
                                 </q-item>
                                 <q-item
                                     clickable
@@ -59,7 +65,7 @@
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
                                     </q-item-section>
-                                    <q-item-section> Copy UUID </q-item-section>
+                                    <q-item-section> Copy UUID</q-item-section>
                                 </q-item>
                                 <q-item clickable v-ripple style="color: red">
                                     <q-item-section avatar>
@@ -199,14 +205,27 @@
                 :filter="filterKey"
             >
             </q-table>
-            <q-btn
-                v-if="!displayTopics && !data?.tentative && !!mcap"
-                label="Go to Mcap"
-                icon="sym_o_turn_slight_right"
-                @click="redirectToMcap"
+
+            <div
+                class="flex column"
+                v-if="!displayTopics && data?.state === FileState.OK && !!mcap"
             >
-            </q-btn>
-            <div v-if="data?.tentative">
+                <span class="q-my-sm">
+                    Kleinkram does ony extract topics for mcap files.
+                    <br />Please switch to the mcap file to see the topics.
+                </span>
+
+                <q-btn
+                    label="Go to Mcap"
+                    flat
+                    class="button-border"
+                    style="width: 350px"
+                    icon="sym_o_turn_slight_right"
+                    @click="redirectToMcap"
+                >
+                </q-btn>
+            </div>
+            <div v-if="data?.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
                 </h5>
@@ -302,9 +321,19 @@ registerNoPermissionErrorHandler(isLoadingError, file_uuid, 'file', error);
 
 const missionUUID = useMissionUUID();
 
+const mcap_name = computed(() => data.value?.filename.replace('.bag', '.mcap'));
+const _queryKey = computed(() => ['files', missionUUID.value, mcap_name.value]);
+
 const { data: _filesReturn, refetch } = useQuery({
-    queryKey: ['files', missionUUID.value],
-    queryFn: () => filesOfMission(missionUUID.value || '', 100, 0),
+    queryKey: _queryKey,
+    queryFn: () =>
+        filesOfMission(
+            missionUUID.value || '',
+            100,
+            0,
+            FileType.MCAP,
+            mcap_name.value,
+        ),
     enabled() {
         return !!missionUUID.value;
     },
@@ -329,9 +358,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    filesReturn.value?.find((file: FileEntity) => {
-        return file.filename === data.value?.filename.replace('.bag', '.mcap');
-    }),
+    filesReturn.value.length > 0 ? filesReturn.value[0] : null,
 );
 
 const columns = [
@@ -390,4 +417,7 @@ const pagination = ref({
     rowsPerPage: 20,
 });
 </script>
-<style scoped></style>
+<style scoped>
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
+</style>

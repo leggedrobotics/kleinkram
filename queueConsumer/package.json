@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_queueConsumer",
-    "version": "0.30.4",
+    "version": "0.31.0",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
@@ -25,6 +25,7 @@
         "@opentelemetry/instrumentation-fetch": "^0.52.1",
         "@opentelemetry/instrumentation-http": "^0.52.1",
         "@opentelemetry/instrumentation-nestjs-core": "^0.39.0",
+        "@opentelemetry/instrumentation-pg": "^0.45.1",
         "@opentelemetry/instrumentation-winston": "^0.39.0",
         "@opentelemetry/sdk-node": "^0.53.0",
         "@opentelemetry/sdk-trace-base": "^1.15.1",
@@ -34,7 +35,6 @@
         "dockerode": "^4.0.2",
         "googleapis": "^142.0.0",
         "minio": "^8.0.1",
-        "opentelemetry-instrumentation-typeorm": "^0.41.0",
         "pg": "^8.11.3",
         "redlock": "^5.0.0-beta.2",
         "reflect-metadata": "0.2.2",

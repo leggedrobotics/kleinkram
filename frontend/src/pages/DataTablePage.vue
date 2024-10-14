@@ -95,6 +95,9 @@
             </q-btn-dropdown>
         </div>
         <div class="col-4 flex q-pa-sm">
+            <q-tooltip v-if="!handler.project_uuid" self="bottom middle">
+                Please select a project first
+            </q-tooltip>
             <q-btn-dropdown
                 v-model="dd_open_missions"
                 :label="selected_mission?.name || 'Filter by Mission'"
@@ -102,6 +105,7 @@
                 clearable
                 flat
                 class="full-width button-border"
+                :disable="!handler.project_uuid"
             >
                 <q-list>
                     <q-item
@@ -212,7 +216,7 @@
                 text-color="black"
                 color="primary"
                 label="Tags"
-                icon="sym_o_filter_list"
+                icon="sym_o_sell"
                 class="full-width button-border full-height"
                 @click="openTagFilterDialog"
             >
@@ -253,6 +257,13 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:body-cell-state="props">
             <q-td :props="props">
                 <q-icon
@@ -286,19 +297,11 @@
                 >
                     <q-menu auto-close>
                         <q-list>
-                            <q-item
-                                clickable
-                                v-ripple
-                                @click="() => openQDialog(props.row)"
-                                :style="
-                                    props.row.tentative
-                                        ? 'pointer-events: none'
-                                        : ''
-                                "
-                                :disabled="props.row.tentative"
-                            >
-                                <q-item-section>Edit File</q-item-section>
-                            </q-item>
+                            <edit-file-dialog-opener :file="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>Edit File</q-item-section>
+                                </q-item>
+                            </edit-file-dialog-opener>
                             <q-item
                                 clickable
                                 v-ripple
@@ -335,7 +338,7 @@ import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
 import TagFilter from 'src/dialogs/TagFilter.vue';
@@ -345,6 +348,7 @@ import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 import NewEditFile from 'components/NewEditFile.vue';
+import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 
 const $router = useRouter();
 
@@ -399,7 +403,8 @@ const queryKeyMissions = computed(() => [
 ]);
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
-    queryFn: () => missionsOfProject(handler.value.project_uuid || '', 500, 0),
+    queryFn: () =>
+        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
@@ -599,19 +604,6 @@ const columns = [
         field: 'Edit',
     },
 ];
-
-/**
- * open a q-dialog with a file editor
- */
-function openQDialog(file: FileEntity): void {
-    $q.dialog({
-        title: 'Profilbild wählen',
-        component: NewEditFile,
-        componentProps: {
-            file_uuid: file.uuid,
-        },
-    });
-}
 
 function openTagFilterDialog() {
     $q.dialog({

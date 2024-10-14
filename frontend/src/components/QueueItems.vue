@@ -1,6 +1,6 @@
 <template>
     <div class="row">
-        <div class="col-6 q-pa-md">
+        <div class="col-6 q-py-md q-pr-md">
             <q-input filled v-model="startDate" hint="File Processing since: ">
                 <template v-slot:prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
@@ -49,7 +49,7 @@
                 </template>
             </q-input>
         </div>
-        <div class="col-6 q-pa-md">
+        <div class="col-6 q-py-md">
             <q-select
                 v-model="fileStateFilter"
                 multiple
@@ -88,7 +88,6 @@
     <q-table
         ref="tableRef"
         v-model:pagination="pagination"
-        title="File Processing Queue"
         :rows="queueEntries || []"
         :columns="columns"
         row-key="uuid"
@@ -100,6 +99,13 @@
         v-model:selected="selected"
         selection="multiple"
     >
+        <template v-slot:body-selection="props">
+            <q-checkbox
+                v-model="props.selected"
+                color="grey-8"
+                class="checkbox-with-hitbox"
+            />
+        </template>
         <template v-slot:body-cell-Status="props">
             <q-td :props="props">
                 <q-badge :color="getColor(props.row.state)">
@@ -132,9 +138,7 @@
                                 v-ripple
                                 @click="() => downloadFile(props.row)"
                                 :disable="
-                                    props.row.state ===
-                                        QueueState.AWAITING_UPLOAD ||
-                                    props.row.state === QueueState.CANCELED
+                                    props.row.state !== QueueState.COMPLETED
                                 "
                             >
                                 <q-item-section>Download File</q-item-section>
@@ -142,7 +146,7 @@
                             <q-item
                                 clickable
                                 v-ripple
-                                :disable="canDelete(props.row)"
+                                :disable="!canDelete(props.row)"
                                 @click="() => openDeleteFileDialog(props.row)"
                             >
                                 <q-item-section>Delete File</q-item-section>
@@ -157,8 +161,8 @@
                                 @click="() => _cancelProcessing(props.row)"
                             >
                                 <q-item-section
-                                    >Cancel Processing</q-item-section
-                                >
+                                    >Cancel Processing
+                                </q-item-section>
                             </q-item>
                         </q-list>
                     </q-menu>
@@ -169,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { QTable, useQuasar } from 'quasar';
+import { Notify, QTable, useQuasar } from 'quasar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
@@ -187,8 +191,7 @@ import {
 } from '../services/generic';
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
-import { Notify } from 'quasar';
-import { deleteFile, cancelProcessing } from 'src/services/mutations/queue';
+import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import ConfirmDeleteFile from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 
 const $router = useRouter();
@@ -325,10 +328,11 @@ function canDelete(row: Queue) {
     return (
         row.state !== QueueState.AWAITING_PROCESSING &&
         row.state !== QueueState.CANCELED &&
-        row.state !== QueueState.COMPLETED &&
         row.state !== QueueState.ERROR &&
         row.state !== QueueState.CORRUPTED &&
-        row.state !== QueueState.AWAITING_UPLOAD
+        row.state !== QueueState.AWAITING_UPLOAD &&
+        row.state !== QueueState.UNSUPPORTED_FILE_TYPE &&
+        row.state !== QueueState.FILE_ALREADY_EXISTS
     );
 }
 
@@ -374,7 +378,7 @@ const columns = [
                 row.location == FileLocation.DRIVE
             )
                 return 'Not available';
-            return row.filename;
+            return row.display_name;
         },
     },
     {

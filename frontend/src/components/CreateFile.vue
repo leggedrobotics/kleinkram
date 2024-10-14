@@ -98,21 +98,16 @@
 </style>
 
 <script setup lang="ts">
-import { computed, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProject } from 'src/services/queries/mission';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { FileUpload } from 'src/types/FileUpload';
-import {
-    createFileAction,
-    driveUpload,
-    getOnMount,
-} from 'src/services/fileService';
-import { createDrive } from 'src/services/mutations/queue';
+import { createFileAction, driveUpload } from 'src/services/fileService';
 
 const emit = defineEmits(['update:ready']);
 
@@ -163,7 +158,7 @@ if (props.mission && props.mission.project) {
 
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProject(selected_project.value?.uuid || ''),
+    queryFn: () => missionsOfProjectMinimal(selected_project.value?.uuid || ''),
     enabled: !!selected_project.value?.uuid,
 });
 const missions = computed(() => {
@@ -192,7 +187,6 @@ const createFile = async () => {
         props.uploads,
     );
 };
-onMounted(getOnMount(uploadingFiles, selected_mission));
 
 defineExpose({
     createFileAction: createFile,

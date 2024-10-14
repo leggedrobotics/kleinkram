@@ -53,6 +53,8 @@ export function getColor(state: QueueState) {
         case QueueState.AWAITING_UPLOAD:
             return 'purple';
         case QueueState.CORRUPTED:
+        case QueueState.UNSUPPORTED_FILE_TYPE:
+        case QueueState.FILE_ALREADY_EXISTS:
             return 'orange';
 
         default:
@@ -79,6 +81,9 @@ export function getSimpleFileStateName(state: QueueState) {
             return 'Awaiting Upload';
         case QueueState.CORRUPTED:
             return 'Corrupted';
+        case QueueState.UNSUPPORTED_FILE_TYPE:
+        case QueueState.FILE_ALREADY_EXISTS:
+            return 'Skipped';
         default:
             return 'Unknown'; // Default color for unknown states
     }
@@ -106,6 +111,10 @@ export function getDetailedFileState(state: QueueState) {
             return 'File is corrupted';
         case QueueState.DOWNLOADING:
             return 'File is being downloaded';
+        case QueueState.UNSUPPORTED_FILE_TYPE:
+            return 'File has an unsupported file type';
+        case QueueState.FILE_ALREADY_EXISTS:
+            return 'A File with the same name already exists';
         default:
             return 'Unknown'; // Default color for unknown states
     }

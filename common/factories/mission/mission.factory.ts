@@ -12,8 +12,8 @@ export type MissionContext = {
 define(Mission, (_, context: Partial<MissionContext> = {}) => {
     const mission = new Mission();
     mission.name = extendedFaker.mission.name();
-    mission.creator = context?.user || null;
-    mission.project = context?.project || null;
+    mission.creator = context.user || null;
+    mission.project = context.project || null;
     mission.uuid = extendedFaker.string.uuid();
     return mission;
 });

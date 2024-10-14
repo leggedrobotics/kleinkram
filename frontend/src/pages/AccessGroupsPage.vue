@@ -1,130 +1,130 @@
 <template>
-    <q-page>
-        <title-section title="Access Groups" />
+    <title-section title="Access Groups" />
 
-        <div class="q-my-lg">
-            <div class="flex justify-between items-center">
-                <button-group>
-                    <div style="width: 200px">
-                        <q-btn-dropdown
-                            :label="prefilter.label"
-                            class="q-uploader--bordered full-width full-height"
-                            flat
-                            auto-close
-                        >
-                            <q-list>
-                                <template
-                                    v-for="option in prefilterOptions"
-                                    :key="option.value"
-                                >
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="() => (prefilter = option)"
-                                    >
-                                        <q-item-section
-                                            >{{ option.label }}
-                                        </q-item-section>
-                                    </q-item>
-                                    <q-separator v-if="option.spacer_after" />
-                                </template>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                </button-group>
-
-                <button-group>
-                    <q-input
-                        dense
-                        outlined
-                        v-model="filterOptions.search"
-                        placeholder="Search"
-                        debounce="200"
+    <div class="q-my-lg">
+        <div class="flex justify-between items-center">
+            <button-group>
+                <div style="width: 200px">
+                    <q-btn-dropdown
+                        :label="prefilter.label"
+                        class="q-uploader--bordered full-width full-height"
+                        flat
+                        auto-close
                     >
-                        <template v-slot:append>
-                            <q-icon name="sym_o_search" />
-                        </template>
-                    </q-input>
+                        <q-list>
+                            <template
+                                v-for="option in prefilterOptions"
+                                :key="option.value"
+                            >
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    @click="() => (prefilter = option)"
+                                >
+                                    <q-item-section
+                                        >{{ option.label }}
+                                    </q-item-section>
+                                </q-item>
+                                <q-separator v-if="option.spacer_after" />
+                            </template>
+                        </q-list>
+                    </q-btn-dropdown>
+                </div>
+            </button-group>
 
+            <button-group>
+                <q-input
+                    dense
+                    outlined
+                    v-model="filterOptions.search"
+                    placeholder="Search"
+                    debounce="200"
+                >
+                    <template v-slot:append>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+
+                <q-btn
+                    flat
+                    dense
+                    padding="6px"
+                    color="icon-secondary"
+                    class="button-border"
+                    icon="sym_o_loop"
+                    @click="() => refetchAccessGroups()"
+                />
+
+                <CreateAccessGroupDialogOpener />
+            </button-group>
+        </div>
+
+        <q-table
+            flat
+            bordered
+            wrap-cells
+            virtual-scroll
+            separator="none"
+            :rows="accessGroupsTable"
+            v-model:pagination="pagination"
+            :columns="accessGroupsColumns"
+            style="margin-top: 24px"
+            selection="multiple"
+            v-model:selected="selectedAccessGroups"
+            row-key="uuid"
+            @rowClick="rowClick"
+        >
+            <template v-slot:body-selection="props">
+                <q-checkbox
+                    v-model="props.selected"
+                    color="grey-8"
+                    class="checkbox-with-hitbox"
+                />
+            </template>
+            <template v-slot:body-cell-accessgroupaction="props">
+                <q-td :props="props">
                     <q-btn
                         flat
+                        round
                         dense
-                        padding="6px"
-                        color="icon-secondary"
-                        class="button-border"
-                        icon="sym_o_loop"
-                        @click="() => refetchAccessGroups()"
-                    />
+                        icon="sym_o_more_vert"
+                        unelevated
+                        color="primary"
+                        class="cursor-pointer"
+                        @click.stop
+                    >
+                        <q-menu auto-close>
+                            <q-list>
+                                <q-item
+                                    clickable
+                                    v-ripple
+                                    @click="rowClick(undefined, props.row)"
+                                >
+                                    <q-item-section
+                                        >View Details
+                                    </q-item-section>
+                                </q-item>
 
-                    <CreateAccessGroupDialogOpener />
-                </button-group>
-            </div>
-
-            <q-table
-                flat
-                bordered
-                wrap-cells
-                virtual-scroll
-                separator="none"
-                :rows="accessGroupsTable"
-                v-model:pagination="pagination"
-                :columns="accessGroupsColumns"
-                style="margin-top: 24px"
-                selection="multiple"
-                v-model:selected="selectedAccessGroups"
-                row-key="uuid"
-                @rowClick="rowClick"
-            >
-                <template v-slot:body-cell-accessgroupaction="props">
-                    <q-td :props="props">
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_more_vert"
-                            unelevated
-                            color="primary"
-                            class="cursor-pointer"
-                            @click.stop
-                        >
-                            <q-menu auto-close>
-                                <q-list>
-                                    <q-item
-                                        clickable
-                                        v-ripple
-                                        @click="rowClick(undefined, props.row)"
+                                <q-item clickable v-ripple disabled>
+                                    <q-tooltip
+                                        v-if="prefilter.value === 'personal'"
                                     >
-                                        <q-item-section
-                                            >View Details
-                                        </q-item-section>
+                                        You can't edit personal access groups
+                                    </q-tooltip>
+                                    <q-item-section>Edit</q-item-section>
+                                </q-item>
+                                <DeleteAccessGroup :accessGroup="props.row">
+                                    <q-item clickable v-ripple>
+                                        <q-item-section>Delete</q-item-section>
                                     </q-item>
-
-                                    <q-item clickable v-ripple disabled>
-                                        <q-tooltip
-                                            v-if="
-                                                prefilter.value === 'personal'
-                                            "
-                                        >
-                                            You can't edit personal access
-                                            groups
-                                        </q-tooltip>
-                                        <q-item-section>Edit</q-item-section>
-                                    </q-item>
-                                    <DeleteAccessGroup :accessGroup="props.row">
-                                        <q-item clickable v-ripple>
-                                            <q-item-section
-                                                >Delete</q-item-section
-                                            >
-                                        </q-item>
-                                    </DeleteAccessGroup>
-                                </q-list>
-                            </q-menu>
-                        </q-btn>
-                    </q-td>
-                </template>
-            </q-table>
-        </div>
-    </q-page>
+                                </DeleteAccessGroup>
+                            </q-list>
+                        </q-menu>
+                    </q-btn>
+                </q-td>
+            </template>
+        </q-table>
+    </div>
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';

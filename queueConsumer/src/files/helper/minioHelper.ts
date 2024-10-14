@@ -1,9 +1,10 @@
-import { Client } from 'minio';
+import { Client, Tag } from 'minio';
 import env from '@common/env';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
 import * as crypto from 'crypto';
+import { Tags } from 'minio/dist/main/internal/type';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -15,14 +16,25 @@ const minio: Client = new Client({
     secretKey: env.MINIO_SECRET_KEY,
 });
 
-export async function uploadFile(
+/**
+ * Uploads a file to Minio in parts.
+ *
+ * @param bucketName the name of the bucket to upload the file to
+ * @param identifier the identifier of the file
+ * @param fileName the name of the file (added as metadata)
+ * @param tmp_file_path the path to the file to upload
+ */
+export async function uploadLocalFile(
     bucketName: string,
+    identifier: string,
     fileName: string,
     tmp_file_path: string,
 ) {
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        await minio.fPutObject(bucketName, fileName, tmp_file_path);
+        await minio.fPutObject(bucketName, identifier, tmp_file_path, {
+            'Content-Type': 'application/octet-stream',
+        });
         logger.debug('File uploaded to Minio in parts');
         return true;
     }, 'uploadFile')();

@@ -52,5 +52,5 @@ export class NumberValidate {
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
-    value: Number;
+    value: number;
 }

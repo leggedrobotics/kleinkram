@@ -31,7 +31,6 @@ import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
-import { MoveMissionProvider } from './moveMission/moveMission.provider';
 import CategoryEntity from '@common/entities/category/category.entity';
 
 @Module({
@@ -127,7 +126,6 @@ import CategoryEntity from '@common/entities/category/category.entity';
         FileQueueProcessorProvider,
         ActionQueueProcessorProvider,
         FileCleanupQueueProcessorProvider,
-        MoveMissionProvider,
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,

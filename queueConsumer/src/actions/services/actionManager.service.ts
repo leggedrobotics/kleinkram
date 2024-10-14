@@ -365,7 +365,7 @@ export class ActionManagerService {
                 continue;
             }
             // ignore containers which are not in processing state
-            if (action?.state === ActionState.PROCESSING) {
+            if (action.state === ActionState.PROCESSING) {
                 // kill if older than 24 hours
                 const created_at = new Date(container.Created * 1000);
                 const now = new Date();

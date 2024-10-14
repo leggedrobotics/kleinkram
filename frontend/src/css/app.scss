@@ -153,13 +153,16 @@ label {
     font-size: 32px;
 }
 
+.q-table .selected {
+    background-color: #e7efff;
+}
+
 .help-text {
     color: $text-secondary;
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.16px;
 }
-
 
 .checkbox-with-hitbox {
     position: relative;
@@ -168,8 +171,8 @@ label {
 .checkbox-with-hitbox::before {
     content: '';
     position: absolute;
-    top: -10px; /* Adjust to increase hitbox upwards */
-    bottom: -10px; /* Adjust to increase hitbox downwards */
+    top: -8px; /* Adjust to increase hitbox upwards */
+    bottom: -8px; /* Adjust to increase hitbox downwards */
     left: -15px; /* Adjust to increase hitbox to the left */
     right: -20px; /* Adjust to increase hitbox to the right */
     z-index: 1;

@@ -13,7 +13,7 @@
                     "
                 >
                     klein mission download
-                    <span style="color: #b1b1b1"> {{ params }} </span>
+                    <span style="opacity: 0.8"> {{ params }} </span>
                 </div>
                 <q-btn
                     icon="sym_o_content_copy"

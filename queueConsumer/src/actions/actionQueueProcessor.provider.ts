@@ -237,7 +237,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
         // set state to done if it is not already set to failed
         let isActionDirty = false;
-        if (!!action.executionEndedAt) {
+        if (action.executionEndedAt) {
             action.executionEndedAt = new Date();
             isActionDirty = true;
         }

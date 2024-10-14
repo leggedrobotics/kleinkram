@@ -42,7 +42,7 @@
         <template v-slot:body-cell-cats="props">
             <q-td :props="props">
                 <q-chip
-                    v-for="cat in props.row.categories"
+                    v-for="cat in sortedCats(props.row)"
                     :key="cat.uuid"
                     :label="cat.name"
                     :color="hashUUIDtoColor(cat.uuid)"
@@ -136,6 +136,7 @@ import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { Category } from 'src/types/Category';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
+import { FileEntity } from 'src/types/FileEntity';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -221,6 +222,11 @@ watch(
         $emit('update:selected', newVal);
     },
 );
+
+function sortedCats(file: FileEntity) {
+    const cats = [...(file.categories || [])];
+    return cats.sort((a, b) => a.name.localeCompare(b.name));
+}
 </script>
 
 <style scoped>

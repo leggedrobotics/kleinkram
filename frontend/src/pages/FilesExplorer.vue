@@ -51,7 +51,17 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
 
-                <MissionMetadataOpener :mission="mission" v-if="mission" />
+                <MissionMetadataOpener :mission="mission" v-if="mission">
+                    <q-btn
+                        class="button-border"
+                        flat
+                        color="primary"
+                        icon="sym_o_sell"
+                        label="Metadata"
+                    >
+                        <q-tooltip> Manage Metadata Tags</q-tooltip>
+                    </q-btn>
+                </MissionMetadataOpener>
 
                 <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
@@ -83,18 +93,24 @@
                                         Manage Access
                                     </q-item-section>
                                 </q-item-section>
+                                <q-tooltip>
+                                    Manage Access on Mission Level is not
+                                    supported yet</q-tooltip
+                                >
                             </q-item>
 
-                            <q-item clickable v-close-popup disable>
-                                <q-item-section avatar>
-                                    <q-icon name="sym_o_edit" />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-section>
-                                        Edit Mission
+                            <EditMissionDialogOpener :mission="mission">
+                                <q-item clickable v-close-popup>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_edit" />
                                     </q-item-section>
-                                </q-item-section>
-                            </q-item>
+                                    <q-item-section>
+                                        <q-item-section>
+                                            Edit Mission
+                                        </q-item-section>
+                                    </q-item-section>
+                                </q-item>
+                            </EditMissionDialogOpener>
 
                             <delete-mission-dialog-opener :mission="mission">
                                 <q-item
@@ -141,54 +157,11 @@
                 </template>
             </Suspense>
             <ButtonGroup>
-                <q-select
-                    v-model="selectedCategories"
-                    v-if="selectedCategories"
-                    multiple
-                    clearable
-                    dense
-                    option-label="name"
-                    option-value="uuid"
-                    :options="categories"
-                    placeholder="Select Categories"
-                    use-input
-                    @clear="selectedCategories = []"
-                    input-debounce="300"
-                    @input-value="filter = $event"
-                >
-                    <template v-slot:selected-item="props">
-                        <q-chip
-                            v-if="props.opt"
-                            removable
-                            @remove="props.removeAtIndex(props.index)"
-                            :color="hashUUIDtoColor(props.opt.uuid)"
-                            style="color: white; font-size: smaller"
-                        >
-                            {{ props.opt.name }}
-                        </q-chip>
-                    </template>
-                    <template v-slot:option="props">
-                        <q-item
-                            clickable
-                            v-ripple
-                            v-bind="props.itemProps"
-                            @click="props.toggleOption(props.opt)"
-                            dense
-                        >
-                            <q-item-section>
-                                <div>
-                                    <q-chip
-                                        dense
-                                        :color="hashUUIDtoColor(props.opt.uuid)"
-                                        :style="`color: white `"
-                                    >
-                                        {{ props.opt.name }}
-                                    </q-chip>
-                                </div>
-                            </q-item-section>
-                        </q-item>
-                    </template>
-                </q-select>
+                <CategorySelector
+                    :selected="selectedCategories"
+                    :project_uuid="project_uuid"
+                    @update:selected="updateSelected"
+                />
                 <q-btn-dropdown
                     clearable
                     dense
@@ -247,7 +220,7 @@
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
-        <div class="q-py-lg" v-else style="background: blue">
+        <div class="q-py-lg" v-else style="background: #0f62fe">
             <ButtonGroupOverlay>
                 <template v-slot:start>
                     <div style="margin: 0; font-size: 14pt; color: white">
@@ -261,7 +234,10 @@
                         :files="selectedFiles"
                         style="max-width: 300px"
                     />
-
+                    <OpenMultCategoryAdd
+                        :mission="mission"
+                        :files="selectedFiles"
+                    />
                     <q-btn
                         flat
                         dense
@@ -362,6 +338,9 @@ import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
 import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
+import CategorySelector from 'components/CategorySelector.vue';
+import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
+import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -547,5 +526,9 @@ async function downloadCallback() {
             position: 'bottom',
         });
     }
+}
+
+function updateSelected(value: Category[]) {
+    selectedCategories.value = value;
 }
 </script>

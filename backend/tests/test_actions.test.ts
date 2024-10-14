@@ -62,23 +62,22 @@ describe('Verify Action', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    command: 'echo "Hello World"',
-                    image: 'rslethz/action:file-hash-latest',
                     name: 'test-template',
-                    runtime_requirements: {
-                        gpu_model: {
-                            name: 'no-gpu',
-                            memory: 0,
-                            compute_capability: '',
-                        },
-                        memory: 2,
-                    },
+                    command: '',
+                    image: 'rslethz/action:file-hash-latest',
+                    cpuCores: 2,
+                    cpuMemory: 2,
+                    gpuMemory: -1,
+                    maxRuntime: 2,
                     searchable: true,
                 }),
             },
         );
+
+        expect(create_template.status).toBeLessThan(300);
         const res = await create_template.json();
         const uuid = res.uuid;
+
         // start action container
         const action_submission = await fetch(
             `http://localhost:3000/action/submit`,
@@ -130,6 +129,7 @@ describe('Verify Action', () => {
         }
 
         const file_hash_str = Buffer.from(file_hash).toString('hex');
+        console.log(file_hash_str);
 
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message);
@@ -141,4 +141,9 @@ describe('Verify Action', () => {
 
         // submit a new action
     }, 30_000);
+
+    test('if you can upload a file within an action', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
+    });
 });
