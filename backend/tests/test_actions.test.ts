@@ -129,6 +129,7 @@ describe('Verify Action', () => {
         }
 
         const file_hash_str = Buffer.from(file_hash).toString('hex');
+        console.log(file_hash_str);
 
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message);
@@ -140,4 +141,9 @@ describe('Verify Action', () => {
 
         // submit a new action
     }, 30_000);
+
+    test('if you can upload a file within an action', async () => {
+        // TODO: implement this test
+        expect(true).toBe(false);
+    });
 });

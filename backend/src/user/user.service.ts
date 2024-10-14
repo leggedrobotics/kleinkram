@@ -117,8 +117,8 @@ export class UserService implements OnModuleInit {
             });
         }
 
-        const role = user?.role;
-        const default_permission = user?.accessGroups?.length > 0 ? 10 : 0;
+        const role = user.role;
+        const default_permission = user.accessGroups.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;

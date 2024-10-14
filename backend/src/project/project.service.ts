@@ -13,8 +13,6 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import env from '@common/env';
-import { moveMissionFilesInMinio } from '@common/minio_helper';
 
 @Injectable()
 export class ProjectService {
@@ -81,7 +79,7 @@ export class ProjectService {
             );
         }
 
-        if (!!searchParams) {
+        if (searchParams) {
             Object.keys(searchParams).forEach((key, index) => {
                 if (!['name', 'creator.uuid'].includes(key)) {
                     return;
@@ -209,22 +207,6 @@ export class ProjectService {
         if (exists) {
             throw new ConflictException(
                 'Project with that name already exists',
-            );
-        }
-        if (db_project.name !== project.name) {
-            await Promise.all(
-                db_project.missions.map(async (mission) => {
-                    await moveMissionFilesInMinio(
-                        `${db_project.name}/${mission.name}`,
-                        `${project.name}/${mission.name}`,
-                        env.MINIO_BAG_BUCKET_NAME,
-                    );
-                    await moveMissionFilesInMinio(
-                        `${db_project.name}/${mission.name}`,
-                        `${project.name}/${mission.name}`,
-                        env.MINIO_MCAP_BUCKET_NAME,
-                    );
-                }),
             );
         }
         await this.projectRepository.update(uuid, {

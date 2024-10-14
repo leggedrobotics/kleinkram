@@ -9,8 +9,6 @@ import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 
-const FormData = require('form-data');
-
 export const create_project_using_post = async (
     project: CreateProject,
     user?: User,
@@ -85,15 +83,13 @@ export async function upload_file(
 
     expect(res.status).toBe(201);
     const json = await res.json();
-    const credentials = json['credentials'];
-    const files = json['files'];
-    expect(credentials).toBeDefined();
-    expect(files).toBeDefined();
-    const fileResponse = files[filename];
+    expect(json).toBeDefined();
+
+    const fileResponse = json[0];
+
     expect(fileResponse).toBeDefined();
     expect(fileResponse['bucket']).toBe('bags');
     expect(fileResponse['fileUUID']).toBeDefined();
-    expect(fileResponse['queueUUID']).toBeDefined();
 
     // open file from fixtures
     const file = fs.readFileSync(`./tests/fixtures/${filename}`);
@@ -101,7 +97,7 @@ export async function upload_file(
         type: 'application/octet-stream',
     });
     const fileFile = Buffer.from(await blob.arrayBuffer());
-    const file_hash = await crypto.subtle.digest('SHA-256', file.buffer);
+    const file_hash = await crypto.subtle.digest('SHA-256', fileFile);
     const hash = crypto.createHash('md5');
     hash.update(fileFile);
 
@@ -110,16 +106,16 @@ export async function upload_file(
         forcePathStyle: true,
         region: 'us-east-1',
         credentials: {
-            accessKeyId: credentials.accessKey,
-            secretAccessKey: credentials.secretKey,
-            sessionToken: credentials.sessionToken,
+            accessKeyId: fileResponse.accessCredentials.accessKey,
+            secretAccessKey: fileResponse.accessCredentials.secretKey,
+            sessionToken: fileResponse.accessCredentials.sessionToken,
         },
     });
 
     const resi = await uploadFileMultipart(
         fileFile,
         fileResponse['bucket'],
-        fileResponse['location'],
+        fileResponse['fileUUID'],
         minioClient,
     );
     expect(resi).toBeDefined();
@@ -135,7 +131,7 @@ export async function upload_file(
                 cookie: `authtoken=${await get_jwt_token(user)}`,
             },
             body: JSON.stringify({
-                uuid: fileResponse['queueUUID'],
+                uuid: fileResponse['fileUUID'],
                 md5: hash.digest('base64'),
             }),
         },

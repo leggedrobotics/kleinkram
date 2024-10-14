@@ -331,7 +331,7 @@ export class QueryURLHandler extends QueryHandler {
                     : undefined,
             project_uuid: this.project_uuid || undefined,
             mission_uuid: this.mission_uuid || undefined,
-            name: this.search_params?.name || undefined,
+            name: this.search_params.name || undefined,
             file_type:
                 this.project_uuid && this.mission_uuid
                     ? this.file_type || undefined

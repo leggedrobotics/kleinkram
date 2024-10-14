@@ -17,7 +17,7 @@ import {
     getMetadata,
     listFiles,
 } from './helper/driveHelper';
-import { downloadMinioFile, uploadFile } from './helper/minioHelper';
+import { downloadMinioFile, uploadLocalFile } from './helper/minioHelper';
 import logger from '../logger';
 import { traceWrapper, tracing } from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
@@ -134,10 +134,10 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         logger.debug(`Job ${job.id} started, uuid is ${job.data.queueUuid}`);
         let queue = await this.startProcessing(job.data.queueUuid);
         const md5 = job.data.md5;
-        const sourceIsBag = queue.filename.endsWith('.bag');
+        const sourceIsBag = queue.display_name.endsWith('.bag');
 
         const uuid = crypto.randomUUID();
-        let tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
+        const tmp_file_name = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
 
         queue.state = QueueState.DOWNLOADING;
@@ -165,8 +165,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queue.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         queue = await this.queueRepository.save(queue);
 
-        logger.debug(`Job ${job.id} downloaded file: ${queue.identifier}`);
-        const originalFileName = queue.filename.split('/').pop();
+        logger.debug(`Job ${job.id} downloaded file: ${queue.display_name}`);
+        const originalFileName = queue.display_name.split('/').pop();
 
         let bagFileEntity: FileEntity | undefined;
         let mcapFileEntity: FileEntity | undefined;
@@ -232,9 +232,10 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     '.bag',
                     '.mcap',
                 );
-                await uploadFile(
+                await uploadLocalFile(
                     env.MINIO_MCAP_BUCKET_NAME,
-                    full_pathname_mcap,
+                    mcapFileEntity.uuid,
+                    mcapFileEntity.filename,
                     tmp_file_name_mcap,
                 ).catch(async (error) => {
                     logger.error(`Error converting file, possibly corrupted!`);
@@ -333,12 +334,22 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             logger.debug(
                 `Job {${job.id}} is a folder: ${originalFileName}, processing...`,
             );
+
+            // save the display name
+            queueEntity.display_name = `Google Drive Folder: '${originalFileName}'`;
+            await this.queueRepository.save(queueEntity);
+
             return await this.processDriveFolder(job, queueEntity);
         }
         // it's a file, process it
         logger.debug(
             `Job {${job.id}} is a file: ${originalFileName}, processing...`,
         );
+
+        // save the display name
+        queueEntity.display_name = `Google Drive File: '${originalFileName}'`;
+        await this.queueRepository.save(queueEntity);
+
         const filenameWithoutExtension = originalFileName
             .split('.')
             .slice(0, -1)
@@ -353,7 +364,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         if (exists) {
             queueEntity.state = QueueState.FILE_ALREADY_EXISTS;
-            queueEntity.filename = originalFileName;
             await this.queueRepository.save(queueEntity);
             logger.error(
                 `Job {${job.id}} file ${originalFileName} already exists`,
@@ -367,7 +377,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             !originalFileName.endsWith('.mcap')
         ) {
             queueEntity.state = QueueState.UNSUPPORTED_FILE_TYPE;
-            queueEntity.filename = originalFileName;
             await this.queueRepository.save(queueEntity);
             logger.error(
                 `Job {${job.id}} file ${originalFileName} is not a .bag or .mcap file`,
@@ -376,8 +385,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }
 
         const file_type = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
-
-        let tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
+        const tmp_file_name = `/tmp/${queueEntity.identifier}.${file_type}`;
         job.data.tmp_files.push(tmp_file_name); // saved for cleanup
         queueEntity.state = QueueState.DOWNLOADING;
         await this.queueRepository.save(queueEntity);
@@ -390,7 +398,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }, 'downloadDriveFile')();
 
         queueEntity.state = QueueState.PROCESSING;
-        queueEntity.filename = originalFileName;
         await this.queueRepository.save(queueEntity);
 
         logger.debug(`Job {${job.id}} downloaded file: ${originalFileName}`);
@@ -426,10 +433,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // validate that the tmp file is of the correct type
         if (!tmpFileName.endsWith(`.${file_type}`))
             throw new Error(`File ${tmpFileName} is not a ${file_type} file`);
-
-        const project_name = queueEntity.mission.project.name;
-        const mission_name = queueEntity.mission.name;
-        const full_pathname = `${project_name}/${mission_name}/${originalFileName}`;
 
         ////////////////////////////////////////////////////////////////
         // Upload file to Minio (and convert to mcap if necessary)
@@ -494,10 +497,10 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             queueEntity.state = QueueState.UPLOADING;
             await this.queueRepository.save(queueEntity);
 
-            const full_pathname_mcap = full_pathname.replace('.bag', '.mcap');
-            await uploadFile(
+            await uploadLocalFile(
                 env.MINIO_MCAP_BUCKET_NAME,
-                full_pathname_mcap,
+                mcapFileEntity.uuid,
+                mcapFileEntity.filename,
                 tmp_file_name_mcap,
             ).catch(async (error) => {
                 logger.error(`Error converting file, possibly corrupted!`);
@@ -518,11 +521,12 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         await this.queueRepository.save(queueEntity);
 
         logger.debug(`Uploading file: ${originalFileName} to Minio`);
-        await uploadFile(
+        await uploadLocalFile(
             sourceIsBag
                 ? env.MINIO_BAG_BUCKET_NAME
                 : env.MINIO_MCAP_BUCKET_NAME,
-            full_pathname,
+            savedFileEntity.uuid,
+            savedFileEntity.filename,
             tmpFileName,
         );
 
@@ -628,7 +632,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     file.mimeType === 'application/vnd.google-apps.folder'
                 ) {
                     const newQueue = this.queueRepository.create({
-                        filename: file.name,
+                        display_name: `Google Drive File: '${file.name}'`,
                         identifier: file.id,
                         state: QueueState.AWAITING_PROCESSING,
                         location: FileLocation.DRIVE,

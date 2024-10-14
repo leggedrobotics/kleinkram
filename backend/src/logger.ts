@@ -52,4 +52,4 @@ export class NestLoggerWrapper implements LoggerService {
     }
 }
 
-export default logger as winston.Logger;
+export default logger;

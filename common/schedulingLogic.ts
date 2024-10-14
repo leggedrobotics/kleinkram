@@ -16,7 +16,7 @@ export async function findWorkerForAction(
         cpuCores: MoreThanOrEqual(runtime_requirements.cpuCores),
         gpuMemory: MoreThanOrEqual(runtime_requirements.gpuMemory),
     };
-    let worker = await workerRepository.find({
+    const worker = await workerRepository.find({
         where: defaultWhere,
         order: {
             hostname: 'DESC',

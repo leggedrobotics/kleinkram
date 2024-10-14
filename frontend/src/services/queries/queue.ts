@@ -33,7 +33,7 @@ export const currentQueue = async (
         return new Queue(
             res.uuid,
             res.identifier,
-            res.filename,
+            res.display_name,
             res.state,
             res.location,
             res.mission,
@@ -71,7 +71,7 @@ export const getQueueForFile = async (
         return new Queue(
             rawQueue.uuid,
             rawQueue.identifier,
-            rawQueue.filename,
+            rawQueue.display_name,
             rawQueue.state,
             rawQueue.location,
             rawQueue.mission,

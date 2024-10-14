@@ -4,9 +4,13 @@ export class FileUpload {
     uploaded: number;
     startTime: Date;
     canceled: boolean = false;
-    constructor(name: string, size: number) {
+    uuid: string;
+    missionUuid: string;
+    constructor(name: string, size: number, uuid: string, missionUuid: string) {
         this.name = name;
         this.size = size;
+        this.uuid = uuid;
+        this.mission_uuid = missionUuid;
         this.uploaded = 0;
         this.startTime = new Date();
     }

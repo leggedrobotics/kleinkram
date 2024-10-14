@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
 import { Brackets, ILike, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,17 +9,12 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 import { UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
-import env from '@common/env';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { externalMinio, moveMissionFilesInMinio } from '@common/minio_helper';
-import Queue from 'bull';
-import { redis } from '@common/consts';
+import { externalMinio, getBucketFromFileType } from '@common/minio_helper';
 
 @Injectable()
-export class MissionService implements OnModuleInit {
-    private moveQueue: Queue.Queue;
-
+export class MissionService {
     constructor(
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
@@ -29,10 +24,6 @@ export class MissionService implements OnModuleInit {
         private userservice: UserService,
         private tagservice: TagService,
     ) {}
-
-    async onModuleInit() {
-        this.moveQueue = new Queue('move', { redis });
-    }
 
     async create(
         createMission: CreateMission,
@@ -235,9 +226,26 @@ export class MissionService implements OnModuleInit {
     }
 
     async moveMission(missionUUID: string, projectUUID: string) {
-        return await this.moveQueue.add('mission', {
-            missionUUID,
-            projectUUID,
+        const project = await this.projectRepository.findOneOrFail({
+            where: { uuid: projectUUID },
+        });
+
+        // verify that the no mission with the same name exists in the project
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+        });
+
+        const exists = await this.missionRepository.exists({
+            where: { name: mission.name, project: project },
+        });
+        if (exists) {
+            throw new ConflictException(
+                'Mission with that name already exists in the project',
+            );
+        }
+
+        return await this.missionRepository.update(missionUUID, {
+            project: project,
         });
     }
 
@@ -298,44 +306,29 @@ export class MissionService implements OnModuleInit {
             relations: ['files', 'project'],
         });
         return await Promise.all(
-            mission.files.map((f) =>
-                externalMinio.presignedUrl(
+            mission.files.map(async (f) => ({
+                filename: f.filename,
+                link: await externalMinio.presignedUrl(
                     'GET',
-                    env.MINIO_BAG_BUCKET_NAME,
-                    `${mission.project.name}/${mission.name}/${f.filename}`,
+                    getBucketFromFileType(f.type),
+                    f.uuid,
                     4 * 60 * 60,
+                    {
+                        // set filename in response headers
+                        'response-content-disposition': `attachment; filename ="${f.filename}"`,
+                    },
                 ),
-            ),
+            })),
         );
     }
 
     async updateName(uuid: string, name: string) {
-        const db_mission = await this.missionRepository.findOneOrFail({
-            where: { uuid },
-            relations: ['files', 'project'],
-        });
         const exists = await this.missionRepository.exists({
             where: { name: ILike(name), uuid: Not(uuid) },
         });
         if (exists) {
             throw new ConflictException(
                 'Mission with that name already exists',
-            );
-        }
-        if (db_mission.name !== name) {
-            await Promise.all(
-                db_mission.files.map(async (mission) => {
-                    await moveMissionFilesInMinio(
-                        `${db_mission.project.name}/${db_mission.name}`,
-                        `${db_mission.project.name}/${name}`,
-                        env.MINIO_BAG_BUCKET_NAME,
-                    );
-                    await moveMissionFilesInMinio(
-                        `${db_mission.project.name}/${db_mission.name}`,
-                        `${db_mission.project.name}/${name}`,
-                        env.MINIO_MCAP_BUCKET_NAME,
-                    );
-                }),
             );
         }
         await this.missionRepository.update(uuid, {
