@@ -1,12 +1,15 @@
 import { FileEntity } from 'src/types/FileEntity';
 import axios from 'src/api/axios';
-import { Credentials } from 'minio';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
     bucket: string;
     fileUUID: string;
-    accessCredentials: Credentials;
+    accessCredentials: {
+        accessKey: string;
+        secretKey: string;
+        sessionToken: string;
+    } | null;
 }[];
 
 export const updateFile = async ({ file }: { file: FileEntity }) => {
@@ -27,14 +30,14 @@ export const deleteFile = async (file: FileEntity) => {
 };
 
 export const generateTemporaryCredentials = async (
-    filenames: Record<string, Record<string, string>>,
-    missionUUID,
-): GenerateTemporaryCredentialsResponse => {
+    filenames: string[],
+    missionUUID: string,
+): Promise<GenerateTemporaryCredentialsResponse> => {
     const response = await axios.post('/file/temporaryAccess', {
         filenames,
         missionUUID,
     });
-    return response.data;
+    return response.data as GenerateTemporaryCredentialsResponse;
 };
 
 export const cancelUploads = async (

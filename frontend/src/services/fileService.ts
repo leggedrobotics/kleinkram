@@ -2,7 +2,6 @@ import { Notify } from 'quasar';
 import {
     cancelUploads,
     generateTemporaryCredentials,
-    GenerateTemporaryCredentialsResponse,
 } from 'src/services/mutations/file';
 import ENV from 'src/env';
 import {
@@ -20,172 +19,210 @@ import { existsFile } from 'src/services/queries/file';
 import { Mission } from 'src/types/Mission';
 import { QueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
+import SparkMD5 from 'spark-md5';
 
-export async function createFileAction(
-    selected_mission: Mission,
-    selected_project: Project,
+export const createFileAction = async (
+    selectedMission: Mission,
+    selectedProject: Project,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<FileUpload[]>,
+    injectedFiles: Ref<Ref<FileUpload>[]>,
+) => {
+    const confirmDialog = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = ''; // This triggers the generic browser dialog.
+    };
+
+    window.addEventListener('beforeunload', confirmDialog);
+
+    return _createFileAction(
+        selectedMission,
+        selectedProject,
+        files,
+        queryClient,
+        uploadingFiles,
+        injectedFiles,
+    ).finally(() => window.removeEventListener('beforeunload', confirmDialog));
+};
+
+async function _createFileAction(
+    selectedMission: Mission,
+    selectedProject: Project,
+    files: File[],
+    queryClient: QueryClient,
+    uploadingFiles: Ref<Record<string, Record<string, string>>>,
+    injectedFiles: Ref<Ref<FileUpload>[]>,
 ) {
-    if (!selected_mission) {
-        return;
-    }
-    const noti = Notify.create({
-        group: false,
-        message: 'Processing files...',
-        color: 'positive',
-        spinner: true,
-        position: 'bottom',
-        timeout: 0,
-    });
-    if (files && files.length > 0) {
-        console.log(files);
-        const filesToRecord: Record<string, File> = files.reduce(
-            (acc, file) => ({ ...acc, [file.name]: file }),
-            {},
-        );
-        const filenames = Object.keys(filesToRecord);
-        const filenameRegex = /^[a-zA-Z0-9_\-\. \[\]\(\)äöüÄÖÜ]+$/;
-        const filteredFilenames: string[] = [];
-        filenames.forEach((filename) => {
-            const isBagOrMCAP =
-                filename.endsWith('.bag') || filename.endsWith('.mcap');
-            const isValidName = filenameRegex.test(filename);
-            if (isBagOrMCAP && isValidName) {
-                filteredFilenames.push(filename);
-            } else {
-                if (!isBagOrMCAP) {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: Invalid file type. Only .bag and .mcap files are allowed.`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                } else {
-                    Notify.create({
-                        group: false,
-                        message: `Upload of File ${filename} failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`,
-                        color: 'negative',
-                        spinner: false,
-                        position: 'bottom',
-                        timeout: 30000,
-                        closeBtn: true,
-                    });
-                }
-            }
-        });
-        const tempCreds: GenerateTemporaryCredentialsResponse =
-            await generateTemporaryCredentials(
-                filteredFilenames,
-                selected_mission.uuid,
-            ).catch((e) => {
-                let msg = `Upload of Files failed: ${e}`;
-
-                // show special error for 403
-                if (e.response && e.response.status === 403) {
-                    msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.name}`;
-                }
-
-                // close the notification
-                noti({
-                    message: msg,
-                    color: 'negative',
-                    spinner: false,
-                    position: 'bottom',
-                    timeout: 30000,
-                    closeBtn: true,
-                });
-            });
-        uploadingFiles.value = filteredFilenames;
-        const api = ENV.ENDPOINT;
-        let minio_endpoint = api.replace('api', 'minio');
-        if (api === 'http://localhost:3000') {
-            minio_endpoint = 'http://localhost:9000';
-        }
-
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'files',
-        });
-
-        const limit = pLimit(5);
-
-        const zip = (a, b) => a.map((k, i) => [k, b[i]]);
-        await Promise.all(
-            zip(tempCreds, files).map(async (_file) => {
-                const file_access = _file[0];
-                const file = _file[1];
-
-                const credentials = file_access.accessCredentials;
-                const minioClient = new S3Client({
-                    endpoint: minio_endpoint,
-                    forcePathStyle: true,
-                    region: 'us-east-1',
-                    credentials: {
-                        accessKeyId: credentials.accessKey,
-                        secretAccessKey: credentials.secretKey,
-                        sessionToken: credentials.sessionToken,
-                    },
-                });
-
-                const newFileUpload = ref(
-                    new FileUpload(file.filename, file.size),
-                );
-                injectedFiles.value.push(newFileUpload);
-                return limit(async () => {
-                    try {
-                        const md5Hash = await uploadFileMultipart(
-                            file,
-                            file_access.bucket,
-                            file_access.fileUUID,
-                            minioClient,
-                            newFileUpload,
-                        );
-
-                        return confirmUpload(file_access.fileUUID, md5Hash);
-                    } catch (e) {
-                        console.error('err', e);
-                        newFileUpload.value.canceled = true;
-                        Notify.create({
-                            message: `Upload of File ${filename} failed: ${e}`,
-                            color: 'negative',
-                            spinner: false,
-                            timeout: 0,
-                            closeBtn: true,
-                        });
-                    }
-                    return;
-                });
-            }),
-        );
-
-        noti({
-            message: `Files for Mission ${selected_mission.name} uploaded`,
-            color: 'positive',
-            spinner: false,
-            timeout: 5000,
-        });
-        await queryClient.invalidateQueries({
-            predicate: (query) =>
-                (query.queryKey[0] === 'files' &&
-                    query.queryKey[1] === selected_mission.uuid) ||
-                (query.queryKey[0] === 'missions' &&
-                    query.queryKey[1] === selected_project.uuid) ||
-                (query.queryKey[0] === 'projects' &&
-                    query.queryKey[1] === selected_project.uuid),
-        });
-    } else {
-        noti({
+    if (files.length == 0) {
+        Notify.create({
             message: 'No file or URL provided',
             color: 'negative',
             spinner: false,
             timeout: 2000,
         });
+        return;
     }
+
+    const isBagOrMCAPFilter = (filename: string) =>
+        filename.endsWith('.bag') || filename.endsWith('.mcap');
+
+    const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
+    const isValidNameFilter = (filename: string) =>
+        filenameRegex.test(filename);
+
+    const validFiles = files.filter(
+        (file) => isBagOrMCAPFilter(file.name) && isValidNameFilter(file.name),
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Display Warning for Invalid Files
+    ////////////////////////////////////////////////////////////////////////////
+    const invalidFiles = files.filter(
+        (file) =>
+            !isBagOrMCAPFilter(file.name) || !isValidNameFilter(file.name),
+    );
+
+    if (invalidFiles.length > 0) {
+        const invalidFileNames = invalidFiles
+            .map((file) => file.name)
+            .join(', ');
+        const invalidFileTypeMessage = `Upload of Files failed: Invalid file type. Only .bag and .mcap files are allowed.`;
+        const invalidFileNameMessage = `Upload of Files failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
+        Notify.create({
+            group: false,
+            message:
+                invalidFileNames +
+                ' ' +
+                (isBagOrMCAPFilter(invalidFileNames)
+                    ? invalidFileTypeMessage
+                    : invalidFileNameMessage),
+            color: 'negative',
+            spinner: false,
+            position: 'bottom',
+            timeout: 30000,
+            closeBtn: true,
+        });
+    }
+
+    const fileNames = validFiles.map((file) => file.name);
+    const temporaryCredentials = await generateTemporaryCredentials(
+        fileNames,
+        selectedMission.uuid,
+    ).catch((e) => {
+        let msg = `Upload of Files failed: ${e}`;
+
+        // show special error for 403
+        if (e.response && e.response.status === 403) {
+            msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
+        }
+
+        // close the notification
+        Notify.create({
+            message: msg,
+            color: 'negative',
+            spinner: false,
+            position: 'bottom',
+            timeout: 30000,
+            closeBtn: true,
+        });
+    });
+
+    if (!temporaryCredentials) {
+        return;
+    }
+
+    uploadingFiles.value = fileNames;
+
+    const api = ENV.ENDPOINT;
+    let minioEndpoint = api.replace('api', 'minio');
+    if (api === 'http://localhost:3000') {
+        minioEndpoint = 'http://localhost:9000';
+    }
+
+    await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'files',
+    });
+
+    const limit = pLimit(5);
+
+    await Promise.all(
+        temporaryCredentials.map(async (accessResp, i) => {
+            const file = validFiles[i];
+
+            const accessCredentials = accessResp.accessCredentials;
+            if (accessCredentials === null) {
+                Notify.create({
+                    message: `Upload of File ${file.name} failed: No credentials available`,
+                    color: 'negative',
+                    spinner: false,
+                    timeout: 0,
+                    closeBtn: true,
+                });
+                return;
+            }
+
+            const minioClient = new S3Client({
+                endpoint: minioEndpoint,
+                forcePathStyle: true,
+                region: 'us-east-1',
+                credentials: {
+                    accessKeyId: accessCredentials.accessKey,
+                    secretAccessKey: accessCredentials.secretKey,
+                    sessionToken: accessCredentials.sessionToken,
+                },
+            });
+
+            const newFileUpload = new FileUpload(
+                file.name,
+                file.size,
+                accessResp.fileUUID,
+                selectedMission.uuid,
+            );
+            const newFileUploadRef = ref(newFileUpload);
+            injectedFiles.value.push(newFileUploadRef);
+            return limit(async () => {
+                try {
+                    const md5Hash = await uploadFileMultipart(
+                        file,
+                        accessResp.bucket,
+                        accessResp.fileUUID,
+                        minioClient,
+                        newFileUploadRef,
+                    );
+
+                    return confirmUpload(accessResp.fileUUID, md5Hash);
+                } catch (e) {
+                    console.error('err', e);
+                    newFileUploadRef.value.canceled = true;
+                    Notify.create({
+                        message: `Upload of File ${file.name} failed: ${e}`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 0,
+                        closeBtn: true,
+                    });
+                }
+                return;
+            });
+        }),
+    );
+
+    Notify.create({
+        message: `Files for Mission ${selectedMission.name} uploaded`,
+        color: 'positive',
+        spinner: false,
+        timeout: 5000,
+    });
+    await queryClient.invalidateQueries({
+        predicate: (query) =>
+            (query.queryKey[0] === 'files' &&
+                query.queryKey[1] === selectedMission.uuid) ||
+            (query.queryKey[0] === 'missions' &&
+                query.queryKey[1] === selectedProject.uuid) ||
+            (query.queryKey[0] === 'projects' &&
+                query.queryKey[1] === selectedProject.uuid),
+    });
 }
 
 /**
@@ -322,7 +359,10 @@ async function uploadFileMultipart(
             await minioClient.send(abortMultipartUploadCommand);
             console.log('Multipart upload aborted.');
         }
-        await cancelUploads([fileUUID], selected_mission?.uuid);
+        await cancelUploads(
+            [newFileUpload.value.uuid],
+            newFileUpload.value.missionUuid,
+        );
 
         throw error;
     }

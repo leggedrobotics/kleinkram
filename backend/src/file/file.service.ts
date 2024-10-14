@@ -681,6 +681,12 @@ export class FileService implements OnModuleInit {
             accessCredentials: Credentials;
         }[]
     > {
+        const emptyCredentials = {
+            bucket: null,
+            fileUUID: null,
+            accessCredentials: null,
+        };
+
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -695,14 +701,23 @@ export class FileService implements OnModuleInit {
 
                 // verify that file has ending .bag or .mcap
                 if (!filename.endsWith('.bag') && !filename.endsWith('.mcap')) {
-                    throw new BadRequestException(
-                        'File must have ending .bag or .mcap',
-                    );
+                    return emptyCredentials;
                 }
 
                 const fileType: FileType = filename.endsWith('.bag')
                     ? FileType.BAG
                     : FileType.MCAP;
+
+                // check if file already exists
+                const existingFile = await this.fileRepository.count({
+                    where: {
+                        filename,
+                        mission: {
+                            uuid: missionUUID,
+                        },
+                    },
+                });
+                if (existingFile > 0) return emptyCredentials;
 
                 const file = await this.fileRepository.save(
                     this.fileRepository.create({
