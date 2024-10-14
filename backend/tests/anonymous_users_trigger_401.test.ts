@@ -3,11 +3,10 @@ import { get_endpoints } from './utils/endpoints';
 
 describe('Anonymous users trigger 401', () => {
     const unauthorized_endpoints = [
-        '/file/downloadWithToken', // anonymous users can download files using a valid token
-        '/auth/google', // anonymous users can login
-        '/auth/google/callback', // anonymous users can login
-        '/auth/logout', // anonymous users can logout
-        '/metrics', // anonymous users can access metrics
+        '/auth/google',
+        '/auth/google/callback',
+        '/auth/logout',
+        '/metrics',
     ];
 
     const endpoints = get_endpoints();
