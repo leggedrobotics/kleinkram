@@ -45,7 +45,7 @@ export const explorer_page_table_columns: Array<ProjectColumnType> = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Project) => (row.creator ? row.creator?.name : ''),
+        field: (row: Project) => (row.creator ? row.creator.name : ''),
         format: (val: number) => `${val}`,
         style: 'min-width: 100px',
         sortable: true,
@@ -65,7 +65,7 @@ export const explorer_page_table_columns: Array<ProjectColumnType> = [
         label: '# Missions',
         align: 'right',
         style: 'min-width: 100px',
-        field: (row: Project) => row.missions?.length,
+        field: (row: Project) => row.missions.length,
         format: (val: number) => `${val}`,
     },
     {
@@ -90,7 +90,7 @@ export const mission_columns: Array<ProjectColumnType> = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: Mission) => row.files?.length,
+        field: (row: Mission) => row.files.length,
         format: (val: number) => `${val}`,
     },
     {
@@ -98,7 +98,7 @@ export const mission_columns: Array<ProjectColumnType> = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Project) => (row.creator ? row.creator?.name : ''),
+        field: (row: Project) => (row.creator ? row.creator.name : ''),
         format: (val: number) => `${val}`,
         style: 'min-width: 100px',
         sortable: true,
@@ -123,7 +123,7 @@ export const mission_columns: Array<ProjectColumnType> = [
         label: 'Size',
         align: 'left',
         field: (row: Mission) =>
-            row.files?.map((f) => f.size).reduce((a, b) => a + b, 0),
+            row.files.map((f) => f.size).reduce((a, b) => a + b, 0),
         format: formatSize,
     },
     {

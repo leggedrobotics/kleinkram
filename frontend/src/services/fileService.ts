@@ -88,7 +88,7 @@ export async function createFileAction(
 
                 // show special error for 403
                 if (e.response && e.response.status === 403) {
-                    msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission?.name}`;
+                    msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selected_mission.name}`;
                 }
 
                 // close the notification
@@ -164,7 +164,7 @@ export async function createFileAction(
         );
 
         noti({
-            message: `Files for Mission ${selected_mission?.name} uploaded`,
+            message: `Files for Mission ${selected_mission.name} uploaded`,
             color: 'positive',
             spinner: false,
             timeout: 5000,
@@ -213,7 +213,7 @@ export async function driveUpload(
     await createDrive(selected_mission.uuid, drive_url.value)
         .then(() => {
             noti({
-                message: `Files for Mission ${selected_mission?.name} are now importing...`,
+                message: `Files for Mission ${selected_mission.name} are now importing...`,
                 color: 'positive',
                 spinner: false,
                 timeout: 5000,
@@ -221,7 +221,7 @@ export async function driveUpload(
         })
         .catch((e) => {
             noti({
-                message: `Upload of Files for Mission ${selected_mission?.name} failed: ${e}`,
+                message: `Upload of Files for Mission ${selected_mission.name} failed: ${e}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,

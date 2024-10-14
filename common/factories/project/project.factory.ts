@@ -16,12 +16,12 @@ export type ProjectContext = {
 
 define(Project, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
-        context?.creator || faker.helpers.arrayElement(context?.all_users);
+        context.creator || faker.helpers.arrayElement(context.all_users);
     console.assert(creator, 'No creator provided for project');
 
     const project = new Project();
     project.uuid = extendedFaker.string.uuid();
-    project.name = context?.name || `${extendedFaker.project.name()}`;
+    project.name = context.name || `${extendedFaker.project.name()}`;
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
 
