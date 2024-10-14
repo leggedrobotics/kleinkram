@@ -645,10 +645,10 @@ export class FileService implements OnModuleInit {
     }
 
     async isUploading(userUUID: string) {
-        return this.queueRepository
+        return this.fileRepository
             .findOne({
                 where: {
-                    state: LessThan(QueueState.COMPLETED),
+                    state: FileState.UPLOADING,
                     // pending uploads get canceled after 12 hours
                     // however this cleanup is done asynchronously once a day
                     createdAt: LessThan(
