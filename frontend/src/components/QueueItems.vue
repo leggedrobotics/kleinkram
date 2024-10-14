@@ -378,7 +378,7 @@ const columns = [
                 row.location == FileLocation.DRIVE
             )
                 return 'Not available';
-            return row.filename;
+            return row.display_name;
         },
     },
     {

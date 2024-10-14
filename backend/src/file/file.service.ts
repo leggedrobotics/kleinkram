@@ -33,12 +33,13 @@ import { redis } from '@common/consts';
 import {
     deleteFileMinio,
     externalMinio,
-    generateTemporaryCredentials,
+    generateTemporaryCredential,
+    getBucketFromFileType,
     getInfoFromMinio,
-    moveFile,
 } from '@common/minio_helper';
-import Credentials from 'minio/dist/main/Credentials';
 import Category from '@common/entities/category/category.entity';
+import { parseMinioMetrics } from './utils';
+import Credentials from 'minio/dist/main/Credentials';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -397,30 +398,25 @@ export class FileService implements OnModuleInit {
         });
     }
 
+    /**
+     * Updates a file with the given uuid.
+     * @param uuid
+     * @param file
+     */
     async update(uuid: string, file: UpdateFile) {
         logger.debug('Updating file with uuid: ' + uuid);
         logger.debug('New file data: ' + JSON.stringify(file));
 
-        const db_file = await this.fileRepository.findOne({
+        const db_file = await this.fileRepository.findOneOrFail({
             where: { uuid },
             relations: ['mission', 'mission.project'],
         });
-
-        if (!db_file) {
-            throw new Error('File not found');
-        }
 
         // validate if file ending hasn't changed
         const fileEnding = db_file.type === FileType.MCAP ? '.mcap' : '.bag';
         if (!file.filename.endsWith(fileEnding)) {
             throw new BadRequestException('File ending must not be changed');
         }
-
-        const srcPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
-        const bucketName =
-            db_file.type === FileType.MCAP
-                ? env.MINIO_MCAP_BUCKET_NAME
-                : env.MINIO_BAG_BUCKET_NAME;
 
         db_file.filename = file.filename;
         db_file.date = file.date;
@@ -455,8 +451,6 @@ export class FileService implements OnModuleInit {
             db_file.categories = cats;
         }
 
-        const destPath = `${db_file.mission.project.name}/${db_file.mission.name}/${db_file.filename}`;
-
         await this.dataSource
             .transaction(async (transactionalEntityManager) => {
                 await transactionalEntityManager.save(
@@ -465,9 +459,6 @@ export class FileService implements OnModuleInit {
                 );
                 await transactionalEntityManager.save(Mission, db_file.mission);
                 await transactionalEntityManager.save(FileEntity, db_file);
-                if (srcPath !== destPath) {
-                    await moveFile(srcPath, destPath, bucketName);
-                }
             })
             .catch((err) => {
                 if (err.code === '23505') {
@@ -484,26 +475,42 @@ export class FileService implements OnModuleInit {
         });
     }
 
+    /**
+     * Generate a download link for a file with the given uuid.
+     * The link will expire after 1 week if expires is set to true.
+     *
+     * @param uuid The unique identifier of the file
+     * @param expires Whether the download link should expire
+     */
     async generateDownload(uuid: string, expires: boolean) {
+        // verify that an uuid is provided
+        if (!uuid || uuid === '')
+            throw new BadRequestException('UUID is required');
+
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
-            relations: ['mission', 'mission.project'],
         });
-        if (file.uuid === undefined || file.uuid !== uuid) {
-            throw new Error('File not found');
-        }
-        const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
-        const stats = await getInfoFromMinio(file.type, location);
-        if (!stats) {
-            throw new NotFoundException('File not found');
-        }
+
+        // verify that the file exists in DB
+        if (file.uuid === undefined || file.uuid !== uuid)
+            throw new BadRequestException('File not found');
+
+        const stats = await getInfoFromMinio(file.type, file.uuid);
+
+        // verify that the file exists in Minio
+        if (!stats) throw new NotFoundException('File not found');
+
         return await externalMinio.presignedUrl(
             'GET',
             file.type === FileType.MCAP
                 ? env.MINIO_MCAP_BUCKET_NAME
                 : env.MINIO_BAG_BUCKET_NAME,
-            `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
+            file.uuid, // we use the uuid as the filename in Minio
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
+            {
+                // set filename in response headers
+                'response-content-disposition': `attachment; filename ="${file.filename}"`,
+            },
         );
     }
 
@@ -562,18 +569,39 @@ export class FileService implements OnModuleInit {
         });
     }
 
+    /**
+     * Delete a file with the given uuid.
+     * The file will be removed from the database and from Minio.
+     *
+     * @param uuid The unique identifier of the file
+     */
     async deleteFile(uuid: string) {
-        const file = await this.fileRepository.findOneOrFail({
-            where: { uuid },
-            relations: ['mission', 'mission.project'],
-        });
-        const bucket =
-            file.type === FileType.MCAP
-                ? env.MINIO_MCAP_BUCKET_NAME
-                : env.MINIO_BAG_BUCKET_NAME;
-        const location = `${file.mission.project.name}/${file.mission.name}/${file.filename}`;
-        await deleteFileMinio(bucket, location);
-        return this.fileRepository.remove(file);
+        if (!uuid || uuid === '')
+            throw new BadRequestException('UUID is required');
+
+        // we delete the file from the database and Minio
+        // using a transaction to ensure consistency
+        return this.fileRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+                // find the file in the database
+                const file = await transactionalEntityManager.findOneOrFail(
+                    FileEntity,
+                    { where: { uuid } },
+                );
+                if (!file) throw new NotFoundException('File not found');
+
+                // delete the file from Minio
+                const bucket = getBucketFromFileType(file.type);
+                await deleteFileMinio(bucket, file.uuid).catch((error) => {
+                    if (error.code === 'NoSuchKey') {
+                        throw new NotFoundException('File not found in Minio');
+                    }
+                    throw error;
+                });
+
+                await transactionalEntityManager.remove(file);
+            },
+        );
     }
 
     async getStorage() {
@@ -631,11 +659,34 @@ export class FileService implements OnModuleInit {
             .then((res) => !!res);
     }
 
+    /**
+     * Get temporary access to upload files to Minio.
+     * This function creates a new file entry in the database and a new queue entry.
+     * The queue entry is used to track the upload progress.
+     *
+     * The function returns a list of access credentials for each file.
+     *
+     * @param filenames list of filenames to upload
+     * @param missionUUID the mission to upload the files to
+     * @param userUUID the user that is uploading the files
+     */
     async getTemporaryAccess(
         filenames: string[],
         missionUUID: string,
         userUUID: string,
-    ): Promise<{ credentials: Credentials; files: Record<string, any> }> {
+    ): Promise<
+        {
+            bucket: string;
+            fileUUID: string;
+            accessCredentials: Credentials;
+        }[]
+    > {
+        const emptyCredentials = {
+            bucket: null,
+            fileUUID: null,
+            accessCredentials: null,
+        };
+
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -643,64 +694,65 @@ export class FileService implements OnModuleInit {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        const fileReturn = {};
-        await Promise.all(
+
+        return await Promise.all(
             filenames.map(async (filename) => {
-                const fileType = filename.endsWith('.bag')
+                logger.debug('Creating temporary access for file: ' + filename);
+
+                // verify that file has ending .bag or .mcap
+                if (!filename.endsWith('.bag') && !filename.endsWith('.mcap')) {
+                    return emptyCredentials;
+                }
+
+                const fileType: FileType = filename.endsWith('.bag')
                     ? FileType.BAG
                     : FileType.MCAP;
-                const tentativeFile = this.fileRepository.create({
-                    date: new Date(),
-                    size: 0,
-                    filename,
-                    mission,
-                    creator: user,
-                    type: fileType,
-                    state: FileState.UPLOADING,
-                });
-                try {
-                    const savedFile =
-                        await this.fileRepository.save(tentativeFile);
-                    const location = `${mission.project.name}/${mission.name}/${filename}`;
 
-                    const newQueue = this.queueRepository.create({
+                // check if file already exists
+                const existingFile = await this.fileRepository.count({
+                    where: {
                         filename,
-                        identifier: location,
+                        mission: {
+                            uuid: missionUUID,
+                        },
+                    },
+                });
+                if (existingFile > 0) return emptyCredentials;
+
+                const file = await this.fileRepository.save(
+                    this.fileRepository.create({
+                        date: new Date(),
+                        size: 0,
+                        filename,
+                        mission,
+                        creator: user,
+                        type: fileType,
+                        state: FileState.UPLOADING,
+                    }),
+                );
+
+                const queueEntity = await this.queueRepository.save(
+                    this.queueRepository.create({
+                        identifier: file.uuid,
+                        display_name: filename,
                         state: QueueState.AWAITING_UPLOAD,
                         location: FileLocation.MINIO,
                         mission,
                         creator: user,
-                    });
-                    const queueEntity =
-                        await this.queueRepository.save(newQueue);
-                    fileReturn[filename] = {
-                        bucket:
-                            fileType === FileType.BAG
-                                ? env.MINIO_BAG_BUCKET_NAME
-                                : env.MINIO_MCAP_BUCKET_NAME,
-                        location,
-                        fileUUID: savedFile.uuid,
-                        queueUUID: queueEntity.uuid,
-                        success: true,
-                    };
-                } catch (error) {
-                    logger.debug('Tentative file could not be saved');
-                    fileReturn[filename] = { success: false };
-                }
+                    }),
+                );
+
+                return {
+                    bucket: getBucketFromFileType(fileType),
+                    fileUUID: file.uuid,
+                    accessCredentials: await generateTemporaryCredential(
+                        file.uuid,
+                        getBucketFromFileType(fileType),
+                    ),
+                    queueUUID: queueEntity.uuid,
+                };
             }),
         );
-        const paths = filenames.map((filename) => {
-            return `${mission.project.name}/${mission.name}/${filename}`;
-        });
-        try {
-            const credentials = await generateTemporaryCredentials(paths);
-            return {
-                credentials,
-                files: fileReturn,
-            };
-        } catch (err) {
-            console.error(err);
-        }
     }
 
     async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {
@@ -712,66 +764,86 @@ export class FileService implements OnModuleInit {
         });
     }
 
+    /**
+     * Delete multiple files with the given uuids.
+     *
+     * This function will remove the files from the database and from Minio.
+     * The deletion fails if any of the files is not found in the database or
+     * if any of the files is not found in Minio. It verifies the files in the
+     * database and Minio in a single transaction to ensure consistency.
+     *
+     * @param fileUUIDs The unique identifiers of the files
+     * @param missionUUID The unique identifier of the mission
+     *
+     */
     async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
-        const filteredFileUUIDs = (
-            await Promise.all(
-                fileUUIDs.map(async (uuid) => {
-                    const file = await this.fileRepository.findOne({
-                        where: { uuid, mission: { uuid: missionUUID } },
-                        relations: ['mission'],
-                    });
-                    if (!file) {
-                        return;
-                    }
-                    return file.uuid;
-                }),
-            )
-        ).filter((uuid) => !!uuid);
-        await Promise.all(
-            filteredFileUUIDs.map(async (uuid) => {
-                return this.deleteFile(uuid);
-            }),
+        const unique_files_uuids = [...new Set(fileUUIDs)];
+
+        return await this.fileRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+                // get a list of all files to delete
+                const files = await transactionalEntityManager.find(
+                    FileEntity,
+                    {
+                        where: {
+                            uuid: In(unique_files_uuids),
+                            mission: { uuid: missionUUID },
+                        },
+                    },
+                );
+
+                // verify that all files are found in the database
+                const unique_db_files_uuids = [
+                    ...new Set(files.map((f) => f.uuid)),
+                ];
+                if (
+                    unique_db_files_uuids.length !== unique_files_uuids.length
+                ) {
+                    throw new NotFoundException(
+                        'Some files not found, aborting',
+                    );
+                }
+
+                // verify that all files are found in Minio
+                await Promise.all(
+                    files.map(async (file) => {
+                        const stats = await getInfoFromMinio(
+                            file.type,
+                            file.uuid,
+                        );
+                        if (!stats)
+                            throw new NotFoundException(
+                                `File ${file.uuid} not found in Minio`,
+                            );
+                    }),
+                );
+
+                const bucket = getBucketFromFileType(files[0].type);
+                await Promise.all(
+                    files.map(async (file) => {
+                        await deleteFileMinio(bucket, file.uuid).catch(
+                            (error) => {
+                                if (error.code === 'NoSuchKey') {
+                                    throw new NotFoundException(
+                                        'File not found in Minio',
+                                    );
+                                }
+                                throw error;
+                            },
+                        );
+                    }),
+                );
+
+                await transactionalEntityManager.remove(files);
+            },
         );
     }
 
+    /**
+     * Check if a file with the given uuid exists.
+     * @param fileUUID
+     */
     async exists(fileUUID: string) {
         return this.fileRepository.exists({ where: { uuid: fileUUID } });
     }
-}
-
-function parseMinioMetrics(metricsText) {
-    const lines = metricsText.split('\n').filter((line) => line.trim() !== '');
-
-    const result = {};
-
-    lines.forEach((line) => {
-        // Skip comments
-        if (line.startsWith('#')) {
-            return;
-        }
-
-        // Match metric lines
-        const match = line.match(/^(\w+)\{(.+)\}\s+(.+)$/);
-        if (match) {
-            const [, metricName, labelsText, value] = match;
-
-            // Parse labels
-            const labels = {};
-            labelsText.split(',').forEach((labelPair) => {
-                const [key, val] = labelPair.split('=');
-                labels[key] = val.replace(/\"/g, ''); // Remove quotes
-            });
-
-            // Add to the result object
-            if (!result[metricName]) {
-                result[metricName] = [];
-            }
-            result[metricName].push({
-                labels,
-                value: parseFloat(value),
-            });
-        }
-    });
-
-    return result;
 }

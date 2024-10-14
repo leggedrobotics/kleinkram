@@ -165,10 +165,10 @@ export function tracing<A extends unknown[], C>(
 
         if (typeof propertyKey === 'undefined') {
             // Decorator is applied to all methods of a class
-            Reflect.ownKeys(target?.prototype)?.forEach(
+            Reflect.ownKeys(target.prototype).forEach(
                 (methodName: string | symbol): void => {
                     const originalMethod: (...args: A) => C =
-                        target?.prototype[methodName];
+                        target.prototype[methodName];
                     if (typeof originalMethod === 'function') {
                         target.prototype[methodName] = applyWrap(
                             methodName,
@@ -180,7 +180,7 @@ export function tracing<A extends unknown[], C>(
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method
-            const originalMethod: (...args: A) => C = descriptor?.value;
+            const originalMethod: (...args: A) => C = descriptor.value;
             if (typeof originalMethod === 'function') {
                 descriptor.value = applyWrap(propertyKey, originalMethod);
             }

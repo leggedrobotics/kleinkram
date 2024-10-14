@@ -7,8 +7,6 @@ import { traceWrapper } from '../../tracing';
 import logger from '../../logger';
 import { open } from 'fs/promises';
 import { FileHandleReadable } from '@mcap/nodejs';
-import { uploadFile } from './minioHelper';
-import env from '@common/env';
 
 const execPromisify = promisify(exec);
 

@@ -24,7 +24,7 @@ export const createFile = async (
 };
 
 export const createDrive = async (missionUUID: string, driveURL: string) => {
-    const response = await axios.post('/queue/createdrive', {
+    const response = await axios.post('/queue/import_from_drive', {
         missionUUID,
         driveURL,
     });

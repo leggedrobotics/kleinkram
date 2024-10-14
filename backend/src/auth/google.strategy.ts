@@ -49,7 +49,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
                 return;
             });
 
-        if (!!user) {
+        if (user) {
             logger.debug(`Login successful for ${user.uuid}`);
             callback(null, user);
             return;

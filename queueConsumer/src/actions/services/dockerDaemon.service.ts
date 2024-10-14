@@ -110,9 +110,9 @@ export class DockerDaemon {
             ...container_options,
             limits: {
                 ...defaultContainerLimitations,
-                ...container_options?.limits,
+                ...container_options.limits,
             },
-            environment: { ...container_options?.environment },
+            environment: { ...container_options.environment },
         };
 
         logger.debug(

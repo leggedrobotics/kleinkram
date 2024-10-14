@@ -13,9 +13,7 @@ import {
     QueueState,
     UserRole,
 } from '@common/enum';
-import env from '@common/env';
 import logger from '../logger';
-import { AuthRes } from '../auth/paramDecorator';
 import { UserService } from '../user/user.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import FileEntity from '@common/entities/file/file.entity';
@@ -25,10 +23,15 @@ import { RuntimeDescription } from '@common/types';
 
 import Queue from 'bull';
 import { addActionQueue } from '@common/schedulingLogic';
-import { getInfoFromMinio, internalMinio } from '@common/minio_helper';
+import {
+    getBucketFromFileType,
+    getInfoFromMinio,
+    internalMinio,
+} from '@common/minio_helper';
 import { redis } from '@common/consts';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Gauge } from 'prom-client';
+import User from '@common/entities/user/user.entity';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -112,35 +115,35 @@ export class QueueService implements OnModuleInit {
         logger.debug('All queues are ready');
     }
 
-    async createDrive(driveCreate: DriveCreate, auth: AuthRes) {
+    async importFromDrive(driveCreate: DriveCreate, user: User) {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.user_service.findOneByUUID(auth.user.uuid);
-        const fileId = extractFileIdFromUrl(driveCreate.driveURL);
+        const creator = await this.user_service.findOneByUUID(user.uuid);
 
-        const newQueue = this.queueRepository.create({
-            filename: fileId,
-            identifier: fileId,
-            state: QueueState.AWAITING_PROCESSING,
-            location: FileLocation.DRIVE,
-            mission,
-            creator,
-        });
-        await this.queueRepository.save(newQueue);
+        // get GoogleDrive file id
+        const fileId = extractFileIdFromUrl(driveCreate.driveURL);
+        if (!fileId) throw new ConflictException('Invalid Drive URL');
+
+        const queue_entry = await this.queueRepository.save(
+            this.queueRepository.create({
+                identifier: fileId,
+                display_name: `GoogleDrive Object (no id=${fileId})`,
+                state: QueueState.AWAITING_PROCESSING,
+                location: FileLocation.DRIVE,
+                mission,
+                creator,
+            }),
+        );
         await this.fileQueue
-            .add('processDriveFile', {
-                queueUuid: newQueue.uuid,
-            })
-            .catch((err) => {
-                logger.error(err);
-            });
+            .add('processDriveFile', { queueUuid: queue_entry.uuid })
+            .catch((err) => logger.error(err));
         logger.debug('added to queue');
     }
 
     async confirmUpload(uuid: string, md5: string) {
         const queue = await this.queueRepository.findOneOrFail({
-            where: { uuid: uuid },
+            where: { identifier: uuid },
             relations: ['mission', 'mission.project'],
         });
 
@@ -149,18 +152,16 @@ export class QueueService implements OnModuleInit {
         }
         const file = await this.fileRepository.findOneOrFail({
             where: {
-                filename: queue.filename,
-                mission: { uuid: queue.mission.uuid },
+                uuid: uuid,
             },
         });
 
-        const fileInfo = await getInfoFromMinio(
-            queue.filename.endsWith('.bag') ? FileType.BAG : FileType.MCAP,
-            `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`,
-        ).catch(async (err) => {
-            await this.fileRepository.remove(file);
-            throw new ConflictException('File not found in Minio');
-        });
+        const fileInfo = await getInfoFromMinio(file.type, file.uuid).catch(
+            async () => {
+                await this.fileRepository.remove(file);
+                throw new ConflictException('File not found in Minio');
+            },
+        );
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
@@ -228,7 +229,7 @@ export class QueueService implements OnModuleInit {
     async forFile(filename: string, missionUUID: string) {
         return this.queueRepository.find({
             where: {
-                filename: Like(`${filename}%`),
+                display_name: Like(`${filename}%`),
                 mission: { uuid: missionUUID },
             },
             relations: ['creator'],
@@ -259,18 +260,14 @@ export class QueueService implements OnModuleInit {
         await this.queueRepository.remove(queue);
 
         const file = await this.fileRepository.findOne({
-            where: { filename: queue.filename, mission: { uuid: missionUUID } },
+            where: { uuid: queue.identifier, mission: { uuid: missionUUID } },
         });
         if (!file) {
             return;
         }
-        const minioPath = `${queue.mission.project.name}/${queue.mission.name}/${queue.filename}`;
-        const minioBucket =
-            file.type === FileType.BAG
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME;
+        const minioBucket = getBucketFromFileType(file.type);
         try {
-            await internalMinio.removeObject(minioBucket, minioPath);
+            await internalMinio.removeObject(minioBucket, file.uuid);
         } catch (err) {
             logger.log(err);
         }
@@ -278,15 +275,15 @@ export class QueueService implements OnModuleInit {
         if (file.type === FileType.BAG) {
             const mcap = await this.fileRepository.findOne({
                 where: {
-                    filename: queue.filename.replace('.bag', '.mcap'),
+                    uuid: queue.identifier,
                     mission: { uuid: missionUUID },
                 },
             });
             if (mcap) {
                 try {
                     await internalMinio.removeObject(
-                        minioBucket,
-                        minioPath.replace('.bag', '.mcap'),
+                        getBucketFromFileType(mcap.type),
+                        mcap.uuid,
                     );
                 } catch (err) {
                     logger.log(err);

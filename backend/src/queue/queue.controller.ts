@@ -25,10 +25,13 @@ import { ParamUUID } from '../validation/paramDecorators';
 export class QueueController {
     constructor(private readonly queueService: QueueService) {}
 
-    @Post('createdrive')
+    @Post('import_from_drive')
     @CanCreateInMissionByBody()
-    async createDrive(@Body() body: DriveCreate, @addUser() user: AuthRes) {
-        return this.queueService.createDrive(body, user);
+    async importFromDrive(
+        @Body() body: DriveCreate,
+        @addUser() authRes: AuthRes,
+    ) {
+        return this.queueService.importFromDrive(body, authRes.user);
     }
 
     @Post('confirmUpload')
@@ -64,7 +67,7 @@ export class QueueController {
     @CanReadMission()
     async forFile(
         @QueryString('filename') filename: string,
-        @QueryUUID('uuid') uuid: string, //Mission UUID
+        @QueryUUID('uuid') uuid: string, // Mission UUID
     ) {
         return this.queueService.forFile(filename, uuid);
     }

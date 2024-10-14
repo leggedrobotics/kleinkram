@@ -12,7 +12,7 @@ define(Topic, (_, context: Partial<TopicContext> = {}) => {
     topic.name = extendedFaker.ros.topic();
     topic.uuid = extendedFaker.string.uuid();
     topic.frequency = extendedFaker.number.int({ min: 0, max: 100 });
-    topic.file = context?.file || null;
+    topic.file = context.file || null;
     topic.nrMessages = extendedFaker.number.bigInt({
         min: 0,
         max: 1_000_000_000,

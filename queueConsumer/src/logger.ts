@@ -6,7 +6,7 @@ export const ACTION_CONTAINER_LABEL = 'action_container';
 export const QUEUE_CONSUMER_LABEL = 'queue-consumer';
 
 const ignoreContainerLogs = winston.format((info) => {
-    if (info?.labels?.job === ACTION_CONTAINER_LABEL) return false;
+    if (info.labels?.job === ACTION_CONTAINER_LABEL) return false;
     return info;
 });
 
@@ -62,4 +62,4 @@ export class NestLoggerWrapper implements LoggerService {
     }
 }
 
-export default logger as winston.Logger;
+export default logger;

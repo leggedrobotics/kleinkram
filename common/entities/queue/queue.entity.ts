@@ -6,11 +6,22 @@ import { Column, Entity, ManyToOne } from 'typeorm';
 
 @Entity()
 export default class QueueEntity extends BaseEntity {
+    /**
+     * The unique identifier of the file.
+     *
+     * This is the Google Drive ID for files imported from Google Drive or
+     * the UUID for file entities created in the system for files uploaded.
+     *
+     */
     @Column()
     identifier: string;
 
-    @Column()
-    filename: string;
+    /**
+     * The name of the file as displayed to the user in the queue list
+     *
+     */
+    @Column({ default: '' })
+    display_name: string;
 
     @Column({
         type: 'enum',

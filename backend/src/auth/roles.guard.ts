@@ -484,9 +484,9 @@ export class CreateQueueByBodyGuard extends BaseGuard {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
-        const queueUUID = request.body.uuid;
+        const identifier = request.body.uuid;
         const queue = await this.queueRepository.findOneOrFail({
-            where: { uuid: queueUUID },
+            where: { identifier },
             relations: ['mission'],
         });
         if (!queue) {
