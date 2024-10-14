@@ -16,6 +16,7 @@ import Project from '@common/entities/project/project.entity';
 import {
     DataType,
     FileLocation,
+    FileOrigin,
     FileState,
     FileType,
     QueueState,
@@ -728,6 +729,7 @@ export class FileService implements OnModuleInit {
                         creator: user,
                         type: fileType,
                         state: FileState.UPLOADING,
+                        origin: FileOrigin.UPLOAD,
                     }),
                 );
 
@@ -818,9 +820,9 @@ export class FileService implements OnModuleInit {
                     }),
                 );
 
-                const bucket = getBucketFromFileType(files[0].type);
                 await Promise.all(
                     files.map(async (file) => {
+                        const bucket = getBucketFromFileType(file.type);
                         await deleteFileMinio(bucket, file.uuid).catch(
                             (error) => {
                                 if (error.code === 'NoSuchKey') {

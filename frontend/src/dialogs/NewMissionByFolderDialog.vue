@@ -235,6 +235,4 @@ const submitNewMission = async () => {
     missionName.value = '';
     tagValues.value = {};
 };
-
-onMounted(getOnMount(uploadingFiles, newMission));
 </script>

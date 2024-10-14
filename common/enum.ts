@@ -13,6 +13,12 @@ export enum QueueState {
     'FILE_ALREADY_EXISTS' = 44,
 }
 
+export enum FileOrigin {
+    GOOGLE_DRIVE = 'GOOGLE_DRIVE',
+    UPLOAD = 'UPLOAD',
+    CONVERTED = 'CONVERTED',
+}
+
 export enum FileLocation {
     DRIVE = 'DRIVE',
     MINIO = 'MINIO',

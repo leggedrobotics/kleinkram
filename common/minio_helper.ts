@@ -3,6 +3,7 @@ import { FileType } from './enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import { BucketItem, Client } from 'minio';
 import Credentials from 'minio/dist/main/Credentials';
+import { Tags } from 'minio/dist/main/internal/type';
 
 export const externalMinio: Client = new Client({
     endPoint: env.MINIO_ENDPOINT,
@@ -33,19 +34,6 @@ async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
         stream.on('end', () => resolve(objects));
         stream.on('error', (err) => reject(err));
     });
-}
-
-export async function uploadToMinio(response: any, originalname: string) {
-    const filename = originalname.replace('.bag', '.mcap');
-    await internalMinio.putObject(
-        env.MINIO_BAG_BUCKET_NAME,
-        filename,
-        response.data,
-        undefined,
-        {
-            'Content-Type': 'application/octet-stream',
-        },
-    );
 }
 
 // Function to copy an object within the bucket
@@ -82,6 +70,16 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
         }
         throw e;
     }
+}
+
+export async function addTagsToMinioObject(
+    bucketName: string,
+    objectName: string,
+    tags: Tags,
+) {
+    return await internalMinio.setObjectTagging(bucketName, objectName, tags, {
+        versionId: 'null',
+    });
 }
 
 /**

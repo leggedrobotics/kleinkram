@@ -24,10 +24,20 @@ import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/env';
-import { FileLocation, FileState, FileType, QueueState } from '@common/enum';
+import {
+    FileLocation,
+    FileOrigin,
+    FileState,
+    FileType,
+    QueueState,
+} from '@common/enum';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
 import { calculateFileHash } from './helper/hashHelper';
+import {
+    addTagsToMinioObject,
+    getBucketFromFileType,
+} from '@common/minio_helper';
 
 const fs_promises = require('fs').promises;
 
@@ -143,6 +153,18 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queue.state = QueueState.DOWNLOADING;
         queue = await this.queueRepository.save(queue);
 
+        // set tag inside minio
+        await addTagsToMinioObject(
+            sourceIsBag
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            queue.identifier,
+            {
+                missionUuid: queue.mission.uuid,
+                projectUuid: queue.mission.project.uuid,
+            },
+        );
+
         const filehash = await traceWrapper(async () => {
             return await downloadMinioFile(
                 sourceIsBag
@@ -173,7 +195,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         const mcap_temp_file_name = tmp_file_name.replace('.bag', '.mcap');
 
-        const existingFileEntity = await this.fileRepository.findOne({
+        let existingFileEntity = await this.fileRepository.findOne({
             where: {
                 filename: originalFileName,
                 mission: { uuid: queue.mission.uuid },
@@ -191,7 +213,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         // convert to bag and upload to minio
         if (sourceIsBag) {
-            bagFileEntity = existingFileEntity;
+            bagFileEntity = await this.fileRepository.save(existingFileEntity);
             logger.debug(`Convert file ${queue.identifier} from bag to mcap`);
             mcapExists = await this.fileRepository.exists({
                 where: {
@@ -208,8 +230,12 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     creator: queue.creator,
                     type: FileType.MCAP,
                     state: FileState.UPLOADING,
+                    origin: FileOrigin.CONVERTED,
+                    relatedFile: bagFileEntity,
                 });
                 mcapFileEntity = await this.fileRepository.save(tentativeMCAP);
+                bagFileEntity.relatedFile = mcapFileEntity;
+                await this.fileRepository.save(bagFileEntity);
 
                 // ------------- Convert to MCAP -------------
                 const tmp_file_name_mcap = await convertToMcap(
@@ -245,6 +271,16 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     await this.fileRepository.save(mcapFileEntity);
                     throw error;
                 });
+
+                // set tag inside minio
+                await addTagsToMinioObject(
+                    env.MINIO_MCAP_BUCKET_NAME,
+                    mcapFileEntity.uuid,
+                    {
+                        missionUuid: queue.mission.uuid,
+                        projectUuid: queue.mission.project.uuid,
+                    },
+                );
 
                 job.data.tmp_files.push(mcap_temp_file_name); // saved for cleanup
 
@@ -449,6 +485,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             type: sourceIsBag ? FileType.BAG : FileType.MCAP,
             state: FileState.UPLOADING,
             hash: filehash,
+            origin: FileOrigin.GOOGLE_DRIVE,
         });
         const savedFileEntity = await this.fileRepository.save(newFileEntity);
         if (sourceIsBag) {
@@ -470,8 +507,12 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 creator: queueEntity.creator,
                 type: FileType.MCAP,
                 state: FileState.UPLOADING,
+                origin: FileOrigin.CONVERTED,
+                relatedFile: bagFileEntity,
             });
             mcapFileEntity = await this.fileRepository.save(newMCAP);
+            bagFileEntity.relatedFile = mcapFileEntity;
+            await this.fileRepository.save(bagFileEntity);
 
             // ------------- Convert to MCAP -------------
 
@@ -511,6 +552,16 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 throw error;
             });
 
+            // set tag inside minio
+            await addTagsToMinioObject(
+                env.MINIO_MCAP_BUCKET_NAME,
+                mcapFileEntity.uuid,
+                {
+                    missionUuid: queueEntity.mission.uuid,
+                    projectUuid: queueEntity.mission.project.uuid,
+                },
+            );
+
             logger.debug(`File ${originalFileName} converted successfully`);
             mcapFileEntity.size = fs.statSync(tmp_file_name_mcap).size;
             mcapFileEntity.state = FileState.OK;
@@ -528,6 +579,18 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             savedFileEntity.uuid,
             savedFileEntity.filename,
             tmpFileName,
+        );
+
+        // set tag inside minio
+        await addTagsToMinioObject(
+            sourceIsBag
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            savedFileEntity.uuid,
+            {
+                missionUuid: queueEntity.mission.uuid,
+                projectUuid: queueEntity.mission.project.uuid,
+            },
         );
 
         const mcap_temp_file_name = tmpFileName.replace('.bag', '.mcap');

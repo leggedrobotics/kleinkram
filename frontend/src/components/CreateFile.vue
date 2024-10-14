@@ -98,7 +98,7 @@
 </style>
 
 <script setup lang="ts">
-import { computed, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
@@ -107,11 +107,7 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { FileUpload } from 'src/types/FileUpload';
-import {
-    createFileAction,
-    driveUpload,
-    getOnMount,
-} from 'src/services/fileService';
+import { createFileAction, driveUpload } from 'src/services/fileService';
 
 const emit = defineEmits(['update:ready']);
 
@@ -191,7 +187,6 @@ const createFile = async () => {
         props.uploads,
     );
 };
-onMounted(getOnMount(uploadingFiles, selected_mission));
 
 defineExpose({
     createFileAction: createFile,
