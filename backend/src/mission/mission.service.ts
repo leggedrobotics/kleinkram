@@ -16,6 +16,7 @@ import {
     externalMinio,
     getBucketFromFileType,
 } from '@common/minio_helper';
+import logger from '../logger';
 
 @Injectable()
 export class MissionService {
@@ -53,7 +54,25 @@ export class MissionService {
                 'All required tags must be provided for the mission. Missing tags: ' +
                     missingTagNames,
             );
+        } else {
+            logger.info('All required tags are provided');
         }
+
+        // verify that the no mission with the same name exists in the project
+        const exists = await this.missionRepository.exists({
+            where: {
+                name: createMission.name,
+                project: {
+                    uuid: createMission.projectUUID,
+                },
+            },
+        });
+        if (exists) {
+            throw new ConflictException(
+                `Mission with that name already exists in the project '${project.name}'`,
+            );
+        }
+
         const mission = this.missionRepository.create({
             name: createMission.name,
             project: project,

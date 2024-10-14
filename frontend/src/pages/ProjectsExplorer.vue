@@ -6,6 +6,28 @@
             <h2 class="text-h4 q-mb-xs">All Projects</h2>
 
             <button-group>
+                <q-btn-dropdown dense flat class="button-border q-px-sm">
+                    <template v-slot:label>
+                        {{ my_projects ? 'My Projects' : 'All Projects' }}
+                    </template>
+                    <q-list>
+                        <q-item
+                            v-for="(item, index) in [
+                                'All Projects',
+                                'My Projects',
+                            ]"
+                            clickable
+                            :key="index"
+                            v-close-popup
+                            @click="my_projects = item === 'My Projects'"
+                        >
+                            <q-item-section>
+                                {{ item }}
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-btn-dropdown>
+
                 <q-input
                     debounce="300"
                     placeholder="Search"
@@ -67,16 +89,35 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useHandler, usePermissionsQuery } from 'src/hooks/customQueryHooks';
+import { useHandler } from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import ProjectsTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import CreateProjectButtonOpener from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import TitleSection from 'components/TitleSection.vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { getUser } from 'src/services/auth';
+
+const my_projects = ref(false);
 
 const queryClient = useQueryClient();
 const handler = useHandler();
+
+watch(my_projects, async () => {
+    const user = await getUser();
+
+    if (my_projects.value) {
+        handler.value.setSearch({
+            ...handler.value.search_params,
+            'creator.uuid': user.uuid,
+        });
+    } else {
+        handler.value.setSearch({
+            ...handler.value.search_params,
+            'creator.uuid': undefined,
+        });
+    }
+});
 
 const search = computed({
     get: () => handler.value.search_params.name,

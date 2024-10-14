@@ -31,7 +31,6 @@ import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Controller('project')
 export class ProjectController {

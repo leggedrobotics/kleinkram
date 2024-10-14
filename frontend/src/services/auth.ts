@@ -1,7 +1,5 @@
 import axios from 'src/api/axios';
 import ENV from 'src/env';
-import ROUTES from 'src/router/routes';
-import { useQuery } from '@tanstack/vue-query';
 import { getMe } from 'src/services/queries/user';
 import { User } from 'src/types/User';
 
@@ -34,6 +32,7 @@ export const isAuthenticated = async () => {
     const user = await getUser();
     return user !== null;
 };
+
 export function logout() {
     userCache = null;
     isFetchingUser = false;
