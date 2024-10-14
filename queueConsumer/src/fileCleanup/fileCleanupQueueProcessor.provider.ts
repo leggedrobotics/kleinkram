@@ -192,6 +192,39 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         );
     }
 
+    async dumpFileType(fileType: FileType) {
+        // bag files
+        const files = await this.fileRepository.find({
+            relations: ['mission', 'mission.project'],
+            where: { state: FileState.OK, type: fileType },
+        });
+
+        const header =
+            'filename,file_uuid,mission,project,project_uuid,mission_uuid';
+        const csv = files.map((file) => {
+            return `${file.filename},${file.uuid},${file.mission.name},${file.mission.project.name},${file.mission.project.uuid},${file.mission.uuid}`;
+        });
+
+        const csvString = [header, ...csv].join('\n');
+        await internalMinio.putObject(
+            fileType === FileType.BAG
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            'file_names.csv',
+            csvString,
+        );
+    }
+
+    /**
+     * Dump an CSV containing the resolution of the file names
+     * (file name, file uuid, mission name, project name, project uuid, mission uuid)
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_1AM)
+    async createFileNameDump() {
+        await this.dumpFileType(FileType.BAG);
+        await this.dumpFileType(FileType.MCAP);
+    }
+
     @Cron(CronExpression.EVERY_DAY_AT_2AM)
     async synchronizeFileSystem() {
         await this.redlock.using([`lock:fs-sync`], 10000, async () => {

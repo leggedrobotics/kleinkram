@@ -11,7 +11,11 @@ import { UserRole } from '@common/enum';
 import { TagService } from '../tag/tag.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';
-import { externalMinio, getBucketFromFileType } from '@common/minio_helper';
+import {
+    addTagsToMinioObject,
+    externalMinio,
+    getBucketFromFileType,
+} from '@common/minio_helper';
 
 @Injectable()
 export class MissionService {
@@ -233,6 +237,7 @@ export class MissionService {
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
+            relations: ['files'],
         });
 
         const exists = await this.missionRepository.exists({
@@ -244,9 +249,24 @@ export class MissionService {
             );
         }
 
-        return await this.missionRepository.update(missionUUID, {
+        const savedMission = await this.missionRepository.update(missionUUID, {
             project: project,
         });
+
+        await Promise.all(
+            mission.files.map(async (file) =>
+                addTagsToMinioObject(
+                    getBucketFromFileType(file.type),
+                    file.uuid,
+                    {
+                        missionUuid: missionUUID,
+                        projectUuid: projectUUID,
+                    },
+                ),
+            ),
+        );
+
+        return savedMission;
     }
 
     async findOneByName(name: string): Promise<Mission> {
