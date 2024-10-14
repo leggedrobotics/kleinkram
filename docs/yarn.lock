@@ -666,7 +666,7 @@
     "@vue/compiler-ssr" "3.5.12"
     "@vue/shared" "3.5.12"
 
-"@vue/shared@3.5.12", "@vue/shared@^3.5.11":
+"@vue/shared@3.5.12", "@vue/shared@^3.5.12":
   version "3.5.12"
   resolved "https://registry.yarnpkg.com/@vue/shared/-/shared-3.5.12.tgz#f9e45b7f63f2c3f40d84237b1194b7f67de192e3"
   integrity sha512-L2RPSAwUFbgZH20etwrXyVyCBu9OxRSi8T/38QsvnkJyvq2LufW2lDCOzm7t/U9C1mkhJGWYfCuFBCmIuNivrg==
@@ -1867,10 +1867,10 @@ vitepress-plugin-mermaid@2.0.17:
   optionalDependencies:
     "@mermaid-js/mermaid-mindmap" "^9.3.0"
 
-vitepress@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-1.4.0.tgz#5e879230d98e5c4e5aec91daade6945bbc18934b"
-  integrity sha512-JXCv4EsKTDyAFb6C/UjZr7nsGAzZ6mafVk2rx7rG5o8N+B/4QstIk+iEOe/9dKoU6V624UIC6g1pZ+K63rxhlw==
+vitepress@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-1.4.1.tgz#59c2f242e6a9efd27388093994a5b8df42e9dcb4"
+  integrity sha512-C2rQ7PMlDVqgsaHOa0uJtgGGWaGv74QMaGL62lxKbtFkYtosJB5HAfZ8+pEbfzzvLemYaYwaiQdFLBlexK2sFw==
   dependencies:
     "@docsearch/css" "^3.6.2"
     "@docsearch/js" "^3.6.2"
@@ -1880,7 +1880,7 @@ vitepress@^1.4.0:
     "@types/markdown-it" "^14.1.2"
     "@vitejs/plugin-vue" "^5.1.4"
     "@vue/devtools-api" "^7.4.6"
-    "@vue/shared" "^3.5.11"
+    "@vue/shared" "^3.5.12"
     "@vueuse/core" "^11.1.0"
     "@vueuse/integrations" "^11.1.0"
     focus-trap "^7.6.0"
@@ -1888,14 +1888,14 @@ vitepress@^1.4.0:
     minisearch "^7.1.0"
     shiki "^1.22.0"
     vite "^5.4.8"
-    vue "^3.5.11"
+    vue "^3.5.12"
 
 vue-demi@>=0.14.10:
   version "0.14.10"
   resolved "https://registry.yarnpkg.com/vue-demi/-/vue-demi-0.14.10.tgz#afc78de3d6f9e11bf78c55e8510ee12814522f04"
   integrity sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==
 
-vue@^3.5.11:
+vue@^3.5.12:
   version "3.5.12"
   resolved "https://registry.yarnpkg.com/vue/-/vue-3.5.12.tgz#e08421c601b3617ea2c9ef0413afcc747130b36c"
   integrity sha512-CLVZtXtn2ItBIi/zHZ0Sg1Xkb7+PU32bJJ8Bmy7ts3jxXTcbfsEfBivFYYWz1Hur+lalqGAh65Coin0r+HRUfg==
