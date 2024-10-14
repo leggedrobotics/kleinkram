@@ -7,7 +7,15 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, In, LessThan, Repository } from 'typeorm';
+import {
+    Brackets,
+    DataSource,
+    ILike,
+    In,
+    LessThan,
+    MoreThan,
+    Repository,
+} from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -651,7 +659,7 @@ export class FileService implements OnModuleInit {
                     state: FileState.UPLOADING,
                     // pending uploads get canceled after 12 hours
                     // however this cleanup is done asynchronously once a day
-                    createdAt: LessThan(
+                    createdAt: MoreThan(
                         new Date(Date.now() - 12 * 60 * 60 * 1000),
                     ),
                     creator: { uuid: userUUID },

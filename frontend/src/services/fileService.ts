@@ -64,6 +64,13 @@ async function _createFileAction(
         return;
     }
 
+    Notify.create({
+        message: "Upload started, don't close the tab",
+        color: 'positive',
+        spinner: false,
+        timeout: 2000,
+    });
+
     const isBagOrMCAPFilter = (filename: string) =>
         filename.endsWith('.bag') || filename.endsWith('.mcap');
 
@@ -126,6 +133,11 @@ async function _createFileAction(
             timeout: 30000,
             closeBtn: true,
         });
+    });
+
+    // reset query key isUploading
+    await queryClient.invalidateQueries({
+        queryKey: ['isUploading'],
     });
 
     if (!temporaryCredentials) {
