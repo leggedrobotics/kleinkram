@@ -156,7 +156,9 @@ def mission_by_uuid(
 
 @missionCommands.command("download")
 def download(
-    mission_uuid: Annotated[List[str], typer.Option(help="UUIDs of Mission to download")],
+    mission_uuid: Annotated[
+        List[str], typer.Option(help="UUIDs of Mission to download")
+    ],
     local_path: Annotated[str, typer.Option()],
 ):
     """
@@ -184,15 +186,15 @@ def download(
             )
 
         paths = response.json()
-        if(len(paths) == 0):
+        if len(paths) == 0:
             continue
 
         for path in paths:
 
-            filename = path['filename']
+            filename = path["filename"]
             print(f" - {filename}")
 
-            response = requests.get(path['link'], stream=True)  # Enable streaming mode
+            response = requests.get(path["link"], stream=True)  # Enable streaming mode
             chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
 
             # Open the file for writing in binary mode

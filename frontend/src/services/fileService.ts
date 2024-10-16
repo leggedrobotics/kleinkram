@@ -165,7 +165,7 @@ async function _createFileAction(
             const accessCredentials = accessResp.accessCredentials;
             if (accessCredentials === null) {
                 Notify.create({
-                    message: `Upload of File ${file.name} failed: No credentials available`,
+                    message: `Upload of File ${file.name} failed: Does the file already exist?`,
                     color: 'negative',
                     spinner: false,
                     timeout: 0,

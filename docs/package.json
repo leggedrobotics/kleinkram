@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_docs",
-    "version": "0.32.0",
+    "version": "0.32.1",
     "scripts": {
         "docs:dev": "vitepress dev --port 4000 --host 0.0.0.0",
         "docs:build": "vitepress build",
@@ -8,10 +8,10 @@
     },
     "author": "Cyrill Püntener",
     "dependencies": {
-        "vitepress": "^1.4.0"
+        "vitepress": "^1.4.1"
     },
     "devDependencies": {
-        "mermaid": "^10.9.2",
+        "mermaid": "^11.3.0",
         "vitepress-plugin-mermaid": "2.0.17"
     }
 }
