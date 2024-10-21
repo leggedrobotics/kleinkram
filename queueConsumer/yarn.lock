@@ -4265,10 +4265,10 @@ which@^2.0.1:
   dependencies:
     isexe "^2.0.0"
 
-winston-loki@^6.0.7:
-  version "6.1.2"
-  resolved "https://registry.yarnpkg.com/winston-loki/-/winston-loki-6.1.2.tgz#a0af1bc333385f18af966873ed406f38ab80b834"
-  integrity sha512-l1iqDDaEUt63Q8arDsiVCXIrK3jLjPOEc5UTs+WMVnWf8D+A8ZRErAAXKDOduT240aNGzpTbCwe5zfdqqLlzMg==
+winston-loki@^6.1.3:
+  version "6.1.3"
+  resolved "https://registry.yarnpkg.com/winston-loki/-/winston-loki-6.1.3.tgz#f2ed2d20d255007cc485c6153f40514971e665be"
+  integrity sha512-DjWtJ230xHyYQWr9mZJa93yhwHttn3JEtSYWP8vXZWJOahiQheUhf+88dSIidbGXB3u0oLweV6G1vkL/ouT62Q==
   dependencies:
     async-exit-hook "2.0.1"
     btoa "^1.2.1"
