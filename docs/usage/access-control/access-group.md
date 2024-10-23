@@ -3,7 +3,7 @@
 The valid operations that can be performed on an access group are:
 | **Operation** | **Description** | **Access Level** |
 |---------------|-------------------------------|------------------|
-| view | View the Access Group | <Any /> |
+| view | View the Access Group | <Any hint="Need to be inside an organizational unit" /> |
 | create | Create a new Access Group | <Create hint="The create rights need to be from an organizational unit"/> |
 | add user | Add a user to Access Group | <Creator/> |
 | remove user | Remove a user from the Access Group |<Creator/> |

@@ -95,6 +95,7 @@ export class AccessController {
 
     @Get('filtered')
     @UserOnly()
+    @CanCreate()
     async search(
         @QueryOptionalString('search') search: string,
         @QuerySkip('skip') skip: number,
