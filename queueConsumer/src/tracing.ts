@@ -1,64 +1,49 @@
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { Resource } from '@opentelemetry/resources';
+import {
+    BatchSpanProcessor,
+    ParentBasedSampler,
+    TraceIdRatioBasedSampler,
+} from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { context, Exception, trace } from '@opentelemetry/api';
+import { Exception, trace } from '@opentelemetry/api';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
-import { QUEUE_CONSUMER_LABEL } from './logger';
-
-// Export the tracing
-const contextManager = new AsyncHooksContextManager().enable();
-context.setGlobalContextManager(contextManager);
-
-// Initialize provider and identify this particular service
-// (in this case, we're implementing a federated gateway)
-const provider = new NodeTracerProvider({
-    resource: Resource.default().merge(
-        new Resource({
-            // Replace with any string to identify this service in your system
-            'service.name': QUEUE_CONSUMER_LABEL,
-            job: QUEUE_CONSUMER_LABEL,
-        }),
-    ),
-});
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
     concurrencyLimit: 10, // an optional limit on pending requests
+    timeoutMillis: 500,
 });
-
-// Configure how spans are processed and exported. In this case we're sending spans
-// as we receive them to the console
-provider.addSpanProcessor(
-    new BatchSpanProcessor(exporter, {
-        maxQueueSize: 1000,
-        scheduledDelayMillis: 1000,
-    }),
-);
-
-// Register the provider
-provider.register();
 
 const sdk = new NodeSDK({
     traceExporter: exporter,
+    spanProcessors: [
+        new BatchSpanProcessor(exporter, {
+            exportTimeoutMillis: 20_000,
+            maxQueueSize: 512,
+            scheduledDelayMillis: 5_000,
+            maxExportBatchSize: 512,
+        }),
+    ],
+    serviceName: 'backend',
+    sampler: new ParentBasedSampler({
+        // here you can adjust the sampling rate (currently 100%)
+        root: new TraceIdRatioBasedSampler(1),
+    }),
+    autoDetectResources: true,
     instrumentations: [
         new NestInstrumentation(),
         new ExpressInstrumentation(),
+        new HttpInstrumentation(),
         new FetchInstrumentation(),
         new WinstonInstrumentation(),
         new PgInstrumentation(),
     ],
 });
-
-// initialize the SDK and register with the OpenTelemetry API
-// this enables the API to record telemetry
-sdk.start();
 
 // gracefully shut down the SDK on process exit
 process.on('SIGTERM', () => {
