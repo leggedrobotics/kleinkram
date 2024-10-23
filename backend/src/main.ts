@@ -1,6 +1,7 @@
 import tracer from './tracing';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory} from '@nestjs/core';
 import { AppModule } from './app.module';
+import { Response} from 'express';
 import cookieParser from 'cookie-parser';
 import env from '../../common/env';
 import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
@@ -19,23 +20,31 @@ import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
-const packageJson = JSON.parse(
+const packageJson: Record<string, string> = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
-);
-export const appVersion = packageJson.version;
+) as Record<string, string>;
+export const appVersion: string = packageJson.version;
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
     public catch(exception: Error, host: ArgumentsHost) {
-        const response = host.switchToHttp().getResponse();
+        const response: Response = host.switchToHttp().getResponse() ;
         response.header('kleinkram-version', appVersion);
         response.header('Access-Control-Expose-Headers', 'kleinkram-version');
 
         if (exception instanceof BadRequestException) {
+            const resp = exception.getResponse();
+            // eslint-disable-next-line no-prototype-builtins
+            if(typeof resp === 'object' && resp.hasOwnProperty('message')) {
+                response.status(400).json({
+                    statusCode: 400,
+                    message: resp['message'] as string,
+                });
+                return;
+            }
             response.status(400).json({
                 statusCode: 400,
-                message: exception.getResponse()['message'][0],
+                message: exception.getResponse(),
             });
             return;
         }
@@ -74,9 +83,9 @@ export class GlobalErrorFilter implements ExceptionFilter {
             });
             return;
         }
-
+        const route: Record<string, string> = host.getArgByIndex(0);
         logger.error(
-            `An error occurred on route ${host.getArgByIndex(0).url}!`,
+            `An error occurred on route ${route.url}!`,
         );
 
         logger.error(`exception of type ${exception.name}`);
@@ -99,7 +108,6 @@ function save_endpoints_as_json(app: INestApplication, filename: string) {
             method: r.route.stack[0].method,
         }));
 
-    const fs = require('fs');
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 

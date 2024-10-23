@@ -7,15 +7,7 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-    Brackets,
-    DataSource,
-    ILike,
-    In,
-    LessThan,
-    MoreThan,
-    Repository,
-} from 'typeorm';
+import { Brackets, DataSource, ILike, In, MoreThan, Repository } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -588,6 +580,8 @@ export class FileService implements OnModuleInit {
         if (!uuid || uuid === '')
             throw new BadRequestException('UUID is required');
 
+        logger.debug('Deleting file with uuid: ' + uuid);
+
         // we delete the file from the database and Minio
         // using a transaction to ensure consistency
         return this.fileRepository.manager.transaction(
@@ -597,15 +591,13 @@ export class FileService implements OnModuleInit {
                     FileEntity,
                     { where: { uuid } },
                 );
-                if (!file) throw new NotFoundException('File not found');
 
                 // delete the file from Minio
                 const bucket = getBucketFromFileType(file.type);
                 await deleteFileMinio(bucket, file.uuid).catch((error) => {
-                    if (error.code === 'NoSuchKey') {
-                        throw new NotFoundException('File not found in Minio');
-                    }
-                    throw error;
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, deleting from database only!`,
+                    );
                 });
 
                 await transactionalEntityManager.remove(file);
@@ -814,33 +806,14 @@ export class FileService implements OnModuleInit {
                     );
                 }
 
-                // verify that all files are found in Minio
-                await Promise.all(
-                    files.map(async (file) => {
-                        const stats = await getInfoFromMinio(
-                            file.type,
-                            file.uuid,
-                        );
-                        if (!stats)
-                            throw new NotFoundException(
-                                `File ${file.uuid} not found in Minio`,
-                            );
-                    }),
-                );
-
                 await Promise.all(
                     files.map(async (file) => {
                         const bucket = getBucketFromFileType(file.type);
-                        await deleteFileMinio(bucket, file.uuid).catch(
-                            (error) => {
-                                if (error.code === 'NoSuchKey') {
-                                    throw new NotFoundException(
-                                        'File not found in Minio',
-                                    );
-                                }
-                                throw error;
-                            },
-                        );
+                        await deleteFileMinio(bucket, file.uuid).catch(() => {
+                            logger.error(
+                                `File ${file.uuid} not found in Minio, deleting from database only!`,
+                            );
+                        });
                     }),
                 );
 

@@ -322,14 +322,14 @@
 import { getUser, isAuthenticated, logout } from 'src/services/auth';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import CreateProjectDialogOpener from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
 import USER_ROLES from 'src/enums/USER_ROLES';
 import { useIsUploading } from 'src/hooks/customQueryHooks';
-import { computed, inject, Ref, ref } from 'vue';
+import { computed, inject, Ref, ref, watch } from 'vue';
 import { FileUpload } from 'src/types/FileUpload';
 
 const is_authenticated = await isAuthenticated();
@@ -340,6 +340,14 @@ const { data: user } = useQuery({
     queryFn: () => getUser(),
     enabled: is_authenticated,
 });
+
+// watch changes of is_uploading and invalidate queries
+const queryClient = useQueryClient();
+watch(is_uploading, () =>
+    queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'files',
+    }),
+);
 
 const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
 

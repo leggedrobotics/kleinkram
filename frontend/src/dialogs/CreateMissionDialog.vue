@@ -74,15 +74,42 @@
                         v-model="missionName"
                         outlined
                         required
-                        clearable
                         autofocus
                         dense
                         placeholder="Name...."
                         style="padding-bottom: 30px"
-                        :error="isInErrorState"
+                        :error="!isValidMissionName"
+                        :rules="[
+                            (val) => !!val || 'Field is required',
+                            (val) =>
+                                val.length >= 3 ||
+                                'Name must be at least 3 characters',
+                            (val) =>
+                                val.length <= 40 ||
+                                'Name must be at most 40 characters',
+                            (val) =>
+                                /^[\w\-_]+$/g.test(val) ||
+                                'Name must be alphanumeric and contain only - and _',
+                        ]"
                         :error-message="errorMessage"
-                        v-on:update:model-value="isInErrorState = false"
-                    />
+                        @change="
+                            () => {
+                                errorMessage = '';
+                                isValidMissionName = true;
+                            }
+                        "
+                    >
+                        <template v-slot:error>
+                            {{ errorMessage }}
+                        </template>
+                        <template v-if="missionName" v-slot:append>
+                            <q-icon
+                                name="sym_o_cancel"
+                                @click.stop.prevent="missionName = ''"
+                                class="cursor-pointer"
+                            />
+                        </template>
+                    </q-input>
                 </q-tab-panel>
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
@@ -151,13 +178,10 @@ import CreateFile from 'components/CreateFile.vue';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
-import { getPermissions } from 'src/services/queries/user';
 import {
     canCreateMission,
-    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -183,7 +207,7 @@ const { data: project, refetch }: { data: Ref<Project>; refetch: Function } =
 watch(project_uuid, () => refetch());
 
 const missionName = ref('');
-const isInErrorState = ref(false);
+const isValidMissionName = ref(true);
 const errorMessage = ref('');
 const ddr_open = ref(false);
 
@@ -223,8 +247,8 @@ const submitNewMission = async () => {
         tagValues.value,
     ).catch((e) => {
         tab_selection.value = 'meta_data';
-        isInErrorState.value = true;
-        errorMessage.value = e.response.data.message;
+        isValidMissionName.value = false;
+        errorMessage.value = e.response.data.message[0];
     });
 
     // exit if the request failed
