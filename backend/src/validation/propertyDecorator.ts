@@ -15,7 +15,7 @@ import { Matches } from 'class-validator';
 export const IsValidFileName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-.() ]+.(bag|mcap)$/, {
+    Matches(/^[\w\-.() ]{3,40}.(bag|mcap)$/, {
         message: 'Filename is not valid!',
         ...validationOptions,
     });
@@ -49,7 +49,7 @@ export const IsValidName = (
  * underscore [_]
  * dash [-]
  *
- * A valid mission name is between 3 and 20 characters long.
+ * A valid mission name is between 3 and 40 characters long.
  *
  * @param validationOptions
  * @constructor
@@ -57,7 +57,7 @@ export const IsValidName = (
 export const IsValidMissionName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-_]{3,20}$/, {
+    Matches(/^[\w\-_]{3,40}$/, {
         message: 'Mission name is not valid!',
         ...validationOptions,
     });
