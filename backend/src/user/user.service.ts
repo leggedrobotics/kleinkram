@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
 import { AuthRes } from '../auth/paramDecorator';
-import Account from '@common/entities/auth/account.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
@@ -118,7 +117,7 @@ export class UserService implements OnModuleInit {
         }
 
         const role = user.role;
-        const default_permission = user.accessGroups.length > 0 ? 10 : 0;
+        const default_permission = user.accessGroups?.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;
