@@ -253,7 +253,6 @@ export class QueryURLHandler extends QueryHandler {
 
     setFileType(file_type: FileType) {
         super.setFileType(file_type);
-        console.log('setFileType', file_type);
         this.writeURL();
     }
 
