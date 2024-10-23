@@ -253,6 +253,7 @@ export class QueryURLHandler extends QueryHandler {
 
     setFileType(file_type: FileType) {
         super.setFileType(file_type);
+        console.log('setFileType', file_type);
         this.writeURL();
     }
 
@@ -333,7 +334,7 @@ export class QueryURLHandler extends QueryHandler {
             mission_uuid: this.mission_uuid || undefined,
             name: this.search_params.name || undefined,
             file_type:
-                this.project_uuid && this.mission_uuid
+                !!this.file_type && this.file_type !== FileType.ALL
                     ? this.file_type || undefined
                     : undefined,
             categories:
