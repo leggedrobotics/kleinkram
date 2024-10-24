@@ -63,9 +63,8 @@ export class MissionGuardService {
         const mission = await this.missionRepository.findOne({
             where: { name: missionName },
         });
-        if (!mission) {
-            return true;
-        }
+
+        if (!mission) return false;
         return this.canAccessMission(user, mission.uuid, rights);
     }
 

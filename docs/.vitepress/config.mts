@@ -91,11 +91,11 @@ export default withMermaid({
                 },
 
                 {
-                    text: 'CLI and API',
+                    text: 'Kleinkram CLI',
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/usage/cli-api/cli-getting-started',
+                            link: '/usage/cli/cli-getting-started',
                         },
                     ],
                     collapsed: true,

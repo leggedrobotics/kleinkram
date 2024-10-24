@@ -27,7 +27,7 @@ features:
     - title: How to Use the CLI?
       icon: 🚀
       details: We offer a python CLI to interact with the application, click here for more information.
-      link: /usage/cli-api/cli-getting-started
+      link: /usage/cli/cli-getting-started
     - title: Want to Contribute?
       icon: 🤝
       details: Information on how to start the project locally can be found in the developer documentation.

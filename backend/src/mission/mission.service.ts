@@ -288,7 +288,7 @@ export class MissionService {
         return savedMission;
     }
 
-    async findOneByName(name: string): Promise<Mission> {
+    async findOneByName(name: string): Promise<Mission | undefined> {
         return this.missionRepository.findOne({ where: { name } });
     }
 
