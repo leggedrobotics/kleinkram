@@ -1,13 +1,11 @@
 import os
 
-from botocore.utils import calculate_md5
-from typing_extensions import Annotated, Optional, List
-
 import httpx
 import requests
 import typer
 from rich.console import Console
 from rich.table import Table
+from typing_extensions import Annotated, Optional, List
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
@@ -171,7 +169,10 @@ def download(
     if not os.path.isdir(local_path):
         raise ValueError(f"Local path '{local_path}' is not a directory.")
     if not os.listdir(local_path) == []:
-        raise ValueError(f"Local path '{local_path}' is not empty, but must be empty.")
+        raise ValueError(
+            f"Local path '{local_path}' is not empty, but must be empty, "
+            f"it contains {len(os.listdir(local_path))} files."
+        )
 
     client = AuthenticatedClient()
     for single_mission_uuid in mission_uuid:
