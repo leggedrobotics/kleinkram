@@ -1,10 +1,12 @@
 import os
+import re
 
 import httpx
 import requests
 import typer
 from rich.console import Console
 from rich.table import Table
+from tqdm import tqdm
 from typing_extensions import Annotated, Optional, List
 
 from kleinkram.api_client import AuthenticatedClient
@@ -158,6 +160,11 @@ def download(
         List[str], typer.Option(help="UUIDs of Mission to download")
     ],
     local_path: Annotated[str, typer.Option()],
+    pattern: Optional[str] = typer.Option(
+        None,
+        help="Simple pattern to match the filename against. Allowed are alphanumeric characters,"
+        " '_', '-', '.' and '*' as wildcard.",
+    ),
 ):
     """
 
@@ -169,9 +176,12 @@ def download(
     if not os.path.isdir(local_path):
         raise ValueError(f"Local path '{local_path}' is not a directory.")
     if not os.listdir(local_path) == []:
+
+        full_local_path = os.path.abspath(local_path)
+
         raise ValueError(
-            f"Local path '{local_path}' is not empty, but must be empty, "
-            f"it contains {len(os.listdir(local_path))} files."
+            f"Local path '{full_local_path}' is not empty, it contains {len(os.listdir(local_path))} files. "
+            f"The local target directory must be empty."
         )
 
     client = AuthenticatedClient()
@@ -190,20 +200,43 @@ def download(
         if len(paths) == 0:
             continue
 
+        # validate search pattern
+        if pattern:
+            if not re.match(r"^[a-zA-Z0-9_\-.*]+$", pattern):
+                raise ValueError(
+                    "Invalid pattern. Allowed are alphanumeric characters, '_', '-', '.' and '*' as wildcard."
+                )
+
+            regex = pattern.replace("*", ".*")
+            pattern = re.compile(regex)
+
+        print(f"Found {len(paths)} files in mission:")
+        paths = [
+            path for path in paths if not pattern or pattern.match(path["filename"])
+        ]
+
+        if pattern:
+            print(
+                f" » filtered to {len(paths)} files matching pattern '{pattern.pattern}'."
+            )
+
+        print(f"Start downloading {len(paths)} files to '{local_path}':\n")
         for path in paths:
 
             filename = path["filename"]
-            print(f" - {filename}")
 
             response = requests.get(path["link"], stream=True)  # Enable streaming mode
-            chunk_size = 1024 * 100  # 100 KB chunks, adjust size if needed
+            chunk_size = 1024 * 1024 * 10  # 10 MB chunks, adjust size if needed
 
             # Open the file for writing in binary mode
             with open(os.path.join(local_path, filename), "wb") as f:
-                for chunk in response.iter_content(chunk_size=chunk_size):
+                for chunk in tqdm(
+                    response.iter_content(chunk_size=chunk_size),
+                    unit="MB",
+                    desc=filename,
+                ):
                     if chunk:  # Filter out keep-alive new chunks
                         f.write(chunk)
-                print(f"   Downloaded {filename}")
 
 
 @missionCommands.command("upload")
