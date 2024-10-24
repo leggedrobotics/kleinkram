@@ -16,9 +16,9 @@ const props = defineProps<{
 }>();
 const swaggerSpec = ref(null);
 
-// import('../../docs/swagger-spec.json').then((spec) => {
-//     swaggerSpec.value = spec;
-// });
+import('./../../docs/swagger-spec.json').then((spec) => {
+    swaggerSpec.value = spec;
+});
 
 const filteredSpec = ref(null);
 
@@ -33,6 +33,7 @@ function filterSpecByPath(spec: any, pathPrefix: string) {
         }, {});
     return filteredSpec;
 }
+
 watch(
     () => swaggerSpec.value,
     (newVal) => {
