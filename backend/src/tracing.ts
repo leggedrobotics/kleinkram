@@ -29,7 +29,7 @@ const sdk = new NodeSDK({
             maxExportBatchSize: 512,
         }),
     ],
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment
+
     metricReader: new PrometheusExporter({
         prefix: 'backend_trace_',
     }),
