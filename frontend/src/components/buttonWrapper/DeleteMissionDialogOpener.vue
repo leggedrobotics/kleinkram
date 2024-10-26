@@ -1,6 +1,6 @@
 <template>
     <div
-        @click="deleteFile"
+        @click="deleteMission"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
@@ -49,10 +49,10 @@ const canModify = computed(() => {
     );
 });
 
-const deleteFile = () => {
+const deleteMission = () => {
     if (!canModify.value) return;
     $q.dialog({
-        title: 'Delete File',
+        title: 'Delete Mission',
         component: DeleteMissionDialog,
         componentProps: {
             mission_uuid: props.mission.uuid,
