@@ -143,15 +143,20 @@ def mission_by_uuid(
 
     if json:
         print(data)
-    else:
-        print(f"mission: {data['name']}")
-        print(f"Creator: {data['creator']['name']}")
-        print("Project: " + data["project"]["name"])
-        table = Table("Filename", "Size", "date")
-        for file in data["files"]:
-            table.add_row(file["filename"], f"{file['size']}", file["date"])
-        console = Console()
-        console.print(table)
+        return
+    print(f"mission: {data['name']}")
+    print(f"Creator: {data['creator']['name']}")
+    print("Project: " + data["project"]["name"])
+    table = Table("Filename", "Size", "date")
+
+    if "files" not in data:
+        print("No files found for mission.")
+        return
+
+    for file in data["files"]:
+        table.add_row(file["filename"], f"{file['size']}", file["date"])
+    console = Console()
+    console.print(table)
 
 
 @missionCommands.command("download")

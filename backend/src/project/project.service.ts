@@ -138,6 +138,11 @@ export class ProjectService {
         const access_groups_default = creator.accessGroups.filter(
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );
+
+        if (!project.requiredTags) {
+            project.requiredTags = [];
+        }
+
         const tagTypes = await Promise.all(
             project.requiredTags.map((tag) => {
                 return this.tagTypeRepository.findOneOrFail({

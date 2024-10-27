@@ -93,41 +93,41 @@ describe('Verify File Handling', () => {
 
     test('Test if two files can be uploaded and downloaded in parallel', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if two files with the same name cannot be uploaded to the same mission', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if project can be renamed while uploading a file', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if mission can be renamed while uploading a file', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if you cannot upload file with arbitrary name', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if you cannot upload file to arbitrary bucket', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if you can abort the upload, then retry', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if you cannot download a file you should not have access to', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 });

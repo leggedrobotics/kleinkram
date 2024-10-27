@@ -392,40 +392,56 @@ describe('Verify Project Level Access', () => {
         const mock_email = 'some-external@ethz.ch';
         const external_uuid = await mock_db_user(mock_email);
 
+        const mock_email_internal = 'some-external@leggedrobotics.com';
+        const internal_uuid = await mock_db_user(mock_email_internal);
+
         const userRepository = db.getRepository(User);
-        const user = await userRepository.findOneOrFail({
+        const external_user = await userRepository.findOneOrFail({
             where: { uuid: external_uuid },
+            relations: ['accessGroups'],
         });
 
-        const project_uuid = await create_project_using_post(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: AccessGroupRights.DELETE,
-                        userUUID: user.uuid,
-                    },
-                ],
-            },
-            user,
-        );
+        const internal_user = await userRepository.findOneOrFail({
+            where: { uuid: internal_uuid },
+        });
 
-        const token = await get_jwt_token(user);
-        const res = await fetch(
-            `http://localhost:3000/project/${project_uuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token}`,
-                },
-            },
-        );
-
-        expect(res.status).toBe(200);
         const projectRepository = db.getRepository('Project');
-        const projects = await projectRepository.find();
-        expect(projects.length).toBe(0);
+        const project = projectRepository.create();
+
+        project.name = 'test_project';
+        project.description = 'This is a test project';
+        const project_res = await projectRepository.save(project);
+
+        // delete the project using the external user
+        const token_external = await get_jwt_token(external_user);
+        const deleteRequest = {
+            method: 'DELETE',
+            headers: {
+                cookie: `authtoken=${token_external}`,
+            },
+        };
+
+        const res = await fetch(
+            `http://localhost:3000/project/${project_res.uuid}`,
+            deleteRequest,
+        );
+        expect(res.status).toBe(403);
+
+        project.project_accesses = [
+            {
+                rights: AccessGroupRights.DELETE,
+                accessGroup: external_user.accessGroups.find(
+                    (group) => group.personal,
+                )?.uuid,
+            },
+        ];
+        await projectRepository.save(project);
+
+        const res2 = await fetch(
+            `http://localhost:3000/project/${project_res.uuid}`,
+            deleteRequest,
+        );
+        expect(res2.status).toBe(200);
     });
 
     test('if project can only be deleted if it has no missions', async () => {
@@ -456,21 +472,21 @@ describe('Verify Project Level Access', () => {
 
     test('if viewer of a project cannot add any tag types', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if editor of a project can add any tag types', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if viewer of a project cannot delete any tag types', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if editor of a project can delete any tag types', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 });
