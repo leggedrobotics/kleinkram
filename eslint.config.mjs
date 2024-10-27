@@ -28,7 +28,6 @@ export default tseslint.config(
             '@typescript-eslint/prefer-promise-reject-errors': 'warn',
             'no-useless-escape': 'warn',
 
-
             // currently we have to disable most rules
             // TODO: enforce these rules
             '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -68,8 +67,7 @@ export default tseslint.config(
             '**/*.js',
             '**/*.cjs',
             '**/*.mjs',
-            '**/env.d.ts'
+            '**/env.d.ts',
         ],
-
     },
 );
