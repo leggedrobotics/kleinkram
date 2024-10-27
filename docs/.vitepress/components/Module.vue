@@ -16,9 +16,12 @@ const props = defineProps<{
 }>();
 const swaggerSpec = ref(null);
 
-import('./../../docs/swagger-spec.json').then((spec) => {
-    swaggerSpec.value = spec;
-});
+// check if the swagger-spec.json exists in the docs folder
+if (import.meta.env.DEV) {
+    import('./../../docs/swagger-spec.json').then((spec) => {
+        swaggerSpec.value = spec;
+    });
+}
 
 const filteredSpec = ref(null);
 
