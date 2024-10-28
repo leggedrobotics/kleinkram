@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Post } from '@nestjs/common';
 import { TagService } from './tag.service';
 import { DataType } from '@common/enum';
 import {
@@ -16,9 +16,7 @@ import {
 import {
     QueryOptionalString,
     QuerySkip,
-    QueryString,
     QueryTake,
-    QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { addUser, AuthRes } from '../auth/paramDecorator';

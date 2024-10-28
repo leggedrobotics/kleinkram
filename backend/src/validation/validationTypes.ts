@@ -1,8 +1,6 @@
 import {
     ArrayNotEmpty,
     IsArray,
-    IsBoolean,
-    IsDateString,
     IsNotEmpty,
     IsNumber,
     IsString,

@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import Action, { Image } from './action.entity';
+import Action from './action.entity';
 import User from '../user/user.entity';
 
 @Entity()

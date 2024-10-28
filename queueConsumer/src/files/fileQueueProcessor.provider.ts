@@ -34,10 +34,7 @@ import {
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
 import { calculateFileHash } from './helper/hashHelper';
-import {
-    addTagsToMinioObject,
-    getBucketFromFileType,
-} from '@common/minio_helper';
+import { addTagsToMinioObject } from '@common/minio_helper';
 
 const fs_promises = require('fs').promises;
 

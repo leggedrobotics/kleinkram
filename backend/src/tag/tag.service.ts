@@ -1,6 +1,5 @@
 import {
     ConflictException,
-    ForbiddenException,
     Injectable,
     UnprocessableEntityException,
 } from '@nestjs/common';
@@ -16,10 +15,8 @@ export class TagService {
     constructor(
         @InjectRepository(Tag)
         private tagRepository: Repository<Tag>,
-
         @InjectRepository(TagType)
         private tagTypeRepository: Repository<TagType>,
-
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
     ) {}
@@ -214,6 +211,7 @@ export class TagService {
         }
         return this.tagRepository.save(exsitingTag);
     }
+
     async addTags(
         missionUUID: string,
         tags: Record<string, string>,
@@ -224,6 +222,7 @@ export class TagService {
             ),
         );
     }
+
     async deleteTag(uuid: string): Promise<void> {
         await this.tagRepository.delete({ uuid });
     }

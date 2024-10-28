@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { CanWriteProject, LoggedIn, UserOnly } from './roles.decorator';
+import { UserOnly } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
@@ -64,11 +64,11 @@ export class AuthController {
             <script>
                 function copyToClipboard(elementId) {
                     var copyText = document.getElementById(elementId);
-                    var textArea = document.createElement("textarea");
+                    var textArea = document.createElement('textarea');
                     textArea.value = copyText.textContent; // use textContent since innerText may include extra padding in some cases
                     document.body.appendChild(textArea);
                     textArea.select();
-                    document.execCommand("Copy");
+                    document.execCommand('Copy');
                     textArea.remove();
                 }
             </script>

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, CookieNames, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';

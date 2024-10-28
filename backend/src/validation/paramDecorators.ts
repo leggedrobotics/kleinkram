@@ -3,12 +3,7 @@ import {
     createParamDecorator,
     ExecutionContext,
 } from '@nestjs/common';
-import {
-    validateOrReject,
-    IsUUID,
-    IsString,
-    IsNotEmpty,
-} from 'class-validator';
+import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { StringValidate, UUIDValidate } from './validationTypes';
 

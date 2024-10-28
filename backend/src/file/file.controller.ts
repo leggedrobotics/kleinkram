@@ -6,9 +6,6 @@ import {
     Post,
     Put,
     Query,
-    Req,
-    Res,
-    Response,
 } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
@@ -35,7 +32,6 @@ import {
     QueryOptionalUUID,
     QuerySkip,
     QueryString,
-    QueryStringArray,
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';

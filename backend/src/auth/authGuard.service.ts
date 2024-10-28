@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Injectable()
 export class AuthGuardService {

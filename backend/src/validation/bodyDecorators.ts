@@ -4,12 +4,7 @@ import {
     ExecutionContext,
     InternalServerErrorException,
 } from '@nestjs/common';
-import {
-    validateOrReject,
-    IsUUID,
-    IsString,
-    IsNotEmpty,
-} from 'class-validator';
+import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
 import { AccessGroupRights, DataType } from '@common/enum';
