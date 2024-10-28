@@ -16,7 +16,6 @@ export class ActionTemplate extends BaseEntity {
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
         image_name: string,
         createdBy: User,
         name: string,
@@ -27,7 +26,7 @@ export class ActionTemplate extends BaseEntity {
         gpuMemory: number,
         maxRuntime: number,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.image_name = image_name;
         this.version = version;
         this.createdBy = createdBy;
@@ -44,7 +43,6 @@ export class ActionTemplate extends BaseEntity {
             this.uuid,
             this.createdAt,
             this.updatedAt,
-            this.deletedAt,
             this.image_name,
             this.createdBy,
             this.name,

@@ -21,9 +21,8 @@ export class Queue extends BaseEntity {
         creator: User,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.display_name = display_name;
         this.identifier = identifier;
         this.state = state;

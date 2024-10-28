@@ -15,9 +15,8 @@ export class ProjectAccess extends BaseEntity {
         project: Project | undefined,
         createdAt: Date,
         updatedAt: Date,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.rights = rights;
         this.accessGroup = accessGroup;
         this.project = project;

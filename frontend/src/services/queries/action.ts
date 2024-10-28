@@ -36,14 +36,12 @@ export const getActions = async (
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
-            res.createdBy.deletedAt,
         );
 
         const template = new ActionTemplate(
             res.template.uuid,
             res.template.createdAt,
             res.template.updatedAt,
-            res.template.deletedAt,
             res.template.image_name,
             user,
             res.template.name,
@@ -64,7 +62,6 @@ export const getActions = async (
             undefined,
             new Date(res.mission.createdAt),
             new Date(res.mission.updatedAt),
-            new Date(res.mission.deletedAt),
         );
         let worker = null;
         if (res.worker) {
@@ -74,7 +71,6 @@ export const getActions = async (
                 res.worker.hostname,
                 res.worker.createdAt,
                 res.worker.updatedAt,
-                res.worker.deletedAt,
                 res.worker.cpuMemory,
                 res.worker.gpuModel,
                 res.worker.gpuMemory,
@@ -89,7 +85,6 @@ export const getActions = async (
             res.uuid,
             new Date(res.createdAt),
             new Date(res.updatedAt),
-            new Date(res.deletedAt),
             res.state,
             res.state_cause,
             res.artifact_url,
@@ -121,13 +116,11 @@ export const actionDetails = async (action_uuid: string) => {
         [],
         response.data.createdBy.createdAt,
         response.data.createdBy.updatedAt,
-        response.data.createdBy.deletedAt,
     );
     const template = new ActionTemplate(
         response.data.template.uuid,
         new Date(response.data.template.createdAt),
         new Date(response.data.template.updatedAt),
-        new Date(response.data.template.deletedAt),
         response.data.template.image_name,
         undefined,
         response.data.template.name,
@@ -147,7 +140,6 @@ export const actionDetails = async (action_uuid: string) => {
                 response.data.worker.hostname,
                 response.data.worker.createdAt,
                 response.data.worker.updatedAt,
-                response.data.worker.deletedAt,
                 response.data.worker.cpuMemory,
                 response.data.worker.gpuModel,
                 response.data.worker.gpuMemory,
@@ -162,7 +154,6 @@ export const actionDetails = async (action_uuid: string) => {
             response.data.uuid,
             new Date(response.data.createdAt),
             new Date(response.data.updatedAt),
-            new Date(response.data.deletedAt),
             response.data.state,
             response.data.state_cause,
             response.data.artifact_url,
@@ -201,13 +192,11 @@ export const listActionTemplates = async (search: string) => {
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
-            res.createdBy.deletedAt,
         );
         return new ActionTemplate(
             res.uuid,
             res.createdAt,
             res.updatedAt,
-            res.deletedAt,
             res.image_name,
             user,
             res.name,
@@ -235,13 +224,11 @@ export const getRunningActions = async () => {
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
-            res.createdBy.deletedAt,
         );
         const template = new ActionTemplate(
             res.template.uuid,
             res.template.createdAt,
             res.template.updatedAt,
-            res.template.deletedAt,
             res.template.image_name,
             user,
             res.template.name,
@@ -261,7 +248,6 @@ export const getRunningActions = async () => {
             undefined,
             new Date(res.mission.createdAt),
             new Date(res.mission.updatedAt),
-            new Date(res.mission.deletedAt),
         );
         let worker = null;
         if (res.worker) {
@@ -271,7 +257,6 @@ export const getRunningActions = async () => {
                 res.worker.hostname,
                 res.worker.createdAt,
                 res.worker.updatedAt,
-                res.worker.deletedAt,
                 res.worker.cpuMemory,
                 res.worker.gpuModel,
                 res.worker.gpuMemory,
@@ -286,7 +271,6 @@ export const getRunningActions = async () => {
             res.uuid,
             new Date(res.createdAt),
             new Date(res.updatedAt),
-            new Date(res.deletedAt),
             res.state,
             res.state_cause,
             res.artifact_url,

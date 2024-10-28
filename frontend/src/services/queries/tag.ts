@@ -11,7 +11,6 @@ export const getTagTypes = async () => {
             tag.datatype,
             new Date(tag.createdAt),
             new Date(tag.updatedAt),
-            new Date(tag.deletedAt),
         );
     });
 };
@@ -40,7 +39,6 @@ export const getFilteredTagTypes = async (
             tag.datatype,
             new Date(tag.createdAt),
             new Date(tag.updatedAt),
-            new Date(tag.deletedAt),
         );
     });
 };

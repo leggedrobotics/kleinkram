@@ -32,6 +32,5 @@ export const createTagType = async (name: string, type: DataType) => {
         response.data.type,
         new Date(response.data.createdAt),
         new Date(response.data.updatedAt),
-        new Date(response.data.deletedAt),
     );
 };

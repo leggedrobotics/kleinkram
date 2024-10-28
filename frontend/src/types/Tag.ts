@@ -21,9 +21,8 @@ export class Tag extends BaseEntity {
         type: TagType,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.STRING = STRING;
         this.NUMBER = NUMBER;
         this.BOOLEAN = BOOLEAN;

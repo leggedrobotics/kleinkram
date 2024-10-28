@@ -26,7 +26,6 @@ export const currentQueue = async (
                 [],
                 new Date(res.creator.createdAt),
                 new Date(res.creator.updatedAt),
-                new Date(res.creator.deletedAt),
             );
             users[res.creator.uuid] = creator;
         }
@@ -40,7 +39,6 @@ export const currentQueue = async (
             creator,
             new Date(res.createdAt),
             new Date(res.updatedAt),
-            new Date(res.deletedAt),
         );
     });
 };
@@ -66,7 +64,6 @@ export const getQueueForFile = async (
             [],
             new Date(rawQueue.creator.createdAt),
             new Date(rawQueue.creator.updatedAt),
-            new Date(rawQueue.creator.deletedAt),
         );
         return new Queue(
             rawQueue.uuid,
@@ -78,7 +75,6 @@ export const getQueueForFile = async (
             creator,
             new Date(rawQueue.createdAt),
             new Date(rawQueue.updatedAt),
-            new Date(rawQueue.deletedAt),
         );
     });
 };

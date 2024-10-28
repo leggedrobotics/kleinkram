@@ -11,9 +11,8 @@ export class TagType extends BaseEntity {
         type: DataType,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.name = name;
         this.type = type;
     }

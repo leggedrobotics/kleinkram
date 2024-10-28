@@ -23,9 +23,8 @@ export class AccessGroup extends BaseEntity {
         creator: User | undefined,
         createdAt: Date,
         updatedAt: Date,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.name = name;
         this.users = users;
         this.project_accesses = project_accesses;

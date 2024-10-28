@@ -10,7 +10,6 @@ export async function allWorkers(): Promise<[Worker[], number]> {
             worker.hostname,
             new Date(worker.createdAt),
             new Date(worker.updatedAt),
-            new Date(worker.deletedAt),
             worker.cpuMemory,
             worker.gpuModel,
             worker.gpuMemory,

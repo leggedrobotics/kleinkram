@@ -44,7 +44,6 @@ export class Action extends BaseEntity {
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
         state: ActionState,
         state_cause: string,
         artifactUrl: string,
@@ -64,7 +63,7 @@ export class Action extends BaseEntity {
         executionStartedAt: string | null = null,
         executionEndedAt: string | null = null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.image = image;
         this.state = state;
         this.state_cause = state_cause || '';
