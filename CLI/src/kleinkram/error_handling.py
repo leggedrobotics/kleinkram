@@ -28,8 +28,9 @@ class AccessDeniedException(Exception):
 
 def not_yet_implemented_handler(e: Exception):
     console = Console(file=sys.stderr)
+    default_msg = "This feature is not yet implemented. Please check for updates or use the web interface."
     panel = Panel(
-        "This feature is not yet implemented, please check for updates.",
+        f"{default_msg}",
         title="Not Yet Implemented",
         style="yellow",
         padding=(1, 2),

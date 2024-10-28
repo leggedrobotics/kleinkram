@@ -24,6 +24,10 @@ def list_projects():
     response.raise_for_status()
     projects = response.json()[0]
 
+    if len(projects) == 0:
+        print("No projects found. Create a new project using 'klein project create'")
+        return
+
     stdout_console = Console(stderr=False)
     stderr_console = Console(stderr=True)
     stderr_console.print(f"\nfound {len(projects)} projects with the following UUIDs:")
@@ -46,7 +50,7 @@ def list_projects():
     stderr_console.print("\n")
 
 
-@project.command("details", help="Get details of a project")
+@project.command("details", help="Get details of a project", no_args_is_help=True)
 def project_details(
     project_uuid: Annotated[
         str, typer.Argument(help="UUID of the project to get details of")
@@ -97,7 +101,7 @@ def project_details(
         stdout_console.print(mission["uuid"])
 
 
-@project.command("create")
+@project.command("create", no_args_is_help=True, help="Create a new project")
 def create_project(
     name: Annotated[str, typer.Option(help="Name of Project")],
     description: Annotated[str, typer.Option(help="Description of Project")],
@@ -115,10 +119,20 @@ def create_project(
         if response.status_code >= 400:
             response_json = response.json()
             response_text = response_json["message"]
-            print(f"Failed to create project: {response_text}")
-            return
-        print("Project created")
+            raise ValueError(f"Failed to create project\n » {response_text}!")
+
+        stderr_console = Console(stderr=True)
+        stderr_console.print(f"Project '{name}' created successfully.")
+
+        stdout_console = Console(stderr=False)
+        stderr_console.print("\nProject UUID:\n - ", end="")
+        stdout_console.print(response.json()["uuid"])
 
     except httpx.HTTPError as e:
         print(f"Failed to create project: {e}")
         raise e
+
+
+@project.command("delete", help="Delete a project")
+def delete_project():
+    raise NotImplementedError()
