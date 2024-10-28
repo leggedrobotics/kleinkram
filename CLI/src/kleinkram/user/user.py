@@ -1,28 +1,47 @@
-from typing_extensions import Annotated
+§import sys
 
 import typer
+from rich.console import Console
 from rich.table import Table
+from typing_extensions import Annotated
 
 from kleinkram.api_client import AuthenticatedClient
 
 user = typer.Typer(
     name="users",
     help="User operations",
+    no_args_is_help=True,
 )
 
 
 @user.command("list")
-def users(ctx: typer.Context):
+def users():
     """List all users"""
 
     client = AuthenticatedClient()
     response = client.get("/user/all")
     response.raise_for_status()
     data = response.json()
-    table = Table("Name", "Email", "Role", "googleId")
-    for user in data:
-        table.add_row(user["name"], user["email"], user["role"], user["googleId"])
-    print(table)
+
+    console = Console(file=sys.stderr)
+    console_stdout = Console(file=sys.stdout)
+
+    ####
+    # Print user UUIDs for command piping
+    ####
+    console.print("\nUser UUIDs: ")
+    for _user in data:
+        console.print(" - ", end="")
+        console_stdout.print(_user["uuid"])
+    console.print("\n")
+
+    ####
+    # Print table of the users
+    ####
+    table = Table("UUID", "Name", "Email", "Role", expand=True, highlight=False)
+    for _user in data:
+        table.add_row(_user["uuid"], _user["name"], _user["email"], _user["role"])
+    console.print(table)
 
 
 @user.command("info")
@@ -32,7 +51,10 @@ def user_info():
     response = client.get("/user/me")
     response.raise_for_status()
     data = response.json()
-    print(data)
+
+    # print prettified user info
+    console = Console()
+    console.print(data)
 
 
 @user.command("promote")
