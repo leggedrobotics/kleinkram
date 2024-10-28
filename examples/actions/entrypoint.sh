@@ -15,6 +15,8 @@ klein endpoint set $ENDPOINT
 klein login --key $APIKEY
 klein mission byUUID $MISSION_UUID
 
+klein --version
+
 # TODO... this Endpoint needs to be fixed
 klein mission download --mission-uuid $MISSION_UUID /out
 

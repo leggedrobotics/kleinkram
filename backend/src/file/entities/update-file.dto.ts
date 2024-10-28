@@ -5,7 +5,6 @@ export class UpdateFile {
     @IsUUID() uuid: string;
     @IsValidFileName() @IsString() filename: string;
     @IsOptional() @IsUUID() mission_uuid?: string;
-    @IsOptional() @IsUUID() project_uuid?: string;
     @IsDate() date: Date;
     @IsOptional() @IsUUID('all', { each: true }) categories: string[];
 }

@@ -278,8 +278,8 @@ export class MissionService {
                     getBucketFromFileType(file.type),
                     file.uuid,
                     {
-                        missionUuid: missionUUID,
-                        projectUuid: projectUUID,
+                        mission_uuid: missionUUID,
+                        project_uuid: projectUUID,
                     },
                 ),
             ),

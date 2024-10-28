@@ -160,8 +160,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 : env.MINIO_MCAP_BUCKET_NAME,
             queue.identifier,
             {
-                missionUuid: queue.mission.uuid,
-                projectUuid: queue.mission.project.uuid,
+                mission_uuid: queue.mission.uuid,
+                project_uuid: queue.mission.project.uuid,
+                filename: queue.display_name,
             },
         );
 
@@ -277,8 +278,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     env.MINIO_MCAP_BUCKET_NAME,
                     mcapFileEntity.uuid,
                     {
-                        missionUuid: queue.mission.uuid,
-                        projectUuid: queue.mission.project.uuid,
+                        mission_uuid: queue.mission.uuid,
+                        project_uuid: queue.mission.project.uuid,
+                        filename: mcapFileEntity.filename,
                     },
                 );
 
@@ -557,8 +559,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 env.MINIO_MCAP_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 {
-                    missionUuid: queueEntity.mission.uuid,
-                    projectUuid: queueEntity.mission.project.uuid,
+                    mission_uuid: queueEntity.mission.uuid,
+                    project_uuid: queueEntity.mission.project.uuid,
+                    filename: mcapFileEntity.filename,
                 },
             );
 
@@ -590,6 +593,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             {
                 missionUuid: queueEntity.mission.uuid,
                 projectUuid: queueEntity.mission.project.uuid,
+                filename: savedFileEntity.filename,
             },
         );
 

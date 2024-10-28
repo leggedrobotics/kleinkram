@@ -127,6 +127,36 @@ services:
             - loki
             - redis
 
+    bullconsumer2:
+        image: rslethz/grandtour-datasets:bull-consumer-latest
+        container_name: bullconsumer2
+        build:
+            context: .
+            dockerfile: queueConsumer/Dockerfile
+        volumes:
+            - ./queueConsumer:/usr/src/queueConsumer
+            - ./common:/usr/src/common
+            - /usr/src/queueConsumer/node_modules
+            - /usr/src/queueConsumer/dist
+            # mount docker socket to access docker from within the container
+            - /var/run/docker.sock:/var/run/docker.sock
+        develop:
+            watch:
+                - action: sync
+                  path: ./queueConsumer
+                  target: /usr/src/queueConsumer
+                  ignore:
+                      - node_modules/
+                      - dist/
+        env_file:
+            - .env
+        networks:
+            - privatenet
+        depends_on:
+            - database
+            - loki
+            - redis
+
     prometheus:
         image: prom/prometheus
         volumes:

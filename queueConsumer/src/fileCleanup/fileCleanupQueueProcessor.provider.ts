@@ -30,6 +30,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import env from '@common/env';
 import { getBucketFromFileType, internalMinio } from '@common/minio_helper';
 import crypto from 'crypto';
+import { BucketItem, Tag } from 'minio';
 
 type CancelUploadJob = Job<{
     uuids: string[];
@@ -55,7 +56,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         private projectAccessView: Repository<ProjectAccessViewEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
-        @InjectQueue('file-queue') private readonly fileQueue: Queue,
     ) {}
 
     async onModuleInit() {
@@ -107,46 +107,48 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async fixFileHashes() {
-        await this.redlock.using([`lock:hash-repair`], 10000, async () => {
-            logger.debug('Fixing file hashes');
+        await this.redlock
+            .using([`lock:hash-repair`], 10000, async () => {
+                logger.debug('Fixing file hashes');
 
-            const files = await this.fileRepository.find({
-                where: { hash: IsNull(), state: Not(FileState.LOST) },
-                relations: ['mission', 'mission.project'],
-            });
-            for (const file of files) {
-                const hash = crypto.createHash('md5');
-
-                const datastream = await internalMinio.getObject(
-                    file.type === FileType.BAG
-                        ? env.MINIO_BAG_BUCKET_NAME
-                        : env.MINIO_MCAP_BUCKET_NAME,
-                    `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
-                );
-                await new Promise((resolve, reject) => {
-                    datastream.on('error', (err) => {
-                        logger.error(err);
-                        resolve(void 0);
-                    });
-                    datastream.on('data', (chunk) => {
-                        hash.update(chunk);
-                    });
-                    datastream.on('end', async () => {
-                        file.hash = hash.digest('base64');
-                        await this.fileRepository.save(file);
-                        resolve(void 0);
-                    });
+                const files = await this.fileRepository.find({
+                    where: { hash: IsNull(), state: Not(FileState.LOST) },
+                    relations: ['mission', 'mission.project'],
                 });
-            }
-        });
+                for (const file of files) {
+                    const hash = crypto.createHash('md5');
+
+                    const datastream = await internalMinio.getObject(
+                        file.type === FileType.BAG
+                            ? env.MINIO_BAG_BUCKET_NAME
+                            : env.MINIO_MCAP_BUCKET_NAME,
+                        `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
+                    );
+                    await new Promise((resolve, reject) => {
+                        datastream.on('error', (err) => {
+                            logger.error(err);
+                            resolve(void 0);
+                        });
+                        datastream.on('data', (chunk) => {
+                            hash.update(chunk);
+                        });
+                        datastream.on('end', async () => {
+                            file.hash = hash.digest('base64');
+                            await this.fileRepository.save(file);
+                            resolve(void 0);
+                        });
+                    });
+                }
+            })
+            .catch(() => {
+                logger.debug("Couldn't acquire lock for hash repair");
+            });
     }
 
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async cleanupFailedUploads() {
-        await this.redlock.using(
-            [`lock:cleanup-failed-uploads`],
-            10000,
-            async () => {
+        await this.redlock
+            .using([`lock:cleanup-failed-uploads`], 10000, async () => {
                 logger.debug('Cleaning up failed uploads');
                 const failedUploads = await this.fileRepository.find({
                     where: {
@@ -188,8 +190,12 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         await this.queueRepository.save(queue);
                     }),
                 );
-            },
-        );
+            })
+            .catch(() => {
+                logger.debug(
+                    "Couldn't acquire lock for cleanup failed uploads",
+                );
+            });
     }
 
     async dumpFileType(fileType: FileType) {
@@ -227,88 +233,135 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_DAY_AT_2AM)
     async synchronizeFileSystem() {
-        await this.redlock.using([`lock:fs-sync`], 10000, async () => {
-            logger.debug('Synchronizing file system');
+        await this.redlock
+            .using([`lock:fs-sync`], 10000, async () => {
+                logger.debug('Synchronizing file system');
 
-            const files = await this.fileRepository.find({
-                where: { state: FileState.OK },
-            });
-
-            await Promise.all(
-                files.map(async (file) => {
-                    const exists = await this.doesFileExist(
-                        getBucketFromFileType(file.type),
-                        file.uuid,
-                    );
-                    if (!exists) {
-                        file.state = FileState.LOST;
-                        await this.fileRepository.save(file);
-                    }
-                }),
-            );
-
-            // search for lost files
-            const lostFiles = await this.fileRepository.find({
-                where: { state: FileState.LOST },
-            });
-
-            await Promise.all(
-                lostFiles.map(async (file) => {
-                    const exists = await this.doesFileExist(
-                        getBucketFromFileType(file.type),
-                        file.uuid,
-                    );
-                    if (exists) {
-                        file.state = FileState.FOUND;
-                        await this.fileRepository.save(file);
-                    }
-                }),
-            );
-
-            // search for files present in minio but missing in DB
-            const minioObjects = internalMinio.listObjects(
-                env.MINIO_BAG_BUCKET_NAME,
-                '',
-            );
-            const dbObjects = await this.fileRepository.find({
-                where: { type: FileType.BAG },
-            });
-
-            const minioObjectNames = minioObjects.map((obj) => obj.name);
-            const dbObjectNames = dbObjects.map((obj) => obj.uuid);
-            const missingObjects = minioObjectNames.filter(
-                (obj) => !dbObjectNames.includes(obj),
-            );
-
-            missingObjects.forEach((obj) => {
-                logger.error(
-                    `Found missing object in minio: ${obj} in BAG bucket`,
+                const files = await this.fileRepository.find({
+                    where: { state: FileState.OK },
+                });
+                let count = 0;
+                await Promise.all(
+                    files.map(async (file) => {
+                        const exists = await this.doesFileExist(
+                            getBucketFromFileType(file.type),
+                            file.uuid,
+                        );
+                        if (!exists) {
+                            count++;
+                            file.state = FileState.LOST;
+                            logger.error(
+                                `File ${file.filename} is missing in minio`,
+                            );
+                            await this.fileRepository.save(file);
+                        }
+                    }),
                 );
-            });
+                if (count === 0) {
+                    logger.info(
+                        'All files from the database are present in the minio storage',
+                    );
+                } else {
+                    logger.info(
+                        `${count} files are missing in the minio storage`,
+                    );
+                }
 
-            // search for files present in minio but missing in DB
-            const minioObjectsMcap = internalMinio.listObjects(
-                env.MINIO_MCAP_BUCKET_NAME,
-                '',
-            );
-            const dbObjectsMcap = await this.fileRepository.find({
-                where: { type: FileType.MCAP },
-            });
+                // search for lost files
+                const lostFiles = await this.fileRepository.find({
+                    where: { state: FileState.LOST },
+                });
 
-            const minioObjectNamesMcap = minioObjectsMcap.map(
-                (obj) => obj.name,
-            );
-            const dbObjectNamesMcap = dbObjectsMcap.map((obj) => obj.uuid);
-            const missingObjectsMcap = minioObjectNamesMcap.filter(
-                (obj) => !dbObjectNamesMcap.includes(obj),
-            );
-
-            missingObjectsMcap.forEach((obj) => {
-                logger.error(
-                    `Found missing object in minio: ${obj} in MCAP bucket`,
+                await Promise.all(
+                    lostFiles.map(async (file) => {
+                        const exists = await this.doesFileExist(
+                            getBucketFromFileType(file.type),
+                            file.uuid,
+                        );
+                        if (exists) {
+                            file.state = FileState.FOUND;
+                            logger.info(
+                                `Previously lost file ${file.filename} found`,
+                            );
+                            await this.fileRepository.save(file);
+                        }
+                    }),
                 );
+
+                // search for files present in minio but missing in DB
+                const minioObjects = internalMinio.listObjects(
+                    env.MINIO_BAG_BUCKET_NAME,
+                    '',
+                ); // ObjectStream
+
+                const minioObjectNamesSet: Set<string> = new Set(
+                    await minioObjects
+                        .map((obj) => obj.name as string)
+                        .toArray(),
+                ); // Set of UUIDs
+
+                const dbObjects = await this.fileRepository.find({
+                    where: { type: FileType.BAG },
+                });
+                const dbObjectNames = new Set(dbObjects.map((obj) => obj.uuid));
+                const missionObjects =
+                    minioObjectNamesSet.difference(dbObjectNames); // Set of UUIDs found in minio but not in DB
+
+                await Promise.all(
+                    [...missionObjects].map(async (obj) => {
+                        const tags = await internalMinio.getObjectTagging(
+                            env.MINIO_BAG_BUCKET_NAME,
+                            obj,
+                        );
+                        const restoredDBFile = this.fileRepository.create({
+                            uuid: obj,
+                            type: FileType.BAG,
+                            state: FileState.FOUND,
+                            filename: tags.find((tag) => tag.Key === 'filename')
+                                ?.Value,
+                            mission: {
+                                uuid: tags.find(
+                                    (tag) => tag.Key === 'mission_uuid',
+                                )?.Value,
+                            },
+                        });
+
+                        logger.error(
+                            `Found missing object in minio: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`)} in BAG bucket`,
+                        );
+                    }),
+                );
+
+                // search for files present in minio but missing in DB
+                const minioObjectsMcap = internalMinio.listObjects(
+                    env.MINIO_MCAP_BUCKET_NAME,
+                    '',
+                );
+                const dbObjectsMcap = await this.fileRepository.find({
+                    where: { type: FileType.MCAP },
+                });
+
+                const minioObjectNamesMcap = minioObjectsMcap.map(
+                    (obj) => obj.name,
+                );
+                const minioObjectNamesMcapSet: Set<string> = new Set(
+                    await minioObjectNamesMcap.toArray(),
+                );
+                const dbObjectNamesMcap = new Set(
+                    dbObjectsMcap.map((obj) => obj.uuid),
+                );
+                const missingObjectsMcap =
+                    minioObjectNamesMcapSet.difference(dbObjectNamesMcap);
+
+                missingObjectsMcap.forEach((obj) => {
+                    logger.error(
+                        `Found missing object in minio: ${obj} in MCAP bucket`,
+                    );
+                });
+            })
+            .catch(() => {
+                logger.debug("Couldn't acquire lock for fs sync");
             });
-        });
     }
 
     async canCancelUpload(userUUID: string, missionUUID: string) {

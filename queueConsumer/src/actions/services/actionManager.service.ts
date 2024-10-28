@@ -71,98 +71,101 @@ export class ActionManagerService {
         action.state_cause = 'Action is currently running...';
         await this.actionRepository.save(action);
 
-        using apikey = await this.createAPIkey(action);
-
-        const env_variables: ContainerEnv = {
-            APIKEY: apikey.apikey,
-            PROJECT_UUID: action.mission.project.uuid,
-            MISSION_UUID: action.mission.uuid,
-            ACTION_UUID: action.uuid,
-            ENDPOINT: env.ENDPOINT,
-        };
-        const needs_gpu = action.template.gpuMemory > 0;
-        const { container, repo_digests, sha } =
-            await this.containerDaemon.start_container(
-                async () => {
-                    action.state = ActionState.PROCESSING;
-                    await this.actionRepository.save(action);
-                },
-                {
-                    docker_image: action.template.image_name,
-                    name: action.uuid,
-                    limits: {
-                        max_runtime:
-                            action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
-                        n_cpu: action.template.cpuCores || 1,
-                        memory_limit:
-                            (action.template.cpuMemory || 2) *
-                            1024 *
-                            1024 *
-                            1024, // min 2 GB
+        const apikey = await this.createAPIkey(action);
+        try {
+            const env_variables: ContainerEnv = {
+                APIKEY: apikey.apikey,
+                PROJECT_UUID: action.mission.project.uuid,
+                MISSION_UUID: action.mission.uuid,
+                ACTION_UUID: action.uuid,
+                ENDPOINT: env.ENDPOINT,
+            };
+            const needs_gpu = action.template.gpuMemory > 0;
+            const { container, repo_digests, sha } =
+                await this.containerDaemon.start_container(
+                    async () => {
+                        action.state = ActionState.PROCESSING;
+                        await this.actionRepository.save(action);
                     },
-                    needs_gpu,
-                    environment: env_variables,
-                    command: action.template.command,
-                },
-            );
+                    {
+                        docker_image: action.template.image_name,
+                        name: action.uuid,
+                        limits: {
+                            max_runtime:
+                                action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
+                            n_cpu: action.template.cpuCores || 1,
+                            memory_limit:
+                                (action.template.cpuMemory || 2) *
+                                1024 *
+                                1024 *
+                                1024, // min 2 GB
+                        },
+                        needs_gpu,
+                        environment: env_variables,
+                        command: action.template.command,
+                    },
+                );
 
-        // capture runner information
-        action.image = { repo_digests, sha };
-        await this.setContainerInfo(action, container);
-        await this.actionRepository.save(action);
+            // capture runner information
+            action.image = { repo_digests, sha };
+            await this.setContainerInfo(action, container);
+            await this.actionRepository.save(action);
 
-        const sanitize = (str: string) => {
-            return str.replace(apikey.apikey, '***');
-        };
+            const sanitize = (str: string) => {
+                return str.replace(apikey.apikey, '***');
+            };
 
-        // get logs from container and save them to the database
-        const logsObservable = await this.containerDaemon
-            .subscribeToLogs(container.id, sanitize)
-            .catch((err) => {
-                logger.error('Error while subscribing to logs:', err);
-            });
+            // get logs from container and save them to the database
+            const logsObservable = await this.containerDaemon
+                .subscribeToLogs(container.id, sanitize)
+                .catch((err) => {
+                    logger.error('Error while subscribing to logs:', err);
+                });
 
-        if (!logsObservable) {
-            throw new Error(
-                'Container logs are not available. Container might never have been started correctly.',
-            );
-        }
+            if (!logsObservable) {
+                throw new Error(
+                    'Container logs are not available. Container might never have been started correctly.',
+                );
+            }
 
-        await this.processContainerLogs(
-            logsObservable,
-            action.uuid,
-            container.id,
-        );
-
-        // wait for the container to stop
-        await container.wait();
-
-        // update action state based on container exit code
-        action = await this.actionRepository.findOneOrFail({
-            where: { uuid: action.uuid },
-            relations: ['worker', 'template'],
-        });
-        await this.containerDaemon.removeContainer(container.id, true);
-        await this.setActionState(container, action);
-        action.executionEndedAt = new Date();
-        action.artifacts = ArtifactState.UPLOADING;
-        await this.actionRepository.save(action);
-
-        const { container: artifact_upload_container, parentFolder } =
-            await this.containerDaemon.launchArtifactUploadContainer(
+            await this.processContainerLogs(
+                logsObservable,
                 action.uuid,
-                `${action.template.name}-v${action.template.version}-${action.uuid}`,
+                container.id,
             );
-        await artifact_upload_container.wait();
-        action.artifacts = ArtifactState.UPLOADED;
-        await this.containerDaemon.removeContainer(
-            artifact_upload_container.id,
-        );
-        await this.containerDaemon.removeVolume(action.uuid);
-        action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
-        await this.actionRepository.save(action);
 
-        return true; // Mark the job as completed
+            // wait for the container to stop
+            await container.wait();
+
+            // update action state based on container exit code
+            action = await this.actionRepository.findOneOrFail({
+                where: { uuid: action.uuid },
+                relations: ['worker', 'template'],
+            });
+            await this.containerDaemon.removeContainer(container.id, true);
+            await this.setActionState(container, action);
+            action.executionEndedAt = new Date();
+            action.artifacts = ArtifactState.UPLOADING;
+            await this.actionRepository.save(action);
+
+            const { container: artifact_upload_container, parentFolder } =
+                await this.containerDaemon.launchArtifactUploadContainer(
+                    action.uuid,
+                    `${action.template.name}-v${action.template.version}-${action.uuid}`,
+                );
+            await artifact_upload_container.wait();
+            action.artifacts = ArtifactState.UPLOADED;
+            await this.containerDaemon.removeContainer(
+                artifact_upload_container.id,
+            );
+            await this.containerDaemon.removeVolume(action.uuid);
+            action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
+            await this.actionRepository.save(action);
+
+            return true; // Mark the job as completed
+        } finally {
+            await apikey[Symbol.asyncDispose]();
+        }
     }
 
     /**

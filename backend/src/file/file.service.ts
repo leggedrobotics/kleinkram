@@ -32,6 +32,7 @@ import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
 import { redis } from '@common/consts';
 import {
+    addTagsToMinioObject,
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredential,
@@ -434,21 +435,10 @@ export class FileService implements OnModuleInit {
             }
         }
 
-        if (file.project_uuid) {
-            const newProject = await this.projectRepository.findOne({
-                where: { uuid: file.project_uuid },
-            });
-            if (newProject) {
-                db_file.mission.project = newProject;
-            } else {
-                throw new Error('Project not found');
-            }
-        }
         if (file.categories) {
             const cats = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
-            console.log(cats);
             db_file.categories = cats;
         }
 
@@ -469,7 +459,15 @@ export class FileService implements OnModuleInit {
                 }
                 throw err;
             });
-
+        await addTagsToMinioObject(
+            getBucketFromFileType(db_file.type),
+            db_file.uuid,
+            {
+                project_uuid: db_file.mission.project.uuid,
+                mission_uuid: db_file.mission.uuid,
+                filename: db_file.filename,
+            },
+        );
         return this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission', 'mission.project'],
