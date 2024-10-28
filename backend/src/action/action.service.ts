@@ -124,7 +124,6 @@ export class ActionService {
             template.gpuMemory === data.gpuMemory &&
             template.maxRuntime === data.maxRuntime
         ) {
-            console.log('making template searchable');
             template.searchable = true;
             return this.actionTemplateRepository.save(template);
         }
