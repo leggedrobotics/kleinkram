@@ -195,7 +195,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         const mcap_temp_file_name = tmp_file_name.replace('.bag', '.mcap');
 
-        let existingFileEntity = await this.fileRepository.findOne({
+        const existingFileEntity = await this.fileRepository.findOne({
             where: {
                 filename: originalFileName,
                 mission: { uuid: queue.mission.uuid },

@@ -22,11 +22,11 @@ export default withMermaid({
         nav: [
             {
                 text: 'For Users',
-                link: '/usage/getting-started',
+                link: '/usage/getting-started.md',
             },
             {
                 text: 'For Developers',
-                link: '/development/getting-started',
+                link: '/development/getting-started.md',
             },
         ],
 
@@ -37,7 +37,7 @@ export default withMermaid({
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/usage/getting-started',
+                            link: '/usage/getting-started.md',
                         },
                     ],
                     collapsed: false,
@@ -48,7 +48,7 @@ export default withMermaid({
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/usage/actions/getting-started',
+                            link: '/usage/actions/getting-started.md',
                         },
                     ],
                     collapsed: true,
@@ -91,11 +91,11 @@ export default withMermaid({
                 },
 
                 {
-                    text: 'CLI and API',
+                    text: 'Kleinkram CLI',
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/usage/cli-api/cli-getting-started',
+                            link: '/usage/cli/cli-getting-started.md',
                         },
                     ],
                     collapsed: true,
@@ -117,7 +117,7 @@ export default withMermaid({
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/development/getting-started',
+                            link: '/development/getting-started.md',
                         },
                     ],
                     collapsed: true,
@@ -237,11 +237,15 @@ export default withMermaid({
                     collapsed: true,
                 },
                 {
-                    text: 'API',
+                    text: 'API und CLI',
                     items: [
                         {
                             text: 'Introduction',
                             link: '/development/API/Introduction',
+                        },
+                         {
+                            text: 'Develop the CLI',
+                            link: '/development/CLI/getting-started.md',
                         }
                     ]
                 },
@@ -260,7 +264,7 @@ export default withMermaid({
 
                         {
                             text: 'Run Testsuite',
-                            link: '/development/testing/getting-started',
+                            link: '/development/testing/getting-started.md',
                         }
                     ]
                 },

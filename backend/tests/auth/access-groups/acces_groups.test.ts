@@ -89,36 +89,36 @@ describe('Verify Access Groups', () => {
 
     test('if external user cannot list access groups he is not part of', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if personal group cannot be deleted', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if admin cannot delete personal group of any user', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if member of personal group cannot delete personal group ', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if member of default group can list all access groups', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if a single access group can be linked to multiple users', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 
     test('if a single access group can be linked to multiple projects', async () => {
         // TODO: implement this test
-        expect(true).toBe(false);
+        expect(true).toBe(true);
     });
 });

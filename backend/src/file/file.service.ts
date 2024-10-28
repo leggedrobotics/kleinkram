@@ -682,12 +682,6 @@ export class FileService implements OnModuleInit {
             accessCredentials: Credentials;
         }[]
     > {
-        const emptyCredentials = {
-            bucket: null,
-            fileUUID: null,
-            accessCredentials: null,
-        };
-
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -698,10 +692,19 @@ export class FileService implements OnModuleInit {
 
         return await Promise.all(
             filenames.map(async (filename) => {
+                const emptyCredentials = {
+                    bucket: null,
+                    fileName: filename,
+                    fileUUID: null,
+                    accessCredentials: null,
+                    error: null,
+                };
+
                 logger.debug('Creating temporary access for file: ' + filename);
 
                 // verify that file has ending .bag or .mcap
                 if (!filename.endsWith('.bag') && !filename.endsWith('.mcap')) {
+                    emptyCredentials.error = 'Invalid file ending';
                     return emptyCredentials;
                 }
 
@@ -718,7 +721,11 @@ export class FileService implements OnModuleInit {
                         },
                     },
                 });
-                if (existingFile > 0) return emptyCredentials;
+                if (existingFile > 0) {
+                    emptyCredentials.error = 'File already exists';
+                    emptyCredentials.fileName = filename;
+                    return emptyCredentials;
+                }
 
                 const file = await this.fileRepository.save(
                     this.fileRepository.create({
@@ -747,6 +754,7 @@ export class FileService implements OnModuleInit {
                 return {
                     bucket: getBucketFromFileType(fileType),
                     fileUUID: file.uuid,
+                    fileName: filename,
                     accessCredentials: await generateTemporaryCredential(
                         file.uuid,
                         getBucketFromFileType(fileType),

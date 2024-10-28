@@ -170,16 +170,6 @@
                     >
                         Actions
                     </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_move_down"
-                        color="white"
-                        disable
-                    >
-                        Move
-                    </q-btn>
 
                     <q-btn
                         flat
@@ -187,8 +177,13 @@
                         padding="6px"
                         icon="sym_o_delete"
                         color="white"
-                        disable
+                        :disable="selectedMissions.length !== 1"
+                        @click="deleteMission"
                         >Delete
+
+                        <q-tooltip v-if="selectedMissions.length !== 1">
+                            You can only delete one mission at a time
+                        </q-tooltip>
                     </q-btn>
                     <q-btn
                         flat
@@ -243,18 +238,16 @@ import ExplorerPageMissionTable from 'components/explorer_page/ExplorerPageMissi
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
-import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import CreateMissionDialogOpener from 'components/buttonWrapper/CreateMissionDialogOpener.vue';
 import { useProjectUUID } from 'src/hooks/utils';
 import { useQuasar } from 'quasar';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
-import { FileEntity } from 'src/types/FileEntity';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 import KleinDownloadMissions from 'components/CLILinks/KleinDownloadMissions.vue';
-import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
 import { Mission } from 'src/types/Mission';
+import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -269,6 +262,20 @@ registerNoPermissionErrorHandler(
     'project',
     error,
 );
+
+const deleteMission = async () => {
+    const mission = selectedMissions.value[0];
+
+    $q.dialog({
+        title: 'Delete Mission',
+        component: DeleteMissionDialog,
+        componentProps: {
+            mission_uuid: mission.uuid,
+        },
+    });
+
+    deselect();
+};
 
 const selectedMissions: Ref<Mission[]> = ref([]);
 

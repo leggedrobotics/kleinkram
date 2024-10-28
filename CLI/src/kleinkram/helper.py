@@ -1,20 +1,21 @@
 import glob
 import os
 import queue
+import re
+import sys
 import threading
 from datetime import datetime
 from functools import partial
 
+import boto3
+import tqdm
 import typer
+from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 from botocore.utils import calculate_md5
-from typing_extensions import Dict, List
-import boto3
-
-import tqdm
-from boto3.s3.transfer import TransferConfig
-from botocore.client import BaseClient
 from rich import print
+from rich.console import Console
+from typing_extensions import Dict
 
 from kleinkram.api_client import AuthenticatedClient
 
@@ -106,84 +107,101 @@ def expand_and_match(path_pattern):
     return file_list
 
 
-def uploadFiles(files: Dict[str, str], credentials: Dict[str, str], nrThreads: int):
+def uploadFiles(
+    files_with_access: Dict[str, object], paths: Dict[str, str], nrThreads: int
+):
     client = AuthenticatedClient()
 
-    session = boto3.Session(
-        aws_access_key_id=credentials["accessKey"],
-        aws_secret_access_key=credentials["secretKey"],
-        aws_session_token=credentials["sessionToken"],
-    )
     api_endpoint = client.tokenfile.endpoint
     if api_endpoint == "http://localhost:3000":
         minio_endpoint = "http://localhost:9000"
     else:
         minio_endpoint = api_endpoint.replace("api", "minio")
 
-    config = Config(retries={"max_attempts": 10, "mode": "standard"})
-    s3 = session.resource("s3", endpoint_url=minio_endpoint, config=config)
-
     _queue = queue.Queue()
-    for file in files.items():
-        _queue.put(file)
+    for file_with_access in files_with_access:
+        _queue.put((file_with_access, str(paths[file_with_access["fileName"]])))
+
     threads = []
-    transferCallback = TransferCallback()
-    failed_uploads = []
+    transfer_callback = TransferCallback()
 
     for i in range(nrThreads):
         thread = threading.Thread(
-            target=uploadFile, args=(_queue, s3, transferCallback, failed_uploads)
+            target=uploadFile,
+            args=(_queue, minio_endpoint, transfer_callback),
         )
         thread.start()
         threads.append(thread)
     for thread in threads:
         thread.join()
-    if len(failed_uploads) > 0:
-        print("Failed to upload the following files:")
-        for file in failed_uploads:
-            print(file)
 
 
 def uploadFile(
     _queue: queue.Queue,
-    s3: BaseClient,
-    transferCallback: TransferCallback,
-    failed_uploads: List[str],
+    minio_endpoint: str,
+    transfer_callback: TransferCallback,
 ):
+    config = Config(retries={"max_attempts": 10, "mode": "standard"})
+
     while True:
         try:
-            filename, _file = _queue.get(timeout=3)
-            queueUUID = _file["queueUUID"]
-            filepath = _file["filepath"]
-            bucket = _file["bucket"]
-            target_location = _file["location"]
-            config = TransferConfig(
-                multipart_chunksize=10 * 1024 * 1024, max_concurrency=5
+            file_with_access, filepath = _queue.get(timeout=3)
+
+            if "error" in file_with_access and (
+                file_with_access["error"] is not None or file_with_access["error"] != ""
+            ):
+                console = Console(file=sys.stderr, style="red", highlight=False)
+                console.print(
+                    f"Error uploading file: {file_with_access['fileName']} ({filepath}): {file_with_access['error']}"
+                )
+                _queue.task_done()
+                continue
+
+            access_key = file_with_access["accessCredentials"]["accessKey"]
+            secret_key = file_with_access["accessCredentials"]["secretKey"]
+            session_token = file_with_access["accessCredentials"]["sessionToken"]
+
+            session = boto3.Session(
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                aws_session_token=session_token,
+            )
+
+            s3 = session.resource("s3", endpoint_url=minio_endpoint, config=config)
+
+            fileu_uid = file_with_access["fileUUID"]
+            bucket = file_with_access["bucket"]
+
+            transfer_config = TransferConfig(
+                multipart_chunksize=10 * 1024 * 1024,
+                max_concurrency=5,
             )
             with open(filepath, "rb") as f:
                 md5_checksum = calculate_md5(f)
                 file_size = os.path.getsize(filepath)
-                transferCallback.add_file(filename, file_size)
-                callback_function = create_transfer_callback(transferCallback, filename)
+                transfer_callback.add_file(filepath, file_size)
+                callback_function = create_transfer_callback(
+                    transfer_callback, filepath
+                )
                 s3.Bucket(bucket).upload_file(
                     filepath,
-                    target_location,
-                    Config=config,
+                    fileu_uid,
+                    Config=transfer_config,
                     Callback=callback_function,
                 )
 
                 client = AuthenticatedClient()
                 res = client.post(
                     "/queue/confirmUpload",
-                    json={"uuid": queueUUID, "md5": md5_checksum},
+                    json={"uuid": fileu_uid, "md5": md5_checksum},
                 )
                 res.raise_for_status()
             _queue.task_done()
         except queue.Empty:
             break
         except Exception as e:
-            print(f"Error uploading {filename}: {e}")
-            failed_uploads.append(filepath)
+            print("Error uploading file: " + filepath)
+            print(e)
             _queue.task_done()
 
 
@@ -233,6 +251,18 @@ def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
                         print("Invalid date format. Please use 'YYYY-MM-DD HH:MM:SS'")
 
             setTags[required_tag["uuid"]] = tag_value
+
+
+def is_valid_UUIDv4(uuid: str) -> bool:
+    has_correct_length = len(uuid) == 36
+
+    # is UUID4
+    uuid_regex = (
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    )
+    is_valid_uuid = re.match(uuid_regex, uuid)
+
+    return has_correct_length and is_valid_uuid
 
 
 if __name__ == "__main__":

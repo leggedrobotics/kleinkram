@@ -13,6 +13,12 @@ ExceptionType = "typing.Type[Exception]"
 ErrorHandlingCallback = typing.Callable[[Exception], int]
 
 
+class AbortException(Exception):
+
+    def __init__(self, message: str):
+        self.message = message
+
+
 class AccessDeniedException(Exception):
 
     def __init__(self, message: str, api_error: str):
@@ -22,8 +28,9 @@ class AccessDeniedException(Exception):
 
 def not_yet_implemented_handler(e: Exception):
     console = Console(file=sys.stderr)
+    default_msg = "This feature is not yet implemented. Please check for updates or use the web interface."
     panel = Panel(
-        "This feature is not yet implemented, please check for updates.",
+        f"{default_msg}",
         title="Not Yet Implemented",
         style="yellow",
         padding=(1, 2),
@@ -105,6 +112,20 @@ def remote_down_handler(e: Exception):
     print()
 
 
+def abort_handler(e: AbortException):
+    console = Console(file=sys.stderr)
+    panel = Panel(
+        f"{e.message}",
+        title="Command Aborted",
+        style="yellow",
+        padding=(1, 2),
+        highlight=True,
+    )
+    print()
+    console.print(panel)
+    print()
+
+
 class ErrorHandledTyper(Typer):
     error_handlers: typing.Dict[ExceptionType, ErrorHandlingCallback] = {
         NotAuthenticatedException: not_authenticated_handler,
@@ -114,6 +135,7 @@ class ErrorHandledTyper(Typer):
         ValueError: value_error_handler,
         RemoteProtocolError: remote_down_handler,
         ReadError: remote_down_handler,
+        AbortException: abort_handler,
     }
 
     def __init__(self, *args, **kwargs):
@@ -138,11 +160,16 @@ class ErrorHandledTyper(Typer):
                     f"An unhanded error of type {type(e).__name__} occurred.",
                     fg=typer.colors.RED,
                 )
-                typer.secho(str(e), fg=typer.colors.RED)
+
                 typer.secho(
                     " » Please report this error to the developers.",
                     fg=typer.colors.RED,
                 )
+
+                typer.secho(f"\n\n{e}:", fg=typer.colors.RED)
+                console = Console()
+                console.print_exception(show_locals=True)
+
             else:
                 self.error_handlers[type(e)](e)
 

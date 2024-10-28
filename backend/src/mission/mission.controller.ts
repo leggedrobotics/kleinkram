@@ -114,7 +114,7 @@ export class MissionController {
     @Get('byName')
     @CanReadMissionByName()
     async getMissionByName(@QueryString('name') name: string) {
-        return this.missionService.findOneByName(name);
+        return await this.missionService.findOneByName(name);
     }
 
     @Get('download')

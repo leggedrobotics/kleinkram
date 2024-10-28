@@ -9,7 +9,6 @@ services:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
             - /usr/src/app/node_modules
-            - swagger-spec:/usr/src/app/backend/docs
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -198,13 +197,15 @@ services:
         build:
             context: docs/.
             dockerfile: local-dev.Dockerfile
+        environment:
+            DEVBUILD: 'true'
         ports:
             - '4000:4000'
         volumes:
             - ./docs:/app/src
             - vitepress_dist:/app/src/.vitepress/dist
             - node_modules:/app/src/node_modules
-            - swagger-spec:/app/src/docs/
+            - ./backend/docs:/app/src/docs/
 
     artifactUploader:
         image: rslethz/grandtour-datasets:artifact-uploader-latest
@@ -232,7 +233,6 @@ volumes:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
-    swagger-spec:
 
 networks:
     webnet:

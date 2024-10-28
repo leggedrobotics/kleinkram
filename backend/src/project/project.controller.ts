@@ -31,24 +31,35 @@ import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('project')
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
 
-    /**
-     * Get all projects
-     * @param user
-     * @param skip
-     * @param take
-     * @param sortBy
-     * @param descending
-     * @param searchParams
-     */
     @Get('filtered')
+    @ApiQuery({
+        name: 'skip',
+        required: true,
+        description: 'Number of items to skip',
+        type: Number,
+    })
+    @ApiQuery({
+        name: 'take',
+        required: true,
+        description: 'Number of items to take',
+        type: Number,
+    })
+    @ApiQuery({
+        name: 'sortBy',
+        required: false,
+        description: 'Sort by',
+        type: String,
+    })
     @UserOnly()
     async allProjects(
-        @addUser() user: AuthRes,
+        @addUser()
+        user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryProjectSortBy('sortBy') sortBy?: string,
