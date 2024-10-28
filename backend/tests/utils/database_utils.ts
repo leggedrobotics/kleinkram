@@ -1,10 +1,7 @@
 import { DataSource } from 'typeorm';
 import process from 'node:process';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import {
-    create_access_groups,
-    create_new_user,
-} from '../../src/auth/auth.service';
+import { createAccessGroups, createNewUser } from '../../src/auth/auth.service';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/enum';
@@ -43,7 +40,7 @@ export const clearAllData = async () => {
     }
 };
 
-export const mock_db_user = async (
+export const mockDbUser = async (
     email: string,
     username: string = 'Test User',
     role: UserRole = undefined,
@@ -52,7 +49,7 @@ export const mock_db_user = async (
     const fs = require('fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = db.getRepository(AccessGroup);
-    await create_access_groups(accessGroupRepository, config);
+    await createAccessGroups(accessGroupRepository, config);
 
     const userRepository = db.getRepository(User);
     const accountRepository = db.getRepository(Account);
@@ -63,7 +60,7 @@ export const mock_db_user = async (
     hash.update(email);
     const oauthID = hash.digest('hex');
 
-    await create_new_user(
+    await createNewUser(
         config,
         userRepository,
         accountRepository,
@@ -86,12 +83,12 @@ export const mock_db_user = async (
     return (await userRepository.findOne({ where: { email: email } })).uuid;
 };
 
-export const get_jwt_token = async (user: User) => {
+export const getJwtToken = async (user: User) => {
     const jwt = require('jsonwebtoken');
     return jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET);
 };
 
-export const get_user_from_db = async (uuid: string) => {
+export const getUserFromDb = async (uuid: string) => {
     const userRepository = db.getRepository(User);
     return await userRepository.findOneOrFail({ where: { uuid: uuid } });
 };

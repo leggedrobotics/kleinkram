@@ -3,24 +3,24 @@ import { useRoute } from 'vue-router';
 
 /**
  * This function returns a boolean ref that gets set to true if any of the set_refs
- * change and set to false on any of the resets_refs change.
+ * change and set to false on any of the resetsRefs change.
  *
- * @param set_refs changes on these refs will set the state to true
- * @param resets_refs changes on these refs will set the state to false
- * @param initial_state initial value of the state ref
+ * @param setRefs changes on these refs will set the state to true
+ * @param resetsRefs changes on these refs will set the state to false
+ * @param initialState initial value of the state ref
  *
  */
 export const useToggle = (
-    set_refs: Ref<any>[],
-    resets_refs: Ref<any>[],
-    initial_state = false,
+    setRefs: Ref<any>[],
+    resetsRefs: Ref<any>[],
+    initialState = false,
 ): Ref<boolean> => {
-    const state = ref(initial_state);
+    const state = ref(initialState);
 
-    watch(set_refs, () => {
+    watch(setRefs, () => {
         state.value = true;
     });
-    watch(resets_refs, () => {
+    watch(resetsRefs, () => {
         state.value = false;
     });
 

@@ -240,15 +240,15 @@ async function _createFileAction(
 /**
  * Import files from Google Drive.
  *
- * @param selected_mission the mission to import the files into
- * @param drive_url the URL of the Google Drive folder to import
+ * @param selectedMission the mission to import the files into
+ * @param driveUrl the URL of the Google Drive folder to import
  */
 export async function driveUpload(
-    selected_mission: Mission,
-    drive_url: Ref<string>,
+    selectedMission: Mission,
+    driveUrl: Ref<string>,
 ) {
     // abort if no mission is selected
-    if (!selected_mission) return;
+    if (!selectedMission) return;
 
     const noti = Notify.create({
         group: false,
@@ -259,10 +259,10 @@ export async function driveUpload(
         timeout: 0,
     });
 
-    await createDrive(selected_mission.uuid, drive_url.value)
+    await createDrive(selectedMission.uuid, driveUrl.value)
         .then(() => {
             noti({
-                message: `Files for Mission ${selected_mission.name} are now importing...`,
+                message: `Files for Mission ${selectedMission.name} are now importing...`,
                 color: 'positive',
                 spinner: false,
                 timeout: 5000,
@@ -270,7 +270,7 @@ export async function driveUpload(
         })
         .catch((e) => {
             noti({
-                message: `Upload of Files for Mission ${selected_mission.name} failed: ${e}`,
+                message: `Upload of Files for Mission ${selectedMission.name} failed: ${e}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,
@@ -286,11 +286,14 @@ async function uploadFileMultipart(
     minioClient: S3Client,
     newFileUpload: Ref<FileUpload>,
 ) {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     let UploadId: string | undefined;
     try {
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
+            /* eslint-disable @typescript-eslint/naming-convention */
             Bucket: bucket,
             Key: key,
+            /* eslint-enable @typescript-eslint/naming-convention */
         });
         const { UploadId: _uploadID } = await minioClient.send(
             createMultipartUploadCommand,
@@ -318,18 +321,22 @@ async function uploadFileMultipart(
             spark.append(partBuffer);
 
             const uploadPartCommand = new UploadPartCommand({
+                /* eslint-disable @typescript-eslint/naming-convention */
                 Bucket: bucket,
                 Key: key,
                 PartNumber: partNumber,
                 UploadId,
                 Body: partBlob,
+                /* eslint-enable @typescript-eslint/naming-convention */
             });
             const maxRetries = 60;
             let retries = 0;
             while (retries < maxRetries) {
                 try {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     const { ETag } = await minioClient.send(uploadPartCommand);
                     newFileUpload.value.uploaded += partBlob.size;
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     parts.push({ PartNumber: partNumber, ETag });
                     break;
                 } catch (error) {
@@ -346,10 +353,12 @@ async function uploadFileMultipart(
         // Step 3: Complete Multipart Upload
         const completeMultipartUploadCommand =
             new CompleteMultipartUploadCommand({
+                /* eslint-disable @typescript-eslint/naming-convention */
                 Bucket: bucket,
                 Key: key,
                 UploadId,
                 MultipartUpload: { Parts: parts },
+                /* eslint-enable @typescript-eslint/naming-convention */
             });
         const finalMD5 = btoa(spark.end(true));
         console.log('Final MD5:', finalMD5);
@@ -363,9 +372,11 @@ async function uploadFileMultipart(
         if (UploadId) {
             const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
                 {
+                    /* eslint-disable @typescript-eslint/naming-convention */
                     Bucket: bucket,
                     Key: key,
                     UploadId,
+                    /* eslint-enable @typescript-eslint/naming-convention */
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);

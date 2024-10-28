@@ -1,5 +1,5 @@
 import { CreateProject } from '../../src/project/entities/create-project.dto';
-import { get_jwt_token } from './database_utils';
+import { getJwtToken } from './database_utils';
 import User from '@common/entities/user/user.entity';
 import { CreateMission } from '../../src/mission/entities/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
@@ -9,15 +9,16 @@ import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 
-export const create_project_using_post = async (
+export const createProjectUsingPost = async (
     project: CreateProject,
     user?: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/project/create`, {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await get_jwt_token(user)}`,
+            cookie: `authtoken=${await getJwtToken(user)}`,
         },
         body: JSON.stringify(project),
         credentials: 'include',
@@ -28,15 +29,16 @@ export const create_project_using_post = async (
     return (await res.json()).uuid;
 };
 
-export const create_mission_using_post = async (
+export const createMissionUsingPost = async (
     mission: CreateMission,
     user?: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/mission/create`, {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await get_jwt_token(user)}`,
+            cookie: `authtoken=${await getJwtToken(user)}`,
         },
         body: JSON.stringify({
             name: mission.name,
@@ -59,25 +61,26 @@ export const create_mission_using_post = async (
  *
  * @param user the user that is uploading the file
  * @param filename the name of the file to upload
- * @param mission_uuid the mission uuid to upload the file to
+ * @param missionUuid the mission uuid to upload the file to
  *
  * @returns the has of the file computed using SHA-256 (and the local file)
  *
  */
-export async function upload_file(
+export async function uploadFile(
     user: User,
     filename: string,
-    mission_uuid: string,
+    missionUuid: string,
 ) {
     const res = await fetch(`http://localhost:3000/file/temporaryAccess`, {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await get_jwt_token(user)}`,
+            cookie: `authtoken=${await getJwtToken(user)}`,
         },
         body: JSON.stringify({
             filenames: [filename],
-            missionUUID: mission_uuid,
+            missionUUID: missionUuid,
         }),
     });
 
@@ -97,7 +100,7 @@ export async function upload_file(
         type: 'application/octet-stream',
     });
     const fileFile = Buffer.from(await blob.arrayBuffer());
-    const file_hash = await crypto.subtle.digest('SHA-256', fileFile);
+    const fileHash = await crypto.subtle.digest('SHA-256', fileFile);
     const hash = crypto.createHash('md5');
     hash.update(fileFile);
 
@@ -122,13 +125,14 @@ export async function upload_file(
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
-    const res_confirm = await fetch(
+    const resConfirm = await fetch(
         `http://localhost:3000/queue/confirmUpload`,
         {
             method: 'POST',
             headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Content-Type': 'application/json',
-                cookie: `authtoken=${await get_jwt_token(user)}`,
+                cookie: `authtoken=${await getJwtToken(user)}`,
             },
             body: JSON.stringify({
                 uuid: fileResponse['fileUUID'],
@@ -136,18 +140,18 @@ export async function upload_file(
             }),
         },
     );
-    expect(res_confirm.status).toBe(201);
+    expect(resConfirm.status).toBe(201);
 
     while (true) {
-        const res_active = await fetch(`http://localhost:3000/queue/active`, {
+        const resActive = await fetch(`http://localhost:3000/queue/active`, {
             method: 'GET',
             headers: {
-                cookie: `authtoken=${await get_jwt_token(user)}`,
+                cookie: `authtoken=${await getJwtToken(user)}`,
             },
         });
 
-        expect(res_active.status).toBe(200);
-        const active = await res_active.json();
+        expect(resActive.status).toBe(200);
+        const active = await resActive.json();
         if (
             active.find(
                 (x: QueueEntity) =>
@@ -160,5 +164,5 @@ export async function upload_file(
         await new Promise((r) => setTimeout(r, 1000));
     }
 
-    return file_hash;
+    return fileHash;
 }

@@ -106,6 +106,7 @@ export async function deleteFileMinio(bucketName: string, location: string) {
 }
 
 export function basePolicy(resource: string) {
+    /* eslint-disable @typescript-eslint/naming-convention */
     return {
         Version: '2012-10-17',
         Statement: [
@@ -116,6 +117,7 @@ export function basePolicy(resource: string) {
             },
         ],
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 /**

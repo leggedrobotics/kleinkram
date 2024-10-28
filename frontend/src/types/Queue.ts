@@ -5,7 +5,7 @@ import { User } from 'src/types/User';
 
 export class Queue extends BaseEntity {
     identifier: string;
-    display_name: string;
+    displayName: string;
     state: QueueState;
     location: string;
     mission: Mission;
@@ -14,7 +14,7 @@ export class Queue extends BaseEntity {
     constructor(
         uuid: string,
         identifier: string,
-        display_name: string,
+        displayName: string,
         state: QueueState,
         location: string,
         mission: Mission,
@@ -23,7 +23,7 @@ export class Queue extends BaseEntity {
         updatedAt: Date | null,
     ) {
         super(uuid, createdAt, updatedAt);
-        this.display_name = display_name;
+        this.displayName = displayName;
         this.identifier = identifier;
         this.state = state;
         this.location = location;

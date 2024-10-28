@@ -14,14 +14,11 @@ export default class Project extends BaseEntity {
     @OneToMany(() => Mission, (mission) => mission.project)
     missions: Mission[];
 
-    @OneToMany(
-        () => ProjectAccess,
-        (project_access) => project_access.project,
-        {
-            cascade: true,
-            eager: true,
-        },
-    )
+    @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
+        cascade: true,
+        eager: true,
+    })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses: ProjectAccess[];
 
     @Column({ nullable: true })

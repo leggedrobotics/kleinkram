@@ -84,16 +84,16 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
      * HardwareDependencyError is thrown.
      *
      * @private
-     * @param runtime_requirements
+     * @param runtimeRequirements
      * @throws HardwareDependencyError
      *
      */
-    private checkRuntimeCapability(runtime_requirements: RuntimeDescription) {
+    private checkRuntimeCapability(runtimeRequirements: RuntimeDescription) {
         return true;
     }
 
     @Process({ concurrency: 2, name: `action` })
-    async process_action(job: Job<{ uuid: string }>) {
+    async processAction(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
             relations: [

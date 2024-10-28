@@ -30,10 +30,12 @@ export default class Mission extends BaseEntity {
     @ManyToOne(() => User, (user) => user.missions)
     creator: User;
 
-    @OneToMany(() => Apikey, (api_key) => api_key.mission)
+    @OneToMany(() => Apikey, (apiKey) => apiKey.mission)
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     api_keys: Apikey[];
 
-    @OneToMany(() => MissionAccess, (mission_access) => mission_access.mission)
+    @OneToMany(() => MissionAccess, (missionAccess) => missionAccess.mission)
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses: MissionAccess[];
 
     @OneToMany(() => Tag, (tag) => tag.mission)

@@ -98,6 +98,7 @@ export class ActionService {
             cpuMemory: data.cpuMemory,
             gpuMemory: data.gpuMemory,
             maxRuntime: data.maxRuntime,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: data.image,
             command: data.command,
             searchable: data.searchable,
@@ -164,8 +165,8 @@ export class ActionService {
     }
 
     async listActions(
-        project_uuid: string,
-        mission_uuid: string,
+        projectUuid: string,
+        missionUuid: string,
         userUUID: string,
         skip: number,
         take: number,
@@ -179,8 +180,8 @@ export class ActionService {
             return this.actionRepository.findAndCount({
                 where: {
                     mission: {
-                        uuid: mission_uuid,
-                        project: { uuid: project_uuid },
+                        uuid: missionUuid,
+                        project: { uuid: projectUuid },
                     },
                 },
                 relations: [
@@ -201,22 +202,26 @@ export class ActionService {
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('action.template', 'template')
             .leftJoinAndSelect('action.createdBy', 'createdBy')
-            .andWhere('project.uuid = :project_uuid', { project_uuid })
+            .andWhere('project.uuid = :project_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                project_uuid: projectUuid,
+            })
             .skip(skip)
             .take(take)
             .orderBy('action.' + sortBy, descending ? 'DESC' : 'ASC');
 
-        if (mission_uuid) {
+        if (missionUuid) {
             baseQuery.andWhere('mission.uuid = :mission_uuid', {
-                mission_uuid,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                mission_uuid: missionUuid,
             });
         }
         return addAccessConstraints(baseQuery, userUUID).getManyAndCount();
     }
 
-    async details(action_uuid: string) {
+    async details(actionUuid: string) {
         return await this.actionRepository.findOneOrFail({
-            where: { uuid: action_uuid },
+            where: { uuid: actionUuid },
             relations: [
                 'mission',
                 'mission.project',

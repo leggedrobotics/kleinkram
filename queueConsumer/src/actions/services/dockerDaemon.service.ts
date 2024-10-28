@@ -19,6 +19,7 @@ import {
 } from '../helper/ContainerConfigs';
 
 export type ContainerLimits = {
+    /* eslint-disable @typescript-eslint/naming-convention */
     /**
      * The maximum runtime of the container in milliseconds.
      */
@@ -35,13 +36,16 @@ export type ContainerLimits = {
      * The maximum disk space the container can use in bytes.
      */
     disk_quota: number;
+    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 const defaultContainerLimitations: ContainerLimits = {
+    /* eslint-disable @typescript-eslint/naming-convention */
     max_runtime: 60 * 60 * 1_000, // 1 hour
     memory_limit: 1024 * 1024 * 1024, // 1GB
     n_cpu: 2, // CPU limit in nano CPUs
     disk_quota: 40737418240,
+    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export type ContainerEnv = {
@@ -49,12 +53,14 @@ export type ContainerEnv = {
 };
 
 export type ContainerStartOptions = {
+    /* eslint-disable @typescript-eslint/naming-convention */
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
     needs_gpu?: boolean;
     environment?: ContainerEnv;
     command?: string;
+    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export const dockerDaemonErrorHandler = (error: Error) => {
@@ -74,6 +80,8 @@ const artifactUploaderImage =
 @Injectable()
 export class DockerDaemon {
     readonly docker: Docker;
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     static readonly CONTAINER_PREFIX = 'kleinkram-user-action-';
 
     constructor() {
@@ -89,47 +97,48 @@ export class DockerDaemon {
      * This function returns as soon as the container is started.
      *
      * @private
-     * @param container_options
+     * @param containerOptions
      * @param start
      * @returns the container object
      * @throws Error if the docker image is not from the rslethz organization
      *
      */
     @tracing()
-    async start_container(
+    async startContainer(
         start: () => Promise<void>,
-        container_options?: Partial<ContainerStartOptions>,
+        containerOptions?: Partial<ContainerStartOptions>,
     ): Promise<{
         container: Dockerode.Container;
-        repo_digests: string[];
+        repoDigests: string[];
         sha: string;
     }> {
         // merge the given container limitations with the default ones
-        if (!container_options) container_options = {};
-        container_options = {
-            ...container_options,
+        if (!containerOptions) containerOptions = {};
+        containerOptions = {
+            ...containerOptions,
             limits: {
                 ...defaultContainerLimitations,
-                ...container_options.limits,
+                ...containerOptions.limits,
             },
-            environment: { ...container_options.environment },
+            environment: { ...containerOptions.environment },
         };
 
         logger.debug(
-            `Starting container with options: ${JSON.stringify(container_options)}`,
+            `Starting container with options: ${JSON.stringify(containerOptions)}`,
         );
-        const image = await this.getImage(container_options.docker_image);
+        const image = await this.getImage(containerOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
-                `Image ${container_options.docker_image} not found, could not start container!`,
+                `Image ${containerOptions.docker_image} not found, could not start container!`,
             );
         }
-        const repo_digests = details.RepoDigests;
+        const repoDigests = details.RepoDigests;
         const sha = '';
-        const needs_gpu = container_options.needs_gpu || false;
-        const add_gpu_capabilities = {
+        const needsGpu = containerOptions.needs_gpu || false;
+        const addGpuCapabilities = {
+            /* eslint-disable @typescript-eslint/naming-convention */
             DeviceRequests: [
                 {
                     Driver: 'nvidia',
@@ -137,28 +146,30 @@ export class DockerDaemon {
                     Capabilities: [['gpu']],
                 },
             ],
+            /* eslint-enable @typescript-eslint/naming-convention */
         };
 
         logger.info(
-            needs_gpu
+            needsGpu
                 ? 'Creating container with GPU support'
                 : 'Creating container without GPU support',
         );
-        const container_create_options: Dockerode.ContainerCreateOptions = {
-            Image: container_options.docker_image,
-            name: DockerDaemon.CONTAINER_PREFIX + container_options.name,
-            Env: Object.entries(container_options.environment).map(
+        const containerCreateOptions: Dockerode.ContainerCreateOptions = {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            Image: containerOptions.docker_image,
+            name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
+            Env: Object.entries(containerOptions.environment).map(
                 ([key, value]) => `${key}=${value}`,
             ),
-            Cmd: container_options.command
-                ? container_options.command.split(' ')
+            Cmd: containerOptions.command
+                ? containerOptions.command.split(' ')
                 : [],
 
             HostConfig: {
-                ...(needs_gpu ? add_gpu_capabilities : {}),
-                Memory: container_options.limits.memory_limit, // memory limit in bytes
-                NanoCpus: container_options.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
-                DiskQuota: container_options.limits.disk_quota,
+                ...(needsGpu ? addGpuCapabilities : {}),
+                Memory: containerOptions.limits.memory_limit, // memory limit in bytes
+                NanoCpus: containerOptions.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
+                DiskQuota: containerOptions.limits.disk_quota,
 
                 NetworkMode,
                 LogConfig,
@@ -169,7 +180,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out', // Inside container
-                        Source: `vol-${container_options.name}`, // Volume name
+                        Source: `vol-${containerOptions.name}`, // Volume name
                         Type: 'volume', // Use Docker-managed volume
                     },
                 ],
@@ -177,10 +188,11 @@ export class DockerDaemon {
             Volumes: {
                 '/tmp_disk': {},
             },
+            /* eslint-enable @typescript-eslint/naming-convention */
         };
         await start();
         const container = await this.docker
-            .createContainer(container_create_options)
+            .createContainer(containerCreateOptions)
             .catch((error) => {
                 // cleanup error message
                 error.message = error.message.replace(/\(.*?\)/g, '');
@@ -200,32 +212,32 @@ export class DockerDaemon {
         // stop the container after max_runtime seconds
         this.killContainerAfterMaxRuntime(
             container,
-            container_options.limits.max_runtime,
+            containerOptions.limits.max_runtime,
         );
 
-        return { container, repo_digests, sha };
+        return { container, repoDigests: repoDigests, sha };
     }
 
     /**
-     * Kill a container after max_runtime_ms milliseconds.
+     * Kill a container after maxRuntimeMs milliseconds.
      *
      * The OS sends a SIGTERM signal to the container, which allows the container to
      * gracefully shut down. If the container does not stop after 10 seconds, it is
      * forcefully killed (SIGKILL).
      *
      * @param container
-     * @param max_runtime_ms
-     * @param clear_volume - if true, the volume is removed after the container is stopped
+     * @param maxRuntimeMs
+     * @param clearVolume - if true, the volume is removed after the container is stopped
      * @private
      */
     private killContainerAfterMaxRuntime(
         container: Dockerode.Container,
-        max_runtime_ms: number,
-        clear_volume = false,
+        maxRuntimeMs: number,
+        clearVolume = false,
     ) {
-        const cancel_timeout = setTimeout(async () => {
+        const cancelTimeout = setTimeout(async () => {
             logger.info(
-                `Stopping container ${container.id} after ${max_runtime_ms}ms`,
+                `Stopping container ${container.id} after ${maxRuntimeMs}ms`,
             );
 
             // initialize a kill timeout
@@ -233,32 +245,32 @@ export class DockerDaemon {
                 logger.info(
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
-                await this.killAndRemoveContainer(container.id, clear_volume);
+                await this.killAndRemoveContainer(container.id, clearVolume);
             }, 10_000);
 
             await this.stopContainer(container.id);
             clearTimeout(killTimout); // clear the kill timeout
-            await this.removeContainer(container.id, clear_volume);
-        }, max_runtime_ms);
+            await this.removeContainer(container.id, clearVolume);
+        }, maxRuntimeMs);
 
         container.wait().finally(() => {
-            clearTimeout(cancel_timeout); // clear the cancel timeout
+            clearTimeout(cancelTimeout); // clear the cancel timeout
         });
     }
 
     @tracing()
-    private async pull_image(docker_image: string) {
+    private async pullImage(dockerImage: string) {
         if (!this.docker || !(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
-        if (!docker_image || docker_image === '') {
+        if (!dockerImage || dockerImage === '') {
             throw new Error('No docker image specified');
         }
 
         // pull the image from the docker hub
-        logger.info(`Pulling image: ${docker_image}`);
-        const pullStream = await this.docker.pull(docker_image, {
+        logger.info(`Pulling image: ${dockerImage}`);
+        const pullStream = await this.docker.pull(dockerImage, {
             authconfig: {
                 auth: '',
                 serveraddress: 'https://index.docker.io/v1',
@@ -272,9 +284,9 @@ export class DockerDaemon {
     }
 
     @tracing()
-    private async getImage(docker_image: string) {
+    private async getImage(dockerImage: string) {
         // assert that we only run rslethz images
-        if (!docker_image.startsWith('rslethz/')) {
+        if (!dockerImage.startsWith('rslethz/')) {
             throw new Error(
                 'Only images from the rslethz organization are allowed',
             );
@@ -285,47 +297,47 @@ export class DockerDaemon {
             throw new Error('Docker socket not available or not responding');
         }
 
-        await this.pull_image(docker_image).catch((error) => {
+        await this.pullImage(dockerImage).catch((error) => {
             // cleanup error message
             error.message = error.message.replace(/\(.*?\)/g, '');
             error.message = error.message.replace(/ +/g, ' ').trim();
             logger.warn(`Failed to pull image: ${error.message}`);
         });
 
-        return this.docker.getImage(docker_image);
+        return this.docker.getImage(dockerImage);
     }
 
-    async stopContainer(container_id: string) {
+    async stopContainer(containerId: string) {
         await this.docker
-            .getContainer(container_id)
+            .getContainer(containerId)
             .stop()
             .catch(dockerDaemonErrorHandler);
     }
 
-    async killAndRemoveContainer(container_id: string, clear_volume = false) {
-        await this.killContainer(container_id);
-        await this.removeContainer(container_id, clear_volume);
+    async killAndRemoveContainer(containerId: string, clearVolume = false) {
+        await this.killContainer(containerId);
+        await this.removeContainer(containerId, clearVolume);
     }
 
-    async killContainer(container_id: string) {
+    async killContainer(containerId: string) {
         await this.docker
-            .getContainer(container_id)
+            .getContainer(containerId)
             .kill()
             .catch(dockerDaemonErrorHandler);
     }
 
-    async removeContainer(container_id: string, clear_volume = false) {
-        const container = this.docker.getContainer(container_id);
+    async removeContainer(containerId: string, clearVolume = false) {
+        const container = this.docker.getContainer(containerId);
         if (container) {
             container
-                .remove({ v: clear_volume })
+                .remove({ v: clearVolume })
                 .catch(dockerDaemonErrorHandler);
         }
     }
 
-    async removeVolume(container_id: string) {
-        const volume_name = `vol-${container_id}`;
-        const volume = this.docker.getVolume(volume_name);
+    async removeVolume(containerId: string) {
+        const volumeName = `vol-${containerId}`;
+        const volume = this.docker.getVolume(volumeName);
 
         // try to remove volume, if in use wait and try again
         await volume.remove().catch(async (error) => {
@@ -342,34 +354,34 @@ export class DockerDaemon {
      * Parse a log line from a container.
      *
      * @param line
-     * @param sanitize_callback
+     * @param sanitizeCallback
      * @private
      */
     private static parseContainerLogLine(
         line: string,
-        sanitize_callback?: (str: string) => string,
+        sanitizeCallback?: (str: string) => string,
     ): ContainerLog {
-        const log_level = line.split('')[0].charCodeAt(0);
+        const logLevel = line.split('')[0].charCodeAt(0);
 
         // remove all non-printable characters
         line = line.replace(/[\x00-\x1F\x7F]/u, '');
 
-        const date_start_idx = line.indexOf('20');
-        let date_end_idx = line.indexOf(' ', date_start_idx);
-        date_end_idx = date_end_idx === -1 ? line.length : date_end_idx;
+        const dateStartIdx = line.indexOf('20');
+        let dateEndIdx = line.indexOf(' ', dateStartIdx);
+        dateEndIdx = dateEndIdx === -1 ? line.length : dateEndIdx;
 
-        const date_str = line.substring(date_start_idx, date_end_idx);
-        const timestamp = new Date(date_str).toISOString();
+        const dateStr = line.substring(dateStartIdx, dateEndIdx);
+        const timestamp = new Date(dateStr).toISOString();
 
-        let message = line.substring(date_end_idx);
-        if (sanitize_callback && message != '') {
-            message = sanitize_callback(message);
+        let message = line.substring(dateEndIdx);
+        if (sanitizeCallback && message != '') {
+            message = sanitizeCallback(message);
         }
 
         return {
             timestamp: timestamp,
             message: message,
-            type: log_level === 2 ? 'stderr' : 'stdout',
+            type: logLevel === 2 ? 'stderr' : 'stdout',
         };
     }
 
@@ -377,18 +389,18 @@ export class DockerDaemon {
      * Subscribe to the logs of a container.
      * The logs are parsed and returned as an observable.
      *
-     * @param container_id the id of the container
-     * @param sanitize_callback a callback function to sanitize the log messages
+     * @param containerId the id of the container
+     * @param sanitizeCallback a callback function to sanitize the log messages
      *                       before they are emitted (e.g. to remove sensitive information
      *                       like api keys)
      * @returns an observable that emits log entries
      */
     @tracing()
     async subscribeToLogs(
-        container_id: string,
-        sanitize_callback?: (str: string) => string,
+        containerId: string,
+        sanitizeCallback?: (str: string) => string,
     ) {
-        const container = this.docker.getContainer(container_id);
+        const container = this.docker.getContainer(containerId);
 
         const dockerodeLogStream = await container.logs({
             follow: true,
@@ -407,10 +419,10 @@ export class DockerDaemon {
                     .map((line) =>
                         DockerDaemon.parseContainerLogLine(
                             line,
-                            sanitize_callback,
+                            sanitizeCallback,
                         ),
                     )
-                    .forEach((log_entry) => observer.next(log_entry));
+                    .forEach((logEntry) => observer.next(logEntry));
             });
 
             dockerodeLogStream.on('end', () => observer.complete());
@@ -420,18 +432,18 @@ export class DockerDaemon {
 
     @tracing()
     async launchArtifactUploadContainer(
-        container_id: string,
-        action_name: string,
+        containerId: string,
+        actionName: string,
     ) {
-        const parentFolder = await createDriveFolder(action_name);
+        const parentFolder = await createDriveFolder(actionName);
 
         // merge the given container limitations with the default ones
-        const container_options = {
+        const containerOptions = {
             limits: defaultContainerLimitations,
         };
 
         logger.debug(
-            `Starting container with options: ${JSON.stringify(container_options)}`,
+            `Starting container with options: ${JSON.stringify(containerOptions)}`,
         );
 
         // check if docker socket is available
@@ -443,7 +455,7 @@ export class DockerDaemon {
         logger.info(`Checking if image ${artifactUploaderImage} exists...`);
         if (!details) {
             logger.info('Image does not exist, pulling image...');
-            const pull_res = await this.pull_image(artifactUploaderImage).catch(
+            const pullRes = await this.pullImage(artifactUploaderImage).catch(
                 (error) => {
                     // cleanup error message
                     error.message = error.message.replace(/\(.*?\)/g, '');
@@ -453,7 +465,7 @@ export class DockerDaemon {
                 },
             );
 
-            logger.info(`Image pulled: ${pull_res}. Starting container...`);
+            logger.info(`Image pulled: ${pullRes}. Starting container...`);
             image = this.docker.getImage(artifactUploaderImage);
         }
 
@@ -464,14 +476,14 @@ export class DockerDaemon {
                 `Crashed during Artifacts upload. Image ${artifactUploaderImage} not found!`,
             );
         }
-        const repo_digests = details.RepoDigests;
-        const google_key = fs.readFileSync(
+        const repoDigests = details.RepoDigests;
+        const googleKey = fs.readFileSync(
             Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
             'utf-8',
         );
 
         // assert non empty env variables
-        if (!google_key || google_key === '') {
+        if (!googleKey || googleKey === '') {
             throw new Error('Google key not found');
         }
 
@@ -480,18 +492,19 @@ export class DockerDaemon {
         }
 
         logger.info('Creating artifact uploader container...');
-        const container_create_options: Dockerode.ContainerCreateOptions = {
+        const containerCreateOptions: Dockerode.ContainerCreateOptions = {
+            /* eslint-disable @typescript-eslint/naming-convention */
             Image: artifactUploaderImage,
-            name: 'kleinkram-artifact-uploader-' + container_id,
+            name: 'kleinkram-artifact-uploader-' + containerId,
             Env: [
                 'DRIVE_PARENT_FOLDER_ID=' + parentFolder,
-                'GOOGLE_KEY=' + google_key,
+                'GOOGLE_KEY=' + googleKey,
             ],
 
             HostConfig: {
-                Memory: container_options.limits.memory_limit, // memory limit in bytes
-                NanoCpus: container_options.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
-                DiskQuota: container_options.limits.disk_quota,
+                Memory: containerOptions.limits.memory_limit, // memory limit in bytes
+                NanoCpus: containerOptions.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
+                DiskQuota: containerOptions.limits.disk_quota,
                 NetworkMode,
                 LogConfig,
                 CapDrop,
@@ -500,15 +513,16 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out',
-                        Source: `vol-${container_id}`,
+                        Source: `vol-${containerId}`,
                         Type: 'volume',
                     },
                 ],
             },
+            /* eslint-enable @typescript-eslint/naming-convention */
         };
 
         const container = await this.docker
-            .createContainer(container_create_options)
+            .createContainer(containerCreateOptions)
             .catch((error) => {
                 if (env.DEV) {
                     // cleanup error message
@@ -533,10 +547,10 @@ export class DockerDaemon {
         // stop the container after max_runtime seconds
         this.killContainerAfterMaxRuntime(
             container,
-            container_options.limits.max_runtime,
+            containerOptions.limits.max_runtime,
             true,
         );
 
-        return { container, repo_digests, parentFolder };
+        return { container, repoDigests, parentFolder };
     }
 }

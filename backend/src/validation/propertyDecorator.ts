@@ -12,6 +12,7 @@ import { Matches } from 'class-validator';
  * @param validationOptions
  * @constructor
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsValidFileName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
@@ -40,6 +41,7 @@ export const IsValidFileName = (
  * @param validationOptions
  * @constructor
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsValidName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
@@ -68,6 +70,7 @@ export const IsValidName = (
  * @param validationOptions
  * @constructor
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsValidMissionName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>

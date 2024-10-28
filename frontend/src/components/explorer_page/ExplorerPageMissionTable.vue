@@ -7,7 +7,7 @@
         :rows-per-page-options="[10, 20, 50, 100]"
         v-model:selected="selected"
         :rows="data"
-        :columns="mission_columns as any"
+        :columns="missionColumns as any"
         row-key="uuid"
         :loading="isLoading"
         binary-state-sort
@@ -124,7 +124,7 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { mission_columns } from 'components/explorer_page/explorer_page_table_columns';
+import { missionColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
@@ -182,7 +182,7 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler?.skip,
             props.url_handler?.sortBy,
             props.url_handler?.descending,
-            props.url_handler?.search_params,
+            props.url_handler?.searchParams,
         ),
 });
 

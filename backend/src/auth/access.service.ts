@@ -21,6 +21,7 @@ export class AccessService {
         private projectAccessRepository: Repository<ProjectAccess>,
         private readonly entityManager: EntityManager,
     ) {}
+
     async getAccessGroup(uuid: string, jwtuser: AuthRes) {
         return this.accessGroupRepository.findOneOrFail({
             where: { uuid },
@@ -33,20 +34,22 @@ export class AccessService {
             ],
         });
     }
+
     async createAccessGroup(name: string, auth: AuthRes) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
 
-        const new_group = this.accessGroupRepository.create({
+        const newGroup = this.accessGroupRepository.create({
             name,
             personal: false,
             inheriting: false,
             users: [user],
             creator: user,
         });
-        return this.accessGroupRepository.save(new_group);
+        return this.accessGroupRepository.save(newGroup);
     }
+
     async hasProjectRights(
         projectUUID: string,
         auth: AuthRes,
@@ -64,7 +67,10 @@ export class AccessService {
             .leftJoin('projectAccesses.accessGroup', 'accessGroup')
             .leftJoin('accessGroup.users', 'users')
             .where('project.uuid = :uuid', { uuid: projectUUID })
-            .andWhere('users.uuid = :user_uuid', { user_uuid: auth.user.uuid })
+            .andWhere('users.uuid = :user_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                user_uuid: auth.user.uuid,
+            })
             .andWhere('projectAccesses.rights >= :rights', {
                 rights: rights,
             })
@@ -145,6 +151,7 @@ export class AccessService {
             relations: ['project_accesses', 'project_accesses.accessGroup'],
         });
     }
+
     async addUserToAccessGroup(
         accessGroupUUID: string,
         userUUID: string,

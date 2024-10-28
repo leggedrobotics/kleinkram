@@ -5,13 +5,13 @@ import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Project } from 'src/types/Project';
 
 export const canAddAccessGroup = async (
-    project_uuid: string,
+    projectUuid: string,
 ): Promise<boolean> => {
-    if (!project_uuid) {
+    if (!projectUuid) {
         return false;
     }
     const response = await axios.get('/access/canAddAccessGroupToProject', {
-        params: { uuid: project_uuid },
+        params: { uuid: projectUuid },
     });
 
     return response.data;
@@ -62,7 +62,7 @@ export const searchAccessGroups = async (
                 new Date(user.updatedAt),
             );
         });
-        const project_access = group.project_accesses.map((access: any) => {
+        const projectAccess = group.project_accesses.map((access: any) => {
             const project = new Project(
                 access.project.uuid,
                 access.project.name,
@@ -87,7 +87,7 @@ export const searchAccessGroups = async (
             group.uuid,
             group.name,
             users,
-            project_access,
+            projectAccess,
             [],
             group.personal,
             group.inheriting,
@@ -114,7 +114,7 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             new Date(user.updatedAt),
         );
     });
-    const project_access = group.project_accesses.map((access: any) => {
+    const projectAccess = group.project_accesses.map((access: any) => {
         const creator = new User(
             access.project.creator.uuid,
             access.project.creator.name,
@@ -149,7 +149,7 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
         group.uuid,
         group.name,
         users,
-        project_access,
+        projectAccess,
         [],
         group.personal,
         group.inheriting,

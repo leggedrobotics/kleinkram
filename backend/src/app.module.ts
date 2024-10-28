@@ -20,7 +20,7 @@ import { ActionModule } from './action/actionModule';
 import env from '@common/env';
 import { TagModule } from './tag/tag.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import access_config from '../access_config.json';
+import accessConfig from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
 import { UserResolverMiddleware } from './UserResolverMiddleware';
 import { WorkerModule } from './worker/worker.module';
@@ -83,7 +83,7 @@ export const appVersion = packageJson.version;
         }),
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [configuration, () => ({ accessConfig: access_config })],
+            load: [configuration, () => ({ accessConfig: accessConfig })],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -129,6 +129,8 @@ export class AppModule {
 }
 
 export type AccessGroupConfig = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     emails: [{ email: string; access_groups: string[] }];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     access_groups: [{ name: string; uuid: string; rights: number }];
 };

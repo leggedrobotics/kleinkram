@@ -45,8 +45,8 @@ export const fetchOverview = async (
         if (!data) return [[], 0];
         const total = response.data[1];
         const res: FileEntity[] = data.map((file: any): FileEntity => {
-            const project_uuid: string = file.mission.project.uuid;
-            let project: Project | undefined = projects[project_uuid];
+            const projectUuid: string = file.mission.project.uuid;
+            let project: Project | undefined = projects[projectUuid];
             if (!project) {
                 project = new Project(
                     file.mission.project.uuid,
@@ -74,8 +74,8 @@ export const fetchOverview = async (
                 );
                 creator[file.creator.uuid] = user;
             }
-            const mission_uuid: string = file.mission.uuid;
-            let mission: Mission | undefined = missions[mission_uuid];
+            const missionUuid: string = file.mission.uuid;
+            let mission: Mission | undefined = missions[missionUuid];
             if (!mission) {
                 mission = new Mission(
                     file.mission.uuid,

@@ -10,16 +10,16 @@ import { FileHandleReadable } from '@mcap/nodejs';
 
 const execPromisify = promisify(exec);
 
-export async function convertToMcap(tmp_file_name: string): Promise<string> {
+export async function convertToMcap(tmpFileName: string): Promise<string> {
     return await traceWrapper(async () => {
-        const tmp_file_name_mcap = tmp_file_name.replace('.bag', '.mcap');
+        const tmpFileNameMcap = tmpFileName.replace('.bag', '.mcap');
 
         logger.debug(
-            `Converting file ${tmp_file_name} from bag to mcap ${tmp_file_name_mcap}`,
+            `Converting file ${tmpFileName} from bag to mcap ${tmpFileNameMcap}`,
         );
-        await convert(tmp_file_name, tmp_file_name_mcap);
+        await convert(tmpFileName, tmpFileNameMcap);
         logger.debug('File converted successfully');
-        return tmp_file_name_mcap;
+        return tmpFileNameMcap;
     }, 'convertToMcap')();
 }
 
@@ -30,12 +30,12 @@ export const convert = (infile: string, outfile: string): Promise<boolean> =>
     }, 'MCAP Conversion')();
 
 export async function mcapMetaInfo(
-    mcap_tmp_file_name: string,
+    mcapTmpFileName: string,
 ): Promise<{ topics: Record<string, unknown>[]; date: Date; size: number }> {
     const decompressHandlers = await loadDecompressHandlers();
-    const fileHandle = await open(mcap_tmp_file_name, 'r');
+    const fileHandle = await open(mcapTmpFileName, 'r');
 
-    const file_size = (await fileHandle.stat()).size;
+    const fileSize = (await fileHandle.stat()).size;
     const reader = await McapIndexedReader.Initialize({
         readable: new FileHandleReadable(fileHandle),
         decompressHandlers,
@@ -48,13 +48,13 @@ export async function mcapMetaInfo(
     const duration = stats.messageEndTime - stats.messageStartTime;
     reader.channelsById.forEach((channel) => {
         const schema = reader.schemasById.get(channel.schemaId);
-        const nr_messages = stats.channelMessageCounts.get(channel.id);
+        const nrMessages = stats.channelMessageCounts.get(channel.id);
         const topic = {
             name: channel.topic,
             type: schema.name,
-            nrMessages: nr_messages,
+            nrMessages: nrMessages,
             frequency:
-                Number(nr_messages) / (Number(duration / 1000n) / 1000000),
+                Number(nrMessages) / (Number(duration / 1000n) / 1000000),
         };
         topics.push(topic);
     });
@@ -62,6 +62,6 @@ export async function mcapMetaInfo(
     return {
         topics: topics,
         date: new Date(Number(stats.messageStartTime / 1000000n)),
-        size: file_size,
+        size: fileSize,
     };
 }

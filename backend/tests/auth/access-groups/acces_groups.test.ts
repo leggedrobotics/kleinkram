@@ -1,5 +1,5 @@
 import User from '@common/entities/user/user.entity';
-import { clearAllData, db, mock_db_user } from '../../utils/database_utils';
+import { clearAllData, db, mockDbUser } from '../../utils/database_utils';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import {
     DEFAULT_GROUP_UUIDS,
@@ -25,27 +25,27 @@ describe('Verify Access Groups', () => {
 
     test('Non "leggedrobotics.com" email is not added to default group', async () => {
         // create a user with a non default email
-        const mock_email = 'external-user@third-party.com';
-        const external_uuid = await mock_db_user(mock_email);
+        const mockEmail = 'external-user@third-party.com';
+        const externalUuid = await mockDbUser(mockEmail);
 
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
 
-        const personal_group = getAccessGroupForEmail(mock_email, accessGroups);
-        expect(personal_group).toBeDefined();
+        const personalGroup = getAccessGroupForEmail(mockEmail, accessGroups);
+        expect(personalGroup).toBeDefined();
 
         // one access group should have the default uuid
-        const default_group = accessGroups.filter(
+        const defaultGroup = accessGroups.filter(
             (group: AccessGroup) => group.uuid === DEFAULT_GROUP_UUIDS[0],
         );
-        expect(default_group.length).toBe(1);
+        expect(defaultGroup.length).toBe(1);
 
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
-            where: { uuid: external_uuid },
+            where: { uuid: externalUuid },
             relations: ['accessGroups'],
         });
-        expect(user.email).toBe(mock_email);
+        expect(user.email).toBe(mockEmail);
 
         // check if the user with a non default email is not added to the default group
         user.accessGroups.forEach((accessGroup: AccessGroup) => {
@@ -60,27 +60,27 @@ describe('Verify Access Groups', () => {
     });
 
     test('if leggedrobotics email is added to default group', async () => {
-        const mock_email = 'internal-user@leggedrobotics.com';
-        const internal_uuid = await mock_db_user(mock_email);
+        const mockEmail = 'internal-user@leggedrobotics.com';
+        const internalUuid = await mockDbUser(mockEmail);
 
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
 
         // one access group should be personal
-        const personal_group = accessGroups.filter(
+        const personalGroup = accessGroups.filter(
             (group: AccessGroup) => group.personal === true,
         );
-        expect(personal_group.length).toBe(1);
+        expect(personalGroup.length).toBe(1);
 
         // one access group should have the default uuid
-        const default_group = accessGroups.filter(
+        const defaultGroup = accessGroups.filter(
             (group: AccessGroup) => group.uuid === DEFAULT_GROUP_UUIDS[0],
         );
-        expect(default_group.length).toBe(1);
+        expect(defaultGroup.length).toBe(1);
 
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
-            where: { uuid: internal_uuid },
+            where: { uuid: internalUuid },
             relations: ['accessGroups'],
         });
 

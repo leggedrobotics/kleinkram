@@ -9,6 +9,7 @@ import { plainToInstance } from 'class-transformer';
 import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
 import { AccessGroupRights, DataType } from '@common/enum';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         if (!data) {
@@ -27,6 +28,7 @@ export const BodyUUID = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyString = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -44,6 +46,7 @@ export const BodyString = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyName = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -58,6 +61,7 @@ export const BodyName = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyAccessGroupRights = createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -73,6 +77,7 @@ export const BodyAccessGroupRights = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyDataType = createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -86,6 +91,7 @@ export const BodyDataType = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyNotNull = createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -99,6 +105,7 @@ export const BodyNotNull = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const BodyUUIDArray = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();

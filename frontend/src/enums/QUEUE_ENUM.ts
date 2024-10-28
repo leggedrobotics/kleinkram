@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum QueueState {
     'AWAITING_UPLOAD' = 0,
     'AWAITING_PROCESSING' = 10,

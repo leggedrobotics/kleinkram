@@ -3,6 +3,7 @@ import { formatDate } from 'src/services/dateFormating';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { TagType } from 'src/types/TagType';
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export class Tag extends BaseEntity {
     STRING?: string;
     NUMBER?: number;

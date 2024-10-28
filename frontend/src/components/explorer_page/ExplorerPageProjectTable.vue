@@ -7,7 +7,7 @@
         v-model:selected="selected"
         :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
-        :columns="explorer_page_table_columns as any"
+        :columns="explorerPageTableColumns as any"
         row-key="uuid"
         :loading="isLoading"
         wrap-cells
@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { QTable, useQuasar } from 'quasar';
 import { computed, ref, watch } from 'vue';
-import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
+import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
@@ -145,7 +145,7 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler?.skip,
             props.url_handler?.sortBy,
             props.url_handler?.descending,
-            props.url_handler?.search_params,
+            props.url_handler?.searchParams,
         ),
 });
 

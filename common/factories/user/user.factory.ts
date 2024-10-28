@@ -9,7 +9,7 @@ export type UserContext = {
     lastName: string;
     mail: string;
     role: UserRole;
-    default_group_ids: string[];
+    defaultGroupIds: string[];
 };
 
 define(User, (_, context: Partial<UserContext> = {}) => {
@@ -28,8 +28,8 @@ define(User, (_, context: Partial<UserContext> = {}) => {
     user.avatarUrl = extendedFaker.image.avatarGitHub();
     user.uuid = extendedFaker.string.uuid();
 
-    if (context.default_group_ids) {
-        user.accessGroups = context.default_group_ids.map((id) => {
+    if (context.defaultGroupIds) {
+        user.accessGroups = context.defaultGroupIds.map((id) => {
             const accessGroup = new AccessGroup();
             accessGroup.uuid = id;
             return accessGroup;

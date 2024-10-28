@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',

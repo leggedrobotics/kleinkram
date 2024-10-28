@@ -106,15 +106,15 @@ props.handler.setSort('createdAt');
 props.handler.setDescending(true);
 const actionKey = computed(() => [
     'action_mission',
-    props.handler.mission_uuid,
+    props.handler.missionUuid,
     props.handler.queryKey,
 ]);
 const { data: rawData, isLoading } = useQuery<[Action[], number]>({
     queryKey: actionKey,
     queryFn: () =>
         getActions(
-            props.handler.project_uuid as string,
-            props.handler.mission_uuid as string,
+            props.handler.projectUuid as string,
+            props.handler.missionUuid as string,
             props.handler.take,
             props.handler.skip,
             props.handler.sortBy,
@@ -171,7 +171,7 @@ const columns = [
         align: 'left',
         sortable: false,
         field: (row: Action) =>
-            row.template?.image_name ? row.template.image_name : 'N/A',
+            row.template?.imageName ? row.template.imageName : 'N/A',
     },
     {
         name: 'mission',
@@ -196,7 +196,7 @@ const columns = [
         label: 'State Reason',
         align: 'left',
         sortable: true,
-        field: (row: Action) => (row.state_cause ? row.state_cause : ''),
+        field: (row: Action) => (row.stateCause ? row.stateCause : ''),
     },
 
     {

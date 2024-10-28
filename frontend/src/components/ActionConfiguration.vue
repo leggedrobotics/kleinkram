@@ -128,10 +128,10 @@
                 >
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
-                        <label for="docker_image">Define the Action</label>
+                        <label for="dockerImage">Define the Action</label>
                         <q-input
-                            name="docker_image"
-                            v-model="editingTemplate.image_name"
+                            name="dockerImage"
+                            v-model="editingTemplate.imageName"
                             outlined
                             dense
                             class="q-mb-sm"
@@ -338,25 +338,25 @@ const projects = computed(() =>
 
 const selected_project = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.project_uuid,
+        (project: Project) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 // Fetch mission based on selected project -------------------------------------
 const queryKeyMissions = computed(() => [
     'missions',
-    handler.value.project_uuid,
+    handler.value.projectUuid,
 ]);
 const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
     queryFn: () =>
-        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
+        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 const selected_mission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.mission_uuid,
+        (mission: Mission) => mission.uuid === handler.value.missionUuid,
     ),
 );
 
@@ -386,7 +386,7 @@ const { mutateAsync: createTemplate } = useMutation({
         createActionTemplate({
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image_name,
+            dockerImage: editingTemplate.value.imageName,
             cpuCores: editingTemplate.value.cpuCores,
             cpuMemory: editingTemplate.value.cpuMemory,
             gpuMemory: editingTemplate.value.gpuMemory,
@@ -425,7 +425,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             uuid: editingTemplate.value.uuid,
             name: editingTemplate.value.name,
             command: editingTemplate.value.command,
-            docker_image: editingTemplate.value.image_name,
+            dockerImage: editingTemplate.value.imageName,
             cpuCores: editingTemplate.value.cpuCores,
             cpuMemory: editingTemplate.value.cpuMemory,
             gpuMemory: editingTemplate.value.gpuMemory,
@@ -478,7 +478,7 @@ async function submitAnalysis() {
         });
         return;
     }
-    if (!editingTemplate.value.image_name.startsWith('rslethz/')) {
+    if (!editingTemplate.value.imageName.startsWith('rslethz/')) {
         Notify.create({
             group: false,
             message: 'The image name must start with "rslethz/"',
@@ -548,7 +548,7 @@ const isModified = computed(() => {
     }
     const sameName = editingTemplate.value.name === select.value?.name;
     const sameImage =
-        editingTemplate.value?.image_name === select.value?.image_name;
+        editingTemplate.value?.imageName === select.value?.imageName;
     const sameCommand =
         editingTemplate.value?.command === select.value?.command;
     const sameGPU =
@@ -588,7 +588,6 @@ function selectTemplate(template: ActionTemplate) {
     if (!template) {
         editingTemplate.value = new ActionTemplate(
             '',
-            null,
             null,
             null,
             'rslethz/action:simple-dev',

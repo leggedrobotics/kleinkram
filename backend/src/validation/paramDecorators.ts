@@ -7,6 +7,7 @@ import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { StringValidate, UUIDValidate } from './validationTypes';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const ParamUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -19,6 +20,8 @@ export const ParamUUID = createParamDecorator(
         return value;
     },
 );
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const ParamString = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();

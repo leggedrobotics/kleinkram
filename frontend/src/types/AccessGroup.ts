@@ -6,8 +6,8 @@ import { MissionAccess } from 'src/types/MissionAccess';
 export class AccessGroup extends BaseEntity {
     name: string;
     users: User[];
-    project_accesses: ProjectAccess[];
-    mission_accesses: MissionAccess[];
+    projectAccesses: ProjectAccess[];
+    missionAccesses: MissionAccess[];
     creator?: User;
     personal: boolean;
     inheriting: boolean;
@@ -16,8 +16,8 @@ export class AccessGroup extends BaseEntity {
         uuid: string,
         name: string,
         users: User[],
-        project_accesses: ProjectAccess[],
-        mission_accesses: MissionAccess[],
+        projectAccesses: ProjectAccess[],
+        missionAccesses: MissionAccess[],
         personal: boolean,
         inheriting: boolean,
         creator: User | undefined,
@@ -27,8 +27,8 @@ export class AccessGroup extends BaseEntity {
         super(uuid, createdAt, updatedAt);
         this.name = name;
         this.users = users;
-        this.project_accesses = project_accesses;
-        this.mission_accesses = mission_accesses;
+        this.projectAccesses = projectAccesses;
+        this.missionAccesses = missionAccesses;
         this.personal = personal;
         this.inheriting = inheriting;
         this.creator = creator;

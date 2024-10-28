@@ -14,7 +14,9 @@ export const getActions = async (
     descending: boolean,
 ): Promise<[Action[], number]> => {
     const params = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         project_uuid: projectUUID,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         mission_uuid: missionUUID,
         take,
         skip,
@@ -33,6 +35,7 @@ export const getActions = async (
             res.createdBy.email,
             res.createdBy.role,
             res.createdBy.avatarUrl,
+            [],
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
@@ -101,9 +104,9 @@ export const getActions = async (
     return [resi, response.data[1]];
 };
 
-export const actionDetails = async (action_uuid: string) => {
+export const actionDetails = async (actionUuid: string) => {
     const params = {
-        uuid: action_uuid,
+        uuid: actionUuid,
     };
 
     const response = await axios.get('/action/details', { params });

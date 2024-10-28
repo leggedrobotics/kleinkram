@@ -1,5 +1,5 @@
 import * as assert from 'node:assert';
-import { get_endpoints } from '../utils/endpoints';
+import { getEndpoints } from '../utils/endpoints';
 
 const UNAUTHENTICATED_ENDPOINTS = [
     '/auth/google',
@@ -21,7 +21,7 @@ const UNAUTHENTICATED_ENDPOINTS = [
  *
  */
 describe('Unauthenticated users trigger 401', () => {
-    const endpoints = get_endpoints();
+    const endpoints = getEndpoints();
     for (const endpoint of endpoints) {
         // skip endpoints that are not protected
         if (UNAUTHENTICATED_ENDPOINTS.includes(endpoint.url)) continue;

@@ -30,7 +30,7 @@ export class AuthService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        await create_access_groups(this.accessGroupRepository, this.config);
+        await createAccessGroups(this.accessGroupRepository, this.config);
     }
 
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
@@ -95,7 +95,7 @@ export class AuthService implements OnModuleInit {
         username: string,
         picture: string,
     ) {
-        return create_new_user(
+        return createNewUser(
             this.config,
             this.userRepository,
             this.accountRepository,
@@ -111,31 +111,31 @@ export class AuthService implements OnModuleInit {
     }
 }
 
-export const create_access_groups = async (
+export const createAccessGroups = async (
     accessGroupRepository,
     config: AccessGroupConfig,
 ) => {
     // Read access_config/*.json and create access groups
     await Promise.all(
         config.access_groups.map(async (group) => {
-            const db_group = await accessGroupRepository.findOne({
+            const dbGroup = await accessGroupRepository.findOne({
                 where: { uuid: group.uuid },
             });
-            if (!db_group) {
-                const new_group = accessGroupRepository.create({
+            if (!dbGroup) {
+                const newGroup = accessGroupRepository.create({
                     name: group.name,
                     uuid: group.uuid,
                     personal: false,
                     inheriting: true,
                     creator: null,
                 });
-                return accessGroupRepository.save(new_group);
+                return accessGroupRepository.save(newGroup);
             }
         }),
     );
 };
 
-export const create_new_user = async (
+export const createNewUser = async (
     config,
     userRepository,
     accountRepository,
@@ -148,13 +148,13 @@ export const create_new_user = async (
         picture: string;
     },
 ) => {
-    const existing_user = await userRepository.findOne({
+    const existingUser = await userRepository.findOne({
         where: { email: options.email },
         relations: ['account'],
     });
 
     // assert that we don't have a user with the same email but a different provider
-    if (!!existing_user && existing_user.account) {
+    if (!!existingUser && existingUser.account) {
         throw new AuthFlowException(
             'User already exists and has a linked account!',
         );
@@ -166,12 +166,12 @@ export const create_new_user = async (
     });
 
     // if the user exists but has no linked account
-    if (!!existing_user && !existing_user.account) {
+    if (!!existingUser && !existingUser.account) {
         logger.debug(
-            `Linking account ${account} to existing user ${existing_user.uuid}`,
+            `Linking account ${account} to existing user ${existingUser.uuid}`,
         );
-        account.user = existing_user;
-        return accountRepository.save(account).then(() => existing_user);
+        account.user = existingUser;
+        return accountRepository.save(account).then(() => existingUser);
     }
 
     logger.debug(`Creating new user with email ${options.email}`);
@@ -187,15 +187,15 @@ export const create_new_user = async (
     });
 
     user.account = await accountRepository.save(account);
-    const saved_user = await userRepository.save(user);
+    const savedUser = await userRepository.save(user);
 
-    const personal_group = accessGroupRepository.create({
-        name: `Personal: ${saved_user.name}`,
-        users: [saved_user],
+    const personalGroup = accessGroupRepository.create({
+        name: `Personal: ${savedUser.name}`,
+        users: [savedUser],
         personal: true,
     });
-    await accessGroupRepository.save(personal_group);
-    user.accessGroups = [personal_group];
+    await accessGroupRepository.save(personalGroup);
+    user.accessGroups = [personalGroup];
 
     config.emails?.forEach((config) => {
         if (user.email.endsWith(config.email)) {
@@ -210,9 +210,9 @@ export const create_new_user = async (
         }
     });
 
-    const new_user = await userRepository.save(user);
+    const newUser = await userRepository.save(user);
     return userRepository.findOneOrFail({
-        where: { uuid: new_user.uuid },
+        where: { uuid: newUser.uuid },
         relations: ['account'],
     });
 };

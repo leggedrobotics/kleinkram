@@ -1,3 +1,6 @@
+// disable naming-convention rule for enum.ts
+/* eslint @typescript-eslint/naming-convention: 0 */
+
 export enum QueueState {
     'AWAITING_UPLOAD' = 0,
     'AWAITING_PROCESSING' = 10,
@@ -23,6 +26,7 @@ export enum FileLocation {
     DRIVE = 'DRIVE',
     MINIO = 'MINIO',
 }
+
 export enum UserRole {
     ADMIN = 'ADMIN',
     USER = 'USER',

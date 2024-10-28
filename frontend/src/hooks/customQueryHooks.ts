@@ -15,6 +15,7 @@ import { getPermissions } from 'src/services/queries/user';
 
 type Permissions = {
     role: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     default_permission: number;
     projects: {
         uuid: string;
@@ -39,35 +40,35 @@ export const usePermissionsQuery = (): UseQueryReturnType<
 };
 
 export const getPermissionForProject = (
-    project_uuid: string,
+    projectUuid: string,
     permissions: Permissions,
 ): number => {
     if (!permissions) return 0;
     if (permissions.role === 'ADMIN') return 100;
-    const default_permission = permissions.default_permission;
+    const defaultPermission = permissions.default_permission;
 
     const project = permissions.projects.find(
-        (p: { uuid: string; access: number }) => p.uuid === project_uuid,
+        (p: { uuid: string; access: number }) => p.uuid === projectUuid,
     );
 
-    const project_permission = project?.access || 0;
-    return Math.max(default_permission, project_permission);
+    const projectPermission = project?.access || 0;
+    return Math.max(defaultPermission, projectPermission);
 };
 
 export const getPermissionForMission = (
-    mission_uuid: string,
+    missionUuid: string,
     permissions: Permissions,
 ): number => {
     if (!permissions) return 0;
     if (permissions.role === 'ADMIN') return 100;
-    const default_permission = permissions.default_permission;
+    const defaultPermission = permissions.default_permission;
 
     const mission = permissions.missions.find(
-        (m: { uuid: string; access: number }) => m.uuid === mission_uuid,
+        (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
-    const mission_permission = mission?.access || 0;
-    return Math.max(default_permission, mission_permission);
+    const missionPermission = mission?.access || 0;
+    return Math.max(defaultPermission, missionPermission);
 };
 
 export const canCreateProject = (
@@ -79,62 +80,50 @@ export const canCreateProject = (
 };
 
 export const canCreateMission = (
-    project_uuid: string | undefined,
+    projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!project_uuid) return false;
-    const permission = getPermissionForProject(project_uuid, permissions);
+    if (!projectUuid) return false;
+    const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
 };
 export const canModifyProject = (
-    project_uuid: string | undefined,
+    projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!project_uuid) return false;
-    const permission = getPermissionForProject(project_uuid, permissions);
+    if (!projectUuid) return false;
+    const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.WRITE;
 };
 
 export const canModifyMission = (
-    mission_uuid: string | undefined,
-    project_uuid: string | undefined,
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!mission_uuid && !project_uuid) return false;
-    const mission_permission = getPermissionForMission(
-        mission_uuid,
-        permissions,
-    );
-    const project_permission = getPermissionForProject(
-        project_uuid,
-        permissions,
-    );
+    if (!missionUuid && !projectUuid) return false;
+    const missionPermission = getPermissionForMission(missionUuid, permissions);
+    const projectPermission = getPermissionForProject(projectUuid, permissions);
     return (
-        Math.max(mission_permission, project_permission) >=
+        Math.max(missionPermission, projectPermission) >=
         AccessGroupRights.WRITE
     );
 };
 
 export const canDeleteMission = (
-    mission_uuid: string | undefined,
-    project_uuid: string | undefined,
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!mission_uuid && !project_uuid) return false;
-    const mission_permission = getPermissionForMission(
-        mission_uuid,
-        permissions,
-    );
-    const project_permission = getPermissionForProject(
-        project_uuid,
-        permissions,
-    );
+    if (!missionUuid && !projectUuid) return false;
+    const missionPermission = getPermissionForMission(missionUuid, permissions);
+    const projectPermission = getPermissionForProject(projectUuid, permissions);
     return (
-        Math.max(mission_permission, project_permission) >=
+        Math.max(missionPermission, projectPermission) >=
         AccessGroupRights.DELETE
     );
 };
@@ -145,56 +134,56 @@ export const canLaunchInMission = (
 ): boolean => {
     if (!permissions) return false;
     if (!mission) return false;
-    const mission_permission = getPermissionForMission(
+    const missionPermission = getPermissionForMission(
         mission.uuid,
         permissions,
     );
-    const project_permission = getPermissionForProject(
+    const projectPermission = getPermissionForProject(
         mission.project?.uuid as string,
         permissions,
     );
     return (
-        Math.max(mission_permission, project_permission) >=
+        Math.max(missionPermission, projectPermission) >=
         AccessGroupRights.CREATE
     );
 };
 
 export const canDeleteProject = (
-    project_uuid: string | undefined,
+    projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
 ): boolean => {
-    if (!project_uuid) return false;
+    if (!projectUuid) return false;
     if (!permissions) return false;
-    const permission = getPermissionForProject(project_uuid, permissions);
+    const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.DELETE;
 };
 
 export const useMissionQuery = (
-    mission_uuid: Ref<string | undefined>,
+    missionUuid: Ref<string | undefined>,
     throwOnError: ((error: any, query: any) => boolean) | undefined = undefined,
     retryDelay: number = 1000,
 ): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
-        queryKey: ['mission', mission_uuid.value ? mission_uuid : ''],
+        queryKey: ['mission', missionUuid.value ? missionUuid : ''],
         queryFn: () => {
-            if (!mission_uuid.value) return null;
-            return getMission(mission_uuid.value);
+            if (!missionUuid.value) return null;
+            return getMission(missionUuid.value);
         },
-        enabled: () => !!mission_uuid.value,
+        enabled: () => !!missionUuid.value,
         retryDelay,
         throwOnError,
     });
 };
 export const useProjectQuery = (
-    project_uuid: Ref<string | undefined>,
+    projectUuid: Ref<string | undefined>,
 ): UseQueryReturnType<Project, Error> =>
     useQuery<Project>({
-        queryKey: ['project', project_uuid ? project_uuid : ''],
+        queryKey: ['project', projectUuid ? projectUuid : ''],
         queryFn: (): Promise<Project> => {
-            if (!project_uuid.value) return Promise.reject();
-            return getProject(project_uuid.value);
+            if (!projectUuid.value) return Promise.reject();
+            return getProject(projectUuid.value);
         },
-        enabled: () => !!project_uuid.value,
+        enabled: () => !!projectUuid.value,
     });
 
 export const useAllProjectsQuery = (
@@ -223,13 +212,13 @@ export const useAllProjectsQuery = (
  *
  * @param isLoadingError
  * @param uuid
- * @param resource_name
+ * @param resourceName
  * @param error
  */
 export const registerNoPermissionErrorHandler = (
     isLoadingError: Ref<false, false> | Ref<true, true>,
     uuid: Ref<string>,
-    resource_name: 'project' | 'mission' | 'file',
+    resourceName: 'project' | 'mission' | 'file',
     error: Ref<Error, Error> | Ref<null, null>,
 ) => {
     const $router = useRouter();
@@ -237,21 +226,21 @@ export const registerNoPermissionErrorHandler = (
 
     watch([isLoadingError], async () => {
         if (error.value instanceof AxiosError) {
-            const status_code =
+            const statusCode =
                 error.value.response?.data?.statusCode ||
-                `Could not load the ${resource_name}`;
+                `Could not load the ${resourceName}`;
 
-            if (status_code == 403)
+            if (statusCode == 403)
                 await $router.push({
                     name: ROUTES.ERROR_403.routeName,
                     query: {
-                        message: `You are not authorized to access this ${resource_name}!`,
+                        message: `You are not authorized to access this ${resourceName}!`,
                         uuid: uuid.value,
                     },
                 });
         } else {
             $q.notify({
-                message: `Could not load the ${resource_name}, please try again!`,
+                message: `Could not load the ${resourceName}, please try again!`,
                 color: 'negative',
                 position: 'top',
                 timeout: 2000,

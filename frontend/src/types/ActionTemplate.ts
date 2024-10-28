@@ -2,7 +2,7 @@ import { User } from 'src/types/User';
 import { BaseEntity } from 'src/types/BaseEntity';
 
 export class ActionTemplate extends BaseEntity {
-    image_name: string;
+    imageName: string;
     createdBy: User;
     name: string;
     version: number;
@@ -16,7 +16,7 @@ export class ActionTemplate extends BaseEntity {
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
-        image_name: string,
+        imageName: string,
         createdBy: User,
         name: string,
         version: number,
@@ -27,7 +27,7 @@ export class ActionTemplate extends BaseEntity {
         maxRuntime: number,
     ) {
         super(uuid, createdAt, updatedAt);
-        this.image_name = image_name;
+        this.imageName = imageName;
         this.version = version;
         this.createdBy = createdBy;
         this.name = name;
@@ -43,7 +43,7 @@ export class ActionTemplate extends BaseEntity {
             this.uuid,
             this.createdAt,
             this.updatedAt,
-            this.image_name,
+            this.imageName,
             this.createdBy,
             this.name,
             this.version,

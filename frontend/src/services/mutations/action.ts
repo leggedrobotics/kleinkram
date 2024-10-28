@@ -20,7 +20,7 @@ export const createMultipleAnalysis = async (action: {
 export const createActionTemplate = async (template: {
     name: string;
     command: string;
-    docker_image: string;
+    dockerImage: string;
     cpuCores: number;
     cpuMemory: number;
     gpuMemory: number;
@@ -31,7 +31,7 @@ export const createActionTemplate = async (template: {
     const response = await axios.post('/action/createTemplate', {
         name: template.name,
         command: template.command,
-        image: template.docker_image,
+        image: template.dockerImage,
         cpuCores: template.cpuCores,
         cpuMemory: template.cpuMemory,
         gpuMemory: template.gpuMemory,
@@ -59,7 +59,7 @@ export const createNewActionTemplateVersion = async (template: {
     uuid: string;
     name: string;
     command: string;
-    docker_image: string;
+    dockerImage: string;
     cpuCores: number;
     cpuMemory: number;
     gpuMemory: number;
@@ -70,7 +70,7 @@ export const createNewActionTemplateVersion = async (template: {
         uuid: template.uuid,
         name: template.name,
         command: template.command,
-        image: template.docker_image,
+        image: template.dockerImage,
         cpuCores: template.cpuCores,
         cpuMemory: template.cpuMemory,
         gpuMemory: template.gpuMemory,

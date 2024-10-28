@@ -97,7 +97,7 @@ const tab = ref('Details');
 
 const defaultGroup = data?.accessGroups.find((group) => group.inheriting);
 const handler = new QueryHandler();
-handler.search_params = { 'creator.uuid': data?.uuid || '' };
+handler.searchParams = { 'creator.uuid': data?.uuid || '' };
 </script>
 <style>
 .q-table-container {

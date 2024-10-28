@@ -148,13 +148,13 @@ const handler = useHandler();
 const { data: permissions } = usePermissionsQuery();
 const selected_project = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.project_uuid,
+        (project: Project) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 const selected_mission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.mission_uuid,
+        (mission: Mission) => mission.uuid === handler.value.missionUuid,
     ),
 );
 
@@ -176,12 +176,12 @@ const projects = computed(() =>
 // Fetch missions
 const queryKeyMissions = computed(() => [
     'missions',
-    handler.value.project_uuid,
+    handler.value.projectUuid,
 ]);
 const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
     queryFn: () =>
-        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
+        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 </script>

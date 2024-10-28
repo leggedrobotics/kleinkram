@@ -50,6 +50,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
                 creator: { uuid: user.uuid },
             },

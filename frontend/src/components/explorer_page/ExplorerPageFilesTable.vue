@@ -7,7 +7,7 @@
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         v-model:selected="selected"
         :rows="data"
-        :columns="file_columns as any"
+        :columns="fileColumns as any"
         row-key="uuid"
         :loading="isLoading"
         binary-state-sort
@@ -121,7 +121,7 @@ import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
-import { file_columns } from 'components/explorer_page/explorer_page_table_columns';
+import { fileColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
@@ -173,7 +173,7 @@ const queryKey = computed(() => [
     'files',
     mission_uuid.value,
     props.url_handler.queryKey,
-    props.url_handler.file_type,
+    props.url_handler.fileType,
     props.url_handler?.categories,
 ]);
 
@@ -184,8 +184,8 @@ const { data: rawData, isLoading } = useQuery({
             mission_uuid.value,
             props.url_handler.take,
             props.url_handler.skip,
-            props.url_handler.file_type,
-            props.url_handler.search_params.name,
+            props.url_handler.fileType,
+            props.url_handler.searchParams.name,
             props.url_handler?.categories,
         ),
 });

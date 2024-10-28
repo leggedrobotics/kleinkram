@@ -12,13 +12,13 @@ export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
  * Verify if an access group with the passed uuid exists
  *
  * @param uuid uuid of the access group to search for
- * @param access_groups list of access groups to search in
+ * @param accessGroups list of access groups to search in
  */
 export const verifyIfGroupWithUUIDExists = (
     uuid: string,
-    access_groups: AccessGroup[],
+    accessGroups: AccessGroup[],
 ) => {
-    const group = access_groups.filter(
+    const group = accessGroups.filter(
         (group: AccessGroup) => group.uuid === uuid,
     );
     expect(group.length).toBe(1);

@@ -117,7 +117,7 @@ export class UserService implements OnModuleInit {
         }
 
         const role = user.role;
-        const default_permission = user.accessGroups.length > 0 ? 10 : 0;
+        const defaultPermission = user.accessGroups.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;
@@ -136,11 +136,18 @@ export class UserService implements OnModuleInit {
             access: number;
         }[] = [];
 
-        return { role, default_permission, projects, missions };
+        return {
+            role,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            default_permission: defaultPermission,
+            projects,
+            missions,
+        };
     }
 
     async findOneByApiKey(apikey: string) {
         const user = await this.userRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
         });

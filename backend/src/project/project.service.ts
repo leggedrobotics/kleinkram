@@ -47,7 +47,7 @@ export class ProjectService {
         take = Number(take);
         skip = Number(skip);
 
-        const db_user = await this.userRepository.findOne({
+        const dbUser = await this.userRepository.findOne({
             where: { uuid: auth.user.uuid },
         });
 
@@ -57,7 +57,7 @@ export class ProjectService {
             .leftJoinAndSelect('project.missions', 'missions');
 
         // if not admin, only show projects that the user has access to
-        if (db_user.role !== UserRole.ADMIN) {
+        if (dbUser.role !== UserRole.ADMIN) {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
@@ -135,7 +135,7 @@ export class ProjectService {
             );
         }
         const creator = await this.userservice.findOneByUUID(auth.user.uuid);
-        const access_groups_default = creator.accessGroups.filter(
+        const accessGroupsDefault = creator.accessGroups.filter(
             (accessGroup) => accessGroup.personal || accessGroup.inheriting,
         );
 
@@ -157,17 +157,13 @@ export class ProjectService {
             requiredTags: tagTypes,
         });
 
-        const access_groups_default_ids = access_groups_default.map(
-            (ag) => ag.uuid,
-        );
+        const accessGroupsDefaultIds = accessGroupsDefault.map((ag) => ag.uuid);
 
         let deduplicatedAccessGroups = [];
         if (project.accessGroups) {
             deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
                 if ('accessGroupUUID' in ag) {
-                    return !access_groups_default_ids.includes(
-                        ag.accessGroupUUID,
-                    );
+                    return !accessGroupsDefaultIds.includes(ag.accessGroupUUID);
                 } else {
                     return ag.userUUID !== auth.user.uuid;
                 }
@@ -178,7 +174,7 @@ export class ProjectService {
                 const savedProject = await manager.save(Project, newProject);
                 await this.createDefaultAccessGroups(
                     manager,
-                    access_groups_default,
+                    accessGroupsDefault,
                     savedProject,
                 );
 
@@ -202,7 +198,7 @@ export class ProjectService {
         uuid: string,
         project: { name: string; description: string },
     ): Promise<Project> {
-        const db_project = await this.projectRepository.findOneOrFail({
+        const dbProject = await this.projectRepository.findOneOrFail({
             where: { uuid },
             relations: ['missions'],
         });

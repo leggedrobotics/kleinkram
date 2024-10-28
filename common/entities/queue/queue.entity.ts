@@ -21,6 +21,7 @@ export default class QueueEntity extends BaseEntity {
      *
      */
     @Column({ default: '' })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     display_name: string;
 
     @Column({

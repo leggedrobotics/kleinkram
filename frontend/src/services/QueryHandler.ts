@@ -16,10 +16,10 @@ export class QueryHandler {
     take: number;
     sortBy: string;
     descending: boolean;
-    mission_uuid?: string;
-    project_uuid?: string;
-    search_params: Record<string, string>;
-    file_type?: FileType;
+    missionUuid?: string;
+    projectUuid?: string;
+    searchParams: Record<string, string>;
+    fileType?: FileType;
     rowsNumber: number;
     categories: string[];
 
@@ -28,20 +28,20 @@ export class QueryHandler {
         take: number = DEFAULT_PAGINATION.rowsPerPage,
         sortBy: string = DEFAULT_SORT.sortBy,
         descending: boolean = DEFAULT_SORT.descending,
-        project_uuid?: string,
-        mission_uuid?: string,
-        search_params?: Record<string, string>,
-        file_type?: FileType,
+        projectUuid?: string,
+        missionUuid?: string,
+        searchParams?: Record<string, string>,
+        fileType?: FileType,
         categories: string[],
     ) {
         this.page = page;
         this.take = take;
         this.sortBy = sortBy;
         this.descending = descending;
-        this.project_uuid = project_uuid;
-        this.mission_uuid = mission_uuid;
-        this.search_params = search_params || DEFAULT_SEARCH;
-        this.file_type = file_type || FileType.ALL;
+        this.projectUuid = projectUuid;
+        this.missionUuid = missionUuid;
+        this.searchParams = searchParams || DEFAULT_SEARCH;
+        this.fileType = fileType || FileType.ALL;
         this.categories = categories || [];
         this.rowsNumber = 0;
     }
@@ -81,32 +81,32 @@ export class QueryHandler {
         }
     }
 
-    setProjectUUID(project_uuid: string | undefined) {
-        this.project_uuid = project_uuid;
-        this.mission_uuid = undefined;
-        this.search_params = DEFAULT_SEARCH;
+    setProjectUUID(projectUuid: string | undefined) {
+        this.projectUuid = projectUuid;
+        this.missionUuid = undefined;
+        this.searchParams = DEFAULT_SEARCH;
         this.resetPagination();
     }
 
-    setMissionUUID(mission_uuid: string | undefined) {
-        this.mission_uuid = mission_uuid;
-        this.search_params = DEFAULT_SEARCH;
+    setMissionUUID(missionUuid: string | undefined) {
+        this.missionUuid = missionUuid;
+        this.searchParams = DEFAULT_SEARCH;
         this.resetPagination();
     }
 
-    setSearch(search_params: Record<string, string>) {
-        const paramsChanged = Object.keys(search_params).some(
-            (key) => this.search_params[key] !== search_params[key],
+    setSearch(searchParams: Record<string, string>) {
+        const paramsChanged = Object.keys(searchParams).some(
+            (key) => this.searchParams[key] !== searchParams[key],
         );
 
         if (paramsChanged) {
-            this.search_params = search_params;
+            this.searchParams = searchParams;
             this.resetPagination();
         }
     }
 
-    setFileType(file_type: FileType) {
-        this.file_type = file_type;
+    setFileType(fileType: FileType) {
+        this.fileType = fileType;
         this.resetPagination();
     }
 
@@ -132,15 +132,15 @@ export class QueryHandler {
      * ---------------------------------------------
      */
     get isListingProjects() {
-        return !this.project_uuid && !this.mission_uuid;
+        return !this.projectUuid && !this.missionUuid;
     }
 
     get isListingMissions() {
-        return !!this.project_uuid && !this.mission_uuid;
+        return !!this.projectUuid && !this.missionUuid;
     }
 
     get isListingFiles() {
-        return !!this.mission_uuid;
+        return !!this.missionUuid;
     }
 
     /**
@@ -150,7 +150,7 @@ export class QueryHandler {
      */
     get queryKey() {
         return {
-            search_params: this.search_params,
+            searchParams: this.searchParams,
             skip: this.skip,
             take: this.take,
             sortBy: this.sortBy,
@@ -164,7 +164,7 @@ export class QueryHandler {
  */
 export class QueryURLHandler extends QueryHandler {
     router: Router | undefined;
-    internal_update: boolean = false;
+    internalUpdate: boolean = false;
 
     constructor(
         router?: Router,
@@ -172,10 +172,10 @@ export class QueryURLHandler extends QueryHandler {
         take?: number,
         sortBy?: string,
         descending?: boolean,
-        project_uuid?: string,
-        mission_uuid?: string,
-        search_params?: typeof DEFAULT_SEARCH,
-        file_type?: FileType,
+        projectUuid?: string,
+        missionUuid?: string,
+        searchParams?: typeof DEFAULT_SEARCH,
+        fileType?: FileType,
         categories?: string[],
     ) {
         super(
@@ -183,10 +183,10 @@ export class QueryURLHandler extends QueryHandler {
             take,
             sortBy,
             descending,
-            project_uuid,
-            mission_uuid,
-            search_params,
-            file_type,
+            projectUuid,
+            missionUuid,
+            searchParams,
+            fileType,
             categories,
         );
         if (router) {
@@ -203,7 +203,7 @@ export class QueryURLHandler extends QueryHandler {
         watch(
             router.currentRoute,
             () => {
-                if (!this.internal_update) {
+                if (!this.internalUpdate) {
                     this.readURL(router.currentRoute.value);
                 }
             },
@@ -236,23 +236,23 @@ export class QueryURLHandler extends QueryHandler {
         this.writeURL();
     }
 
-    setProjectUUID(project_uuid: string | undefined) {
-        super.setProjectUUID(project_uuid);
+    setProjectUUID(projectUuid: string | undefined) {
+        super.setProjectUUID(projectUuid);
         this.writeURL();
     }
 
-    setMissionUUID(mission_uuid: string | undefined) {
-        super.setMissionUUID(mission_uuid);
+    setMissionUUID(missionUuid: string | undefined) {
+        super.setMissionUUID(missionUuid);
         this.writeURL();
     }
 
-    setSearch(search_params: Record<string, string>) {
-        super.setSearch(search_params);
+    setSearch(searchParams: Record<string, string>) {
+        super.setSearch(searchParams);
         this.writeURL();
     }
 
-    setFileType(file_type: FileType) {
-        super.setFileType(file_type);
+    setFileType(fileType: FileType) {
+        super.setFileType(fileType);
         this.writeURL();
     }
 
@@ -273,7 +273,7 @@ export class QueryURLHandler extends QueryHandler {
      * Values not set in the URL will be set to the default values
      */
     readURL(route: RouteLocationNormalizedLoaded) {
-        if (this.internal_update) {
+        if (this.internalUpdate) {
             return;
         }
         if (route.query.page) this.page = parseInt(route.query.page as string);
@@ -286,17 +286,17 @@ export class QueryURLHandler extends QueryHandler {
             this.descending = route.query.descending === 'true';
         else this.descending = DEFAULT_SORT.descending;
         if (route.query.project_uuid)
-            this.project_uuid = route.query.project_uuid as string;
-        else this.project_uuid = undefined;
+            this.projectUuid = route.query.project_uuid as string;
+        else this.projectUuid = undefined;
         if (route.query.mission_uuid)
-            this.mission_uuid = route.query.mission_uuid as string;
-        else this.mission_uuid = undefined;
+            this.missionUuid = route.query.mission_uuid as string;
+        else this.missionUuid = undefined;
         if (route.query.name)
-            this.search_params = { name: route.query.name as string };
-        else this.search_params = DEFAULT_SEARCH;
+            this.searchParams = { name: route.query.name as string };
+        else this.searchParams = DEFAULT_SEARCH;
         if (route.query.file_type)
-            this.file_type = route.query.file_type as FileType;
-        else this.file_type = DEFAULT_FILE_TYPE;
+            this.fileType = route.query.file_type as FileType;
+        else this.fileType = DEFAULT_FILE_TYPE;
         if (route.query.categories) {
             if (Array.isArray(route.query.categories))
                 this.categories = route.query.categories as string[];
@@ -311,7 +311,7 @@ export class QueryURLHandler extends QueryHandler {
      */
     writeURL() {
         if (!this.router) return;
-        this.internal_update = true;
+        this.internalUpdate = true;
 
         // Only write non default values to the URL
         const newQuery = {
@@ -329,18 +329,21 @@ export class QueryURLHandler extends QueryHandler {
                 this.descending !== DEFAULT_SORT.descending
                     ? this.descending.toString()
                     : undefined,
-            project_uuid: this.project_uuid || undefined,
-            mission_uuid: this.mission_uuid || undefined,
-            name: this.search_params.name || undefined,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            project_uuid: this.projectUuid || undefined,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            mission_uuid: this.missionUuid || undefined,
+            name: this.searchParams.name || undefined,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             file_type:
-                !!this.file_type && this.file_type !== FileType.ALL
-                    ? this.file_type || undefined
+                !!this.fileType && this.fileType !== FileType.ALL
+                    ? this.fileType || undefined
                     : undefined,
             categories:
                 this.categories.length > 0 ? this.categories : undefined,
         };
         this.router.push({ query: newQuery });
-        this.internal_update = false;
+        this.internalUpdate = false;
     }
 }
 

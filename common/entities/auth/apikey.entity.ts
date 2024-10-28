@@ -12,6 +12,7 @@ export default class Apikey extends BaseEntity {
     apikey: string;
 
     @Column()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     key_type: KeyTypes;
 
     @ManyToOne(() => Mission, (mission) => mission.api_keys, {
