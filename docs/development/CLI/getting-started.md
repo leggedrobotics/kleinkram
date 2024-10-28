@@ -15,30 +15,30 @@ However, if you want to develop the CLI locally, you can do so by following thes
 
 ### Step-By-Step Guide for Local Development
 
-1) Start the application using the following command:
+1. Start the application using the following command:
 
     ```bash
     docker compose up --build --watch -d
     ```
 
-2) Navigate to the `/CLI` directory and install the dependencies:
+2. Navigate to the `/CLI` directory and install the dependencies:
 
     ```bash
     pip install -r requirements.txt
     ```
 
-3) Run the CLI using the following command inside the `/CLI/src` directory:
+3. Run the CLI using the following command inside the `/CLI/src` directory:
 
     ```bash
     python3 klein.py [[command]] [[options]]
     ```
 
-   ::: details Use `klein ...` instead of `python3 klein.py ...`
-   If you define the following alias in your `.bashrc` or `.zshrc` file, you can run the local code of the CLI from
-   anywhere in your terminal, similar to the global installation of the kleinkram CLI:
-   
-   ```bash
-   alias klein="python3 /path/to/kleinkram/CLU/src/klein.py"
-   ```
-   
-   :::
+    ::: details Use `klein ...` instead of `python3 klein.py ...`
+    If you define the following alias in your `.bashrc` or `.zshrc` file, you can run the local code of the CLI from
+    anywhere in your terminal, similar to the global installation of the kleinkram CLI:
+
+    ```bash
+    alias klein="python3 /path/to/kleinkram/CLU/src/klein.py"
+    ```
+
+    :::
