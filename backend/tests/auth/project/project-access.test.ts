@@ -388,17 +388,10 @@ describe('Verify Project Level Access', () => {
         const mockEmail = 'some-external@ethz.ch';
         const externalUuid = await mockDbUser(mockEmail);
 
-        const mockEmailInternal = 'some-external@leggedrobotics.com';
-        const internalUuid = await mockDbUser(mockEmailInternal);
-
         const userRepository = db.getRepository(User);
         const externalUser = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
             relations: ['accessGroups'],
-        });
-
-        const internalUser = await userRepository.findOneOrFail({
-            where: { uuid: internalUuid },
         });
 
         const projectRepository = db.getRepository('Project');

@@ -13,7 +13,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, ArtifactState } from '@common/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
-import { RuntimeDescription } from '@common/types';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';
 import Worker from '@common/entities/worker/worker.entity';
@@ -77,21 +76,6 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         logger.debug('Status: ' + this.analysisQueue.client.status);
     }
 
-    /**
-     *
-     * Check if the job has any runtime requirements that are not met
-     * by the current processing environment. If so, throw a
-     * HardwareDependencyError is thrown.
-     *
-     * @private
-     * @param runtimeRequirements
-     * @throws HardwareDependencyError
-     *
-     */
-    private checkRuntimeCapability(runtimeRequirements: RuntimeDescription) {
-        return true;
-    }
-
     @Process({ concurrency: 2, name: `action` })
     async processAction(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
@@ -118,12 +102,6 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 `Action ${action.uuid} reassigned to worker ${this.worker.identifier}`,
             );
         }
-        this.checkRuntimeCapability({
-            cpuMemory: action.template.cpuMemory,
-            cpuCores: action.template.cpuCores,
-            gpuMemory: action.template.gpuMemory,
-            maxRuntime: action.template.maxRuntime,
-        });
         return await this.actionController.processAction(action);
     }
 

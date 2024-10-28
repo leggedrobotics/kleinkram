@@ -19,7 +19,7 @@ export class AuthController {
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth(@Req() req) {}
+    async googleAuth() {}
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
@@ -129,7 +129,7 @@ export class AuthController {
                 sameSite: 'strict',
             });
             res.status(200).json({ message: 'Token refreshed' });
-        } catch (e) {
+        } catch {
             throw InvalidJwtTokenException;
         }
     }

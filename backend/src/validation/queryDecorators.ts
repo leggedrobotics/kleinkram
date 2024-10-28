@@ -20,7 +20,7 @@ export const QueryUUID = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid UUID`,
             );
@@ -41,7 +41,7 @@ export const QueryOptionalUUID = createParamDecorator(
         }
 
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid UUID`,
             );
@@ -58,7 +58,7 @@ export const QueryString = createParamDecorator(
         const value = request.query[data];
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String`,
             );
@@ -79,7 +79,7 @@ export const QueryOptionalString = createParamDecorator(
         }
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String`,
             );
@@ -95,7 +95,7 @@ export const QueryStringArray = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(StringArrayValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String Array`,
             );
@@ -114,7 +114,7 @@ export const QueryOptionalStringArray = createParamDecorator(
             return;
         }
         const object = plainToInstance(StringArrayValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String Array`,
             );
@@ -130,7 +130,7 @@ export const QueryBoolean = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(BooleanValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Boolean`,
             );
@@ -158,7 +158,7 @@ export const QueryOptionalBoolean = createParamDecorator(
             return;
         }
         const object = plainToInstance(BooleanValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Boolean`,
             );
@@ -188,7 +188,7 @@ export const QueryDate = createParamDecorator(
         }
 
         const object = plainToInstance(DateStringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
             );
@@ -223,7 +223,7 @@ export const QueryProjectSortBy = createParamDecorator(
         }
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -276,7 +276,7 @@ export const QueryOptionalDate = createParamDecorator(
             return;
         }
         const object = plainToInstance(DateStringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
             );
@@ -297,7 +297,7 @@ export const QueryOptionalNumber = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -316,7 +316,7 @@ export const QuerySkip = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -335,7 +335,7 @@ export const QueryTake = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 

@@ -21,7 +21,7 @@ import { AuthGuardService } from './authGuard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
-    canActivate(context: ExecutionContext): boolean {
+    canActivate(): boolean {
         return true; // Always allow access
     }
 }
@@ -76,7 +76,7 @@ export class AdminOnlyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
+        const { user, apiKey } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys are never admins');
@@ -246,7 +246,7 @@ export class CreateGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
+        const { user, apiKey } = await this.getUser(context);
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot create projects');
         }

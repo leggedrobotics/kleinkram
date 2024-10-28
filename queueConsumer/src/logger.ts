@@ -10,7 +10,7 @@ const ignoreContainerLogs = winston.format((info) => {
     return info;
 });
 
-const messageOnly = winston.format.printf(({ level, message, label }) => {
+const messageOnly = winston.format.printf(({ level, message }) => {
     return `[${level.toUpperCase()}]: ${message}`;
 });
 

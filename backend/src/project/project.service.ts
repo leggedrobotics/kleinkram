@@ -198,10 +198,6 @@ export class ProjectService {
         uuid: string,
         project: { name: string; description: string },
     ): Promise<Project> {
-        const dbProject = await this.projectRepository.findOneOrFail({
-            where: { uuid },
-            relations: ['missions'],
-        });
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });

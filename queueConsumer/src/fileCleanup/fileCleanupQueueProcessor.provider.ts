@@ -124,7 +124,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         : env.MINIO_MCAP_BUCKET_NAME,
                     `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
                 );
-                await new Promise((resolve, reject) => {
+                await new Promise((resolve) => {
                     datastream.on('error', (err) => {
                         logger.error(err);
                         resolve(void 0);

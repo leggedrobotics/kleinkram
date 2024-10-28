@@ -22,7 +22,7 @@ export class AccessService {
         private readonly entityManager: EntityManager,
     ) {}
 
-    async getAccessGroup(uuid: string, jwtuser: AuthRes) {
+    async getAccessGroup(uuid: string) {
         return this.accessGroupRepository.findOneOrFail({
             where: { uuid },
             relations: [
@@ -89,11 +89,6 @@ export class AccessService {
         });
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
-            relations: ['accessGroups'],
-        });
-
-        const modifyingUser = await this.userRepository.findOneOrFail({
-            where: { uuid: auth.user.uuid },
             relations: ['accessGroups'],
         });
 
@@ -334,11 +329,7 @@ export class AccessService {
         return;
     }
 
-    async getProjectAccess(
-        projectUUID: string,
-        projectAccessUUID: string,
-        jwtuser: AuthRes,
-    ) {
+    async getProjectAccess(projectUUID: string, projectAccessUUID: string) {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
             relations: ['project'],

@@ -7,14 +7,14 @@ let routerInstance: Router;
 export default boot(({ router }) => {
     routerInstance = router;
 
-    routerInstance.afterEach(async (to, from) => {
+    routerInstance.afterEach(async (to) => {
         const auth = await isAuthenticated();
         if (auth && to.path === ROUTES.HOME.path) {
             return routerInstance.push(ROUTES.DASHBOARD.path);
         }
     });
 
-    routerInstance.beforeEach(async (to, from) => {
+    routerInstance.beforeEach(async (to) => {
         // check if it's a public route
         if (PUBLIC_ROUTES.some((route) => route.path === to.path)) {
             return;

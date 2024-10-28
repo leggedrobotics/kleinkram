@@ -49,7 +49,6 @@ export class CategoryController {
             missionUUID,
             files,
             categories,
-            user,
         );
     }
 }

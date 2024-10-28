@@ -135,7 +135,7 @@ export async function _downloadFiles(files: FileEntity[]) {
         try {
             const url = await downloadFile(file.uuid, true);
             return { url, filename: file.filename };
-        } catch (e) {
+        } catch {
             return { url: '', filename: file.filename };
         }
     });

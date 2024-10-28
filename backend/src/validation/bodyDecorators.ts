@@ -20,7 +20,7 @@ export const BodyUUID = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Body parameter is not a valid UUID');
         });
 
@@ -35,7 +35,7 @@ export const BodyString = createParamDecorator(
         const value = request.body[data];
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 undefined,
                 'Parameter is not a valid String',
@@ -53,7 +53,7 @@ export const BodyName = createParamDecorator(
         const value = request.body[data];
 
         const object = plainToInstance(NameValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid String');
         });
 
@@ -117,7 +117,7 @@ export const BodyUUIDArray = createParamDecorator(
 
         for (const uuid of value) {
             const object = plainToInstance(UUIDValidate, { value: uuid });
-            await validateOrReject(object).catch((errors) => {
+            await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
                     'Body parameter is not a valid UUID',
                 );

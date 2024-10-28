@@ -13,7 +13,7 @@ export const ParamUUID = createParamDecorator(
         const request = ctx.switchToHttp().getRequest();
         const value = request.params[data];
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid UUID!');
         });
 
@@ -28,7 +28,7 @@ export const ParamString = createParamDecorator(
         const value = request.params[data];
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid String');
         });
 

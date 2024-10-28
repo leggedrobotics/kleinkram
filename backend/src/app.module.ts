@@ -63,7 +63,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
             `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
         );
 
-        this.actionService.writeAuditLog(key, auditLog).then((r) => {});
+        this.actionService.writeAuditLog(key, auditLog).then(() => {});
         next();
     }
 }

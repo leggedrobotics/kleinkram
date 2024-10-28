@@ -5,6 +5,7 @@ import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
 import { Topic } from 'src/types/Topic';
 import { FileType } from 'src/enums/FILE_ENUM';
+import { StorageResponse } from 'src/types/storage';
 
 export const fetchOverview = async (
     filename: string,
@@ -348,7 +349,7 @@ export const existsFile = async (uuid) => {
             params: { uuid },
         });
         return response.data;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

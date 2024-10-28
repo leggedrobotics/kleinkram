@@ -91,7 +91,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     if (fs.existsSync(tmpFile)) fsPromises.unlink(tmpFile);
                 }),
             );
-        } catch (error) {
+        } catch {
             logger.debug(`Error deleting tmp files`);
         }
     }
@@ -254,10 +254,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 // ------------- Upload to Minio -------------
                 queue.state = QueueState.UPLOADING;
                 await this.queueRepository.save(queue);
-                const fullPathnameMcap = queue.identifier.replace(
-                    '.bag',
-                    '.mcap',
-                );
                 await uploadLocalFile(
                     env.MINIO_MCAP_BUCKET_NAME,
                     mcapFileEntity.uuid,
@@ -647,7 +643,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             await this.fileRepository.save(savedFile);
             throw error;
         });
-        const { topics, date, size } = meta;
+        const { topics, date } = meta;
         logger.debug(`Job {${job.id}} saved file: ${savedFile.filename}`);
 
         const res = topics.map(async (topic) => {

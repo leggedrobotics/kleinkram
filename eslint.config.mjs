@@ -21,7 +21,7 @@ export default tseslint.config(
             complexity: ['warn', { max: 4 }],
             'no-shadow': 'warn',
             '@typescript-eslint/naming-convention': 'error',
-            '@typescript-eslint/no-unused-vars': 'warn',
+            '@typescript-eslint/no-unused-vars': 'error',
             'no-nested-ternary': 'warn',
             'no-control-regex': 'warn',
             '@typescript-eslint/no-unsafe-enum-comparison': 'warn',

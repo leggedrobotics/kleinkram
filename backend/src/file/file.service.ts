@@ -595,7 +595,7 @@ export class FileService implements OnModuleInit {
 
                 // delete the file from Minio
                 const bucket = getBucketFromFileType(file.type);
-                await deleteFileMinio(bucket, file.uuid).catch((error) => {
+                await deleteFileMinio(bucket, file.uuid).catch(() => {
                     logger.error(
                         `File ${file.uuid} not found in Minio, deleting from database only!`,
                     );

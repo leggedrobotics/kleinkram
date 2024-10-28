@@ -37,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             try {
                 const user = await this.userService.findOneByUUID(payload.uuid);
                 return { user };
-            } catch (e) {
+            } catch {
                 throw InvalidJwtTokenException;
             }
         }
