@@ -1,4 +1,3 @@
-import User from './entities/user/user.entity';
 import { UserRole } from './enum';
 
 export const redis = { host: 'redis', port: 6379 };

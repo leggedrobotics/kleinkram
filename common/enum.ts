@@ -17,6 +17,7 @@ export enum FileOrigin {
     GOOGLE_DRIVE = 'GOOGLE_DRIVE',
     UPLOAD = 'UPLOAD',
     CONVERTED = 'CONVERTED',
+    UNKNOWN = 'UNKNOWN',
 }
 
 export enum FileLocation {

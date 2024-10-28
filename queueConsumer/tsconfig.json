@@ -22,8 +22,8 @@
         "paths": {
             "@common/*": ["../common/*"]
         },
-        "target": "es2022",
-        "lib": ["es2022", "esnext.disposable", "dom"]
+        "target": "esnext",
+        "lib": ["esnext", "dom"]
     },
     "rules": {
         "no-console": [true, "warning"]
