@@ -76,15 +76,15 @@ export class ActionManagerService {
         const apikey = await this.createAPIkey(action);
         try {
             const envVariables: ContainerEnv = {
-            /* eslint-disable @typescript-eslint/naming-convention */
-            APIKEY: apikey.apikey,
-            PROJECT_UUID: action.mission.project.uuid,
-            MISSION_UUID: action.mission.uuid,
-            ACTION_UUID: action.uuid,
-            ENDPOINT: env.ENDPOINT,
-            /* eslint-enable @typescript-eslint/naming-convention */
-        };
-        const needsGpu = action.template.gpuMemory > 0;
+                /* eslint-disable @typescript-eslint/naming-convention */
+                APIKEY: apikey.apikey,
+                PROJECT_UUID: action.mission.project.uuid,
+                MISSION_UUID: action.mission.uuid,
+                ACTION_UUID: action.uuid,
+                ENDPOINT: env.ENDPOINT,
+                /* eslint-enable @typescript-eslint/naming-convention */
+            };
+            const needsGpu = action.template.gpuMemory > 0;
             const { container, repoDigests, sha } =
                 await this.containerDaemon.startContainer(
                     async () => {
@@ -93,28 +93,28 @@ export class ActionManagerService {
                     },
                     {
                         /* eslint-disable @typescript-eslint/naming-convention */
-                    docker_image: action.template.image_name,
-                    name: action.uuid,
-                    limits: {
-                        max_runtime:
-                            action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
-                        n_cpu: action.template.cpuCores || 1,
-                        memory_limit:
-                            (action.template.cpuMemory || 2) *
-                            1024 *
-                            1024 *
-                            1024, // min 2 GB
-                    },
-                    needs_gpu: needsGpu,
+                        docker_image: action.template.image_name,
+                        name: action.uuid,
+                        limits: {
+                            max_runtime:
+                                action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
+                            n_cpu: action.template.cpuCores || 1,
+                            memory_limit:
+                                (action.template.cpuMemory || 2) *
+                                1024 *
+                                1024 *
+                                1024, // min 2 GB
+                        },
+                        needs_gpu: needsGpu,
                         environment: envVariables,
-                    command: action.template.command,
-                    /* eslint-enable @typescript-eslint/naming-convention */
+                        command: action.template.command,
+                        /* eslint-enable @typescript-eslint/naming-convention */
                     },
                 );
 
             // capture runner information
             // eslint-disable-next-line @typescript-eslint/naming-convention
-        action.image = { repo_digests: repoDigests, sha };
+            action.image = { repo_digests: repoDigests, sha };
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 
@@ -161,11 +161,13 @@ export class ActionManagerService {
                     `${action.template.name}-v${action.template.version}-${action.uuid}`,
                 );
             await artifactUploadContainer.wait();
-        action.artifacts = ArtifactState.UPLOADED;
-        await this.containerDaemon.removeContainer(artifactUploadContainer.id);
-        await this.containerDaemon.removeVolume(action.uuid);
-        action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
-        await this.actionRepository.save(action);
+            action.artifacts = ArtifactState.UPLOADED;
+            await this.containerDaemon.removeContainer(
+                artifactUploadContainer.id,
+            );
+            await this.containerDaemon.removeVolume(action.uuid);
+            action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
+            await this.actionRepository.save(action);
 
             return true; // Mark the job as completed
         } finally {
