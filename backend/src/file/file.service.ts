@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, ILike, In, MoreThan, Repository } from 'typeorm';
@@ -7,7 +13,15 @@ import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
-import { DataType, FileLocation, FileOrigin, FileState, FileType, QueueState, UserRole } from '@common/enum';
+import {
+    DataType,
+    FileLocation,
+    FileOrigin,
+    FileState,
+    FileType,
+    QueueState,
+    UserRole,
+} from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';
@@ -133,16 +147,23 @@ export class FileService implements OnModuleInit {
                 });
 
             // Use the subquery in the main query
-            query.andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')').setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
+            query
+                .andWhere('file.uuid IN (' + topicSubquery.getQuery() + ')')
+                .setParameters(topicSubquery.getParameters()); // Ensure all parameters are correctly set
         }
         if (tags) {
-            query.leftJoin('mission.tags', 'tag').leftJoin('tag.tagType', 'tagtype');
+            query
+                .leftJoin('mission.tags', 'tag')
+                .leftJoin('tag.tagType', 'tagtype');
             for (const [key, value] of Object.entries(tags)) {
                 query.andWhere('tagtype.name = :tagName', { tagName: key });
                 query.andWhere(
                     new Brackets((qb) => {
                         if (typeof value === 'string') {
-                            qb.where('tag.STRING = :value', { value }).orWhere('tag.LOCATION = :value', { value });
+                            qb.where('tag.STRING = :value', { value }).orWhere(
+                                'tag.LOCATION = :value',
+                                { value },
+                            );
                             if (new Date(value).toString() !== 'Invalid Date') {
                                 qb.orWhere('tag.DATE = :value', { value });
                             }
@@ -223,7 +244,10 @@ export class FileService implements OnModuleInit {
             const splitFileTypes = fileTypes.split(',');
             if (splitFileTypes.length === 1) {
                 query.andWhere('file.type = :type', {
-                    type: splitFileTypes[0] === 'MCAP' ? FileType.MCAP : FileType.BAG,
+                    type:
+                        splitFileTypes[0] === 'MCAP'
+                            ? FileType.MCAP
+                            : FileType.BAG,
                 });
             }
         }
@@ -239,7 +263,9 @@ export class FileService implements OnModuleInit {
         }
 
         if (startDate && endDate) {
-            logger.debug('Filtering files by date range: ' + startDate + ' - ' + endDate);
+            logger.debug(
+                'Filtering files by date range: ' + startDate + ' - ' + endDate,
+            );
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
                 startDate: startDate,
                 endDate: endDate,
@@ -261,7 +287,9 @@ export class FileService implements OnModuleInit {
             }
         }
         if (tags) {
-            query.leftJoin('mission.tags', 'tag').leftJoin('tag.tagType', 'tagtype');
+            query
+                .leftJoin('mission.tags', 'tag')
+                .leftJoin('tag.tagType', 'tagtype');
             await Promise.all(
                 Object.keys(tags).map(async (key, idx) => {
                     const tagtype = await this.tagTypeRepository.findOneOrFail({
@@ -282,30 +310,45 @@ export class FileService implements OnModuleInit {
 
                             switch (tagtype.datatype) {
                                 case DataType.BOOLEAN:
-                                    subquery = subquery.andWhere('tag.BOOLEAN = :value' + idx, {
-                                        ['value' + idx]: tags[key],
-                                    });
+                                    subquery = subquery.andWhere(
+                                        'tag.BOOLEAN = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
                                     break;
                                 case DataType.DATE:
-                                    subquery = subquery.andWhere('tag.DATE = :value' + idx, {
-                                        ['value' + idx]: tags[key],
-                                    });
+                                    subquery = subquery.andWhere(
+                                        'tag.DATE = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
                                     break;
                                 case DataType.LOCATION:
-                                    subquery = subquery.andWhere('tag.LOCATION = :value' + idx, {
-                                        ['value' + idx]: tags[key],
-                                    });
+                                    subquery = subquery.andWhere(
+                                        'tag.LOCATION = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
                                     break;
                                 case DataType.NUMBER:
-                                    subquery = subquery.andWhere('tag.NUMBER = :value' + idx, {
-                                        ['value' + idx]: tags[key],
-                                    });
+                                    subquery = subquery.andWhere(
+                                        'tag.NUMBER = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
                                     break;
                                 case DataType.STRING:
                                 case DataType.LINK:
-                                    subquery = subquery.andWhere('tag.STRING = :value' + idx, {
-                                        ['value' + idx]: tags[key],
-                                    });
+                                    subquery = subquery.andWhere(
+                                        'tag.STRING = :value' + idx,
+                                        {
+                                            ['value' + idx]: tags[key],
+                                        },
+                                    );
                                     break;
                             }
 
@@ -343,7 +386,13 @@ export class FileService implements OnModuleInit {
     async findOne(uuid: string) {
         return this.fileRepository.findOne({
             where: { uuid },
-            relations: ['mission', 'topics', 'mission.project', 'creator', 'categories'],
+            relations: [
+                'mission',
+                'topics',
+                'mission.project',
+                'creator',
+                'categories',
+            ],
         });
     }
 
@@ -398,21 +447,30 @@ export class FileService implements OnModuleInit {
 
         await this.dataSource
             .transaction(async (transactionalEntityManager) => {
-                await transactionalEntityManager.save(Project, db_file.mission.project);
+                await transactionalEntityManager.save(
+                    Project,
+                    db_file.mission.project,
+                );
                 await transactionalEntityManager.save(Mission, db_file.mission);
                 await transactionalEntityManager.save(FileEntity, db_file);
             })
             .catch((err) => {
                 if (err.code === '23505') {
-                    throw new ConflictException('File with this name already exists in the mission');
+                    throw new ConflictException(
+                        'File with this name already exists in the mission',
+                    );
                 }
                 throw err;
             });
-        await addTagsToMinioObject(getBucketFromFileType(db_file.type), db_file.uuid, {
-            project_uuid: db_file.mission.project.uuid,
-            mission_uuid: db_file.mission.uuid,
-            filename: db_file.filename,
-        });
+        await addTagsToMinioObject(
+            getBucketFromFileType(db_file.type),
+            db_file.uuid,
+            {
+                project_uuid: db_file.mission.project.uuid,
+                mission_uuid: db_file.mission.uuid,
+                filename: db_file.filename,
+            },
+        );
         return this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission', 'mission.project'],
@@ -428,14 +486,16 @@ export class FileService implements OnModuleInit {
      */
     async generateDownload(uuid: string, expires: boolean) {
         // verify that an uuid is provided
-        if (!uuid || uuid === '') throw new BadRequestException('UUID is required');
+        if (!uuid || uuid === '')
+            throw new BadRequestException('UUID is required');
 
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
         });
 
         // verify that the file exists in DB
-        if (file.uuid === undefined || file.uuid !== uuid) throw new BadRequestException('File not found');
+        if (file.uuid === undefined || file.uuid !== uuid)
+            throw new BadRequestException('File not found');
 
         const stats = await getInfoFromMinio(file.type, file.uuid);
 
@@ -444,7 +504,9 @@ export class FileService implements OnModuleInit {
 
         return await externalMinio.presignedUrl(
             'GET',
-            file.type === FileType.MCAP ? env.MINIO_MCAP_BUCKET_NAME : env.MINIO_BAG_BUCKET_NAME,
+            file.type === FileType.MCAP
+                ? env.MINIO_MCAP_BUCKET_NAME
+                : env.MINIO_BAG_BUCKET_NAME,
             file.uuid, // we use the uuid as the filename in Minio
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
             {
@@ -490,7 +552,13 @@ export class FileService implements OnModuleInit {
 
         const files = await this.fileRepository.find({
             where: second_where,
-            relations: ['mission', 'mission.project', 'categories', 'mission.creator', 'creator'],
+            relations: [
+                'mission',
+                'mission.project',
+                'categories',
+                'mission.creator',
+                'creator',
+            ],
             order: { filename: 'ASC' },
         });
         return [files, count];
@@ -510,24 +578,32 @@ export class FileService implements OnModuleInit {
      * @param uuid The unique identifier of the file
      */
     async deleteFile(uuid: string) {
-        if (!uuid || uuid === '') throw new BadRequestException('UUID is required');
+        if (!uuid || uuid === '')
+            throw new BadRequestException('UUID is required');
 
         logger.debug('Deleting file with uuid: ' + uuid);
 
         // we delete the file from the database and Minio
         // using a transaction to ensure consistency
-        return this.fileRepository.manager.transaction(async (transactionalEntityManager) => {
-            // find the file in the database
-            const file = await transactionalEntityManager.findOneOrFail(FileEntity, { where: { uuid } });
+        return this.fileRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+                // find the file in the database
+                const file = await transactionalEntityManager.findOneOrFail(
+                    FileEntity,
+                    { where: { uuid } },
+                );
 
-            // delete the file from Minio
-            const bucket = getBucketFromFileType(file.type);
-            await deleteFileMinio(bucket, file.uuid).catch((error) => {
-                logger.error(`File ${file.uuid} not found in Minio, deleting from database only!`);
-            });
+                // delete the file from Minio
+                const bucket = getBucketFromFileType(file.type);
+                await deleteFileMinio(bucket, file.uuid).catch((error) => {
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, deleting from database only!`,
+                    );
+                });
 
-            await transactionalEntityManager.remove(file);
-        });
+                await transactionalEntityManager.remove(file);
+            },
+        );
     }
 
     async getStorage() {
@@ -554,10 +630,14 @@ export class FileService implements OnModuleInit {
             .then((response) => {
                 const metrics = parseMinioMetrics(response.data);
                 return {
-                    usedBytes: metrics['minio_system_drive_used_bytes'][0].value,
-                    totalBytes: metrics['minio_system_drive_total_bytes'][0].value,
-                    usedInodes: metrics['minio_system_drive_used_inodes'][0].value,
-                    totalInodes: metrics['minio_system_drive_total_inodes'][0].value,
+                    usedBytes:
+                        metrics['minio_system_drive_used_bytes'][0].value,
+                    totalBytes:
+                        metrics['minio_system_drive_total_bytes'][0].value,
+                    usedInodes:
+                        metrics['minio_system_drive_used_inodes'][0].value,
+                    totalInodes:
+                        metrics['minio_system_drive_total_inodes'][0].value,
                 };
             })
             .catch((error) => {
@@ -572,7 +652,9 @@ export class FileService implements OnModuleInit {
                     state: FileState.UPLOADING,
                     // pending uploads get canceled after 12 hours
                     // however this cleanup is done asynchronously once a day
-                    createdAt: MoreThan(new Date(Date.now() - 12 * 60 * 60 * 1000)),
+                    createdAt: MoreThan(
+                        new Date(Date.now() - 12 * 60 * 60 * 1000),
+                    ),
                     creator: { uuid: userUUID },
                 },
             })
@@ -627,7 +709,9 @@ export class FileService implements OnModuleInit {
                     return emptyCredentials;
                 }
 
-                const fileType: FileType = filename.endsWith('.bag') ? FileType.BAG : FileType.MCAP;
+                const fileType: FileType = filename.endsWith('.bag')
+                    ? FileType.BAG
+                    : FileType.MCAP;
 
                 // check if file already exists
                 const existingFile = await this.fileRepository.count({
@@ -672,7 +756,10 @@ export class FileService implements OnModuleInit {
                     bucket: getBucketFromFileType(fileType),
                     fileUUID: file.uuid,
                     fileName: filename,
-                    accessCredentials: await generateTemporaryCredential(file.uuid, getBucketFromFileType(fileType)),
+                    accessCredentials: await generateTemporaryCredential(
+                        file.uuid,
+                        getBucketFromFileType(fileType),
+                    ),
                     queueUUID: queueEntity.uuid,
                 };
             }),
@@ -703,32 +790,45 @@ export class FileService implements OnModuleInit {
     async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
         const unique_files_uuids = [...new Set(fileUUIDs)];
 
-        return await this.fileRepository.manager.transaction(async (transactionalEntityManager) => {
-            // get a list of all files to delete
-            const files = await transactionalEntityManager.find(FileEntity, {
-                where: {
-                    uuid: In(unique_files_uuids),
-                    mission: { uuid: missionUUID },
-                },
-            });
+        return await this.fileRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+                // get a list of all files to delete
+                const files = await transactionalEntityManager.find(
+                    FileEntity,
+                    {
+                        where: {
+                            uuid: In(unique_files_uuids),
+                            mission: { uuid: missionUUID },
+                        },
+                    },
+                );
 
-            // verify that all files are found in the database
-            const unique_db_files_uuids = [...new Set(files.map((f) => f.uuid))];
-            if (unique_db_files_uuids.length !== unique_files_uuids.length) {
-                throw new NotFoundException('Some files not found, aborting');
-            }
+                // verify that all files are found in the database
+                const unique_db_files_uuids = [
+                    ...new Set(files.map((f) => f.uuid)),
+                ];
+                if (
+                    unique_db_files_uuids.length !== unique_files_uuids.length
+                ) {
+                    throw new NotFoundException(
+                        'Some files not found, aborting',
+                    );
+                }
 
-            await Promise.all(
-                files.map(async (file) => {
-                    const bucket = getBucketFromFileType(file.type);
-                    await deleteFileMinio(bucket, file.uuid).catch(() => {
-                        logger.error(`File ${file.uuid} not found in Minio, deleting from database only!`);
-                    });
-                }),
-            );
+                await Promise.all(
+                    files.map(async (file) => {
+                        const bucket = getBucketFromFileType(file.type);
+                        await deleteFileMinio(bucket, file.uuid).catch(() => {
+                            logger.error(
+                                `File ${file.uuid} not found in Minio, deleting from database only!`,
+                            );
+                        });
+                    }),
+                );
 
-            await transactionalEntityManager.remove(files);
-        });
+                await transactionalEntityManager.remove(files);
+            },
+        );
     }
 
     /**
@@ -744,12 +844,19 @@ export class FileService implements OnModuleInit {
         const filesList = await files.toArray();
         await Promise.all(
             filesList.map(async (file: BucketItem) => {
-                const fileEntity = await this.fileRepository.findOne({ where: { uuid: file.name }, relations: ['mission', 'mission.project'] });
+                const fileEntity = await this.fileRepository.findOne({
+                    where: { uuid: file.name },
+                    relations: ['mission', 'mission.project'],
+                });
                 if (!fileEntity) {
                     logger.error(`File ${file.name} not found in database`);
                     return;
                 }
-                await internalMinio.removeObjectTagging(bucked, file.name, {} as TaggingOpts);
+                await internalMinio.removeObjectTagging(
+                    bucked,
+                    file.name,
+                    {} as TaggingOpts,
+                );
                 await addTagsToMinioObject(bucked, file.name, {
                     project_uuid: fileEntity.mission.project.uuid,
                     mission_uuid: fileEntity.mission.uuid,

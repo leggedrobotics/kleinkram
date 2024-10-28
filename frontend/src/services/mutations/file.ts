@@ -28,7 +28,10 @@ export const deleteFile = async (file: FileEntity) => {
     return response.data;
 };
 
-export const generateTemporaryCredentials = async (filenames: string[], missionUUID: string): Promise<GenerateTemporaryCredentialsResponse> => {
+export const generateTemporaryCredentials = async (
+    filenames: string[],
+    missionUUID: string,
+): Promise<GenerateTemporaryCredentialsResponse> => {
     const response = await axios.post('/file/temporaryAccess', {
         filenames,
         missionUUID,
@@ -36,7 +39,10 @@ export const generateTemporaryCredentials = async (filenames: string[], missionU
     return response.data as GenerateTemporaryCredentialsResponse;
 };
 
-export const cancelUploads = async (fileUUIDs: string[], missionUUID: string) => {
+export const cancelUploads = async (
+    fileUUIDs: string[],
+    missionUUID: string,
+) => {
     const response = await axios.post('/file/cancelUpload', {
         uuids: fileUUIDs,
         missionUUID,

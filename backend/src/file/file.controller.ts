@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Post, Put, Query, Req, Res, Response } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+    Req,
+    Res,
+    Response,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -41,7 +52,11 @@ export class FileController {
 
     @Get('all')
     @UserOnly()
-    async allFiles(@addUser() auth: AuthRes, @QuerySkip('skip') skip: number, @QueryTake('take') take: number) {
+    async allFiles(
+        @addUser() auth: AuthRes,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+    ) {
         return await this.fileService.findAll(auth.user.uuid, take, skip);
     }
 
@@ -56,7 +71,15 @@ export class FileController {
         @QueryTake('take') take: number,
         @addUser() auth: AuthRes,
     ) {
-        return await this.fileService.findFilteredByNames(projectName, missionName, topics, auth.user.uuid, take, skip, tags);
+        return await this.fileService.findFilteredByNames(
+            projectName,
+            missionName,
+            topics,
+            auth.user.uuid,
+            take,
+            skip,
+            tags,
+        );
     }
 
     @Get('filtered')
@@ -101,7 +124,10 @@ export class FileController {
 
     @Get('download')
     @CanReadFile()
-    async download(@QueryUUID('uuid') uuid: string, @QueryBoolean('expires') expires: boolean) {
+    async download(
+        @QueryUUID('uuid') uuid: string,
+        @QueryBoolean('expires') expires: boolean,
+    ) {
         logger.debug('download ' + uuid + ': expires=' + expires);
         return this.fileService.generateDownload(uuid, expires);
     }
@@ -128,7 +154,14 @@ export class FileController {
         @QueryOptionalString('fileType') fileType: FileType,
         @QueryOptionalStringArray('categories') categories: string[],
     ) {
-        return this.fileService.findByMission(uuid, take, skip, filename, fileType, categories);
+        return this.fileService.findByMission(
+            uuid,
+            take,
+            skip,
+            filename,
+            fileType,
+            categories,
+        );
     }
 
     @Put(':uuid')
@@ -139,7 +172,10 @@ export class FileController {
 
     @Get('oneByName')
     @CanReadMission()
-    async getOneFileByName(@QueryUUID('uuid') uuid: string, @QueryString('filename') name: string) {
+    async getOneFileByName(
+        @QueryUUID('uuid') uuid: string,
+        @QueryString('filename') name: string,
+    ) {
         return this.fileService.findOneByName(uuid, name);
     }
 
@@ -163,20 +199,38 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    async getTemporaryAccess(@addUser() auth: AuthRes, @Body() body: CreatePreSignedURLSDto) {
-        return await this.fileService.getTemporaryAccess(body.filenames, body.missionUUID, auth.user.uuid);
+    async getTemporaryAccess(
+        @addUser() auth: AuthRes,
+        @Body() body: CreatePreSignedURLSDto,
+    ) {
+        return await this.fileService.getTemporaryAccess(
+            body.filenames,
+            body.missionUUID,
+            auth.user.uuid,
+        );
     }
 
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
-    async cancelUpload(@BodyUUIDArray('uuids') uuids: string[], @BodyUUID('missionUUID') missionUUID: string, @addUser() auth: AuthRes) {
+    async cancelUpload(
+        @BodyUUIDArray('uuids') uuids: string[],
+        @BodyUUID('missionUUID') missionUUID: string,
+        @addUser() auth: AuthRes,
+    ) {
         logger.debug('cancelUpload ' + uuids);
-        return this.fileService.cancelUpload(uuids, missionUUID, auth.user.uuid);
+        return this.fileService.cancelUpload(
+            uuids,
+            missionUUID,
+            auth.user.uuid,
+        );
     }
 
     @Post('deleteMultiple')
     @CanDeleteMission()
-    async deleteMultiple(@BodyUUIDArray('uuids') uuids: string[], @BodyUUID('missionUUID') missionUUID: string) {
+    async deleteMultiple(
+        @BodyUUIDArray('uuids') uuids: string[],
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
         return this.fileService.deleteMultiple(uuids, missionUUID);
     }
 
