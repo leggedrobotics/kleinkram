@@ -19,7 +19,7 @@ export default tseslint.config(
             semi: 'error',
             'prefer-const': 'error',
             complexity: ['warn', { max: 4 }],
-            'no-shadow': 'warn',
+            'no-shadow': 'error',
             '@typescript-eslint/naming-convention': 'error',
             '@typescript-eslint/no-unused-vars': 'error',
             'no-nested-ternary': 'warn',

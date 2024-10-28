@@ -19,7 +19,7 @@ export const verifyIfGroupWithUUIDExists = (
     accessGroups: AccessGroup[],
 ) => {
     const group = accessGroups.filter(
-        (group: AccessGroup) => group.uuid === uuid,
+        (_group: AccessGroup) => _group.uuid === uuid,
     );
     expect(group.length).toBe(1);
 };
@@ -35,8 +35,8 @@ export const getAccessGroupForEmail = (
     email: string,
     accessGroups: AccessGroup[],
 ): AccessGroup => {
-    const group = accessGroups.filter((group: AccessGroup) =>
-        group.users.some((user) => user.email === email && group.personal),
+    const group = accessGroups.filter((_group: AccessGroup) =>
+        _group.users.some((user) => user.email === email && _group.personal),
     );
 
     const thereIsOnlyOnePersonalGroup = group.length === 1;

@@ -316,7 +316,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(tags).map(async ([tagTypeUUID, value]) => {
                 const tag = mission.tags.find(
-                    (tag) => tag.tagType.uuid === tagTypeUUID,
+                    (_tag) => _tag.tagType.uuid === tagTypeUUID,
                 );
                 if (tag) {
                     return this.tagservice.updateTagType(

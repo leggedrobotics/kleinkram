@@ -249,15 +249,15 @@ export const QueryProjectSearchParam = createParamDecorator(
         }
 
         // remove empty values
-        Object.keys(value).forEach((key) => {
-            if (value[key] === '') {
-                delete value[key];
+        Object.keys(value).forEach((_key) => {
+            if (value[_key] === '') {
+                delete value[_key];
             }
         });
 
         // check if every value is a string
-        Object.keys(value).forEach((key) => {
-            if (typeof value[key] !== 'string') {
+        Object.keys(value).forEach((_key) => {
+            if (typeof value[_key] !== 'string') {
                 throw new BadRequestException('Parameter is not a valid value');
             }
         });

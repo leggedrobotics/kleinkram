@@ -39,8 +39,8 @@ export function addAccessConstraints(
     );
 
     qb.andWhere(
-        new Brackets((qb) => {
-            qb.where('"missionAccess"."missionuuid" IS NOT NULL').orWhere(
+        new Brackets((_qb) => {
+            _qb.where('"missionAccess"."missionuuid" IS NOT NULL').orWhere(
                 '"projectAccess"."projectuuid" IS NOT NULL',
             );
         }),

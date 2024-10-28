@@ -197,9 +197,9 @@ export const createNewUser = async (
     await accessGroupRepository.save(personalGroup);
     user.accessGroups = [personalGroup];
 
-    config.emails?.forEach((config) => {
-        if (user.email.endsWith(config.email)) {
-            config.access_groups?.forEach(async (uuid) => {
+    config.emails?.forEach((_config) => {
+        if (user.email.endsWith(_config.email)) {
+            _config.access_groups?.forEach(async (uuid) => {
                 const group = await accessGroupRepository.findOne({
                     where: { uuid },
                 });

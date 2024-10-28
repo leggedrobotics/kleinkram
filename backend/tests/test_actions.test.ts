@@ -107,7 +107,7 @@ describe('Verify Action', () => {
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         while (true) {
-            const res = await fetch(
+            const _res = await fetch(
                 `http://localhost:3000/action/details?uuid=${actionUuid}`,
                 {
                     method: 'GET',
@@ -117,7 +117,7 @@ describe('Verify Action', () => {
                 },
             );
 
-            const json = await res.json();
+            const json = await _res.json();
             if (
                 json.state === ActionState.DONE ||
                 json.state === ActionState.FAILED
