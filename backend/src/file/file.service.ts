@@ -848,7 +848,7 @@ export class FileService implements OnModuleInit {
         await Promise.all(
             filesList.map(async (file: BucketItem) => {
                 if (!file.name) {
-                    logger.debug(`File name is empty: ${JSON.stringify(file)}`);
+                    logger.debug(`Filename is empty: ${JSON.stringify(file)}`);
                     return;
                 }
                 const fileEntity = await this.fileRepository.findOne({
@@ -872,6 +872,8 @@ export class FileService implements OnModuleInit {
                     filename: fileEntity.filename,
                 });
             }),
-        );
+        ).catch((err) => {
+            logger.error(err);
+        });
     }
 }
