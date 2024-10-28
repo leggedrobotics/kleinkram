@@ -1,6 +1,7 @@
 import glob
 import os
 import queue
+import re
 import sys
 import threading
 from datetime import datetime
@@ -149,7 +150,7 @@ def uploadFile(
             if "error" in file_with_access and (
                 file_with_access["error"] is not None or file_with_access["error"] != ""
             ):
-                console = Console(file=sys.stderr, style="red")
+                console = Console(file=sys.stderr, style="red", highlight=False)
                 console.print(
                     f"Error uploading file: {file_with_access['fileName']} ({filepath}): {file_with_access['error']}"
                 )
@@ -250,6 +251,18 @@ def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
                         print("Invalid date format. Please use 'YYYY-MM-DD HH:MM:SS'")
 
             setTags[required_tag["uuid"]] = tag_value
+
+
+def is_valid_UUIDv4(uuid: str) -> bool:
+    has_correct_length = len(uuid) == 36
+
+    # is UUID4
+    uuid_regex = (
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    )
+    is_valid_uuid = re.match(uuid_regex, uuid)
+
+    return has_correct_length and is_valid_uuid
 
 
 if __name__ == "__main__":

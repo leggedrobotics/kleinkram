@@ -18,7 +18,14 @@ export const IsValidFileName = (
     Matches(/^[\w\-.() ]{3,40}.(bag|mcap)$/, {
         message: 'Filename is not valid!',
         ...validationOptions,
-    });
+    }) &&
+    Matches(
+        /^(?![0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/,
+        {
+            message: 'File name is not valid, are you trying to use a UUID?',
+            ...validationOptions,
+        },
+    );
 
 /**
  * Validates that the property is a valid project name.
@@ -39,7 +46,14 @@ export const IsValidName = (
     Matches(/^[\w\-_]{3,20}$/, {
         message: 'Project name is not valid!',
         ...validationOptions,
-    });
+    }) &&
+    Matches(
+        /^(?![0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/,
+        {
+            message: 'Project name is not valid, are you trying to use a UUID?',
+            ...validationOptions,
+        },
+    );
 
 /**
  * Validates that the property is a valid mission name.
@@ -60,4 +74,11 @@ export const IsValidMissionName = (
     Matches(/^[\w\-_]{3,40}$/, {
         message: 'Mission name is not valid!',
         ...validationOptions,
-    });
+    }) &&
+    Matches(
+        /^(?![0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/,
+        {
+            message: 'Mission name is not valid, are you trying to use a UUID?',
+            ...validationOptions,
+        },
+    );
