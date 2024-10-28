@@ -2,15 +2,9 @@
     <title-section title="">
         <template #subtitle>
             <div class="row">
-                <q-img
-                    :src="data?.avatarUrl"
-                    style="width: 100px; height: 100px; border-radius: 50%"
-                />
+                <q-img :src="data?.avatarUrl" style="width: 100px; height: 100px; border-radius: 50%" />
                 <div class="q-ml-md">
-                    <h2
-                        class="text-h3"
-                        style="margin-bottom: 5px; margin-top: 10px"
-                    >
+                    <h2 class="text-h3" style="margin-bottom: 5px; margin-top: 10px">
                         {{ data?.name }}
                     </h2>
                     <p class="text-subtitle2" style="color: #58585c">
@@ -20,21 +14,11 @@
             </div>
         </template>
         <template #tabs>
-            <q-tabs
-                v-model="tab"
-                dense
-                class="text-grey"
-                align="left"
-                active-color="primary"
-            >
+            <q-tabs v-model="tab" dense class="text-grey" align="left" active-color="primary">
                 <q-tab name="Details" label="Details" style="color: #222" />
                 <q-tab name="Projects" label="Projects" style="color: #222" />
-                <q-tab
-                    name="Settings"
-                    label="Settings"
-                    :disable="true"
-                    style="color: #222"
-                />
+                <q-tab name="Settings" label="Settings" :disable="true" style="color: #222" />
+                <q-tab name="Admin" label="Admin" :disable="data?.role === ROLE.USER" style="color: #222" />
             </q-tabs>
         </template>
     </title-section>
@@ -67,9 +51,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="q-table__cell first-column">
-                                Default Group:
-                            </td>
+                            <td class="q-table__cell first-column">Default Group:</td>
                             <td class="q-table__cell">
                                 {{ defaultGroup?.name }}
                             </td>
@@ -81,6 +63,15 @@
         <q-tab-panel name="Projects">
             <explorer-page-project-table :url_handler="handler" />
         </q-tab-panel>
+        <q-tab-panel name="Admin">
+            <div style="width: 300px">
+                <q-btn label="Reset Minio Tagging" class="button-border bg-button-primary full-width" @click="resetMinioTagging" flat />
+                <div>
+                    This will delete the Minio tags for all files in the system and then regenerate them based on the current DB state. This action
+                    cannot be undone. There is no confirmation!
+                </div>
+            </div>
+        </q-tab-panel>
     </q-tab-panels>
 </template>
 
@@ -88,9 +79,11 @@
 import 'vue-json-pretty/lib/styles.css';
 import { getUser } from 'src/services/auth';
 import TitleSection from 'components/TitleSection.vue';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
 import { QueryHandler } from 'src/services/QueryHandler';
+import ROLE from 'src/enums/USER_ROLES';
+import axios from 'src/api/axios';
 
 const data = await getUser();
 const tab = ref('Details');
@@ -98,6 +91,10 @@ const tab = ref('Details');
 const defaultGroup = data?.accessGroups.find((group) => group.inheriting);
 const handler = new QueryHandler();
 handler.search_params = { 'creator.uuid': data?.uuid || '' };
+
+async function resetMinioTagging() {
+    await axios.post('file/resetMinioTags');
+}
 </script>
 <style>
 .q-table-container {
