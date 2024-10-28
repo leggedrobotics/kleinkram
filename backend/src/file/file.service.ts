@@ -847,6 +847,10 @@ export class FileService implements OnModuleInit {
         const filesList = await files.toArray();
         await Promise.all(
             filesList.map(async (file: BucketItem) => {
+                if (!file.name) {
+                    logger.debug(`File name is empty: ${JSON.stringify(file)}`);
+                    return;
+                }
                 const fileEntity = await this.fileRepository.findOne({
                     where: { uuid: file.name },
                     relations: ['mission', 'mission.project'],
