@@ -17,7 +17,6 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
         uuid: file.uuid,
         filename: file.filename,
         mission_uuid: file.mission?.uuid,
-        project_uuid: file.mission?.project?.uuid,
         date: file.date,
         categories: file.categories.map((category) => category.uuid),
     });
@@ -29,10 +28,7 @@ export const deleteFile = async (file: FileEntity) => {
     return response.data;
 };
 
-export const generateTemporaryCredentials = async (
-    filenames: string[],
-    missionUUID: string,
-): Promise<GenerateTemporaryCredentialsResponse> => {
+export const generateTemporaryCredentials = async (filenames: string[], missionUUID: string): Promise<GenerateTemporaryCredentialsResponse> => {
     const response = await axios.post('/file/temporaryAccess', {
         filenames,
         missionUUID,
@@ -40,10 +36,7 @@ export const generateTemporaryCredentials = async (
     return response.data as GenerateTemporaryCredentialsResponse;
 };
 
-export const cancelUploads = async (
-    fileUUIDs: string[],
-    missionUUID: string,
-) => {
+export const cancelUploads = async (fileUUIDs: string[], missionUUID: string) => {
     const response = await axios.post('/file/cancelUpload', {
         uuids: fileUUIDs,
         missionUUID,
