@@ -32,15 +32,19 @@ import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
 import { redis } from '@common/consts';
 import {
+    addTagsToMinioObject,
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredential,
     getBucketFromFileType,
     getInfoFromMinio,
+    internalMinio,
 } from '@common/minio_helper';
 import Category from '@common/entities/category/category.entity';
 import { parseMinioMetrics } from './utils';
 import Credentials from 'minio/dist/main/Credentials';
+import { BucketItem } from 'minio';
+import { TaggingOpts } from 'minio/dist/main/internal/type';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -434,21 +438,10 @@ export class FileService implements OnModuleInit {
             }
         }
 
-        if (file.project_uuid) {
-            const newProject = await this.projectRepository.findOne({
-                where: { uuid: file.project_uuid },
-            });
-            if (newProject) {
-                dbFile.mission.project = newProject;
-            } else {
-                throw new Error('Project not found');
-            }
-        }
         if (file.categories) {
             const cats = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
-            console.log(cats);
             dbFile.categories = cats;
         }
 
@@ -469,7 +462,17 @@ export class FileService implements OnModuleInit {
                 }
                 throw err;
             });
-
+        await addTagsToMinioObject(
+            getBucketFromFileType(dbFile.type),
+            dbFile.uuid,
+            {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                project_uuid: dbFile.mission.project.uuid,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                mission_uuid: dbFile.mission.uuid,
+                filename: dbFile.filename,
+            },
+        );
         return this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission', 'mission.project'],
@@ -837,5 +840,34 @@ export class FileService implements OnModuleInit {
      */
     async exists(fileUUID: string) {
         return this.fileRepository.exists({ where: { uuid: fileUUID } });
+    }
+
+    async renameTags(bucked: string) {
+        const files = internalMinio.listObjects(bucked, '');
+        const filesList = await files.toArray();
+        await Promise.all(
+            filesList.map(async (file: BucketItem) => {
+                const fileEntity = await this.fileRepository.findOne({
+                    where: { uuid: file.name },
+                    relations: ['mission', 'mission.project'],
+                });
+                if (!fileEntity) {
+                    logger.error(`File ${file.name} not found in database`);
+                    return;
+                }
+                await internalMinio.removeObjectTagging(
+                    bucked,
+                    file.name,
+                    {} as TaggingOpts,
+                );
+                await addTagsToMinioObject(bucked, file.name, {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    project_uuid: fileEntity.mission.project.uuid,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    mission_uuid: fileEntity.mission.uuid,
+                    filename: fileEntity.filename,
+                });
+            }),
+        );
     }
 }

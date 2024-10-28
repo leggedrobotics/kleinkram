@@ -18,8 +18,6 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
         filename: file.filename,
         // eslint-disable-next-line @typescript-eslint/naming-convention
         mission_uuid: file.mission?.uuid,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        project_uuid: file.mission?.project?.uuid,
         date: file.date,
         categories: file.categories.map((category) => category.uuid),
     });

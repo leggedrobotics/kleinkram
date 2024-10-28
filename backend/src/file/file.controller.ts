@@ -11,6 +11,7 @@ import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
 import {
+    AdminOnly,
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
@@ -39,6 +40,7 @@ import { ParamUUID } from '../validation/paramDecorators';
 import { FileType } from '@common/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
+import env from '@common/env';
 
 @Controller('file')
 export class FileController {
@@ -232,5 +234,13 @@ export class FileController {
     @CanReadFile()
     async exists(@QueryUUID('uuid') uuid: string) {
         return this.fileService.exists(uuid);
+    }
+
+    @Post('resetMinioTags')
+    @AdminOnly()
+    async resetMinioTags() {
+        logger.debug('Resetting Minio tags');
+        await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
+        await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
     }
 }

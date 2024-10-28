@@ -73,9 +73,9 @@ export class ActionManagerService {
         action.state_cause = 'Action is currently running...';
         await this.actionRepository.save(action);
 
-        using apikey = await this.createAPIkey(action);
-
-        const envVariables: ContainerEnv = {
+        const apikey = await this.createAPIkey(action);
+        try {
+            const envVariables: ContainerEnv = {
             /* eslint-disable @typescript-eslint/naming-convention */
             APIKEY: apikey.apikey,
             PROJECT_UUID: action.mission.project.uuid,
@@ -85,14 +85,14 @@ export class ActionManagerService {
             /* eslint-enable @typescript-eslint/naming-convention */
         };
         const needsGpu = action.template.gpuMemory > 0;
-        const { container, repoDigests, sha } =
-            await this.containerDaemon.startContainer(
-                async () => {
-                    action.state = ActionState.PROCESSING;
-                    await this.actionRepository.save(action);
-                },
-                {
-                    /* eslint-disable @typescript-eslint/naming-convention */
+            const { container, repoDigests, sha } =
+                await this.containerDaemon.startContainer(
+                    async () => {
+                        action.state = ActionState.PROCESSING;
+                        await this.actionRepository.save(action);
+                    },
+                    {
+                        /* eslint-disable @typescript-eslint/naming-convention */
                     docker_image: action.template.image_name,
                     name: action.uuid,
                     limits: {
@@ -106,68 +106,71 @@ export class ActionManagerService {
                             1024, // min 2 GB
                     },
                     needs_gpu: needsGpu,
-                    environment: envVariables,
+                        environment: envVariables,
                     command: action.template.command,
                     /* eslint-enable @typescript-eslint/naming-convention */
-                },
-            );
+                    },
+                );
 
-        // capture runner information
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+            // capture runner information
+            // eslint-disable-next-line @typescript-eslint/naming-convention
         action.image = { repo_digests: repoDigests, sha };
-        await this.setContainerInfo(action, container);
-        await this.actionRepository.save(action);
+            await this.setContainerInfo(action, container);
+            await this.actionRepository.save(action);
 
-        const sanitize = (str: string) => {
-            return str.replace(apikey.apikey, '***');
-        };
+            const sanitize = (str: string) => {
+                return str.replace(apikey.apikey, '***');
+            };
 
-        // get logs from container and save them to the database
-        const logsObservable = await this.containerDaemon
-            .subscribeToLogs(container.id, sanitize)
-            .catch((err) => {
-                logger.error('Error while subscribing to logs:', err);
-            });
+            // get logs from container and save them to the database
+            const logsObservable = await this.containerDaemon
+                .subscribeToLogs(container.id, sanitize)
+                .catch((err) => {
+                    logger.error('Error while subscribing to logs:', err);
+                });
 
-        if (!logsObservable) {
-            throw new Error(
-                'Container logs are not available. Container might never have been started correctly.',
-            );
-        }
+            if (!logsObservable) {
+                throw new Error(
+                    'Container logs are not available. Container might never have been started correctly.',
+                );
+            }
 
-        await this.processContainerLogs(
-            logsObservable,
-            action.uuid,
-            container.id,
-        );
-
-        // wait for the container to stop
-        await container.wait();
-
-        // update action state based on container exit code
-        action = await this.actionRepository.findOneOrFail({
-            where: { uuid: action.uuid },
-            relations: ['worker', 'template'],
-        });
-        await this.containerDaemon.removeContainer(container.id, true);
-        await this.setActionState(container, action);
-        action.executionEndedAt = new Date();
-        action.artifacts = ArtifactState.UPLOADING;
-        await this.actionRepository.save(action);
-
-        const { container: artifactUploadContainer, parentFolder } =
-            await this.containerDaemon.launchArtifactUploadContainer(
+            await this.processContainerLogs(
+                logsObservable,
                 action.uuid,
-                `${action.template.name}-v${action.template.version}-${action.uuid}`,
+                container.id,
             );
-        await artifactUploadContainer.wait();
+
+            // wait for the container to stop
+            await container.wait();
+
+            // update action state based on container exit code
+            action = await this.actionRepository.findOneOrFail({
+                where: { uuid: action.uuid },
+                relations: ['worker', 'template'],
+            });
+            await this.containerDaemon.removeContainer(container.id, true);
+            await this.setActionState(container, action);
+            action.executionEndedAt = new Date();
+            action.artifacts = ArtifactState.UPLOADING;
+            await this.actionRepository.save(action);
+
+            const { container: artifactUploadContainer, parentFolder } =
+                await this.containerDaemon.launchArtifactUploadContainer(
+                    action.uuid,
+                    `${action.template.name}-v${action.template.version}-${action.uuid}`,
+                );
+            await artifactUploadContainer.wait();
         action.artifacts = ArtifactState.UPLOADED;
         await this.containerDaemon.removeContainer(artifactUploadContainer.id);
         await this.containerDaemon.removeVolume(action.uuid);
         action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
         await this.actionRepository.save(action);
 
-        return true; // Mark the job as completed
+            return true; // Mark the job as completed
+        } finally {
+            await apikey[Symbol.asyncDispose]();
+        }
     }
 
     /**
