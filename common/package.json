@@ -6,7 +6,7 @@
         "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
     },
     "dependencies": {
-        "@faker-js/faker": "^9.0.3",
+        "@faker-js/faker": "^9.1.0",
         "bull": "^4.16.3",
         "pg": "^8.13.1",
         "ts-node": "^10.9.2",
