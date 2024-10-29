@@ -37,7 +37,7 @@
         "@opentelemetry/instrumentation-http": "^0.54.0",
         "@opentelemetry/instrumentation-nestjs-core": "^0.41.0",
         "@opentelemetry/instrumentation-pg": "^0.47.0",
-        "@opentelemetry/instrumentation-winston": "^0.40.0",
+        "@opentelemetry/instrumentation-winston": "^0.41.0",
         "@opentelemetry/sdk-node": "^0.54.0",
         "@opentelemetry/sdk-trace-base": "^1.27.0",
         "@types/multer": "^1.4.11",
