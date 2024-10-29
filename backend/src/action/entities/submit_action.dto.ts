@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class SubmitAction {
     @IsUUID()
@@ -24,23 +24,28 @@ export class CreateActionTemplate {
     command: string;
 
     @IsString()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     docker_image: string;
 
     @IsString()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     gpu_model: string;
 }
 
 export class ActionQuery {
     @IsUUID()
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_uuid: string;
 
     @IsOptional()
     @IsUUID()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_uuid: string;
 }
 
 export class ActionDetailsQuery {
     @IsUUID()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     action_uuid: string;
 }

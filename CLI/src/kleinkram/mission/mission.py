@@ -49,8 +49,8 @@ def addTag(
 @missionCommands.command("list")
 def list_missions(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
-    verbose: Optional[bool] = typer.Option(
-        False, help="Outputs a table with more information"
+    table: Optional[bool] = typer.Option(
+        True, help="Outputs a table with more information"
     ),
 ):
     """
@@ -93,20 +93,28 @@ def list_missions(
         return
 
     print("missions by Project:")
-    if not verbose:
+    if not table:
         for project_uuid, missions in missions_by_project_uuid.items():
             print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
             for mission in missions:
                 print(f"  - {mission['name']}")
 
     else:
-        table = Table("UUID", "name", "project", "creator", "createdAt")
+        table = Table(
+            "project",
+            "name",
+            "UUID",
+            "creator",
+            "createdAt",
+            title="Missions",
+            expand=True,
+        )
         for project_uuid, missions in missions_by_project_uuid.items():
             for mission in missions:
                 table.add_row(
-                    mission["uuid"],
-                    mission["name"],
                     mission["project"]["name"],
+                    mission["name"],
+                    mission["uuid"],
                     mission["creator"]["name"],
                     mission["createdAt"],
                 )
@@ -261,7 +269,7 @@ def upload(
     Multiple paths can be given by using the option multiple times.\n
     \n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project_1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
 
     """
     files = []

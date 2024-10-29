@@ -2,12 +2,12 @@ import User from '@common/entities/user/user.entity';
 import {
     clearAllData,
     db,
-    get_jwt_token,
-    get_user_from_db,
-    mock_db_user,
+    getJwtToken,
+    getUserFromDb,
+    mockDbUser,
 } from '../../utils/database_utils';
 import { AccessGroupRights, UserRole } from '@common/enum';
-import { create_project_using_post } from '../../utils/api_calls';
+import { createProjectUsingPost } from '../../utils/api_calls';
 
 /**
  * This test suite tests the access control of the application.
@@ -25,10 +25,10 @@ describe('Verify Project Level Access', () => {
     });
 
     test('if user with leggedrobotics email is allowed to create new project', async () => {
-        const user_id = await mock_db_user('internal-user@leggedrobotics.com');
-        const user = await get_user_from_db(user_id);
+        const userId = await mockDbUser('internal-user@leggedrobotics.com');
+        const user = await getUserFromDb(userId);
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -39,21 +39,21 @@ describe('Verify Project Level Access', () => {
 
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: project_uuid },
+            where: { uuid: projectUuid },
         });
         expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
     });
 
     test('if user with admin role is allowed to create new project', async () => {
-        const user_id = await mock_db_user(
+        const userId = await mockDbUser(
             'John Doe',
             'test@example.com',
             UserRole.ADMIN,
         );
-        const user = await get_user_from_db(user_id);
+        const user = await getUserFromDb(userId);
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -64,7 +64,7 @@ describe('Verify Project Level Access', () => {
 
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: project_uuid },
+            where: { uuid: projectUuid },
         });
         expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
@@ -73,27 +73,27 @@ describe('Verify Project Level Access', () => {
     test('if user with admin role can view all projects', async () => {
         // generate 10 projects
         const projectRepository = db.getRepository('Project');
-        const project_uuids = [];
+        const projectUuids = [];
         for (let i = 0; i < 10; i++) {
             const project = projectRepository.create();
             project.name = `Project ${i}`;
             project.description = `This is project ${i}`;
-            const project_res = await projectRepository.save(project);
-            project_uuids.push(project_res.uuid);
+            const projectRes = await projectRepository.save(project);
+            projectUuids.push(projectRes.uuid);
         }
 
         // check if the projects are created
         const projects = await projectRepository.find();
         expect(projects.length).toBe(10);
 
-        const user_id = await mock_db_user(
+        const userId = await mockDbUser(
             'some-admin@third-party.com',
             undefined,
             UserRole.ADMIN,
         );
-        const user = await get_user_from_db(user_id);
+        const user = await getUserFromDb(userId);
 
-        const token = await get_jwt_token(user);
+        const token = await getJwtToken(user);
         const res = await fetch(
             `http://localhost:3000/project/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
@@ -104,19 +104,19 @@ describe('Verify Project Level Access', () => {
             },
         );
         expect(res.status).toBe(200);
-        const project_list = await res.json();
-        console.log(project_list);
-        expect(project_list[0].length).toBe(10);
-        project_list[0]?.forEach((project) => {
-            expect(project_uuids.includes(project.uuid)).toBe(true);
+        const projectList = await res.json();
+        console.log(projectList);
+        expect(projectList[0].length).toBe(10);
+        projectList[0]?.forEach((project) => {
+            expect(projectUuids.includes(project.uuid)).toBe(true);
         });
     });
 
     test('the creator of a project has delete access to the project', async () => {
-        const user_ud = await mock_db_user('creator@leggedrobotics.com');
-        const user = await get_user_from_db(user_ud);
+        const userID = await mockDbUser('creator@leggedrobotics.com');
+        const user = await getUserFromDb(userID);
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -128,13 +128,13 @@ describe('Verify Project Level Access', () => {
         // check if project is created by reading the database
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: project_uuid },
+            where: { uuid: projectUuid },
         });
         expect(project.name).toBe('test_project');
 
         // delete the project using the API
-        const token = await get_jwt_token(user);
-        const url = `http://localhost:3000/project/${project_uuid}`;
+        const token = await getJwtToken(user);
+        const url = `http://localhost:3000/project/${projectUuid}`;
         const res = await fetch(url, {
             method: 'DELETE',
             headers: {
@@ -148,15 +148,13 @@ describe('Verify Project Level Access', () => {
     });
 
     test('if user with admin role can delete any project', async () => {
-        const creator_user_id = await mock_db_user(
-            'creator@leggedrobotics.com',
-        );
+        const creatorUserId = await mockDbUser('creator@leggedrobotics.com');
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOne({
-            where: { uuid: creator_user_id },
+            where: { uuid: creatorUserId },
         });
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -169,22 +167,22 @@ describe('Verify Project Level Access', () => {
         let projects = await projectRepository.find();
         expect(projects.length).toBe(1);
 
-        const admin_user_id = await mock_db_user(
+        const adminUserId = await mockDbUser(
             'third-party-admin@test.com',
             undefined,
             UserRole.ADMIN,
         );
-        const third_party_user = await userRepository.findOne({
-            where: { uuid: admin_user_id },
+        const thirdPartyUser = await userRepository.findOne({
+            where: { uuid: adminUserId },
         });
-        const third_party_token = await get_jwt_token(third_party_user);
+        const thirdPartyToken = await getJwtToken(thirdPartyUser);
 
         const res = await fetch(
-            `http://localhost:3000/project/${project_uuid}`,
+            `http://localhost:3000/project/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: {
-                    cookie: `authtoken=${third_party_token}`,
+                    cookie: `authtoken=${thirdPartyToken}`,
                 },
             },
         );
@@ -195,37 +193,37 @@ describe('Verify Project Level Access', () => {
     });
 
     test('third party user cannot view any project by default', async () => {
-        const interal_user_id = await mock_db_user(
+        const interalUserId = await mockDbUser(
             'some-interal-user@leggedrobotics.com',
         );
-        const internal_user = await get_user_from_db(interal_user_id);
+        const internalUser = await getUserFromDb(interalUserId);
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
-            internal_user,
+            internalUser,
         );
 
         const projectRepository = db.getRepository('Project');
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
 
-        const external_user_id = await mock_db_user(
+        const externalUserId = await mockDbUser(
             'some-external-user@third-party.com',
         );
-        const external_user = await get_user_from_db(external_user_id);
-        const external_user_token = await get_jwt_token(external_user);
+        const externalUser = await getUserFromDb(externalUserId);
+        const externalUserToken = await getJwtToken(externalUser);
 
         // check single project view access
         const res2 = await fetch(
-            `http://localhost:3000/project/one?uuid=${project_uuid}`,
+            `http://localhost:3000/project/one?uuid=${projectUuid}`,
             {
                 method: 'GET',
                 headers: {
-                    cookie: `authtoken=${external_user_token}`,
+                    cookie: `authtoken=${externalUserToken}`,
                 },
             },
         );
@@ -237,22 +235,20 @@ describe('Verify Project Level Access', () => {
             {
                 method: 'GET',
                 headers: {
-                    cookie: `authtoken=${external_user_token}`,
+                    cookie: `authtoken=${externalUserToken}`,
                 },
             },
         );
         expect(res.status).toBe(200);
-        const project_list = await res.json();
-        expect(project_list[0].length).toBe(0);
+        const projectList = await res.json();
+        expect(projectList[0].length).toBe(0);
     });
 
     test('internal user have read only access by default', async () => {
-        const interal_user_id = await mock_db_user(
-            'internal-1@leggedrobotics.com',
-        );
-        const user = await get_user_from_db(interal_user_id);
+        const interalUserId = await mockDbUser('internal-1@leggedrobotics.com');
+        const user = await getUserFromDb(interalUserId);
 
-        const project_uuid = await create_project_using_post(
+        const projectIuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -263,19 +259,17 @@ describe('Verify Project Level Access', () => {
 
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: project_uuid },
+            where: { uuid: projectIuid },
         });
         expect(project.name).toBe('test_project');
 
-        const second_user_id = await mock_db_user(
-            'internal-2@leggedrobotics.com',
-        );
-        const second_user = await get_user_from_db(second_user_id);
+        const secondUserId = await mockDbUser('internal-2@leggedrobotics.com');
+        const secondUser = await getUserFromDb(secondUserId);
 
         // check view access
-        const token = await get_jwt_token(second_user);
+        const token = await getJwtToken(secondUser);
         const res = await fetch(
-            `http://localhost:3000/project/one?uuid=${project_uuid}`,
+            `http://localhost:3000/project/one?uuid=${projectIuid}`,
             {
                 method: 'GET',
                 headers: {
@@ -284,15 +278,16 @@ describe('Verify Project Level Access', () => {
             },
         );
         expect(res.status).toBe(200);
-        const project_res = await res.json();
-        expect(project_res.name).toBe('test_project');
+        const projectRes = await res.json();
+        expect(projectRes.name).toBe('test_project');
 
         // check denied modification access
         const res2 = await fetch(
-            `http://localhost:3000/project/update?uuid=${project_uuid}`,
+            `http://localhost:3000/project/update?uuid=${projectIuid}`,
             {
                 method: 'PUT',
                 headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                     cookie: `authtoken=${token}`,
                 },
@@ -307,7 +302,7 @@ describe('Verify Project Level Access', () => {
 
         // check denied delete access
         const res3 = await fetch(
-            `http://localhost:3000/project/delete?uuid=${project_uuid}`,
+            `http://localhost:3000/project/delete?uuid=${projectIuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -320,17 +315,17 @@ describe('Verify Project Level Access', () => {
         // assert that the project is not deleted
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
-        expect(projects[0].uuid).toBe(project_uuid);
+        expect(projects[0].uuid).toBe(projectIuid);
         expect(projects[0].name).toBe('test_project');
     });
 
     test('if external user cannot create a new project', async () => {
-        const mock_email = 'some-external@ethz.ch';
-        const external_uuid = await mock_db_user(mock_email);
+        const mockEmail = 'some-external@ethz.ch';
+        const externalUuid = await mockDbUser(mockEmail);
 
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
-            where: { uuid: external_uuid },
+            where: { uuid: externalUuid },
         });
 
         const projectRepository = db.getRepository('Project');
@@ -338,11 +333,12 @@ describe('Verify Project Level Access', () => {
         project.name = 'test_project';
         project.description = 'This is a test project';
 
-        const token = await get_jwt_token(user);
+        const token = await getJwtToken(user);
         const res = await fetch(`http://localhost:3000/project/create`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -358,23 +354,23 @@ describe('Verify Project Level Access', () => {
     });
 
     test('if external user cannot delete a project', async () => {
-        const mock_email = 'some-external@ethz.ch';
-        const external_uuid = await mock_db_user(mock_email);
+        const mockEmail = 'some-external@ethz.ch';
+        const externalUuid = await mockDbUser(mockEmail);
 
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
-            where: { uuid: external_uuid },
+            where: { uuid: externalUuid },
         });
 
         const projectRepository = db.getRepository('Project');
         const project = projectRepository.create();
         project.name = 'test_project';
         project.description = 'This is a test project';
-        const project_res = await projectRepository.save(project);
+        const projectRes = await projectRepository.save(project);
 
-        const token = await get_jwt_token(user);
+        const token = await getJwtToken(user);
         const res = await fetch(
-            `http://localhost:3000/project/${project_res.uuid}`,
+            `http://localhost:3000/project/${projectRes.uuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -389,20 +385,13 @@ describe('Verify Project Level Access', () => {
     });
 
     test('if project can only be deleted by users with delete access', async () => {
-        const mock_email = 'some-external@ethz.ch';
-        const external_uuid = await mock_db_user(mock_email);
-
-        const mock_email_internal = 'some-external@leggedrobotics.com';
-        const internal_uuid = await mock_db_user(mock_email_internal);
+        const mockEmail = 'some-external@ethz.ch';
+        const externalUuid = await mockDbUser(mockEmail);
 
         const userRepository = db.getRepository(User);
-        const external_user = await userRepository.findOneOrFail({
-            where: { uuid: external_uuid },
+        const externalUser = await userRepository.findOneOrFail({
+            where: { uuid: externalUuid },
             relations: ['accessGroups'],
-        });
-
-        const internal_user = await userRepository.findOneOrFail({
-            where: { uuid: internal_uuid },
         });
 
         const projectRepository = db.getRepository('Project');
@@ -410,19 +399,19 @@ describe('Verify Project Level Access', () => {
 
         project.name = 'test_project';
         project.description = 'This is a test project';
-        const project_res = await projectRepository.save(project);
+        const projectRes = await projectRepository.save(project);
 
         // delete the project using the external user
-        const token_external = await get_jwt_token(external_user);
+        const tokenExternal = await getJwtToken(externalUser);
         const deleteRequest = {
             method: 'DELETE',
             headers: {
-                cookie: `authtoken=${token_external}`,
+                cookie: `authtoken=${tokenExternal}`,
             },
         };
 
         const res = await fetch(
-            `http://localhost:3000/project/${project_res.uuid}`,
+            `http://localhost:3000/project/${projectRes.uuid}`,
             deleteRequest,
         );
         expect(res.status).toBe(403);
@@ -430,7 +419,7 @@ describe('Verify Project Level Access', () => {
         project.project_accesses = [
             {
                 rights: AccessGroupRights.DELETE,
-                accessGroup: external_user.accessGroups.find(
+                accessGroup: externalUser.accessGroups.find(
                     (group) => group.personal,
                 )?.uuid,
             },
@@ -438,18 +427,18 @@ describe('Verify Project Level Access', () => {
         await projectRepository.save(project);
 
         const res2 = await fetch(
-            `http://localhost:3000/project/${project_res.uuid}`,
+            `http://localhost:3000/project/${projectRes.uuid}`,
             deleteRequest,
         );
         expect(res2.status).toBe(200);
     });
 
     test('if project can only be deleted if it has no missions', async () => {
-        const mock_email = 'internal@leggedrobotics.com';
-        const user_id = await mock_db_user(mock_email);
-        const user = await get_user_from_db(user_id);
+        const mockEmail = 'internal@leggedrobotics.com';
+        const userId = await mockDbUser(mockEmail);
+        const user = await getUserFromDb(userId);
 
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -465,7 +454,7 @@ describe('Verify Project Level Access', () => {
 
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: project_uuid },
+            where: { uuid: projectUuid },
         });
         expect(project.name).toBe('test_project');
     });

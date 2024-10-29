@@ -18,7 +18,6 @@ export const searchUsers = async (search: string): Promise<User[]> => {
             [],
             new Date(user.createdAt),
             new Date(user.updatedAt),
-            new Date(user.deletedAt),
         );
     });
 };
@@ -38,7 +37,6 @@ export const getMe = async (): Promise<User> => {
             undefined,
             new Date(group.createdAt),
             new Date(group.updatedAt),
-            new Date(group.deletedAt),
         );
     });
     return new User(
@@ -51,7 +49,6 @@ export const getMe = async (): Promise<User> => {
         accessGroups,
         new Date(user.createdAt),
         new Date(user.updatedAt),
-        new Date(user.deletedAt),
     );
 };
 

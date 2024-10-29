@@ -21,9 +21,8 @@ export class User extends BaseEntity {
         accessGroups: AccessGroup[],
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.name = name;
         this.email = email;
         this.role = role;

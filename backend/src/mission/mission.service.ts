@@ -278,8 +278,10 @@ export class MissionService {
                     getBucketFromFileType(file.type),
                     file.uuid,
                     {
-                        missionUuid: missionUUID,
-                        projectUuid: projectUUID,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        mission_uuid: missionUUID,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        project_uuid: projectUUID,
                     },
                 ),
             ),
@@ -314,7 +316,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(tags).map(async ([tagTypeUUID, value]) => {
                 const tag = mission.tags.find(
-                    (tag) => tag.tagType.uuid === tagTypeUUID,
+                    (_tag) => _tag.tagType.uuid === tagTypeUUID,
                 );
                 if (tag) {
                     return this.tagservice.updateTagType(
@@ -354,6 +356,7 @@ export class MissionService {
                     4 * 60 * 60,
                     {
                         // set filename in response headers
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         'response-content-disposition': `attachment; filename ="${f.filename}"`,
                     },
                 ),

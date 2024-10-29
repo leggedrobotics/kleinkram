@@ -1,10 +1,9 @@
-import { Client, Tag } from 'minio';
+import { Client } from 'minio';
 import env from '@common/env';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
 import * as crypto from 'crypto';
-import { Tags } from 'minio/dist/main/internal/type';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -22,17 +21,18 @@ const minio: Client = new Client({
  * @param bucketName the name of the bucket to upload the file to
  * @param identifier the identifier of the file
  * @param fileName the name of the file (added as metadata)
- * @param tmp_file_path the path to the file to upload
+ * @param tmpFilePath the path to the file to upload
  */
 export async function uploadLocalFile(
     bucketName: string,
     identifier: string,
     fileName: string,
-    tmp_file_path: string,
+    tmpFilePath: string,
 ) {
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        await minio.fPutObject(bucketName, identifier, tmp_file_path, {
+        await minio.fPutObject(bucketName, identifier, tmpFilePath, {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/octet-stream',
         });
         logger.debug('File uploaded to Minio in parts');
@@ -43,13 +43,13 @@ export async function uploadLocalFile(
 export async function downloadMinioFile(
     bucketName: string,
     fileName: string,
-    tmp_file_name: string,
+    tmpFileName: string,
 ): Promise<string> {
     return await traceWrapper(async (): Promise<string> => {
         const hash = crypto.createHash('md5');
         logger.debug('Downloading file from Minio...');
         const fileStream = await minio.getObject(bucketName, fileName);
-        const writeStream = fs.createWriteStream(tmp_file_name);
+        const writeStream = fs.createWriteStream(tmpFileName);
 
         fileStream.on('data', (chunk) => {
             hash.update(chunk);

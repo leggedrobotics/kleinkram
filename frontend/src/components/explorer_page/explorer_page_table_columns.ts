@@ -19,7 +19,7 @@ export type ProjectColumnType = {
     sort?: (_a: string, _b: string, a: FileEntity, b: FileEntity) => number;
 };
 
-export const explorer_page_table_columns: Array<ProjectColumnType> = [
+export const explorerPageTableColumns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -76,7 +76,7 @@ export const explorer_page_table_columns: Array<ProjectColumnType> = [
     },
 ];
 
-export const mission_columns: Array<ProjectColumnType> = [
+export const missionColumns: Array<ProjectColumnType> = [
     {
         name: 'name',
         required: true,
@@ -134,7 +134,7 @@ export const mission_columns: Array<ProjectColumnType> = [
     },
 ];
 
-export const file_columns: Array<ProjectColumnType> = [
+export const fileColumns: Array<ProjectColumnType> = [
     {
         name: 'state',
         required: true,

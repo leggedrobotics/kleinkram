@@ -1,14 +1,14 @@
 import {
     clearAllData,
     db,
-    get_jwt_token,
-    get_user_from_db,
-    mock_db_user,
+    getJwtToken,
+    getUserFromDb,
+    mockDbUser,
 } from './utils/database_utils';
 import {
-    create_mission_using_post,
-    create_project_using_post,
-    upload_file,
+    createMissionUsingPost,
+    createProjectUsingPost,
+    uploadFile,
 } from './utils/api_calls';
 
 describe('Verify File Handling', () => {
@@ -25,11 +25,11 @@ describe('Verify File Handling', () => {
     test('Test if file is uploaded and can be downloaded again', async () => {
         const filename = 'test_small.bag';
 
-        const user_id = await mock_db_user('internal@leggedrobotics.com');
-        const user = await get_user_from_db(user_id);
+        const userId = await mockDbUser('internal@leggedrobotics.com');
+        const user = await getUserFromDb(userId);
 
         // create project
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'test description',
@@ -37,58 +37,58 @@ describe('Verify File Handling', () => {
             },
             user,
         );
-        expect(project_uuid).toBeDefined();
+        expect(projectUuid).toBeDefined();
 
         // create mission using the post
-        const mission_uuid = await create_mission_using_post(
+        const missionUuid = await createMissionUsingPost(
             {
                 name: 'test_mission2',
-                projectUUID: project_uuid,
+                projectUUID: projectUuid,
                 tags: {},
             },
             user,
         );
-        expect(mission_uuid).toBeDefined();
-        const file_hash = await upload_file(user, filename, mission_uuid);
+        expect(missionUuid).toBeDefined();
+        const fileHash = await uploadFile(user, filename, missionUuid);
 
         // get file uuid by calling /file/oneByName
-        const res_oneByName = await fetch(
+        const resOneByName = await fetch(
             `http://localhost:3000/file/byName?name=${filename}`,
             {
                 method: 'GET',
                 headers: {
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
+                    cookie: `authtoken=${await getJwtToken(user)}`,
                 },
             },
         );
 
-        expect(res_oneByName.status).toBe(200);
-        const json_oneByName = await res_oneByName.json();
-        expect(json_oneByName).toBeDefined();
-        expect(json_oneByName.uuid).toBeDefined();
+        expect(resOneByName.status).toBe(200);
+        const jsonOneByName = await resOneByName.json();
+        expect(jsonOneByName).toBeDefined();
+        expect(jsonOneByName.uuid).toBeDefined();
 
         // download file
         // http://localhost:3000/file/download?uuid={uuid}
-        const res_download = await fetch(
-            `http://localhost:3000/file/download?uuid=${json_oneByName.uuid}&expires=false`,
+        const resDownload = await fetch(
+            `http://localhost:3000/file/download?uuid=${jsonOneByName.uuid}&expires=false`,
             {
                 method: 'GET',
                 headers: {
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
+                    cookie: `authtoken=${await getJwtToken(user)}`,
                 },
             },
         );
 
-        expect(res_download.status).toBe(200);
-        const download_file = await res_download.blob();
+        expect(resDownload.status).toBe(200);
+        const downloadFile = await resDownload.blob();
 
         // verify file content
-        const download_file_hash = await crypto.subtle.digest(
+        const downloadFileHash = await crypto.subtle.digest(
             'SHA-256',
-            await download_file.arrayBuffer(),
+            await downloadFile.arrayBuffer(),
         );
 
-        expect(download_file_hash).toEqual(file_hash);
+        expect(downloadFileHash).toEqual(fileHash);
     }, 30_000);
 
     test('Test if two files can be uploaded and downloaded in parallel', async () => {

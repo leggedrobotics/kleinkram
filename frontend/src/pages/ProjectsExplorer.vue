@@ -108,19 +108,19 @@ watch(my_projects, async () => {
 
     if (my_projects.value) {
         handler.value.setSearch({
-            ...handler.value.search_params,
+            ...handler.value.searchParams,
             'creator.uuid': user.uuid,
         });
     } else {
         handler.value.setSearch({
-            ...handler.value.search_params,
+            ...handler.value.searchParams,
             'creator.uuid': undefined,
         });
     }
 });
 
 const search = computed({
-    get: () => handler.value.search_params.name,
+    get: () => handler.value.searchParams.name,
     set: (value: string) => {
         handler.value.setSearch({ name: value });
     },

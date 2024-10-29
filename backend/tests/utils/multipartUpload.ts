@@ -12,17 +12,19 @@ export async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
 ) {
-    let UploadId: string | undefined;
+    let uploadId: string | undefined;
     try {
         // Step 1: Initiate Multipart Upload
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             Bucket: bucket,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             Key: key,
         });
         const { UploadId: _uploadID } = await minioClient.send(
             createMultipartUploadCommand,
         );
-        UploadId = _uploadID;
+        uploadId = _uploadID;
 
         // Step 2: Upload Parts
         const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
@@ -35,22 +37,33 @@ export async function uploadFileMultipart(
             const end = Math.min(start + partSize, file.length);
             const partBlob = file.slice(start, end);
             const uploadPartCommand = new UploadPartCommand({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 Bucket: bucket,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 Key: key,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 PartNumber: partNumber,
-                UploadId,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                UploadId: uploadId,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 Body: partBlob,
             });
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             const { ETag } = await minioClient.send(uploadPartCommand);
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             parts.push({ PartNumber: partNumber, ETag });
         }
 
         // Step 3: Complete Multipart Upload
         const completeMultipartUploadCommand =
             new CompleteMultipartUploadCommand({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 Bucket: bucket,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 Key: key,
-                UploadId,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                UploadId: uploadId,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 MultipartUpload: { Parts: parts },
             });
         return await minioClient.send(completeMultipartUploadCommand);
@@ -58,12 +71,15 @@ export async function uploadFileMultipart(
         console.error('Multipart upload failed:', error);
 
         // Step 4 (Optional): Abort Multipart Upload
-        if (UploadId) {
+        if (uploadId) {
             const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
                 {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     Bucket: bucket,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     Key: key,
-                    UploadId,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    UploadId: uploadId,
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);

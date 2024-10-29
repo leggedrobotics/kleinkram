@@ -186,7 +186,6 @@ watch(
                 newValue.categories,
                 newValue.createdAt,
                 newValue.updatedAt,
-                newValue.deletedAt,
             );
             dateTime.value = formatDate(new Date(newValue.date));
         }

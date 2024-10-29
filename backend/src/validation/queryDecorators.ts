@@ -14,12 +14,13 @@ import {
     UUIDValidate,
 } from './validationTypes';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid UUID`,
             );
@@ -29,6 +30,7 @@ export const QueryUUID = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalUUID = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -39,7 +41,7 @@ export const QueryOptionalUUID = createParamDecorator(
         }
 
         const object = plainToInstance(UUIDValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid UUID`,
             );
@@ -49,13 +51,14 @@ export const QueryOptionalUUID = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryString = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String`,
             );
@@ -65,6 +68,7 @@ export const QueryString = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalString = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -75,7 +79,7 @@ export const QueryOptionalString = createParamDecorator(
         }
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String`,
             );
@@ -85,12 +89,13 @@ export const QueryOptionalString = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryStringArray = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(StringArrayValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String Array`,
             );
@@ -100,6 +105,7 @@ export const QueryStringArray = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalStringArray = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -108,7 +114,7 @@ export const QueryOptionalStringArray = createParamDecorator(
             return;
         }
         const object = plainToInstance(StringArrayValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid String Array`,
             );
@@ -118,12 +124,13 @@ export const QueryOptionalStringArray = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryBoolean = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
         const object = plainToInstance(BooleanValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Boolean`,
             );
@@ -142,6 +149,7 @@ export const QueryBoolean = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalBoolean = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -150,7 +158,7 @@ export const QueryOptionalBoolean = createParamDecorator(
             return;
         }
         const object = plainToInstance(BooleanValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Boolean`,
             );
@@ -169,6 +177,7 @@ export const QueryOptionalBoolean = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryDate = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -179,7 +188,7 @@ export const QueryDate = createParamDecorator(
         }
 
         const object = plainToInstance(DateStringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
             );
@@ -189,6 +198,7 @@ export const QueryDate = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryProjectSortBy = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -213,7 +223,7 @@ export const QueryProjectSortBy = createParamDecorator(
         }
 
         const object = plainToInstance(StringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -221,6 +231,7 @@ export const QueryProjectSortBy = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryProjectSearchParam = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -238,15 +249,15 @@ export const QueryProjectSearchParam = createParamDecorator(
         }
 
         // remove empty values
-        Object.keys(value).forEach((key) => {
-            if (value[key] === '') {
-                delete value[key];
+        Object.keys(value).forEach((_key) => {
+            if (value[_key] === '') {
+                delete value[_key];
             }
         });
 
         // check if every value is a string
-        Object.keys(value).forEach((key) => {
-            if (typeof value[key] !== 'string') {
+        Object.keys(value).forEach((_key) => {
+            if (typeof value[_key] !== 'string') {
                 throw new BadRequestException('Parameter is not a valid value');
             }
         });
@@ -255,6 +266,7 @@ export const QueryProjectSearchParam = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalDate = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -264,7 +276,7 @@ export const QueryOptionalDate = createParamDecorator(
             return;
         }
         const object = plainToInstance(DateStringValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException(
                 `Parameter ${data} is not a valid Date`,
             );
@@ -274,6 +286,7 @@ export const QueryOptionalDate = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalNumber = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -284,7 +297,7 @@ export const QueryOptionalNumber = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -292,6 +305,7 @@ export const QueryOptionalNumber = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QuerySkip = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -302,7 +316,7 @@ export const QuerySkip = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -310,6 +324,7 @@ export const QuerySkip = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryTake = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -320,7 +335,7 @@ export const QueryTake = createParamDecorator(
         }
 
         const object = plainToInstance(NumberValidate, { value });
-        await validateOrReject(object).catch((errors) => {
+        await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
         });
 
@@ -328,6 +343,7 @@ export const QueryTake = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptional = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
@@ -341,6 +357,7 @@ export const QueryOptional = createParamDecorator(
     },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalRecord = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();

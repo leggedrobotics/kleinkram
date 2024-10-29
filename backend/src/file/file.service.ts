@@ -32,15 +32,19 @@ import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
 import { redis } from '@common/consts';
 import {
+    addTagsToMinioObject,
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredential,
     getBucketFromFileType,
     getInfoFromMinio,
+    internalMinio,
 } from '@common/minio_helper';
 import Category from '@common/entities/category/category.entity';
 import { parseMinioMetrics } from './utils';
 import Credentials from 'minio/dist/main/Credentials';
+import { BucketItem } from 'minio';
+import { TaggingOpts } from 'minio/dist/main/internal/type';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -198,7 +202,7 @@ export class FileService implements OnModuleInit {
         startDate: Date,
         endDate: Date,
         topics: string,
-        and_or: boolean,
+        andOr: boolean,
         fileTypes: string,
         tags: Record<string, any>,
         userUUID: string,
@@ -276,7 +280,7 @@ export class FileService implements OnModuleInit {
                 });
             }
 
-            if (and_or) {
+            if (andOr) {
                 query.having('COUNT(file.uuid) = :topicCount', {
                     topicCount: splitTopics.length,
                 });
@@ -408,19 +412,19 @@ export class FileService implements OnModuleInit {
         logger.debug('Updating file with uuid: ' + uuid);
         logger.debug('New file data: ' + JSON.stringify(file));
 
-        const db_file = await this.fileRepository.findOneOrFail({
+        const dbFile = await this.fileRepository.findOneOrFail({
             where: { uuid },
             relations: ['mission', 'mission.project'],
         });
 
         // validate if file ending hasn't changed
-        const fileEnding = db_file.type === FileType.MCAP ? '.mcap' : '.bag';
+        const fileEnding = dbFile.type === FileType.MCAP ? '.mcap' : '.bag';
         if (!file.filename.endsWith(fileEnding)) {
             throw new BadRequestException('File ending must not be changed');
         }
 
-        db_file.filename = file.filename;
-        db_file.date = file.date;
+        dbFile.filename = file.filename;
+        dbFile.date = file.date;
 
         if (file.mission_uuid) {
             const newMission = await this.missionRepository.findOne({
@@ -428,38 +432,27 @@ export class FileService implements OnModuleInit {
                 relations: ['project'],
             });
             if (newMission) {
-                db_file.mission = newMission;
+                dbFile.mission = newMission;
             } else {
                 throw new Error('Mission not found');
             }
         }
 
-        if (file.project_uuid) {
-            const newProject = await this.projectRepository.findOne({
-                where: { uuid: file.project_uuid },
-            });
-            if (newProject) {
-                db_file.mission.project = newProject;
-            } else {
-                throw new Error('Project not found');
-            }
-        }
         if (file.categories) {
             const cats = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
-            console.log(cats);
-            db_file.categories = cats;
+            dbFile.categories = cats;
         }
 
         await this.dataSource
             .transaction(async (transactionalEntityManager) => {
                 await transactionalEntityManager.save(
                     Project,
-                    db_file.mission.project,
+                    dbFile.mission.project,
                 );
-                await transactionalEntityManager.save(Mission, db_file.mission);
-                await transactionalEntityManager.save(FileEntity, db_file);
+                await transactionalEntityManager.save(Mission, dbFile.mission);
+                await transactionalEntityManager.save(FileEntity, dbFile);
             })
             .catch((err) => {
                 if (err.code === '23505') {
@@ -469,7 +462,17 @@ export class FileService implements OnModuleInit {
                 }
                 throw err;
             });
-
+        await addTagsToMinioObject(
+            getBucketFromFileType(dbFile.type),
+            dbFile.uuid,
+            {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                project_uuid: dbFile.mission.project.uuid,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                mission_uuid: dbFile.mission.uuid,
+                filename: dbFile.filename,
+            },
+        );
         return this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission', 'mission.project'],
@@ -510,6 +513,7 @@ export class FileService implements OnModuleInit {
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
             {
                 // set filename in response headers
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
@@ -545,12 +549,12 @@ export class FileService implements OnModuleInit {
         if (resUUIDs.length === 0) {
             return [[], count];
         }
-        const second_where = {
+        const secondWhere = {
             uuid: In(resUUIDs.map((file) => file.uuid)),
         };
 
         const files = await this.fileRepository.find({
-            where: second_where,
+            where: secondWhere,
             relations: [
                 'mission',
                 'mission.project',
@@ -594,7 +598,7 @@ export class FileService implements OnModuleInit {
 
                 // delete the file from Minio
                 const bucket = getBucketFromFileType(file.type);
-                await deleteFileMinio(bucket, file.uuid).catch((error) => {
+                await deleteFileMinio(bucket, file.uuid).catch(() => {
                     logger.error(
                         `File ${file.uuid} not found in Minio, deleting from database only!`,
                     );
@@ -619,6 +623,7 @@ export class FileService implements OnModuleInit {
         });
 
         const headers = {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             Authorization: `Bearer ${token}`,
         };
 
@@ -743,6 +748,7 @@ export class FileService implements OnModuleInit {
                 const queueEntity = await this.queueRepository.save(
                     this.queueRepository.create({
                         identifier: file.uuid,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         display_name: filename,
                         state: QueueState.AWAITING_UPLOAD,
                         location: FileLocation.MINIO,
@@ -787,7 +793,7 @@ export class FileService implements OnModuleInit {
      *
      */
     async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
-        const unique_files_uuids = [...new Set(fileUUIDs)];
+        const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
         return await this.fileRepository.manager.transaction(
             async (transactionalEntityManager) => {
@@ -796,19 +802,17 @@ export class FileService implements OnModuleInit {
                     FileEntity,
                     {
                         where: {
-                            uuid: In(unique_files_uuids),
+                            uuid: In(uniqueFilesUuids),
                             mission: { uuid: missionUUID },
                         },
                     },
                 );
 
                 // verify that all files are found in the database
-                const unique_db_files_uuids = [
+                const uniqueDbFilesUuids = [
                     ...new Set(files.map((f) => f.uuid)),
                 ];
-                if (
-                    unique_db_files_uuids.length !== unique_files_uuids.length
-                ) {
+                if (uniqueDbFilesUuids.length !== uniqueFilesUuids.length) {
                     throw new NotFoundException(
                         'Some files not found, aborting',
                     );
@@ -836,5 +840,40 @@ export class FileService implements OnModuleInit {
      */
     async exists(fileUUID: string) {
         return this.fileRepository.exists({ where: { uuid: fileUUID } });
+    }
+
+    async renameTags(bucked: string) {
+        const files = internalMinio.listObjects(bucked, '');
+        const filesList = await files.toArray();
+        await Promise.all(
+            filesList.map(async (file: BucketItem) => {
+                if (!file.name) {
+                    logger.debug(`Filename is empty: ${JSON.stringify(file)}`);
+                    return;
+                }
+                const fileEntity = await this.fileRepository.findOne({
+                    where: { uuid: file.name },
+                    relations: ['mission', 'mission.project'],
+                });
+                if (!fileEntity) {
+                    logger.error(`File ${file.name} not found in database`);
+                    return;
+                }
+                await internalMinio.removeObjectTagging(
+                    bucked,
+                    file.name,
+                    {} as TaggingOpts,
+                );
+                await addTagsToMinioObject(bucked, file.name, {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    project_uuid: fileEntity.mission.project.uuid,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    mission_uuid: fileEntity.mission.uuid,
+                    filename: fileEntity.filename,
+                });
+            }),
+        ).catch((err) => {
+            logger.error(err);
+        });
     }
 }

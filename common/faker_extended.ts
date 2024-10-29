@@ -50,7 +50,7 @@ const tags: [string, DataType, string][] = [
     ['file_description', DataType.STRING, 'description of the data capture'],
 ];
 
-const ros_topic_names = [
+const rosTopicNames = [
     'chatter',
     'cmd_vel',
     'diagnostics',
@@ -154,7 +154,7 @@ const ros_topic_names = [
     '/trajectory_updates',
 ];
 
-const ros_topic_types = [
+const rosTopicTypes = [
     'std_msgs/String',
     'geometry_msgs/Twist',
     'diagnostic_msgs/DiagnosticArray',
@@ -197,7 +197,7 @@ const ros_topic_types = [
     'trajectory_msgs/JointTrajectory',
 ];
 
-const mission_names = [
+const missionNames = [
     'Tunnel Mai',
     'Sechselläuten',
     'Expedition',
@@ -221,8 +221,8 @@ const extendedFaker = faker as ExtendedFaker;
 
 // define modifications
 extendedFaker.ros = {
-    topic: () => faker.helpers.arrayElement(ros_topic_names),
-    topicType: () => faker.helpers.arrayElement(ros_topic_types),
+    topic: () => faker.helpers.arrayElement(rosTopicNames),
+    topicType: () => faker.helpers.arrayElement(rosTopicTypes),
     fileType: () => faker.helpers.arrayElement([FileType.BAG, FileType.MCAP]),
     fileName: (type: FileType) =>
         `${faker.date.past().getTime()}_${faker.helpers.arrayElement(devices)}.${type.toLowerCase()}`,
@@ -230,7 +230,7 @@ extendedFaker.ros = {
 
 extendedFaker.mission = {
     name: () => {
-        const mission = faker.helpers.arrayElement(mission_names);
+        const mission = faker.helpers.arrayElement(missionNames);
         const year = faker.date.future().getFullYear();
         const month = faker.date.future().getMonth();
         const day = faker.date.future().getDay();

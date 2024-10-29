@@ -14,7 +14,6 @@ export const getCategories = async (projectUUID: string, filter?: string) => {
             res.uuid,
             res.createdAt,
             res.updatedAt,
-            res.deletedAt,
             res.name,
             undefined,
             [],

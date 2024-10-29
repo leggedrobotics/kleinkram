@@ -12,14 +12,14 @@ export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
  * Verify if an access group with the passed uuid exists
  *
  * @param uuid uuid of the access group to search for
- * @param access_groups list of access groups to search in
+ * @param accessGroups list of access groups to search in
  */
 export const verifyIfGroupWithUUIDExists = (
     uuid: string,
-    access_groups: AccessGroup[],
+    accessGroups: AccessGroup[],
 ) => {
-    const group = access_groups.filter(
-        (group: AccessGroup) => group.uuid === uuid,
+    const group = accessGroups.filter(
+        (_group: AccessGroup) => _group.uuid === uuid,
     );
     expect(group.length).toBe(1);
 };
@@ -35,8 +35,8 @@ export const getAccessGroupForEmail = (
     email: string,
     accessGroups: AccessGroup[],
 ): AccessGroup => {
-    const group = accessGroups.filter((group: AccessGroup) =>
-        group.users.some((user) => user.email === email && group.personal),
+    const group = accessGroups.filter((_group: AccessGroup) =>
+        _group.users.some((user) => user.email === email && _group.personal),
     );
 
     const thereIsOnlyOnePersonalGroup = group.length === 1;

@@ -108,7 +108,7 @@ const columns = [
         align: 'left',
         sortable: false,
         field: (row: Action) =>
-            row.template?.image_name ? row.template.image_name : 'N/A',
+            row.template?.imageName ? row.template.imageName : 'N/A',
     },
     {
         name: 'mission',

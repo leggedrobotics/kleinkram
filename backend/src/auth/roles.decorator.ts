@@ -30,6 +30,9 @@ import {
     UserGuard,
 } from './roles.guard';
 
+// disable naming-convention rule for enum.ts
+/* eslint @typescript-eslint/naming-convention: 0 */
+
 // Public route decorator
 export function Public() {
     return applyDecorators(

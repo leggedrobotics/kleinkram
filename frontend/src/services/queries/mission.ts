@@ -16,7 +16,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
             tagType.datatype,
             new Date(tagType.createdAt),
             new Date(tagType.updatedAt),
-            new Date(tagType.deletedAt),
         );
     });
     const project = new Project(
@@ -29,7 +28,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
         undefined,
         new Date(mission.project.createdAt),
         new Date(mission.project.updatedAt),
-        new Date(mission.project.deletedAt),
     );
     const creator = new User(
         mission.creator.uuid,
@@ -40,7 +38,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
         [],
         new Date(mission.creator.createdAt),
         new Date(mission.creator.updatedAt),
-        new Date(mission.creator.deletedAt),
     );
     const tags = mission.tags.map((tag: any) => {
         const tagType = new TagType(
@@ -49,7 +46,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
             tag.tagType.datatype,
             new Date(tag.tagType.createdAt),
             new Date(tag.tagType.updatedAt),
-            new Date(tag.tagType.deletedAt),
         );
         return new Tag(
             tag.uuid,
@@ -61,7 +57,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
             tagType,
             new Date(tag.createdAt),
             new Date(tag.updatedAt),
-            new Date(tag.deletedAt),
         );
     });
     return new Mission(
@@ -73,7 +68,6 @@ export const getMission = async (uuid: string): Promise<Mission> => {
         creator,
         new Date(mission.createdAt),
         new Date(mission.updatedAt),
-        new Date(mission.deletedAt),
     );
 };
 
@@ -120,7 +114,6 @@ export const missionsOfProjectMinimal = async (
             undefined,
             new Date(mission.project.createdAt),
             new Date(mission.project.updatedAt),
-            new Date(mission.project.deletedAt),
         );
         let missionCreator: User | undefined = users[mission.creator.uuid];
         if (!missionCreator) {
@@ -133,7 +126,6 @@ export const missionsOfProjectMinimal = async (
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),
-                new Date(mission.creator.deletedAt),
             );
             users[mission.creator.uuid] = missionCreator;
         }
@@ -147,7 +139,6 @@ export const missionsOfProjectMinimal = async (
             missionCreator,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),
-            new Date(mission.deletedAt),
         );
     });
     return [res, total];
@@ -196,7 +187,6 @@ export const missionsOfProject = async (
             undefined,
             new Date(mission.project.createdAt),
             new Date(mission.project.updatedAt),
-            new Date(mission.project.deletedAt),
         );
         let missionCreator: User | undefined = users[mission.creator.uuid];
         if (!missionCreator) {
@@ -209,7 +199,6 @@ export const missionsOfProject = async (
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),
-                new Date(mission.creator.deletedAt),
             );
             users[mission.creator.uuid] = missionCreator;
         }
@@ -220,7 +209,6 @@ export const missionsOfProject = async (
                 tag.tagType.datatype,
                 new Date(tag.tagType.createdAt),
                 new Date(tag.tagType.updatedAt),
-                new Date(tag.tagType.deletedAt),
             );
             return new Tag(
                 tag.uuid,
@@ -232,7 +220,6 @@ export const missionsOfProject = async (
                 tagType,
                 new Date(tag.createdAt),
                 new Date(tag.updatedAt),
-                new Date(tag.deletedAt),
             );
         });
         const missionEntity = new Mission(
@@ -244,7 +231,6 @@ export const missionsOfProject = async (
             missionCreator,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),
-            new Date(mission.deletedAt),
         );
         missionEntity.files = mission.files.map((file: any) => {
             let fileCreator: User | undefined = users[file.creator.uuid];
@@ -258,7 +244,6 @@ export const missionsOfProject = async (
                     [],
                     new Date(file.creator.createdAt),
                     new Date(file.creator.updatedAt),
-                    new Date(file.creator.deletedAt),
                 );
                 users[file.creator.uuid] = fileCreator;
             }
@@ -276,7 +261,6 @@ export const missionsOfProject = async (
                 file.categories,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
-                new Date(file.deletedAt),
             );
         });
         return missionEntity;
@@ -302,7 +286,6 @@ export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
             undefined,
             new Date(mission.project.createdAt),
             new Date(mission.project.updatedAt),
-            new Date(mission.project.deletedAt),
         );
         let missionCreator: User | undefined = users[mission.creator.uuid];
         if (!missionCreator) {
@@ -315,7 +298,6 @@ export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),
-                new Date(mission.creator.deletedAt),
             );
             users[mission.creator.uuid] = missionCreator;
         }
@@ -325,11 +307,10 @@ export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
             mission.name,
             project,
             [],
-            undefined,
+            [],
             missionCreator,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),
-            new Date(mission.deletedAt),
         );
     });
 };

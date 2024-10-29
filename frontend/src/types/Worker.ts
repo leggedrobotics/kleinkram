@@ -18,7 +18,6 @@ export class Worker extends BaseEntity {
         hostname: string,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
         cpuMemory: number,
         gpuModel: string | null,
         gpuMemory: number | null,
@@ -28,7 +27,7 @@ export class Worker extends BaseEntity {
         lastSeen: string,
         reachable: boolean,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.identifier = identifier;
         this.hostname = hostname;
         this.cpuMemory = cpuMemory;

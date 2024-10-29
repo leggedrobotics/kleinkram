@@ -31,9 +31,8 @@ export class FileEntity extends BaseEntity {
         categories: Category[],
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.size = size;
         this.mission = mission;
         this.creator = creator;

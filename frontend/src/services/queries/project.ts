@@ -46,7 +46,6 @@ export const filteredProjects = async (
                         undefined,
                         new Date(mission.createdAt),
                         new Date(mission.updatedAt),
-                        new Date(mission.deletedAt),
                     ),
             ),
             new User(
@@ -59,13 +58,11 @@ export const filteredProjects = async (
                 [],
                 new Date(project.creator.createdAt),
                 new Date(project.creator.updatedAt),
-                new Date(project.creator.deletedAt),
             ),
             [],
             [],
             new Date(project.createdAt),
             new Date(project.updatedAt),
-            new Date(project.deletedAt),
         );
     });
     return [res, total];
@@ -84,7 +81,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
         [],
         new Date(project.creator.createdAt),
         new Date(project.creator.updatedAt),
-        new Date(project.creator.deletedAt),
     );
     const missions: Mission[] = project.missions.map((mission: any) => {
         return new Mission(
@@ -96,7 +92,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
             undefined,
             new Date(mission.createdAt),
             new Date(mission.updatedAt),
-            new Date(mission.deletedAt),
         );
     });
     const requiredTags = project.requiredTags.map((tag: any) => {
@@ -106,7 +101,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
             tag.datatype,
             new Date(tag.createdAt),
             new Date(tag.updatedAt),
-            new Date(tag.deletedAt),
         );
     });
     const projectAccess = project.project_accesses.map((access: any) => {
@@ -124,7 +118,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
                         [],
                         new Date(user.createdAt),
                         new Date(user.updatedAt),
-                        new Date(user.deletedAt),
                     ),
                 );
             });
@@ -140,7 +133,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
             undefined,
             new Date(access.accessGroup.createdAt),
             new Date(access.accessGroup.updatedAt),
-            new Date(access.accessGroup.deletedAt),
         );
 
         return new ProjectAccess(
@@ -150,7 +142,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
             undefined,
             new Date(access.createdAt),
             new Date(access.updatedAt),
-            new Date(access.deletedAt),
         );
     });
     return new Project(
@@ -163,7 +154,6 @@ export const getProject = async (uuid: string): Promise<Project> => {
         projectAccess,
         new Date(project.createdAt),
         new Date(project.updatedAt),
-        new Date(project.deletedAt),
     );
 };
 

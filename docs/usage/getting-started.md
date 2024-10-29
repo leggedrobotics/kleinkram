@@ -9,7 +9,7 @@ See the [documentation](actions/getting-started.md) for more information.
 :::
 
 ::: details How does the access control work?
-See the [documentation](/usage/access-control) for more information.
+See the [documentation](/usage/access-control/base-concepts) for more information.
 :::
 
 ::: details Is there a CLI / API to interact with the application?

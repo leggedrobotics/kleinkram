@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, CookieNames, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -21,7 +21,7 @@ import { AuthGuardService } from './authGuard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
-    canActivate(context: ExecutionContext): boolean {
+    canActivate(): boolean {
         return true; // Always allow access
     }
 }
@@ -76,7 +76,7 @@ export class AdminOnlyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
+        const { user, apiKey } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys are never admins');
@@ -246,7 +246,7 @@ export class CreateGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
+        const { user, apiKey } = await this.getUser(context);
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot create projects');
         }

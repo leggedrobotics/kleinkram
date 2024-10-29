@@ -2,13 +2,13 @@ import { RuntimeDescription } from '@common/types';
 
 export class HardwareDependencyError extends Error {
     constructor(
-        public readonly hardware_requirements: RuntimeDescription,
-        public readonly hardware_capabilities: RuntimeDescription,
+        public readonly hardwareRequirements: RuntimeDescription,
+        public readonly hardwareCapabilities: RuntimeDescription,
     ) {
         super(
             `Hardware requirements not met. Required: ${JSON.stringify(
-                hardware_requirements,
-            )}, Available: ${JSON.stringify(hardware_capabilities)}`,
+                hardwareRequirements,
+            )}, Available: ${JSON.stringify(hardwareCapabilities)}`,
         );
         this.name = 'DependencyNotMetError';
     }

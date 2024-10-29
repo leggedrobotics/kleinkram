@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum AccessGroupRights {
     NONE = -1,
     READ = 0,

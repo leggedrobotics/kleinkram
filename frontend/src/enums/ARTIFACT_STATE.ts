@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum ArtifactState {
     AWAITING_ACTION = 10,
     UPLOADING = 20,

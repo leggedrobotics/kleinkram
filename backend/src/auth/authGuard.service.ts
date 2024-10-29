@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { UserRole } from '@common/enum';
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
 
 @Injectable()
 export class AuthGuardService {
@@ -51,6 +50,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
                 creator: { uuid: user.uuid },
             },

@@ -5,6 +5,7 @@ import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
 import { Topic } from 'src/types/Topic';
 import { FileType } from 'src/enums/FILE_ENUM';
+import { StorageResponse } from 'src/types/storage';
 
 export const fetchOverview = async (
     filename: string,
@@ -45,8 +46,8 @@ export const fetchOverview = async (
         if (!data) return [[], 0];
         const total = response.data[1];
         const res: FileEntity[] = data.map((file: any): FileEntity => {
-            const project_uuid: string = file.mission.project.uuid;
-            let project: Project | undefined = projects[project_uuid];
+            const projectUuid: string = file.mission.project.uuid;
+            let project: Project | undefined = projects[projectUuid];
             if (!project) {
                 project = new Project(
                     file.mission.project.uuid,
@@ -58,7 +59,6 @@ export const fetchOverview = async (
                     undefined,
                     new Date(file.mission.project.createdAt),
                     new Date(file.mission.project.updatedAt),
-                    new Date(file.mission.project.deletedAt),
                 );
             }
             let user: User | undefined = creator[file.creator.uuid];
@@ -72,12 +72,11 @@ export const fetchOverview = async (
                     [],
                     new Date(file.creator.createdAt),
                     new Date(file.creator.updatedAt),
-                    new Date(file.creator.deletedAt),
                 );
                 creator[file.creator.uuid] = user;
             }
-            const mission_uuid: string = file.mission.uuid;
-            let mission: Mission | undefined = missions[mission_uuid];
+            const missionUuid: string = file.mission.uuid;
+            let mission: Mission | undefined = missions[missionUuid];
             if (!mission) {
                 mission = new Mission(
                     file.mission.uuid,
@@ -88,7 +87,6 @@ export const fetchOverview = async (
                     file.mission.creator,
                     new Date(file.mission.createdAt),
                     new Date(file.mission.updatedAt),
-                    new Date(file.mission.deletedAt),
                 );
             }
             const newFile = new FileEntity(
@@ -105,7 +103,6 @@ export const fetchOverview = async (
                 file.categories,
                 new Date(file.createdAt),
                 new Date(file.updatedAt),
-                new Date(file.deletedAt),
             );
             mission.files.push(newFile);
             return newFile;
@@ -131,7 +128,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             undefined,
             new Date(file.mission.project.createdAt),
             new Date(file.mission.project.updatedAt),
-            new Date(file.mission.project.deletedAt),
         );
 
         const mission = new Mission(
@@ -143,7 +139,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             undefined,
             new Date(file.mission.createdAt),
             new Date(file.mission.updatedAt),
-            new Date(file.mission.deletedAt),
         );
         const creator = new User(
             file.creator.uuid,
@@ -154,7 +149,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             [],
             new Date(file.creator.createdAt),
             new Date(file.creator.updatedAt),
-            new Date(file.creator.deletedAt),
         );
 
         project.missions.push(mission);
@@ -167,7 +161,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
                 topic.frequency,
                 new Date(topic.createdAt),
                 new Date(topic.updatedAt),
-                new Date(topic.deletedAt),
             );
         });
         const newFile = new FileEntity(
@@ -184,7 +177,6 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.categories,
             new Date(file.createdAt),
             new Date(file.updatedAt),
-            new Date(file.deletedAt),
         );
         mission.files.push(newFile);
         return newFile;
@@ -240,7 +232,6 @@ export const filesOfMission = async (
             [],
             new Date(data[0].mission.creator.createdAt),
             new Date(data[0].mission.creator.updatedAt),
-            new Date(data[0].mission.creator.deletedAt),
         );
         users[data[0].mission.creator.uuid] = missionCreator;
     }
@@ -254,7 +245,6 @@ export const filesOfMission = async (
         undefined,
         new Date(data[0].mission.project.createdAt),
         new Date(data[0].mission.project.updatedAt),
-        new Date(data[0].mission.project.deletedAt),
     );
     const mission = new Mission(
         missionUUID,
@@ -265,7 +255,6 @@ export const filesOfMission = async (
         missionCreator,
         new Date(data[0].mission.createdAt),
         new Date(data[0].mission.updatedAt),
-        new Date(data[0].mission.deletedAt),
     );
     const res = data.map((file: any) => {
         let fileCreator: User | undefined = users[file.creator.uuid];
@@ -279,7 +268,6 @@ export const filesOfMission = async (
                 [],
                 new Date(file.creator.createdAt),
                 new Date(file.creator.updatedAt),
-                new Date(file.creator.deletedAt),
             );
             users[file.creator.uuid] = fileCreator;
         }
@@ -298,7 +286,6 @@ export const filesOfMission = async (
             file.categories,
             new Date(file.createdAt),
             new Date(file.updatedAt),
-            new Date(file.deletedAt),
         );
         mission.files.push(newFile);
         return newFile;
@@ -327,7 +314,6 @@ export const findOneByNameAndMission = async (
         [],
         new Date(file.creator.createdAt),
         new Date(file.creator.updatedAt),
-        new Date(file.creator.deletedAt),
     );
 
     return new FileEntity(
@@ -344,7 +330,6 @@ export const findOneByNameAndMission = async (
         file.categories,
         new Date(file.createdAt),
         new Date(file.updatedAt),
-        new Date(file.deletedAt),
     );
 };
 
@@ -364,7 +349,7 @@ export const existsFile = async (uuid) => {
             params: { uuid },
         });
         return response.data;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

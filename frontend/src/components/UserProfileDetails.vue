@@ -35,6 +35,12 @@
                     :disable="true"
                     style="color: #222"
                 />
+                <q-tab
+                    name="Admin"
+                    label="Admin"
+                    :disable="data?.role === ROLE.USER"
+                    style="color: #222"
+                />
             </q-tabs>
         </template>
     </title-section>
@@ -81,6 +87,21 @@
         <q-tab-panel name="Projects">
             <explorer-page-project-table :url_handler="handler" />
         </q-tab-panel>
+        <q-tab-panel name="Admin">
+            <div style="width: 300px">
+                <q-btn
+                    label="Reset Minio Tagging"
+                    class="button-border bg-button-primary full-width"
+                    @click="resetMinioTagging"
+                    flat
+                />
+                <div>
+                    This will delete the Minio tags for all files in the system
+                    and then regenerate them based on the current DB state. This
+                    action cannot be undone. There is no confirmation!
+                </div>
+            </div>
+        </q-tab-panel>
     </q-tab-panels>
 </template>
 
@@ -88,16 +109,22 @@
 import 'vue-json-pretty/lib/styles.css';
 import { getUser } from 'src/services/auth';
 import TitleSection from 'components/TitleSection.vue';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
 import { QueryHandler } from 'src/services/QueryHandler';
+import ROLE from 'src/enums/USER_ROLES';
+import axios from 'src/api/axios';
 
 const data = await getUser();
 const tab = ref('Details');
 
 const defaultGroup = data?.accessGroups.find((group) => group.inheriting);
 const handler = new QueryHandler();
-handler.search_params = { 'creator.uuid': data?.uuid || '' };
+handler.searchParams = { 'creator.uuid': data?.uuid || '' };
+
+async function resetMinioTagging() {
+    await axios.post('file/resetMinioTags');
+}
 </script>
 <style>
 .q-table-container {

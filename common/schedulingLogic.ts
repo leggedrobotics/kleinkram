@@ -5,16 +5,16 @@ import { MoreThanOrEqual, Repository } from 'typeorm';
 import { ActionState } from './enum';
 
 export async function findWorkerForAction(
-    runtime_requirements: RuntimeDescription,
+    runtimeRequirements: RuntimeDescription,
     workerRepository: Repository<Worker>,
     actionQueues: Record<string, any>,
     logger: any,
 ) {
     const defaultWhere = {
         reachable: true,
-        cpuMemory: MoreThanOrEqual(runtime_requirements.cpuMemory + 1), // +1 as OS requires at least 1GB
-        cpuCores: MoreThanOrEqual(runtime_requirements.cpuCores),
-        gpuMemory: MoreThanOrEqual(runtime_requirements.gpuMemory),
+        cpuMemory: MoreThanOrEqual(runtimeRequirements.cpuMemory + 1), // +1 as OS requires at least 1GB
+        cpuCores: MoreThanOrEqual(runtimeRequirements.cpuCores),
+        gpuMemory: MoreThanOrEqual(runtimeRequirements.gpuMemory),
     };
     const worker = await workerRepository.find({
         where: defaultWhere,
@@ -23,7 +23,7 @@ export async function findWorkerForAction(
         },
     });
     logger.debug(
-        `Available Worker (GPU: ${runtime_requirements.gpuMemory}GB): ${worker.map((a) => a.identifier).join(', ')}`,
+        `Available Worker (GPU: ${runtimeRequirements.gpuMemory}GB): ${worker.map((a) => a.identifier).join(', ')}`,
     );
 
     if (worker.length === 0) {
@@ -45,14 +45,14 @@ export async function findWorkerForAction(
 }
 export async function addActionQueue(
     action: Action,
-    runtime_requirements: RuntimeDescription,
+    runtimeRequirements: RuntimeDescription,
     workerRepository: any,
     actionRepository: any,
     actionQueues: Record<string, any>,
     logger: any = undefined,
 ) {
     const worker = await findWorkerForAction(
-        runtime_requirements,
+        runtimeRequirements,
         workerRepository,
         actionQueues,
         logger,

@@ -22,9 +22,8 @@ export class Project extends BaseEntity {
         projectAccesses: ProjectAccess[] | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.name = name;
         this.creator = creator;
         this.missions = missions;
@@ -44,7 +43,6 @@ export class Project extends BaseEntity {
             this.projectAccesses,
             this.createdAt,
             this.updatedAt,
-            this.deletedAt,
         );
     }
 }

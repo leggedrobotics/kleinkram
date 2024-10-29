@@ -1,5 +1,8 @@
 // As we are streaming the logs,
 // we need to keep the logs at a reasonable size.
+
+/* eslint-disable @typescript-eslint/naming-convention */
+
 export const LogConfig = {
     Type: 'json-file',
     Config: {

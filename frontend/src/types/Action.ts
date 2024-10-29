@@ -13,12 +13,12 @@ type ContainerLog = {
 
 export type Image = {
     sha: string | null;
-    repo_digests: string[] | null;
+    repoDigests: string[] | null;
 };
 
 export class Action extends BaseEntity {
     state: ActionState;
-    state_cause: string;
+    stateCause: string;
     image: Image;
     createdBy: User;
 
@@ -44,9 +44,8 @@ export class Action extends BaseEntity {
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
         state: ActionState,
-        state_cause: string,
+        stateCause: string,
         artifactUrl: string,
         artifacts: ArtifactState,
         mission: Mission | null,
@@ -64,10 +63,10 @@ export class Action extends BaseEntity {
         executionStartedAt: string | null = null,
         executionEndedAt: string | null = null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.image = image;
         this.state = state;
-        this.state_cause = state_cause || '';
+        this.stateCause = stateCause || '';
         this.artifactUrl = artifactUrl;
         this.artifacts = artifacts;
         this.mission = mission;

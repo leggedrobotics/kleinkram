@@ -5,13 +5,13 @@ import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Project } from 'src/types/Project';
 
 export const canAddAccessGroup = async (
-    project_uuid: string,
+    projectUuid: string,
 ): Promise<boolean> => {
-    if (!project_uuid) {
+    if (!projectUuid) {
         return false;
     }
     const response = await axios.get('/access/canAddAccessGroupToProject', {
-        params: { uuid: project_uuid },
+        params: { uuid: projectUuid },
     });
 
     return response.data;
@@ -60,10 +60,9 @@ export const searchAccessGroups = async (
                 [],
                 new Date(user.createdAt),
                 new Date(user.updatedAt),
-                new Date(user.deletedAt),
             );
         });
-        const project_access = group.project_accesses.map((access: any) => {
+        const projectAccess = group.project_accesses.map((access: any) => {
             const project = new Project(
                 access.project.uuid,
                 access.project.name,
@@ -74,7 +73,6 @@ export const searchAccessGroups = async (
                 undefined,
                 new Date(access.project.createdAt),
                 new Date(access.project.updatedAt),
-                new Date(access.project.deletedAt),
             );
             return new ProjectAccess(
                 access.uuid,
@@ -83,21 +81,19 @@ export const searchAccessGroups = async (
                 project,
                 new Date(access.createdAt),
                 new Date(access.updatedAt),
-                new Date(access.deletedAt),
             );
         });
         return new AccessGroup(
             group.uuid,
             group.name,
             users,
-            project_access,
+            projectAccess,
             [],
             group.personal,
             group.inheriting,
             group.creator,
             new Date(group.createdAt),
             new Date(group.updatedAt),
-            new Date(group.deletedAt),
         );
     });
     return [res, total];
@@ -116,10 +112,9 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             [],
             new Date(user.createdAt),
             new Date(user.updatedAt),
-            new Date(user.deletedAt),
         );
     });
-    const project_access = group.project_accesses.map((access: any) => {
+    const projectAccess = group.project_accesses.map((access: any) => {
         const creator = new User(
             access.project.creator.uuid,
             access.project.creator.name,
@@ -129,7 +124,6 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             [],
             new Date(access.project.creator.createdAt),
             new Date(access.project.creator.updatedAt),
-            new Date(access.project.creator.deletedAt),
         );
         const project = new Project(
             access.project.uuid,
@@ -141,7 +135,6 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             undefined,
             new Date(access.project.createdAt),
             new Date(access.project.updatedAt),
-            new Date(access.project.deletedAt),
         );
         return new ProjectAccess(
             access.uuid,
@@ -150,21 +143,19 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             project,
             new Date(access.createdAt),
             new Date(access.updatedAt),
-            new Date(access.deletedAt),
         );
     });
     return new AccessGroup(
         group.uuid,
         group.name,
         users,
-        project_access,
+        projectAccess,
         [],
         group.personal,
         group.inheriting,
         group.creator,
         new Date(group.createdAt),
         new Date(group.updatedAt),
-        new Date(group.deletedAt),
     );
 };
 
@@ -186,7 +177,6 @@ export const getProjectAccess = async (
         undefined,
         new Date(access.project.createdAt),
         new Date(access.project.updatedAt),
-        new Date(access.project.deletedAt),
     );
     return new ProjectAccess(
         access.uuid,
@@ -195,6 +185,5 @@ export const getProjectAccess = async (
         project,
         new Date(access.createdAt),
         new Date(access.updatedAt),
-        new Date(access.deletedAt),
     );
 };

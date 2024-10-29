@@ -280,7 +280,7 @@ const deleteMission = async () => {
 const selectedMissions: Ref<Mission[]> = ref([]);
 
 const search = computed({
-    get: () => handler.value.search_params.name,
+    get: () => handler.value.searchParams.name,
     set: (value: string) => {
         handler.value.setSearch({ name: value });
     },

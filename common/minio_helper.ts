@@ -25,40 +25,6 @@ export const internalMinio: Client = new Client({
     secretKey: env.MINIO_SECRET_KEY,
 });
 
-// Function to list objects in a bucket
-async function listObjects(bucketName, prefix): Promise<BucketItem[]> {
-    return new Promise((resolve, reject) => {
-        const objects: BucketItem[] = [];
-        const stream = internalMinio.listObjectsV2(bucketName, prefix, true);
-        stream.on('data', (obj) => objects.push(obj));
-        stream.on('end', () => resolve(objects));
-        stream.on('error', (err) => reject(err));
-    });
-}
-
-// Function to copy an object within the bucket
-/**
- * Copy an object within the bucket
- * @param bucketName - Name of the bucket
- * @param srcName - Name of the source object within the bucket
- * @param destName - Name of the destination object within the bucket name
- */
-async function copyObject(bucketName, srcName, destName) {
-    return internalMinio.copyObject(
-        bucketName,
-        destName,
-        `/${bucketName}/${srcName}`,
-    );
-}
-
-// Function to remove an object from the bucket
-async function removeObject(
-    bucketName: string,
-    objectName: string,
-): Promise<void> {
-    return internalMinio.removeObject(bucketName, objectName);
-}
-
 export async function getInfoFromMinio(fileType: FileType, location: string) {
     const bucketName = getBucketFromFileType(fileType);
     try {
@@ -106,6 +72,7 @@ export async function deleteFileMinio(bucketName: string, location: string) {
 }
 
 export function basePolicy(resource: string) {
+    /* eslint-disable @typescript-eslint/naming-convention */
     return {
         Version: '2012-10-17',
         Statement: [
@@ -116,6 +83,7 @@ export function basePolicy(resource: string) {
             },
         ],
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 /**

@@ -1,13 +1,12 @@
 import { Controller, Delete, Get, Post } from '@nestjs/common';
 import { AccessService } from './access.service';
 import {
-    IsAccessGroupCreator,
     CanCreate,
+    CanDeleteProject,
     CanReadProject,
     CanWriteProject,
+    IsAccessGroupCreator,
     IsAccessGroupCreatorByProjectAccess,
-    LoggedIn,
-    CanDeleteProject,
     UserOnly,
 } from './roles.decorator';
 import { addUser, AuthRes } from './paramDecorator';
@@ -32,11 +31,8 @@ export class AccessController {
 
     @Get('one')
     @UserOnly()
-    async getAccessGroup(
-        @QueryString('uuid') uuid: string,
-        @addUser() user?: AuthRes,
-    ) {
-        return this.accessService.getAccessGroup(uuid, user);
+    async getAccessGroup(@QueryString('uuid') uuid: string) {
+        return this.accessService.getAccessGroup(uuid);
     }
 
     @Post('create')
@@ -78,7 +74,6 @@ export class AccessController {
     async addUserToAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
-        @addUser() user?: AuthRes,
     ) {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
     }
@@ -88,7 +83,6 @@ export class AccessController {
     async removeUserFromAccessGroup(
         @BodyUUID('uuid') uuid: string,
         @BodyUUID('userUUID') userUUID: string,
-        @addUser() user?: AuthRes,
     ) {
         return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
     }
@@ -148,10 +142,7 @@ export class AccessController {
 
     @Delete(':uuid')
     @IsAccessGroupCreator()
-    async deleteAccessGroup(
-        @ParamUUID('uuid') uuid: string,
-        @addUser() user?: AuthRes,
-    ) {
+    async deleteAccessGroup(@ParamUUID('uuid') uuid: string) {
         return this.accessService.deleteAccessGroup(uuid);
     }
 
@@ -160,13 +151,8 @@ export class AccessController {
     async getProjectAccess(
         @QueryString('uuid') uuid: string,
         @QueryString('projectAccessUUID') projectAccessUUID: string,
-        @addUser() user?: AuthRes,
     ) {
-        return this.accessService.getProjectAccess(
-            uuid,
-            projectAccessUUID,
-            user,
-        );
+        return this.accessService.getProjectAccess(uuid, projectAccessUUID);
     }
 
     @Post('updateProjectAccess')

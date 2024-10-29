@@ -249,7 +249,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
-import { explorer_page_table_columns } from 'components/explorer_page/explorer_page_table_columns';
+import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Notify, QTable, useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
@@ -362,7 +362,7 @@ const drop_columns = (cols: any[], label: string) => {
 
 const project_cols = computed(() => {
     {
-        let defaultCols = [...explorer_page_table_columns];
+        let defaultCols = [...explorerPageTableColumns];
         rename_columns(defaultCols, 'Creator', 'Project Creator');
         rename_columns(defaultCols, 'Description', 'Project Description');
         defaultCols = drop_columns(defaultCols, 'Created');

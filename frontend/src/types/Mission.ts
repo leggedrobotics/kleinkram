@@ -20,9 +20,8 @@ export class Mission extends BaseEntity {
         creator: User | undefined,
         createdAt: Date | null,
         updatedAt: Date | null,
-        deletedAt: Date | null,
     ) {
-        super(uuid, createdAt, updatedAt, deletedAt);
+        super(uuid, createdAt, updatedAt);
         this.name = name;
         this.project = project;
         this.files = files;
@@ -40,7 +39,6 @@ export class Mission extends BaseEntity {
             this.creator,
             this.createdAt,
             this.updatedAt,
-            this.deletedAt,
         );
     }
 }

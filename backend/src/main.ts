@@ -97,7 +97,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
     }
 }
 
-function save_endpoints_as_json(app: INestApplication, filename: string) {
+function saveEndpointsAsJson(app: INestApplication, filename: string) {
     const server = app.getHttpServer();
     const endpoints = server._events.request._router.stack
         .filter((r: any) => r.route)
@@ -165,7 +165,7 @@ async function bootstrap() {
     console.log('Listening on port 3000');
     await app.listen(3000);
     console.log('Save endpoints as JSON');
-    save_endpoints_as_json(app, '.endpoints/__generated__endpoints.json');
+    saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
     console.log('Endpoints saved');
 }
 

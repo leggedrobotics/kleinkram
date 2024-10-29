@@ -351,7 +351,7 @@ const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
 const search = computed({
-    get: () => handler.value.search_params.name,
+    get: () => handler.value.searchParams.name,
     set: (value: string) => {
         handler.value.setSearch({ name: value });
     },

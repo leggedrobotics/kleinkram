@@ -43,13 +43,11 @@ export class CategoryController {
         @BodyUUID('missionUUID') missionUUID: string,
         @BodyUUIDArray('files') files: string[],
         @BodyUUIDArray('categories') categories: string[],
-        @addUser() user: AuthRes,
     ) {
         return this.categoryService.addManyCategories(
             missionUUID,
             files,
             categories,
-            user,
         );
     }
 }

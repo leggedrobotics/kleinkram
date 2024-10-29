@@ -277,7 +277,7 @@ const accessGroupsColumns = [
         label: 'Nr of Projects',
         align: 'center',
         field: (row: AccessGroup) =>
-            row.project_accesses.map((pa) => pa.project).flat().length,
+            row.projectAccesses.map((pa) => pa.project).flat().length,
         format: (val: number) => `${val}`,
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',

@@ -86,8 +86,8 @@ def list_files(
     Can list files of a project, mission, or with specific topics (Logical AND).
     Examples:\n
         - 'klein filelist'\n
-        - 'klein file list --project "Project 1"'\n
-        - 'klein file list --mission "Mission 1"'\n
+        - 'klein file list --project "Project_1"'\n
+        - 'klein file list --mission "Mission_1"'\n
         - 'klein file list --topics "/elevation_mapping/semantic_map,/elevation_mapping/elevation_map_raw"'\n
         - 'klein file list --topics "/elevation_mapping/semantic_map,/elevation_mapping/elevation_map_raw" --mission "Mission A"'
     """

@@ -66,7 +66,7 @@ export class QueueService implements OnModuleInit {
         private missionRepository: Repository<Mission>,
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
-        private user_service: UserService,
+        private userService: UserService,
         @InjectRepository(Worker)
         private workerRepository: Repository<Worker>,
         @InjectRepository(Action)
@@ -119,15 +119,16 @@ export class QueueService implements OnModuleInit {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        const creator = await this.user_service.findOneByUUID(user.uuid);
+        const creator = await this.userService.findOneByUUID(user.uuid);
 
         // get GoogleDrive file id
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
         if (!fileId) throw new ConflictException('Invalid Drive URL');
 
-        const queue_entry = await this.queueRepository.save(
+        const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 display_name: `GoogleDrive Object (no id=${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
@@ -136,7 +137,7 @@ export class QueueService implements OnModuleInit {
             }),
         );
         await this.fileQueue
-            .add('processDriveFile', { queueUuid: queue_entry.uuid })
+            .add('processDriveFile', { queueUuid: queueEntry.uuid })
             .catch((err) => logger.error(err));
         logger.debug('added to queue');
     }
@@ -182,7 +183,7 @@ export class QueueService implements OnModuleInit {
         skip: number,
         take: number,
     ) {
-        const user = await this.user_service.findOneByUUID(userUUID);
+        const user = await this.userService.findOneByUUID(userUUID);
         const where = {
             updatedAt: MoreThan(startDate),
         };
@@ -229,6 +230,7 @@ export class QueueService implements OnModuleInit {
     async forFile(filename: string, missionUUID: string) {
         return this.queueRepository.find({
             where: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 display_name: Like(`${filename}%`),
                 mission: { uuid: missionUUID },
             },
@@ -323,13 +325,13 @@ export class QueueService implements OnModuleInit {
 
     async _addActionQueue(
         action: Action,
-        runtime_requirements: RuntimeDescription,
+        runtimeRequirements: RuntimeDescription,
     ) {
         logger.debug(`Adding action to queue: ${action.template.name}`);
 
         return await addActionQueue(
             action,
-            runtime_requirements,
+            runtimeRequirements,
             this.workerRepository,
             this.actionRepository,
             this.actionQueues,
@@ -432,7 +434,7 @@ export class QueueService implements OnModuleInit {
                                     });
                                 try {
                                     await job.remove();
-                                    const runtime_requirements = {
+                                    const runtimeRequirements = {
                                         cpuCores: action.template.cpuCores,
                                         cpuMemory: action.template.cpuMemory,
                                         gpuMemory: action.template.gpuMemory,
@@ -441,7 +443,7 @@ export class QueueService implements OnModuleInit {
 
                                     await addActionQueue(
                                         action,
-                                        runtime_requirements,
+                                        runtimeRequirements,
                                         this.workerRepository,
                                         this.actionRepository,
                                         this.actionQueues,
@@ -481,22 +483,22 @@ export class QueueService implements OnModuleInit {
     @Cron(CronExpression.EVERY_SECOND)
     async checkQueueState() {
         const actionQueues = Object.values(this.actionQueues);
-        const job_counts = await Promise.all(
+        const jobCounts = await Promise.all(
             actionQueues.map(async (queue) => {
                 return await queue.getJobCounts();
             }),
         );
-        const jobs_count = await this.fileQueue.getJobCounts();
+        const jobsCount = await this.fileQueue.getJobCounts();
 
         this.pendingJobs.set(
             { queue: 'fileQueue' },
-            jobs_count.waiting + jobs_count.delayed,
+            jobsCount.waiting + jobsCount.delayed,
         );
-        this.activeJobs.set({ queue: 'fileQueue' }, jobs_count.active);
-        this.completedJobs.set({ queue: 'fileQueue' }, jobs_count.completed);
-        this.failedJobs.set({ queue: 'fileQueue' }, jobs_count.failed);
+        this.activeJobs.set({ queue: 'fileQueue' }, jobsCount.active);
+        this.completedJobs.set({ queue: 'fileQueue' }, jobsCount.completed);
+        this.failedJobs.set({ queue: 'fileQueue' }, jobsCount.failed);
 
-        job_counts.forEach((count, index) => {
+        jobCounts.forEach((count, index) => {
             this.pendingJobs.set(
                 { queue: actionQueues[index].name },
                 count.waiting + count.delayed,

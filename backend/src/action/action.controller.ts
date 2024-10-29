@@ -75,13 +75,13 @@ export class ActionController {
         @QueryOptionalString('sortBy') sortBy: string,
         @QueryOptionalBoolean('descending') descending: boolean,
     ) {
-        let mission_uuid = dto.mission_uuid;
+        let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
-            mission_uuid = auth.apikey.mission.uuid;
+            missionUuid = auth.apikey.mission.uuid;
         }
         return this.actionService.listActions(
             dto.project_uuid,
-            mission_uuid,
+            missionUuid,
             auth.user.uuid,
             skip,
             take,

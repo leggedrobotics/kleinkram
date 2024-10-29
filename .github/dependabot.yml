@@ -12,6 +12,12 @@ updates:
           interval: 'weekly'
       target-branch: 'dev'
 
+      groups:
+          open-telemetry:
+              applies-to: version-updates
+              patterns:
+                  - '@opentelemetry*'
+
     - package-ecosystem: 'npm'
       directory: '/common'
       schedule:
@@ -29,6 +35,12 @@ updates:
       schedule:
           interval: 'weekly'
       target-branch: 'dev'
+
+      groups:
+          open-telemetry:
+              applies-to: version-updates
+              patterns:
+                  - '@opentelemetry*'
 
     - package-ecosystem: 'npm'
       directory: '/frontend'

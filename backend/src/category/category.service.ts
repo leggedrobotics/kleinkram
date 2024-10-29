@@ -42,7 +42,6 @@ export class CategoryService {
         missionUUID: string,
         files: string[],
         categories: string[],
-        user: AuthRes,
     ) {
         // Step 1: Validate that the files belong to the mission in one query
         const validFileIds = await this.fileEntityRepository

@@ -1,14 +1,14 @@
 import {
     clearAllData,
     db,
-    get_jwt_token,
-    get_user_from_db,
-    mock_db_user,
+    getJwtToken,
+    getUserFromDb,
+    mockDbUser,
 } from './utils/database_utils';
 import {
-    create_mission_using_post,
-    create_project_using_post,
-    upload_file,
+    createMissionUsingPost,
+    createProjectUsingPost,
+    uploadFile,
 } from './utils/api_calls';
 import { ActionState } from '@common/enum';
 import { SubmitAction } from '../src/action/entities/submit_action.dto';
@@ -27,10 +27,10 @@ describe('Verify Action', () => {
     test('Test if file is uploaded and can be downloaded again inside an action', async () => {
         const filename = 'test_small.bag';
 
-        const user_id = await mock_db_user('internal@leggedrobotics.com');
-        const user = await get_user_from_db(user_id);
+        const userId = await mockDbUser('internal@leggedrobotics.com');
+        const user = await getUserFromDb(userId);
         // create project
-        const project_uuid = await create_project_using_post(
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'test description',
@@ -38,27 +38,28 @@ describe('Verify Action', () => {
             },
             user,
         );
-        expect(project_uuid).toBeDefined();
+        expect(projectUuid).toBeDefined();
 
         // create mission using the post
-        const mission_uuid = await create_mission_using_post(
+        const missionUuid = await createMissionUsingPost(
             {
                 name: 'test_mission',
-                projectUUID: project_uuid,
+                projectUUID: projectUuid,
                 tags: {},
             },
             user,
         );
-        expect(mission_uuid).toBeDefined();
+        expect(missionUuid).toBeDefined();
 
-        const file_hash = await upload_file(user, filename, mission_uuid);
+        const fileHash = await uploadFile(user, filename, missionUuid);
 
-        const create_template = await fetch(
+        const createTemplate = await fetch(
             `http://localhost:3000/action/createTemplate`,
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
+                    cookie: `authtoken=${await getJwtToken(user)}`,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -74,48 +75,49 @@ describe('Verify Action', () => {
             },
         );
 
-        expect(create_template.status).toBeLessThan(300);
-        const res = await create_template.json();
+        expect(createTemplate.status).toBeLessThan(300);
+        const res = await createTemplate.json();
         const uuid = res.uuid;
 
         // start action container
-        const action_submission = await fetch(
+        const actionSubmission = await fetch(
             `http://localhost:3000/action/submit`,
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await get_jwt_token(user)}`,
+                    cookie: `authtoken=${await getJwtToken(user)}`,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    missionUUID: mission_uuid,
+                    missionUUID: missionUuid,
                     templateUUID: uuid,
                 } as SubmitAction),
             },
         );
 
         // check if the request was successful
-        expect(action_submission.status).toBeLessThan(300);
+        expect(actionSubmission.status).toBeLessThan(300);
 
         // get action uuid
-        const action = await action_submission.json();
-        const action_uuid = action.uuid;
-        expect(action_uuid).toBeDefined();
+        const action = await actionSubmission.json();
+        const actionUuid = action.uuid;
+        expect(actionUuid).toBeDefined();
         let logs = null;
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         while (true) {
-            const res = await fetch(
-                `http://localhost:3000/action/details?uuid=${action_uuid}`,
+            const _res = await fetch(
+                `http://localhost:3000/action/details?uuid=${actionUuid}`,
                 {
                     method: 'GET',
                     headers: {
-                        cookie: `authtoken=${await get_jwt_token(user)}`,
+                        cookie: `authtoken=${await getJwtToken(user)}`,
                     },
                 },
             );
 
-            const json = await res.json();
+            const json = await _res.json();
             if (
                 json.state === ActionState.DONE ||
                 json.state === ActionState.FAILED
@@ -128,16 +130,16 @@ describe('Verify Action', () => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
-        const file_hash_str = Buffer.from(file_hash).toString('hex');
-        console.log(file_hash_str);
+        const fileHashStr = Buffer.from(fileHash).toString('hex');
+        console.log(fileHashStr);
 
         expect(logs).toBeDefined();
         const messages = logs?.map((log) => log.message) ?? [];
         console.log(messages);
-        const contains_file = messages.some((message) =>
-            message.includes(file_hash_str),
+        const containsFile = messages.some((message) =>
+            message.includes(fileHashStr),
         );
-        expect(contains_file).toBeTruthy();
+        expect(containsFile).toBeTruthy();
 
         // submit a new action
     }, 30_000);

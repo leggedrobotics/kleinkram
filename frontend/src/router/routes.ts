@@ -1,6 +1,8 @@
 import { RouteRecordRaw } from 'vue-router';
 import { routeWithLayout } from 'src/router/routesUtils';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 /**
  *
  * Defines all the routes in the application.

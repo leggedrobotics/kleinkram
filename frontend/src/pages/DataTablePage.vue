@@ -95,7 +95,7 @@
             </q-btn-dropdown>
         </div>
         <div class="col-4 flex q-pa-sm">
-            <q-tooltip v-if="!handler.project_uuid" self="bottom middle">
+            <q-tooltip v-if="!handler.projectUuid" self="bottom middle">
                 Please select a project first
             </q-tooltip>
             <q-btn-dropdown
@@ -105,7 +105,7 @@
                 clearable
                 flat
                 class="full-width button-border"
-                :disable="!handler.project_uuid"
+                :disable="!handler.projectUuid"
             >
                 <q-list>
                     <q-item
@@ -373,13 +373,13 @@ const fileTypeFilter = ref([
 
 const selected_project = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.project_uuid,
+        (project: Project) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 const selected_mission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.mission_uuid,
+        (mission: Mission) => mission.uuid === handler.value.missionUuid,
     ),
 );
 
@@ -399,12 +399,12 @@ const projects = computed(() =>
 // Fetch missions
 const queryKeyMissions = computed(() => [
     'missions',
-    handler.value.project_uuid,
+    handler.value.projectUuid,
 ]);
 const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
     queryFn: () =>
-        missionsOfProjectMinimal(handler.value.project_uuid || '', 500, 0),
+        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
 });
 const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
@@ -462,8 +462,8 @@ function setPagination(update: {
 
 const queryKeyFiles = computed(() => [
     'Filtered Files',
-    handler.value.project_uuid,
-    handler.value.mission_uuid,
+    handler.value.projectUuid,
+    handler.value.missionUuid,
     filter,
     startDate,
     endDate,
@@ -494,8 +494,8 @@ const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
     queryFn: () =>
         fetchOverview(
             filter.value,
-            handler.value.project_uuid,
-            handler.value.mission_uuid,
+            handler.value.projectUuid,
+            handler.value.missionUuid,
             startDate.value,
             endDate.value,
             selectedTopics.value || [],

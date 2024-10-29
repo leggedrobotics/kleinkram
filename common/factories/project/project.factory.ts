@@ -9,14 +9,14 @@ import TagType from '../../entities/tagType/tagType.entity';
 export type ProjectContext = {
     name: string;
     creator: User;
-    all_users: User[];
-    all_access_groups: AccessGroup[];
+    allUsers: User[];
+    allAccessGroups: AccessGroup[];
     tagTypes: TagType[];
 };
 
 define(Project, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
-        context.creator || faker.helpers.arrayElement(context.all_users);
+        context.creator || faker.helpers.arrayElement(context.allUsers);
     console.assert(creator, 'No creator provided for project');
 
     const project = new Project();

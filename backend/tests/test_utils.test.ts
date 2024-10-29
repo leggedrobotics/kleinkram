@@ -1,8 +1,8 @@
 import {
     db,
     clearAllData,
-    get_jwt_token,
-    mock_db_user,
+    getJwtToken,
+    mockDbUser,
 } from './utils/database_utils';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/enum';
@@ -41,7 +41,7 @@ describe('Test Suite Utils', () => {
     });
 
     test('Create User with Valid Token', async () => {
-        await mock_db_user('test-01@leggedrobotics.com');
+        await mockDbUser('test-01@leggedrobotics.com');
 
         const userRepository = db.getRepository(User);
         const users = await userRepository.find();
@@ -66,7 +66,7 @@ describe('Test Suite Utils', () => {
         const res2 = await fetch(`http://localhost:3000/user/me`, {
             method: 'GET',
             headers: {
-                cookie: `authtoken=${await get_jwt_token(users[0])}`,
+                cookie: `authtoken=${await getJwtToken(users[0])}`,
             },
             credentials: 'include',
         });

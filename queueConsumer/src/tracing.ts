@@ -120,7 +120,7 @@ export const traceWrapper =
  *
  */
 export function tracing<A extends unknown[], C>(
-    trace_name: string = undefined,
+    traceName: string = undefined,
 ):
     | (MethodDecorator & ClassDecorator)
     | ((
@@ -143,7 +143,7 @@ export function tracing<A extends unknown[], C>(
             return function (...args: A): C {
                 return traceWrapper(
                     originalMethod.bind(this),
-                    trace_name,
+                    traceName,
                 )(...args) as C;
             };
         };

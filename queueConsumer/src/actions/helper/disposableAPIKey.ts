@@ -4,7 +4,7 @@ import Apikey from '@common/entities/auth/apikey.entity';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 
-export class DisposableAPIKey implements Disposable {
+export class DisposableAPIKey implements AsyncDisposable {
     apikeytype: KeyTypes;
     mission: Mission;
     uuid: string;
@@ -25,7 +25,7 @@ export class DisposableAPIKey implements Disposable {
      * Disposes the API key by setting the deletedAt field to the current date.
      * This will make the API key unusable.
      */
-    async [Symbol.dispose]() {
+    async [Symbol.asyncDispose]() {
         logger.info(`Disposing API key ${this.uuid}`);
         await this.apikeyRepository.update(
             { uuid: this.uuid },

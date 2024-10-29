@@ -1,11 +1,4 @@
-import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
-    OneToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
@@ -23,6 +16,7 @@ export type ContainerLog = {
 
 export type Image = {
     sha: string | null;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     repo_digests: string[] | null;
 };
 
@@ -33,6 +27,7 @@ export type Container = {
 export interface SubmittedAction {
     uuid: string;
     state: ActionState;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     runtime_requirements: RuntimeDescription;
     image: Image;
     command: string;
@@ -50,6 +45,7 @@ export default class Action extends BaseEntity {
     createdBy: User;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     state_cause: string;
 
     @Column({ nullable: true })
@@ -70,9 +66,11 @@ export default class Action extends BaseEntity {
     auditLogs: any;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     exit_code: number;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_url: string;
 
     @Column({ nullable: false, default: ArtifactState.AWAITING_ACTION })
