@@ -623,7 +623,7 @@ export class WriteFileGuard extends BaseGuard {
 }
 
 @Injectable()
-export class WriteFilesGuard extends BaseGuard {
+export class MoveFilesGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private missionGuardService: MissionGuardService,

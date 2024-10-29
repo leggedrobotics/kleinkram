@@ -19,7 +19,7 @@ import {
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
-    CanWriteFiles,
+    CanMoveFiles,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
@@ -168,7 +168,7 @@ export class FileController {
     }
 
     @Post('moveFiles')
-    @CanWriteFiles()
+    @CanMoveFiles()
     async moveFiles(
         @BodyUUIDArray('fileUUIDs') fileUUIDs: string[],
         @BodyUUID('missionUUID') missionUUID: string,
