@@ -1,10 +1,14 @@
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
-import { IsValidMissionName } from '../../validation/propertyDecorator';
+import {
+    IsNoValidUUID,
+    IsValidMissionName,
+} from '../../validation/propertyDecorator';
 
 export class CreateMission {
     @IsString()
     @IsNotEmpty()
     @IsValidMissionName()
+    @IsNoValidUUID()
     name: string;
 
     @IsUUID()

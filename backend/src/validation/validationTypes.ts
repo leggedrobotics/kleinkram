@@ -7,7 +7,7 @@ import {
     IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsValidName } from './propertyDecorator';
+import { IsNoValidUUID, IsValidName } from './propertyDecorator';
 
 export class UUIDValidate {
     @IsUUID()
@@ -24,6 +24,7 @@ export class NameValidate {
     @IsString()
     @IsNotEmpty()
     @IsValidName()
+    @IsNoValidUUID()
     value: string;
 }
 
