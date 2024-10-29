@@ -35,9 +35,9 @@ from .helper import (
 
 
 class CommandPanel(str, Enum):
-    CoreCommands = "CORE COMMANDS"
-    Commands = "COMMANDS"
-    AdditionalCommands = "ADDITIONAL COMMANDS"
+    COMMANDS = "COMMANDS"
+    CORE_COMMANDS = "CORE COMMANDS"
+    ADDITIONAL_COMMANDS = "ADDITIONAL COMMANDS"
 
 
 def version_callback(value: bool):
@@ -102,29 +102,29 @@ def version(
     pass
 
 
-app.add_typer(project, rich_help_panel=CommandPanel.Commands)
-app.add_typer(missionCommands, rich_help_panel=CommandPanel.Commands)
+app.add_typer(project, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(missionCommands, rich_help_panel=CommandPanel.COMMANDS)
 
-app.add_typer(topic, rich_help_panel=CommandPanel.Commands)
-app.add_typer(file, rich_help_panel=CommandPanel.Commands)
-app.add_typer(queue, rich_help_panel=CommandPanel.Commands)
-app.add_typer(user, rich_help_panel=CommandPanel.Commands)
-app.add_typer(tag, rich_help_panel=CommandPanel.Commands)
-app.add_typer(endpoint, rich_help_panel=CommandPanel.AdditionalCommands)
+app.add_typer(topic, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(file, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(queue, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(user, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(tag, rich_help_panel=CommandPanel.COMMANDS)
+app.add_typer(endpoint, rich_help_panel=CommandPanel.ADDITIONAL_COMMANDS)
 
-app.command(rich_help_panel=CommandPanel.AdditionalCommands)(login)
-app.command(rich_help_panel=CommandPanel.AdditionalCommands)(logout)
+app.command(rich_help_panel=CommandPanel.ADDITIONAL_COMMANDS)(login)
+app.command(rich_help_panel=CommandPanel.ADDITIONAL_COMMANDS)(logout)
 app.command(hidden=True)(setCliKey)
 
 
-@app.command("download", rich_help_panel=CommandPanel.CoreCommands)
+@app.command("download", rich_help_panel=CommandPanel.CORE_COMMANDS)
 def download():
     print(
         "Not implemented yet. Consider using the 'klein file download' or 'klein mission download' commands."
     )
 
 
-@app.command("upload", rich_help_panel=CommandPanel.CoreCommands, no_args_is_help=True)
+@app.command("upload", rich_help_panel=CommandPanel.CORE_COMMANDS, no_args_is_help=True)
 def upload(
     path: Annotated[
         List[str],
