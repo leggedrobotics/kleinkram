@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import typer
-
 from kleinkram.auth.auth import TokenFile
 
 endpoint = typer.Typer(
-    name="endpoint",
-    help="Get Or Set the current endpoint.\n\nThe endpoint is used to determine the API server to connect to"
-    "(default is the API server of https://datasets.leggedrobotics.com).",
+    name='endpoint',
+    help='Get Or Set the current endpoint.\n\nThe endpoint is used to determine the API server to connect to'
+    '(default is the API server of https://datasets.leggedrobotics.com).',
     no_args_is_help=True,
-    context_settings={"help_option_names": ["-h", "--help"]},
+    context_settings={'help_option_names': ['-h', '--help']},
 )
 
 
-@endpoint.command("set")
-def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use")):
+@endpoint.command('set')
+def set_endpoint(endpoint: str = typer.Argument(None, help='API endpoint to use')):
     """
     Set the current endpoint
 
@@ -26,21 +25,21 @@ def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use"
     """
 
     if not endpoint:
-        raise ValueError("No endpoint provided.")
+        raise ValueError('No endpoint provided.')
 
     tokenfile = TokenFile()
     tokenfile.endpoint = endpoint
     tokenfile.writeToFile()
 
     print()
-    print("Endpoint set to: " + endpoint)
+    print('Endpoint set to: ' + endpoint)
     if tokenfile.endpoint not in tokenfile.tokens:
         print(
             "Not authenticated on this endpoint, please execute 'klein login' to authenticate."
         )
 
 
-@endpoint.command("get")
+@endpoint.command('get')
 def get_endpoints():
     """
     Get the current endpoint
@@ -48,13 +47,13 @@ def get_endpoints():
     Also displays all endpoints with saved tokens.
     """
     tokenfile = TokenFile()
-    print("Current: " + tokenfile.endpoint)
+    print('Current: ' + tokenfile.endpoint)
     print()
 
     if not tokenfile.tokens:
-        print("No saved tokens found.")
+        print('No saved tokens found.')
         return
 
-    print("Saved Tokens found for:")
+    print('Saved Tokens found for:')
     for _endpoint, _ in tokenfile.tokens.items():
-        print("- " + _endpoint)
+        print('- ' + _endpoint)

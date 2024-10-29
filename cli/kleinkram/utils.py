@@ -7,6 +7,7 @@ import sys
 import threading
 from datetime import datetime
 from functools import partial
+from typing import Dict
 from uuid import UUID
 
 import boto3
@@ -15,11 +16,9 @@ import typer
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 from botocore.utils import calculate_md5
+from kleinkram.api_client import AuthenticatedClient
 from rich import print
 from rich.console import Console
-from typing_extensions import Dict
-
-from kleinkram.api_client import AuthenticatedClient
 
 
 class TransferCallback:
@@ -50,13 +49,13 @@ class TransferCallback:
         with self._lock:
             tqdm_instance = tqdm.tqdm(
                 total=target_size,
-                unit="B",
+                unit='B',
                 unit_scale=True,
                 desc=f"Uploading {file_id}",
             )
             self.file_progress[file_id] = {
-                "tqdm": tqdm_instance,
-                "total_transferred": 0,
+                'tqdm': tqdm_instance,
+                'total_transferred': 0,
             }
 
     def __call__(self, file_id, bytes_transferred):
@@ -73,16 +72,16 @@ class TransferCallback:
         with self._lock:
             if file_id in self.file_progress:
                 progress = self.file_progress[file_id]
-                progress["total_transferred"] += bytes_transferred
+                progress['total_transferred'] += bytes_transferred
 
                 # Update tqdm progress bar
-                progress["tqdm"].update(bytes_transferred)
+                progress['tqdm'].update(bytes_transferred)
 
     def close(self):
         """Close all tqdm progress bars."""
         with self._lock:
             for progress in self.file_progress.values():
-                progress["tqdm"].close()
+                progress['tqdm'].close()
 
 
 def create_transfer_callback(callback_instance, file_id):
@@ -101,7 +100,7 @@ def expand_and_match(path_pattern):
 
     normalized_path = os.path.normpath(expanded_path)
 
-    if "**" in normalized_path:
+    if '**' in normalized_path:
         file_list = glob.glob(normalized_path, recursive=True)
     else:
         file_list = glob.glob(normalized_path)
@@ -110,19 +109,19 @@ def expand_and_match(path_pattern):
 
 
 def uploadFiles(
-    files_with_access: Dict[str, object], paths: Dict[str, str], nrThreads: int
+    files_with_access: dict[str, object], paths: dict[str, str], nrThreads: int
 ):
     client = AuthenticatedClient()
 
     api_endpoint = client.tokenfile.endpoint
-    if api_endpoint == "http://localhost:3000":
-        minio_endpoint = "http://localhost:9000"
+    if api_endpoint == 'http://localhost:3000':
+        minio_endpoint = 'http://localhost:9000'
     else:
-        minio_endpoint = api_endpoint.replace("api", "minio")
+        minio_endpoint = api_endpoint.replace('api', 'minio')
 
     _queue = queue.Queue()
     for file_with_access in files_with_access:
-        _queue.put((file_with_access, str(paths[file_with_access["fileName"]])))
+        _queue.put((file_with_access, str(paths[file_with_access['fileName']])))
 
     threads = []
     transfer_callback = TransferCallback()
@@ -143,25 +142,25 @@ def uploadFile(
     minio_endpoint: str,
     transfer_callback: TransferCallback,
 ):
-    config = Config(retries={"max_attempts": 10, "mode": "standard"})
+    config = Config(retries={'max_attempts': 10, 'mode': 'standard'})
 
     while True:
         try:
             file_with_access, filepath = _queue.get(timeout=3)
 
-            if "error" in file_with_access and (
-                file_with_access["error"] is not None or file_with_access["error"] != ""
+            if 'error' in file_with_access and (
+                file_with_access['error'] is not None or file_with_access['error'] != ''
             ):
-                console = Console(file=sys.stderr, style="red", highlight=False)
+                console = Console(file=sys.stderr, style='red', highlight=False)
                 console.print(
                     f"Error uploading file: {file_with_access['fileName']} ({filepath}): {file_with_access['error']}"
                 )
                 _queue.task_done()
                 continue
 
-            access_key = file_with_access["accessCredentials"]["accessKey"]
-            secret_key = file_with_access["accessCredentials"]["secretKey"]
-            session_token = file_with_access["accessCredentials"]["sessionToken"]
+            access_key = file_with_access['accessCredentials']['accessKey']
+            secret_key = file_with_access['accessCredentials']['secretKey']
+            session_token = file_with_access['accessCredentials']['sessionToken']
 
             session = boto3.Session(
                 aws_access_key_id=access_key,
@@ -169,16 +168,16 @@ def uploadFile(
                 aws_session_token=session_token,
             )
 
-            s3 = session.resource("s3", endpoint_url=minio_endpoint, config=config)
+            s3 = session.resource('s3', endpoint_url=minio_endpoint, config=config)
 
-            fileu_uid = file_with_access["fileUUID"]
-            bucket = file_with_access["bucket"]
+            fileu_uid = file_with_access['fileUUID']
+            bucket = file_with_access['bucket']
 
             transfer_config = TransferConfig(
                 multipart_chunksize=10 * 1024 * 1024,
                 max_concurrency=5,
             )
-            with open(filepath, "rb") as f:
+            with open(filepath, 'rb') as f:
                 md5_checksum = calculate_md5(f)
                 file_size = os.path.getsize(filepath)
                 transfer_callback.add_file(filepath, file_size)
@@ -194,65 +193,65 @@ def uploadFile(
 
                 client = AuthenticatedClient()
                 res = client.post(
-                    "/queue/confirmUpload",
-                    json={"uuid": fileu_uid, "md5": md5_checksum},
+                    '/queue/confirmUpload',
+                    json={'uuid': fileu_uid, 'md5': md5_checksum},
                 )
                 res.raise_for_status()
             _queue.task_done()
         except queue.Empty:
             break
         except Exception as e:
-            print("Error uploading file: " + filepath)
+            print('Error uploading file: ' + filepath)
             print(e)
             _queue.task_done()
 
 
 def canUploadMission(client: AuthenticatedClient, project_uuid: str):
-    permissions = client.get("/user/permissions")
+    permissions = client.get('/user/permissions')
     permissions.raise_for_status()
     permissions_json = permissions.json()
     for_project = filter(
-        lambda x: x["uuid"] == project_uuid, permissions_json["projects"]
+        lambda x: x['uuid'] == project_uuid, permissions_json['projects']
     )
-    max_for_project = max(map(lambda x: x["access"], for_project))
+    max_for_project = max(map(lambda x: x['access'], for_project))
     return max_for_project >= 10
 
 
-def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
+def promptForTags(setTags: dict[str, str], requiredTags: dict[str, str]):
     for required_tag in requiredTags:
-        if required_tag["name"] not in setTags:
+        if required_tag['name'] not in setTags:
             while True:
-                if required_tag["datatype"] in ["LOCATION", "STRING", "LINK"]:
+                if required_tag['datatype'] in ['LOCATION', 'STRING', 'LINK']:
                     tag_value = typer.prompt(
-                        "Provide value for required tag " + required_tag["name"]
+                        'Provide value for required tag ' + required_tag['name']
                     )
-                    if tag_value != "":
+                    if tag_value != '':
                         break
-                elif required_tag["datatype"] == "BOOLEAN":
+                elif required_tag['datatype'] == 'BOOLEAN':
                     tag_value = typer.confirm(
-                        "Provide (y/N) for required tag " + required_tag["name"]
+                        'Provide (y/N) for required tag ' + required_tag['name']
                     )
                     break
-                elif required_tag["datatype"] == "NUMBER":
+                elif required_tag['datatype'] == 'NUMBER':
                     tag_value = typer.prompt(
-                        "Provide number for required tag " + required_tag["name"]
+                        'Provide number for required tag ' + required_tag['name']
                     )
                     try:
                         tag_value = float(tag_value)
                         break
                     except ValueError:
-                        typer.echo("Invalid number format. Please provide a number.")
-                elif required_tag["datatype"] == "DATE":
+                        typer.echo('Invalid number format. Please provide a number.')
+                elif required_tag['datatype'] == 'DATE':
                     tag_value = typer.prompt(
-                        "Provide date for required tag " + required_tag["name"]
+                        'Provide date for required tag ' + required_tag['name']
                     )
                     try:
-                        tag_value = datetime.strptime(tag_value, "%Y-%m-%d %H:%M:%S")
+                        tag_value = datetime.strptime(tag_value, '%Y-%m-%d %H:%M:%S')
                         break
                     except ValueError:
                         print("Invalid date format. Please use 'YYYY-MM-DD HH:MM:SS'")
 
-            setTags[required_tag["uuid"]] = tag_value
+            setTags[required_tag['uuid']] = tag_value
 
 
 def is_valid_UUIDv4(uuid: str) -> bool:
@@ -263,8 +262,8 @@ def is_valid_UUIDv4(uuid: str) -> bool:
         return False
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     res = expand_and_match(
-        "~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-003/**.bag"
+        '~/Downloads/dodo_mission_2024_02_08-20240408T074313Z-003/**.bag'
     )
     print(res)

@@ -2,28 +2,30 @@ from __future__ import annotations
 
 import os
 import re
+from typing import Annotated
+from typing import List
+from typing import Optional
 
 import httpx
 import requests
 import typer
+from kleinkram.api_client import AuthenticatedClient
+from kleinkram.error_handling import AccessDeniedException
+from kleinkram.utils import expand_and_match
+from kleinkram.utils import uploadFiles
 from rich.console import Console
 from rich.table import Table
 from tqdm import tqdm
-from typing_extensions import Annotated, Optional, List
-
-from kleinkram.api_client import AuthenticatedClient
-from kleinkram.error_handling import AccessDeniedException
-from kleinkram.utils import expand_and_match, uploadFiles
 
 missionCommands = typer.Typer(
-    name="mission",
-    help="Mission operations",
+    name='mission',
+    help='Mission operations',
     no_args_is_help=True,
-    context_settings={"help_option_names": ["-h", "--help"]},
+    context_settings={'help_option_names': ['-h', '--help']},
 )
 
 
-@missionCommands.command("tag")
+@missionCommands.command('tag')
 def addTag(
     mission_uuid: Annotated[str, typer.Argument()],
     tagtype_uuid: Annotated[str, typer.Argument()],
@@ -33,39 +35,39 @@ def addTag(
     try:
         client = AuthenticatedClient()
         response = client.post(
-            "/tag/addTag",
-            json={"mission": mission_uuid, "tagType": tagtype_uuid, "value": value},
+            '/tag/addTag',
+            json={'mission': mission_uuid, 'tagType': tagtype_uuid, 'value': value},
         )
         if response.status_code < 400:
-            print("Tagged mission")
+            print('Tagged mission')
         else:
             print(response.json())
-            print("Failed to tag mission")
-            raise Exception("Failed to tag mission")
+            print('Failed to tag mission')
+            raise Exception('Failed to tag mission')
     except httpx.HTTPError as e:
         print(e)
-        print("Failed to tag mission")
+        print('Failed to tag mission')
         raise e
 
 
-@missionCommands.command("list")
+@missionCommands.command('list')
 def list_missions(
-    project: Optional[str] = typer.Option(None, help="Name of Project"),
-    verbose: Optional[bool] = typer.Option(
-        False, help="Outputs a table with more information"
+    project: str | None = typer.Option(None, help='Name of Project'),
+    verbose: bool | None = typer.Option(
+        False, help='Outputs a table with more information'
     ),
 ):
     """
     List all missions with optional filter for project.
     """
 
-    url = "/mission"
+    url = '/mission'
     params = {}
     if project:
         url += f"/filteredByProjectName"
-        params["projectName"] = project
+        params['projectName'] = project
     else:
-        url += "/all"
+        url += '/all'
 
     client = AuthenticatedClient()
 
@@ -85,7 +87,7 @@ def list_missions(
     data = response.json()
     missions_by_project_uuid = {}
     for mission in data:
-        project_uuid = mission["project"]["uuid"]
+        project_uuid = mission['project']['uuid']
         if project_uuid not in missions_by_project_uuid:
             missions_by_project_uuid[project_uuid] = []
         missions_by_project_uuid[project_uuid].append(mission)
@@ -94,7 +96,7 @@ def list_missions(
         print(f"No missions found for project '{project}'. Does it exist?")
         return
 
-    print("missions by Project:")
+    print('missions by Project:')
     if not verbose:
         for project_uuid, missions in missions_by_project_uuid.items():
             print(f"* {missions_by_project_uuid[project_uuid][0]['project']['name']}")
@@ -102,24 +104,24 @@ def list_missions(
                 print(f"  - {mission['name']}")
 
     else:
-        table = Table("UUID", "name", "project", "creator", "createdAt")
+        table = Table('UUID', 'name', 'project', 'creator', 'createdAt')
         for project_uuid, missions in missions_by_project_uuid.items():
             for mission in missions:
                 table.add_row(
-                    mission["uuid"],
-                    mission["name"],
-                    mission["project"]["name"],
-                    mission["creator"]["name"],
-                    mission["createdAt"],
+                    mission['uuid'],
+                    mission['name'],
+                    mission['project']['name'],
+                    mission['creator']['name'],
+                    mission['createdAt'],
                 )
         console = Console()
         console.print(table)
 
 
-@missionCommands.command("byUUID")
+@missionCommands.command('byUUID')
 def mission_by_uuid(
     uuid: Annotated[str, typer.Argument()],
-    json: Optional[bool] = typer.Option(False, help="Output as JSON"),
+    json: bool | None = typer.Option(False, help='Output as JSON'),
 ):
     """
     Get mission name, project name, creator and table of its files given a Mission UUID
@@ -128,9 +130,9 @@ def mission_by_uuid(
 
     Can be run with API Key or with login.
     """
-    url = "/mission/one"
+    url = '/mission/one'
     client = AuthenticatedClient()
-    response = client.get(url, params={"uuid": uuid})
+    response = client.get(url, params={'uuid': uuid})
 
     try:
         response.raise_for_status()
@@ -148,28 +150,28 @@ def mission_by_uuid(
         return
     print(f"mission: {data['name']}")
     print(f"Creator: {data['creator']['name']}")
-    print("Project: " + data["project"]["name"])
-    table = Table("Filename", "Size", "date")
+    print('Project: ' + data['project']['name'])
+    table = Table('Filename', 'Size', 'date')
 
-    if "files" not in data:
-        print("No files found for mission.")
+    if 'files' not in data:
+        print('No files found for mission.')
         return
 
-    for file in data["files"]:
-        table.add_row(file["filename"], f"{file['size']}", file["date"])
+    for file in data['files']:
+        table.add_row(file['filename'], f"{file['size']}", file['date'])
     console = Console()
     console.print(table)
 
 
-@missionCommands.command("download")
+@missionCommands.command('download')
 def download(
     mission_uuid: Annotated[
-        List[str], typer.Option(help="UUIDs of Mission to download")
+        list[str], typer.Option(help='UUIDs of Mission to download')
     ],
     local_path: Annotated[str, typer.Option()],
-    pattern: Optional[str] = typer.Option(
+    pattern: str | None = typer.Option(
         None,
-        help="Simple pattern to match the filename against. Allowed are alphanumeric characters,"
+        help='Simple pattern to match the filename against. Allowed are alphanumeric characters,'
         " '_', '-', '.' and '*' as wildcard.",
     ),
 ):
@@ -193,7 +195,7 @@ def download(
 
     client = AuthenticatedClient()
     for single_mission_uuid in mission_uuid:
-        response = client.get("/mission/download", params={"uuid": single_mission_uuid})
+        response = client.get('/mission/download', params={'uuid': single_mission_uuid})
         try:
             response.raise_for_status()
         except httpx.HTTPError as e:
@@ -209,17 +211,17 @@ def download(
 
         # validate search pattern
         if pattern:
-            if not re.match(r"^[a-zA-Z0-9_\-.*]+$", pattern):
+            if not re.match(r'^[a-zA-Z0-9_\-.*]+$', pattern):
                 raise ValueError(
                     "Invalid pattern. Allowed are alphanumeric characters, '_', '-', '.' and '*' as wildcard."
                 )
 
-            regex = pattern.replace("*", ".*")
+            regex = pattern.replace('*', '.*')
             pattern = re.compile(regex)
 
         print(f"Found {len(paths)} files in mission:")
         paths = [
-            path for path in paths if not pattern or pattern.match(path["filename"])
+            path for path in paths if not pattern or pattern.match(path['filename'])
         ]
 
         if pattern:
@@ -230,30 +232,30 @@ def download(
         print(f"Start downloading {len(paths)} files to '{local_path}':\n")
         for path in paths:
 
-            filename = path["filename"]
+            filename = path['filename']
 
-            response = requests.get(path["link"], stream=True)  # Enable streaming mode
+            response = requests.get(path['link'], stream=True)  # Enable streaming mode
             chunk_size = 1024 * 1024 * 10  # 10 MB chunks, adjust size if needed
 
             # Open the file for writing in binary mode
-            with open(os.path.join(local_path, filename), "wb") as f:
+            with open(os.path.join(local_path, filename), 'wb') as f:
                 for chunk in tqdm(
                     response.iter_content(chunk_size=chunk_size),
-                    unit="MB",
+                    unit='MB',
                     desc=filename,
                 ):
                     if chunk:  # Filter out keep-alive new chunks
                         f.write(chunk)
 
 
-@missionCommands.command("upload")
+@missionCommands.command('upload')
 def upload(
     path: Annotated[
-        List[str],
-        typer.Option(prompt=True, help="Path to files to upload, Regex supported"),
+        list[str],
+        typer.Option(prompt=True, help='Path to files to upload, Regex supported'),
     ],
     mission: Annotated[
-        str, typer.Option(prompt=True, help="UUID of Mission to create")
+        str, typer.Option(prompt=True, help='UUID of Mission to create')
     ],
 ):
     """
@@ -270,44 +272,44 @@ def upload(
     for p in path:
         files.extend(expand_and_match(p))
     filenames = list(
-        map(lambda x: x.split("/")[-1], filter(lambda x: not os.path.isdir(x), files))
+        map(lambda x: x.split('/')[-1], filter(lambda x: not os.path.isdir(x), files))
     )
     if not filenames:
-        raise ValueError("No files found matching the given path.")
+        raise ValueError('No files found matching the given path.')
 
     print(f"Uploading the following files to mission '{mission}':")
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
-            filepaths[path.split("/")[-1]] = path
+            filepaths[path.split('/')[-1]] = path
             typer.secho(f" - {path}", fg=typer.colors.RESET)
 
     try:
         client = AuthenticatedClient()
         res = client.post(
-            "/file/temporaryAccess",
-            json={"missionUUID": mission, "filenames": filenames},
+            '/file/temporaryAccess',
+            json={'missionUUID': mission, 'filenames': filenames},
         )
         if res.status_code >= 400:
             raise ValueError(
-                "Failed to get temporary access. Status code: "
+                'Failed to get temporary access. Status code: '
                 + str(res.status_code)
-                + " Message: "
-                + res.json()["message"]
+                + ' Message: '
+                + res.json()['message']
             )
 
         temp_credentials = res.json()
-        credential = temp_credentials["credentials"]
-        confirmed_files = temp_credentials["files"]
+        credential = temp_credentials['credentials']
+        confirmed_files = temp_credentials['files']
         for _file in filenames:
             if not _file in confirmed_files.keys():
                 raise Exception(
                     "Could not upload File '" + _file + "'. Is the filename unique? "
                 )
-            confirmed_files[_file]["filepath"] = filepaths[_file]
+            confirmed_files[_file]['filepath'] = filepaths[_file]
         if len(confirmed_files.keys()) > 0:
             uploadFiles(confirmed_files, credential, 4)
     except Exception as e:
         print(e)
-        print("Failed to upload files")
+        print('Failed to upload files')
         raise e
