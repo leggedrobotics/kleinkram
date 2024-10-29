@@ -238,16 +238,11 @@
                         :mission="mission"
                         :files="selectedFiles"
                     />
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_move_down"
-                        color="white"
-                        disable
-                    >
-                        Move
-                    </q-btn>
+                    <OpenMultiFileMoveDialog
+                        :mission="mission"
+                        :files="selectedFiles"
+                    />
+
                     <q-btn
                         flat
                         dense
@@ -341,6 +336,7 @@ import { getCategories } from 'src/services/queries/categories';
 import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
+import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
