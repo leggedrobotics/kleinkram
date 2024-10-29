@@ -32,7 +32,7 @@
         "@nestjs/typeorm": "^10.0.2",
         "@opentelemetry/exporter-prometheus": "^0.54.0",
         "@opentelemetry/exporter-trace-otlp-http": "^0.54.0",
-        "@opentelemetry/instrumentation-express": "^0.43.0",
+        "@opentelemetry/instrumentation-express": "^0.44.0",
         "@opentelemetry/instrumentation-fetch": "^0.54.0",
         "@opentelemetry/instrumentation-http": "^0.54.0",
         "@opentelemetry/instrumentation-nestjs-core": "^0.40.0",
