@@ -1,6 +1,7 @@
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { Matches } from 'class-validator';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsNoValidUUID = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
