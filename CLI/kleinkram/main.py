@@ -27,7 +27,7 @@ from kleinkram.queue.queue import queue
 from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
-from .helper import (
+from kleinkram.utils import (
     uploadFiles,
     expand_and_match,
     canUploadMission,
@@ -214,7 +214,7 @@ def upload(
             print("Project created successfully.")
 
     project_json = project_response.json()
-    if not project_json["uuid"]:
+    if project_json["uuid"] is None:
         print(f"Project not found: '{project}'")
         return
 

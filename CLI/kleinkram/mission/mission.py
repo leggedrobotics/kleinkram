@@ -13,7 +13,7 @@ from typing_extensions import Annotated, Optional, List
 
 from kleinkram.api_client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
-from kleinkram.helper import expand_and_match, uploadFiles
+from kleinkram.utils import expand_and_match, uploadFiles
 
 missionCommands = typer.Typer(
     name="mission",
