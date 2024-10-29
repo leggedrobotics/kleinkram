@@ -26,11 +26,11 @@ from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
 from .helper import (
-    uploadFiles,
-    expand_and_match,
+    is_valid_UUIDv4,
     canUploadMission,
     promptForTags,
-    is_valid_UUIDv4,
+    expand_and_match,
+    uploadFiles,
 )
 
 
@@ -148,6 +148,22 @@ def upload(
         bool,
         typer.Option(help="Allows adding files to an existing mission"),
     ] = False,
+    overwrite: Annotated[
+        bool,
+        typer.Option(
+            help="Overwrite files with the same name.\n\n*WARNING:* This cannot be undone! This command will NOT delete"
+            "converted files, i.g. if the file is of type 'some-name.bag' the converted 'some-name.mcap' file will not "
+            "be deleted."
+        ),
+    ] = False,
+    overwrite_all: Annotated[
+        bool,
+        typer.Option(
+            help="Overwrite files with the same name.\n\n*WARNING:* This cannot be undone! This command WILL "
+            "automatically delete converted files, i.g. if the file is of type 'some-name.bag' the converted "
+            "'some-name.mcap' file will be deleted."
+        ),
+    ] = False,
 ):
     """
     Upload files matching the path to a mission in a project.
@@ -155,7 +171,7 @@ def upload(
     The mission name must be unique within the project and not yet created.\n
     Multiple paths can be given by using the option multiple times.\n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "Mission 1" --tags "0700946d-1d6a-4520-b263-0e177f49c35b:LEE-H" --tags "1565118d-593c-4517-8c2d-9658452d9319:Dodo"'\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project_1" --mission "Mission_1" --tags "0700946d-1d6a-4520-b263-0e177f49c35b:LEE-H" --tags "1565118d-593c-4517-8c2d-9658452d9319:Dodo"'\n
 
     """
 
@@ -197,10 +213,11 @@ def upload(
                 },
             )
             if project_response.status_code >= 400:
+                msg = str(project_response.json()["message"])
                 raise ValueError(
                     f"Failed to create project. Status Code: "
                     f"{str(project_response.status_code)}\n"
-                    f"{project_response.json()['message'][0]}"
+                    f"{msg}"
                 )
             print("Project created successfully.")
 
@@ -321,6 +338,85 @@ def upload(
             "multiple files with the same name in different directories or use the '--fix-filenames' option."
         )
 
+    # check if files already exist
+    get_files_url = "/file/ofMission"
+    response = client.get(
+        get_files_url,
+        params={"uuid": mission_json["uuid"]},
+    )
+    if response.status_code >= 400:
+        raise ValueError(
+            "Failed to check for existing files. Status Code: "
+            + str(response.status_code)
+            + "\n"
+            + response.json()["message"]
+        )
+
+    existing_files = response.json()[0]
+    conflicting_files = [
+        file for file in existing_files if file["filename"] in filenames
+    ]
+
+    if conflicting_files and len(conflicting_files):
+        print("The following files already exist in the mission:")
+        for file in conflicting_files:
+            typer.secho(f" - {file['filename']}", fg=typer.colors.RED, nl=False)
+            if overwrite or overwrite_all:
+                # delete existing files
+                delete_files_url = f"/file/{file['uuid']}"
+                response = client.delete(delete_files_url)
+                if response.status_code >= 400:
+                    raise ValueError(
+                        "Failed to delete existing files. Status Code: "
+                        + str(response.status_code)
+                        + "\n"
+                        + response.json()["message"]
+                    )
+                print("   » deleted")
+
+                # check if converted files exist
+                mcap_file = file["filename"].replace(".bag", ".mcap")
+
+                if mcap_file == file["filename"]:
+                    continue
+
+                mcap_uuid = next(
+                    (
+                        file["uuid"]
+                        for file in existing_files
+                        if file["filename"] == mcap_file
+                    ),
+                    None,
+                )
+
+                if mcap_uuid and overwrite_all:
+                    typer.secho(f"   {mcap_file}", fg=typer.colors.RED, nl=False)
+                    delete_files_url = f"/file/{mcap_uuid}"
+                    response = client.delete(delete_files_url)
+                    if response.status_code >= 400:
+                        raise ValueError(
+                            "Failed to delete existing files. Status Code: "
+                            + str(response.status_code)
+                            + "\n"
+                            + response.json()["message"]
+                        )
+                    print("  » deleted")
+                elif mcap_uuid and not overwrite_all:
+                    print(
+                        f"   {mcap_file}  » skipped (consider using '--overwrite-all' to delete this file)"
+                    )
+                else:
+                    print("   » not found")
+
+            else:
+                print("")
+
+        if not overwrite and not overwrite_all:
+            print(
+                "\nYou may use the '--overwrite' or '--overwrite-all' flag to overwrite existing files."
+            )
+        print("")
+
     get_temporary_credentials = "/file/temporaryAccess"
     response = client.post(
         get_temporary_credentials,
@@ -328,7 +424,7 @@ def upload(
     )
     if response.status_code >= 400:
         raise ValueError(
-            "Failed to get temporary credentials. Status Code: "
+            "Failed to upload data. Status Code: "
             + str(response.status_code)
             + "\n"
             + response.json()["message"][0]

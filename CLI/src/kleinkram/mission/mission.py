@@ -261,7 +261,7 @@ def upload(
     Multiple paths can be given by using the option multiple times.\n
     \n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project 1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
+        - 'klein upload --path "~/data/**/*.bag" --project "Project_1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
 
     """
     files = []
