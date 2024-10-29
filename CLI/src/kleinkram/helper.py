@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import glob
 import os
 import queue
-import re
 import sys
 import threading
 from datetime import datetime

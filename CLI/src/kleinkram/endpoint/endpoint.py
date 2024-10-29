@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typer
 
 from kleinkram.auth.auth import TokenFile

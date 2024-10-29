@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import httpx
 
 from kleinkram.auth.auth import TokenFile, CLI_KEY, AUTH_TOKEN, REFRESH_TOKEN

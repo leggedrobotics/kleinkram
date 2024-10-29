@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.metadata
 import os
 from datetime import datetime, timedelta
@@ -58,6 +60,8 @@ class OrderCommands(TyperGroup):
     """
 
     def list_commands(self, _ctx: Context) -> List[str]:
+        _ = _ctx  # unused
+
         order = list(CommandPanel)
         grouped_commands = {
             name: getattr(command, "rich_help_panel")
@@ -71,7 +75,7 @@ class OrderCommands(TyperGroup):
         ]
         return [
             name
-            for name, command in sorted(
+            for name, _ in sorted(
                 grouped_commands.items(),
                 key=lambda item: order.index(item[1]),
             )
@@ -161,9 +165,7 @@ def upload(
 
     client = AuthenticatedClient()
 
-    ##############################
-    # Check if project exists
-    ##############################
+    # check if project exists, if `project` is a UUID search by uuid else search by name
     if is_valid_UUIDv4(project):
         get_project_url = "/project/one"
         project_response = client.get(get_project_url, params={"uuid": project})
@@ -174,16 +176,18 @@ def upload(
     if project_response.status_code >= 400:
         if not create_project and not is_valid_UUIDv4(project):
             raise AccessDeniedException(
-                f"The project '{project}' does not exist or you do not have access to it.\n"
-                f"Consider using the following command to create a project: 'klein project create' "
-                f"or consider passing the flag '--create-project' to create the project automatically.",
+                f"The project `{project}` does not exist or you do not have access to it.\n"
+                "Consider using the following command to create a project: "
+                "`klein project create` or consider passing the flag "
+                "`--create-project` to create the project automatically.",
                 f"{project_response.json()['message']} ({project_response.status_code})",
             )
         elif is_valid_UUIDv4(project):
             raise ValueError(
-                f"Project '{project}' does not exist. UUIDs cannot be used to create projects.\n"
-                f"Please provide a valid project name or consider creating the project using the"
-                f" following command: 'klein project create'"
+                f"The project `{project}` does not exist or you do not have access to it.\n"
+                "UUIDs cannot be used to create projects.\n"
+                "Please provide a valid project name or consider creating "
+                "the project using the following command: `klein project create`"
             )
         else:
             print(f"Project '{project}' does not exist. Creating it now.")
@@ -225,9 +229,7 @@ def upload(
     )
     promptForTags(tags_dict, required_tags)
 
-    ##############################
-    # Check if mission exists
-    ##############################
+    # check if mission exists, if `mission` is a UUID search by uuid else search by name
     if is_valid_UUIDv4(mission):
         get_mission_url = "/mission/one"
         mission_response = client.get(get_mission_url, params={"uuid": mission})
