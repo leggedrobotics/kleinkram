@@ -54,6 +54,7 @@ export const getActions = async (
             res.template.cpuMemory,
             res.template.gpuMemory,
             res.template.maxRuntime,
+            res.template.entrypoint,
         );
 
         const mission = new Mission(
@@ -133,6 +134,7 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.template.cpuMemory,
         response.data.template.gpuMemory,
         response.data.template.maxRuntime,
+        response.data.template.entrypoint,
     );
     try {
         let worker = null;
@@ -209,6 +211,7 @@ export const listActionTemplates = async (search: string) => {
             res.cpuMemory,
             res.gpuMemory,
             res.maxRuntime,
+            res.entrypoint,
         );
     });
 };
@@ -241,6 +244,7 @@ export const getRunningActions = async () => {
             res.template.cpuMemory,
             res.template.gpuMemory,
             res.template.maxRuntime,
+            res.template.entrypoint,
         );
         const mission = new Mission(
             res.mission.uuid,

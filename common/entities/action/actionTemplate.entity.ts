@@ -39,4 +39,7 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column()
     maxRuntime: number; // in hours
+
+    @Column({ nullable: true })
+    entrypoint: string;
 }
