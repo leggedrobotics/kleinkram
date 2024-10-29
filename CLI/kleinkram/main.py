@@ -92,6 +92,11 @@ app = ErrorHandledTyper(
 )
 
 
+def main() -> int:
+    app()
+    return 0
+
+
 @app.callback()
 def version(
     version: bool = typer.Option(
@@ -380,4 +385,4 @@ def claim():
 
 
 if __name__ == "__main__":
-    app()
+    raise SystemExit(main())
