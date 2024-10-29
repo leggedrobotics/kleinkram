@@ -4,6 +4,7 @@ import importlib.metadata
 import os
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import cast, Dict
 
 import httpx
 import typer
@@ -90,11 +91,6 @@ app = ErrorHandledTyper(
     f"For a list of available commands, run 'klein --help' or visit "
     f"https://docs.datasets.leggedrobotics.com/usage/cli/cli-getting-started.html for more information.",
 )
-
-
-def main() -> int:
-    app()
-    return 0
 
 
 @app.callback()
@@ -230,7 +226,9 @@ def upload(
     tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
 
     required_tags = (
-        project_json["requiredTags"] if "requiredTags" in project_json else []
+        cast(Dict[str, str], project_json["requiredTags"])
+        if "requiredTags" in project_json
+        else {}
     )
     promptForTags(tags_dict, required_tags)
 
@@ -349,9 +347,9 @@ def list_queue():
     """List current Queue entities"""
     try:
         url = "/queue/active"
-        startDate = datetime.now().date() - timedelta(days=1)
+        start_date = datetime.now().date() - timedelta(days=1)
         client = AuthenticatedClient()
-        response = client.get(url, params={"startDate": startDate})
+        response = client.get(url, params={"startDate": str(start_date)})
         response.raise_for_status()
         data = response.json()
         table = Table("UUID", "filename", "mission", "state", "origin", "createdAt")
@@ -382,6 +380,11 @@ def claim():
     response = client.post("/user/claimAdmin")
     response.raise_for_status()
     print("Admin claimed.")
+
+
+def main() -> int:
+    app()
+    return 0
 
 
 if __name__ == "__main__":
