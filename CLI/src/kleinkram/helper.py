@@ -6,6 +6,7 @@ import sys
 import threading
 from datetime import datetime
 from functools import partial
+from uuid import UUID
 
 import boto3
 import tqdm
@@ -254,15 +255,11 @@ def promptForTags(setTags: Dict[str, str], requiredTags: Dict[str, str]):
 
 
 def is_valid_UUIDv4(uuid: str) -> bool:
-    has_correct_length = len(uuid) == 36
-
-    # is UUID4
-    uuid_regex = (
-        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    )
-    is_valid_uuid = re.match(uuid_regex, uuid)
-
-    return has_correct_length and is_valid_uuid
+    try:
+        UUID(uuid, version=4)
+        return True
+    except ValueError:
+        return False
 
 
 if __name__ == "__main__":
