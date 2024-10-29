@@ -95,8 +95,14 @@
                             >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Move</q-item-section>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <MoveFileDialogOpener
+                                        :files="[props.row]"
+                                        :mission="props.row.mission"
+                                        >Move</MoveFileDialogOpener
+                                    >
+                                </q-item-section>
                             </q-item>
                             <q-item clickable v-ripple>
                                 <q-item-section>
@@ -137,6 +143,7 @@ import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { Category } from 'src/types/Category';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import { FileEntity } from 'src/types/FileEntity';
+import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();

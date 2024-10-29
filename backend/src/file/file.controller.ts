@@ -19,6 +19,7 @@ import {
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
+    CanWriteFiles,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
@@ -164,6 +165,15 @@ export class FileController {
     @CanWriteFile()
     async update(@ParamUUID('uuid') uuid: string, @Body() dto: UpdateFile) {
         return this.fileService.update(uuid, dto);
+    }
+
+    @Post('moveFiles')
+    @CanWriteFiles()
+    async moveFiles(
+        @BodyUUIDArray('fileUUIDs') fileUUIDs: string[],
+        @BodyUUID('missionUUID') missionUUID: string,
+    ) {
+        return this.fileService.moveFiles(fileUUIDs, missionUUID);
     }
 
     @Get('oneByName')

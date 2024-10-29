@@ -623,6 +623,39 @@ export class WriteFileGuard extends BaseGuard {
 }
 
 @Injectable()
+export class WriteFilesGuard extends BaseGuard {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+        const fileUUIDs = request.body.fileUUIDs;
+        const missionUUID = request.body.missionUUID;
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot move files');
+        }
+        const canDeleteFiles = this.fileGuardService.canAccessFiles(
+            user,
+            fileUUIDs,
+            AccessGroupRights.DELETE,
+        );
+        if (!canDeleteFiles) {
+            return false;
+        }
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            AccessGroupRights.CREATE,
+        );
+    }
+}
+
+@Injectable()
 export class ReadActionGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,

@@ -12,11 +12,9 @@
                         label="Download"
                         @click="() => _downloadFile(data?.uuid, data?.filename)"
                         :disable="
-                            [
-                                FileState.LOST,
-                                FileState.UPLOADING,
-                                FileState.MOVING,
-                            ].indexOf(data?.state) !== -1
+                            [FileState.LOST, FileState.UPLOADING].indexOf(
+                                data?.state,
+                            ) !== -1
                         "
                     />
 
