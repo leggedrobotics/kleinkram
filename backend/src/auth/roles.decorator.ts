@@ -28,6 +28,7 @@ import {
     CreateInMissionByBodyGuard,
     CreateInProjectByBodyGuard,
     UserGuard,
+    MoveFilesGuard,
 } from './roles.guard';
 
 // disable naming-convention rule for enum.ts
@@ -145,6 +146,13 @@ export function CanWriteFile() {
     return applyDecorators(
         SetMetadata('CanWriteFile', true),
         UseGuards(WriteFileGuard),
+    );
+}
+
+export function CanMoveFiles() {
+    return applyDecorators(
+        SetMetadata('CanWriteFile', true),
+        UseGuards(MoveFilesGuard),
     );
 }
 

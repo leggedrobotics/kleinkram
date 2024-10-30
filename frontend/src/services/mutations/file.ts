@@ -24,6 +24,14 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
     return response.data;
 };
 
+export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
+    const response = await axios.post('/file/moveFiles', {
+        fileUUIDs,
+        missionUUID,
+    });
+    return response.data;
+};
+
 export const deleteFile = async (file: FileEntity) => {
     const response = await axios.delete(`/file/${file.uuid}`);
     return response.data;

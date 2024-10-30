@@ -574,6 +574,36 @@ export class FileService implements OnModuleInit {
         });
     }
 
+    async moveFiles(fileUUIDs: string[], missionUUID: string) {
+        await Promise.all(
+            fileUUIDs.map(async (uuid) => {
+                try {
+                    const file = await this.fileRepository.findOneOrFail({
+                        where: { uuid },
+                    });
+                    file.mission = { uuid: missionUUID } as Mission;
+                    await this.fileRepository.save(file);
+                    const newFile = await this.fileRepository.findOneOrFail({
+                        where: { uuid },
+                        relations: ['mission', 'mission.project'],
+                    });
+                    const bucket = getBucketFromFileType(file.type);
+                    await addTagsToMinioObject(bucket, file.uuid, {
+                        filename: file.filename,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        mission_uuid: missionUUID,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        project_uuid: newFile.mission.project.uuid,
+                    });
+                } catch (e) {
+                    logger.error(
+                        `Error moving file ${uuid} to mission ${missionUUID}: ${e}`,
+                    );
+                }
+            }),
+        );
+    }
+
     /**
      * Delete a file with the given uuid.
      * The file will be removed from the database and from Minio.

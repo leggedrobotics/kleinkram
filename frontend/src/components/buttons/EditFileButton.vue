@@ -7,9 +7,8 @@
         label="Edit File"
         @click="editFile"
         :disable="
-            [FileState.LOST, FileState.UPLOADING, FileState.MOVING].indexOf(
-                file?.state,
-            ) !== -1 || !canModify
+            [FileState.LOST, FileState.UPLOADING].indexOf(file?.state) !== -1 ||
+            !canModify
         "
     >
         <q-tooltip> Edit File</q-tooltip>

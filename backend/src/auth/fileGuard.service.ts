@@ -114,4 +114,23 @@ export class FileGuardService {
             apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
         );
     }
+
+    async canAccessFiles(
+        user: User,
+        fileUUIDs: string[],
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!fileUUIDs || !user) {
+            logger.error(
+                `FileGuard: File UUIDs (${fileUUIDs}) or User (${user}) not provided. Requesting ${rights} access.`,
+            );
+            return false;
+        }
+        for (const fileUUID of fileUUIDs) {
+            if (!(await this.canAccessFile(user, fileUUID, rights))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
