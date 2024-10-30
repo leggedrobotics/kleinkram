@@ -6,6 +6,7 @@ from typing import Dict
 from kleinkram.api.client import AuthenticatedClient
 
 TEMP_CREDS_ENDPOINT = "/file/temporaryAccess"
+CLAIM_ADMIN_ENDPOINT = "/user/claimAdmin"
 
 
 def get_upload_creditials(
@@ -26,3 +27,10 @@ def get_upload_creditials(
         )
 
     return resp.json()  # type: ignore
+
+
+def claim_admin() -> None:
+    client = AuthenticatedClient()
+    response = client.post(CLAIM_ADMIN_ENDPOINT)
+    response.raise_for_status()
+    return

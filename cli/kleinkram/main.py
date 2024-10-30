@@ -13,6 +13,7 @@ from typing import Optional, Union
 from itertools import chain
 from uuid import UUID
 from kleinkram.api.routes import get_upload_creditials
+from kleinkram.api.routes import claim_admin
 
 import httpx
 import typer
@@ -33,7 +34,7 @@ from kleinkram.user.user import user
 from kleinkram.utils import canUploadMission
 from kleinkram.utils import matched_paths
 from kleinkram.utils import is_valid_uuid4
-from kleinkram.utils import promptForTags
+from kleinkram.utils import prompt_required_tags
 from kleinkram.utils import upload_files, get_internal_file_map
 from rich import print
 from rich.table import Table
@@ -144,7 +145,7 @@ def upload(
     tags: Annotated[
         List[str],
         typer.Option(help="Tags to add to the mission"),
-    ] = None,
+    ],
     fix_filenames: Annotated[
         bool,
         typer.Option(help="Automatically fix filenames such that they are valid"),
@@ -234,7 +235,8 @@ def upload(
         if "requiredTags" in project_json
         else {}
     )
-    promptForTags(tags_dict, required_tags)
+    # TODO
+    prompt_required_tags(tags_dict, required_tags)
 
     # check if mission exists, if `mission` is a UUID search by uuid else search by name
     if is_valid_uuid4(mission):
@@ -315,9 +317,13 @@ def list_queue():
     try:
         url = "/queue/active"
         start_date = datetime.now().date() - timedelta(days=1)
+
         client = AuthenticatedClient()
         response = client.get(url, params={"startDate": str(start_date)})
         response.raise_for_status()
+    except httpx.HTTPError as e:
+        print(e)
+    else:
         data = response.json()
         table = Table("UUID", "filename", "mission", "state", "origin", "createdAt")
         for topic in data:
@@ -331,9 +337,6 @@ def list_queue():
             )
         print(table)
 
-    except httpx.HTTPError as e:
-        print(e)
-
 
 @app.command("claim", hidden=True)
 def claim():
@@ -342,11 +345,8 @@ def claim():
 
     Only works if no other user has claimed admin rights before.
     """
-
-    client = AuthenticatedClient()
-    response = client.post("/user/claimAdmin")
-    response.raise_for_status()
-    print("Admin claimed.")
+    claim_admin()
+    print("Admin rights claimed successfully.")
 
 
 def main() -> int:
