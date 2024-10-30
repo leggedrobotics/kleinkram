@@ -28,7 +28,7 @@ export const IsNoValidUUID = (
 export const IsValidFileName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-.() ]{3,40}.(bag|mcap)$/, {
+    Matches(/^[\w\-.() ]{3,50}.(bag|mcap)$/, {
         message: 'Filename is not valid!',
         ...validationOptions,
     });

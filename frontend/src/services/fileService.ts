@@ -79,7 +79,10 @@ async function _createFileAction(
         filenameRegex.test(filename);
 
     const validFiles = files.filter(
-        (file) => isBagOrMCAPFilter(file.name) && isValidNameFilter(file.name),
+        (file) =>
+            isBagOrMCAPFilter(file.name) &&
+            isValidNameFilter(file.name) &&
+            file.name.length <= 50,
     );
 
     ////////////////////////////////////////////////////////////////////////////
@@ -87,23 +90,30 @@ async function _createFileAction(
     ////////////////////////////////////////////////////////////////////////////
     const invalidFiles = files.filter(
         (file) =>
-            !isBagOrMCAPFilter(file.name) || !isValidNameFilter(file.name),
+            !isBagOrMCAPFilter(file.name) ||
+            !isValidNameFilter(file.name) ||
+            file.name.length > 50,
     );
 
     if (invalidFiles.length > 0) {
-        const invalidFileNames = invalidFiles
-            .map((file) => file.name)
-            .join(', ');
-        const invalidFileTypeMessage = `Upload of Files failed: Invalid file type. Only .bag and .mcap files are allowed.`;
-        const invalidFileNameMessage = `Upload of Files failed: Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
+        let message = `Upload of following Files failed: `;
+        const invalidFileTypeMessage = `Invalid file type. Only .bag and .mcap files are allowed.`;
+        const invalidFileNameMessage = `Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
+        const invalidFileNameLengthMessage = `File name is too long. Maximum length is 50 characters.`;
+        invalidFiles.forEach((file) => {
+            if (file.name.length > 50) {
+                message += `${file.name}: ${invalidFileNameLengthMessage}`;
+            }
+            if (!isBagOrMCAPFilter(file.name)) {
+                message += `${file.name}: ${invalidFileTypeMessage}`;
+            }
+            if (!isValidNameFilter(file.name)) {
+                message += `${file.name}: ${invalidFileNameMessage}`;
+            }
+        });
         Notify.create({
             group: false,
-            message:
-                invalidFileNames +
-                ' ' +
-                (isBagOrMCAPFilter(invalidFileNames)
-                    ? invalidFileTypeMessage
-                    : invalidFileNameMessage),
+            message,
             color: 'negative',
             spinner: false,
             position: 'bottom',
@@ -117,7 +127,7 @@ async function _createFileAction(
         fileNames,
         selectedMission.uuid,
     ).catch((e) => {
-        let msg = `Upload of Files failed: ${e}`;
+        let msg = `Upload of Files failed: ${e.response.message}`;
 
         // show special error for 403
         if (e.response && e.response.status === 403) {
