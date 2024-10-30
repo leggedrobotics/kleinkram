@@ -5,15 +5,18 @@ import os
 from datetime import datetime
 from datetime import timedelta
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
+from itertools import chain
+from uuid import UUID
+from kleinkram.api.routes import get_upload_creditials
 
 import httpx
 import typer
-from kleinkram.api_client import AuthenticatedClient
+from kleinkram.api.client import AuthenticatedClient
 from kleinkram.auth.auth import login
 from kleinkram.auth.auth import logout
 from kleinkram.auth.auth import setCliKey
@@ -28,10 +31,10 @@ from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
 from kleinkram.utils import canUploadMission
-from kleinkram.utils import expand_and_match
-from kleinkram.utils import is_valid_UUIDv4
+from kleinkram.utils import matched_paths
+from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import promptForTags
-from kleinkram.utils import uploadFiles
+from kleinkram.utils import upload_files, get_internal_file_map
 from rich import print
 from rich.table import Table
 from typer.core import TyperGroup
@@ -39,17 +42,17 @@ from typer.models import Context
 
 
 class CommandPanel(str, Enum):
-    COMMANDS = 'COMMANDS'
-    CORE_COMMANDS = 'CORE COMMANDS'
-    ADDITIONAL_COMMANDS = 'ADDITIONAL COMMANDS'
+    COMMANDS = "COMMANDS"
+    CORE_COMMANDS = "CORE COMMANDS"
+    ADDITIONAL_COMMANDS = "ADDITIONAL COMMANDS"
 
 
 def version_callback(value: bool):
     if value:
         try:
-            _version = importlib.metadata.version('kleinkram')
+            _version = importlib.metadata.version("kleinkram")
         except importlib.metadata.PackageNotFoundError:
-            _version = 'local'
+            _version = "local"
         typer.echo(f"CLI Version: {_version}")
         raise typer.Exit()
 
@@ -66,9 +69,9 @@ class OrderCommands(TyperGroup):
 
         order = list(CommandPanel)
         grouped_commands = {
-            name: getattr(command, 'rich_help_panel')
+            name: getattr(command, "rich_help_panel")
             for name, command in sorted(self.commands.items())
-            if getattr(command, 'rich_help_panel') in order
+            if getattr(command, "rich_help_panel") in order
         }
         ungrouped_command_names = [
             command.name
@@ -85,7 +88,7 @@ class OrderCommands(TyperGroup):
 
 
 app = ErrorHandledTyper(
-    context_settings={'help_option_names': ['-h', '--help']},
+    context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
     cls=OrderCommands,
     help=f"Kleinkram CLI\n\nThe Kleinkram CLI is a command line interface for Kleinkram. "
@@ -98,11 +101,11 @@ app = ErrorHandledTyper(
 def version(
     version: bool = typer.Option(
         None,
-        '--version',
-        '-v',
+        "--version",
+        "-v",
         callback=version_callback,
         is_eager=True,
-        help='Print the version and exit',
+        help="Print the version and exit",
     )
 ):
     pass
@@ -123,36 +126,36 @@ app.command(rich_help_panel=CommandPanel.ADDITIONAL_COMMANDS)(logout)
 app.command(hidden=True)(setCliKey)
 
 
-@app.command('download', rich_help_panel=CommandPanel.CORE_COMMANDS)
+@app.command("download", rich_help_panel=CommandPanel.CORE_COMMANDS)
 def download():
     print(
         "Not implemented yet. Consider using the 'klein file download' or 'klein mission download' commands."
     )
 
 
-@app.command('upload', rich_help_panel=CommandPanel.CORE_COMMANDS, no_args_is_help=True)
+@app.command("upload", rich_help_panel=CommandPanel.CORE_COMMANDS, no_args_is_help=True)
 def upload(
     path: Annotated[
         list[str],
-        typer.Option(help='Path to files to upload, Regex supported'),
+        typer.Option(help="Path to files to upload, Regex supported"),
     ],
-    project: Annotated[str, typer.Option(help='Name or UUID of a Project')],
-    mission: Annotated[str, typer.Option(help='Name of UUID Mission to create')],
+    project: Annotated[str, typer.Option(help="Name or UUID of a Project")],
+    mission: Annotated[str, typer.Option(help="Name of UUID Mission to create")],
     tags: Annotated[
         list[str] | None,
-        typer.Option(help='Tags to add to the mission'),
+        typer.Option(help="Tags to add to the mission"),
     ] = None,
     fix_filenames: Annotated[
         bool,
-        typer.Option(help='Automatically fix filenames such that they are valid'),
+        typer.Option(help="Automatically fix filenames such that they are valid"),
     ] = False,
     create_project: Annotated[
         bool,
-        typer.Option(help='Allows adding files to an existing mission'),
+        typer.Option(help="Allows adding files to an existing mission"),
     ] = False,
     create_mission: Annotated[
         bool,
-        typer.Option(help='Allows adding files to an existing mission'),
+        typer.Option(help="Allows adding files to an existing mission"),
     ] = False,
 ):
     """
@@ -168,38 +171,38 @@ def upload(
     client = AuthenticatedClient()
 
     # check if project exists, if `project` is a UUID search by uuid else search by name
-    if is_valid_UUIDv4(project):
-        get_project_url = '/project/one'
-        project_response = client.get(get_project_url, params={'uuid': project})
+    if is_valid_uuid4(project):
+        get_project_url = "/project/one"
+        project_response = client.get(get_project_url, params={"uuid": project})
     else:
-        get_project_url = '/project/byName'
-        project_response = client.get(get_project_url, params={'name': project})
+        get_project_url = "/project/byName"
+        project_response = client.get(get_project_url, params={"name": project})
 
     if project_response.status_code >= 400:
-        if not create_project and not is_valid_UUIDv4(project):
+        if not create_project and not is_valid_uuid4(project):
             raise AccessDeniedException(
                 f"The project `{project}` does not exist or you do not have access to it.\n"
-                'Consider using the following command to create a project: '
-                '`klein project create` or consider passing the flag '
-                '`--create-project` to create the project automatically.',
+                "Consider using the following command to create a project: "
+                "`klein project create` or consider passing the flag "
+                "`--create-project` to create the project automatically.",
                 f"{project_response.json()['message']} ({project_response.status_code})",
             )
-        elif is_valid_UUIDv4(project):
+        elif is_valid_uuid4(project):
             raise ValueError(
                 f"The project `{project}` does not exist or you do not have access to it.\n"
-                'UUIDs cannot be used to create projects.\n'
-                'Please provide a valid project name or consider creating '
-                'the project using the following command: `klein project create`'
+                "UUIDs cannot be used to create projects.\n"
+                "Please provide a valid project name or consider creating "
+                "the project using the following command: `klein project create`"
             )
         else:
             print(f"Project '{project}' does not exist. Creating it now.")
-            create_project_url = '/project/create'
+            create_project_url = "/project/create"
             project_response = client.post(
                 create_project_url,
                 json={
-                    'name': project,
-                    'description': 'Autogenerated by klein CLI',
-                    'requiredTags': [],
+                    "name": project,
+                    "description": "Autogenerated by klein CLI",
+                    "requiredTags": [],
                 },
             )
             if project_response.status_code >= 400:
@@ -208,38 +211,38 @@ def upload(
                     f"{str(project_response.status_code)}\n"
                     f"{project_response.json()['message'][0]}"
                 )
-            print('Project created successfully.')
+            print("Project created successfully.")
 
     project_json = project_response.json()
-    if project_json['uuid'] is None:
+    if project_json["uuid"] is None:
         print(f"Project not found: '{project}'")
         return
 
-    can_upload = canUploadMission(client, project_json['uuid'])
+    can_upload = canUploadMission(client, project_json["uuid"])
     if not can_upload:
         raise AccessDeniedException(
             f"You do not have the required permissions to upload to project '{project}'\n",
-            'Access Denied',
+            "Access Denied",
         )
 
     if not tags:
         tags = []
-    tags_dict = {item.split(':')[0]: item.split(':')[1] for item in tags}
+    tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
 
     required_tags = (
-        cast(dict[str, str], project_json['requiredTags'])
-        if 'requiredTags' in project_json
+        cast(dict[str, str], project_json["requiredTags"])
+        if "requiredTags" in project_json
         else {}
     )
     promptForTags(tags_dict, required_tags)
 
     # check if mission exists, if `mission` is a UUID search by uuid else search by name
-    if is_valid_UUIDv4(mission):
-        get_mission_url = '/mission/one'
-        mission_response = client.get(get_mission_url, params={'uuid': mission})
+    if is_valid_uuid4(mission):
+        get_mission_url = "/mission/one"
+        mission_response = client.get(get_mission_url, params={"uuid": mission})
     else:
-        get_mission_url = '/mission/byName'
-        mission_response = client.get(get_mission_url, params={'name': mission})
+        get_mission_url = "/mission/byName"
+        mission_response = client.get(get_mission_url, params={"name": mission})
 
     if mission_response.status_code >= 400:
         if not create_mission:
@@ -251,13 +254,13 @@ def upload(
             )
         else:
             print(f"Mission '{mission}' does not exist. Creating it now.")
-            create_mission_url = '/mission/create'
+            create_mission_url = "/mission/create"
             mission_response = client.post(
                 create_mission_url,
                 json={
-                    'name': mission,
-                    'projectUUID': project_json['uuid'],
-                    'tags': tags_dict,
+                    "name": mission,
+                    "projectUUID": project_json["uuid"],
+                    "tags": tags_dict,
                 },
             )
             if mission_response.status_code >= 400:
@@ -268,100 +271,63 @@ def upload(
                 )
 
     mission_json = mission_response.json()
-
-    files = []
-    for p in path:
-        files.extend(expand_and_match(p))
-
     print(
         f"Uploading the following files to mission '{mission_json['name']}' in project '{project_json['name']}':"
     )
-    filename_filepaths_map = {}
-    for path in files:
-        if not os.path.isdir(path):
 
-            filename = path.split('/')[-1]
-            filename_without_extension, extension = os.path.splitext(filename)
-            if fix_filenames:
+    paths = list(chain(*(matched_paths(p) for p in path)))
+    if not paths:
+        # should we raise this error inside `matched_paths` function?
+        raise ValueError("No files found matching the given path.")
 
-                # replace all non-alphanumeric characters with underscores
-                filename_without_extension = ''.join(
-                    char if char.isalnum() else '_'
-                    for char in filename_without_extension
-                )
+    internal_filename_map = get_internal_file_map(paths)
 
-                # trim filename to 40 characters
-                filename_without_extension = filename_without_extension[:40]
-                filename = f"{filename_without_extension}{extension}"
-
-            if (
-                not filename.replace('.', '')
-                .replace('_', '')
-                .replace('-', '')
-                .isalnum()
-            ):
+    if not fix_filenames:
+        for external, internal in internal_filename_map.items():
+            if external != internal:
                 raise ValueError(
-                    f"Filename '{filename}' is not valid. It must only contain alphanumeric characters, underscores and "
-                    f"hyphens. Consider using the '--fix-filenames' option to automatically fix the filenames."
+                    f"Filename '{external}' is not valid.\n"
+                    " - It must only contain alphanumeric characters"
+                    "underscores and hyphens.\n"
+                    " - It must be between 3 and 40 characters long.\n\n"
+                    "Consider using the '--fix-filenames' option "
+                    "to automatically fix the filenames."
                 )
+    else:
+        mismatched = [
+            (ext, _int) for ext, _int in internal_filename_map.items() if ext != _int
+        ]
+        if mismatched:
+            print("Fixing filenames internally...")
+            for ext, _int in mismatched:
+                print(f" - {ext} -> {_int}")
 
-            if not 3 <= len(filename_without_extension) <= 40:
-                raise ValueError(
-                    f"Filename '{filename}' is not valid. It must be between 3 and 40 characters long. Consider using "
-                    f"the '--fix-filenames' option to automatically fix the filenames."
-                )
-
-            filename_filepaths_map[filename] = path
-            typer.secho(f" - {filename}", fg=typer.colors.RESET)
-    print('\n\n')
-
-    filenames = list(filename_filepaths_map.keys())
-
-    if not filenames:
-        raise ValueError('No files found matching the given path.')
-
-    # validate filenames
-    if len(filenames) != len(set(filenames)):
-        raise ValueError(
-            'Filenames must be unique. Please check the files you are trying to upload. This can happen if you have '
-            "multiple files with the same name in different directories or use the '--fix-filenames' option."
-        )
-
-    get_temporary_credentials = '/file/temporaryAccess'
-    response = client.post(
-        get_temporary_credentials,
-        json={'filenames': filenames, 'missionUUID': mission_json['uuid']},
+    files_with_access = get_upload_creditials(
+        client, list(internal_filename_map.values()), mission_json["uuid"]
     )
-    if response.status_code >= 400:
-        raise ValueError(
-            'Failed to get temporary credentials. Status Code: '
-            + str(response.status_code)
-            + '\n'
-            + response.json()['message'][0]
-        )
 
-    uploadFiles(response.json(), filename_filepaths_map, 4)
+    upload_files(files_with_access, internal_filename_map, n_workers=4)
 
 
-@queue.command('list')
+@queue.command("list")
 def list_queue():
     """List current Queue entities"""
     try:
-        url = '/queue/active'
+        url = "/queue/active"
         start_date = datetime.now().date() - timedelta(days=1)
         client = AuthenticatedClient()
-        response = client.get(url, params={'startDate': str(start_date)})
+        response = client.get(url, params={"startDate": str(start_date)})
         response.raise_for_status()
         data = response.json()
-        table = Table('UUID', 'filename', 'mission', 'state', 'origin', 'createdAt')
+        table = Table("UUID", "filename", "mission", "state", "origin", "createdAt")
         for topic in data:
             table.add_row(
-                topic['uuid'],
-                topic['filename'],
-                topic['mission']['name'],
-                topic['state'],
-                topic['location'],
-                topic['createdAt'],
+                topic["uuid"],
+                topic["filename"],
+                topic["mission"]["name"],
+                topic["state"],
+                topic["location"],
+                topic["createdAt"],
             )
         print(table)
 
@@ -369,7 +335,7 @@ def list_queue():
         print(e)
 
 
-@app.command('claim', hidden=True)
+@app.command("claim", hidden=True)
 def claim():
     """
     Claim admin rights as the first user
@@ -378,9 +344,9 @@ def claim():
     """
 
     client = AuthenticatedClient()
-    response = client.post('/user/claimAdmin')
+    response = client.post("/user/claimAdmin")
     response.raise_for_status()
-    print('Admin claimed.')
+    print("Admin claimed.")
 
 
 def main() -> int:
@@ -388,5 +354,5 @@ def main() -> int:
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

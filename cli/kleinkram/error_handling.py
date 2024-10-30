@@ -7,7 +7,7 @@ import typer
 from httpx import HTTPStatusError
 from httpx import ReadError
 from httpx import RemoteProtocolError
-from kleinkram.api_client import NotAuthenticatedException
+from kleinkram.api.client import NotAuthenticatedException
 from rich.console import Console
 from rich.panel import Panel
 from typer import Typer

@@ -1,31 +1,29 @@
 from __future__ import annotations
 
 import json
-import os
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from pathlib import Path
 from typing import Annotated
-from typing import Optional
 
 import typer
 from kleinkram.consts import API_URL
 
-TOKEN_FILE = Path(os.path.expanduser('~/.kleinkram.json'))
-REFRESH_TOKEN = 'refreshtoken'
-AUTH_TOKEN = 'authtoken'
-CLI_KEY = 'clikey'
+TOKEN_FILE = Path("~/.kleinkram.json")
+REFRESH_TOKEN = "refreshtoken"
+AUTH_TOKEN = "authtoken"
+CLI_KEY = "clikey"
 
 
 class TokenFile:
     def __init__(self):
         try:
-            with TOKEN_FILE.open('r') as token_file:
+            with TOKEN_FILE.open("r") as token_file:
                 content = json.load(token_file)
-                self.endpoint = content['endpoint']
-                self.tokens = content['tokens']
+                self.endpoint = content["endpoint"]
+                self.tokens = content["tokens"]
         except FileNotFoundError:
             self.tokens = {}
             self.endpoint = API_URL
@@ -47,10 +45,10 @@ class TokenFile:
 
     def writeToFile(self):
         res = {
-            'endpoint': self.endpoint,
-            'tokens': self.tokens,
+            "endpoint": self.endpoint,
+            "tokens": self.tokens,
         }
-        with TOKEN_FILE.open('w') as token_file:
+        with TOKEN_FILE.open("w") as token_file:
             json.dump(res, token_file)
 
     def saveTokens(self, tokens):
@@ -60,7 +58,7 @@ class TokenFile:
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path.startswith('/cli/callback'):
+        if self.path.startswith("/cli/callback"):
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
             self.server.tokens = {
@@ -68,18 +66,18 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                 REFRESH_TOKEN: params.get(REFRESH_TOKEN)[0],
             }
             self.send_response(200)
-            self.send_header('Content-type', 'text/html')
+            self.send_header("Content-type", "text/html")
             self.end_headers()
-            self.wfile.write(b'Authentication successful. You can close this window.')
+            self.wfile.write(b"Authentication successful. You can close this window.")
             return
-        print('here')
+        print("here")
 
     def log_message(self, format, *args):
         pass
 
 
 def get_auth_tokens():
-    server_address = ('', 8000)
+    server_address = ("", 8000)
     httpd = HTTPServer(server_address, OAuthCallbackHandler)
     httpd.handle_request()
     return httpd.tokens
@@ -92,13 +90,13 @@ def logout():
     tokenfile = TokenFile()
     tokenfile.tokens[tokenfile.endpoint] = {}
     tokenfile.writeToFile()
-    print('Logged out.')
+    print("Logged out.")
 
 
 def login(
-    key: str | None = typer.Option(None, help='CLI Key', hidden=True),
+    key: str | None = typer.Option(None, help="CLI Key", hidden=True),
     open_browser: bool | None = typer.Option(
-        True, help='Open browser for authentication'
+        True, help="Open browser for authentication"
     ),
 ):
     """
@@ -112,13 +110,13 @@ def login(
         tokenfile.saveTokens(token)
 
     else:
-        url = tokenfile.endpoint + '/auth/google?state=cli'
+        url = tokenfile.endpoint + "/auth/google?state=cli"
 
         has_browser = True
         try:
             browser_available = webbrowser.get()
             if not browser_available:
-                raise Exception('No web browser available.')
+                raise Exception("No web browser available.")
         except Exception as e:
             has_browser = False
 
@@ -127,28 +125,28 @@ def login(
             auth_tokens = get_auth_tokens()
 
             if not auth_tokens:
-                raise Exception('Failed to get authentication tokens.')
+                raise Exception("Failed to get authentication tokens.")
 
             tokenfile.saveTokens(auth_tokens)
-            print('Authentication complete. Tokens saved to ~/.kleinkram.json.')
+            print("Authentication complete. Tokens saved to ~/.kleinkram.json.")
             return
 
         print(
             f"Please open the following URL manually in your browser to authenticate: {url + '-no-redirect'}"
         )
-        print('Enter the authentication token provided after logging in:')
-        manual_auth_token = input('Authentication Token: ')
-        manual_refresh_token = input('Refresh Token: ')
+        print("Enter the authentication token provided after logging in:")
+        manual_auth_token = input("Authentication Token: ")
+        manual_refresh_token = input("Refresh Token: ")
         if manual_auth_token:
             tokenfile.saveTokens(
                 {AUTH_TOKEN: manual_auth_token, REFRESH_TOKEN: manual_refresh_token}
             )
-            print('Authentication complete. Tokens saved to tokens.json.')
+            print("Authentication complete. Tokens saved to tokens.json.")
         else:
-            raise ValueError('Failed to get authentication tokens.')
+            raise ValueError("Failed to get authentication tokens.")
 
 
-def setCliKey(key: Annotated[str, typer.Argument(help='CLI Key')]):
+def setCliKey(key: Annotated[str, typer.Argument(help="CLI Key")]):
     """
     Set the CLI key (Actions Only)
 

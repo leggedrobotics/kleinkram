@@ -8,7 +8,7 @@ from typing import Optional
 import httpx
 import requests
 import typer
-from kleinkram.api_client import AuthenticatedClient
+from kleinkram.api.client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
 
 file = typer.Typer(

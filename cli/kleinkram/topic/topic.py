@@ -4,7 +4,7 @@ from typing import Annotated
 
 import httpx
 import typer
-from kleinkram.api_client import AuthenticatedClient
+from kleinkram.api.client import AuthenticatedClient
 from rich.table import Table
 
 topic = typer.Typer(
