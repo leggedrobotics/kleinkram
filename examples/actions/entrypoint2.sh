@@ -3,7 +3,7 @@
 set -e # exit on error
 
 env
-echo ""
+echo "WOW: entrypoint2.sh"
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"
 echo ""
