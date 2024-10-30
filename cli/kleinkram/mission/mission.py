@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Annotated
+from typing_extensions import Annotated
 from typing import List
 from typing import Optional
 
@@ -53,8 +53,8 @@ def addTag(
 
 @missionCommands.command("list")
 def list_missions(
-    project: str | None = typer.Option(None, help="Name of Project"),
-    verbose: bool | None = typer.Option(
+    project: Optional[str] = typer.Option(None, help="Name of Project"),
+    verbose: Optional[bool] = typer.Option(
         False, help="Outputs a table with more information"
     ),
 ):
@@ -122,7 +122,7 @@ def list_missions(
 @missionCommands.command("byUUID")
 def mission_by_uuid(
     uuid: Annotated[str, typer.Argument()],
-    json: bool | None = typer.Option(False, help="Output as JSON"),
+    json: Optional[bool] = typer.Option(False, help="Output as JSON"),
 ):
     """
     Get mission name, project name, creator and table of its files given a Mission UUID
@@ -167,10 +167,10 @@ def mission_by_uuid(
 @missionCommands.command("download")
 def download(
     mission_uuid: Annotated[
-        list[str], typer.Option(help="UUIDs of Mission to download")
+        List[str], typer.Option(help="UUIDs of Mission to download")
     ],
     local_path: Annotated[str, typer.Option()],
-    pattern: str | None = typer.Option(
+    pattern: Optional[str] = typer.Option(
         None,
         help="Simple pattern to match the filename against. Allowed are alphanumeric characters,"
         " '_', '-', '.' and '*' as wildcard.",
@@ -252,7 +252,7 @@ def download(
 @missionCommands.command("upload")
 def upload(
     path: Annotated[
-        list[str],
+        List[str],
         typer.Option(prompt=True, help="Path to files to upload, Regex supported"),
     ],
     mission: Annotated[

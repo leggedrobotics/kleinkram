@@ -6,7 +6,8 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from pathlib import Path
-from typing import Annotated
+from typing_extensions import Annotated
+from typing import Union, Optional
 
 import typer
 from kleinkram.consts import API_URL
@@ -94,8 +95,8 @@ def logout():
 
 
 def login(
-    key: str | None = typer.Option(None, help="CLI Key", hidden=True),
-    open_browser: bool | None = typer.Option(
+    key: Optional[str] = typer.Option(None, help="CLI Key", hidden=True),
+    open_browser: Optional[bool] = typer.Option(
         True, help="Open browser for authentication"
     ),
 ):

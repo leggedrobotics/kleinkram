@@ -94,7 +94,7 @@ class ProgressManager:
         self._lock = threading.Lock()
         self._file_progress = {}
 
-    def track_file(self, file: UUID | str, target_size: int):
+    def track_file(self, file: Union[UUID, str], target_size: int):
         with self._lock:
             pbar = tqdm.tqdm(
                 total=target_size,
@@ -108,7 +108,7 @@ class ProgressManager:
 
             self._file_progress[file] = pbar
 
-    def update(self, file: UUID | str, bytes_transferred: int):
+    def update(self, file: Union[UUID,str], bytes_transferred: int):
         with self._lock:
             if file in self._file_progress:
                 pbar = self._file_progress[file]
@@ -146,7 +146,7 @@ class FileUploadJob(NamedTuple):
     local_path: Path
     internal_filename: str
     access: UploadAccess
-    error: str | None = None
+    error: Optional[str] = None
 
 
 def upload_files(

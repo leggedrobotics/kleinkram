@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing_extensions import Annotated
 
 import httpx
 import typer

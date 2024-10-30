@@ -5,11 +5,11 @@ import os
 from datetime import datetime
 from datetime import timedelta
 from enum import Enum
-from typing import Annotated, Any
-from typing import cast
+from typing_extensions import Annotated
+from typing import cast, Any
 from typing import Dict
 from typing import List
-from typing import Optional
+from typing import Optional, Union
 from itertools import chain
 from uuid import UUID
 from kleinkram.api.routes import get_upload_creditials
@@ -64,7 +64,7 @@ class OrderCommands(TyperGroup):
     https://github.com/tiangolo/typer/discussions/855#discussioncomment-9824582) and adapted to our use case.
     """
 
-    def list_commands(self, _ctx: Context) -> list[str]:
+    def list_commands(self, _ctx: Context) -> List[str]:
         _ = _ctx  # unused
 
         order = list(CommandPanel)
@@ -136,13 +136,13 @@ def download():
 @app.command("upload", rich_help_panel=CommandPanel.CORE_COMMANDS, no_args_is_help=True)
 def upload(
     path: Annotated[
-        list[str],
+        List[str],
         typer.Option(help="Path to files to upload, Regex supported"),
     ],
     project: Annotated[str, typer.Option(help="Name or UUID of a Project")],
     mission: Annotated[str, typer.Option(help="Name of UUID Mission to create")],
     tags: Annotated[
-        list[str] | None,
+        List[str],
         typer.Option(help="Tags to add to the mission"),
     ] = None,
     fix_filenames: Annotated[

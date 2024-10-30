@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Annotated
+from typing_extensions import Annotated
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
