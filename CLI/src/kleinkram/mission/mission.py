@@ -258,7 +258,7 @@ def upload(
         List[str],
         typer.Option(prompt=True, help="Path to files to upload, Regex supported"),
     ],
-    mission: Annotated[
+    mission_uuid: Annotated[
         str, typer.Option(prompt=True, help="UUID of Mission to create")
     ],
 ):
@@ -269,7 +269,7 @@ def upload(
     Multiple paths can be given by using the option multiple times.\n
     \n
     Examples:\n
-        - 'klein upload --path "~/data/**/*.bag" --project "Project_1" --mission "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
+        - 'klein upload --path "~/data/**/*.bag" --mission-uuid "2518cfc2-07f2-41a5-b74c-fdedb1b97f88" '\n
 
     """
     files = []
@@ -281,7 +281,7 @@ def upload(
     if not filenames:
         raise ValueError("No files found matching the given path.")
 
-    print(f"Uploading the following files to mission '{mission}':")
+    print(f"Uploading the following files to mission '{mission_uuid}':")
     filepaths = {}
     for path in files:
         if not os.path.isdir(path):
@@ -290,29 +290,20 @@ def upload(
 
     try:
         client = AuthenticatedClient()
-        res = client.post(
-            "/file/temporaryAccess",
-            json={"missionUUID": mission, "filenames": filenames},
+        get_temporary_credentials = "/file/temporaryAccess"
+        response = client.post(
+            get_temporary_credentials,
+            json={"filenames": filenames, "missionUUID": mission_uuid},
         )
-        if res.status_code >= 400:
+        if response.status_code >= 400:
             raise ValueError(
-                "Failed to get temporary access. Status code: "
-                + str(res.status_code)
-                + " Message: "
-                + res.json()["message"]
+                "Failed to upload data. Status Code: "
+                + str(response.status_code)
+                + "\n"
+                + response.json()["message"][0]
             )
 
-        temp_credentials = res.json()
-        credential = temp_credentials["credentials"]
-        confirmed_files = temp_credentials["files"]
-        for _file in filenames:
-            if not _file in confirmed_files.keys():
-                raise Exception(
-                    "Could not upload File '" + _file + "'. Is the filename unique? "
-                )
-            confirmed_files[_file]["filepath"] = filepaths[_file]
-        if len(confirmed_files.keys()) > 0:
-            uploadFiles(confirmed_files, credential, 4)
+        uploadFiles(response.json(), filepaths, 4)
     except Exception as e:
         print(e)
         print("Failed to upload files")
