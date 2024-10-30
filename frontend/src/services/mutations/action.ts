@@ -26,6 +26,7 @@ export const createActionTemplate = async (template: {
     gpuMemory: number;
     maxRuntime: number;
     searchable: boolean;
+    entrypoint: string;
 }) => {
     console.log(template);
     const response = await axios.post('/action/createTemplate', {
@@ -37,6 +38,7 @@ export const createActionTemplate = async (template: {
         gpuMemory: template.gpuMemory,
         maxRuntime: template.maxRuntime,
         searchable: template.searchable,
+        entrypoint: template.entrypoint,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -52,6 +54,7 @@ export const createActionTemplate = async (template: {
         res.cpuMemory,
         res.gpuMemory,
         res.maxRuntime,
+        res.entrypoint,
     );
 };
 
@@ -65,6 +68,7 @@ export const createNewActionTemplateVersion = async (template: {
     gpuMemory: number;
     maxRuntime: number;
     searchable: boolean;
+    entrypoint: string;
 }) => {
     const response = await axios.post('/action/createNewVersion', {
         uuid: template.uuid,
@@ -76,6 +80,7 @@ export const createNewActionTemplateVersion = async (template: {
         gpuMemory: template.gpuMemory,
         maxRuntime: template.maxRuntime,
         searchable: template.searchable,
+        entrypoint: template.entrypoint,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -91,5 +96,6 @@ export const createNewActionTemplateVersion = async (template: {
         res.cpuMemory,
         res.gpuMemory,
         res.maxRuntime,
+        res.entrypoint,
     );
 };

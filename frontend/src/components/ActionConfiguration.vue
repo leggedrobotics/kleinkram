@@ -168,6 +168,19 @@
                             v-if="editingTemplate"
                         />
                     </div>
+                    <div>
+                        <label for="action_entrypoint">Entrypoint</label>
+                        <q-input
+                            name="action_entrypoint"
+                            v-model="editingTemplate.entrypoint"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Entrypoint"
+                            v-if="editingTemplate"
+                        />
+                    </div>
                 </div>
 
                 <span class="text-h5" style="margin-top: 32px">
@@ -301,13 +314,13 @@ const editingTemplate: Ref<ActionTemplate> = ref(
         null,
         'rslethz/action:simple-latest',
         null,
-        '',
         1,
         '',
         2,
         2,
         -1,
         2,
+        '',
     ),
 );
 // QUERYING ####################################################################
@@ -392,6 +405,7 @@ const { mutateAsync: createTemplate } = useMutation({
             gpuMemory: editingTemplate.value.gpuMemory,
             maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
+            entrypoint: editingTemplate.value.entrypoint,
         }),
     onSuccess: () => {
         queryClient.invalidateQueries({
@@ -431,6 +445,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             gpuMemory: editingTemplate.value.gpuMemory,
             maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
+            entrypoint: editingTemplate.value.entrypoint,
         }),
     onSuccess: (newVal) => {
         queryClient.invalidateQueries({
@@ -560,7 +575,8 @@ const isModified = computed(() => {
         editingTemplate.value?.cpuCores === select.value?.cpuCores;
     const sameRuntime =
         editingTemplate.value?.maxRuntime === select.value?.maxRuntime;
-
+    const sameEntrypoint =
+        editingTemplate.value?.entrypoint === select.value?.entrypoint;
     return !(
         sameName &&
         sameImage &&
@@ -568,7 +584,8 @@ const isModified = computed(() => {
         sameGPU &&
         sameMemory &&
         sameCores &&
-        sameRuntime
+        sameRuntime &&
+        sameEntrypoint
     );
 });
 

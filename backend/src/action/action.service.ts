@@ -102,6 +102,7 @@ export class ActionService {
             image_name: data.image,
             command: data.command,
             searchable: data.searchable,
+            entrypoint: data.entrypoint,
         });
         return this.actionTemplateRepository.save(template);
     }
@@ -123,7 +124,8 @@ export class ActionService {
             template.cpuCores === data.cpuCores &&
             template.cpuMemory === data.cpuMemory &&
             template.gpuMemory === data.gpuMemory &&
-            template.maxRuntime === data.maxRuntime
+            template.maxRuntime === data.maxRuntime &&
+            template.entrypoint === data.entrypoint
         ) {
             template.searchable = true;
             return this.actionTemplateRepository.save(template);
@@ -148,6 +150,8 @@ export class ActionService {
         template.version = previousVersions[0].version + change;
         template.uuid = undefined;
         template.searchable = data.searchable;
+        template.maxRuntime = data.maxRuntime;
+        template.entrypoint = data.entrypoint;
         return this.actionTemplateRepository.save(template);
     }
 

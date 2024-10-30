@@ -34,6 +34,10 @@ export class CreateTemplateDto {
 
     @IsBoolean()
     searchable: boolean;
+
+    @IsString()
+    @IsOptional()
+    entrypoint: string;
 }
 
 export class UpdateTemplateDto extends CreateTemplateDto {
