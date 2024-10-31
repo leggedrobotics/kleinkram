@@ -1,6 +1,7 @@
 """\
 this file contains any functions calling the API
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -42,6 +43,7 @@ PROMOTE_USER = "/user/promote"
 DEMOTE_USER = "/user/demote"
 
 FILE_DOWNLOAD = "/file/download"
+FILE_QUERY = "/file/filteredByNames"
 
 
 def get_upload_creditials(
@@ -306,3 +308,14 @@ def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
 
     resp.raise_for_status()
     return resp.text
+
+
+def get_files(
+    client: AuthenticatedClient,
+    name: Optional[str] = None,
+    mission: Optional[str] = None,
+    topics: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
+):
+    if name is None and mission is None and topics is None and tags is None:
+        raise ValueError("At least one of name, mission or topics must be provided")
