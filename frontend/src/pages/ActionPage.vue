@@ -128,16 +128,8 @@ import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
 import ROLE from 'src/enums/USER_ROLES';
 
-const search = ref('');
 const createAction = ref(false);
 
-const select: Ref<undefined | ActionTemplate> = ref(undefined);
-const filter = ref('');
-const image_name = ref('rslethz/action:simple-latest');
-const options = [
-    { label: 'no GPU', value: 'no-gpu' },
-    { label: 'GPU needed', value: 'GPU needed' },
-];
 const queryClient = useQueryClient();
 
 const dropdownNewFileProject = ref(false);
@@ -157,6 +149,10 @@ const selected_mission = computed(() =>
         (mission: Mission) => mission.uuid === handler.value.missionUuid,
     ),
 );
+const search = computed({
+    get: () => handler.value.searchParams.name,
+    set: (value) => handler.value.setSearch({ name: value }),
+});
 
 const canCreate = computed(() =>
     selected_mission.value

@@ -3,7 +3,7 @@ import { BaseEntity } from 'src/types/BaseEntity';
 
 export class ActionTemplate extends BaseEntity {
     imageName: string;
-    createdBy: User;
+    createdBy: User | null;
     name: string;
     version: number;
     cpuCores: number;
@@ -18,7 +18,7 @@ export class ActionTemplate extends BaseEntity {
         createdAt: Date | null,
         updatedAt: Date | null,
         imageName: string,
-        createdBy: User,
+        createdBy: User | null,
         name: string,
         version: number,
         command: string,
