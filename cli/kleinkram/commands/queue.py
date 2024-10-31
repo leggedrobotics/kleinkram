@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+import typer
+
+queue = typer.Typer(
+    name="queue",
+    help="status of files uploading",
+    no_args_is_help=true,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
