@@ -1,17 +1,25 @@
 """\
 this file contains any functions calling the API
 """
-
 from __future__ import annotations
 
-from kleinkram.utils import UploadAccess
-from kleinkram.tag import TagType, DataType
+from typing import Any
+from typing import cast
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 from uuid import UUID
-from typing import Dict, Optional, Union, cast, List, Tuple, Any
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.utils import is_valid_uuid4
-from kleinkram.models import Project, User
 
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.error_handling import AccessDeniedException
+from kleinkram.models import Project
+from kleinkram.models import User
+from kleinkram.tag import DataType
+from kleinkram.tag import TagType
+from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import UploadAccess
 
 TEMP_CREDS = "/file/temporaryAccess"
 CLAIM_ADMIN = "/user/claimAdmin"
@@ -32,6 +40,8 @@ ALL_USERS = "/user/all"
 USER_INFO = "/user/me"
 PROMOTE_USER = "/user/promote"
 DEMOTE_USER = "/user/demote"
+
+FILE_DOWNLOAD = "/file/download"
 
 
 def get_upload_creditials(
@@ -283,3 +293,16 @@ def demote_user(client: AuthenticatedClient, email: str) -> None:
     resp = client.post(DEMOTE_USER, json={"email": email})
     resp.raise_for_status()
     print("User demoted.")
+
+
+def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
+    resp = client.get(FILE_DOWNLOAD, params={"uuid": str(id)})
+
+    if 400 <= resp.status_code < 500:
+        raise AccessDeniedException(
+            f"Failed to download file: {resp.json()['message']}",
+            "Status Code: " + str(resp.status_code),
+        )
+
+    resp.raise_for_status()
+    return resp.text

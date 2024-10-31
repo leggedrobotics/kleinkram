@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing_extensions import Annotated
 from typing import List
 from typing import Optional
+
 import typer
+from typing_extensions import Annotated
 
 file = typer.Typer(
     name="file",

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import typer
-from typing_extensions import Annotated
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_tag_types
-from kleinkram.api.routes import delete_tag as _delete_tag
-from kleinkram.models import tag_types_table
-from kleinkram.utils import is_valid_uuid4
-from rich.console import Console
 from uuid import UUID
 
+import typer
+from rich.console import Console
+from typing_extensions import Annotated
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import delete_tag as _delete_tag
+from kleinkram.api.routes import get_tag_types
+from kleinkram.models import tag_types_table
+from kleinkram.utils import is_valid_uuid4
 
 tag = typer.Typer(
     name="tag",

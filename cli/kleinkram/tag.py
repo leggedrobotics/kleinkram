@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, Union
 from datetime import datetime
+from typing import Dict
+from typing import Union
 
 import typer
 
-from kleinkram.models import TagType, DataType
+from kleinkram.models import DataType
+from kleinkram.models import TagType
 
 
 def _prompt_tag(tag: TagType) -> Union[str, bool, float, datetime]:

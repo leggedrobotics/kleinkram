@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing_extensions import Annotated
+import sys
 
 import httpx
 import typer
-from kleinkram.models import projects_to_table
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import (
-    create_project as _create_project,
-    get_projects_filtered,
-    get_project,
-)
 from rich.console import Console
 from rich.table import Table
-import sys
+from typing_extensions import Annotated
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import create_project as _create_project
+from kleinkram.api.routes import get_project
+from kleinkram.api.routes import get_projects_filtered
+from kleinkram.models import projects_to_table
 
 project = typer.Typer(
     name="project",

@@ -7,10 +7,11 @@ import typer
 from httpx import HTTPStatusError
 from httpx import ReadError
 from httpx import RemoteProtocolError
-from kleinkram.api.client import NotAuthenticatedException
 from rich.console import Console
 from rich.panel import Panel
 from typer import Typer
+
+from kleinkram.api.client import NotAuthenticatedException
 
 ExceptionType = 'typing.Type[Exception]'
 ErrorHandlingCallback = typing.Callable[[Exception], int]

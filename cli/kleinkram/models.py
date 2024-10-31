@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional, NamedTuple
-from uuid import UUID
 from enum import Enum
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import NamedTuple
+from typing import Optional
+from uuid import UUID
 
 from rich.table import Table
 

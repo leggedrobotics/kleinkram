@@ -1,37 +1,37 @@
 from __future__ import annotations
 
-from typing import cast
 import glob
 import os
 import queue
-from uuid import uuid4
-from enum import Enum
-import sys
-import threading
-from typing import Dict, List
-from datetime import datetime
-from functools import partial
-from typing import Generator
-from uuid import UUID
-from pathlib import Path
 import secrets
 import string
+import sys
+import threading
+from contextlib import contextmanager
+from datetime import datetime
+from enum import Enum
+from functools import partial
+from pathlib import Path
+from typing import cast
+from typing import Dict
+from typing import Generator
+from typing import List
 from typing import NamedTuple
+from typing import Optional
+from typing import Type
+from typing import Union
+from uuid import UUID
+from uuid import uuid4
 
-import boto3
+import boto3.s3.transfer
 import tqdm
 import typer
-import boto3.s3.transfer
 from botocore.config import Config
 from botocore.utils import calculate_md5
-from kleinkram.api.client import AuthenticatedClient
 from rich import print
 from rich.console import Console
-from typing import Type, Optional, Union
-from datetime import datetime
 
-from contextlib import contextmanager
-
+from kleinkram.api.client import AuthenticatedClient
 from kleinkram.enums import PermissionLevel
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"

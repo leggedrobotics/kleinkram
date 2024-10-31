@@ -6,10 +6,12 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from pathlib import Path
-from typing_extensions import Annotated
-from typing import Union, Optional
+from typing import Optional
+from typing import Union
 
 import typer
+from typing_extensions import Annotated
+
 from kleinkram.consts import API_URL
 
 TOKEN_FILE = Path("~/.kleinkram.json")

@@ -1,20 +1,38 @@
 from __future__ import annotations
 
-from kleinkram.utils import ProgressManager, transfer_progress
-
-import boto3
-import botocore.config
-import boto3.s3.transfer
-
-from typing import Dict, NamedTuple, Optional
-from uuid import UUID
-from pathlib import Path
-from functools import partial
-
 import os
+import queue
+import threading
+from functools import partial
+from pathlib import Path
+from typing import Dict
+from typing import NamedTuple
+from typing import Optional
+from uuid import UUID
+
+import boto3.s3.transfer
+import botocore.config
+import httpx
+import tqdm
+import sys
+from rich.console import Console
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.consts import LOCAL_API_URL
+from kleinkram.consts import LOCAL_S3_URL
+from kleinkram.utils import ProgressManager
+from kleinkram.utils import transfer_progress
 
+DOWNLOAD_CHUNK_SIZE = 1024 * 128
+
+
+def get_s3_endpoint() -> str:
+    # TODO: this needs to be more configurable
+    api_endpoint = AuthenticatedClient().tokenfile.endpoint
+    if api_endpoint == LOCAL_API_URL:
+        return LOCAL_S3_URL
+    else:
+        return api_endpoint.replace("api", "minio")
 
 
 class UploadAccess(NamedTuple):
@@ -105,15 +123,8 @@ def upload_files(
     *,
     n_workers: int = 8,
 ):
-    client = AuthenticatedClient()
-
-    # TODO: what is happening here?
-    api_endpoint = client.tokenfile.endpoint
-    if api_endpoint == "http://localhost:3000":
-        minio_endpoint = "http://localhost:9000"
-    else:
-        minio_endpoint = api_endpoint.replace("api", "minio")
-
+    # get proper s3_endpoint
+    s3_endpoint = get_s3_endpoint()
     file_queue = queue.Queue()
 
     for path, access in file_access.items():
@@ -130,7 +141,7 @@ def upload_files(
         for _ in range(n_workers):
             thread = threading.Thread(
                 target=file_upload_worker,
-                args=(file_queue, minio_endpoint, callback),
+                args=(file_queue, s3_endpoint, callback),
             )
             thread.start()
             thread_pool.append(thread)
@@ -138,3 +149,19 @@ def upload_files(
         # wait for all threads
         for thread in thread_pool:
             thread.join()
+
+
+def download_file(url: str, path: Path) -> None:
+    if path.exists():
+        raise FileExistsError(f"File already exists: {path}")
+
+    with httpx.stream("GET", url) as response:
+        with open(path, "wb") as f:
+            for chunk in tqdm.tqdm(
+                response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE),
+                desc=f"Downloading {path.name}",
+                unit="B",
+                unit_scale=True,
+            ):
+                for chunk in response.iter_bytes():
+                    f.write(chunk)

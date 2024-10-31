@@ -5,19 +5,26 @@ import os
 from datetime import datetime
 from datetime import timedelta
 from enum import Enum
-from typing_extensions import Annotated
-from typing import cast, Any
+from itertools import chain
+from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
-from typing import Optional, Union
-from itertools import chain
+from typing import Optional
+from typing import Union
 from uuid import UUID
-from kleinkram.api.routes import get_upload_creditials
-from kleinkram.api.routes import claim_admin
 
 import httpx
 import typer
+from rich import print
+from rich.table import Table
+from typer.core import TyperGroup
+from typer.models import Context
+from typing_extensions import Annotated
+
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import claim_admin
+from kleinkram.api.routes import get_upload_creditials
 from kleinkram.auth.auth import login
 from kleinkram.auth.auth import logout
 from kleinkram.auth.auth import setCliKey
@@ -32,14 +39,11 @@ from kleinkram.tag.tag import tag
 from kleinkram.topic.topic import topic
 from kleinkram.user.user import user
 from kleinkram.utils import canUploadMission
-from kleinkram.utils import matched_paths
+from kleinkram.utils import get_internal_file_map
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import matched_paths
 from kleinkram.utils import prompt_required_tags
-from kleinkram.utils import upload_files, get_internal_file_map
-from rich import print
-from rich.table import Table
-from typer.core import TyperGroup
-from typer.models import Context
+from kleinkram.utils import upload_files
 
 
 class CommandPanel(str, Enum):

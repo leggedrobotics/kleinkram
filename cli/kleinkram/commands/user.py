@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import sys
-from typing_extensions import Annotated
 
 import typer
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_users, get_user_info, promote_user, demote_user
-
 from rich.console import Console
 from rich.table import Table
+from typing_extensions import Annotated
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import demote_user
+from kleinkram.api.routes import get_user_info
+from kleinkram.api.routes import get_users
+from kleinkram.api.routes import promote_user
 
 user = typer.Typer(
     name="users",
