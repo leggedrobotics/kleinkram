@@ -31,18 +31,18 @@ class AuthenticatedClient(httpx.Client):
 
     def refresh_token(self):
         if self.tokenfile.isCliToken():
-            print('CLI key cannot be refreshed.')
+            print("CLI key cannot be refreshed.")
             return
         refresh_token = self.tokenfile.getRefreshToken()
         if not refresh_token:
-            print('No refresh token found. Please login again.')
-            raise Exception('No refresh token found.')
+            print("No refresh token found. Please login again.")
+            raise Exception("No refresh token found.")
         self.cookies.set(
             REFRESH_TOKEN,
             refresh_token,
         )
         response = self.post(
-            '/auth/refresh-token',
+            "/auth/refresh-token",
         )
         response.raise_for_status()
         new_access_token = response.cookies.get(AUTH_TOKEN)
@@ -54,12 +54,12 @@ class AuthenticatedClient(httpx.Client):
         response = super().request(
             method, self.tokenfile.endpoint + url, *args, **kwargs
         )
-        if (url == '/auth/refresh-token') and response.status_code == 401:
-            print('Refresh token expired. Please login again.')
+        if (url == "/auth/refresh-token") and response.status_code == 401:
+            print("Refresh token expired. Please login again.")
             response.status_code = 403
             exit(1)
         if response.status_code == 401:
-            print('Token expired, refreshing token...')
+            print("Token expired, refreshing token...")
             self.refresh_token()
             response = super().request(
                 method, self.tokenfile.endpoint + url, *args, **kwargs

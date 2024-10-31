@@ -1,23 +1,11 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Dict, NamedTuple, Union 
+from typing import Dict, Union
 from datetime import datetime
 
 import typer
 
-class DataType(Enum, str):
-    LOCATION = "LOCATION"
-    STRING = "STRING"
-    LINK = "LINK"
-    BOOLEAN = "BOOLEAN"
-    NUMBER = "NUMBER"
-    DATE = "DATE"
-
-
-class TagType(NamedTuple):
-    name: str
-    data_type: DataType
+from kleinkram.models import TagType, DataType
 
 
 def _prompt_tag(tag: TagType) -> Union[str, bool, float, datetime]:
