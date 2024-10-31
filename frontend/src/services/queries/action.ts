@@ -12,8 +12,9 @@ export const getActions = async (
     skip: number,
     sortBy: string,
     descending: boolean,
+    search: string,
 ): Promise<[Action[], number]> => {
-    const params = {
+    const params: Record<string, string | number | boolean> = {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         project_uuid: projectUUID,
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -23,6 +24,10 @@ export const getActions = async (
         sortBy,
         descending,
     };
+
+    if (search) {
+        params['search'] = search;
+    }
 
     const response = await axios.get('/action/listActions', { params });
     if (response.data.length < 2) {
