@@ -4,6 +4,7 @@ import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
+import { Worker } from 'src/types/Worker';
 
 type ContainerLog = {
     timestamp: string;
