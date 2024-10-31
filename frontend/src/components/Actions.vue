@@ -119,6 +119,7 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
             props.handler.skip,
             props.handler.sortBy,
             props.handler.descending,
+            props.handler.searchParams['name'],
         ),
     staleTime: 0,
     refetchInterval: 4000,

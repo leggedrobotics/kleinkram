@@ -74,6 +74,7 @@ export class ActionController {
         @QuerySkip('take') take: number,
         @QueryOptionalString('sortBy') sortBy: string,
         @QueryOptionalBoolean('descending') descending: boolean,
+        @QueryOptionalString('search') search: string,
     ) {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -87,6 +88,7 @@ export class ActionController {
             take,
             sortBy,
             descending,
+            search,
         );
     }
 

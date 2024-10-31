@@ -176,28 +176,41 @@ export class ActionService {
         take: number,
         sortBy: string,
         descending: boolean,
+        search: string,
     ): Promise<[Action[], number]> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.actionRepository.findAndCount({
-                where: {
-                    mission: {
-                        uuid: missionUuid,
-                        project: { uuid: projectUuid },
-                    },
-                },
-                relations: [
-                    'mission',
-                    'mission.project',
-                    'createdBy',
-                    'template',
-                ],
-                order: { [sortBy]: descending ? 'DESC' : 'ASC' },
-                skip,
-                take,
-            });
+            const query = this.actionRepository
+                .createQueryBuilder('action')
+                .leftJoinAndSelect('action.mission', 'mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('action.createdBy', 'createdBy')
+                .leftJoinAndSelect('action.template', 'template')
+                .andWhere('project.uuid = :projectUuid', { projectUuid })
+                .orderBy(`action.${sortBy}`, descending ? 'DESC' : 'ASC')
+                .skip(skip)
+                .take(take);
+            if (search) {
+                query.andWhere(
+                    new Brackets((qb) => {
+                        qb.where('template.name ILIKE :searchTerm', {
+                            searchTerm: `%${search}%`,
+                        })
+                            .orWhere('action.state_cause ILIKE :searchTerm', {
+                                searchTerm: `%${search}%`,
+                            })
+                            .orWhere('template.image_name ILIKE :searchTerm', {
+                                searchTerm: `%${search}%`,
+                            });
+                    }),
+                );
+            }
+            if (missionUuid) {
+                query.andWhere('mission.uuid = :missionUuid', { missionUuid });
+            }
+            return query.getManyAndCount();
         }
 
         const baseQuery = this.actionRepository
@@ -219,6 +232,21 @@ export class ActionService {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 mission_uuid: missionUuid,
             });
+        }
+        if (search) {
+            baseQuery.andWhere(
+                new Brackets((qb) => {
+                    qb.where('template.name ILIKE :searchTerm', {
+                        searchTerm: `%${search}%`,
+                    })
+                        .orWhere('action.state_cause ILIKE :searchTerm', {
+                            searchTerm: `%${search}%`,
+                        })
+                        .orWhere('template.image_name ILIKE :searchTerm', {
+                            searchTerm: `%${search}%`,
+                        });
+                }),
+            );
         }
         return addAccessConstraints(baseQuery, userUUID).getManyAndCount();
     }
