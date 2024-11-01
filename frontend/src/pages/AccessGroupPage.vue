@@ -332,7 +332,8 @@ watch(
 );
 
 const project_rows = computed(() => {
-    return accessGroup.value?.project_accesses.map((project: ProjectAccess) => {
+    console.log(accessGroup.value);
+    return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
         return {
             ...project.project,
             rights: project.rights,
