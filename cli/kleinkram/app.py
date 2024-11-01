@@ -3,8 +3,8 @@ from __future__ import annotations
 import typer
 from typing import Optional
 from kleinkram.utils import get_version
-from kleinkram.auth import login as _login
-from kleinkram.auth import logout as _logout
+from kleinkram.auth import login_flow
+from kleinkram.config import Config
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
 
@@ -30,12 +30,13 @@ def login(
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
 ) -> None:
-    _login(key=key, headless=headless)
+    login_flow(key=key, headless=headless)
 
 
 @app.command()
 def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> None:
-    _logout(all=all)
+    config = Config()
+    config.clear_credentials(all=all)
 
 
 @app.command(hidden=True)

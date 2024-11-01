@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+import json
+import tempfile
+import os
+
+from typing import TypedDict, cast, Dict, Optional
+from kleinkram.consts import LOCAL_API_URL
+
+CONFIG_PATH = Path().home() / ".kleinkram.json"
+CORRUPTED_CONFIG_FILE_MESSAGE = (
+    "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
+)
+
+
+class Auth(TypedDict):
+    auth_token: Optional[str]
+    refresh_token: Optional[str]
+    cli_key: Optional[str]
+
+
+JSON_ENDPOINTS_KEY = "endpoints"
+JSON_TOKENS_KEY = "tokens"
+
+
+class CorruptedConfigFile(Exception):
+    def __init__(self) -> None:
+        super().__init__(CORRUPTED_CONFIG_FILE_MESSAGE)
+
+
+class Config:
+    endpoint: str
+    endpoint_auths: Dict[str, Auth]
+
+    def __init__(self) -> None:
+        if not CONFIG_PATH.exists():
+            self.tokens = {}
+            self.endpoint = LOCAL_API_URL
+            self.save()
+        try:
+            with open(CONFIG_PATH, "r") as file:
+                content = json.load(file)
+
+                endpoint = content.get(JSON_ENDPOINTS_KEY, None)
+                if not isinstance(endpoint, str):
+                    raise CorruptedConfigFile
+
+                tokens = content.get(JSON_TOKENS_KEY, None)
+                if not isinstance(tokens, dict):
+                    raise CorruptedConfigFile
+
+                self.endpoint = endpoint
+                self.tokens = tokens
+        except Exception:
+            raise CorruptedConfigFile
+
+    def has_cli_key(self) -> bool:
+        return CLI_KEY in self.tokens[self.endpoint]
+
+    @property
+    def auth_token(self) -> str:
+        return self.tokens[self.endpoint][AUTH_TOKEN]
+
+    @property
+    def refresh_token(self) -> str:
+        return self.tokens[self.endpoint][REFRESH_TOKEN]
+
+    @property
+    def cli_key(self) -> str:
+        return self.tokens[self.endpoint][CLI_KEY]
+
+    def save(self) -> None:
+        data = {
+            "endpoint": self.endpoint,
+            "tokens": self.tokens,
+        }
+
+        # atomically write to file
+        fd, tmp_path = tempfile.mkstemp()
+        with open(fd, "w") as file:
+            json.dump(data, file)
+
+        os.replace(tmp_path, CONFIG_PATH)
+
+    def save_tokens(self, tokens: Dict[str, str]) -> None:
+        self.tokens[self.endpoint] = tokens
+        self.save()
