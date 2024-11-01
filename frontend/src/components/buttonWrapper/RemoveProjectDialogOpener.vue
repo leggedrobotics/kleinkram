@@ -1,6 +1,6 @@
 <template>
     <div
-        @click="canDelete ? _removeProject : null"
+        @click="removeProject"
         :class="{
             disabled: !canDelete,
             'cursor-pointer': !canDelete,
@@ -23,23 +23,16 @@
 </style>
 
 <script setup lang="ts">
-import { Notify, useQuasar } from 'quasar';
-import { computed, Ref, ref } from 'vue';
+import { Notify } from 'quasar';
+import { computed } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import {
-    deleteAccessGroup,
-    removeAccessGroupFromProject,
-} from 'src/services/mutations/access';
+import { removeAccessGroupFromProject } from 'src/services/mutations/access';
 import { AccessGroup } from 'src/types/AccessGroup';
-import { getUser } from 'src/services/auth';
-import { User } from 'src/types/User';
-import ROLE from 'src/enums/USER_ROLES';
 import {
     canDeleteProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 
-const $q = useQuasar();
 const props = defineProps<{
     accessGroup: AccessGroup;
     projectUUID: string;
@@ -50,13 +43,18 @@ const canDelete = computed(() =>
     canDeleteProject(props.projectUUID, permissions.value),
 );
 const queryClient = useQueryClient();
+function removeProject() {
+    if (!canDelete.value) return;
+    console.log('removeProject');
+    _removeProject();
+}
 
 const { mutate: _removeProject } = useMutation({
     mutationFn: () =>
-        removeAccessGroupFromProject(props.projectUUID, uuid.value),
+        removeAccessGroupFromProject(props.projectUUID, props.accessGroup.uuid),
     onSuccess: () => {
         queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', uuid],
+            queryKey: ['AccessGroup', props.accessGroup.uuid],
         });
         Notify.create({
             message: 'Project removed from access group',
@@ -66,7 +64,7 @@ const { mutate: _removeProject } = useMutation({
     },
     onError: () => {
         Notify.create({
-            message: 'Error removing project from access group',
+            message: `Error removing project from access group.`,
             color: 'negative',
             position: 'bottom',
         });

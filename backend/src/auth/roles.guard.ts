@@ -198,7 +198,8 @@ export class DeleteProjectGuard extends BaseGuard {
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot delete projects');
         }
-        const projectUUID = request.query.uuid || request.params.uuid;
+        const projectUUID =
+            request.query.uuid || request.params.uuid || request.body.uuid;
         return this.projectGuardService.canAccessProject(
             user,
             projectUUID,
