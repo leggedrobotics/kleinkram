@@ -103,6 +103,7 @@ export class ActionService {
             command: data.command,
             searchable: data.searchable,
             entrypoint: data.entrypoint,
+            accessRights: data.accessRights,
         });
         return this.actionTemplateRepository.save(template);
     }
@@ -125,7 +126,8 @@ export class ActionService {
             template.cpuMemory === data.cpuMemory &&
             template.gpuMemory === data.gpuMemory &&
             template.maxRuntime === data.maxRuntime &&
-            template.entrypoint === data.entrypoint
+            template.entrypoint === data.entrypoint &&
+            template.accessRights === data.accessRights
         ) {
             template.searchable = true;
             return this.actionTemplateRepository.save(template);
@@ -152,6 +154,7 @@ export class ActionService {
         template.searchable = data.searchable;
         template.maxRuntime = data.maxRuntime;
         template.entrypoint = data.entrypoint;
+        template.accessRights = data.accessRights;
         return this.actionTemplateRepository.save(template);
     }
 

@@ -16,22 +16,6 @@ export class SubmitActionMulti {
     templateUUID: string;
 }
 
-export class CreateActionTemplate {
-    @IsString()
-    name: string;
-
-    @IsString()
-    command: string;
-
-    @IsString()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    docker_image: string;
-
-    @IsString()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    gpu_model: string;
-}
-
 export class ActionQuery {
     @IsUUID()
     @IsOptional()
