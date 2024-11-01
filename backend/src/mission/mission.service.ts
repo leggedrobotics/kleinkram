@@ -290,8 +290,18 @@ export class MissionService {
         return savedMission;
     }
 
-    async findOneByName(name: string): Promise<Mission | undefined> {
-        return this.missionRepository.findOne({ where: { name } });
+    async findOneByName(
+        name: string,
+        projectUuid: string,
+    ): Promise<Mission | undefined> {
+        return this.missionRepository.findOne({
+            where: {
+                name,
+                project: {
+                    uuid: projectUuid,
+                },
+            },
+        });
     }
 
     async deleteMission(uuid: string): Promise<Mission> {
