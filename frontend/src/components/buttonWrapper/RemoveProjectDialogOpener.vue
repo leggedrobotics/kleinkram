@@ -45,7 +45,6 @@ const canDelete = computed(() =>
 const queryClient = useQueryClient();
 function removeProject() {
     if (!canDelete.value) return;
-    console.log('removeProject');
     _removeProject();
 }
 

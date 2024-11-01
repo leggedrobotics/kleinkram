@@ -29,11 +29,15 @@ import {
 import { computed } from 'vue';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { Mission } from 'src/types/Mission';
+import ROUTES from 'src/router/routes';
+import { useRouter } from 'vue-router';
+import { useMissionUUID } from 'src/hooks/utils';
 
 const $q = useQuasar();
 const props = defineProps<{
     mission: Mission;
 }>();
+const urlMissionUUID = useMissionUUID();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
@@ -42,6 +46,7 @@ const canModify = computed(() =>
         permissions.value,
     ),
 );
+const $router = useRouter();
 
 function moveMission() {
     if (!canModify.value) return;
@@ -51,6 +56,14 @@ function moveMission() {
         persistent: false,
         style: 'max-width: 1500px',
         componentProps: { mission: props.mission },
+    }).onOk((newProjectUUID: string) => {
+        if (urlMissionUUID.value) {
+            $router?.push({
+                params: {
+                    project_uuid: newProjectUUID,
+                },
+            });
+        }
     });
 }
 </script>
