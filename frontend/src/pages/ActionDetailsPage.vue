@@ -49,7 +49,7 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ action?.image.repo_digests[0] }}
+                                {{ action?.image?.repoDigests?.[0] }}
                             </td>
                         </tr>
                         <tr>
