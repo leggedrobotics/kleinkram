@@ -113,8 +113,11 @@ export class MissionController {
 
     @Get('byName')
     @CanReadMissionByName()
-    async getMissionByName(@QueryString('name') name: string) {
-        return await this.missionService.findOneByName(name);
+    async getMissionByName(
+        @QueryString('name') name: string,
+        @QueryUUID('projectUUID') projectUuid: string,
+    ) {
+        return await this.missionService.findOneByName(name, projectUuid);
     }
 
     @Get('download')

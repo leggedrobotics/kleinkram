@@ -315,17 +315,20 @@ export class ReadMissionByNameGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const missionName = request.query.name;
+        const projectUuid = request.query.projectUUID;
 
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMissionByName(
                 apiKey,
                 missionName,
+                projectUuid,
                 AccessGroupRights.READ,
             );
         }
         return this.missionGuardService.canAccessMissionByName(
             user,
             missionName,
+            projectUuid,
         );
     }
 }

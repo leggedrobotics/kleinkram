@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_queueConsumer",
-    "version": "0.34.4",
+    "version": "0.35.0",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",

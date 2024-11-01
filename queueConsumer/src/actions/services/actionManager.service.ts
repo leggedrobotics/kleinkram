@@ -108,6 +108,7 @@ export class ActionManagerService {
                         needs_gpu: needsGpu,
                         environment: envVariables,
                         command: action.template.command,
+                        entrypoint: action.template.entrypoint,
                         /* eslint-enable @typescript-eslint/naming-convention */
                     },
                 );

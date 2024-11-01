@@ -39,6 +39,18 @@
                         style="padding-bottom: 30px"
                         :error-message="errorMessagesProjectName"
                         :error="isInErrorStateProjectName"
+                        :rules="[
+                            (val) => !!val || 'Field is required',
+                            (val) =>
+                                val.length >= 3 ||
+                                'Name must be at least 3 characters',
+                            (val) =>
+                                val.length <= 20 ||
+                                'Name must be at most 20 characters',
+                            (val) =>
+                                /^[\w\-_]+$/g.test(val) ||
+                                'Name must be alphanumeric and contain only - and _',
+                        ]"
                         @update:model-value="verify_input"
                     />
 

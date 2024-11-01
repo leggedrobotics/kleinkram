@@ -3,7 +3,7 @@ import { BaseEntity } from 'src/types/BaseEntity';
 
 export class ActionTemplate extends BaseEntity {
     imageName: string;
-    createdBy: User;
+    createdBy: User | null;
     name: string;
     version: number;
     cpuCores: number;
@@ -11,13 +11,14 @@ export class ActionTemplate extends BaseEntity {
     gpuMemory: number;
     maxRuntime: number;
     command: string;
+    entrypoint: string;
 
     constructor(
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
         imageName: string,
-        createdBy: User,
+        createdBy: User | null,
         name: string,
         version: number,
         command: string,
@@ -25,6 +26,7 @@ export class ActionTemplate extends BaseEntity {
         cpuMemory: number,
         gpuMemory: number,
         maxRuntime: number,
+        entrypoint: string,
     ) {
         super(uuid, createdAt, updatedAt);
         this.imageName = imageName;
@@ -36,6 +38,7 @@ export class ActionTemplate extends BaseEntity {
         this.cpuMemory = cpuMemory;
         this.gpuMemory = gpuMemory;
         this.maxRuntime = maxRuntime;
+        this.entrypoint = entrypoint;
     }
 
     clone(): ActionTemplate {
@@ -52,6 +55,7 @@ export class ActionTemplate extends BaseEntity {
             this.cpuMemory,
             this.gpuMemory,
             this.maxRuntime,
+            this.entrypoint,
         );
     }
 }
