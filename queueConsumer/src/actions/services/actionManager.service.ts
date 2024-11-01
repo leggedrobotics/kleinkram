@@ -114,8 +114,7 @@ export class ActionManagerService {
                 );
 
             // capture runner information
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            action.image = { repo_digests: repoDigests, sha };
+            action.image = { repoDigests: repoDigests, sha };
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 
