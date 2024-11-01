@@ -43,7 +43,7 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ data?.template.image_name }}
+                                {{ data?.image.repo_digests[0] }}
                             </td>
                         </tr>
                         <tr>
@@ -68,7 +68,7 @@
                         <tr>
                             <td class="q-table__cell">State Reason</td>
                             <td class="q-table__cell">
-                                {{ data?.state_cause }}
+                                {{ data?.stateCause }}
                             </td>
                         </tr>
                         <tr>
