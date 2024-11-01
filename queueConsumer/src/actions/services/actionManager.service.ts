@@ -47,7 +47,7 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
-            rights: AccessGroupRights.WRITE, // todo read from frontend
+            rights: action.template.accessRights,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.CONTAINER,
             action: action,

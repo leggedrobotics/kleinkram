@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Action from './action.entity';
 import User from '../user/user.entity';
+import { AccessGroupRights } from '../../enum';
 
 @Entity()
 @Unique(['name', 'version'])
@@ -42,4 +43,7 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column({ nullable: true })
     entrypoint: string;
+
+    @Column()
+    accessRights: AccessGroupRights;
 }

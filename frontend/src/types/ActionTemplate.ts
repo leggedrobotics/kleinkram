@@ -1,5 +1,6 @@
 import { User } from 'src/types/User';
 import { BaseEntity } from 'src/types/BaseEntity';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export class ActionTemplate extends BaseEntity {
     imageName: string;
@@ -12,6 +13,7 @@ export class ActionTemplate extends BaseEntity {
     maxRuntime: number;
     command: string;
     entrypoint: string;
+    accessRights: AccessGroupRights;
 
     constructor(
         uuid: string,
@@ -27,6 +29,7 @@ export class ActionTemplate extends BaseEntity {
         gpuMemory: number,
         maxRuntime: number,
         entrypoint: string,
+        accessRights: AccessGroupRights,
     ) {
         super(uuid, createdAt, updatedAt);
         this.imageName = imageName;
@@ -39,6 +42,7 @@ export class ActionTemplate extends BaseEntity {
         this.gpuMemory = gpuMemory;
         this.maxRuntime = maxRuntime;
         this.entrypoint = entrypoint;
+        this.accessRights = accessRights;
     }
 
     clone(): ActionTemplate {
@@ -56,6 +60,7 @@ export class ActionTemplate extends BaseEntity {
             this.gpuMemory,
             this.maxRuntime,
             this.entrypoint,
+            this.accessRights,
         );
     }
 }
