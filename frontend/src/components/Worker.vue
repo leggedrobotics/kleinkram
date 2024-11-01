@@ -26,16 +26,35 @@
                 v-for="singleWorker in worker"
                 :key="singleWorker.hostname"
             >
-                <q-card class="full-width q-pa-md row-container" flat>
+                <q-card class="full-width q-pa-md" flat>
                     <div
                         class="row-container"
                         style="align-items: center; width: 100%"
                     >
-                        <q-icon name="sym_o_dns" size="20px" />
+                        <q-btn
+                            flat
+                            dense
+                            @click="() => extendWorker(singleWorker.uuid)"
+                        >
+                            <q-icon
+                                name="sym_o_chevron_right"
+                                size="20px"
+                                :style="
+                                    extendedWorkers[singleWorker.uuid]
+                                        ? 'rotate: 90deg'
+                                        : ''
+                                "
+                            />
+                        </q-btn>
+
+                        <q-icon
+                            name="sym_o_dns"
+                            size="20px"
+                            @click="extendWorker"
+                        />
                         <span class="worker-name">{{
                             singleWorker.hostname
                         }}</span>
-
                         <q-icon
                             name="sym_o_developer_board"
                             size="20px"
@@ -64,6 +83,64 @@
                             }}</span
                         >
                     </div>
+                    <div
+                        v-if="extendedWorkers[singleWorker.uuid]"
+                        class="row-container"
+                        style="
+                            align-items: center;
+                            width: 100%;
+                            padding-left: 30px;
+                        "
+                    >
+                        <div class="row">
+                            <div class="q-mt-md col-6">
+                                <q-icon name="sym_o_psychology" size="20px" />
+                                <span class="worker-name">{{
+                                    singleWorker.cpuModel
+                                }}</span>
+                            </div>
+                            <div class="q-mt-md col-3">
+                                <q-icon name="sym_o_hub" size="20px" />
+                                <span class="worker-name"
+                                    >{{ singleWorker.cpuCores }} Cores</span
+                                >
+                            </div>
+                            <div class="q-mt-md col-3">
+                                <q-icon name="sym_o_memory" size="20px" />
+                                <span class="worker-name"
+                                    >{{ singleWorker.cpuMemory }}GB</span
+                                >
+                            </div>
+                            <div
+                                class="row-container"
+                                style="align-items: center; width: 100%"
+                            >
+                                <div class="q-mt-md">
+                                    <q-icon
+                                        name="sym_o_developer_board"
+                                        size="20px"
+                                    />
+                                    <span class="worker-name">{{
+                                        singleWorker.gpuModel
+                                    }}</span>
+                                </div>
+                            </div>
+                            <div
+                                class="row-container"
+                                style="align-items: center; width: 100%"
+                            >
+                                <div class="q-mt-md">
+                                    <q-icon
+                                        name="sym_o_hard_disk"
+                                        size="20px"
+                                    />
+                                    <span class="worker-name"
+                                        >{{ singleWorker.storage }} GB</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </q-card>
                 <q-separator />
             </template>
@@ -74,7 +151,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { allWorkers } from 'src/services/queries/worker';
-import { computed, ComputedRef } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import { Worker } from 'src/types/Worker';
 
 const { data: _worker } = useQuery({
@@ -88,9 +165,29 @@ const worker: ComputedRef<Worker[]> = computed(() => {
 });
 const online = computed(() => worker.value.filter((w) => w.reachable));
 const offline = computed(() => worker.value.filter((w) => !w.reachable));
+const extendedWorkers = ref({} as Record<string, boolean>);
+watch(
+    () => worker.value,
+    () => {
+        extendedWorkers.value = worker.value.reduce(
+            (acc, w) => {
+                acc[w.uuid] = !!extendedWorkers.value[w.uuid];
+                return acc;
+            },
+            {} as Record<string, boolean>,
+        );
+    },
+    { immediate: true },
+);
+
+function extendWorker(uuid: string) {
+    extendedWorkers.value[uuid] = !extendedWorkers.value[uuid];
+}
 </script>
 
 <style scoped>
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
+
 .row-container {
     display: flex;
     gap: 4px; /* Add spacing between elements */

@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_common",
-    "version": "0.35.6",
+    "version": "0.35.7",
     "scripts": {
         "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
         "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
