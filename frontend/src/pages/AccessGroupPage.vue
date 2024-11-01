@@ -167,7 +167,7 @@
                     >
                         <q-btn
                             flat
-                            class="bg-button-secondary text-on-color"
+                            class="bg-button-secondary text-on-color full-height"
                             label="Add User"
                             icon="sym_o_add"
                         />
