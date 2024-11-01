@@ -214,11 +214,16 @@ export const QuerySortBy = createParamDecorator(
             'name',
             'description',
             'creator',
+            'creator.name',
             'createdAt',
             'updatedAt',
             'filename',
             'state',
             'size',
+            'file.date',
+            'file.createdAt',
+            'file.size',
+            'file.filename',
         ];
 
         if (!fields.includes(value)) {
