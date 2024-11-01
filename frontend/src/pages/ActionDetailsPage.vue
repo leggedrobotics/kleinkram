@@ -101,6 +101,24 @@
                                 {{ data?.getRuntimeInMS() / 1000 }} seconds
                             </td>
                         </tr>
+                        <td class="q-table__cell">Hardware Requirements:</td>
+                        <td class="q-table__cell">
+                            <div v-if="data?.template">
+                                Cores: {{ data?.template.cpuCores }}<br />
+                                RAM:
+                                {{ data?.template.cpuMemory }} GB<br />
+                                min vRAM:
+                                <template v-if="data?.template.gpuMemory >= 0">
+                                    {{ data?.template.gpuMemory }} GB
+                                </template>
+                                <template v-else>no GPU requested</template>
+                                <br />
+                            </div>
+                            <div v-else>N/A</div>
+                        </td>
+
+                        <tr></tr>
+
                         <tr>
                             <td class="q-table__cell">Artifact Files:</td>
                             <td class="q-table__cell">
