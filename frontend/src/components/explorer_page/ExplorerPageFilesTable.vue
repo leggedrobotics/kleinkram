@@ -200,6 +200,7 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler?.categories,
             props.url_handler.sortBy,
             props.url_handler.descending,
+            props.url_handler.searchParams.health,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
