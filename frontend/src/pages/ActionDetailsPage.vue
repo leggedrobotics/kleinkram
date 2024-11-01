@@ -223,7 +223,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #525252"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
@@ -243,7 +245,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #fd7c7cff"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
