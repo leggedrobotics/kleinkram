@@ -413,3 +413,8 @@ def get_project_permission_level(client: AuthenticatedClient, project_id: UUID) 
     # it is possilbe that a user has access to a project via multiple groups
     # in this case we take the highest permission level
     return cast(int, max(map(lambda x: x.get("access", 0), filtered_by_id)))
+
+
+def get_version() -> str:
+    # TODO
+    return "0.1.0"

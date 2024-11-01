@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import httpx
 
-from kleinkram.auth.auth import AUTH_TOKEN
-from kleinkram.auth.auth import CLI_KEY
-from kleinkram.auth.auth import REFRESH_TOKEN
-from kleinkram.auth.auth import TokenFile
+from kleinkram.auth import AUTH_TOKEN
+from kleinkram.auth import CLI_KEY
+from kleinkram.auth import REFRESH_TOKEN
+from kleinkram.auth import TokenFile
 
 
 class NotAuthenticatedException(Exception):
@@ -15,7 +15,7 @@ class NotAuthenticatedException(Exception):
 
 
 class AuthenticatedClient(httpx.Client):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         try:
