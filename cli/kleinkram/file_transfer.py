@@ -23,7 +23,7 @@ from kleinkram.consts import LOCAL_S3_URL
 from kleinkram.utils import ProgressManager
 from kleinkram.utils import transfer_progress
 
-DOWNLOAD_CHUNK_SIZE = 1024 * 128
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 
 
 def get_s3_endpoint() -> str:
@@ -160,8 +160,7 @@ def download_file(url: str, path: Path) -> None:
             for chunk in tqdm.tqdm(
                 response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE),
                 desc=f"Downloading {path.name}",
-                unit="B",
+                unit="16MB",
                 unit_scale=True,
             ):
-                for chunk in response.iter_bytes():
-                    f.write(chunk)
+                f.write(chunk)

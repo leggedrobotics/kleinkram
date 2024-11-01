@@ -4,10 +4,13 @@ import typer
 from typing import Optional
 from kleinkram.utils import get_version
 from kleinkram.auth import login_flow
-from kleinkram.config import Config
+from kleinkram.config import Config, get_shared_state
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
-
+from kleinkram.commands.project import project
+from kleinkram.commands.mission import mission
+from kleinkram.commands.file import file
+from kleinkram.commands.endpoint import endpoint
 
 CLI_HELP = """\
 Kleinkram CLI
@@ -23,6 +26,11 @@ app = typer.Typer(
     no_args_is_help=True,
     help=CLI_HELP,
 )
+
+app.add_typer(project, name="project")
+app.add_typer(mission, name="mission")
+app.add_typer(file, name="file")
+app.add_typer(endpoint, name="endpoint")
 
 
 @app.command()
@@ -67,4 +75,6 @@ def cli(
     verbose: bool = typer.Option(True),
     version: Optional[bool] = typer.Option(None, "--version", callback=_version_cb),
 ):
-    pass
+    _ = version  # suppress unused variable warning
+    shared_state = get_shared_state()
+    shared_state.verbose = verbose

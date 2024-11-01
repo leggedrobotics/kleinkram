@@ -9,12 +9,12 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
+from typing import Union, NamedTuple
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.error_handling import AccessDeniedException
-from kleinkram.models import Project
+from kleinkram.models import Project, File
 from kleinkram.models import User
 from kleinkram.tag import DataType
 from kleinkram.tag import TagType
@@ -43,6 +43,7 @@ DEMOTE_USER = "/user/demote"
 
 FILE_DOWNLOAD = "/file/download"
 FILE_QUERY = "/file/filteredByNames"
+FILE_ONE = "/file/one"
 
 
 def get_upload_creditials(
@@ -297,7 +298,10 @@ def demote_user(client: AuthenticatedClient, email: str) -> None:
 
 
 def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
-    resp = client.get(FILE_DOWNLOAD, params={"uuid": str(id)})
+    """\
+    get the download url for a file by file id
+    """
+    resp = client.get(FILE_DOWNLOAD, params={"uuid": str(id), "expires": True})
 
     if 400 <= resp.status_code < 500:
         raise AccessDeniedException(
@@ -309,12 +313,80 @@ def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     return resp.text
 
 
+def get_file(client: AuthenticatedClient, id: UUID) -> File:
+    resp = client.get(FILE_ONE, params={"uuid": str(id)})
+    resp.raise_for_status()
+
+    file = resp.json()
+
+    project_id = UUID(file["mission"]["project"]["uuid"], version=4)
+    project_name = file["mission"]["project"]["name"]
+
+    mission_id = UUID(file["mission"]["uuid"], version=4)
+    mission_name = file["mission"]["name"]
+
+    filename = file["filename"]
+    file_id = UUID(file["uuid"], version=4)
+
+    return File(
+        id=file_id,
+        name=filename,
+        project_id=project_id,
+        project_name=project_name,
+        mission_id=mission_id,
+        mission_name=mission_name,
+    )
+
+
 def get_files(
     client: AuthenticatedClient,
     name: Optional[str] = None,
+    project: Optional[str] = None,
     mission: Optional[str] = None,
     topics: Optional[List[str]] = None,
     tags: Optional[List[str]] = None,
-):
-    if name is None and mission is None and topics is None and tags is None:
-        raise ValueError("At least one of name, mission or topics must be provided")
+) -> List[File]:
+    params = {}
+    if name is not None:
+        params["name"] = name
+    if project is not None:
+        params["project"] = project
+    if mission is not None:
+        params["mission"] = mission
+    if topics:
+        params["topics"] = ",".join(topics)
+    if tags:
+        p = {}
+        for tag in tags:
+            key, value = tag.split("=")
+            p[key] = value
+        params["tags"] = p
+
+    resp = client.get(FILE_QUERY, params=params)
+    resp.raise_for_status()
+
+    files = []
+    data = resp.json()
+    for file in data:
+        try:
+            project_id = UUID(file["mission"]["project"]["uuid"], version=4)
+            project_name = file["mission"]["project"]["name"]
+
+            mission_id = UUID(file["mission"]["uuid"], version=4)
+            mission_name = file["mission"]["name"]
+
+            filename = file["filename"]
+            file_id = UUID(file["uuid"], version=4)
+
+            parsed = File(
+                id=file_id,
+                name=filename,
+                project_id=project_id,
+                project_name=project_name,
+                mission_id=mission_id,
+                mission_name=mission_name,
+            )
+            files.append(parsed)
+        except Exception:
+            print(f"Error parsing file: {file}")
+    return files

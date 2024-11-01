@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typer
+import sys
 
 from kleinkram.auth import Config
 
@@ -16,8 +17,6 @@ endpoint = typer.Typer(
 @endpoint.command("set")
 def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use")):
     """
-    Set the current endpoint
-
     Use this command to switch between different API endpoints.\n
     Standard endpoints are:\n
     - http://localhost:3000\n
@@ -32,29 +31,26 @@ def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use"
     tokenfile.endpoint = endpoint
     tokenfile.save()
 
-    print()
-    print("Endpoint set to: " + endpoint)
-    if tokenfile.endpoint not in tokenfile.tokens:
-        print(
-            "Not authenticated on this endpoint, please execute 'klein login' to authenticate."
-        )
+    print(f"Endpoint set to: {endpoint}")
+    if tokenfile.endpoint not in tokenfile.credentials:
+        print("\nLogin with `klein login`.")
 
 
-@endpoint.command("get")
-def get_endpoints():
+@endpoint.command("list")
+def list_endpoints():
     """
     Get the current endpoint
 
     Also displays all endpoints with saved tokens.
     """
-    tokenfile = TokenFile()
-    print("Current: " + tokenfile.endpoint)
-    print()
+    config = Config()
+    print(f"Current endpoint: {config.endpoint}\n", file=sys.stderr)
 
-    if not tokenfile.tokens:
-        print("No saved tokens found.")
+    if not config.credentials:
+        print("No saved credentials found.", file=sys.stderr)
         return
 
-    print("Saved Tokens found for:")
-    for _endpoint, _ in tokenfile.tokens.items():
-        print("- " + _endpoint)
+    print("Found Credentials for:", file=sys.stderr)
+    for ep in config.credentials.keys():
+        print(" - ", file=sys.stderr, end="", flush=True)
+        print(ep, file=sys.stdout, flush=True)

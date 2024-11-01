@@ -7,6 +7,7 @@ import os
 from typing import NamedTuple, Dict, Optional
 from kleinkram.consts import LOCAL_API_URL
 from pathlib import Path
+from dataclasses import dataclass
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
 CORRUPTED_CONFIG_FILE_MESSAGE = (
@@ -53,8 +54,8 @@ class Config:
 
                 try:
                     parsed_creds = {}
-                    for endpoint, creds in credentials.items():
-                        parsed_creds[endpoint] = Credentials(**creds)
+                    for ep, creds in credentials.items():
+                        parsed_creds[ep] = Credentials(**creds)
                 except Exception:
                     raise CorruptedConfigFile
 
@@ -115,3 +116,15 @@ class Config:
     def save_credentials(self, creds: Credentials) -> None:
         self.credentials[self.endpoint] = creds
         self.save()
+
+
+@dataclass
+class _SharedState:
+    verbose: bool = True
+
+
+SHARED_STATE = _SharedState()
+
+
+def get_shared_state() -> _SharedState:
+    return SHARED_STATE

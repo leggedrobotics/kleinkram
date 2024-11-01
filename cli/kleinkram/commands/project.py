@@ -15,14 +15,11 @@ from kleinkram.api.routes import get_projects_filtered
 from kleinkram.models import projects_to_table
 
 project = typer.Typer(
-    name="project",
-    help="Project operations",
-    no_args_is_help=True,
-    context_settings={"help_option_names": ["-h", "--help"]},
+    no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-@project.command("list", help="List all projects")
+@project.command("list")
 def list_projects(
     verbose: Annotated[bool, typer.Option()] = False,
 ) -> None:
@@ -43,8 +40,8 @@ def list_projects(
         console.print(table)
 
 
-@project.command("details", help="Get details of a project", no_args_is_help=True)
-def project_details(
+@project.command("details")
+def details(
     id: Annotated[str, typer.Argument(help="UUID of the project to get details of")],
     verbose: Annotated[bool, typer.Option()] = False,
 ):

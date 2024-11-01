@@ -5,15 +5,12 @@ from typing import Optional
 
 import typer
 
-missionCommands = typer.Typer(
-    name="mission",
-    help="Mission operations",
-    no_args_is_help=True,
-    context_settings={"help_option_names": ["-h", "--help"]},
+mission = typer.Typer(
+    no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-@missionCommands.command("tag")
+@mission.command()
 def tag(
     mission_id: str = typer.Argument(),
     tagtype_id: str = typer.Argument(),
@@ -22,8 +19,8 @@ def tag(
     raise NotImplementedError
 
 
-@missionCommands.command("list")
-def list_(
+@mission.command("list")
+def list_missions(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
     verbose: Optional[bool] = typer.Option(
         False, help="Outputs a table with more information"
@@ -32,7 +29,7 @@ def list_(
     raise NotImplementedError
 
 
-@missionCommands.command("info")
+@mission.command()
 def info(
     id: str = typer.Argument(),
     verbose: Optional[bool] = typer.Option(False, help="Outputs more information"),
@@ -40,7 +37,7 @@ def info(
     raise NotImplementedError
 
 
-@missionCommands.command("download")
+@mission.command()
 def download(
     id: List[str] = typer.Option(help="UUIDs of Mission to download"),
     path: str = typer.Option(),
@@ -53,7 +50,7 @@ def download(
     raise NotImplementedError
 
 
-@missionCommands.command("upload")
+@mission.command()
 def upload(
     path: List[str] = typer.Option(
         prompt=True, help="Path to files to upload, Regex supported"
