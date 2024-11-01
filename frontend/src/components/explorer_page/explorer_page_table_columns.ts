@@ -139,16 +139,18 @@ export const fileColumns: Array<ProjectColumnType> = [
         name: 'state',
         required: true,
         label: 'Health',
-        style: 'width: 10px',
+        style: 'width: 100px',
         align: 'center',
+        sortable: true,
     },
     {
-        name: 'name',
+        name: 'filename',
         required: true,
         label: 'File',
         align: 'left',
         field: (row: FileEntity) => row.filename,
         format: (val: string) => `${val}`,
+        sortable: true,
     },
     {
         name: 'cats',
@@ -157,15 +159,16 @@ export const fileColumns: Array<ProjectColumnType> = [
         align: 'right',
     },
     {
-        name: 'Created',
+        name: 'createdAt',
         required: true,
         label: 'Created',
         align: 'left',
         field: (row: FileEntity) => row.date,
         format: (val: string) => formatDate(new Date(val)),
+        sortable: true,
     },
     {
-        name: 'Size',
+        name: 'size',
         required: true,
         label: 'Size',
         align: 'left',
@@ -174,6 +177,7 @@ export const fileColumns: Array<ProjectColumnType> = [
         sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
             a.size - b.size,
         style: 'width: 40px',
+        sortable: true,
     },
     {
         name: 'fileaction',

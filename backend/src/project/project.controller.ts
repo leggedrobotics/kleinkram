@@ -21,7 +21,7 @@ import {
 import {
     QueryOptionalBoolean,
     QueryProjectSearchParam,
-    QueryProjectSortBy,
+    QuerySortBy,
     QuerySkip,
     QueryString,
     QueryTake,
@@ -62,7 +62,7 @@ export class ProjectController {
         user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QueryProjectSortBy('sortBy') sortBy?: string,
+        @QuerySortBy('sortBy') sortBy?: string,
         @QueryOptionalBoolean('descending') descending?: boolean,
         @QueryProjectSearchParam('searchParams')
         searchParams?: Map<string, string>,
