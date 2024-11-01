@@ -206,6 +206,7 @@ export const filesOfMission = async (
     categories?: string[],
     sort?: string,
     desc?: boolean,
+    health?: 'Healthy' | 'Unhealthy' | 'Uploading',
 ): Promise<[FileEntity[], number]> => {
     const params: Record<string, string | number | boolean> = {
         uuid: missionUUID,
@@ -214,6 +215,7 @@ export const filesOfMission = async (
     };
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
+    if (health) params['health'] = health;
     if (categories && categories.length > 0) params['categories'] = categories;
     if (sort) params['sort'] = sort;
     else params['sort'] = 'filename';

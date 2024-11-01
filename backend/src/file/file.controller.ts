@@ -153,6 +153,7 @@ export class FileController {
         @QueryOptionalStringArray('categories') categories: string[],
         @QuerySortBy('sort') sort: string,
         @QueryOptionalBoolean('desc') desc: boolean,
+        @QueryOptionalString('health') health: string,
     ) {
         return this.fileService.findByMission(
             uuid,
@@ -163,6 +164,7 @@ export class FileController {
             categories,
             sort,
             desc,
+            health,
         );
     }
 

@@ -536,6 +536,7 @@ export class FileService implements OnModuleInit {
         categories?: string[],
         sort?: string,
         desc?: boolean,
+        health?: string,
     ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = {
             mission: { uuid: missionUUID },
@@ -548,6 +549,21 @@ export class FileService implements OnModuleInit {
         }
         if (categories && categories.length > 0) {
             where.categories = { uuid: In(categories) };
+        }
+        switch (health) {
+            case 'Healthy':
+                where.state = In([FileState.OK, FileState.FOUND]);
+                break;
+            case 'Unhealthy':
+                where.state = In([
+                    FileState.ERROR,
+                    FileState.CONVERSION_ERROR,
+                    FileState.LOST,
+                    FileState.CORRUPTED,
+                ]);
+                break;
+            case 'Uploading':
+                where.state = FileState.UPLOADING;
         }
         const select = [
             'uuid',
