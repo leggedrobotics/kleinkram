@@ -199,7 +199,7 @@ export const QueryDate = createParamDecorator(
 );
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryProjectSortBy = createParamDecorator(
+export const QuerySortBy = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -214,8 +214,16 @@ export const QueryProjectSortBy = createParamDecorator(
             'name',
             'description',
             'creator',
+            'creator.name',
             'createdAt',
             'updatedAt',
+            'filename',
+            'state',
+            'size',
+            'file.date',
+            'file.createdAt',
+            'file.size',
+            'file.filename',
         ];
 
         if (!fields.includes(value)) {
@@ -224,7 +232,7 @@ export const QueryProjectSortBy = createParamDecorator(
 
         const object = plainToInstance(StringValidate, { value });
         await validateOrReject(object).catch(() => {
-            throw new BadRequestException('Parameter is not a valid Number');
+            throw new BadRequestException('Parameter is not a valid SortBy');
         });
 
         return value;

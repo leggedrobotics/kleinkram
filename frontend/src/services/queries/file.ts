@@ -70,6 +70,7 @@ export const fetchOverview = async (
                     file.creator.role,
                     file.creator.avatarUrl,
                     [],
+                    [],
                     new Date(file.creator.createdAt),
                     new Date(file.creator.updatedAt),
                 );
@@ -147,6 +148,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
             file.creator.role,
             file.creator.avatarUrl,
             [],
+            [],
             new Date(file.creator.createdAt),
             new Date(file.creator.updatedAt),
         );
@@ -202,8 +204,10 @@ export const filesOfMission = async (
     fileType?: FileType,
     filename?: string,
     categories?: string[],
+    sort?: string,
+    desc?: boolean,
 ): Promise<[FileEntity[], number]> => {
-    const params: Record<string, string | number> = {
+    const params: Record<string, string | number | boolean> = {
         uuid: missionUUID,
         take,
         skip,
@@ -211,6 +215,10 @@ export const filesOfMission = async (
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
     if (categories && categories.length > 0) params['categories'] = categories;
+    if (sort) params['sort'] = sort;
+    else params['sort'] = 'filename';
+    if (desc !== undefined) params['desc'] = desc;
+    else params['desc'] = false;
     const response = await axios.get('file/ofMission', {
         params,
     });
@@ -229,6 +237,7 @@ export const filesOfMission = async (
             data[0].mission.creator.email,
             data[0].mission.creator.role,
             data[0].mission.creator.avatarUrl,
+            [],
             [],
             new Date(data[0].mission.creator.createdAt),
             new Date(data[0].mission.creator.updatedAt),
@@ -265,6 +274,7 @@ export const filesOfMission = async (
                 file.creator.email,
                 file.creator.role,
                 file.creator.avatarUrl,
+                [],
                 [],
                 new Date(file.creator.createdAt),
                 new Date(file.creator.updatedAt),
@@ -311,6 +321,7 @@ export const findOneByNameAndMission = async (
         file.creator.email,
         file.creator.role,
         file.creator.avatarUrl,
+        [],
         [],
         new Date(file.creator.createdAt),
         new Date(file.creator.updatedAt),
