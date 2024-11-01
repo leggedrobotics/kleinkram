@@ -43,7 +43,7 @@ class User(NamedTuple):
     role: str
 
 
-class DataType(Enum, str):
+class DataType(str, Enum):
     LOCATION = "LOCATION"
     STRING = "STRING"
     LINK = "LINK"

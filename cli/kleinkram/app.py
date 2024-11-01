@@ -9,32 +9,20 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
 
 
-CLI_HELP = '''\
+CLI_HELP = """\
 Kleinkram CLI
 
 The Kleinkram CLI is a command line interface for Kleinkram.
-For a list of available commands, run 'klein --help' or visit \
+For a list of available commands, run `klein --help` or visit \
 https://docs.datasets.leggedrobotics.com/usage/cli/cli-getting-started.html \
 for more information.
-'''
+"""
 
 app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
     help=CLI_HELP,
 )
-
-
-@app.callback()
-def version() -> None:
-    vers = get_version()
-    typer.echo(f"kleinkram version {vers}")
-    raise typer.Exit()
-
-
-@app.callback()
-def verbose():
-    raise NotImplementedError
 
 
 @app.command()
@@ -65,3 +53,17 @@ def upload():
 @app.command()
 def download():
     raise NotImplementedError
+
+
+def _version_cb(value: bool) -> None:
+    if value:
+        typer.echo(get_version())
+        raise typer.Exit()
+
+
+@app.callback()
+def cli(
+    verbose: bool = typer.Option(True),
+    version: Optional[bool] = typer.Option(None, "--version", callback=_version_cb),
+):
+    pass
