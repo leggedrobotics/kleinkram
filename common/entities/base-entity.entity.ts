@@ -12,15 +12,28 @@ import {
  */
 @Entity()
 export default class BaseEntity {
+    /**
+     * Unique UUID for the entity
+     */
     @PrimaryGeneratedColumn('uuid')
     uuid: string;
 
+    /**
+     * Timestamp of when the entity was created
+     */
     @CreateDateColumn()
     createdAt: Date;
 
+    /**
+     * Timestamp of when the entity was last updated
+     */
     @UpdateDateColumn()
     updatedAt?: Date;
 
+    /**
+     * Timestamp of when the entity was deleted.
+     * This field is used to soft-delete entities.
+     */
     @DeleteDateColumn({ select: false })
     deletedAt?: Date;
 }
