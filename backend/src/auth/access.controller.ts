@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { AccessService } from './access.service';
 import {
     CanCreate,
@@ -6,6 +6,7 @@ import {
     CanReadProject,
     CanWriteProject,
     IsAccessGroupCreator,
+    IsAccessGroupCreatorByAccessGroupUser,
     IsAccessGroupCreatorByProjectAccess,
     UserOnly,
 } from './roles.decorator';
@@ -170,5 +171,14 @@ export class AccessController {
             rights,
             user,
         );
+    }
+
+    @Post('setExpireDate')
+    @IsAccessGroupCreatorByAccessGroupUser()
+    async setExpireDate(
+        @BodyUUID('aguUUID') aguUUID: string,
+        @Body('expireDate') expireDate: Date,
+    ) {
+        return this.accessService.setExpireDate(aguUUID, expireDate);
     }
 }

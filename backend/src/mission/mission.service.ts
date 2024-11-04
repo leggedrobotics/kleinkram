@@ -204,16 +204,7 @@ export class MissionService {
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')
                 .leftJoinAndSelect('mission.creator', 'creator')
-                .where('project.name = :name', { name: projectName })
-                .andWhere(
-                    new Brackets((qb) => {
-                        qb.where('projectUsers.uuid = :user', {
-                            user: userUUID,
-                        }).orWhere('missionUsers.uuid = :user', {
-                            user: userUUID,
-                        });
-                    }),
-                ),
+                .where('project.name = :name', { name: projectName }),
             userUUID,
         )
             .take(take)

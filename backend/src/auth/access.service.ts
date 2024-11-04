@@ -26,17 +26,23 @@ export class AccessService {
     ) {}
 
     async getAccessGroup(uuid: string) {
-        return this.accessGroupRepository.findOneOrFail({
-            where: { uuid },
-            relations: [
+        return this.accessGroupRepository
+            .createQueryBuilder('accessGroup')
+            .withDeleted()
+            .leftJoinAndSelect(
+                'accessGroup.accessGroupUsers',
                 'accessGroupUsers',
-                'accessGroupUsers.user',
+            )
+            .leftJoinAndSelect('accessGroupUsers.user', 'user')
+            .leftJoinAndSelect(
+                'accessGroup.project_accesses',
                 'project_accesses',
-                'project_accesses.project',
-                'project_accesses.project.creator',
-                'creator',
-            ],
-        });
+            )
+            .leftJoinAndSelect('project_accesses.project', 'project')
+            .leftJoinAndSelect('project.creator', 'projectCreator')
+            .leftJoinAndSelect('accessGroup.creator', 'creator')
+            .where('accessGroup.uuid = :uuid', { uuid })
+            .getOneOrFail();
     }
 
     async createAccessGroup(name: string, auth: AuthRes) {
@@ -172,19 +178,37 @@ export class AccessService {
                         AccessGroup,
                         {
                             where: { uuid: accessGroupUUID },
-                            relations: ['users'],
+                            relations: ['accessGroupUsers'],
                         },
                     );
+                const user = await transactionalEntityManager.findOneOrFail(
+                    User,
+                    {
+                        where: { uuid: userUUID },
+                    },
+                );
+                const agu = transactionalEntityManager.create(AccessGroupUser, {
+                    expirationDate: undefined,
+                });
+                await transactionalEntityManager.save(agu);
                 await transactionalEntityManager
                     .createQueryBuilder()
-                    .relation(AccessGroup, 'users')
+                    .relation(AccessGroup, 'accessGroupUsers')
                     .of(accessGroup)
-                    .add(userUUID);
+                    .add(agu);
+                await transactionalEntityManager
+                    .createQueryBuilder()
+                    .relation(User, 'accessGroupUsers')
+                    .of(user)
+                    .add(agu);
                 return await transactionalEntityManager.findOneOrFail(
                     AccessGroup,
                     {
                         where: { uuid: accessGroupUUID },
-                        relations: ['users'],
+                        relations: [
+                            'accessGroupUsers',
+                            'accessGroupUsers.user',
+                        ],
                     },
                 );
             },
@@ -379,5 +403,13 @@ export class AccessService {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
         });
+    }
+
+    async setExpireDate(uuid: string, expireDate: Date | null) {
+        const agu = await this.accessGroupUserRepository.findOneOrFail({
+            where: { uuid },
+        });
+        agu.expirationDate = expireDate;
+        return this.accessGroupUserRepository.save(agu);
     }
 }
