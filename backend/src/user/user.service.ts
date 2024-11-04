@@ -36,7 +36,11 @@ export class UserService implements OnModuleInit {
     async findOneByUUID(uuid: string) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
-            relations: ['accessGroups', 'account'],
+            relations: [
+                'accessGroupUsers',
+                'accessGroupUsers.accessGroup',
+                'account',
+            ],
         });
     }
 
@@ -59,7 +63,7 @@ export class UserService implements OnModuleInit {
     async me(auth: AuthRes) {
         return await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
-            relations: ['accessGroups'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
         });
     }
 
@@ -105,9 +109,9 @@ export class UserService implements OnModuleInit {
         let user = await this.userRepository.findOne({
             where: {
                 uuid: auth.user.uuid,
-                accessGroups: { inheriting: true },
+                accessGroupUsers: { accessGroup: { inheriting: true } },
             },
-            relations: ['accessGroups'],
+            relations: ['accessGroupUsers'],
         });
 
         if (!user) {
@@ -117,7 +121,7 @@ export class UserService implements OnModuleInit {
         }
 
         const role = user.role;
-        const defaultPermission = user.accessGroups?.length > 0 ? 10 : 0;
+        const defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;

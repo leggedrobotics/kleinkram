@@ -11,6 +11,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { CookieNames, Providers, UserRole } from '@common/enum';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -24,6 +25,8 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(AccessGroupUser)
+        private accessGroupUserRepository: Repository<AccessGroupUser>,
         private configService: ConfigService,
     ) {
         this.config = this.configService.get('accessConfig');
@@ -100,6 +103,7 @@ export class AuthService implements OnModuleInit {
             this.userRepository,
             this.accountRepository,
             this.accessGroupRepository,
+            this.accessGroupUserRepository,
             {
                 oauthID,
                 provider,
@@ -140,6 +144,7 @@ export const createNewUser = async (
     userRepository,
     accountRepository,
     accessGroupRepository,
+    accessGroupUserRepository,
     options: {
         oauthID: string;
         provider: Providers;
@@ -195,7 +200,15 @@ export const createNewUser = async (
         personal: true,
     });
     await accessGroupRepository.save(personalGroup);
-    user.accessGroups = [personalGroup];
+
+    const personalAccessGroupUser = accessGroupUserRepository.create({
+        user: { uuid: savedUser.uuid },
+        accessGroup: { uuid: personalGroup.uuid },
+        expirationDate: null,
+    });
+    await accessGroupUserRepository.save(personalAccessGroupUser);
+
+    user.accessGroupUsers = [personalAccessGroupUser];
 
     config.emails?.forEach((_config) => {
         if (user.email.endsWith(_config.email)) {
@@ -204,7 +217,16 @@ export const createNewUser = async (
                     where: { uuid },
                 });
                 if (group) {
-                    user.accessGroups.push(group);
+                    const institutionalAccessGroupUser =
+                        accessGroupUserRepository.create({
+                            user: { uuid: savedUser.uuid },
+                            accessGroup: { uuid: group.uuid },
+                            expirationDate: null,
+                        });
+                    await accessGroupUserRepository.save(
+                        institutionalAccessGroupUser,
+                    );
+                    user.accessGroupUsers.push(institutionalAccessGroupUser);
                 }
             });
         }

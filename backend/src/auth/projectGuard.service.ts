@@ -76,8 +76,9 @@ export class ProjectGuardService {
 
         return this.accessGroupRepository
             .createQueryBuilder('access_group')
-            .leftJoin('access_group.users', 'users')
-            .andWhere('users.uuid = :user', { user: user.uuid })
+            .leftJoin('access_group.accessGroupUsers', 'accessGroupUsers')
+            .leftJoin('accessGroupUsers.user', 'user')
+            .andWhere('user.uuid = :user', { user: user.uuid })
             .andWhere('access_group.personal = false')
             .andWhere('access_group.inheriting = true')
             .getExists();
