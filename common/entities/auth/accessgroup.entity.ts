@@ -1,11 +1,4 @@
-import {
-    Column,
-    Entity,
-    JoinTable,
-    ManyToMany,
-    ManyToOne,
-    OneToMany,
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
 import ProjectAccess from './project_access.entity';

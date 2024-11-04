@@ -1,14 +1,6 @@
-import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToMany,
-    OneToMany,
-    OneToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Account from '../auth/account.entity';
-import AccessGroup from '../auth/accessgroup.entity';
 import Project from '../project/project.entity';
 import Mission from '../mission/mission.entity';
 import QueueEntity from '../queue/queue.entity';
