@@ -128,6 +128,9 @@ export class ProjectService {
     async getRecentProjects(take: number, user: User): Promise<Project[]> {
         let res;
         if (user.role === UserRole.ADMIN) {
+            // Get all Projects and add the computed field latestUpdate
+            // LatestUpdate is computed in the subquery by selecting the latest updatedAt of the project, missions and files
+            // This is implemented in SQL as TypeORM does not support sorting by a computed field...
             res = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
                     '    "project"."uuid" AS "project_uuid",\n' +
