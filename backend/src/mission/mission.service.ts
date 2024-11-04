@@ -278,6 +278,7 @@ export class MissionService {
                     getBucketFromFileType(file.type),
                     file.uuid,
                     {
+                        filename: file.filename,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         mission_uuid: missionUUID,
                         // eslint-disable-next-line @typescript-eslint/naming-convention

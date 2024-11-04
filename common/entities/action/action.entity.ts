@@ -16,8 +16,7 @@ export type ContainerLog = {
 
 export type Image = {
     sha: string | null;
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    repo_digests: string[] | null;
+    repoDigests: string[] | null;
 };
 
 export type Container = {

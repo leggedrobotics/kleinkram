@@ -106,6 +106,7 @@ props.handler.setSort('createdAt');
 props.handler.setDescending(true);
 const actionKey = computed(() => [
     'action_mission',
+    props.handler.projectUuid,
     props.handler.missionUuid,
     props.handler.queryKey,
 ]);

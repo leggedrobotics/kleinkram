@@ -1,5 +1,6 @@
 import axios from 'src/api/axios';
 import { ActionTemplate } from 'src/types/ActionTemplate';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
@@ -27,8 +28,8 @@ export const createActionTemplate = async (template: {
     maxRuntime: number;
     searchable: boolean;
     entrypoint: string;
+    accessRights: AccessGroupRights;
 }) => {
-    console.log(template);
     const response = await axios.post('/action/createTemplate', {
         name: template.name,
         command: template.command,
@@ -39,6 +40,7 @@ export const createActionTemplate = async (template: {
         maxRuntime: template.maxRuntime,
         searchable: template.searchable,
         entrypoint: template.entrypoint,
+        accessRights: template.accessRights,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -46,7 +48,7 @@ export const createActionTemplate = async (template: {
         res.createdAt,
         res.updatedAt,
         res.image_name,
-        undefined,
+        null,
         res.name,
         res.version,
         res.command,
@@ -55,6 +57,7 @@ export const createActionTemplate = async (template: {
         res.gpuMemory,
         res.maxRuntime,
         res.entrypoint,
+        res.accessRights,
     );
 };
 
@@ -69,6 +72,7 @@ export const createNewActionTemplateVersion = async (template: {
     maxRuntime: number;
     searchable: boolean;
     entrypoint: string;
+    accessRights: AccessGroupRights;
 }) => {
     const response = await axios.post('/action/createNewVersion', {
         uuid: template.uuid,
@@ -81,6 +85,7 @@ export const createNewActionTemplateVersion = async (template: {
         maxRuntime: template.maxRuntime,
         searchable: template.searchable,
         entrypoint: template.entrypoint,
+        accessRights: template.accessRights,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -88,7 +93,7 @@ export const createNewActionTemplateVersion = async (template: {
         res.createdAt,
         res.updatedAt,
         res.image_name,
-        undefined,
+        null,
         res.name,
         res.version,
         res.command,
@@ -97,5 +102,6 @@ export const createNewActionTemplateVersion = async (template: {
         res.gpuMemory,
         res.maxRuntime,
         res.entrypoint,
+        res.accessRights,
     );
 };

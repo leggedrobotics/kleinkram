@@ -157,6 +157,47 @@
                 </template>
             </Suspense>
             <ButtonGroup>
+                <q-select
+                    v-model="selectedFileHealth"
+                    dense
+                    clearable
+                    :options="fileHealthOptions"
+                    @clear="selectedFileHealth = undefined"
+                    style="min-width: 120px"
+                    label="File Health"
+                >
+                    <template v-slot:selected-item="props">
+                        <q-chip
+                            v-if="props.opt"
+                            :color="fileHealthColor(props.opt)"
+                            :style="`color: ${fileHealthTextColor(props.opt)}; font-size: smaller`"
+                        >
+                            {{ props.opt }}
+                        </q-chip>
+                    </template>
+                    <template v-slot:option="props">
+                        <q-item
+                            clickable
+                            v-ripple
+                            v-bind="props.itemProps"
+                            @click="props.toggleOption(props.opt)"
+                            dense
+                        >
+                            <q-item-section>
+                                <div>
+                                    <q-chip
+                                        dense
+                                        :color="fileHealthColor(props.opt)"
+                                        :style="`color: ${fileHealthTextColor(props.opt)}`"
+                                        class="full-width"
+                                    >
+                                        {{ props.opt }}
+                                    </q-chip>
+                                </div>
+                            </q-item-section>
+                        </q-item>
+                    </template>
+                </q-select>
                 <CategorySelector
                     :selected="selectedCategories"
                     :project_uuid="project_uuid"
@@ -349,7 +390,10 @@ const mission_uuid = useMissionUUID();
 const search = computed({
     get: () => handler.value.searchParams.name,
     set: (value: string) => {
-        handler.value.setSearch({ name: value });
+        handler.value.setSearch({
+            name: value,
+            health: selectedFileHealth.value,
+        });
     },
 });
 const fileTypeFilter = ref([
@@ -362,7 +406,14 @@ const selectedFileTypes = computed(() => {
         .map((item) => item.name)
         .join(' & ');
 });
+const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
+const selectedFileHealth = computed({
+    get: () => handler.value.searchParams.health,
+    set: (value: string) => {
+        handler.value.setSearch({ health: value, name: search.value });
+    },
+});
 const filter: Ref<string> = ref('');
 
 const selectedFiles: Ref<FileEntity[]> = ref([]);
@@ -412,19 +463,6 @@ registerNoPermissionErrorHandler(
     mission_uuid,
     'mission',
     error,
-);
-
-const queryKey = computed(() => [
-    'categories',
-    project_uuid.value,
-    filter.value,
-]);
-const { data: _categories } = useQuery<[Category[], number]>({
-    queryKey: queryKey,
-    queryFn: () => getCategories(project_uuid.value, filter.value),
-});
-const categories: Ref<Category[]> = computed(() =>
-    _categories.value ? _categories.value[0] : [],
 );
 
 const { data: _all_categories } = useQuery<[Category[], number]>({
@@ -526,5 +564,30 @@ async function downloadCallback() {
 
 function updateSelected(value: Category[]) {
     selectedCategories.value = value;
+}
+
+function fileHealthColor(health: string) {
+    switch (health) {
+        case 'Healthy':
+            return 'positive';
+        case 'Uploading':
+            return 'warning';
+        case 'Unhealthy':
+            return 'negative';
+        default:
+            return 'grey';
+    }
+}
+function fileHealthTextColor(health: string) {
+    switch (health) {
+        case 'Healthy':
+            return 'white';
+        case 'Uploading':
+            return 'black';
+        case 'Unhealthy':
+            return 'white';
+        default:
+            return 'black';
+    }
 }
 </script>

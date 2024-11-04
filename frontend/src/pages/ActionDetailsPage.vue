@@ -49,7 +49,7 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ action?.image.repo_digests[0] }}
+                                {{ action?.image?.repoDigests?.[0] }}
                             </td>
                         </tr>
                         <tr>
@@ -90,6 +90,16 @@
                             </td>
                         </tr>
                         <tr>
+                            <td class="q-table__cell">Access Rights</td>
+                            <td class="q-table__cell">
+                                {{
+                                    accessGroupRightsMap[
+                                        action?.template.accessRights
+                                    ]
+                                }}
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="q-table__cell">Submitted At:</td>
                             <td class="q-table__cell">
                                 {{
@@ -127,23 +137,27 @@
                                 {{ action?.getRuntimeInMS() / 1000 }} seconds
                             </td>
                         </tr>
-                        <td class="q-table__cell">Hardware Requirements:</td>
-                        <td class="q-table__cell">
-                            <div v-if="action?.template">
-                                Cores: {{ action?.template.cpuCores }}<br />
-                                RAM:
-                                {{ action?.template.cpuMemory }} GB<br />
-                                min vRAM:
-                                <template v-if="data?.template.gpuMemory >= 0">
-                                    {{ action?.template.gpuMemory }} GB
-                                </template>
-                                <template v-else>no GPU requested</template>
-                                <br />
-                            </div>
-                            <div v-else>N/A</div>
-                        </td>
-
-                        <tr></tr>
+                        <tr>
+                            <td class="q-table__cell">
+                                Hardware Requirements:
+                            </td>
+                            <td class="q-table__cell">
+                                <div v-if="action?.template">
+                                    Cores: {{ action?.template.cpuCores }}<br />
+                                    RAM:
+                                    {{ action?.template.cpuMemory }} GB<br />
+                                    min vRAM:
+                                    <template
+                                        v-if="action?.template.gpuMemory >= 0"
+                                    >
+                                        {{ action?.template.gpuMemory }} GB
+                                    </template>
+                                    <template v-else>no GPU requested</template>
+                                    <br />
+                                </div>
+                                <div v-else>N/A</div>
+                            </td>
+                        </tr>
 
                         <tr>
                             <td class="q-table__cell">Artifact Files:</td>
@@ -209,7 +223,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #525252"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
@@ -229,7 +245,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #fd7c7cff"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
@@ -304,6 +322,7 @@ import { computed, ComputedRef, Ref, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 import { formatDate, parseDate } from '../services/dateFormating';
+import { accessGroupRightsMap } from 'src/services/generic';
 
 const tab = ref('info');
 

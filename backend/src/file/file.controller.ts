@@ -33,6 +33,7 @@ import {
     QueryOptionalStringArray,
     QueryOptionalUUID,
     QuerySkip,
+    QuerySortBy,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -93,7 +94,7 @@ export class FileController {
         @QueryOptionalString('tags') tags: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QueryOptionalString('sort') sort: string,
+        @QuerySortBy('sort') sort: string,
         @QueryOptionalBoolean('desc') desc: boolean,
         @addUser() auth: AuthRes,
     ) {
@@ -150,6 +151,9 @@ export class FileController {
         @QueryOptionalString('filename') filename: string,
         @QueryOptionalString('fileType') fileType: FileType,
         @QueryOptionalStringArray('categories') categories: string[],
+        @QuerySortBy('sort') sort: string,
+        @QueryOptionalBoolean('desc') desc: boolean,
+        @QueryOptionalString('health') health: string,
     ) {
         return this.fileService.findByMission(
             uuid,
@@ -158,6 +162,9 @@ export class FileController {
             filename,
             fileType,
             categories,
+            sort,
+            desc,
+            health,
         );
     }
 

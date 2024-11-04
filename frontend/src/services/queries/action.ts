@@ -60,6 +60,7 @@ export const getActions = async (
             res.template.gpuMemory,
             res.template.maxRuntime,
             res.template.entrypoint,
+            res.template.accessRights,
         );
 
         const mission = new Mission(
@@ -123,6 +124,7 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.createdBy.role,
         response.data.createdBy.avatarUrl,
         [],
+        [],
         response.data.createdBy.createdAt,
         response.data.createdBy.updatedAt,
     );
@@ -131,7 +133,7 @@ export const actionDetails = async (actionUuid: string) => {
         new Date(response.data.template.createdAt),
         new Date(response.data.template.updatedAt),
         response.data.template.image_name,
-        undefined,
+        null,
         response.data.template.name,
         response.data.template.version,
         response.data.template.command,
@@ -140,6 +142,7 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.template.gpuMemory,
         response.data.template.maxRuntime,
         response.data.template.entrypoint,
+        response.data.template.accessRights,
     );
     try {
         let worker = null;
@@ -184,9 +187,8 @@ export const actionDetails = async (actionUuid: string) => {
 };
 
 export const listActionTemplates = async (search: string) => {
-    const params = {};
+    const params: Record<string, string> = {};
     if (search) {
-        console.log('search', search);
         params['search'] = search;
     }
     const response = await axios.get('/action/listTemplates', {
@@ -199,6 +201,7 @@ export const listActionTemplates = async (search: string) => {
             res.createdBy.email,
             res.createdBy.role,
             res.createdBy.avatarUrl,
+            [],
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
@@ -217,6 +220,7 @@ export const listActionTemplates = async (search: string) => {
             res.gpuMemory,
             res.maxRuntime,
             res.entrypoint,
+            res.accessRights,
         );
     });
 };
@@ -232,6 +236,7 @@ export const getRunningActions = async () => {
             res.createdBy.email,
             res.createdBy.role,
             res.createdBy.avatarUrl,
+            [],
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
@@ -250,6 +255,7 @@ export const getRunningActions = async () => {
             res.template.gpuMemory,
             res.template.maxRuntime,
             res.template.entrypoint,
+            res.template.accessRights,
         );
         const mission = new Mission(
             res.mission.uuid,

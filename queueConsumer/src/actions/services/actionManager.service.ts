@@ -6,12 +6,7 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import {
-    AccessGroupRights,
-    ActionState,
-    ArtifactState,
-    KeyTypes,
-} from '@common/enum';
+import { ActionState, ArtifactState, KeyTypes } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
@@ -47,7 +42,7 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
-            rights: AccessGroupRights.WRITE, // todo read from frontend
+            rights: action.template.accessRights,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.CONTAINER,
             action: action,
@@ -114,8 +109,7 @@ export class ActionManagerService {
                 );
 
             // capture runner information
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            action.image = { repo_digests: repoDigests, sha };
+            action.image = { repoDigests: repoDigests, sha };
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 

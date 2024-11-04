@@ -7,8 +7,8 @@ import {
 } from './entities/submit_action.dto';
 import {
     CanCreate,
+    CanCreateAction,
     CanCreateActions,
-    CanCreateInMissionByBody,
     CanReadAction,
     LoggedIn,
     UserOnly,
@@ -31,7 +31,7 @@ export class ActionController {
     constructor(private readonly actionService: ActionService) {}
 
     @Post('submit')
-    @CanCreateInMissionByBody()
+    @CanCreateAction()
     async createActionRun(
         @Body() dto: SubmitAction,
         @addUser() user: AuthRes,
