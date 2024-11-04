@@ -19,6 +19,7 @@ import Action from '../action/action.entity';
 import ActionTemplate from '../action/actionTemplate.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
+import AccessGroupUser from '../auth/accessgroup_user.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -64,8 +65,8 @@ export default class User extends BaseEntity {
     @JoinColumn({ name: 'account_uuid' })
     account: Account;
 
-    @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.users)
-    accessGroups: AccessGroup[];
+    @OneToMany(() => AccessGroupUser, (accessGroupUser) => accessGroupUser.user)
+    accessGroupUsers: AccessGroupUser[];
 
     @OneToMany(() => Project, (project) => project.creator)
     projects: Project[];

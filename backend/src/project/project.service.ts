@@ -61,11 +61,12 @@ export class ProjectService {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-                .leftJoin('accessGroup.users', 'users')
+                .leftJoin('accessGroup.accessGroupUsers', 'accessGroupUsers')
+                .leftJoin('accessGroupUsers.user', 'user')
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
                 })
-                .andWhere('users.uuid = :uuid', { uuid: auth.user.uuid });
+                .andWhere('user.uuid = :uuid', { uuid: auth.user.uuid });
         }
 
         // add sorting
@@ -114,7 +115,11 @@ export class ProjectService {
             .leftJoinAndSelect('project.requiredTags', 'requiredTags')
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
-            .leftJoinAndSelect('accessGroup.users', 'users')
+            .leftJoinAndSelect(
+                'accessGroup.accessGroupUsers',
+                'accessGroupUsers',
+            )
+            .leftJoinAndSelect('accessGroupUsers.user', 'user')
             .getOne();
     }
 
@@ -220,37 +225,12 @@ export class ProjectService {
                     'FROM\n' +
                     '   "project" "project" \n' +
                     '   LEFT JOIN\n' +
-                    '      "project_access" "projectAccesses" \n' +
-                    '      ON "projectAccesses"."projectUuid" = "project"."uuid" \n' +
-                    '      AND \n' +
-                    '      (\n' +
-                    '         "projectAccesses"."deletedAt" IS NULL\n' +
-                    '      )\n' +
-                    '   LEFT JOIN\n' +
-                    '      "access_group" "accessGroup" \n' +
-                    '      ON "accessGroup"."uuid" = "projectAccesses"."accessGroupUuid" \n' +
-                    '      AND \n' +
-                    '      (\n' +
-                    '         "accessGroup"."deletedAt" IS NULL\n' +
-                    '      )\n' +
-                    '   LEFT JOIN\n' +
-                    '      "access_group_users_user" "accessGroup_users" \n' +
-                    '      ON "accessGroup_users"."accessGroupUuid" = "accessGroup"."uuid" \n' +
-                    '   LEFT JOIN\n' +
-                    '      "user" "users" \n' +
-                    '      ON "users"."uuid" = "accessGroup_users"."userUuid" \n' +
-                    '      AND \n' +
-                    '      (\n' +
-                    '         "users"."deletedAt" IS NULL\n' +
-                    '      )\n' +
+                    '      "project_access_view_entity" "projectAccessView" \n' +
+                    '      ON "projectAccessView"."projectuuid" = "project"."uuid" \n' +
                     'WHERE\n' +
                     '   (\n' +
-                    '      "projectAccesses"."rights" >= $1 \n' +
-                    '      AND "users"."uuid" = $2 \n' +
-                    '   )\n' +
-                    '   AND \n' +
-                    '   (\n' +
-                    '      "project"."deletedAt" IS NULL \n' +
+                    '      "projectAccessView"."rights" >= $1 \n' +
+                    '      AND "projectAccessView"."useruuid" = $2 \n' +
                     '   )\n',
                 [AccessGroupRights.READ, user.uuid],
             );
@@ -286,8 +266,14 @@ export class ProjectService {
             );
         }
         const creator = await this.userservice.findOneByUUID(auth.user.uuid);
-        const accessGroupsDefault = creator.accessGroups.filter(
-            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
+        const accessGroupUsersDefault = creator.accessGroupUsers.filter(
+            (accessGroupUser) =>
+                accessGroupUser.accessGroup.personal ||
+                accessGroupUser.accessGroup.inheriting,
+        );
+
+        const defaultAccessGroups = accessGroupUsersDefault.map(
+            (ag) => ag.accessGroup,
         );
 
         if (!project.requiredTags) {
@@ -308,7 +294,7 @@ export class ProjectService {
             requiredTags: tagTypes,
         });
 
-        const accessGroupsDefaultIds = accessGroupsDefault.map((ag) => ag.uuid);
+        const accessGroupsDefaultIds = defaultAccessGroups.map((ag) => ag.uuid);
 
         let deduplicatedAccessGroups = [];
         if (project.accessGroups) {
@@ -325,7 +311,7 @@ export class ProjectService {
                 const savedProject = await manager.save(Project, newProject);
                 await this.createDefaultAccessGroups(
                     manager,
-                    accessGroupsDefault,
+                    defaultAccessGroups,
                     savedProject,
                 );
 
@@ -468,11 +454,13 @@ export class ProjectService {
                     accessGroupDB =
                         await this.accessGroupRepository.findOneOrFail({
                             where: {
-                                users: [
-                                    {
-                                        uuid: accessGroup.userUUID,
-                                    },
-                                ],
+                                accessGroupUsers: {
+                                    user: [
+                                        {
+                                            uuid: accessGroup.userUUID,
+                                        },
+                                    ],
+                                },
                                 personal: true,
                             },
                         });
@@ -493,9 +481,11 @@ export class ProjectService {
 
     async getDefaultRights(auth: AuthRes) {
         const creator = await this.userservice.findOneByUUID(auth.user.uuid);
-        const rights = creator.accessGroups.filter(
-            (accessGroup) => accessGroup.personal || accessGroup.inheriting,
-        );
+        const rights = creator.accessGroupUsers
+            .map((agu) => agu.accessGroup)
+            .filter(
+                (accessGroup) => accessGroup.personal || accessGroup.inheriting,
+            );
         return rights.map((right) => {
             const name = right.name;
             const accessGroupUUID = right.uuid;
