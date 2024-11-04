@@ -165,9 +165,7 @@ export const getDefaultAccessGroups = async (): Promise<AccessGroup[]> => {
 export const recentProjects = async (take: number): Promise<Project[]> => {
     const response = await axios.get('/project/recent', { params: { take } });
     try {
-        console.log(response.data);
         return response.data.map((project: any) => {
-            console.log(project);
             return new Project(
                 project.uuid,
                 project.name,
