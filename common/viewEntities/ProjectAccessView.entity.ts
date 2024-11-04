@@ -9,7 +9,8 @@ import Project from '../entities/project/project.entity';
             .from(Project, 'project')
             .innerJoin('project.project_accesses', 'projectAccesses')
             .innerJoin('projectAccesses.accessGroup', 'accessGroup')
-            .innerJoin('accessGroup.users', 'users')
+            .innerJoin('accessGroup.accessGroupUsers', 'accessGroupUsers')
+            .innerJoin('accessGroupUsers.user', 'users')
             .select([
                 'project.uuid as projectUUID',
                 'users.uuid as userUUID',

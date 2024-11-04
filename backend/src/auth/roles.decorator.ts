@@ -29,6 +29,7 @@ import {
     CreateInProjectByBodyGuard,
     UserGuard,
     MoveFilesGuard,
+    CreateActionGuard,
 } from './roles.guard';
 
 // disable naming-convention rule for enum.ts
@@ -196,7 +197,12 @@ export function CanReadAction() {
         UseGuards(ReadActionGuard),
     );
 }
-
+export function CanCreateAction() {
+    return applyDecorators(
+        SetMetadata('CanCreateActions', true),
+        UseGuards(CreateActionGuard),
+    );
+}
 export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),

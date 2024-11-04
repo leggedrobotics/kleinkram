@@ -21,8 +21,8 @@ import {
 import {
     QueryOptionalBoolean,
     QueryProjectSearchParam,
-    QueryProjectSortBy,
     QuerySkip,
+    QuerySortBy,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -62,7 +62,7 @@ export class ProjectController {
         user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QueryProjectSortBy('sortBy') sortBy?: string,
+        @QuerySortBy('sortBy') sortBy?: string,
         @QueryOptionalBoolean('descending') descending?: boolean,
         @QueryProjectSearchParam('searchParams')
         searchParams?: Map<string, string>,
@@ -75,6 +75,15 @@ export class ProjectController {
             descending,
             searchParams,
         );
+    }
+
+    @Get('recent')
+    @UserOnly()
+    async getRecentProjects(
+        @QueryTake('take') take: number,
+        @addUser() user: AuthRes,
+    ): Promise<Project[]> {
+        return this.projectService.getRecentProjects(take, user.user);
     }
 
     @Get('one')

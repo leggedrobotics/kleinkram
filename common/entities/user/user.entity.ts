@@ -1,14 +1,6 @@
-import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToMany,
-    OneToMany,
-    OneToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Account from '../auth/account.entity';
-import AccessGroup from '../auth/accessgroup.entity';
 import Project from '../project/project.entity';
 import Mission from '../mission/mission.entity';
 import QueueEntity from '../queue/queue.entity';
@@ -19,18 +11,45 @@ import Action from '../action/action.entity';
 import ActionTemplate from '../action/actionTemplate.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
+import AccessGroupUser from '../auth/accessgroup_user.entity';
 
 @Entity()
 export default class User extends BaseEntity {
+    /**
+     * The name of the user. This is the name that will be displayed in the UI.
+     * The name gets automatically extracted from the oauth provider.
+     *
+     * @example 'John Doe'
+     */
     @Column()
     name: string;
 
+    /**
+     * The email of the user. This is the email that will be displayed in the UI.
+     * The email gets automatically extracted from the oauth provider.
+     *
+     * @example 'john.doe@example.com'
+     */
     @Column({ unique: true })
     email: string;
 
+    /**
+     * The role of the user. The role determines what the user can do in the application.
+     *
+     * @example 'USER'
+     *
+     * @see UserRole
+     *
+     */
     @Column()
     role: UserRole;
 
+    /**
+     * The avatar url of the user. This is the url of the avatar that will be displayed in the UI.
+     * The avatar url gets automatically extracted from the oauth provider.
+     *
+     * @example 'https://example.com/avatar.jpg'
+     */
     @Column({ nullable: true })
     avatarUrl: string;
 
@@ -38,8 +57,8 @@ export default class User extends BaseEntity {
     @JoinColumn({ name: 'account_uuid' })
     account: Account;
 
-    @ManyToMany(() => AccessGroup, (accessGroup) => accessGroup.users)
-    accessGroups: AccessGroup[];
+    @OneToMany(() => AccessGroupUser, (accessGroupUser) => accessGroupUser.user)
+    accessGroupUsers: AccessGroupUser[];
 
     @OneToMany(() => Project, (project) => project.creator)
     projects: Project[];

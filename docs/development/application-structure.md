@@ -6,8 +6,8 @@ This page describes the structure of the application and how it is organized.
 
 The application is composed of multiple Docker containers (services), categorized into two primary groups:
 
--   [**operational containers**](#operational-containers): responsible for running the application
--   [**non-operational** containers](#non-operational-containers): responsible for monitoring, logging, and documentation.
+-   [**core containers**](#core-containers): responsible for running the application
+-   [**helper** containers](#helper-containers): responsible for monitoring, logging, and documentation.
 
 ::: tip Application Structure
 The application code is stored inside a monorepo.
@@ -16,7 +16,7 @@ Each service is responsible for a specific part of the application and is bundle
 are orchestrated by [Docker Compose](https://docs.docker.com/compose/).
 :::
 
-### Operational Containers
+### Core Containers
 
 The operational containers are again split into publicly accessible and non-publicly accessible containers.
 
@@ -33,7 +33,7 @@ The operational containers are again split into publicly accessible and non-publ
 -   [redis](application-structure/redis.md) - Database to manage the Queue
 -   `action containers` - custom containers scheduled by the `queue-processor` to perform user specific actions
 
-## Non-Operational Containers:
+## Helper Containers:
 
 -   [docs](application-structure/docs.md) - this documentation, built using VitePress
 -   [prometheus](application-structure/prometheus.md) - monitoring (for time series data)
@@ -45,6 +45,6 @@ The operational containers are again split into publicly accessible and non-publ
 
 ![Infrastructure.jpg](imgs/infrastructure.svg)
 
-::: warning How to Edit the Figure
+::: details How to Edit the Figure
 The above figure can be edited using https://drive.google.com/file/d/1w4JAuPfGMLiISAmuAbiq0NbgInp4VGlP/view?ts=6666d313
 :::

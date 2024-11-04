@@ -8,6 +8,10 @@ import CategoryEntity from '../category/category.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
+    /**
+     * The name of the project. This is the name that will be displayed in the UI.
+     * The name must be globally unique.
+     */
     @Column({ unique: true })
     name: string;
 

@@ -7,7 +7,15 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, In, MoreThan, Repository } from 'typeorm';
+import {
+    Brackets,
+    DataSource,
+    FindOptionsSelectByString,
+    ILike,
+    In,
+    MoreThan,
+    Repository,
+} from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -526,6 +534,9 @@ export class FileService implements OnModuleInit {
         filename?: string,
         fileType?: FileType,
         categories?: string[],
+        sort?: string,
+        desc?: boolean,
+        health?: string,
     ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = {
             mission: { uuid: missionUUID },
@@ -539,12 +550,31 @@ export class FileService implements OnModuleInit {
         if (categories && categories.length > 0) {
             where.categories = { uuid: In(categories) };
         }
+        switch (health) {
+            case 'Healthy':
+                where.state = In([FileState.OK, FileState.FOUND]);
+                break;
+            case 'Unhealthy':
+                where.state = In([
+                    FileState.ERROR,
+                    FileState.CONVERSION_ERROR,
+                    FileState.LOST,
+                    FileState.CORRUPTED,
+                ]);
+                break;
+            case 'Uploading':
+                where.state = FileState.UPLOADING;
+        }
+        const select = [
+            'uuid',
+            `${sort}`,
+        ] as FindOptionsSelectByString<FileEntity>;
         const [resUUIDs, count] = await this.fileRepository.findAndCount({
-            select: ['uuid', 'filename'],
+            select,
             where,
             take,
             skip,
-            order: { filename: 'ASC' },
+            order: { [sort]: desc ? 'DESC' : 'ASC' },
         });
         if (resUUIDs.length === 0) {
             return [[], count];
@@ -562,7 +592,7 @@ export class FileService implements OnModuleInit {
                 'mission.creator',
                 'creator',
             ],
-            order: { filename: 'ASC' },
+            order: { [sort]: desc ? 'DESC' : 'ASC' },
         });
         return [files, count];
     }

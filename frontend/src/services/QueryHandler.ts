@@ -291,8 +291,12 @@ export class QueryURLHandler extends QueryHandler {
         if (route.query.mission_uuid)
             this.missionUuid = route.query.mission_uuid as string;
         else this.missionUuid = undefined;
-        if (route.query.name)
-            this.searchParams = { name: route.query.name as string };
+
+        const searchParams = {} as Record<string, string>;
+        if (route.query.name) searchParams['name'] = route.query.name as string;
+        if (route.query.health)
+            searchParams['health'] = route.query.health as string;
+        if (searchParams) this.searchParams = searchParams;
         else this.searchParams = DEFAULT_SEARCH;
         if (route.query.file_type)
             this.fileType = route.query.file_type as FileType;
@@ -333,7 +337,7 @@ export class QueryURLHandler extends QueryHandler {
             project_uuid: this.projectUuid || undefined,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             mission_uuid: this.missionUuid || undefined,
-            name: this.searchParams.name || undefined,
+            ...this.searchParams,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             file_type:
                 !!this.fileType && this.fileType !== FileType.ALL

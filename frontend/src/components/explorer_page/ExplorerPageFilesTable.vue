@@ -158,6 +158,10 @@ const props = defineProps({
     },
 });
 
+if (props.url_handler?.sortBy === 'name') {
+    props.url_handler.setSort('filename');
+}
+
 function setPagination(update: TableRequest) {
     props.url_handler.setPage(update.pagination.page);
     props.url_handler.setTake(update.pagination.rowsPerPage);
@@ -171,7 +175,7 @@ const pagination = computed(() => {
         rowsPerPage: props.url_handler.take,
         rowsNumber: props.url_handler.rowsNumber,
         sortBy: props.url_handler.sortBy,
-        descending: false,
+        descending: props.url_handler.descending,
     };
 });
 
@@ -194,6 +198,9 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler.fileType,
             props.url_handler.searchParams.name,
             props.url_handler?.categories,
+            props.url_handler.sortBy,
+            props.url_handler.descending,
+            props.url_handler.searchParams.health,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
