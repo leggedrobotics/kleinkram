@@ -125,6 +125,154 @@ export class ProjectService {
         });
     }
 
+    async getRecentProjects(take: number, user: User): Promise<Project[]> {
+        let res;
+        if (user.role === UserRole.ADMIN) {
+            res = await this.projectRepository.query(
+                'SELECT DISTINCT\n' +
+                    '    "project"."uuid" AS "project_uuid",\n' +
+                    '    "project"."createdAt" AS "project_createdAt",\n' +
+                    '    "project"."updatedAt" AS "project_updatedAt",\n' +
+                    '    "project"."name" AS "project_name",\n' +
+                    '    "project"."description" AS "project_description",\n' +
+                    '    "project"."creatorUuid" AS "project_creatorUuid",\n' +
+                    '    (\n' +
+                    '        SELECT\n' +
+                    '            GREATEST(  MAX("project2"."updatedAt"),  MAX("missions2"."updatedAt"),  MAX("files2"."updatedAt")  ) AS "latestUpdate"\n' +
+                    '        FROM\n' +
+                    '            "project" "project2"\n' +
+                    '                LEFT JOIN\n' +
+                    '            "mission" "missions2"\n' +
+                    '            ON "missions2"."projectUuid" = "project2"."uuid"\n' +
+                    '                AND\n' +
+                    '               (\n' +
+                    '                   "missions2"."deletedAt" IS NULL\n' +
+                    '                   )\n' +
+                    '                LEFT JOIN\n' +
+                    '            "file_entity" "files2"\n' +
+                    '            ON "files2"."missionUuid" = "missions2"."uuid"\n' +
+                    '                AND\n' +
+                    '               (\n' +
+                    '                   "files2"."deletedAt" IS NULL\n' +
+                    '                   )\n' +
+                    '        WHERE\n' +
+                    '            (\n' +
+                    '                "project2"."uuid" = "project"."uuid"\n' +
+                    '                )\n' +
+                    '          AND\n' +
+                    '            (\n' +
+                    '                "project2"."deletedAt" IS NULL\n' +
+                    '                )\n' +
+                    '    )\n' +
+                    '        AS "latestUpdate"\n' +
+                    'FROM\n' +
+                    '    "project" "project"\n' +
+                    '        WHERE\n' +
+                    '    (\n' +
+                    '        "project"."deletedAt" IS NULL\n' +
+                    '        )\n' +
+                    'ORDER BY\n' +
+                    '    "latestUpdate" DESC\n',
+            );
+        }
+
+        if (user.role !== UserRole.ADMIN) {
+            res = await this.projectRepository.query(
+                'SELECT DISTINCT\n' +
+                    '   "project"."uuid" AS "project_uuid",\n' +
+                    '   "project"."createdAt" AS "project_createdAt",\n' +
+                    '   "project"."updatedAt" AS "project_updatedAt",\n' +
+                    '   "project"."name" AS "project_name",\n' +
+                    '   "project"."description" AS "project_description",\n' +
+                    '   "project"."creatorUuid" AS "project_creatorUuid",\n' +
+                    '   (\n' +
+                    '      SELECT\n' +
+                    '         GREATEST( MAX("project2"."updatedAt"), MAX("missions2"."updatedAt"), MAX("files2"."updatedAt") ) AS "latestUpdate" \n' +
+                    '      FROM\n' +
+                    '         "project" "project2" \n' +
+                    '         LEFT JOIN\n' +
+                    '            "mission" "missions2" \n' +
+                    '            ON "missions2"."projectUuid" = "project2"."uuid" \n' +
+                    '            AND \n' +
+                    '            (\n' +
+                    '               "missions2"."deletedAt" IS NULL\n' +
+                    '            )\n' +
+                    '         LEFT JOIN\n' +
+                    '            "file_entity" "files2" \n' +
+                    '            ON "files2"."missionUuid" = "missions2"."uuid" \n' +
+                    '            AND \n' +
+                    '            (\n' +
+                    '               "files2"."deletedAt" IS NULL\n' +
+                    '            )\n' +
+                    '      WHERE\n' +
+                    '         (\n' +
+                    '            "project2"."uuid" = "project"."uuid" \n' +
+                    '         )\n' +
+                    '         AND \n' +
+                    '         (\n' +
+                    '            "project2"."deletedAt" IS NULL \n' +
+                    '         )\n' +
+                    '   )\n' +
+                    '   AS "latestUpdate" \n' +
+                    'FROM\n' +
+                    '   "project" "project" \n' +
+                    '   LEFT JOIN\n' +
+                    '      "project_access" "projectAccesses" \n' +
+                    '      ON "projectAccesses"."projectUuid" = "project"."uuid" \n' +
+                    '      AND \n' +
+                    '      (\n' +
+                    '         "projectAccesses"."deletedAt" IS NULL\n' +
+                    '      )\n' +
+                    '   LEFT JOIN\n' +
+                    '      "access_group" "accessGroup" \n' +
+                    '      ON "accessGroup"."uuid" = "projectAccesses"."accessGroupUuid" \n' +
+                    '      AND \n' +
+                    '      (\n' +
+                    '         "accessGroup"."deletedAt" IS NULL\n' +
+                    '      )\n' +
+                    '   LEFT JOIN\n' +
+                    '      "access_group_users_user" "accessGroup_users" \n' +
+                    '      ON "accessGroup_users"."accessGroupUuid" = "accessGroup"."uuid" \n' +
+                    '   LEFT JOIN\n' +
+                    '      "user" "users" \n' +
+                    '      ON "users"."uuid" = "accessGroup_users"."userUuid" \n' +
+                    '      AND \n' +
+                    '      (\n' +
+                    '         "users"."deletedAt" IS NULL\n' +
+                    '      )\n' +
+                    'WHERE\n' +
+                    '   (\n' +
+                    '      "projectAccesses"."rights" >= $1 \n' +
+                    '      AND "users"."uuid" = $2 \n' +
+                    '   )\n' +
+                    '   AND \n' +
+                    '   (\n' +
+                    '      "project"."deletedAt" IS NULL \n' +
+                    '   )\n',
+                [AccessGroupRights.READ, user.uuid],
+            );
+        }
+        return res
+            .map((project) => {
+                return {
+                    name: project['project_name'] as string,
+                    uuid: project['project_uuid'] as string,
+                    description: project['project_description'] as string,
+                    creator: undefined,
+                    requiredTags: [],
+                    latestUpdate: project['latestUpdate'] as Date,
+                    missions: [],
+                    categories: [],
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    project_accesses: [],
+                    createdAt: project['project_createdAt'] as Date,
+                };
+            })
+            .sort(
+                (a, b) => b.latestUpdate.getTime() - a.latestUpdate.getTime(),
+            );
+    }
+
     async create(project: CreateProject, auth: AuthRes): Promise<Project> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
