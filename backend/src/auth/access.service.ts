@@ -72,18 +72,21 @@ export class AccessService {
         if (dbuser.role === UserRole.ADMIN) {
             return true;
         }
+
         return this.projectRepository
             .createQueryBuilder('project')
-            .leftJoin('project.project_accesses', 'projectAccesses')
-            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-            .leftJoin('accessGroup.users', 'users')
+            .leftJoin(
+                'project_access_view_entity',
+                'projectAccesses',
+                'projectAccesses.projectuuid = project.uuid',
+            )
             .where('project.uuid = :uuid', { uuid: projectUUID })
-            .andWhere('users.uuid = :user_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                user_uuid: auth.user.uuid,
-            })
             .andWhere('projectAccesses.rights >= :rights', {
                 rights: rights,
+            })
+            .andWhere('projectAccesses.useruuid = :user_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                user_uuid: auth.user.uuid,
             })
             .getExists();
     }
