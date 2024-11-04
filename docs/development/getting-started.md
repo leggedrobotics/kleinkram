@@ -8,9 +8,9 @@ run the project locally and how to set up the development environment.
 In order to get started with the development of the project, you need to have the following tools installed on your
 system:
 
-- [Git](https://git-scm.com/downloads) (for cloning the repository)
-- [Docker](https://docs.docker.com/get-docker/) (for running the project)
-- [Docker Compose](https://docs.docker.com/compose/install/) (for running the project)
+-   [Git](https://git-scm.com/downloads) (for cloning the repository)
+-   [Docker](https://docs.docker.com/get-docker/) (for running the project)
+-   [Docker Compose](https://docs.docker.com/compose/install/) (for running the project)
 
 ::: info Additional Tools
 To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
@@ -64,9 +64,9 @@ docker compose up --build --watch
 
 ::: tip
 
-- the `--build` flag is used to build the project before starting the development server.
-- the `--watch` flag is optional and is used to watch for changes in the codebase.
-  :::
+-   the `--build` flag is used to build the project before starting the development server.
+-   the `--watch` flag is optional and is used to watch for changes in the codebase.
+    :::
 
 4. You can now open the projects:
 
@@ -97,7 +97,7 @@ In order to seed the database with mock data, you can run the following command:
 
 ```bash
 # This will remove the existing database
-docker compose down --volumes 
+docker compose down --volumes
 
 # enable seeding by changing SEED in the .env file to true
 sed -i 's/SEED=false/SEED=true/' .env
