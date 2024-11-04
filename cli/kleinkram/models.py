@@ -79,6 +79,8 @@ def tag_types_table(tag_types: list[TagType], verbose: bool = False) -> Table:
 class File(NamedTuple):
     id: UUID
     name: str
+    hash: str
+    size: int
     mission_id: UUID
     mission_name: str
     project_id: UUID

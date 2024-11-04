@@ -13,6 +13,7 @@ from typing import Union, NamedTuple
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.errors import CorruptedFile
 from kleinkram.error_handling import AccessDeniedException
 from kleinkram.models import Project, File
 from kleinkram.models import User
@@ -44,6 +45,7 @@ DEMOTE_USER = "/user/demote"
 FILE_DOWNLOAD = "/file/download"
 FILE_QUERY = "/file/filteredByNames"
 FILE_ONE = "/file/one"
+FILE_CONFIRM_UPLOAD = "/queue/confirmUpload"
 
 
 def get_upload_creditials(
@@ -310,15 +312,11 @@ def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
         )
 
     resp.raise_for_status()
+
     return resp.text
 
 
-def get_file(client: AuthenticatedClient, id: UUID) -> File:
-    resp = client.get(FILE_ONE, params={"uuid": str(id)})
-    resp.raise_for_status()
-
-    file = resp.json()
-
+def _parse_file(file: Dict[str, Any]) -> File:
     project_id = UUID(file["mission"]["project"]["uuid"], version=4)
     project_name = file["mission"]["project"]["name"]
 
@@ -327,15 +325,26 @@ def get_file(client: AuthenticatedClient, id: UUID) -> File:
 
     filename = file["filename"]
     file_id = UUID(file["uuid"], version=4)
+    file_size = file["size"]
+    file_hash = file["hash"]
 
-    return File(
+    parsed = File(
         id=file_id,
         name=filename,
+        size=file_size,
+        hash=file_hash,
         project_id=project_id,
         project_name=project_name,
         mission_id=mission_id,
         mission_name=mission_name,
     )
+    return parsed
+
+
+def get_file(client: AuthenticatedClient, id: UUID) -> File:
+    resp = client.get(FILE_ONE, params={"uuid": str(id)})
+    resp.raise_for_status()
+    return _parse_file(resp.json())
 
 
 def get_files(
@@ -369,24 +378,22 @@ def get_files(
     data = resp.json()
     for file in data:
         try:
-            project_id = UUID(file["mission"]["project"]["uuid"], version=4)
-            project_name = file["mission"]["project"]["name"]
-
-            mission_id = UUID(file["mission"]["uuid"], version=4)
-            mission_name = file["mission"]["name"]
-
-            filename = file["filename"]
-            file_id = UUID(file["uuid"], version=4)
-
-            parsed = File(
-                id=file_id,
-                name=filename,
-                project_id=project_id,
-                project_name=project_name,
-                mission_id=mission_id,
-                mission_name=mission_name,
-            )
+            parsed = _parse_file(file)
             files.append(parsed)
         except Exception:
             print(f"Error parsing file: {file}")
     return files
+
+
+def confirm_file_upload(
+    client: AuthenticatedClient, file_id: UUID, file_hash: str
+) -> None:
+    data = {
+        "uuid": str(file_id),
+        "md5": file_hash,
+    }
+    resp = client.post("/file/confirmUpload", json=data)
+
+    if 400 <= resp.status_code < 500:
+        raise CorruptedFile()
+    resp.raise_for_status()

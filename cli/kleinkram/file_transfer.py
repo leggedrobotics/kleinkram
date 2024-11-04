@@ -17,18 +17,20 @@ import tqdm
 import sys
 from rich.console import Console
 
+from kleinkram.api.routes import confirm_file_upload
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
-from kleinkram.utils import ProgressManager
+from kleinkram.utils import ProgressManager, b64_md5
 from kleinkram.utils import transfer_progress
+from kleinkram.config import Config
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 
 
 def get_s3_endpoint() -> str:
-    # TODO: this needs to be more configurable
-    api_endpoint = AuthenticatedClient().tokenfile.endpoint
+    config = Config()
+    api_endpoint = config.endpoint
     if api_endpoint == LOCAL_API_URL:
         return LOCAL_S3_URL
     else:
@@ -72,6 +74,8 @@ def upload_file(
 
     # TODO: checksum
     file_size = os.path.getsize(local_path)
+    file_hash = b64_md5(local_path)
+
     progress.track_file(str(local_path), file_size)
 
     callback_fn = partial(progress.update, str(local_path))
@@ -83,6 +87,10 @@ def upload_file(
         Config=transfer_config,
         Callback=callback_fn,
     )
+
+    # verify upload integrity
+    client = AuthenticatedClient()
+    confirm_file_upload(client, access.file_id, file_hash)
 
 
 def file_upload_worker(
@@ -151,16 +159,16 @@ def upload_files(
             thread.join()
 
 
-def download_file(url: str, path: Path) -> None:
+def download_file(url: str, path: Path, size: int) -> None:
     if path.exists():
-        raise FileExistsError(f"File already exists: {path}")
+        pass
+        # raise FileExistsError(f"File already exists: {path}")
 
     with httpx.stream("GET", url) as response:
         with open(path, "wb") as f:
-            for chunk in tqdm.tqdm(
-                response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE),
-                desc=f"Downloading {path.name}",
-                unit="16MB",
-                unit_scale=True,
-            ):
-                f.write(chunk)
+            with tqdm.tqdm(
+                total=size, desc=f"Downloading {path.name}", unit="B", unit_scale=True
+            ) as pbar:
+                for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                    f.write(chunk)
+                    pbar.update(len(chunk))

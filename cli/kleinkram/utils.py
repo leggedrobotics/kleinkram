@@ -27,9 +27,10 @@ import boto3.s3.transfer
 import tqdm
 import typer
 from botocore.config import Config
-from botocore.utils import calculate_md5
 from rich import print
 from rich.console import Console
+import hashlib
+import base64
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.enums import PermissionLevel
@@ -418,3 +419,12 @@ def get_project_permission_level(client: AuthenticatedClient, project_id: UUID) 
 def get_version() -> str:
     # TODO
     return "0.1.0"
+
+
+def b64_md5(file: Path) -> str:
+    hash_md5 = hashlib.md5()
+    with open(file, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    binary_digest = hash_md5.digest()
+    return base64.b64encode(binary_digest).decode("utf-8")
