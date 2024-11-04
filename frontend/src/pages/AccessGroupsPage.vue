@@ -266,7 +266,7 @@ const accessGroupsColumns = [
         required: true,
         label: 'Nr of Users',
         align: 'center',
-        field: (row: AccessGroup) => row.users.length,
+        field: (row: AccessGroup) => row.accessGroupUsers.length,
         format: (val: number) => `${val}`,
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',

@@ -5,7 +5,9 @@ import User from '../user/user.entity';
 
 @Entity()
 export default class AccessGroupUser extends BaseEntity {
-    @ManyToOne(() => AccessGroup, (group) => group.project_accesses)
+    @ManyToOne(() => AccessGroup, (group) => group.project_accesses, {
+        onDelete: 'CASCADE',
+    })
     accessGroup: AccessGroup;
 
     @ManyToOne(() => User, (user) => user.accessGroupUsers)

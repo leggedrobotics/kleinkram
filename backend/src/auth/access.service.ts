@@ -231,7 +231,8 @@ export class AccessService {
             skip,
             take,
             relations: [
-                'users',
+                'accessGroupUsers',
+                'accessGroupUsers.user',
                 'project_accesses',
                 'project_accesses.project',
                 'creator',
@@ -251,7 +252,7 @@ export class AccessService {
         });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: ['users'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
         });
 
         if (rights === AccessGroupRights.DELETE) {

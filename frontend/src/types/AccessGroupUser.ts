@@ -4,14 +4,14 @@ import { AccessGroup } from 'src/types/AccessGroup';
 
 export class AccessGroupUser extends BaseEntity {
     user: User | null;
-    accessGroup: AccessGroup;
+    accessGroup: AccessGroup | null;
     expirationDate: Date | null;
     constructor(
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
         user: User | null,
-        accessGroup: AccessGroup,
+        accessGroup: AccessGroup | null,
         expirationDate: Date | null = null,
     ) {
         super(uuid, createdAt, updatedAt);
