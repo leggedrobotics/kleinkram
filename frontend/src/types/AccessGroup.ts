@@ -2,10 +2,11 @@ import { BaseEntity } from 'src/types/BaseEntity';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { User } from 'src/types/User';
 import { MissionAccess } from 'src/types/MissionAccess';
+import { AccessGroupUser } from 'src/types/AccessGroupUser';
 
 export class AccessGroup extends BaseEntity {
     name: string;
-    users: User[];
+    accessGroupUsers: AccessGroupUser[];
     projectAccesses: ProjectAccess[];
     missionAccesses: MissionAccess[];
     creator?: User;
@@ -15,7 +16,7 @@ export class AccessGroup extends BaseEntity {
     constructor(
         uuid: string,
         name: string,
-        users: User[],
+        accessGroupUsers: AccessGroupUser[],
         projectAccesses: ProjectAccess[],
         missionAccesses: MissionAccess[],
         personal: boolean,
@@ -26,7 +27,7 @@ export class AccessGroup extends BaseEntity {
     ) {
         super(uuid, createdAt, updatedAt);
         this.name = name;
-        this.users = users;
+        this.accessGroupUsers = accessGroupUsers;
         this.projectAccesses = projectAccesses;
         this.missionAccesses = missionAccesses;
         this.personal = personal;

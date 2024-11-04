@@ -140,6 +140,7 @@ export class MissionService {
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, userUUID);
         }
+        console.log(query.getSql());
         return query.getManyAndCount();
     }
 

@@ -24,6 +24,7 @@ import { AccessService } from './access.service';
 import { AccessController } from './access.controller';
 import FileEntity from '@common/entities/file/file.entity';
 import { AuthGuardService } from './authGuard.service';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
 
 @Global()
 @Module({
@@ -39,6 +40,7 @@ import { AuthGuardService } from './authGuard.service';
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
             FileEntity,
+            AccessGroupUser,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({

@@ -66,13 +66,15 @@ watch(
     () => projectResponse.data,
     (newValue) => {
         newValue.value?.projectAccesses.forEach((access) => {
-            if (access.accessGroup.personal) {
-                existingRights.value[access.accessGroup.users[0].uuid] = {
+            if (access.accessGroup?.personal) {
+                existingRights.value[
+                    access.accessGroup?.accessGroupUsers[0]?.user?.uuid
+                ] = {
                     label: getAccessRightDescription(access.rights),
                     value: access.rights,
                 };
             } else {
-                existingRights.value[access.accessGroup.uuid] = {
+                existingRights.value[access.accessGroup?.uuid] = {
                     label: getAccessRightDescription(access.rights),
                     value: access.rights,
                 };
@@ -149,7 +151,7 @@ const AccessRightsColumns = [
         required: true,
         label: 'Name',
         align: 'left',
-        field: (row: ProjectAccess) => row.accessGroup.name,
+        field: (row: ProjectAccess) => row.accessGroup?.name,
         sortable: true,
     },
     {

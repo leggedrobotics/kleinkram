@@ -7,6 +7,7 @@ import { AccessGroupRights, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
 
 @Injectable()
 export class AccessService {
@@ -15,6 +16,8 @@ export class AccessService {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(AccessGroupUser)
+        private accessGroupUserRepository: Repository<AccessGroupUser>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(ProjectAccess)
@@ -26,7 +29,8 @@ export class AccessService {
         return this.accessGroupRepository.findOneOrFail({
             where: { uuid },
             relations: [
-                'users',
+                'accessGroupUsers',
+                'accessGroupUsers.user',
                 'project_accesses',
                 'project_accesses.project',
                 'project_accesses.project.creator',
@@ -44,10 +48,17 @@ export class AccessService {
             name,
             personal: false,
             inheriting: false,
-            users: [user],
+            accessGroupUsers: [],
             creator: user,
         });
-        return this.accessGroupRepository.save(newGroup);
+        const saved = await this.accessGroupRepository.save(newGroup);
+        const accessGroupUser = this.accessGroupUserRepository.create({
+            accessGroup: { uuid: saved.uuid },
+            user: { uuid: user.uuid },
+            expirationDate: undefined,
+        });
+        await this.accessGroupUserRepository.save(accessGroupUser);
+        return saved;
     }
 
     async hasProjectRights(
@@ -61,18 +72,21 @@ export class AccessService {
         if (dbuser.role === UserRole.ADMIN) {
             return true;
         }
+
         return this.projectRepository
             .createQueryBuilder('project')
-            .leftJoin('project.project_accesses', 'projectAccesses')
-            .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-            .leftJoin('accessGroup.users', 'users')
+            .leftJoin(
+                'project_access_view_entity',
+                'projectAccesses',
+                'projectAccesses.projectuuid = project.uuid',
+            )
             .where('project.uuid = :uuid', { uuid: projectUUID })
-            .andWhere('users.uuid = :user_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                user_uuid: auth.user.uuid,
-            })
             .andWhere('projectAccesses.rights >= :rights', {
                 rights: rights,
+            })
+            .andWhere('projectAccesses.useruuid = :user_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                user_uuid: auth.user.uuid,
             })
             .getExists();
     }
@@ -89,11 +103,11 @@ export class AccessService {
         });
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
-            relations: ['accessGroups'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
         });
 
-        const personalAccessGroup = dbuser.accessGroups.find(
-            (accessGroup) => accessGroup.personal,
+        const personalAccessGroup = dbuser.accessGroupUsers.find(
+            (accessGroup) => accessGroup.accessGroup.personal,
         );
         const canUpdate = await this.hasProjectRights(
             projectUUID,
@@ -181,15 +195,15 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        const accessGroup = await this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['users'],
+        await this.accessGroupUserRepository.delete({
+            accessGroup: { uuid: accessGroupUUID },
+            user: { uuid: userUUID },
         });
 
-        accessGroup.users = accessGroup.users.filter(
-            (u) => u.uuid !== userUUID,
-        );
-        return this.accessGroupRepository.save(accessGroup);
+        return this.accessGroupRepository.findOneOrFail({
+            where: { uuid: accessGroupUUID },
+            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
+        });
     }
 
     async searchAccessGroup(
@@ -220,7 +234,8 @@ export class AccessService {
             skip,
             take,
             relations: [
-                'users',
+                'accessGroupUsers',
+                'accessGroupUsers.user',
                 'project_accesses',
                 'project_accesses.project',
                 'creator',
@@ -240,7 +255,7 @@ export class AccessService {
         });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: ['users'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
         });
 
         if (rights === AccessGroupRights.DELETE) {

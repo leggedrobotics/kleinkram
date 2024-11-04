@@ -161,3 +161,25 @@ export const getDefaultAccessGroups = async (): Promise<AccessGroup[]> => {
     const response = await axios.get('/project/getDefaultRights');
     return response.data;
 };
+
+export const recentProjects = async (take: number): Promise<Project[]> => {
+    const response = await axios.get('/project/recent', { params: { take } });
+    try {
+        return response.data.map((project: any) => {
+            return new Project(
+                project.uuid,
+                project.name,
+                project.description,
+                [],
+                undefined,
+                [],
+                [],
+                new Date(project.createdAt),
+                new Date(project.latestUpdate),
+            );
+        });
+    } catch (e) {
+        console.log(e);
+        return [];
+    }
+};
