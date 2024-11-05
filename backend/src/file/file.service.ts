@@ -936,4 +936,29 @@ export class FileService implements OnModuleInit {
             logger.error(err);
         });
     }
+
+    async recomputeFileSizes() {
+        const files = await this.fileRepository.find({
+            where: {
+                state: In([FileState.OK, FileState.FOUND]),
+            },
+        });
+        await Promise.all(
+            files.map(async (file) => {
+                const stats = await getInfoFromMinio(file.type, file.uuid);
+                if (!stats) {
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                    );
+                    file.state = FileState.LOST;
+                } else {
+                    file.size = stats.size;
+                    logger.debug(
+                        `Updated size for ${file.filename}: ${file.size}`,
+                    );
+                }
+                await this.fileRepository.save(file);
+            }),
+        );
+    }
 }
