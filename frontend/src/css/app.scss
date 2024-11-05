@@ -140,6 +140,10 @@ label {
     background-color: $layer-01;
 }
 
+.table-white tbody {
+    background-color: white;
+}
+
 .q-table thead {
     background-color: $layer-hover-01 !important;
     color: $text-secondary;

@@ -311,6 +311,7 @@ export class ProjectService {
                 }
             });
         }
+
         const transactedProject = await this.dataSource.transaction(
             async (manager) => {
                 const savedProject = await manager.save(Project, newProject);
@@ -318,6 +319,7 @@ export class ProjectService {
                     manager,
                     defaultAccessGroups,
                     savedProject,
+                    project.removedDefaultGroups,
                 );
 
                 if (project.accessGroups) {
@@ -416,11 +418,15 @@ export class ProjectService {
         manager: EntityManager,
         accessGroups: AccessGroup[],
         project: Project,
+        removedDefaultGroups: string[],
     ) {
         return await Promise.all(
             accessGroups.map(async (accessGroup) => {
                 let rights = AccessGroupRights.WRITE;
                 if (accessGroup.inheriting) {
+                    if (removedDefaultGroups.includes(accessGroup.uuid)) {
+                        return;
+                    }
                     rights = this.config.access_groups.find((group) => {
                         return group.uuid === accessGroup.uuid;
                     }).rights;
@@ -491,22 +497,28 @@ export class ProjectService {
             .filter(
                 (accessGroup) => accessGroup.personal || accessGroup.inheriting,
             );
-        return rights.map((right) => {
-            const name = right.name;
-            const accessGroupUUID = right.uuid;
-            let _rights = AccessGroupRights.WRITE;
-            if (right.inheriting) {
-                _rights = this.config.access_groups.find(
-                    (group) => group.uuid === right.uuid,
-                ).rights;
-            } else if (right.personal) {
-                _rights = AccessGroupRights.DELETE;
-            }
-            return {
-                name,
-                accessGroupUUID,
-                rights: _rights,
-            };
-        });
+        return Promise.all(
+            rights.map(async (right) => {
+                const name = right.name;
+                let memberCount = 1;
+                let _rights = AccessGroupRights.WRITE;
+                if (right.inheriting) {
+                    _rights = this.config.access_groups.find(
+                        (group) => group.uuid === right.uuid,
+                    ).rights;
+                    memberCount = await this.userservice.getMemberCount(
+                        right.uuid,
+                    );
+                } else if (right.personal) {
+                    _rights = AccessGroupRights.DELETE;
+                }
+                return {
+                    name,
+                    uuid: right.uuid,
+                    memberCount,
+                    rights: _rights,
+                };
+            }),
+        );
     }
 }

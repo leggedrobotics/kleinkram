@@ -10,12 +10,14 @@ export const createProject = async (
         | { accessGroupUUID: string; rights: AccessGroupRights }
         | { userUUID: string; rights: AccessGroupRights }
     )[],
+    removedDefaultGroups: string[],
 ) => {
     const response = await axios.post('/project/create', {
         name,
         description,
         requiredTags,
         accessGroups,
+        removedDefaultGroups,
     });
     return response.data;
 };
