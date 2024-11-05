@@ -16,15 +16,13 @@ def tag(
     tagtype_id: str = typer.Argument(),
     value: str = typer.Argument(),
 ):
+    _ = mission_id, tagtype_id, value  # suppress warning
     raise NotImplementedError
 
 
 @mission.command("list")
 def list_missions(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
-    verbose: Optional[bool] = typer.Option(
-        False, help="Outputs a table with more information"
-    ),
 ):
     raise NotImplementedError
 

@@ -8,7 +8,7 @@ from typing_extensions import Annotated
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import get_files, get_file, get_file_download
 from kleinkram.file_transfer import download_file as _download_file
-from kleinkram.models import print_files
+from kleinkram.models import print_files, File
 from kleinkram.utils import b64_md5
 from uuid import UUID
 from pathlib import Path
@@ -45,17 +45,17 @@ def download_file(
             continue
 
         file = get_file(client, parsed_id)
-
-        download_url = get_file_download(client, file.id)
-        file_dest = dest_dir / file.name
-
-        _download_file(download_url, file_dest, file.size)
-        observed_hash = b64_md5(file_dest)
-
-        if observed_hash != file.hash:
-            print(f"Downloaded file {file.name} hash does not match the expected hash.")
-        else:
-            print(f"Downloaded file {file.name} successfully.")
+        try:
+            _download_file(
+                client,
+                file_id=file.id,
+                name=file.name,
+                dest=dest_dir,
+                hash=file.hash,
+                size=file.size,
+            )
+        except Exception as e:
+            print(f"Error downloading file {file.name}: {e}")
 
 
 @file.command("list")

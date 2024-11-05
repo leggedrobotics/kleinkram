@@ -17,13 +17,14 @@ import tqdm
 import sys
 from rich.console import Console
 
-from kleinkram.api.routes import confirm_file_upload
+from kleinkram.api.routes import confirm_file_upload, get_file_download
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
 from kleinkram.utils import ProgressManager, b64_md5
 from kleinkram.utils import transfer_progress
 from kleinkram.config import Config
+from kleinkram.errors import CorruptedFile
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 
@@ -159,7 +160,7 @@ def upload_files(
             thread.join()
 
 
-def download_file(url: str, path: Path, size: int) -> None:
+def _url_download(url: str, path: Path, size: int) -> None:
     if path.exists():
         pass
         # raise FileExistsError(f"File already exists: {path}")
@@ -172,3 +173,21 @@ def download_file(url: str, path: Path, size: int) -> None:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     f.write(chunk)
                     pbar.update(len(chunk))
+
+
+def download_file(
+    client: AuthenticatedClient,
+    file_id: UUID,
+    name: str,
+    dest: Path,
+    hash: str,
+    size: int,
+) -> None:
+    download_url = get_file_download(client, file_id)
+
+    file_path = dest / name
+    _url_download(download_url, file_path, size)
+    observed_hash = b64_md5(file_path)
+
+    if observed_hash != hash:
+        raise CorruptedFile

@@ -6,8 +6,13 @@ from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from typing import Optional
 from getpass import getpass
-from kleinkram.config import Config, Credentials, CONFIG_PATH
-
+from kleinkram.config import (
+    Config,
+    Credentials,
+    CONFIG_PATH,
+    InvalidConfigFile,
+    CorruptedConfigFile,
+)
 
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/google?state=cli"
@@ -76,7 +81,7 @@ def _browser_auth(*, url: str) -> None:
 
 
 def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
-    config = Config()
+    config = Config(overwrite=True)
 
     # use cli key login
     if key is not None:

@@ -25,6 +25,11 @@ JSON_ENDPOINT_KEY = "endpoint"
 JSON_CREDENTIALS_KEY = "credentials"
 
 
+class InvalidConfigFile(Exception):
+    def __init__(self) -> None:
+        super().__init__("Invalid config file.")
+
+
 class CorruptedConfigFile(Exception):
     def __init__(self) -> None:
         super().__init__(CORRUPTED_CONFIG_FILE_MESSAGE)
@@ -34,36 +39,48 @@ class Config:
     endpoint: str
     credentials: Dict[str, Credentials]
 
-    def __init__(self) -> None:
+    def __init__(self, overwrite: bool = False) -> None:
         self.credentials = {}
         self.endpoint = LOCAL_API_URL
 
         if not CONFIG_PATH.exists():
             self.save()
+
         try:
-            with open(CONFIG_PATH, "r") as file:
+            self._read_config()
+        except (InvalidConfigFile, CorruptedConfigFile):
+            if not overwrite:
+                self.credentials = {}
+                self.endpoint = LOCAL_API_URL
+                self.save()
+            else:
+                raise
+
+    def _read_config(self) -> None:
+        with open(CONFIG_PATH, "r") as file:
+            try:
                 content = json.load(file)
+            except Exception:
+                raise CorruptedConfigFile
 
-                endpoint = content.get(JSON_ENDPOINT_KEY, None)
-                if not isinstance(endpoint, str):
-                    raise CorruptedConfigFile
+        endpoint = content.get(JSON_ENDPOINT_KEY, None)
 
-                credentials = content.get(JSON_CREDENTIALS_KEY, None)
-                if not isinstance(credentials, dict):
-                    raise CorruptedConfigFile
+        if not isinstance(endpoint, str):
+            raise InvalidConfigFile
 
-                try:
-                    parsed_creds = {}
-                    for ep, creds in credentials.items():
-                        parsed_creds[ep] = Credentials(**creds)
-                except Exception:
-                    raise CorruptedConfigFile
+        credentials = content.get(JSON_CREDENTIALS_KEY, None)
+        if not isinstance(credentials, dict):
+            raise InvalidConfigFile
 
-                self.endpoint = endpoint
-                self.credentials = parsed_creds
-
+        try:
+            parsed_creds = {}
+            for ep, creds in credentials.items():
+                parsed_creds[ep] = Credentials(**creds)
         except Exception:
-            raise CorruptedConfigFile
+            raise InvalidConfigFile
+
+        self.endpoint = endpoint
+        self.credentials = parsed_creds
 
     @property
     def has_cli_key(self) -> bool:
@@ -121,6 +138,7 @@ class Config:
 @dataclass
 class _SharedState:
     verbose: bool = True
+    debug: bool = False
 
 
 SHARED_STATE = _SharedState()
