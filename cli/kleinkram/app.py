@@ -29,8 +29,6 @@ app = typer.Typer(
     help=CLI_HELP,
 )
 
-app.add_typer(project_typer, name="project")
-app.add_typer(mission_typer, name="mission")
 app.add_typer(file_typer, name="file")
 app.add_typer(endpoint_typer, name="endpoint")
 app.add_typer(download_typer, name="download")

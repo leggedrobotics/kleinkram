@@ -49,7 +49,9 @@ def is_valid_name(name: str) -> bool:
     return not is_valid_uuid4(name)
 
 
-def get_internal_file_map(files: List[Path]) -> Dict[Path, str]:
+def get_internal_file_map(
+    files: List[Path], raise_on_error: bool = False
+) -> Dict[Path, str]:
     """\
     takes a list of unique filepaths and returns a mapping
     from the original filename to a sanitized internal filename
@@ -64,7 +66,6 @@ def get_internal_file_map(files: List[Path]) -> Dict[Path, str]:
     - "_" and "-"
     """
     internal_file_map = {}
-
     for file in files:
         if file.is_dir():
             raise ValueError(f"got dir {file} expected file")

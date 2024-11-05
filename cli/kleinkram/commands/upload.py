@@ -121,7 +121,9 @@ def upload(
 
     # upload files
     file_paths = list(patterns_matched(files))
-    internal_filename_map = get_internal_file_map(file_paths)
+    internal_filename_map = get_internal_file_names(
+        file_paths, raise_on_error=not fix_filenames
+    )
 
     if not fix_filenames:
         for external, internal in internal_filename_map.items():
