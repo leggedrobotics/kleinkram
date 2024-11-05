@@ -20,19 +20,22 @@ from kleinkram.models import User
 from kleinkram.tag import DataType
 from kleinkram.tag import TagType
 from kleinkram.utils import is_valid_uuid4
-from kleinkram.utils import UploadAccess
+from kleinkram.models import UploadAccess
+from kleinkram.models import Mission
+
+MAX_PAGINATION = 10_000
 
 TEMP_CREDS = "/file/temporaryAccess"
 CLAIM_ADMIN = "/user/claimAdmin"
 
-PROJECT_BY_NAME = "project/byName"
-PROJECT_BY_ID = "project/one"
-PROJECT_CREATE = "project/create"
-PROJECTS_FILTERED = "project/filtered"
+PROJECT_BY_NAME = "/project/byName"
+PROJECT_BY_ID = "/project/one"
+PROJECT_CREATE = "/project/create"
+PROJECTS_FILTERED = "/project/filtered"
 
-MISSION_BY_NAME = "mission/byName"
-MISSION_BY_ID = "mission/one"
-MISSION_CREATE = "mission/create"
+MISSION_BY_NAME = "/mission/byName"
+MISSION_BY_ID = "/mission/one"
+MISSION_CREATE = "/mission/create"
 
 TAG_TYPES = "/tag/all"
 TAG = "/tag"
@@ -46,6 +49,7 @@ FILE_DOWNLOAD = "/file/download"
 FILE_QUERY = "/file/filteredByNames"
 FILE_ONE = "/file/one"
 FILE_CONFIRM_UPLOAD = "/queue/confirmUpload"
+FILE_OF_MISSION = "/file/ofMission"
 
 
 def get_upload_creditials(
@@ -158,22 +162,59 @@ def get_projects_filtered(client: AuthenticatedClient) -> list[Project]:
     return ret
 
 
-def get_mission(
-    client: AuthenticatedClient, identifier: Union[str, UUID], project_id: UUID
+def get_mission_id_by_name(
+    client: AuthenticatedClient, mission_name, project_id: UUID
 ) -> Optional[UUID]:
-
-    if isinstance(identifier, UUID):
-        params = {"uuid": str(identifier)}
-    else:
-        # ISSUE: https://github.com/leggedrobotics/kleinkram/issues/851
-        params = {"name": identifier, "projectUUID": str(project_id)}
-
-    resp = client.get("/missions", params=params)
+    params = {"name": mission_name, "projectUUID": str(project_id)}
+    resp = client.get(MISSION_BY_NAME, params=params)
 
     if resp.status_code in (403, 404):
         return None
 
     # TODO: handle other status codes
+    resp.raise_for_status()
+
+    data = resp.json()
+
+    return UUID(data["uuid"], version=4)
+
+
+def get_mission_by_id(
+    client: AuthenticatedClient, mission_id: UUID
+) -> Optional[Mission]:
+    params = {"uuid": str(mission_id), "take": MAX_PAGINATION}
+    resp = client.get(FILE_OF_MISSION, params=params)
+
+    if resp.status_code in (403, 404):
+        return None
+
+    resp.raise_for_status()
+    data = resp.json()[0]
+    files = [_parse_file(file) for file in data]
+
+    resp = client.get(MISSION_BY_ID, params={"uuid": str(mission_id)})
+    resp.raise_for_status()
+
+    mission_data = resp.json()
+    mission = Mission(
+        id=mission_id,
+        name=mission_data["name"],
+        project_id=UUID(mission_data["project"]["uuid"], version=4),
+        files=files,
+    )
+
+    return mission
+
+
+def get_project_id_by_name(
+    client: AuthenticatedClient, project_name: str
+) -> Optional[UUID]:
+    params = {"name": project_name}
+    resp = client.get(PROJECT_BY_NAME, params=params)
+
+    if resp.status_code in (403, 404):
+        return None
+
     resp.raise_for_status()
 
     return UUID(resp.json()["uuid"], version=4)

@@ -1,40 +1,30 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
-from typing import Dict
 from typing import List
 from typing import NamedTuple
 from typing import Optional
 from uuid import UUID
-import sys
+from pathlib import Path
+from dataclasses import dataclass, field
 
 from rich.table import Table
 
 
-class Project(NamedTuple):
+@dataclass
+class Project:
     id: UUID
     name: str
     description: str
+    missions: List[Mission] = field(default_factory=list)
 
 
-def projects_to_table(projects: List[Project]) -> Table:
-    table = Table(title="Projects")
-    table.add_column("ID")
-    table.add_column("Name")
-    table.add_column("Description")
-
-    for project in projects:
-        table.add_row(str(project.id), project.name, project.description)
-
-    return table
-
-
-class Mission(NamedTuple):
+@dataclass
+class Mission:
     id: UUID
     name: str
-    description: str
     project_id: UUID
+    files: List[File] = field(default_factory=list)
 
 
 class User(NamedTuple):
@@ -59,6 +49,33 @@ class TagType(NamedTuple):
     id: Optional[UUID] = None
 
 
+@dataclass
+class File:
+    id: UUID
+    name: str
+    hash: str
+    size: int
+    mission_id: UUID
+    mission_name: str
+    project_id: UUID
+    project_name: str
+
+
+class UploadAccess(NamedTuple):
+    access_key: str
+    secret_key: str
+    session_token: str
+    file_id: UUID
+    bucket: str
+
+
+class FileUploadJob(NamedTuple):
+    local_path: Path
+    internal_filename: str
+    access: UploadAccess
+    error: Optional[str] = None
+
+
 def tag_types_table(tag_types: list[TagType], verbose: bool = False) -> Table:
     table = Table(title="Tag Types")
     table.add_column("Name")
@@ -76,15 +93,16 @@ def tag_types_table(tag_types: list[TagType], verbose: bool = False) -> Table:
     return table
 
 
-class File(NamedTuple):
-    id: UUID
-    name: str
-    hash: str
-    size: int
-    mission_id: UUID
-    mission_name: str
-    project_id: UUID
-    project_name: str
+def projects_to_table(projects: List[Project]) -> Table:
+    table = Table(title="Projects")
+    table.add_column("ID")
+    table.add_column("Name")
+    table.add_column("Description")
+
+    for project in projects:
+        table.add_row(str(project.id), project.name, project.description)
+
+    return table
 
 
 def print_files(file: List[File]) -> None:
@@ -99,7 +117,6 @@ def print_files(file: List[File]) -> None:
     pmap = {f.project_id: f.project_name for f in file}
     mmap = {f.mission_id: f.mission_name for f in file}
 
-    print("Files:")
     for project_id, missions in tree.items():
         print(f" -  Project: {pmap[project_id]} ({project_id})")
         for mission_id, files in missions.items():

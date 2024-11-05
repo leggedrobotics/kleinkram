@@ -12,6 +12,7 @@ from kleinkram.commands.project import project
 from kleinkram.commands.mission import mission
 from kleinkram.commands.file import file
 from kleinkram.commands.endpoint import endpoint
+from kleinkram.commands import download as new_download
 from kleinkram.file_transfer import download_file
 from kleinkram.api.routes import get_files, get_file
 from uuid import UUID
@@ -36,6 +37,7 @@ app.add_typer(project, name="project")
 app.add_typer(mission, name="mission")
 app.add_typer(file, name="file")
 app.add_typer(endpoint, name="endpoint")
+app.add_typer(new_download.download, name="ndownload")
 
 
 @app.command()

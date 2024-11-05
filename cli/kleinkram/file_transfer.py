@@ -5,10 +5,11 @@ import queue
 import threading
 from functools import partial
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union, Generator
 from typing import NamedTuple
 from typing import Optional
 from uuid import UUID
+from contextlib import contextmanager
 
 import boto3.s3.transfer
 import botocore.config
@@ -21,12 +22,60 @@ from kleinkram.api.routes import confirm_file_upload, get_file_download
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
-from kleinkram.utils import ProgressManager, b64_md5
-from kleinkram.utils import transfer_progress
+from kleinkram.utils import b64_md5
 from kleinkram.config import Config
 from kleinkram.errors import CorruptedFile
+from kleinkram.models import UploadAccess, FileUploadJob
 
-DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16  # 16MB
+
+
+class ProgressManager:
+    _lock: threading.Lock  # TODO: we probably dont need a lock
+    _file_progress: Dict[Union[str, UUID], tqdm.tqdm]  # pbar, transferred bytes
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._file_progress = {}
+
+    def track_file(self, file: Union[UUID, str], target_size: int):
+        with self._lock:
+            pbar = tqdm.tqdm(
+                total=target_size,
+                unit="B",
+                unit_scale=True,
+                desc=f"Uploading {file}",
+            )
+
+            if file in self._file_progress:
+                raise ValueError(f"file {file} already tracked")
+
+            self._file_progress[file] = pbar
+
+    def update(self, file: Union[UUID, str], bytes_transferred: int):
+        with self._lock:
+            if file in self._file_progress:
+                pbar = self._file_progress[file]
+                pbar.update(bytes_transferred)
+
+    def close(self):
+        with self._lock:
+            for pbar in self._file_progress.values():
+                pbar.close()
+
+
+@contextmanager
+def transfer_progress() -> Generator[ProgressManager, None, None]:
+    """\
+    context manager to provide a TransferProgressCallback instance
+    """
+
+    transfer_callback = ProgressManager()
+
+    try:
+        yield transfer_callback
+    finally:
+        transfer_callback.close()
 
 
 def get_s3_endpoint() -> str:
@@ -36,21 +85,6 @@ def get_s3_endpoint() -> str:
         return LOCAL_S3_URL
     else:
         return api_endpoint.replace("api", "minio")
-
-
-class UploadAccess(NamedTuple):
-    access_key: str
-    secret_key: str
-    session_token: str
-    file_id: UUID
-    bucket: str
-
-
-class FileUploadJob(NamedTuple):
-    local_path: Path
-    internal_filename: str
-    access: UploadAccess
-    error: Optional[str] = None
 
 
 def upload_file(
@@ -160,10 +194,9 @@ def upload_files(
             thread.join()
 
 
-def _url_download(url: str, path: Path, size: int) -> None:
-    if path.exists():
-        pass
-        # raise FileExistsError(f"File already exists: {path}")
+def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:
+    if path.exists() and not overwrite:
+        raise FileExistsError(f"File already exists: {path}")
 
     with httpx.stream("GET", url) as response:
         with open(path, "wb") as f:
