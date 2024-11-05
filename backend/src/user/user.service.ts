@@ -113,15 +113,17 @@ export class UserService implements OnModuleInit {
             },
             relations: ['accessGroupUsers'],
         });
-
+        let defaultPermission;
         if (!user) {
             user = await this.userRepository.findOneOrFail({
                 where: { uuid: auth.user.uuid },
             });
+            defaultPermission = 0;
+        } else {
+            defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
         }
 
         const role = user.role;
-        const defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;

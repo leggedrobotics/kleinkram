@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
-import { Brackets, ILike, In, Not, Repository } from 'typeorm';
+import { ILike, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from './entities/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
@@ -39,23 +39,24 @@ export class MissionService {
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
         });
-
-        const missingTags = project.requiredTags.filter(
-            (tagType: TagType) =>
-                createMission.tags[tagType.uuid] === undefined &&
-                createMission.tags[tagType.uuid] === '' &&
-                createMission.tags[tagType.uuid] === null,
-        );
-        if (missingTags.length > 0) {
-            const missingTagNames = missingTags
-                .map((tagType: TagType) => tagType.name)
-                .join(', ');
-            throw new ConflictException(
-                'All required tags must be provided for the mission. Missing tags: ' +
-                    missingTagNames,
+        if (!createMission.ignoreTags) {
+            const missingTags = project.requiredTags.filter(
+                (tagType: TagType) =>
+                    createMission.tags[tagType.uuid] === undefined &&
+                    createMission.tags[tagType.uuid] === '' &&
+                    createMission.tags[tagType.uuid] === null,
             );
-        } else {
-            logger.info('All required tags are provided');
+            if (missingTags.length > 0) {
+                const missingTagNames = missingTags
+                    .map((tagType: TagType) => tagType.name)
+                    .join(', ');
+                throw new ConflictException(
+                    'All required tags must be provided for the mission. Missing tags: ' +
+                        missingTagNames,
+                );
+            } else {
+                logger.info('All required tags are provided');
+            }
         }
 
         // verify that the no mission with the same name exists in the project
@@ -204,16 +205,7 @@ export class MissionService {
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')
                 .leftJoinAndSelect('mission.creator', 'creator')
-                .where('project.name = :name', { name: projectName })
-                .andWhere(
-                    new Brackets((qb) => {
-                        qb.where('projectUsers.uuid = :user', {
-                            user: userUUID,
-                        }).orWhere('missionUsers.uuid = :user', {
-                            user: userUUID,
-                        });
-                    }),
-                ),
+                .where('project.name = :name', { name: projectName }),
             userUUID,
         )
             .take(take)

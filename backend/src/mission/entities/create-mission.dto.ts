@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import {
+    IsBoolean,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsUUID,
+} from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidMissionName,
@@ -16,4 +22,8 @@ export class CreateMission {
 
     @IsNotEmpty()
     tags: Record<string, string>;
+
+    @IsBoolean()
+    @IsOptional()
+    ignoreTags: boolean;
 }

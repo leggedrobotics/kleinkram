@@ -88,17 +88,35 @@
             <explorer-page-project-table :url_handler="handler" />
         </q-tab-panel>
         <q-tab-panel name="Admin">
-            <div style="width: 300px">
-                <q-btn
-                    label="Reset Minio Tagging"
-                    class="button-border bg-button-primary full-width"
-                    @click="resetMinioTagging"
-                    flat
-                />
-                <div>
-                    This will delete the Minio tags for all files in the system
-                    and then regenerate them based on the current DB state. This
-                    action cannot be undone. There is no confirmation!
+            <div class="row">
+                <div style="width: 300px">
+                    <q-btn
+                        label="Reset Minio Tagging"
+                        class="button-border bg-button-primary full-width"
+                        @click="resetMinioTagging"
+                        icon="sym_o_sell"
+                        flat
+                    />
+                    <div>
+                        This will delete the Minio tags for all files in the
+                        system and then regenerate them based on the current DB
+                        state. This action cannot be undone. There is no
+                        confirmation!
+                    </div>
+                </div>
+                <div style="width: 300px; margin-left: 20px">
+                    <q-btn
+                        label="Recompute File Sizes"
+                        class="button-border bg-button-primary full-width"
+                        @click="resetFileSizes"
+                        icon="sym_o_expand"
+                        flat
+                    />
+                    <div>
+                        This will recompute the file sizes in the database by
+                        asking Minio for the size of each file. This action
+                        cannot be undone. There is no confirmation!
+                    </div>
                 </div>
             </div>
         </q-tab-panel>
@@ -114,16 +132,23 @@ import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProje
 import { QueryHandler } from 'src/services/QueryHandler';
 import ROLE from 'src/enums/USER_ROLES';
 import axios from 'src/api/axios';
+import { useHandler } from 'src/hooks/customQueryHooks';
 
 const data = await getUser();
 const tab = ref('Details');
 
-const defaultGroup = data?.accessGroups.find((group) => group.inheriting);
-const handler = new QueryHandler();
-handler.searchParams = { 'creator.uuid': data?.uuid || '' };
+const defaultGroup = data?.accessGroupUsers.find(
+    (group) => group.accessGroup?.inheriting,
+)?.accessGroup;
+const handler = useHandler();
+handler.value.searchParams = { 'creator.uuid': data?.uuid || '' };
 
 async function resetMinioTagging() {
     await axios.post('file/resetMinioTags');
+}
+
+async function resetFileSizes() {
+    await axios.post('file/recomputeFileSizes');
 }
 </script>
 <style>

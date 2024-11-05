@@ -180,7 +180,9 @@ export class ProjectService {
                     '        "project"."deletedAt" IS NULL\n' +
                     '        )\n' +
                     'ORDER BY\n' +
-                    '    "latestUpdate" DESC\n',
+                    '    "latestUpdate" DESC\n' +
+                    'LIMIT $1',
+                [take],
             );
         }
 
@@ -231,8 +233,11 @@ export class ProjectService {
                     '   (\n' +
                     '      "projectAccessView"."rights" >= $1 \n' +
                     '      AND "projectAccessView"."useruuid" = $2 \n' +
-                    '   )\n',
-                [AccessGroupRights.READ, user.uuid],
+                    '   )\n' +
+                    'ORDER BY\n' +
+                    '   "latestUpdate" DESC \n' +
+                    'LIMIT $3',
+                [AccessGroupRights.READ, user.uuid, take],
             );
         }
         return res
