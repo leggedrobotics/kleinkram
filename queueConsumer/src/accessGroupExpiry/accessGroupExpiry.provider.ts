@@ -1,4 +1,3 @@
-import { Processor } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import Redlock from 'redlock';
 import { Redis } from 'ioredis';
