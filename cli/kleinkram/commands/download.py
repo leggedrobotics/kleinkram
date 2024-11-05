@@ -74,18 +74,18 @@ def _get_files_by_file_spec(
 
 @download_typer.callback()
 def download(
-    dest: str = typer.Option(prompt="destination", help="local path to save the files"),
+    files: Optional[List[str]] = typer.Argument(
+        None, help="file names, ids or patterns"
+    ),
     project: Optional[str] = typer.Option(
         None, "--project", "-p", help="project name or id"
     ),
     mission: Optional[str] = typer.Option(
         None, "--mission", "-m", help="mission name or id"
     ),
-    files: List[str] = typer.Option(
-        ..., "--files", "-f", help="file names, ids or patterns", default_factory=list
-    ),
+    dest: str = typer.Option(prompt="destination", help="local path to save the files"),
 ) -> None:
-    _files = [to_name_or_uuid(f) for f in files]
+    _files = [to_name_or_uuid(f) for f in files or []]
     _project = to_name_or_uuid(project) if project else None
     _mission = to_name_or_uuid(mission) if mission else None
 

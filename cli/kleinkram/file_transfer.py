@@ -161,7 +161,7 @@ def file_upload_worker(
 
 
 def upload_files(
-    file_access: Dict[Path, UploadAccess],
+    file_access: Dict[str, UploadAccess],
     internal_filename_map: Dict[Path, str],
     *,
     n_workers: int = 8,
@@ -170,11 +170,11 @@ def upload_files(
     s3_endpoint = get_s3_endpoint()
     file_queue = queue.Queue()
 
-    for path, access in file_access.items():
+    for path, name in internal_filename_map.items():
         job = FileUploadJob(
             local_path=path,
-            internal_filename=internal_filename_map[path],
-            access=access,
+            internal_filename=name,
+            access=file_access[name],
         )
         file_queue.put(job)
 

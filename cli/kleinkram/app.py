@@ -12,6 +12,7 @@ from kleinkram.commands.mission import mission_typer
 from kleinkram.commands.file import file_typer
 from kleinkram.commands.endpoint import endpoint_typer
 from kleinkram.commands.download import download_typer
+from kleinkram.commands.upload import upload_typer
 
 CLI_HELP = """\
 Kleinkram CLI
@@ -32,7 +33,8 @@ app.add_typer(project_typer, name="project")
 app.add_typer(mission_typer, name="mission")
 app.add_typer(file_typer, name="file")
 app.add_typer(endpoint_typer, name="endpoint")
-app.add_typer(download_typer, name="ndownload")
+app.add_typer(download_typer, name="download")
+app.add_typer(upload_typer, name="upload")
 
 
 @app.command()
@@ -54,11 +56,6 @@ def claim():
     client = AuthenticatedClient()
     claim_admin(client)
     print("Admin rights claimed successfully.")
-
-
-@app.command()
-def upload():
-    raise NotImplementedError
 
 
 def _version_cb(value: bool) -> None:

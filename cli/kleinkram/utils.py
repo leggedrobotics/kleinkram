@@ -6,10 +6,9 @@ import secrets
 import string
 from pathlib import Path
 from typing import Dict, Optional, Union, NamedTuple
-from typing import Generator, cast
+from typing import Generator
 from typing import List
 from uuid import UUID
-from enum import Enum
 
 import hashlib
 import base64
@@ -18,7 +17,12 @@ import base64
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
 
-def matched_paths(pattern: str) -> Generator[Path, None, None]:
+def patterns_matched(patterns: List[str]) -> Generator[Path, None, None]:
+    for pattern in patterns:
+        yield from pattern_matched(pattern)
+
+
+def pattern_matched(pattern: str) -> Generator[Path, None, None]:
     """\
     yields path to files matching a glob pattern
     expanding user and environment variables
