@@ -56,4 +56,25 @@ export class AuthGuardService {
             },
         });
     }
+
+    async isAccessGroupCreatorByAccessGroupUserGuard(
+        user: User,
+        aguUUID: string,
+    ) {
+        if (!user || !aguUUID) {
+            logger.error(
+                `AuthGuard: aguUUID (${aguUUID}) or User (${user}) not provided.`,
+            );
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        return await this.accessGroupRepository.exists({
+            where: {
+                accessGroupUsers: { uuid: aguUUID },
+                creator: { uuid: user.uuid },
+            },
+        });
+    }
 }

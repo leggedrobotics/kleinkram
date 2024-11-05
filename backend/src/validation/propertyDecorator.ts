@@ -72,7 +72,7 @@ export const IsValidName = (
 export const IsValidMissionName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-_]{3,40}$/, {
+    Matches(/^[\w\-_]{3,50}$/, {
         message: 'Mission name is not valid!',
         ...validationOptions,
     });

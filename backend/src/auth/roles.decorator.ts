@@ -30,6 +30,7 @@ import {
     UserGuard,
     MoveFilesGuard,
     CreateActionGuard,
+    IsAccessGroupCreatorByAccessGroupUserGuard,
 } from './roles.guard';
 
 // disable naming-convention rule for enum.ts
@@ -234,6 +235,13 @@ export function IsAccessGroupCreatorByProjectAccess() {
     return applyDecorators(
         SetMetadata('IsAccessGroupCreatorByProjectAccess', true),
         UseGuards(IsAccessGroupCreatorByProjectAccessGuard),
+    );
+}
+
+export function IsAccessGroupCreatorByAccessGroupUser() {
+    return applyDecorators(
+        SetMetadata('IsAccessGroupCreatorByAccessGroupUser', true),
+        UseGuards(IsAccessGroupCreatorByAccessGroupUserGuard),
     );
 }
 

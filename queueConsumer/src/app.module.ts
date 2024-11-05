@@ -33,6 +33,7 @@ import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
 import CategoryEntity from '@common/entities/category/category.entity';
 import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import { AccessGroupExpiryProvider } from './accessGroupExpiry/accessGroupExpiry.provider';
 
 @Module({
     imports: [
@@ -132,6 +133,7 @@ import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,
+        AccessGroupExpiryProvider,
     ],
 })
 export class AppModule {}

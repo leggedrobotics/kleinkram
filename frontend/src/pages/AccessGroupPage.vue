@@ -191,6 +191,27 @@
                         class="checkbox-with-hitbox"
                     />
                 </template>
+                <template v-slot:body-cell-expiration="props">
+                    <td>
+                        <q-btn
+                            flat
+                            class="button-border"
+                            :label="
+                                props.row.expirationDate
+                                    ? formatDate(props.row.expirationDate)
+                                    : 'Never'
+                            "
+                            icon="sym_o_date_range"
+                            :color="
+                                isExpired(props.row.expirationDate)
+                                    ? 'negative'
+                                    : 'primary'
+                            "
+                            @click="openSetExpirationDialog(props.row)"
+                        >
+                        </q-btn>
+                    </td>
+                </template>
                 <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
                         <q-btn
@@ -260,6 +281,7 @@ import ButtonGroup from 'components/ButtonGroup.vue';
 import {
     removeAccessGroupFromProject,
     removeUserFromAccessGroup,
+    setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
@@ -268,6 +290,8 @@ import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDia
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { formatDate } from 'src/services/dateFormating';
+import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -302,6 +326,13 @@ const { data: accessGroup, refetch } = useQuery({
         return getAccessGroup(uuid.value as string);
     },
 });
+
+function isExpired(date: Date | null) {
+    if (!date) {
+        return false;
+    }
+    return date < new Date();
+}
 
 const { mutate: _removeUser } = useMutation({
     mutationFn: (userUUID: string) =>
@@ -366,6 +397,48 @@ const drop_columns = (cols: any[], label: string) => {
     return cols.filter((col) => col.label !== label);
 };
 
+const { mutate: setAccessGroup } = useMutation({
+    mutationFn: (data: { aguUUID: string; expirationDate: Date | null }) => {
+        return setAccessGroupExpiry(data.aguUUID, data.expirationDate);
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return (
+                    query.queryKey[0] === 'AccessGroup' &&
+                    query.queryKey[1] === uuid.value
+                );
+            },
+        });
+        Notify.create({
+            message: 'Expiration date set',
+            color: 'positive',
+            position: 'bottom',
+        });
+    },
+    onError: () => {
+        Notify.create({
+            message: 'Error setting expiration date',
+            color: 'negative',
+            position: 'bottom',
+        });
+    },
+});
+
+function openSetExpirationDialog(agu: AccessGroupUser) {
+    $q.dialog({
+        component: SetAccessGroupExpirationDialog,
+        componentProps: {
+            agu: agu,
+        },
+    }).onOk((expirationDate: Date | null) => {
+        setAccessGroup({
+            aguUUID: agu.uuid,
+            expirationDate,
+        });
+    });
+}
+
 const project_cols = computed(() => {
     {
         let defaultCols = [...explorerPageTableColumns];
@@ -401,6 +474,12 @@ const user_cols = [
         label: 'Email',
         align: 'left',
         field: (row: AccessGroupUser) => row.user?.email,
+    },
+    {
+        name: 'expiration',
+        required: true,
+        label: 'Expiration',
+        align: 'left',
     },
     {
         name: 'actions',
