@@ -6,14 +6,12 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_files, get_file, get_file_download
+from kleinkram.api.routes import get_files, get_file
 from kleinkram.file_transfer import download_file as _download_file
-from kleinkram.models import print_files, File
-from kleinkram.utils import b64_md5
 from uuid import UUID
 from pathlib import Path
 
-file = typer.Typer(
+file_typer = typer.Typer(
     name="file",
     help="File operations",
     no_args_is_help=True,
@@ -21,7 +19,7 @@ file = typer.Typer(
 )
 
 
-@file.command("download")
+@file_typer.command("download")
 def download_file(
     id: Annotated[List[str], typer.Option(help="UUIDs of the files")],
     dest: Annotated[
@@ -58,7 +56,7 @@ def download_file(
             print(f"Error downloading file {file.name}: {e}")
 
 
-@file.command("list")
+@file_typer.command("list")
 def list_files(
     project: Optional[str] = typer.Option(None, help="project name"),
     mission: Optional[str] = typer.Option(None, help="mission name"),

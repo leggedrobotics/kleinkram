@@ -5,7 +5,7 @@ import sys
 
 from kleinkram.auth import Config
 
-endpoint = typer.Typer(
+endpoint_typer = typer.Typer(
     name="endpoint",
     help="Get Or Set the current endpoint.\n\nThe endpoint is used to determine the API server to connect to"
     "(default is the API server of https://datasets.leggedrobotics.com).",
@@ -14,7 +14,7 @@ endpoint = typer.Typer(
 )
 
 
-@endpoint.command("set")
+@endpoint_typer.command("set")
 def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use")):
     """
     Use this command to switch between different API endpoints.\n
@@ -36,7 +36,7 @@ def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use"
         print("\nLogin with `klein login`.")
 
 
-@endpoint.command("list")
+@endpoint_typer.command("list")
 def list_endpoints():
     """
     Get the current endpoint

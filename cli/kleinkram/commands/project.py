@@ -14,12 +14,12 @@ from kleinkram.api.routes import get_project
 from kleinkram.api.routes import get_projects_filtered
 from kleinkram.models import projects_to_table
 
-project = typer.Typer(
+project_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-@project.command("list")
+@project_typer.command("list")
 def list_projects(
     verbose: Annotated[bool, typer.Option()] = False,
 ) -> None:
@@ -40,7 +40,7 @@ def list_projects(
         console.print(table)
 
 
-@project.command("details")
+@project_typer.command("details")
 def details(
     id: Annotated[str, typer.Argument(help="UUID of the project to get details of")],
     verbose: Annotated[bool, typer.Option()] = False,
@@ -62,7 +62,7 @@ def details(
         console.print(details)
 
 
-@project.command("create", no_args_is_help=True, help="Create a new project")
+@project_typer.command("create", no_args_is_help=True, help="Create a new project")
 def create_project(
     name: Annotated[str, typer.Option(help="Name of Project")],
     description: Annotated[str, typer.Option(help="Description of Project")],
@@ -74,6 +74,6 @@ def create_project(
     print(f"Project '{name}' created successfully with UUID: {project_id}")
 
 
-@project.command("delete", help="Delete a project")
+@project_typer.command("delete", help="Delete a project")
 def delete_project():
     raise NotImplementedError()

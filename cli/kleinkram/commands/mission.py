@@ -5,12 +5,12 @@ from typing import Optional
 
 import typer
 
-mission = typer.Typer(
+mission_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-@mission.command()
+@mission_typer.command()
 def tag(
     mission_id: str = typer.Argument(),
     tagtype_id: str = typer.Argument(),
@@ -20,14 +20,14 @@ def tag(
     raise NotImplementedError
 
 
-@mission.command("list")
+@mission_typer.command("list")
 def list_missions(
     project: Optional[str] = typer.Option(None, help="Name of Project"),
 ):
     raise NotImplementedError
 
 
-@mission.command()
+@mission_typer.command()
 def info(
     id: str = typer.Argument(),
     verbose: Optional[bool] = typer.Option(False, help="Outputs more information"),
@@ -35,7 +35,7 @@ def info(
     raise NotImplementedError
 
 
-@mission.command()
+@mission_typer.command()
 def download(
     id: List[str] = typer.Option(help="UUIDs of Mission to download"),
     path: str = typer.Option(),
@@ -48,7 +48,7 @@ def download(
     raise NotImplementedError
 
 
-@mission.command()
+@mission_typer.command()
 def upload(
     path: List[str] = typer.Option(
         prompt=True, help="Path to files to upload, Regex supported"

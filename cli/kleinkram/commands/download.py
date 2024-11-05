@@ -26,7 +26,7 @@ from pathlib import Path
 import typer
 
 
-download = typer.Typer(
+download_typer = typer.Typer(
     name="download", no_args_is_help=True, invoke_without_command=True
 )
 
@@ -72,8 +72,8 @@ def _get_files_by_file_spec(
     return parsed_mission.files
 
 
-@download.callback()
-def download_cb(
+@download_typer.callback()
+def download(
     dest: str = typer.Option(prompt="destination", help="local path to save the files"),
     project: Optional[str] = typer.Option(
         None, "--project", "-p", help="project name or id"
