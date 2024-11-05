@@ -69,7 +69,7 @@ export const searchAccessGroups = async (
                 new Date(agu.updatedAt),
                 user,
                 null,
-                new Date(agu.expirationDate),
+                agu.expirationDate ? new Date(agu.expirationDate) : null,
             );
         });
         const projectAccess = group.project_accesses.map((access: any) => {
@@ -130,7 +130,7 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
             new Date(agu.updatedAt),
             user,
             null,
-            new Date(agu.expirationDate),
+            agu.expirationDate ? new Date(agu.expirationDate) : null,
         );
     });
     const projectAccess = group.project_accesses.map((access: any) => {

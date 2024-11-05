@@ -73,7 +73,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const { data } = useQuery<Project[]>({
-    queryKey: ['projects', 5, 0, 'updatedAt', true],
+    queryKey: ['projects', 5],
     queryFn: () => recentProjects(5),
 });
 

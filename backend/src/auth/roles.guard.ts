@@ -810,3 +810,28 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
         );
     }
 }
+
+@Injectable()
+export class IsAccessGroupCreatorByAccessGroupUserGuard extends BaseGuard {
+    constructor(
+        private reflector: Reflector,
+        private authGuardService: AuthGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot check access group creator',
+            );
+        }
+        const aguUUID = request.body.aguUUID || request.params.aguUUID;
+        return this.authGuardService.isAccessGroupCreatorByAccessGroupUserGuard(
+            user,
+            aguUUID,
+        );
+    }
+}
