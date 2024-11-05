@@ -175,7 +175,13 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 tmpFileName,
             );
         }, 'downloadMinioFile')();
-        const size = fs.statSync(tmpFileName).size;
+        let bagSize;
+        let mcapSize;
+        if (sourceIsBag) {
+            bagSize = fs.statSync(tmpFileName).size;
+        } else {
+            mcapSize = fs.statSync(tmpFileName).size;
+        }
 
         let bagHash = '';
         let mcapHash = '';
@@ -286,7 +292,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
                 job.data.tmp_files.push(mcapTempFileName); // saved for cleanup
 
-                mcapFileEntity.size = fs.statSync(mcapTempFileName).size;
+                mcapSize = fs.statSync(mcapTempFileName).size;
                 mcapFileEntity.hash = mcapHash;
             }
         } else {
@@ -319,7 +325,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         ////////////////////////////////////////////////////////////////
         if (sourceIsBag) {
             bagFileEntity.hash = bagHash;
-            bagFileEntity.size = size;
+            bagFileEntity.size = bagSize;
             bagFileEntity.date = date;
             if (job.data.recovering) {
                 bagFileEntity.state = FileState.FOUND;
@@ -330,7 +336,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }
 
         if (!mcapExists) {
-            mcapFileEntity.size = size;
+            mcapFileEntity.size = mcapSize;
             mcapFileEntity.hash = mcapHash;
             mcapFileEntity.date = date;
             if (job.data.recovering) {

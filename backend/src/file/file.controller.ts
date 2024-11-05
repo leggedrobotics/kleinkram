@@ -260,4 +260,11 @@ export class FileController {
         await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
         await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
     }
+
+    @Post('recomputeFileSizes')
+    @AdminOnly()
+    async recomputeFileSizes() {
+        logger.debug('Recomputing file sizes');
+        await this.fileService.recomputeFileSizes();
+    }
 }

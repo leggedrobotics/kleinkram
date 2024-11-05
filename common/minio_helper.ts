@@ -28,7 +28,6 @@ export const internalMinio: Client = new Client({
 export async function getInfoFromMinio(fileType: FileType, location: string) {
     const bucketName = getBucketFromFileType(fileType);
     try {
-        console.log('Getting file info:', bucketName, location);
         return await internalMinio.statObject(bucketName, location);
     } catch (e) {
         if (e.code === 'NotFound') {
