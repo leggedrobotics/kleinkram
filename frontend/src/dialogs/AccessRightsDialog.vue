@@ -58,7 +58,7 @@ const accessGroups = ref<AccessRight[]>(
     project.value?.projectAccesses?.map((access) => ({
         name: access.accessGroup?.name,
         uuid: access.accessGroup?.uuid,
-        memberCount: '???',
+        memberCount: access.accessGroup?.accessGroupUsers?.length || '???',
         rights: access.rights,
     })) || [],
 );
@@ -70,7 +70,8 @@ watch(
             newValue?.map((access) => ({
                 name: access.accessGroup?.name,
                 uuid: access.accessGroup?.uuid,
-                memberCount: '???',
+                memberCount:
+                    access.accessGroup?.accessGroupUsers?.length || '???',
                 rights: access.rights,
             })) || [];
     },

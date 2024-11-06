@@ -126,7 +126,7 @@ export const getProject = async (uuid: string): Promise<Project> => {
         const accessGroup = new AccessGroup(
             access.accessGroup.uuid,
             access.accessGroup.name,
-            users,
+            access.accessGroup.accessGroupUsers,
             [],
             [],
             access.accessGroup.personal,
