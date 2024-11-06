@@ -329,7 +329,7 @@ def upload(
                     f"hyphens. Consider using the '--fix-filenames' option to automatically fix the filenames."
                 )
 
-            if not 3 <= len(filename_without_extension) <= 40:
+            if not 3 <= len(filename_without_extension) <= 50:
                 raise ValueError(
                     f"Filename '{filename}' is not valid. It must be between 3 and 40 characters long. Consider using "
                     f"the '--fix-filenames' option to automatically fix the filenames."

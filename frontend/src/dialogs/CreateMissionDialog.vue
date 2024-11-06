@@ -85,7 +85,7 @@
                                 val.length >= 3 ||
                                 'Name must be at least 3 characters',
                             (val) =>
-                                val.length <= 40 ||
+                                val.length <= 50 ||
                                 'Name must be at most 40 characters',
                             (val) =>
                                 /^[\w\-_]+$/g.test(val) ||
