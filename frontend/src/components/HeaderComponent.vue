@@ -45,7 +45,11 @@ const main_menu = [
         title: 'Projects',
         icon: 'sym_o_box',
         to: ROUTES.PROJECTS.path,
-        subpage_names: [ROUTES.FILES.name, ROUTES.MISSIONS.name],
+        subpage_names: [
+            ROUTES.FILES.name,
+            ROUTES.MISSIONS.name,
+            ROUTES.FILE.name,
+        ],
     },
     {
         title: 'Datatable',
