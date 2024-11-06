@@ -21,7 +21,6 @@ import {
     QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip,
-    QueryString,
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
