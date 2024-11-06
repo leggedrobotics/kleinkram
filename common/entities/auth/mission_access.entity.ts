@@ -5,7 +5,7 @@ import AccessGroup from './accessgroup.entity';
 import Mission from '../mission/mission.entity';
 
 @Entity()
-@Unique(['accessGroup', 'mission'])
+@Unique('no_duplicated_access_groups_per_mission', ['accessGroup', 'mission'])
 export default class MissionAccess extends BaseEntity {
     @Column()
     rights: AccessGroupRights;

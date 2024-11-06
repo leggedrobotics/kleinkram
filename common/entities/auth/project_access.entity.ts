@@ -4,7 +4,7 @@ import { AccessGroupRights } from '../../enum';
 import AccessGroup from './accessgroup.entity';
 import Project from '../project/project.entity';
 
-@Unique(['accessGroup', 'project'])
+@Unique('no_duplicated_access_groups_per_project', ['accessGroup', 'project'])
 @Entity()
 export default class ProjectAccess extends BaseEntity {
     @Column()
