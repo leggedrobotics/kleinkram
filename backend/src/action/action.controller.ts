@@ -17,7 +17,7 @@ import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
-    QuerySkip,
+    QuerySkip, QuerySortBy, QuerySortDirection,
     QueryUUID,
 } from '../validation/queryDecorators';
 import Action from '@common/entities/action/action.entity';
@@ -72,9 +72,9 @@ export class ActionController {
         @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
-        @QueryOptionalString('sortBy') sortBy: string,
-        @QueryOptionalBoolean('descending') descending: boolean,
-        @QueryOptionalString('search') search: string,
+        @QuerySortBy('sortBy') sortBy: string,
+        @QuerySortDirection('descending') descending: boolean,
+        @QueryOptionalString('search', 'Searchkey in name, state_cause or image_name') search: string,
     ) {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -108,14 +108,14 @@ export class ActionController {
         @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
-        @QueryOptionalString('search') search: string,
+        @QueryOptionalString('search', 'Searchkey in name') search: string,
     ) {
         return this.actionService.listTemplates(skip, take, search);
     }
 
     @Get('details')
     @CanReadAction()
-    async details(@QueryUUID('uuid') uuid: string) {
+    async details(@QueryUUID('uuid', 'ActionUUID') uuid: string) {
         return this.actionService.details(uuid);
     }
 }

@@ -70,8 +70,8 @@ export class TagController {
     @Get('filtered')
     @LoggedIn()
     async getFiltered(
-        @QueryOptionalString('name') name: string,
-        @QueryOptionalString('type') type: DataType,
+        @QueryOptionalString('name', 'Filter by TagType name') name: string,
+        @QueryOptionalString('type', 'Filter by TagType datatype') type: DataType,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {

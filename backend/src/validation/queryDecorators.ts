@@ -13,9 +13,25 @@ import {
     StringValidate,
     UUIDValidate,
 } from './validationTypes';
+import { DECORATORS } from '@nestjs/swagger/dist/constants';
+
+const metadataApplier = (paramName: string, paramDescription: string, paramType:string, paramDatatype: string, paramRequired: boolean)=>[(target, key) => {
+    // Here we will define query parameter for swagger documentation
+    const explicit = Reflect.getMetadata(DECORATORS.API_PARAMETERS, target[key]) ?? [];
+    Reflect.defineMetadata(DECORATORS.API_PARAMETERS, [
+        ...explicit,
+        {
+            description: paramDescription,
+            in: paramType,
+            name: paramName,
+            required: paramRequired,
+            type: paramDatatype,
+        }
+    ], target[key]);
+}];
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryUUID = createParamDecorator(
+export const QueryUUID =(paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -28,10 +44,11 @@ export const QueryUUID = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'uuid', true)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalUUID = createParamDecorator(
+export const QueryOptionalUUID = (paramName: string, paramDescription: string) => createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -49,10 +66,11 @@ export const QueryOptionalUUID = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'uuid', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryString = createParamDecorator(
+export const QueryString = (paramName: string, paramDescription: string) => createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -66,10 +84,12 @@ export const QueryString = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'string', true)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalString = createParamDecorator(
+export const QueryOptionalString = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -87,10 +107,12 @@ export const QueryOptionalString = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'string', false)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryStringArray = createParamDecorator(
+export const QueryStringArray = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -103,10 +125,12 @@ export const QueryStringArray = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'string[]', true)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalStringArray = createParamDecorator(
+export const QueryOptionalStringArray = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -122,10 +146,11 @@ export const QueryOptionalStringArray = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'string[]', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryBoolean = createParamDecorator(
+export const QueryBoolean = (paramName: string, paramDescription: string)=>  createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -147,10 +172,12 @@ export const QueryBoolean = createParamDecorator(
             `Parameter ${data} is not a valid Boolean`,
         );
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'boolean', true)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalBoolean = createParamDecorator(
+export const QueryOptionalBoolean =(paramName: string, paramDescription: string) => createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -175,10 +202,11 @@ export const QueryOptionalBoolean = createParamDecorator(
             `Parameter ${data} is not a valid Boolean`,
         );
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'boolean', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryDate = createParamDecorator(
+export const QueryDate = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -196,10 +224,11 @@ export const QueryDate = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'DateString', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QuerySortBy = createParamDecorator(
+export const QuerySortBy = (paramName: string, paramDescription?: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -224,6 +253,8 @@ export const QuerySortBy = createParamDecorator(
             'file.createdAt',
             'file.size',
             'file.filename',
+            'state',
+            'state_cause'
         ];
 
         if (!fields.includes(value)) {
@@ -237,10 +268,38 @@ export const QuerySortBy = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription || 'Sort response by', 'query', 'string (sortable field)', true)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryProjectSearchParam = createParamDecorator(
+export const QuerySortDirection = (paramName: string, paramDescription?: string) =>createParamDecorator(
+    async (data: string, ctx: ExecutionContext) => {
+        const request = ctx.switchToHttp().getRequest();
+        let value = request.query[data];
+
+        if (value === '' || value === undefined) {
+            return 'ASC'; // default value
+        }
+
+        value = value.toUpperCase();
+        if (value !== 'ASC' && value !== 'DESC') {
+            throw new BadRequestException('Parameter is not a valid SortDirection');
+        }
+
+        const object = plainToInstance(StringValidate, { value });
+        await validateOrReject(object).catch(() => {
+            throw new BadRequestException('Parameter is not a valid SortDirection');
+        });
+
+        return value;
+    },
+    metadataApplier(paramName, paramDescription || 'Sort response direction', 'query', 'boolean', false)
+
+)(paramName);
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const QueryProjectSearchParam = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -272,10 +331,12 @@ export const QueryProjectSearchParam = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'Record<name | creator.uuid, string>', true)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalDate = createParamDecorator(
+export const QueryOptionalDate = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -292,10 +353,12 @@ export const QueryOptionalDate = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'dateString', false)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalNumber = createParamDecorator(
+export const QueryOptionalNumber = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -311,10 +374,12 @@ export const QueryOptionalNumber = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'number', false)
+
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QuerySkip = createParamDecorator(
+export const QuerySkip = (paramName: string, paramDescription?: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -330,10 +395,11 @@ export const QuerySkip = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription || 'Pagination Skip', 'query', 'number', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryTake = createParamDecorator(
+export const QueryTake = (paramName: string, paramDescription?: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -349,10 +415,11 @@ export const QueryTake = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription || 'Pagination Take', 'query', 'number', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptional = createParamDecorator(
+export const QueryOptional =(paramName: string, paramDescription: string) => createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -363,10 +430,11 @@ export const QueryOptional = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'any', false)
+)(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryOptionalRecord = createParamDecorator(
+export const QueryOptionalRecord = (paramName: string, paramDescription: string) =>createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
@@ -377,4 +445,5 @@ export const QueryOptionalRecord = createParamDecorator(
 
         return JSON.parse(value.replace(/'/g, '"'));
     },
-);
+    metadataApplier(paramName, paramDescription, 'query', 'Record<unknown, unknown>', false)
+)(paramName);

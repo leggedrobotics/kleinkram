@@ -15,3 +15,4 @@ Available Modules are:
 -   [`topic`](topic.md) - Handles the topic related requests.
 -   [`action`](action.md) - Handles the action related requests.
 -   [`queue`](queue.md) - Handles the queue related requests.
+-   [`category`](category.md) - Handles the category related requests.

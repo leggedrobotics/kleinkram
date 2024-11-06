@@ -20,9 +20,9 @@ export class CategoryController {
     @Get('all')
     @CanReadProject()
     async getAll(
-        @QueryUUID('uuid') uuid: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
         @addUser() user: AuthRes,
-        @QueryOptionalString('filter') filter?: string,
+        @QueryOptionalString('filter', 'Filter by Category name') filter?: string,
     ) {
         return this.categoryService.getAll(uuid, filter);
     }

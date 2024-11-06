@@ -32,7 +32,7 @@ export class AccessController {
 
     @Get('one')
     @UserOnly()
-    async getAccessGroup(@QueryString('uuid') uuid: string) {
+    async getAccessGroup(@QueryUUID('uuid','AccessGroup UUID') uuid: string) {
         return this.accessService.getAccessGroup(uuid);
     }
 
@@ -48,7 +48,7 @@ export class AccessController {
     @Get('canAddAccessGroupToProject')
     @UserOnly()
     async canAddAccessGroup(
-        @QueryUUID('uuid') uuid: string,
+        @QueryUUID('uuid', 'Project UUID' ) uuid: string,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.hasProjectRights(uuid, user);
@@ -92,12 +92,12 @@ export class AccessController {
     @UserOnly()
     @CanCreate()
     async search(
-        @QueryOptionalString('search') search: string,
+        @QueryOptionalString('search', 'Searchkey for accessgroup name') search: string,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
-        @QueryOptionalBoolean('personal') personal: boolean,
-        @QueryOptionalBoolean('creator') creator: boolean,
-        @QueryOptionalBoolean('member') member: boolean,
+        @QueryOptionalBoolean('personal', 'Only Personal Access Groups') personal: boolean,
+        @QueryOptionalBoolean('creator', 'Only Access Groups created by user') creator: boolean,
+        @QueryOptionalBoolean('member', 'Only Access Groups the user is member of') member: boolean,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.searchAccessGroup(
@@ -150,8 +150,8 @@ export class AccessController {
     @Get('projectAccess')
     @CanReadProject()
     async getProjectAccess(
-        @QueryString('uuid') uuid: string,
-        @QueryString('projectAccessUUID') projectAccessUUID: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryUUID('projectAccessUUID','ProjectAccess UUID') projectAccessUUID: string,
     ) {
         return this.accessService.getProjectAccess(uuid, projectAccessUUID);
     }

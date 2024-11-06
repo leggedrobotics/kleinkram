@@ -46,8 +46,8 @@ export class QueueController {
     @Get('active')
     @LoggedIn()
     async active(
-        @QueryDate('startDate') startDate: string,
-        @QueryOptionalString('stateFilter') stateFilter: string,
+        @QueryDate('startDate', 'Start of time range to filter queue by') startDate: string,
+        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -66,8 +66,8 @@ export class QueueController {
     @Get('forFile')
     @CanReadMission()
     async forFile(
-        @QueryString('filename') filename: string,
-        @QueryUUID('uuid') uuid: string, // Mission UUID
+        @QueryString('filename', 'Filename') filename: string,
+        @QueryUUID('uuid', 'Mission UUID') uuid: string,
     ) {
         return this.queueService.forFile(filename, uuid);
     }
