@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import typer
 import sys
+
+import typer
 
 from kleinkram.auth import Config
 

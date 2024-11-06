@@ -1,32 +1,28 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
+from uuid import UUID
 
 import typer
-from typing import Optional, Dict, List
-from pathlib import Path
 import yaml
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.models import Mission
-from kleinkram.api.routes import (
-    get_mission_by_id,
-    get_project_id_by_name,
-    get_mission_id_by_name,
-    create_mission,
-    get_upload_creditials,
-)
-from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import create_mission
+from kleinkram.api.routes import get_mission_by_id
+from kleinkram.api.routes import get_mission_id_by_name
+from kleinkram.api.routes import get_project_id_by_name
+from kleinkram.api.routes import get_upload_creditials
 from kleinkram.file_transfer import upload_files
-
-
-from kleinkram.utils import (
-    MissionById,
-    MissionByName,
-    get_valid_mission_spec,
-    patterns_matched,
-    get_internal_file_map,
-)
-from uuid import UUID
-from typing import Union
+from kleinkram.models import Mission
+from kleinkram.utils import get_internal_file_map
+from kleinkram.utils import get_valid_mission_spec
+from kleinkram.utils import MissionById
+from kleinkram.utils import MissionByName
+from kleinkram.utils import patterns_matched
 
 upload_typer = typer.Typer(
     name="upload",
@@ -149,8 +145,6 @@ def upload(
     access = get_upload_creditials(
         client, list(internal_filename_map.values()), mission_parsed.id
     )
-
-    breakpoint()
 
     # upload files
     upload_files(files_with_access, internal_filename_map, n_workers=4)

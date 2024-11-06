@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
-import tempfile
 import os
-
-from typing import NamedTuple, Dict, Optional
-from kleinkram.consts import LOCAL_API_URL
-from pathlib import Path
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict
+from typing import NamedTuple
+from typing import Optional
+
+from kleinkram.consts import LOCAL_API_URL
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
 CORRUPTED_CONFIG_FILE_MESSAGE = (

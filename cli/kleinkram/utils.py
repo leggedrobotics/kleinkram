@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import base64
 import glob
+import hashlib
 import os
 import secrets
 import string
 from pathlib import Path
-from typing import Dict, Optional, Union, NamedTuple
+from typing import Dict
 from typing import Generator
 from typing import List
+from typing import NamedTuple
+from typing import Optional
+from typing import Union
 from uuid import UUID
-
-import hashlib
-import base64
 
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"

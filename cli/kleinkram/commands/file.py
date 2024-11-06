@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import List
 from typing import Optional
+from uuid import UUID
 
 import typer
 from typing_extensions import Annotated
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_files, get_file
+from kleinkram.api.routes import get_file
+from kleinkram.api.routes import get_files
 from kleinkram.file_transfer import download_file as _download_file
-from uuid import UUID
-from pathlib import Path
 
 file_typer = typer.Typer(
     name="file",

@@ -2,30 +2,34 @@ from __future__ import annotations
 
 import os
 import queue
+import sys
 import threading
+from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Dict, Union, Generator
+from typing import Dict
+from typing import Generator
 from typing import NamedTuple
 from typing import Optional
+from typing import Union
 from uuid import UUID
-from contextlib import contextmanager
 
 import boto3.s3.transfer
 import botocore.config
 import httpx
 import tqdm
-import sys
 from rich.console import Console
 
-from kleinkram.api.routes import confirm_file_upload, get_file_download
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import confirm_file_upload
+from kleinkram.api.routes import get_file_download
+from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
-from kleinkram.utils import b64_md5
-from kleinkram.config import Config
 from kleinkram.errors import CorruptedFile
-from kleinkram.models import UploadAccess, FileUploadJob
+from kleinkram.models import FileUploadJob
+from kleinkram.models import UploadAccess
+from kleinkram.utils import b64_md5
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16  # 16MB
 

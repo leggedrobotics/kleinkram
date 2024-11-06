@@ -1,7 +1,6 @@
 """\
 this file contains any functions calling the API
 """
-
 from __future__ import annotations
 
 from typing import Any
@@ -13,15 +12,16 @@ from typing import Union
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.errors import CorruptedFile
 from kleinkram.error_handling import AccessDeniedException
-from kleinkram.models import Project, File
+from kleinkram.errors import CorruptedFile
+from kleinkram.models import File
+from kleinkram.models import Mission
+from kleinkram.models import Project
+from kleinkram.models import UploadAccess
 from kleinkram.models import User
 from kleinkram.tag import DataType
 from kleinkram.tag import TagType
 from kleinkram.utils import is_valid_uuid4
-from kleinkram.models import UploadAccess
-from kleinkram.models import Mission
 
 MAX_PAGINATION = 10_000
 
@@ -31,11 +31,12 @@ CLAIM_ADMIN = "/user/claimAdmin"
 PROJECT_BY_NAME = "/project/byName"
 PROJECT_BY_ID = "/project/one"
 PROJECT_CREATE = "/project/create"
-PROJECTS_FILTERED = "/project/filtered"
+PROJECT_ALL = "/project/filtered"
 
 MISSION_BY_NAME = "/mission/byName"
 MISSION_BY_ID = "/mission/one"
 MISSION_CREATE = "/mission/create"
+MISSION_BY_PROJECT_NAME = "/mission/filteredByProjectName"
 
 TAG_TYPES = "/tag/all"
 TAG = "/tag"
@@ -68,8 +69,6 @@ def get_upload_creditials(
             "Failed to get temporary credentials. Status Code: "
             f"{resp.status_code}\n{resp.json()['message'][0]}"
         )
-
-    breakpoint()
 
     raise NotImplementedError("TODO: implement this")
 
@@ -152,20 +151,6 @@ def create_project(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def get_projects_filtered(client: AuthenticatedClient) -> list[Project]:
-    resp = client.get(PROJECTS_FILTERED)
-    resp.raise_for_status()
-
-    ret = []
-    for project in resp.json()[0]:
-        id = UUID(project["uuid"], version=4)
-        name = project["name"]
-        description = project["description"]
-
-        ret.append(Project(id=id, name=name, description=description))
-    return ret
-
-
 def get_mission_id_by_name(
     client: AuthenticatedClient, mission_name, project_id: UUID
 ) -> Optional[UUID]:
@@ -204,6 +189,7 @@ def get_mission_by_id(
         id=mission_id,
         name=mission_data["name"],
         project_id=UUID(mission_data["project"]["uuid"], version=4),
+        project_name=mission_data["project"]["name"],
         files=files,
     )
 
@@ -421,6 +407,40 @@ def get_files(
         except Exception:
             print(f"Error parsing file: {file}")
     return files
+
+
+def get_missions(
+    client: AuthenticatedClient,
+    project: Optional[str] = None,
+    tags: Optional[Dict[str, str]] = None,
+) -> list[Mission]:
+    # TODO: use a better endpoint once this exists
+    matching_files = get_files(client, project=project, tags=tags)
+
+    ret = {}
+    for file in matching_files:
+        ret[file.mission_id] = Mission(
+            id=file.mission_id,
+            name=file.mission_name,
+            project_id=file.project_id,
+            project_name=file.project_name,
+        )
+
+    return list(ret.values())
+
+
+def get_projects(client: AuthenticatedClient) -> list[Project]:
+    resp = client.get(PROJECT_ALL)
+    resp.raise_for_status()
+
+    ret = []
+    for pr in resp.json()[0]:
+        id = UUID(pr["uuid"], version=4)
+        name = pr["name"]
+        description = pr["description"]
+        ret.append(Project(id=id, name=name, description=description))
+
+    return ret
 
 
 def confirm_file_upload(

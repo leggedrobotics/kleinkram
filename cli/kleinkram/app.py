@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import typer
 from typing import Optional
-from kleinkram.utils import get_version
-from kleinkram.auth import login_flow
-from kleinkram.config import Config, get_shared_state
+
+import typer
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
-from kleinkram.commands.endpoint import endpoint_typer
+from kleinkram.auth import login_flow
 from kleinkram.commands.download import download_typer
-from kleinkram.commands.upload import upload_typer
+from kleinkram.commands.endpoint import endpoint_typer
 from kleinkram.commands.list import list_typer
+from kleinkram.commands.upload import upload_typer
+from kleinkram.config import Config
+from kleinkram.config import get_shared_state
+from kleinkram.utils import get_version
 
 
 CLI_HELP = """\

@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
+from pathlib import Path
 from typing import List
 from typing import NamedTuple
 from typing import Optional
 from uuid import UUID
-from pathlib import Path
-from dataclasses import dataclass, field
 
 from rich.table import Table
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Project:
     id: UUID
     name: str
@@ -19,12 +20,25 @@ class Project:
     missions: List[Mission] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Mission:
     id: UUID
     name: str
     project_id: UUID
+    project_name: str
     files: List[File] = field(default_factory=list)
+
+
+@dataclass(frozen=True, eq=True)
+class File:
+    id: UUID
+    name: str
+    hash: str
+    size: int
+    mission_id: UUID
+    mission_name: str
+    project_id: UUID
+    project_name: str
 
 
 class User(NamedTuple):
@@ -49,18 +63,6 @@ class TagType(NamedTuple):
     id: Optional[UUID] = None
 
 
-@dataclass
-class File:
-    id: UUID
-    name: str
-    hash: str
-    size: int
-    mission_id: UUID
-    mission_name: str
-    project_id: UUID
-    project_name: str
-
-
 class UploadAccess(NamedTuple):
     access_key: str
     secret_key: str
@@ -76,28 +78,23 @@ class FileUploadJob(NamedTuple):
     error: Optional[str] = None
 
 
-def tag_types_table(tag_types: list[TagType], verbose: bool = False) -> Table:
-    table = Table(title="Tag Types")
-    table.add_column("Name")
-    table.add_column("Data Type")
-
-    if verbose:
-        table.add_column("UUID")
-
-    for tagtype in tag_types:
-        entries = [tagtype.name, tagtype.data_type.value]
-        if verbose:
-            entries.append(str(tagtype.id))
-        table.add_row(*entries)
-
-    return table
+def delimiter_row(
+    *lengths: int, delimiter: str = "-", cols: list[int] | None = None
+) -> List[str]:
+    ret = []
+    for i, col_len in enumerate(lengths):
+        if cols is None or i in cols:
+            ret.append(delimiter * col_len)
+        else:
+            ret.append("")
+    return ret
 
 
 def projects_to_table(projects: List[Project]) -> Table:
-    table = Table(title="Projects")
-    table.add_column("ID")
-    table.add_column("Name")
-    table.add_column("Description")
+    table = Table(title="projects")
+    table.add_column("id")
+    table.add_column("name")
+    table.add_column("description")
 
     for project in projects:
         table.add_row(str(project.id), project.name, project.description)
@@ -105,40 +102,66 @@ def projects_to_table(projects: List[Project]) -> Table:
     return table
 
 
-def files_to_table(files: List[File]) -> Table:
+def missions_to_table(missions: List[Mission]) -> Table:
+    table = Table(title="missions")
+    table.add_column("project")
+    table.add_column("name")
+    table.add_column("id")
 
-    table = Table(title="Files")
+    # order by project, name
+    missions_tp = []
+    for mission in missions:
+        missions_tp.append((mission.project_name, mission.name, str(mission.id)))
+    missions_tp.sort()
+
+    # this is used to place table delimiters
+    # somehow this is not supported out of the box by rich
+    pmax = max(len(x[0]) for x in missions_tp)
+    nmax = max(len(x[1]) for x in missions_tp)
+    imax = max(len(x[2]) for x in missions_tp)
+
+    last_project: Optional[str] = None
+    for project, name, id_ in missions_tp:
+        # add delimiter row if project changes
+        if last_project is not None and last_project != project:
+            table.add_row(*delimiter_row(pmax, nmax, imax, delimiter="="))
+        last_project = project
+
+        table.add_row(project, name, id_)
+    return table
+
+
+def files_to_table(files: List[File], delimiters: bool = True) -> Table:
+    table = Table(title="files")
     table.add_column("project")
     table.add_column("mission")
     table.add_column("name")
     table.add_column("id")
 
+    # order by project, mission, name
     files_tp = []
     for file in files:
         files_tp.append((file.project_name, file.mission_name, file.name, str(file.id)))
     files_tp.sort()
 
-    for tp in files_tp:
-        table.add_row(*tp)
+    # this is used to place table delimiters
+    # somehow this is not supported out of the box by rich
+    pmax = max(len(x[0]) for x in files_tp)
+    mmax = max(len(x[1]) for x in files_tp)
+    nmax = max(len(x[2]) for x in files_tp)
+    imax = max(len(x[3]) for x in files_tp)
+
+    last_mission: Optional[str] = None
+    last_project: Optional[str] = None
+    for project, mission, name, id_ in files_tp:
+        # add delimiter row if project or mission changes
+        if last_project is not None and last_project != project and delimiters:
+            table.add_row(*delimiter_row(pmax, mmax, nmax, imax, delimiter="="))
+        elif last_mission is not None and last_mission != mission and delimiters:
+            table.add_row()
+        last_project = project
+        last_mission = mission
+
+        table.add_row(project, mission, name, id_)
 
     return table
-
-
-def print_files(file: List[File]) -> None:
-    tree = {}
-    for f in file:
-        if f.project_id not in tree:
-            tree[f.project_id] = {}
-        if f.mission_id not in tree[f.project_id]:
-            tree[f.project_id][f.mission_id] = []
-        tree[f.project_id][f.mission_id].append(f)
-
-    pmap = {f.project_id: f.project_name for f in file}
-    mmap = {f.mission_id: f.mission_name for f in file}
-
-    for project_id, missions in tree.items():
-        print(f" -  Project: {pmap[project_id]} ({project_id})")
-        for mission_id, files in missions.items():
-            print(f"   - Mission: {mmap[mission_id]} ({mission_id})")
-            for f in files:
-                print(f"     - {f.name} ({f.id})")

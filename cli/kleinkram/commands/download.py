@@ -1,29 +1,30 @@
 from __future__ import annotations
 
-
-from typing import Optional
-from typing import List, Union, TYPE_CHECKING
-from kleinkram.utils import (
-    get_valid_file_spec,
-    to_name_or_uuid,
-    FilesById,
-    FilesByMission,
-    MissionById,
-    MissionByName,
-)
-from kleinkram.api.routes import (
-    get_file,
-    get_mission_by_id,
-    get_mission_id_by_name,
-    get_project_id_by_name,
-)
-from kleinkram.api.client import AuthenticatedClient
-from uuid import UUID
-from kleinkram.models import Mission, File, print_files
-from kleinkram.file_transfer import download_file
 from pathlib import Path
+from typing import List
+from typing import Optional
+from typing import Union
+from uuid import UUID
 
 import typer
+from rich.console import Console
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import get_file
+from kleinkram.api.routes import get_mission_by_id
+from kleinkram.api.routes import get_mission_id_by_name
+from kleinkram.api.routes import get_project_id_by_name
+from kleinkram.config import get_shared_state
+from kleinkram.file_transfer import download_file
+from kleinkram.models import File
+from kleinkram.models import files_to_table
+from kleinkram.models import Mission
+from kleinkram.utils import FilesById
+from kleinkram.utils import FilesByMission
+from kleinkram.utils import get_valid_file_spec
+from kleinkram.utils import MissionById
+from kleinkram.utils import MissionByName
+from kleinkram.utils import to_name_or_uuid
 
 
 download_typer = typer.Typer(
@@ -103,9 +104,10 @@ def download(
             "the files you are trying to download do not have unique names"
         )
 
-    print("downloading files:")
-    print_files(parsed_files)
-    print()
+    if get_shared_state().verbose:
+        table = files_to_table(parsed_files, title="downloading files...")
+        console = Console()
+        console.print(table)
 
     for file in parsed_files:
         try:
