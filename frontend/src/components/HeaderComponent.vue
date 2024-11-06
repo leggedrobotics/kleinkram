@@ -29,10 +29,8 @@ import KleinkramLogo from 'components/header/KleinkramLogo.vue';
 import HeaderTabs from 'components/header/HeaderTabs.vue';
 import HeaderMenuRight from 'components/HeaderMenuRight.vue';
 import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
-import { useQuasar } from 'quasar';
 
 const $router = useRouter();
-const $q = useQuasar();
 
 const main_menu = [
     {
