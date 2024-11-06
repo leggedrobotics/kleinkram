@@ -27,8 +27,8 @@ export class TagController {
     @Post('create')
     @CanCreate()
     async createTagType(
-        @BodyString('name') name: string,
-        @BodyDataType('type') type: DataType,
+        @BodyString('name', 'Tag name') name: string,
+        @BodyDataType('type', 'Tag type') type: DataType,
     ) {
         return this.tagService.create(name, type);
     }
@@ -36,9 +36,9 @@ export class TagController {
     @Post('addTag')
     @CanAddTag()
     async addTag(
-        @BodyUUID('mission') mission: string,
-        @BodyUUID('tagType') tagType: string,
-        @BodyNotNull('value') value: string | number | boolean,
+        @BodyUUID('mission', 'Mission UUID') mission: string,
+        @BodyUUID('tagType', 'TagType UUID') tagType: string,
+        @BodyNotNull('value', 'TagType value') value: string | number | boolean,
     ) {
         return this.tagService.addTagType(mission, tagType, value);
     }
@@ -46,8 +46,8 @@ export class TagController {
     @Post('addTags')
     @CanAddTag()
     async addTags(
-        @BodyUUID('uuid') uuid: string,
-        @BodyNotNull('tags') tags: Record<string, string>,
+        @BodyUUID('uuid', 'Mission UUID') uuid: string,
+        @BodyNotNull('tags', 'Record Tagtype UUID to Tag value') tags: Record<string, string>,
     ) {
         return this.tagService.addTags(uuid, tags);
     }

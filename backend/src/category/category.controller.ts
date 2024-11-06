@@ -30,9 +30,9 @@ export class CategoryController {
     @Post('create')
     @CanCreateInProjectByBody()
     async createCategory(
-        @BodyString('name') name: string,
+        @BodyString('name', 'Category Name') name: string,
         @addUser() user: AuthRes,
-        @BodyUUID('projectUUID') projectUUID: string,
+        @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
     ) {
         return this.categoryService.create(name, projectUUID, user);
     }
@@ -40,9 +40,9 @@ export class CategoryController {
     @Post('addMany')
     @CanWriteMissionByBody()
     async addManyCategories(
-        @BodyUUID('missionUUID') missionUUID: string,
-        @BodyUUIDArray('files') files: string[],
-        @BodyUUIDArray('categories') categories: string[],
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @BodyUUIDArray('files', 'List of File UUID where Categries are added') files: string[],
+        @BodyUUIDArray('categories', 'List of Category UUID to be added') categories: string[],
     ) {
         return this.categoryService.addManyCategories(
             missionUUID,

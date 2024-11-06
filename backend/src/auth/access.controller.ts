@@ -39,7 +39,7 @@ export class AccessController {
     @Post('create')
     @CanCreate()
     async createAccessGroup(
-        @BodyName('name') name: string,
+        @BodyName('name', 'Name of AccessGroup') name: string,
         @addUser() user: AuthRes,
     ) {
         return this.accessService.createAccessGroup(name, user);
@@ -57,9 +57,9 @@ export class AccessController {
     @Post('addUserToProject')
     @CanWriteProject()
     async addUserToProject(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('userUUID') userUUID: string,
-        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
+        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
+        @BodyUUID('userUUID', 'User UUID') userUUID: string,
+        @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
         @addUser() requestUser?: AuthRes,
     ) {
         return this.accessService.addUserToProject(
@@ -73,8 +73,8 @@ export class AccessController {
     @Post('addUserToAccessGroup')
     @IsAccessGroupCreator()
     async addUserToAccessGroup(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('userUUID') userUUID: string,
+        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
+        @BodyUUID('userUUID', 'User UUID') userUUID: string,
     ) {
         return this.accessService.addUserToAccessGroup(uuid, userUUID);
     }
@@ -82,8 +82,8 @@ export class AccessController {
     @Post('removeUserFromAccessGroup')
     @IsAccessGroupCreator()
     async removeUserFromAccessGroup(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('userUUID') userUUID: string,
+        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
+        @BodyUUID('userUUID', 'User UUID') userUUID: string,
     ) {
         return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
     }
@@ -114,9 +114,9 @@ export class AccessController {
     @Post('addAccessGroupToProject')
     @CanWriteProject()
     async addAccessGroupToProject(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('accessGroupUUID') accessGroupUUID: string,
-        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
+        @BodyUUID('uuid', 'Project UUID') uuid: string,
+        @BodyUUID('accessGroupUUID', 'Access Group UUID') accessGroupUUID: string,
+        @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.addAccessGroupToProject(
@@ -130,8 +130,8 @@ export class AccessController {
     @Post('removeAccessGroupFromProject')
     @CanDeleteProject()
     async removeAccessGroupFromProject(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('accessGroupUUID') accessGroupUUID: string,
+        @BodyUUID('uuid', 'Project UUID') uuid: string,
+        @BodyUUID('accessGroupUUID', 'Access Group UUID') accessGroupUUID: string,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.removeAccessGroupFromProject(
@@ -160,9 +160,9 @@ export class AccessController {
     @CanWriteProject()
     @IsAccessGroupCreatorByProjectAccess()
     async updateProjectAccess(
-        @BodyUUID('uuid') uuid: string,
-        @BodyUUID('projectAccessUUID') projectAccessUUID: string,
-        @BodyAccessGroupRights('rights') rights: AccessGroupRights,
+        @BodyUUID('uuid', 'Project UUID') uuid: string,
+        @BodyUUID('projectAccessUUID', 'ProjectAccess UUID') projectAccessUUID: string,
+        @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.updateProjectAccess(
@@ -176,7 +176,7 @@ export class AccessController {
     @Post('setExpireDate')
     @IsAccessGroupCreatorByAccessGroupUser()
     async setExpireDate(
-        @BodyUUID('aguUUID') aguUUID: string,
+        @BodyUUID('aguUUID', 'AccessGroupUser UUID') aguUUID: string,
         @Body('expireDate') expireDate: Date,
     ) {
         return this.accessService.setExpireDate(aguUUID, expireDate);

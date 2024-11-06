@@ -19,10 +19,10 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 import {
-    QueryOptionalBoolean,
     QueryProjectSearchParam,
     QuerySkip,
-    QuerySortBy, QuerySortDirection,
+    QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -31,7 +31,7 @@ import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
-import { ApiQuery } from '@nestjs/swagger';
+import { BodyUUIDArray } from '../validation/bodyDecorators';
 
 @Controller('project')
 export class ProjectController {
@@ -70,7 +70,9 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@QueryUUID('uuid', 'Project UUID') uuid: string): Promise<Project> {
+    async getProjectById(
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+    ): Promise<Project> {
         return this.projectService.findOne(uuid);
     }
 
@@ -127,7 +129,7 @@ export class ProjectController {
     @CanWriteProject()
     async updateTagTypes(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @Body('tagTypeUUIDs') tagTypeUUIDs: string[],
+        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set') tagTypeUUIDs: string[],
     ) {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
     }

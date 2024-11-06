@@ -13,9 +13,10 @@ import {
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
-    QueryOptionalBoolean,
     QueryOptionalString,
-    QuerySkip, QuerySortBy, QuerySortDirection,
+    QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryStringArray,
     QueryTake,
@@ -40,7 +41,7 @@ export class MissionController {
     @Post('updateName')
     @CanWriteMissionByBody()
     async updateMissionName(
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('name') name: string,
     ) {
         // validate name
@@ -160,7 +161,7 @@ export class MissionController {
     @Post('tags')
     @CanWriteMissionByBody()
     async updateMissionTags(
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('tags') tags: Record<string, string>,
     ) {
         return this.missionService.updateTags(missionUUID, tags);
@@ -168,7 +169,9 @@ export class MissionController {
 
     @Get('many')
     @CanReadManyMissions()
-    async getManyMissions(@QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[]) {
+    async getManyMissions(
+        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
+    ) {
         return this.missionService.findMany(uuids);
     }
 }

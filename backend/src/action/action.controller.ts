@@ -15,7 +15,6 @@ import {
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
-    QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip, QuerySortBy, QuerySortDirection,
     QueryUUID,

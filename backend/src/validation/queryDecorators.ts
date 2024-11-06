@@ -13,25 +13,11 @@ import {
     StringValidate,
     UUIDValidate,
 } from './validationTypes';
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
+import { metadataApplier } from './MetadataApplier';
 
-const metadataApplier = (paramName: string, paramDescription: string, paramType:string, paramDatatype: string, paramRequired: boolean)=>[(target, key) => {
-    // Here we will define query parameter for swagger documentation
-    const explicit = Reflect.getMetadata(DECORATORS.API_PARAMETERS, target[key]) ?? [];
-    Reflect.defineMetadata(DECORATORS.API_PARAMETERS, [
-        ...explicit,
-        {
-            description: paramDescription,
-            in: paramType,
-            name: paramName,
-            required: paramRequired,
-            type: paramDatatype,
-        }
-    ], target[key]);
-}];
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const QueryUUID =(paramName: string, paramDescription: string)=> createParamDecorator(
+export const QueryUUID = (paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.query[data];
