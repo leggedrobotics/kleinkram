@@ -77,7 +77,7 @@
                                 Default Group:
                             </td>
                             <td class="q-table__cell">
-                                {{ defaultGroup?.name }}
+                                {{ defaultGroup?.name || 'None' }}
                             </td>
                         </tr>
                     </tbody>
@@ -88,68 +88,33 @@
             <explorer-page-project-table :url_handler="handler" />
         </q-tab-panel>
         <q-tab-panel name="Admin">
-            <div class="row">
-                <div style="width: 300px">
-                    <q-btn
-                        label="Reset Minio Tagging"
-                        class="button-border bg-button-primary full-width"
-                        @click="resetMinioTagging"
-                        icon="sym_o_sell"
-                        flat
-                    />
-                    <div>
-                        This will delete the Minio tags for all files in the
-                        system and then regenerate them based on the current DB
-                        state. This action cannot be undone. There is no
-                        confirmation!
-                    </div>
-                </div>
-                <div style="width: 300px; margin-left: 20px">
-                    <q-btn
-                        label="Recompute File Sizes"
-                        class="button-border bg-button-primary full-width"
-                        @click="resetFileSizes"
-                        icon="sym_o_expand"
-                        flat
-                    />
-                    <div>
-                        This will recompute the file sizes in the database by
-                        asking Minio for the size of each file. This action
-                        cannot be undone. There is no confirmation!
-                    </div>
-                </div>
-            </div>
+            <admin-settings />
         </q-tab-panel>
     </q-tab-panels>
 </template>
 
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
-import { getUser } from 'src/services/auth';
 import TitleSection from 'components/TitleSection.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
-import { QueryHandler } from 'src/services/QueryHandler';
 import ROLE from 'src/enums/USER_ROLES';
-import axios from 'src/api/axios';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import { useHandler, useUser } from 'src/hooks/customQueryHooks';
+import AdminSettings from 'components/userProfile/AdminSettings.vue';
+import { AccessGroup } from 'src/types/AccessGroup';
 
-const data = await getUser();
+const { data } = useUser();
 const tab = ref('Details');
 
-const defaultGroup = data?.accessGroupUsers.find(
-    (group) => group.accessGroup?.inheriting,
-)?.accessGroup;
+const defaultGroup = computed<AccessGroup | undefined>(() => {
+    return data.value?.accessGroupUsers.find(
+        (group) => group.accessGroup?.inheriting,
+    )?.accessGroup as AccessGroup | undefined;
+});
+
+// we need to set the creator.uuid search param in order to fetch the correct projects
 const handler = useHandler();
-handler.value.searchParams = { 'creator.uuid': data?.uuid || '' };
-
-async function resetMinioTagging() {
-    await axios.post('file/resetMinioTags');
-}
-
-async function resetFileSizes() {
-    await axios.post('file/recomputeFileSizes');
-}
+handler.value.searchParams = { 'creator.uuid': data.value?.uuid || '' };
 </script>
 <style>
 .q-table-container {
@@ -170,6 +135,7 @@ async function resetFileSizes() {
     border-bottom: 1px solid #e0e0e0;
     border-right: 1px solid #e0e0e0;
 }
+
 .q-table__cell:last-child {
     border-right: none;
 }

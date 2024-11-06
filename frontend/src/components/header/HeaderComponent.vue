@@ -11,14 +11,14 @@
 
             <q-separator vertical />
 
-            <header-tabs :main_menu="main_menu" class="q-ml-lg" />
+            <header-navigation-tabs :main_menu="main_menu" class="q-ml-lg" />
 
             <q-space />
             <Suspense>
-                <header-menu-right />
+                <header-right-menu />
             </Suspense>
         </q-toolbar>
-        <navigation-bread-crumbs />
+        <breadcrumb-navigation />
     </q-header>
 </template>
 
@@ -26,9 +26,9 @@
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import KleinkramLogo from 'components/header/KleinkramLogo.vue';
-import HeaderTabs from 'components/header/HeaderTabs.vue';
-import HeaderMenuRight from 'components/HeaderMenuRight.vue';
-import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
+import HeaderNavigationTabs from 'components/header/HeaderTabs.vue';
+import HeaderRightMenu from 'components/header/HeaderMenuRight.vue';
+import BreadcrumbNavigation from 'components/BreadCrumbs.vue';
 
 const $router = useRouter();
 

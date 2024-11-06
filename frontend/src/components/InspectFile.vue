@@ -274,7 +274,7 @@ import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
 import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
 import EditFileButton from 'components/buttons/EditFileButton.vue';
-import KleinDownloadFile from 'components/CLILinks/KleinDownloadFile.vue';
+import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
 
 const $router = useRouter();
