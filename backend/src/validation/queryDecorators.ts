@@ -346,7 +346,7 @@ export const QueryTake = createParamDecorator(
             return 100; // default value
         }
 
-        if (value > 10_00) {
+        if (value > 10_000) {
             throw new BadRequestException('QueryTake is too large');
         } else if (value < 1) {
             throw new BadRequestException('QueryTake is too small');
