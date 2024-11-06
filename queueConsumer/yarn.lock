@@ -228,15 +228,16 @@
   dependencies:
     tslib "^2.5.0"
 
-"@mcap/support@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.1.tgz#595fa108f36ef95565f6adba13be7458bf40705a"
-  integrity sha512-fsZb7//3fG06OKnN+qcs9wdW1sZrpKHU8i2G0ZW/Sj8skkqw6Y6aVqf2hOthJ/e/kChydcsJrNoB4XhvlUhW7w==
+"@mcap/support@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.2.tgz#e9bc4f00571ebc27e5ec17b9678f06c0beb415c2"
+  integrity sha512-zkHuAywhRgTaEJCxBdtEw4PxfCvzml60/YSp50FBaCNBA5ZHTWNFbJTQ2v6XdUK4lyE9Stw74gOzOWVfy4boHw==
   dependencies:
     "@foxglove/wasm-bz2" "^0.1.1"
     "@foxglove/wasm-lz4" "^1.0.2"
     "@foxglove/wasm-zstd" "^1.0.1"
     protobufjs "^7.2.5"
+    tslib "^2.5.0"
 
 "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3":
   version "3.0.3"

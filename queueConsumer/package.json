@@ -1,6 +1,6 @@
 {
     "name": "Kleinkram_queueConsumer",
-    "version": "0.36.1",
+    "version": "0.35.8",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
@@ -10,7 +10,7 @@
     "dependencies": {
         "@mcap/core": "^2.1.5",
         "@mcap/nodejs": "^1.0.2",
-        "@mcap/support": "^1.0.0",
+        "@mcap/support": "^1.0.2",
         "@nestjs/bull": "^10.2.2",
         "@nestjs/common": "10.4.6",
         "@nestjs/config": "^3.3.0",
