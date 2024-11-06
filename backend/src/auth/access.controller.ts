@@ -7,7 +7,6 @@ import {
     CanWriteProject,
     IsAccessGroupCreator,
     IsAccessGroupCreatorByAccessGroupUser,
-    IsAccessGroupCreatorByProjectAccess,
     UserOnly,
 } from './roles.decorator';
 import { addUser, AuthRes } from './paramDecorator';
@@ -24,6 +23,11 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import { CreateAccessGroupDto } from './dto/CreateAccessGroup.dto';
+import { AddUserToProjectDto } from './dto/AddUserToProject.dto';
+import { AddUserToAccessGroupDto } from './dto/AddUserToAccessGroup.dto';
+import { AddAccessGroupToProject } from './dto/AddAccessGroupToProject';
+import { RemoveAccessGroupFromProject } from './dto/RemoveAccessGroupFromProject';
 
 @Controller('access')
 export class AccessController {
@@ -38,10 +42,10 @@ export class AccessController {
     @Post('create')
     @CanCreate()
     async createAccessGroup(
-        @BodyName('name', 'Name of AccessGroup') name: string,
+        @Body() body: CreateAccessGroupDto,
         @addUser() user: AuthRes,
     ) {
-        return this.accessService.createAccessGroup(name, user);
+        return this.accessService.createAccessGroup(body.name, user);
     }
 
     @Get('canAddAccessGroupToProject')
@@ -56,15 +60,13 @@ export class AccessController {
     @Post('addUserToProject')
     @CanWriteProject()
     async addUserToProject(
-        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
-        @BodyUUID('userUUID', 'User UUID') userUUID: string,
-        @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
+        @Body() body: AddUserToProjectDto,
         @addUser() requestUser?: AuthRes,
     ) {
         return this.accessService.addUserToProject(
-            uuid,
-            userUUID,
-            rights,
+            body.uuid,
+            body.userUUID,
+            body.rights,
             requestUser,
         );
     }
@@ -72,19 +74,17 @@ export class AccessController {
     @Post('addUserToAccessGroup')
     @IsAccessGroupCreator()
     async addUserToAccessGroup(
-        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
-        @BodyUUID('userUUID', 'User UUID') userUUID: string,
+        @Body() body: AddUserToAccessGroupDto
     ) {
-        return this.accessService.addUserToAccessGroup(uuid, userUUID);
+        return this.accessService.addUserToAccessGroup(body.uuid, body.userUUID);
     }
 
     @Post('removeUserFromAccessGroup')
     @IsAccessGroupCreator()
     async removeUserFromAccessGroup(
-        @BodyUUID('uuid', 'Access Group UUID') uuid: string,
-        @BodyUUID('userUUID', 'User UUID') userUUID: string,
+        @Body() body: AddUserToProjectDto,
     ) {
-        return this.accessService.removeUserFromAccessGroup(uuid, userUUID);
+        return this.accessService.removeUserFromAccessGroup(body.uuid, body.userUUID);
     }
 
     @Get('filtered')
@@ -113,15 +113,13 @@ export class AccessController {
     @Post('addAccessGroupToProject')
     @CanWriteProject()
     async addAccessGroupToProject(
-        @BodyUUID('uuid', 'Project UUID') uuid: string,
-        @BodyUUID('accessGroupUUID', 'Access Group UUID') accessGroupUUID: string,
-        @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
+        @Body() body: AddAccessGroupToProject,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.addAccessGroupToProject(
-            uuid,
-            accessGroupUUID,
-            rights,
+            body.uuid,
+            body.accessGroupUUID,
+            body.rights,
             user,
         );
     }
@@ -129,13 +127,12 @@ export class AccessController {
     @Post('removeAccessGroupFromProject')
     @CanDeleteProject()
     async removeAccessGroupFromProject(
-        @BodyUUID('uuid', 'Project UUID') uuid: string,
-        @BodyUUID('accessGroupUUID', 'Access Group UUID') accessGroupUUID: string,
+        @Body() body: RemoveAccessGroupFromProject,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.removeAccessGroupFromProject(
-            uuid,
-            accessGroupUUID,
+            body.uuid,
+            body.accessGroupUUID,
             user,
         );
     }

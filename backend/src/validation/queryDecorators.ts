@@ -30,7 +30,7 @@ export const QueryUUID = (paramName: string, paramDescription: string)=> createP
 
         return value;
     },
-    metadataApplier(paramName, paramDescription, 'query', 'uuid', true)
+    metadataApplier(paramName, paramDescription, 'query', 'string', true, 'uuid')
 )(paramName);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

@@ -32,7 +32,7 @@
                     >
                         <td>{{ parameter.name }}</td>
                         <td><Paramtype :paramtype="parameter.in"/></td>
-                        <td><Paramdatatype :datatype="parameter.schema.type" :required="parameter.required"/></td>
+                        <td><Paramdatatype :datatype="parameter.schema?.format || parameter.schema.type" :required="parameter.required"/></td>
                         <td>
                             {{
                                 parameter.description ||
@@ -43,7 +43,7 @@
                     <tr v-for="bodyParam in bodyParams">
                         <td>{{ bodyParam.name }}</td>
                         <td><Paramtype paramtype="body"/></td>
-                        <td><Paramdatatype :datatype="bodyParam.type" :required="bodyParam.required"/></td>
+                        <td><Paramdatatype :datatype="bodyParam.format || bodyParam.type" :required="bodyParam.required"/></td>
                         <td>{{ bodyParam.description }}</td>
                     </tr>
                 </tbody>
@@ -122,7 +122,8 @@ const bodyParams = computed(()=>{
                 name: key,
                 type: value.type,
                 description: value.description,
-                required
+                required,
+                format: value.format
             }
         })
     }
