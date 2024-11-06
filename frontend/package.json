@@ -11,7 +11,7 @@
         "build": "sh ./create_build_info.sh && quasar build"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.676.0",
+        "@aws-sdk/client-s3": "^3.685.0",
         "@quasar/extras": "^1.16.12",
         "@tanstack/vue-query": "^5.56.2",
         "axios": "^1.7.7",
