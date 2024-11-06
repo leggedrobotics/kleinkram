@@ -7,12 +7,11 @@ from kleinkram.auth import login_flow
 from kleinkram.config import Config, get_shared_state
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
-from kleinkram.commands.project import project_typer
-from kleinkram.commands.mission import mission_typer
-from kleinkram.commands.file import file_typer
 from kleinkram.commands.endpoint import endpoint_typer
 from kleinkram.commands.download import download_typer
 from kleinkram.commands.upload import upload_typer
+from kleinkram.commands.list import list_typer
+
 
 CLI_HELP = """\
 Kleinkram CLI
@@ -24,15 +23,14 @@ for more information.
 """
 
 app = typer.Typer(
-    context_settings={"help_option_names": ["-h", "--help"]},
-    no_args_is_help=True,
     help=CLI_HELP,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 
-app.add_typer(file_typer, name="file")
 app.add_typer(endpoint_typer, name="endpoint")
 app.add_typer(download_typer, name="download")
 app.add_typer(upload_typer, name="upload")
+app.add_typer(list_typer, name="list")
 
 
 @app.command()

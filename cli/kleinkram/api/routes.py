@@ -392,29 +392,28 @@ def get_files(
     project: Optional[str] = None,
     mission: Optional[str] = None,
     topics: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None,
+    tags: Optional[Dict[str, str]] = None,
 ) -> List[File]:
-    params = {}
+    # TODO: allow to search by id
+
+    params: Dict[str, Any] = {"take": MAX_PAGINATION}
     if name is not None:
         params["name"] = name
     if project is not None:
-        params["project"] = project
+        params["projectName"] = project
     if mission is not None:
-        params["mission"] = mission
+        params["missionName"] = mission
     if topics:
         params["topics"] = ",".join(topics)
     if tags:
-        p = {}
-        for tag in tags:
-            key, value = tag.split("=")
-            p[key] = value
-        params["tags"] = p
+        params["tags"] = tags
 
     resp = client.get(FILE_QUERY, params=params)
     resp.raise_for_status()
 
     files = []
     data = resp.json()
+
     for file in data:
         try:
             parsed = _parse_file(file)

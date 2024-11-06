@@ -105,6 +105,25 @@ def projects_to_table(projects: List[Project]) -> Table:
     return table
 
 
+def files_to_table(files: List[File]) -> Table:
+
+    table = Table(title="Files")
+    table.add_column("project")
+    table.add_column("mission")
+    table.add_column("name")
+    table.add_column("id")
+
+    files_tp = []
+    for file in files:
+        files_tp.append((file.project_name, file.mission_name, file.name, str(file.id)))
+    files_tp.sort()
+
+    for tp in files_tp:
+        table.add_row(*tp)
+
+    return table
+
+
 def print_files(file: List[File]) -> None:
     tree = {}
     for f in file:
