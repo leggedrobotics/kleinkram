@@ -7,6 +7,7 @@ import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -162,5 +163,15 @@ export class UserService implements OnModuleInit {
             relations: ['action'],
         });
         return { user, apiKey };
+    }
+
+    /**
+     * Get the number of members in a group
+     * @param uuid
+     */
+    async getMemberCount(uuid: string): Promise<number> {
+        return this.userRepository.count({
+            where: { accessGroupUsers: { accessGroup: { uuid } } },
+        });
     }
 }

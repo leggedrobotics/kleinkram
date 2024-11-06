@@ -374,6 +374,10 @@ export const QuerySkip = (paramName: string, paramDescription?: string) =>create
             return 0;
         }
 
+        if (value < 0) {
+            throw new BadRequestException('QuerySkip is too small');
+        }
+
         const object = plainToInstance(NumberValidate, { value });
         await validateOrReject(object).catch(() => {
             throw new BadRequestException('Parameter is not a valid Number');
@@ -392,6 +396,12 @@ export const QueryTake = (paramName: string, paramDescription?: string) =>create
 
         if (value === undefined) {
             return 100; // default value
+        }
+
+        if (value > 10_00) {
+            throw new BadRequestException('QueryTake is too large');
+        } else if (value < 1) {
+            throw new BadRequestException('QueryTake is too small');
         }
 
         const object = plainToInstance(NumberValidate, { value });

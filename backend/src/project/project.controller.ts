@@ -138,9 +138,7 @@ export class ProjectController {
     @LoggedIn()
     async getDefaultRights(
         @addUser() user: AuthRes,
-    ): Promise<
-        { name: string; accessGroupUUID: string; rights: AccessGroupRights }[]
-    > {
+    ): Promise<{ name: string; uuid: string; rights: AccessGroupRights }[]> {
         return this.projectService.getDefaultRights(user);
     }
 }

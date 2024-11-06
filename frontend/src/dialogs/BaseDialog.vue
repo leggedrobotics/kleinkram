@@ -14,14 +14,14 @@
                         dense
                         padding="6px"
                         class="button-border"
-                        style="max-height: 40px"
+                        style="font-size: 14px; line-height: 14px; margin: 0"
                         icon="sym_o_close"
                         @click="onDialogCancel"
                     />
                 </div>
 
                 <div class="q-mx-lg justify-start flex" v-if="$slots.tabs">
-                    <div class="q-mt-sm q-pa-none">
+                    <div class="q-mt-md q-pa-none">
                         <slot name="tabs"></slot>
                     </div>
                 </div>

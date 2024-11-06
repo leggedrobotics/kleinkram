@@ -157,16 +157,15 @@ export class AccessController {
 
     @Post('updateProjectAccess')
     @CanWriteProject()
-    @IsAccessGroupCreatorByProjectAccess()
     async updateProjectAccess(
         @BodyUUID('uuid', 'Project UUID') uuid: string,
-        @BodyUUID('projectAccessUUID', 'ProjectAccess UUID') projectAccessUUID: string,
+        @BodyUUID('groupUuid', '?? UUID') groupUuid: string,
         @BodyAccessGroupRights('rights', 'User Rights') rights: AccessGroupRights,
         @addUser() user?: AuthRes,
     ) {
         return this.accessService.updateProjectAccess(
             uuid,
-            projectAccessUUID,
+            groupUuid,
             rights,
             user,
         );
