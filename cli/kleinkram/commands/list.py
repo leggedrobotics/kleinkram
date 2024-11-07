@@ -16,7 +16,12 @@ from kleinkram.models import files_to_table
 from kleinkram.models import missions_to_table
 from kleinkram.models import projects_to_table
 
-list_typer = typer.Typer(name="list", invoke_without_command=True)
+HELP = """\
+List projects, missions, or files.
+"""
+
+
+list_typer = typer.Typer(name="list", invoke_without_command=True, help=HELP)
 
 
 def _parse_metadata(raw: List[str]) -> dict:

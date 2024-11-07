@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-
 import typer
 
 
-verify_typer = typer.Typer(name="verify", invoke_without_command=True)
+HELP = """\
+Verify if files were uploaded correctly.
+"""
+
+verify_typer = typer.Typer(name="verify", invoke_without_command=True, help=HELP)
 
 
 @verify_typer.callback()

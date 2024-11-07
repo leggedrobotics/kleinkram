@@ -1,20 +1,13 @@
 from __future__ import annotations
 
 import os
-import queue
-import sys
-import threading
-from time import monotonic
-from contextlib import contextmanager
-from functools import partial
-from pathlib import Path
-from typing import Dict, List
-from typing import Generator
-from typing import NamedTuple
-from typing import Optional
-from typing import Union
-from uuid import UUID
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from time import monotonic
+from typing import Dict
+from typing import List
+from typing import NamedTuple
+from uuid import UUID
 
 import boto3.s3.transfer
 import botocore.config
@@ -22,20 +15,20 @@ import httpx
 import tqdm
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import confirm_file_upload
-from kleinkram.api.routes import get_file_download
-from kleinkram.api.routes import cancel_file_upload
 from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
+from kleinkram.error_handling import AccessDeniedException
 from kleinkram.errors import CorruptedFile
+from kleinkram.errors import FailedUpload
 from kleinkram.utils import b64_md5
 
+UPLOAD_CREDS = "/file/temporaryAccess"
+UPLOAD_CONFIRM = "queue/confirmUpload"
+UPLOAD_CANCEL = "queue/cancelUpload"
+
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
-TEMP_CREDS = "/file/temporaryAccess"
-
-
-class FailedUpload(Exception): ...
+DOWNLOAD_URL = "/file/download"
 
 
 class UploadCredentials(NamedTuple):
@@ -52,6 +45,58 @@ class FileUploadJob(NamedTuple):
     path: Path
 
 
+def _get_s3_endpoint() -> str:
+    config = Config()
+    api_endpoint = config.endpoint
+    if api_endpoint == LOCAL_API_URL:
+        return LOCAL_S3_URL
+    else:
+        return api_endpoint.replace("api", "minio")
+
+
+def _confirm_file_upload(
+    client: AuthenticatedClient, file_id: UUID, file_hash: str
+) -> None:
+    data = {
+        "uuid": str(file_id),
+        "md5": file_hash,
+    }
+    resp = client.post(UPLOAD_CONFIRM, json=data)
+
+    if 400 <= resp.status_code < 500:
+        raise CorruptedFile()
+    resp.raise_for_status()
+
+
+def _cancel_file_upload(
+    client: AuthenticatedClient, file_id: UUID, mission_id: UUID
+) -> None:
+    data = {
+        "uuid": [str(file_id)],
+        "missionUUID": str(mission_id),
+    }
+    resp = client.post(UPLOAD_CANCEL, json=data)
+    resp.raise_for_status()
+    return
+
+
+def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
+    """\
+    get the download url for a file by file id
+    """
+    resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True})
+
+    if 400 <= resp.status_code < 500:
+        raise AccessDeniedException(
+            f"Failed to download file: {resp.json()['message']}",
+            "Status Code: " + str(resp.status_code),
+        )
+
+    resp.raise_for_status()
+
+    return resp.text
+
+
 def _get_upload_creditials(
     client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
 ) -> Dict[str, UploadCredentials]:
@@ -61,7 +106,7 @@ def _get_upload_creditials(
         "filenames": internal_filenames,
         "missionUUID": str(mission_id),
     }
-    resp = client.post(TEMP_CREDS, json=dct)
+    resp = client.post(UPLOAD_CREDS, json=dct)
 
     if resp.status_code >= 400:
         raise ValueError(
@@ -96,15 +141,6 @@ def _get_upload_creditials(
         )
 
     return ret
-
-
-def _get_s3_endpoint() -> str:
-    config = Config()
-    api_endpoint = config.endpoint
-    if api_endpoint == LOCAL_API_URL:
-        return LOCAL_S3_URL
-    else:
-        return api_endpoint.replace("api", "minio")
 
 
 def _s3_upload(
@@ -171,11 +207,11 @@ def _upload_file(
         _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
     except Exception as e:
         pbar.write(f"error uploading file: {job.path}: {e}")
-        cancel_file_upload(client, creds.file_id, job.mission_id)
+        _cancel_file_upload(client, creds.file_id, job.mission_id)
     else:
         # tell backend that upload is complete
         local_hash = b64_md5(job.path)
-        confirm_file_upload(client, creds.file_id, local_hash)
+        _confirm_file_upload(client, creds.file_id, local_hash)
     finally:
         pbar.close()
         return job.path.stat().st_size
@@ -237,7 +273,7 @@ def download_file(
     hash: str,
     size: int,
 ) -> None:
-    download_url = get_file_download(client, file_id)
+    download_url = _get_file_download(client, file_id)
 
     file_path = dest / name
     _url_download(download_url, file_path, size)

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 
+class MissionExistsError(Exception): ...
+
+
 class CorruptedFile(Exception): ...
 
 
 class NameIsValidUUID(Exception): ...
+
+
+class FailedUpload(Exception): ...

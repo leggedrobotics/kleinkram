@@ -10,12 +10,12 @@ import typer
 from rich.console import Console
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import download_file
 from kleinkram.api.routes import get_file
 from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_id_by_name
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.config import get_shared_state
-from kleinkram.api.file_transfer import download_file
 from kleinkram.models import File
 from kleinkram.models import files_to_table
 from kleinkram.models import Mission
@@ -27,8 +27,13 @@ from kleinkram.utils import MissionByName
 from kleinkram.utils import to_name_or_uuid
 
 
+HELP = """\
+Download files from kleinkram.
+"""
+
+
 download_typer = typer.Typer(
-    name="download", no_args_is_help=True, invoke_without_command=True
+    name="download", no_args_is_help=True, invoke_without_command=True, help=HELP
 )
 
 

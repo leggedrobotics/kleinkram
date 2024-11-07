@@ -6,10 +6,16 @@ import typer
 
 from kleinkram.auth import Config
 
+HELP = """\
+Get or set the current endpoint.
+
+The endpoint is used to determine the API server to connect to\
+(default is the API server of https://datasets.leggedrobotics.com).
+"""
+
 endpoint_typer = typer.Typer(
     name="endpoint",
-    help="Get Or Set the current endpoint.\n\nThe endpoint is used to determine the API server to connect to"
-    "(default is the API server of https://datasets.leggedrobotics.com).",
+    help=HELP,
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )

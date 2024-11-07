@@ -1,31 +1,38 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union, cast
+from typing import Union
 from uuid import UUID
 
 import typer
 import yaml
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.routes import create_mission
 from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_id_by_name
 from kleinkram.api.routes import get_project_id_by_name
-from kleinkram.api.file_transfer import upload_files
 from kleinkram.models import Mission
-from kleinkram.utils import get_internal_file_map, to_name_or_uuid
+from kleinkram.utils import get_internal_file_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import MissionById
 from kleinkram.utils import MissionByName
+from kleinkram.utils import to_name_or_uuid
+
+HELP = """\
+Upload files to kleinkram.
+"""
 
 upload_typer = typer.Typer(
     name="upload",
     no_args_is_help=True,
     invoke_without_command=True,
+    help=HELP,
 )
 
 

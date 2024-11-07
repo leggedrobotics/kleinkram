@@ -13,12 +13,10 @@ from typing import Union
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.error_handling import AccessDeniedException
-from kleinkram.errors import CorruptedFile
+from kleinkram.errors import CorruptedFile, MissionExistsError
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import User
 from kleinkram.utils import is_valid_uuid4
 
 # TODO: change to 10000
@@ -49,52 +47,6 @@ FILE_OF_MISSION = "/file/ofMission"
 
 CONFIRM_UPLOAD = "/queue/confirmUpload"
 CANCEL_UPLOAD = "/queue/cancelUpload"
-
-
-def get_upload_creditials(
-    client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
-) -> Dict[str, UploadAccess]:
-    if mission_id.version != 4:
-        raise ValueError("Mission ID must be a UUIDv4")
-    dct = {
-        "filenames": internal_filenames,
-        "missionUUID": str(mission_id),
-    }
-    resp = client.post(TEMP_CREDS, json=dct)
-
-    if resp.status_code >= 400:
-        raise ValueError(
-            "Failed to get temporary credentials. Status Code: "
-            f"{resp.status_code}\n{resp.json()['message'][0]}"
-        )
-
-    data = resp.json()
-
-    ret = {}
-    for record in data:
-        if "error" in record:
-            # TODO: handle this better
-            continue
-
-        bucket = record["bucket"]
-        file_id = UUID(record["fileUUID"], version=4)
-        filename = record["fileName"]
-
-        creds = record["accessCredentials"]
-
-        access_key = creds["accessKey"]
-        secret_key = creds["secretKey"]
-        session_token = creds["sessionToken"]
-
-        ret[filename] = UploadAccess(
-            access_key=access_key,
-            secret_key=secret_key,
-            session_token=session_token,
-            file_id=file_id,
-            bucket=bucket,
-        )
-
-    return ret
 
 
 def claim_admin(client: AuthenticatedClient) -> None:
@@ -234,9 +186,6 @@ def get_project_id_by_name(
     return UUID(resp.json()["uuid"], version=4)
 
 
-class MissionExistsError(Exception): ...
-
-
 def create_mission(
     client: AuthenticatedClient,
     project_id: UUID,
@@ -289,56 +238,6 @@ def get_project_permission_level(client: AuthenticatedClient, project_id: UUID) 
     # it is possilbe that a user has access to a project via multiple groups
     # in this case we take the highest permission level
     return cast(int, max(map(lambda x: x.get("access", 0), filtered_by_id)))
-
-
-def get_users(client: AuthenticatedClient) -> list[User]:
-    resp = client.get(ALL_USERS)
-    resp.raise_for_status()
-
-    ret = []
-    for user in cast(List[Dict[str, str]], resp.json()):
-        user_model = User(
-            id=UUID(user["uuid"], version=4),
-            name=user["name"],
-            email=user["email"],
-            role=user["role"],
-        )
-        ret.append(user_model)
-    return ret
-
-
-def get_user_info(client: AuthenticatedClient) -> Any:
-    resp = client.get(USER_INFO)
-    resp.raise_for_status()
-    return resp.json()
-
-
-def promote_user(client: AuthenticatedClient, email: str) -> None:
-    resp = client.post(PROMOTE_USER, json={"email": email})
-    resp.raise_for_status()
-
-
-def demote_user(client: AuthenticatedClient, email: str) -> None:
-    resp = client.post(DEMOTE_USER, json={"email": email})
-    resp.raise_for_status()
-    print("User demoted.")
-
-
-def get_file_download(client: AuthenticatedClient, id: UUID) -> str:
-    """\
-    get the download url for a file by file id
-    """
-    resp = client.get(FILE_DOWNLOAD, params={"uuid": str(id), "expires": True})
-
-    if 400 <= resp.status_code < 500:
-        raise AccessDeniedException(
-            f"Failed to download file: {resp.json()['message']}",
-            "Status Code: " + str(resp.status_code),
-        )
-
-    resp.raise_for_status()
-
-    return resp.text
 
 
 def _parse_file(file: Dict[str, Any]) -> File:
