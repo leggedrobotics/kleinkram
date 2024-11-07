@@ -778,7 +778,7 @@ export class FileService implements OnModuleInit {
                     : FileType.MCAP;
 
                 // check if file already exists
-                const existingFile = await this.fileRepository.count({
+                const existingFile = await this.fileRepository.exists({
                     where: {
                         filename,
                         mission: {
@@ -786,7 +786,7 @@ export class FileService implements OnModuleInit {
                         },
                     },
                 });
-                if (existingFile > 0) {
+                if (existingFile) {
                     emptyCredentials.error = 'File already exists';
                     emptyCredentials.fileName = filename;
                     return emptyCredentials;
