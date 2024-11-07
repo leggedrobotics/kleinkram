@@ -1,26 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import cast
-from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
 from uuid import UUID
 
 import typer
-import yaml
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.routes import create_mission
 from kleinkram.api.routes import get_mission_by_id
-from kleinkram.api.routes import get_mission_id_by_name
+from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.api.routes import get_project_id_by_name
-from kleinkram.models import Mission
+from kleinkram.errors import MissionDoesNotExist
 from kleinkram.utils import get_internal_file_map
 from kleinkram.utils import get_valid_mission_spec
-from kleinkram.utils import MissionById
+from kleinkram.utils import load_metadata
 from kleinkram.utils import MissionByName
 from kleinkram.utils import to_name_or_uuid
 
@@ -34,40 +30,6 @@ upload_typer = typer.Typer(
     invoke_without_command=True,
     help=HELP,
 )
-
-
-def _get_mission_by_spec(
-    client: AuthenticatedClient, spec: Union[MissionById, MissionByName]
-) -> Optional[Mission]:
-    if isinstance(spec, MissionById):
-        return get_mission_by_id(client, spec.id)
-
-    if isinstance(spec.project, UUID):
-        project_id = spec.project
-    else:
-        project_id = get_project_id_by_name(client, spec.project)
-    if project_id is None:
-        return None
-
-    mission_id = get_mission_id_by_name(client, spec.name, project_id)
-    if mission_id is None:
-        return None
-
-    return get_mission_by_id(client, mission_id)
-
-
-class MissionDoesNotExist(Exception):
-    pass
-
-
-def _get_metadate(path: Path) -> Dict[str, str]:
-    if not path.exists():
-        raise FileNotFoundError(f"metadata file not found: {path}")
-    try:
-        with path.open() as f:
-            return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
-    except Exception as e:
-        raise ValueError(f"could not parse metadata file: {e}")
 
 
 @upload_typer.callback()
@@ -93,7 +55,7 @@ def upload(
         files = []
 
     mission_spec = get_valid_mission_spec(_mission, _project)
-    mission_parsed = _get_mission_by_spec(client, mission_spec)
+    mission_parsed = get_mission_by_spec(client, mission_spec)
 
     if not create and mission_parsed is None:
         raise MissionDoesNotExist()
@@ -106,7 +68,7 @@ def upload(
         # get the metadata
         metadata_dct = {}
         if metadata is not None:
-            metadata_dct = _get_metadate(Path(metadata))
+            metadata_dct = load_metadata(Path(metadata))
 
         # get project id
         if isinstance(mission_spec.project, UUID):

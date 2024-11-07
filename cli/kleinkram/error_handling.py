@@ -13,13 +13,13 @@ from typer import Typer
 
 from kleinkram.api.client import NotAuthenticatedException
 
-ExceptionType = 'typing.Type[Exception]'
+ExceptionType = "typing.Type[Exception]"
 ErrorHandlingCallback = typing.Callable[[Exception], int]
 
 
 class AbortException(Exception):
 
-    def __init__(self, message: str):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
@@ -32,11 +32,11 @@ class AccessDeniedException(Exception):
 
 def not_yet_implemented_handler(e: Exception):
     console = Console(file=sys.stderr)
-    default_msg = 'This feature is not yet implemented. Please check for updates or use the web interface.'
+    default_msg = "This feature is not yet implemented. Please check for updates or use the web interface."
     panel = Panel(
         f"{default_msg}",
-        title='Not Yet Implemented',
-        style='yellow',
+        title="Not Yet Implemented",
+        style="yellow",
         padding=(1, 2),
         highlight=True,
     )
@@ -49,8 +49,8 @@ def not_authenticated_handler(e: NotAuthenticatedException):
     console = Console(file=sys.stderr)
     panel = Panel(
         f"{e.message}\n » Please run 'klein login' to authenticate.",
-        title='Not Authenticated',
-        style='yellow',
+        title="Not Authenticated",
+        style="yellow",
         padding=(1, 2),
         highlight=True,
     )
@@ -63,8 +63,8 @@ def access_denied_handler(e: AccessDeniedException):
     console = Console(file=sys.stderr)
     panel = Panel(
         f"{e.message}\n » API Response: {e.api_error}",
-        title='Access Denied',
-        style='red',
+        title="Access Denied",
+        style="red",
         padding=(1, 2),
         highlight=True,
     )
@@ -77,8 +77,8 @@ def value_error_handler(e: Exception):
     console = Console(file=sys.stderr)
     panel = Panel(
         str(e),
-        title='Invalid Argument',
-        style='red',
+        title="Invalid Argument",
+        style="red",
         padding=(1, 2),
         highlight=True,
     )
@@ -91,8 +91,8 @@ def http_status_error_handler(e: HTTPStatusError):
     console = Console(file=sys.stderr)
     panel = Panel(
         f"An HTTP error occurred: {e}\n\n » Please report this error to the developers.",
-        title='HTTP Status Error',
-        style='red',
+        title="HTTP Status Error",
+        style="red",
         padding=(1, 2),
         highlight=True,
     )
@@ -106,8 +106,8 @@ def remote_down_handler(e: Exception):
     panel = Panel(
         f"An error occurred while communicating with the remote server: {e}\n"
         f"\n » The server may be down or unreachable; please try again.",
-        title='Remote Protocol Error',
-        style='yellow',
+        title="Remote Protocol Error",
+        style="yellow",
         padding=(1, 2),
         highlight=True,
     )
@@ -120,8 +120,8 @@ def abort_handler(e: AbortException):
     console = Console(file=sys.stderr)
     panel = Panel(
         f"{e.message}",
-        title='Command Aborted',
-        style='yellow',
+        title="Command Aborted",
+        style="yellow",
         padding=(1, 2),
         highlight=True,
     )
@@ -166,7 +166,7 @@ class ErrorHandledTyper(Typer):
                 )
 
                 typer.secho(
-                    ' » Please report this error to the developers.',
+                    " » Please report this error to the developers.",
                     fg=typer.colors.RED,
                 )
 

@@ -1,7 +1,6 @@
 """\
 this file contains any functions calling the API
 """
-
 from __future__ import annotations
 
 from typing import Any
@@ -13,11 +12,15 @@ from typing import Union
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.errors import CorruptedFile, MissionExistsError
+from kleinkram.errors import MissionExistsError
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.utils import FilesById
+from kleinkram.utils import FilesByMission
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import MissionById
+from kleinkram.utils import MissionByName
 
 # TODO: change to 10000
 MAX_PAGINATION = 1_000
@@ -342,27 +345,42 @@ def get_projects(client: AuthenticatedClient) -> list[Project]:
     return ret
 
 
-def confirm_file_upload(
-    client: AuthenticatedClient, file_id: UUID, file_hash: str
-) -> None:
-    data = {
-        "uuid": str(file_id),
-        "md5": file_hash,
-    }
-    resp = client.post(CONFIRM_UPLOAD, json=data)
+def get_mission_by_spec(
+    client: AuthenticatedClient, spec: Union[MissionById, MissionByName]
+) -> Optional[Mission]:
+    if isinstance(spec, MissionById):
+        return get_mission_by_id(client, spec.id)
 
-    if 400 <= resp.status_code < 500:
-        raise CorruptedFile()
-    resp.raise_for_status()
+    if isinstance(spec.project, UUID):
+        project_id = spec.project
+    else:
+        project_id = get_project_id_by_name(client, spec.project)
+    if project_id is None:
+        return None
+
+    mission_id = get_mission_id_by_name(client, spec.name, project_id)
+    if mission_id is None:
+        return None
+
+    return get_mission_by_id(client, mission_id)
 
 
-def cancel_file_upload(
-    client: AuthenticatedClient, file_id: UUID, mission_id: UUID
-) -> None:
-    data = {
-        "uuid": [str(file_id)],
-        "missionUUID": str(mission_id),
-    }
-    resp = client.post(CANCEL_UPLOAD, json=data)
-    resp.raise_for_status()
-    return
+def get_files_by_file_spec(
+    client: AuthenticatedClient, spec: Union[FilesByMission, FilesById]
+) -> List[File]:
+    if isinstance(spec, FilesById):
+        return [get_file(client, file_id) for file_id in spec.ids]
+
+    parsed_mission = get_mission_by_spec(client, spec.mission)
+    if parsed_mission is None:
+        raise ValueError("mission not found")
+
+    if spec.files:
+        filtered = [
+            f
+            for f in parsed_mission.files
+            if f.id in spec.files or f.name in spec.files
+        ]
+        return filtered
+
+    return parsed_mission.files

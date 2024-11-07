@@ -12,9 +12,10 @@ from typing import Generator
 from typing import List
 from typing import NamedTuple
 from typing import Optional
-from typing import Tuple
 from typing import Union
 from uuid import UUID
+
+import yaml
 
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
@@ -184,3 +185,13 @@ def to_name_or_uuid(s: str) -> Union[UUID, str]:
     if is_valid_uuid4(s):
         return UUID(s)
     return s
+
+
+def load_metadata(path: Path) -> Dict[str, str]:
+    if not path.exists():
+        raise FileNotFoundError(f"metadata file not found: {path}")
+    try:
+        with path.open() as f:
+            return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
+    except Exception as e:
+        raise ValueError(f"could not parse metadata file: {e}")

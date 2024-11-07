@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import List
 from typing import Optional
 
@@ -20,7 +21,6 @@ from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
 from kleinkram.utils import get_version
-from enum import Enum
 
 
 CLI_HELP = """\
