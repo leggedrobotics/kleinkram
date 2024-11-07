@@ -114,6 +114,11 @@
                             <div
                                 class="row-container"
                                 style="align-items: center; width: 100%"
+                                v-if="
+                                    singleWorker?.gpuModel &&
+                                    singleWorker?.gpuMemory &&
+                                    singleWorker?.gpuMemory > 0
+                                "
                             >
                                 <div class="q-mt-md">
                                     <q-icon
