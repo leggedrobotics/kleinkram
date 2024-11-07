@@ -15,6 +15,7 @@ import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import env from '@common/env';
+import si from 'systeminformation';
 
 @Injectable()
 export class ActionManagerService {
@@ -144,6 +145,10 @@ export class ActionManagerService {
                 where: { uuid: action.uuid },
                 relations: ['worker', 'template'],
             });
+
+            action.state = ActionState.STOPPING;
+            await this.actionRepository.save(action);
+
             await this.containerDaemon.removeContainer(container.id, true);
             await this.setActionState(container, action);
             action.executionEndedAt = new Date();
@@ -328,14 +333,19 @@ export class ActionManagerService {
         const actionIds = runningActionContainers.map((container) =>
             container.Names[0].replace(`/${DockerDaemon.CONTAINER_PREFIX}`, ''),
         );
-
-        const actionsInProcess = await this.actionRepository.find({
-            where: { state: ActionState.PROCESSING },
+        const name = (await si.osInfo()).hostname;
+        const actionsInLocalProcess = await this.actionRepository.find({
+            where: {
+                state: ActionState.PROCESSING,
+                worker: { identifier: name },
+            },
             relations: ['mission', 'mission.project'],
         });
-        logger.info(`Checking ${actionsInProcess.length} pending Actions.`);
+        logger.info(
+            `Checking ${actionsInLocalProcess.length} pending Actions.`,
+        );
 
-        for (const action of actionsInProcess) {
+        for (const action of actionsInLocalProcess) {
             if (!actionIds.includes(action.uuid)) {
                 logger.info(
                     `Action ${action.uuid} is running but has no running container.`,
@@ -370,7 +380,10 @@ export class ActionManagerService {
                 continue;
             }
             // ignore containers which are not in processing state
-            if (action.state === ActionState.PROCESSING) {
+            if (
+                action.state === ActionState.PROCESSING ||
+                action.state === ActionState.STOPPING
+            ) {
                 // kill if older than 24 hours
                 const createdAt = new Date(container.Created * 1000);
                 const now = new Date();

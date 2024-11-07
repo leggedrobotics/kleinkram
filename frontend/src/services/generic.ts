@@ -225,6 +225,8 @@ export function getActionColor(state: ActionState) {
             return 'blue';
         case ActionState.UNPROCESSABLE:
             return 'purple';
+        case ActionState.STOPPING:
+            return 'light-green';
         default:
             return 'grey'; // Default color for unknown states
     }
