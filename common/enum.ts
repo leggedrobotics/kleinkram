@@ -37,6 +37,7 @@ export enum ActionState {
     PENDING = 'PENDING',
     STARTING = 'STARTING',
     PROCESSING = 'PROCESSING',
+    STOPPING = 'STOPPING',
     DONE = 'DONE',
     FAILED = 'FAILED',
     UNPROCESSABLE = 'UNPROCESSABLE',
