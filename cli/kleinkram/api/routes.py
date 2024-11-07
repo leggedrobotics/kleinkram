@@ -20,8 +20,6 @@ from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import UploadAccess
 from kleinkram.models import User
-from kleinkram.tag import DataType
-from kleinkram.tag import TagType
 from kleinkram.utils import is_valid_uuid4
 
 # TODO: change to 10000
@@ -39,9 +37,6 @@ MISSION_BY_NAME = "/mission/byName"
 MISSION_BY_ID = "/mission/one"
 MISSION_CREATE = "/mission/create"
 MISSION_BY_PROJECT_NAME = "/mission/filteredByProjectName"
-
-TAG_TYPES = "/tag/all"
-TAG = "/tag"
 
 ALL_USERS = "/user/all"
 USER_INFO = "/user/me"
@@ -293,31 +288,6 @@ def get_project_permission_level(client: AuthenticatedClient, project_id: UUID) 
     # it is possilbe that a user has access to a project via multiple groups
     # in this case we take the highest permission level
     return cast(int, max(map(lambda x: x.get("access", 0), filtered_by_id)))
-
-
-def get_tag_types(client: AuthenticatedClient) -> List[TagType]:
-    resp = client.get("/tag/all")
-    resp.raise_for_status()
-
-    data = cast(List[Dict[str, str]], resp.json())
-
-    if not data or len(data) == 0:
-        return []
-
-    return [
-        TagType(
-            id=UUID(tagtype["uuid"], version=4),
-            name=tagtype["name"],
-            data_type=DataType(tagtype["datatype"]),
-        )
-        for tagtype in data
-    ]
-
-
-def delete_tag(client: AuthenticatedClient, id: UUID) -> None:
-    resp = client.delete(f"{TAG}/{id}")
-    resp.raise_for_status()
-    print(f"deleted tag {id} successfully")
 
 
 def get_users(client: AuthenticatedClient) -> list[User]:
