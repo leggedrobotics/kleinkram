@@ -126,7 +126,7 @@
                                         size="20px"
                                     />
                                     <span class="worker-name">{{
-                                        singleWorker.gpuModel
+                                        singleWorker.gpuModel || 'No GPU'
                                     }}</span>
                                 </div>
                             </div>
