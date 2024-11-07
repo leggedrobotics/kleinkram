@@ -48,9 +48,6 @@ FILE_QUERY = "/file/filteredByNames"
 FILE_ONE = "/file/one"
 FILE_OF_MISSION = "/file/ofMission"
 
-CONFIRM_UPLOAD = "/queue/confirmUpload"
-CANCEL_UPLOAD = "/queue/cancelUpload"
-
 
 def claim_admin(client: AuthenticatedClient) -> None:
     """\

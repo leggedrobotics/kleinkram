@@ -7,6 +7,7 @@ from time import monotonic
 from typing import Dict
 from typing import List
 from typing import NamedTuple
+from typing import Optional
 from uuid import UUID
 
 import boto3.s3.transfer
@@ -24,8 +25,8 @@ from kleinkram.errors import FailedUpload
 from kleinkram.utils import b64_md5
 
 UPLOAD_CREDS = "/file/temporaryAccess"
-UPLOAD_CONFIRM = "queue/confirmUpload"
-UPLOAD_CANCEL = "queue/cancelUpload"
+UPLOAD_CONFIRM = "/queue/confirmUpload"
+UPLOAD_CANCEL = "/file/cancelUpload"
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 DOWNLOAD_URL = "/file/download"
@@ -177,6 +178,7 @@ def _upload_file(
     client: AuthenticatedClient,
     job: FileUploadJob,
     hide_progress: bool = False,
+    progress: Optional[tqdm.tqdm] = None,
 ) -> int:
     """\
     returns bytes uploaded
@@ -201,18 +203,32 @@ def _upload_file(
     if creds is None:
         pbar.write(f"file {job.name} already exists in mission")
         pbar.close()
+
+        if progress is not None:
+            progress.update()
+
         return 0
 
     try:
         _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
     except Exception as e:
         pbar.write(f"error uploading file: {job.path}: {e}")
-        _cancel_file_upload(client, creds.file_id, job.mission_id)
+
+        try:
+            _cancel_file_upload(client, creds.file_id, job.mission_id)
+        except Exception as e:
+            pbar.write(f"error cancelling upload: {e}")
     else:
         # tell backend that upload is complete
-        local_hash = b64_md5(job.path)
-        _confirm_file_upload(client, creds.file_id, local_hash)
+        try:
+            local_hash = b64_md5(job.path)
+            _confirm_file_upload(client, creds.file_id, local_hash)
+        except Exception as e:
+            pbar.write(f"error confirming upload: {e}")
     finally:
+        if progress is not None:
+            progress.update()
+
         pbar.close()
         return job.path.stat().st_size
 
@@ -225,13 +241,21 @@ def upload_files(
 ) -> None:
     futures = []
 
+    pbar = tqdm.tqdm(
+        total=len(files_map),
+        unit="files",
+        desc="Uploading files",
+    )
+
     start = monotonic()
     with ThreadPoolExecutor(max_workers=n_workers) as executor:
         for name, path in files_map.items():
             # client is not thread safe
             client = AuthenticatedClient()
             job = FileUploadJob(mission_id=mission_id, name=name, path=path)
-            future = executor.submit(_upload_file, client=client, job=job)
+            future = executor.submit(
+                _upload_file, client=client, job=job, progress=pbar
+            )
             futures.append(future)
 
     errors = []
@@ -241,6 +265,8 @@ def upload_files(
             total_size += f.result() / 1e6
         except Exception as e:
             errors.append(e)
+
+    pbar.close()
 
     time = monotonic() - start
     print(f"upload took {time:.2f} seconds")
