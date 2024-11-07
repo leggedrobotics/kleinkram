@@ -8,6 +8,7 @@ import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import { CountedAccessGroups } from './dto/CountedAccessGroups.dto';
 
 @Injectable()
 export class AccessService {
@@ -253,7 +254,7 @@ export class AccessService {
             // user in in users of access group
             where['users'] = { uuid: auth.user.uuid };
         }
-        return this.accessGroupRepository.findAndCount({
+        const [found, count] = await this.accessGroupRepository.findAndCount({
             where,
             skip,
             take,
@@ -265,6 +266,7 @@ export class AccessService {
                 'creator',
             ],
         });
+        return { entities: found, total: count } as CountedAccessGroups;
     }
 
     async addAccessGroupToProject(
