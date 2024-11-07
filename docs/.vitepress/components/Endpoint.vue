@@ -1,6 +1,6 @@
 <template>
     <div class="endpoint">
-        <h3>{{ endpoint }}</h3>
+        <h4>{{ endpoint }}</h4>
         <p><strong>Method:</strong> {{ getHttpMethod(spec) }}</p>
         <p v-if="methodSpec?.summary">
             <strong>Summary:</strong> {{ methodSpec.summary }}
@@ -15,17 +15,19 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>In</th>
-                        <th>Type</th>
-                        <th>Description</th>
+                        <th class="param-col-1">Name</th>
+                        <th class="param-col-2">In</th>
+                        <th class="param-col-3">Type</th>
+                        <th class="param-col-4">Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="parameter in params" :key="parameter.name">
-                        <td>{{ parameter.name }}</td>
-                        <td><Paramtype :paramtype="parameter.in" /></td>
-                        <td>
+                        <td class="param-col-1">{{ parameter.name }}</td>
+                        <td class="param-col-2">
+                            <Paramtype :paramtype="parameter.in" />
+                        </td>
+                        <td class="param-col-3">
                             <Paramdatatype
                                 :datatype="
                                     parameter.schema?.format ||
@@ -34,7 +36,7 @@
                                 :required="parameter.required"
                             />
                         </td>
-                        <td>
+                        <td class="param-col-4">
                             {{
                                 parameter.description ||
                                 'No description available'
@@ -61,16 +63,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Status Code</th>
-                        <th>Type</th>
-                        <th>Description</th>
+                        <th class="res-col-1">Status Code</th>
+                        <th class="res-col-2">Type</th>
+                        <th class="res-col-3">Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="response in responses" :key="response.code">
-                        <td>{{ response.code }}</td>
-                        <td>{{ response.type || 'N/A' }}</td>
-                        <td>
+                        <td class="res-col-1">{{ response.code }}</td>
+                        <td class="res-col-2">{{ response.type || 'N/A' }}</td>
+                        <td class="res-col-3">
                             {{
                                 response.description ||
                                 'No description available'
@@ -233,5 +235,28 @@ p {
 h4 {
     margin-top: 16px;
     color: #666;
+}
+
+.param-col-1 {
+    width: 10%;
+}
+.param-col-2 {
+    width: 8%;
+}
+.param-col-3 {
+    width: 12%;
+}
+.param-col-4 {
+    width: 70%;
+}
+
+.res-col-1 {
+    width: 10%;
+}
+.res-col-2 {
+    width: 20%;
+}
+.res-col-3 {
+    width: 70%;
 }
 </style>
