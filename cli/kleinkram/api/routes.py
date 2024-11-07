@@ -46,8 +46,10 @@ DEMOTE_USER = "/user/demote"
 FILE_DOWNLOAD = "/file/download"
 FILE_QUERY = "/file/filteredByNames"
 FILE_ONE = "/file/one"
-FILE_CONFIRM_UPLOAD = "/queue/confirmUpload"
 FILE_OF_MISSION = "/file/ofMission"
+
+CONFIRM_UPLOAD = "/queue/confirmUpload"
+CANCEL_UPLOAD = "/queue/cancelUpload"
 
 
 def get_upload_creditials(
@@ -449,8 +451,20 @@ def confirm_file_upload(
         "uuid": str(file_id),
         "md5": file_hash,
     }
-    resp = client.post("/file/confirmUpload", json=data)
+    resp = client.post(CONFIRM_UPLOAD, json=data)
 
     if 400 <= resp.status_code < 500:
         raise CorruptedFile()
     resp.raise_for_status()
+
+
+def cancel_file_upload(
+    client: AuthenticatedClient, file_id: UUID, mission_id: UUID
+) -> None:
+    data = {
+        "uuid": [str(file_id)],
+        "missionUUID": str(mission_id),
+    }
+    resp = client.post(CANCEL_UPLOAD, json=data)
+    resp.raise_for_status()
+    return

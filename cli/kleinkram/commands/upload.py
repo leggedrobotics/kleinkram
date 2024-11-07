@@ -18,7 +18,7 @@ from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.api.routes import get_upload_creditials
 from kleinkram.file_transfer import upload_files
 from kleinkram.models import Mission, UploadAccess
-from kleinkram.utils import get_internal_file_map
+from kleinkram.utils import get_internal_file_map, to_name_or_uuid
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import MissionById
 from kleinkram.utils import MissionByName
@@ -79,12 +79,15 @@ def upload(
     fix_filenames: bool = typer.Option(False, help="fix filenames"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
+    _project = to_name_or_uuid(project) if project else None
+    _mission = to_name_or_uuid(mission) if mission else None
+
     client = AuthenticatedClient()
 
     if files is None:
         files = []
 
-    mission_spec = get_valid_mission_spec(mission, project)
+    mission_spec = get_valid_mission_spec(_mission, _project)
     mission_parsed = _get_mission_by_spec(client, mission_spec)
 
     if not create and mission_parsed is None:
@@ -120,26 +123,9 @@ def upload(
         assert mission_parsed is not None, "unreachable"
 
     # upload files
-    file_paths = [Path(file) for file in files]
-
-    internal_filename_map = get_internal_file_map(
-        file_paths, raise_on_change=not fix_filenames
+    files_map = get_internal_file_map(
+        [Path(file) for file in files], raise_on_change=not fix_filenames
     )
 
-    # get upload credentials
-    access = get_upload_creditials(
-        client, list(internal_filename_map.keys()), mission_parsed.id
-    )
+    upload_files(files_map, mission_parsed.id, n_workers=8)
 
-    print(access)
-    raise SystemExit
-
-    for name, path in internal_filename_map.items():
-        if name not in access:
-            print(f"file: {path} already uploaded")
-
-    # upload files
-    files_to_upload = {
-        name: path for name, path in internal_filename_map.items() if name in access
-    }
-    upload_files(access, files_to_upload, n_workers=4)

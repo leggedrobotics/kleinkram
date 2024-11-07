@@ -4,15 +4,17 @@ import os
 import queue
 import sys
 import threading
+from time import monotonic
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from typing import Generator
 from typing import NamedTuple
 from typing import Optional
 from typing import Union
 from uuid import UUID
+from concurrent.futures import ThreadPoolExecutor
 
 import boto3.s3.transfer
 import botocore.config
@@ -22,16 +24,36 @@ from rich.console import Console
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import confirm_file_upload
-from kleinkram.api.routes import get_file_download
+from kleinkram.api.routes import (
+    get_file_download,
+    get_upload_creditials,
+    cancel_file_upload,
+)
+from kleinkram.api.routes import get_file
 from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
 from kleinkram.errors import CorruptedFile
-from kleinkram.models import FileUploadJob
-from kleinkram.models import UploadAccess
 from kleinkram.utils import b64_md5
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16  # 16MB
+
+
+class FailedUpload(Exception): ...
+
+
+class UploadCredentials(NamedTuple):
+    access_key: str
+    secret_key: str
+    session_token: str
+    file_id: UUID
+    bucket: str
+
+
+class FileUploadJob(NamedTuple):
+    mission_id: UUID
+    name: str
+    path: Path
 
 
 class ProgressManager:
@@ -42,13 +64,14 @@ class ProgressManager:
         self._lock = threading.Lock()
         self._file_progress = {}
 
-    def track_file(self, file: Union[UUID, str], target_size: int):
+    def add(self, file: UUID, target_size: int):
         with self._lock:
             pbar = tqdm.tqdm(
                 total=target_size,
                 unit="B",
                 unit_scale=True,
                 desc=f"Uploading {file}",
+                leave=False,
             )
 
             if file in self._file_progress:
@@ -56,11 +79,22 @@ class ProgressManager:
 
             self._file_progress[file] = pbar
 
-    def update(self, file: Union[UUID, str], bytes_transferred: int):
+    def remove(self, file: UUID) -> None:
+        with self._lock:
+            pbar = self._file_progress.pop(file)
+            pbar.close()
+
+    def update(self, file: UUID, bytes_transferred: int):
         with self._lock:
             if file in self._file_progress:
                 pbar = self._file_progress[file]
                 pbar.update(bytes_transferred)
+
+    def write(self, file: UUID, msg: str):
+        with self._lock:
+            if file in self._file_progress:
+                pbar = self._file_progress[file]
+                pbar.write(msg)
 
     def close(self):
         with self._lock:
@@ -91,18 +125,18 @@ def get_s3_endpoint() -> str:
         return api_endpoint.replace("api", "minio")
 
 
-def upload_file(
+def _s3_upload(
     local_path: Path,
     endpoint: str,
-    access: UploadAccess,
-    progress: ProgressManager,
+    credentials: UploadCredentials,
+    progress: tqdm.tqdm,
 ) -> None:
+    # configure boto3
     sess = boto3.Session(
-        aws_access_key_id=access.access_key,
-        aws_secret_access_key=access.secret_key,
-        aws_session_token=access.session_token,
+        aws_access_key_id=credentials.access_key,
+        aws_secret_access_key=credentials.secret_key,
+        aws_session_token=credentials.session_token,
     )
-
     boto_config = botocore.config.Config(
         retries={"max_attempts": 10, "mode": "standard"}
     )
@@ -111,90 +145,92 @@ def upload_file(
         max_concurrency=5,
     )
 
-    # TODO: checksum
-    file_size = os.path.getsize(local_path)
-    file_hash = b64_md5(local_path)
-
-    progress.track_file(str(local_path), file_size)
-
-    callback_fn = partial(progress.update, str(local_path))
-
+    # upload file
     s3_resource = sess.resource("s3", endpoint_url=endpoint, config=boto_config)
-    s3_resource.Bucket(access.bucket).upload_file(
+    s3_resource.Bucket(credentials.bucket).upload_file(
         local_path,
-        str(access.file_id),
+        str(credentials.file_id),
         Config=transfer_config,
-        Callback=callback_fn,
+        Callback=progress.update,
     )
 
-    # verify upload integrity
-    client = AuthenticatedClient()
-    confirm_file_upload(client, access.file_id, file_hash)
 
+def _upload_file(
+    client: AuthenticatedClient,
+    job: FileUploadJob,
+    hide_progress: bool = False,
+) -> int:
+    """\
+    returns bytes uploaded
+    """
 
-def file_upload_worker(
-    file_queue: queue.Queue[FileUploadJob],
-    enpoint: str,
-    progress: ProgressManager,
-) -> None:
-    while True:
-        try:
-            job = file_queue.get()
+    pbar = tqdm.tqdm(
+        total=os.path.getsize(job.path),
+        unit="B",
+        unit_scale=True,
+        desc=f"uploading {job.path.name}...",
+        leave=False,
+        disable=hide_progress,
+    )
 
-            if job.error is not None:
-                console = Console(file=sys.stderr, style="red", highlight=False)
-                console.print(f"Error uploading file: {job.local_path}: {job.error}")
-                file_queue.task_done()
-                continue
+    # get upload credentials for a single file
+    access = get_upload_creditials(
+        client, internal_filenames=[job.name], mission_id=job.mission_id
+    )
+    # upload file
+    creds = access.get(job.name)
 
-            upload_file(
-                local_path=job.local_path,
-                endpoint=enpoint,
-                access=job.access,
-                progress=progress,
-            )
+    if creds is None:
+        pbar.write(f"file {job.name} already exists in mission")
+        pbar.close()
+        return 0
 
-        except queue.Empty:
-            break
-        except Exception as e:
-            print(e)
-            file_queue.task_done()
-
-    return None
+    try:
+        _s3_upload(job.path, get_s3_endpoint(), creds, pbar)
+    except Exception as e:
+        pbar.write(f"error uploading file: {job.path}: {e}")
+        cancel_file_upload(client, creds.file_id, job.mission_id)
+    else:
+        # tell backend that upload is complete
+        local_hash = b64_md5(job.path)
+        confirm_file_upload(client, creds.file_id, local_hash)
+    finally:
+        pbar.close()
+        return job.path.stat().st_size
 
 
 def upload_files(
-    file_access: Dict[str, UploadAccess],
-    filenames: Dict[str, Path],
+    files_map: Dict[str, Path],
+    mission_id: UUID,
     *,
     n_workers: int = 8,
-):
-    # get proper s3_endpoint
-    s3_endpoint = get_s3_endpoint()
-    file_queue = queue.Queue()
+) -> None:
+    futures = []
 
-    for name, path in filenames.items():
-        job = FileUploadJob(
-            local_path=path,
-            internal_filename=name,
-            access=file_access[name],
-        )
-        file_queue.put(job)
+    start = monotonic()
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        for name, path in files_map.items():
+            # client is not thread safe
+            client = AuthenticatedClient()
+            job = FileUploadJob(mission_id=mission_id, name=name, path=path)
+            future = executor.submit(_upload_file, client=client, job=job)
+            futures.append(future)
 
-    # TODO: use ThreadPoolExecutor
-    thread_pool = []
-    with transfer_progress() as callback:
-        for _ in range(n_workers):
-            thread = threading.Thread(
-                target=file_upload_worker,
-                args=(file_queue, s3_endpoint, callback),
-            )
-            thread.start()
-            thread_pool.append(thread)
+    errors = []
+    total_size = 0
+    for f in futures:
+        try:
+            total_size += f.result() / 1e6
+        except Exception as e:
+            errors.append(e)
 
-        # wait for all threads
-        for thread in thread_pool:
-            thread.join()
+    time = monotonic() - start
+    print(f"upload took {time:.2f} seconds")
+    print(f"total size: {int(total_size)} MB")
+    print(f"average speed: {total_size / time:.2f} MB/s")
+
+    if errors:
+        raise FailedUpload(f"got unhandled errors: {errors} when uploading files")
 
 
 def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:

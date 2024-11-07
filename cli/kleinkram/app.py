@@ -43,6 +43,7 @@ app = typer.Typer(
     cls=OrderCommands,
     help=CLI_HELP,
     context_settings={"help_option_names": ["-h", "--help"]},
+    no_args_is_help=True,
 )
 
 app.add_typer(download_typer, name="download")

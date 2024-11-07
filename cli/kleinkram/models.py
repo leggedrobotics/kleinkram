@@ -75,7 +75,6 @@ class FileUploadJob(NamedTuple):
     local_path: Path
     internal_filename: str
     access: UploadAccess
-    error: Optional[str] = None
 
 
 def delimiter_row(
