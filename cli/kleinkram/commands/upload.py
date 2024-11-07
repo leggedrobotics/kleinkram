@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
+from typing import Union, cast
 from uuid import UUID
 
 import typer
@@ -17,7 +17,7 @@ from kleinkram.api.routes import get_mission_id_by_name
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.api.routes import get_upload_creditials
 from kleinkram.file_transfer import upload_files
-from kleinkram.models import Mission
+from kleinkram.models import Mission, UploadAccess
 from kleinkram.utils import get_internal_file_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import MissionById
@@ -77,9 +77,12 @@ def upload(
         None, help="path to metadata file (json or yaml)"
     ),
     fix_filenames: bool = typer.Option(False, help="fix filenames"),
-    ignore_mission_tags: bool = typer.Option(False, help="ignore mission tags"),
+    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     client = AuthenticatedClient()
+
+    if files is None:
+        files = []
 
     mission_spec = get_valid_mission_spec(mission, project)
     mission_parsed = _get_mission_by_spec(client, mission_spec)
@@ -110,41 +113,33 @@ def upload(
             project_id,
             mission_spec.name,
             tags=metadata_dct,
-            ignore_missing_tags=ignore_mission_tags,
+            ignore_missing_tags=ignore_missing_tags,
         )
+
         mission_parsed = get_mission_by_id(client, mission_id)
         assert mission_parsed is not None, "unreachable"
 
     # upload files
-    file_paths = list(patterns_matched(files))
-    internal_filename_map = get_internal_file_names(
-        file_paths, raise_on_error=not fix_filenames
-    )
+    file_paths = [Path(file) for file in files]
 
-    if not fix_filenames:
-        for external, internal in internal_filename_map.items():
-            if external != internal:
-                raise ValueError(
-                    f"Filename '{external}' is not valid.\n"
-                    " - It must only contain alphanumeric characters"
-                    "underscores and hyphens.\n"
-                    " - It must be between 3 and 40 characters long.\n\n"
-                    "Consider using the '--fix-filenames' option "
-                    "to automatically fix the filenames."
-                )
-    else:
-        mismatched = [
-            (ext, _int) for ext, _int in internal_filename_map.items() if ext != _int
-        ]
-        if mismatched:
-            print("Fixing filenames internally...")
-            for ext, _int in mismatched:
-                print(f" - {ext} -> {_int}")
+    internal_filename_map = get_internal_file_map(
+        file_paths, raise_on_change=not fix_filenames
+    )
 
     # get upload credentials
     access = get_upload_creditials(
-        client, list(internal_filename_map.values()), mission_parsed.id
+        client, list(internal_filename_map.keys()), mission_parsed.id
     )
 
+    print(access)
+    raise SystemExit
+
+    for name, path in internal_filename_map.items():
+        if name not in access:
+            print(f"file: {path} already uploaded")
+
     # upload files
-    upload_files(files_with_access, internal_filename_map, n_workers=4)
+    files_to_upload = {
+        name: path for name, path in internal_filename_map.items() if name in access
+    }
+    upload_files(access, files_to_upload, n_workers=4)

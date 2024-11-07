@@ -7,7 +7,7 @@ import os
 import secrets
 import string
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Tuple
 from typing import Generator
 from typing import List
 from typing import NamedTuple
@@ -51,9 +51,12 @@ def is_valid_name(name: str) -> bool:
     return not is_valid_uuid4(name)
 
 
+class InvalidFilename(Exception): ...
+
+
 def get_internal_file_map(
-    files: List[Path], raise_on_error: bool = False
-) -> Dict[Path, str]:
+    file_paths: List[Path], raise_on_change: bool = True
+) -> Dict[str, Path]:
     """\
     takes a list of unique filepaths and returns a mapping
     from the original filename to a sanitized internal filename
@@ -67,24 +70,34 @@ def get_internal_file_map(
     - digits
     - "_" and "-"
     """
+
+    if len(file_paths) != len(set(file_paths)):
+        raise ValueError("files paths must be unique")
+
     internal_file_map = {}
-    for file in files:
+    for file in file_paths:
         if file.is_dir():
             raise ValueError(f"got dir {file} expected file")
 
         # replace all disallowed characters with "_" and trim to 40 chars + 10 random chars
-        allowed_stem = "".join(
+        new_stem = "".join(
             char if char in INTERNAL_ALLOWED_CHARS else "_" for char in file.stem
         )
-        trimmed_stem = f"{allowed_stem[:40]}{secrets.token_urlsafe(10)}"
-        internal_file_map[file] = f"{trimmed_stem}{file.suffix}"
+        if len(new_stem) > 50:
+            new_stem = f"{new_stem[:40]}{secrets.token_urlsafe(10)}"
 
-    if len(internal_file_map) != len(files):
-        raise ValueError("files must be unique")
+        if new_stem != file.stem and raise_on_change:
+            raise InvalidFilename(file)
+
+        name = f"{new_stem}{file.suffix}"
+        internal_file_map[name] = file
 
     # this should never happend since our random token has 64**10 possibilities
     if len(internal_file_map) != len(set(internal_file_map.values())):
-        internal_file_map = get_internal_file_map(files)  # universe heat death
+        # universe heat death
+        internal_file_map = get_internal_file_map(
+            file_paths, raise_on_change=raise_on_change
+        )
 
     return internal_file_map
 

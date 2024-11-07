@@ -137,7 +137,6 @@ def file_upload_worker(
     enpoint: str,
     progress: ProgressManager,
 ) -> None:
-
     while True:
         try:
             job = file_queue.get()
@@ -166,7 +165,7 @@ def file_upload_worker(
 
 def upload_files(
     file_access: Dict[str, UploadAccess],
-    internal_filename_map: Dict[Path, str],
+    filenames: Dict[str, Path],
     *,
     n_workers: int = 8,
 ):
@@ -174,7 +173,7 @@ def upload_files(
     s3_endpoint = get_s3_endpoint()
     file_queue = queue.Queue()
 
-    for path, name in internal_filename_map.items():
+    for name, path in filenames.items():
         job = FileUploadJob(
             local_path=path,
             internal_filename=name,

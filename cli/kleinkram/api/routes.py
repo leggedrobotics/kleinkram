@@ -1,6 +1,7 @@
 """\
 this file contains any functions calling the API
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -23,7 +24,8 @@ from kleinkram.tag import DataType
 from kleinkram.tag import TagType
 from kleinkram.utils import is_valid_uuid4
 
-MAX_PAGINATION = 10_000
+# TODO: change to 10000
+MAX_PAGINATION = 1_000
 
 TEMP_CREDS = "/file/temporaryAccess"
 CLAIM_ADMIN = "/user/claimAdmin"
@@ -70,9 +72,33 @@ def get_upload_creditials(
             f"{resp.status_code}\n{resp.json()['message'][0]}"
         )
 
-    raise NotImplementedError("TODO: implement this")
+    data = resp.json()
 
-    return resp.json()  # type: ignore
+    ret = {}
+    for record in data:
+        if "error" in record:
+            # TODO: handle this better
+            continue
+
+        bucket = record["bucket"]
+        file_id = UUID(record["fileUUID"], version=4)
+        filename = record["fileName"]
+
+        creds = record["accessCredentials"]
+
+        access_key = creds["accessKey"]
+        secret_key = creds["secretKey"]
+        session_token = creds["sessionToken"]
+
+        ret[filename] = UploadAccess(
+            access_key=access_key,
+            secret_key=secret_key,
+            session_token=session_token,
+            file_id=file_id,
+            bucket=bucket,
+        )
+
+    return ret
 
 
 def claim_admin(client: AuthenticatedClient) -> None:
@@ -174,6 +200,8 @@ def get_mission_by_id(
     params = {"uuid": str(mission_id), "take": MAX_PAGINATION}
     resp = client.get(FILE_OF_MISSION, params=params)
 
+    resp.raise_for_status()
+
     if resp.status_code in (403, 404):
         return None
 
@@ -240,9 +268,10 @@ def create_mission(
     payload = {
         "name": mission_name,
         "projectUUID": str(project_id),
-        "requiredTags": tags or {},
+        "tags": tags or {},
         "ignoreTags": ignore_missing_tags,
     }
+
     resp = client.post(MISSION_CREATE, json=payload)
     resp.raise_for_status()
 
