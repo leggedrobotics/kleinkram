@@ -15,7 +15,7 @@ from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_id_by_name
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.config import get_shared_state
-from kleinkram.file_transfer import download_file
+from kleinkram.api.file_transfer import download_file
 from kleinkram.models import File
 from kleinkram.models import files_to_table
 from kleinkram.models import Mission

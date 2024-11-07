@@ -63,20 +63,6 @@ class TagType(NamedTuple):
     id: Optional[UUID] = None
 
 
-class UploadAccess(NamedTuple):
-    access_key: str
-    secret_key: str
-    session_token: str
-    file_id: UUID
-    bucket: str
-
-
-class FileUploadJob(NamedTuple):
-    local_path: Path
-    internal_filename: str
-    access: UploadAccess
-
-
 def delimiter_row(
     *lengths: int, delimiter: str = "-", cols: list[int] | None = None
 ) -> List[str]:
@@ -130,7 +116,9 @@ def missions_to_table(missions: List[Mission]) -> Table:
     return table
 
 
-def files_to_table(files: List[File], delimiters: bool = True) -> Table:
+def files_to_table(
+    files: List[File], *, title: str = "files", delimiters: bool = True
+) -> Table:
     table = Table(title="files")
     table.add_column("project")
     table.add_column("mission")

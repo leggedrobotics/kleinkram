@@ -20,23 +20,19 @@ import boto3.s3.transfer
 import botocore.config
 import httpx
 import tqdm
-from rich.console import Console
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import confirm_file_upload
-from kleinkram.api.routes import (
-    get_file_download,
-    get_upload_creditials,
-    cancel_file_upload,
-)
-from kleinkram.api.routes import get_file
+from kleinkram.api.routes import get_file_download
+from kleinkram.api.routes import cancel_file_upload
 from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
 from kleinkram.errors import CorruptedFile
 from kleinkram.utils import b64_md5
 
-DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16  # 16MB
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
+TEMP_CREDS = "/file/temporaryAccess"
 
 
 class FailedUpload(Exception): ...
@@ -56,67 +52,53 @@ class FileUploadJob(NamedTuple):
     path: Path
 
 
-class ProgressManager:
-    _lock: threading.Lock  # TODO: we probably dont need a lock
-    _file_progress: Dict[Union[str, UUID], tqdm.tqdm]  # pbar, transferred bytes
+def _get_upload_creditials(
+    client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
+) -> Dict[str, UploadCredentials]:
+    if mission_id.version != 4:
+        raise ValueError("Mission ID must be a UUIDv4")
+    dct = {
+        "filenames": internal_filenames,
+        "missionUUID": str(mission_id),
+    }
+    resp = client.post(TEMP_CREDS, json=dct)
 
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._file_progress = {}
+    if resp.status_code >= 400:
+        raise ValueError(
+            "Failed to get temporary credentials. Status Code: "
+            f"{resp.status_code}\n{resp.json()['message'][0]}"
+        )
 
-    def add(self, file: UUID, target_size: int):
-        with self._lock:
-            pbar = tqdm.tqdm(
-                total=target_size,
-                unit="B",
-                unit_scale=True,
-                desc=f"Uploading {file}",
-                leave=False,
-            )
+    data = resp.json()
 
-            if file in self._file_progress:
-                raise ValueError(f"file {file} already tracked")
+    ret = {}
+    for record in data:
+        if "error" in record:
+            # TODO: handle this better
+            continue
 
-            self._file_progress[file] = pbar
+        bucket = record["bucket"]
+        file_id = UUID(record["fileUUID"], version=4)
+        filename = record["fileName"]
 
-    def remove(self, file: UUID) -> None:
-        with self._lock:
-            pbar = self._file_progress.pop(file)
-            pbar.close()
+        creds = record["accessCredentials"]
 
-    def update(self, file: UUID, bytes_transferred: int):
-        with self._lock:
-            if file in self._file_progress:
-                pbar = self._file_progress[file]
-                pbar.update(bytes_transferred)
+        access_key = creds["accessKey"]
+        secret_key = creds["secretKey"]
+        session_token = creds["sessionToken"]
 
-    def write(self, file: UUID, msg: str):
-        with self._lock:
-            if file in self._file_progress:
-                pbar = self._file_progress[file]
-                pbar.write(msg)
+        ret[filename] = UploadCredentials(
+            access_key=access_key,
+            secret_key=secret_key,
+            session_token=session_token,
+            file_id=file_id,
+            bucket=bucket,
+        )
 
-    def close(self):
-        with self._lock:
-            for pbar in self._file_progress.values():
-                pbar.close()
-
-
-@contextmanager
-def transfer_progress() -> Generator[ProgressManager, None, None]:
-    """\
-    context manager to provide a TransferProgressCallback instance
-    """
-
-    transfer_callback = ProgressManager()
-
-    try:
-        yield transfer_callback
-    finally:
-        transfer_callback.close()
+    return ret
 
 
-def get_s3_endpoint() -> str:
+def _get_s3_endpoint() -> str:
     config = Config()
     api_endpoint = config.endpoint
     if api_endpoint == LOCAL_API_URL:
@@ -174,7 +156,7 @@ def _upload_file(
     )
 
     # get upload credentials for a single file
-    access = get_upload_creditials(
+    access = _get_upload_creditials(
         client, internal_filenames=[job.name], mission_id=job.mission_id
     )
     # upload file
@@ -186,7 +168,7 @@ def _upload_file(
         return 0
 
     try:
-        _s3_upload(job.path, get_s3_endpoint(), creds, pbar)
+        _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
     except Exception as e:
         pbar.write(f"error uploading file: {job.path}: {e}")
         cancel_file_upload(client, creds.file_id, job.mission_id)

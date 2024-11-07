@@ -15,14 +15,12 @@ from kleinkram.api.routes import create_mission
 from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_id_by_name
 from kleinkram.api.routes import get_project_id_by_name
-from kleinkram.api.routes import get_upload_creditials
-from kleinkram.file_transfer import upload_files
-from kleinkram.models import Mission, UploadAccess
+from kleinkram.api.file_transfer import upload_files
+from kleinkram.models import Mission
 from kleinkram.utils import get_internal_file_map, to_name_or_uuid
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import MissionById
 from kleinkram.utils import MissionByName
-from kleinkram.utils import patterns_matched
 
 upload_typer = typer.Typer(
     name="upload",
@@ -128,4 +126,3 @@ def upload(
     )
 
     upload_files(files_map, mission_parsed.id, n_workers=8)
-

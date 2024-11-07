@@ -18,7 +18,6 @@ from kleinkram.errors import CorruptedFile
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import UploadAccess
 from kleinkram.models import User
 from kleinkram.utils import is_valid_uuid4
 
