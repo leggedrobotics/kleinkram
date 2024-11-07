@@ -12,6 +12,8 @@ import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { getPermissions } from 'src/services/queries/user';
+import { getUser } from 'src/services/auth';
+import { User } from 'src/types/User';
 
 type Permissions = {
     role: string;
@@ -36,6 +38,16 @@ export const usePermissionsQuery = (): UseQueryReturnType<
         queryFn: () => {
             return getPermissions();
         },
+    });
+};
+
+/**
+ * Fetches the user data
+ */
+export const useUser = () => {
+    return useQuery<User | null>({
+        queryKey: ['user'],
+        queryFn: () => getUser(),
     });
 };
 

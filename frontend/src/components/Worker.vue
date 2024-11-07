@@ -114,6 +114,11 @@
                             <div
                                 class="row-container"
                                 style="align-items: center; width: 100%"
+                                v-if="
+                                    singleWorker?.gpuModel &&
+                                    singleWorker?.gpuMemory &&
+                                    singleWorker?.gpuMemory > 0
+                                "
                             >
                                 <div class="q-mt-md">
                                     <q-icon
@@ -121,7 +126,7 @@
                                         size="20px"
                                     />
                                     <span class="worker-name">{{
-                                        singleWorker.gpuModel
+                                        singleWorker.gpuModel || 'No GPU'
                                     }}</span>
                                 </div>
                             </div>

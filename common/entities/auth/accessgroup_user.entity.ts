@@ -3,7 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import AccessGroup from './accessgroup.entity';
 import User from '../user/user.entity';
 
-@Unique(['accessGroup', 'user'])
+@Unique('no_duplicated_user_in_access_group', ['accessGroup', 'user'])
 @Entity()
 export default class AccessGroupUser extends BaseEntity {
     @ManyToOne(() => AccessGroup, (group) => group.project_accesses, {

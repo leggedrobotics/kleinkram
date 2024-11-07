@@ -1,6 +1,6 @@
 {
-    "name": "Kleinkram_queueConsumer",
-    "version": "0.36.1",
+    "name": "kleinkram-queue-consumer",
+    "version": "0.36.2",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
@@ -9,9 +9,9 @@
     },
     "dependencies": {
         "@mcap/core": "^2.1.5",
-        "@mcap/nodejs": "^1.0.0",
-        "@mcap/support": "^1.0.0",
-        "@nestjs/bull": "^10.1.1",
+        "@mcap/nodejs": "^1.0.2",
+        "@mcap/support": "^1.0.2",
+        "@nestjs/bull": "^10.2.2",
         "@nestjs/common": "10.4.6",
         "@nestjs/config": "^3.3.0",
         "@nestjs/core": "10.4.6",
@@ -40,11 +40,11 @@
         "systeminformation": "^5.23.5",
         "typeorm": "^0.3.20",
         "util": "^0.12.5",
-        "winston": "3.15.0",
+        "winston": "3.16.0",
         "winston-loki": "^6.1.3"
     },
     "devDependencies": {
-        "@nestjs/cli": "^10.4.4",
+        "@nestjs/cli": "^10.4.7",
         "@types/dockerode": "^3.3.29",
         "@types/node": "22.8.2",
         "typescript": "5.6.3"

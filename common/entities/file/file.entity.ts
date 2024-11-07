@@ -17,7 +17,7 @@ import { FileOrigin, FileState, FileType } from '../../enum';
 import CategoryEntity from '../category/category.entity';
 
 @Entity()
-@Unique(['filename', 'mission'])
+@Unique('unique_file_name_per_mission', ['filename', 'mission'])
 export default class FileEntity extends BaseEntity {
     @ManyToOne(() => Mission, (mission) => mission.files)
     mission: Mission;
