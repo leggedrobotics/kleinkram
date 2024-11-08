@@ -79,7 +79,7 @@ export const updateProjectAccess = async (
     rights: AccessGroupRights,
 ) => {
     const response = await axios.post('/access/updateProjectAccess', {
-        groupUuid: groupUuid,
+        accessGroupUUID: groupUuid,
         rights,
         uuid: projectUUID,
     });

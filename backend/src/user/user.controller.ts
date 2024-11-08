@@ -48,7 +48,7 @@ export class UserController {
     @Get('search')
     @LoggedIn()
     async search(
-        @QueryString('search') search: string,
+        @QueryString('search', 'Searchkey on name or email') search: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user?: AuthRes,

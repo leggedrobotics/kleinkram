@@ -1,3 +1,3 @@
 # File Module
 
-<Module module="file"></Module>
+<Module module="tag"></Module>

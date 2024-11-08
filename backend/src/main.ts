@@ -163,10 +163,13 @@ async function bootstrap() {
     }
 
     console.log('Listening on port 3000');
-    await app.listen(3000);
     console.log('Save endpoints as JSON');
     saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
     console.log('Endpoints saved');
+
+    SwaggerModule.setup('api', app, document);
+    await app.listen(3000);
+
 }
 
 bootstrap().catch((err) => {

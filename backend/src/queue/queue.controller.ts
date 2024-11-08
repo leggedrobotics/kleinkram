@@ -37,8 +37,8 @@ export class QueueController {
     @Post('confirmUpload')
     @CanCreateQueueByBody()
     async confirmUpload(
-        @BodyUUID('uuid') uuid: string,
-        @BodyString('md5') md5: string,
+        @BodyUUID('uuid', 'File UUID of file that successfully uploaded') uuid: string,
+        @BodyString('md5', 'MD5 hash to validate uncorrupted upload') md5: string,
     ) {
         return this.queueService.confirmUpload(uuid, md5);
     }
@@ -46,8 +46,8 @@ export class QueueController {
     @Get('active')
     @LoggedIn()
     async active(
-        @QueryDate('startDate') startDate: string,
-        @QueryOptionalString('stateFilter') stateFilter: string,
+        @QueryDate('startDate', 'Start of time range to filter queue by') startDate: string,
+        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by') stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -66,8 +66,8 @@ export class QueueController {
     @Get('forFile')
     @CanReadMission()
     async forFile(
-        @QueryString('filename') filename: string,
-        @QueryUUID('uuid') uuid: string, // Mission UUID
+        @QueryString('filename', 'Filename') filename: string,
+        @QueryUUID('uuid', 'Mission UUID') uuid: string,
     ) {
         return this.queueService.forFile(filename, uuid);
     }
@@ -75,7 +75,7 @@ export class QueueController {
     @Delete(':uuid')
     @CanDeleteMission()
     async delete(
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @ParamUUID('uuid') uuid: string,
     ) {
         return this.queueService.delete(missionUUID, uuid);
@@ -84,8 +84,8 @@ export class QueueController {
     @Post('cancelProcessing')
     @CanDeleteMission()
     async cancelProcessing(
-        @BodyUUID('queueUUID') queueUUID: string,
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('queueUUID', 'Queue UUID to cancel') queueUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID of Queue') missionUUID: string,
     ) {
         return this.queueService.cancelProcessing(queueUUID, missionUUID);
     }
@@ -98,7 +98,7 @@ export class QueueController {
 
     @Post('stopJob')
     @AdminOnly()
-    async stopJob(@BodyUUID('jobId') jobId: string) {
+    async stopJob(@BodyUUID('jobId', 'Bull ID of Job to cancel') jobId: string) {
         return this.queueService.stopJob(jobId);
     }
 }

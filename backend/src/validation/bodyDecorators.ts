@@ -1,16 +1,30 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
+    applyDecorators,
     BadRequestException,
     createParamDecorator,
     ExecutionContext,
     InternalServerErrorException,
 } from '@nestjs/common';
-import { validateOrReject } from 'class-validator';
+import { IsUUID, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
 import { AccessGroupRights, DataType } from '@common/enum';
+import { metadataApplier } from './MetadataApplier';
+import { ApiProperty } from '@nestjs/swagger';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyUUID = createParamDecorator(
+
+export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
+    return applyDecorators(
+        IsUUID(),
+        ApiProperty({
+            description,
+            type: 'string',
+            format: 'uuid',
+        })
+    );
+}
+export const BodyUUID = (paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         if (!data) {
             throw new InternalServerErrorException(
@@ -26,10 +40,10 @@ export const BodyUUID = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'uuid', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyString = createParamDecorator(
+export const BodyString = (paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -44,10 +58,10 @@ export const BodyString = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'string', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyName = createParamDecorator(
+export const BodyName = (paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -59,10 +73,10 @@ export const BodyName = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'string', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyAccessGroupRights = createParamDecorator(
+export const BodyAccessGroupRights = (paramName: string, paramDescription: string)=> createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -75,10 +89,10 @@ export const BodyAccessGroupRights = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'AccessGroupRights', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyDataType = createParamDecorator(
+export const BodyDataType = (paramName: string, paramDescription: string)=> createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -89,10 +103,10 @@ export const BodyDataType = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'DataType', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyNotNull = createParamDecorator(
+export const BodyNotNull =(paramName: string, paramDescription: string)=>  createParamDecorator(
     (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -103,10 +117,10 @@ export const BodyNotNull = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'unknown', true)
+)(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const BodyUUIDArray = createParamDecorator(
+export const BodyUUIDArray = (paramName: string, paramDescription: string)=> createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();
         const value = request.body[data];
@@ -126,4 +140,5 @@ export const BodyUUIDArray = createParamDecorator(
 
         return value;
     },
-);
+    metadataApplier(paramName, paramDescription, 'body', 'uuid[]', true)
+)(paramName);

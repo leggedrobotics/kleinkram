@@ -19,10 +19,10 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 import {
-    QueryOptionalBoolean,
     QueryProjectSearchParam,
     QuerySkip,
     QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -31,31 +31,13 @@ import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
-import { ApiQuery } from '@nestjs/swagger';
+import { BodyUUIDArray } from '../validation/bodyDecorators';
 
 @Controller('project')
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
 
     @Get('filtered')
-    @ApiQuery({
-        name: 'skip',
-        required: true,
-        description: 'Number of items to skip',
-        type: Number,
-    })
-    @ApiQuery({
-        name: 'take',
-        required: true,
-        description: 'Number of items to take',
-        type: Number,
-    })
-    @ApiQuery({
-        name: 'sortBy',
-        required: false,
-        description: 'Sort by',
-        type: String,
-    })
     @UserOnly()
     async allProjects(
         @addUser()
@@ -63,8 +45,8 @@ export class ProjectController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy?: string,
-        @QueryOptionalBoolean('descending') descending?: boolean,
-        @QueryProjectSearchParam('searchParams')
+        @QuerySortDirection('descending') descending?: boolean,
+        @QueryProjectSearchParam('searchParams', 'search name and creator')
         searchParams?: Map<string, string>,
     ) {
         return this.projectService.findAll(
@@ -88,7 +70,9 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
-    async getProjectById(@QueryUUID('uuid') uuid: string): Promise<Project> {
+    async getProjectById(
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+    ): Promise<Project> {
         return this.projectService.findOne(uuid);
     }
 
@@ -109,7 +93,7 @@ export class ProjectController {
 
     @Get('byName')
     @CanReadProjectByName()
-    async getProjectByName(@QueryString('name') name: string) {
+    async getProjectByName(@QueryString('name', 'Project Name') name: string) {
         const project = await this.projectService.findOneByName(name);
         if (!project) {
             throw new HttpException('Project not found', 404);
@@ -126,8 +110,8 @@ export class ProjectController {
     @Post('addTagType')
     @CanWriteProject()
     async addTagType(
-        @QueryUUID('uuid') uuid: string,
-        @QueryString('tagTypeUUID') tagTypeUUID: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
     ) {
         return this.projectService.addTagType(uuid, tagTypeUUID);
     }
@@ -135,8 +119,8 @@ export class ProjectController {
     @Post('removeTagType')
     @CanWriteProject()
     async removeTagType(
-        @QueryUUID('uuid') uuid: string,
-        @QueryString('tagTypeUUID') tagTypeUUID: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
     ) {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
@@ -144,8 +128,8 @@ export class ProjectController {
     @Post('updateTagTypes')
     @CanWriteProject()
     async updateTagTypes(
-        @QueryUUID('uuid') uuid: string,
-        @Body('tagTypeUUIDs') tagTypeUUIDs: string[],
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set') tagTypeUUIDs: string[],
     ) {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
     }

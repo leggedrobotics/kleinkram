@@ -76,7 +76,7 @@ export class FileService implements OnModuleInit {
     ) {}
 
     onModuleInit(): any {
-        this.fileCleanupQueue = new Queue('action-queue', {
+        this.fileCleanupQueue = new Queue('file-cleanup', {
             redis,
         });
     }

@@ -1,4 +1,9 @@
-import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
+import {
+    applyDecorators,
+    SetMetadata,
+    UnauthorizedException,
+    UseGuards,
+} from '@nestjs/common';
 import {
     PublicGuard,
     LoggedInUserGuard,
@@ -32,6 +37,12 @@ import {
     CreateActionGuard,
     IsAccessGroupCreatorByAccessGroupUserGuard,
 } from './roles.guard';
+import {
+    ApiExtraModels,
+    ApiHeader,
+    ApiHeaders,
+    ApiResponse,
+} from '@nestjs/swagger';
 
 // disable naming-convention rule for enum.ts
 /* eslint @typescript-eslint/naming-convention: 0 */
@@ -57,6 +68,12 @@ export function UserOnly() {
     return applyDecorators(
         SetMetadata('isLoggedIn', true),
         UseGuards(UserGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'Not authenticated. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -93,6 +110,12 @@ export function CanWriteProject() {
     return applyDecorators(
         SetMetadata('CanWriteProject', true),
         UseGuards(WriteProjectGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Modify permissions on the specified project. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -107,6 +130,12 @@ export function CanCreate() {
     return applyDecorators(
         SetMetadata('CanCreate', true),
         UseGuards(CreateGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have global create permissions. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -228,6 +257,12 @@ export function IsAccessGroupCreator() {
     return applyDecorators(
         SetMetadata('IsAccessGroupCreator', true),
         UseGuards(AddUserToAccessGroupGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User is not the creator of the access group. API keys are not valid on this endpoint.',
+        }),
     );
 }
 

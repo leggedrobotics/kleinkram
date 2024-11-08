@@ -1,7 +1,7 @@
 <template>
     <div v-if="filteredSpec">
         <div v-for="[path, spec] in Object.entries(filteredSpec.paths)">
-            <Endpoint :endpoint="path" :spec="spec" />
+            <Endpoint :endpoint="path" :spec="spec" :schema="schema"/>
         </div>
     </div>
     <div v-else>Loading Swagger spec...</div>
@@ -20,11 +20,13 @@ const swaggerSpec = ref(null);
 if (import.meta.env.DEV) {
     import('./../../docs/swagger-spec.json').then((spec) => {
         swaggerSpec.value = spec;
+        schema.value = swaggerSpec.value.components.schemas;
+
     });
 }
 
 const filteredSpec = ref(null);
-
+const schema = ref(null);
 // Function to filter the OpenAPI spec by path prefix
 function filterSpecByPath(spec: any, pathPrefix: string) {
     const filteredSpec = { ...spec };
@@ -65,6 +67,8 @@ onMounted(async () => {
             swaggerSpec.value,
             '/' + props.module,
         );
+        console.log(swaggerSpec.value)
+        schema.value = swaggerSpec.value.components.schemas;
     } catch (error) {
         console.error('Error loading swagger-spec.json:', error);
     }
