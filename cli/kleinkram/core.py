@@ -4,10 +4,6 @@ from pathlib import Path
 from typing import List
 from uuid import UUID
 
-"""\
-this file contains the core functionality of `kleinkram`
-"""
-
 
 def upload() -> None: ...
 

@@ -11,9 +11,9 @@ from typing import Optional
 
 from kleinkram.consts import LOCAL_API_URL
 
-CONFIG_PATH = Path().home() / ".kleinkram.json"
+CONFIG_PATH = Path().home() / '.kleinkram.json'
 CORRUPTED_CONFIG_FILE_MESSAGE = (
-    "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
+    'Config file is corrupted.\nPlease run `klein login` to re-authenticate.'
 )
 
 
@@ -23,13 +23,13 @@ class Credentials(NamedTuple):
     cli_key: Optional[str] = None
 
 
-JSON_ENDPOINT_KEY = "endpoint"
-JSON_CREDENTIALS_KEY = "credentials"
+JSON_ENDPOINT_KEY = 'endpoint'
+JSON_CREDENTIALS_KEY = 'credentials'
 
 
 class InvalidConfigFile(Exception):
     def __init__(self) -> None:
-        super().__init__("Invalid config file.")
+        super().__init__('Invalid config file.')
 
 
 class CorruptedConfigFile(Exception):
@@ -59,7 +59,7 @@ class Config:
                 raise
 
     def _read_config(self) -> None:
-        with open(CONFIG_PATH, "r") as file:
+        with open(CONFIG_PATH, 'r') as file:
             try:
                 content = json.load(file)
             except Exception:
@@ -120,7 +120,7 @@ class Config:
 
         # atomically write to file
         fd, tmp_path = tempfile.mkstemp()
-        with open(fd, "w") as file:
+        with open(fd, 'w') as file:
             json.dump(data, file)
 
         os.replace(tmp_path, CONFIG_PATH)

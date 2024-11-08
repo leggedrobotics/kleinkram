@@ -42,12 +42,12 @@ class File:
 
 
 class DataType(str, Enum):
-    LOCATION = "LOCATION"
-    STRING = "STRING"
-    LINK = "LINK"
-    BOOLEAN = "BOOLEAN"
-    NUMBER = "NUMBER"
-    DATE = "DATE"
+    LOCATION = 'LOCATION'
+    STRING = 'STRING'
+    LINK = 'LINK'
+    BOOLEAN = 'BOOLEAN'
+    NUMBER = 'NUMBER'
+    DATE = 'DATE'
 
 
 @dataclass(frozen=True, eq=True)
@@ -59,22 +59,22 @@ class TagType:
 
 
 def delimiter_row(
-    *lengths: int, delimiter: str = "-", cols: list[int] | None = None
+    *lengths: int, delimiter: str = '-', cols: list[int] | None = None
 ) -> List[str]:
     ret = []
     for i, col_len in enumerate(lengths):
         if cols is None or i in cols:
             ret.append(delimiter * col_len)
         else:
-            ret.append("")
+            ret.append('')
     return ret
 
 
 def projects_to_table(projects: List[Project]) -> Table:
-    table = Table(title="projects")
-    table.add_column("id")
-    table.add_column("name")
-    table.add_column("description")
+    table = Table(title='projects')
+    table.add_column('id')
+    table.add_column('name')
+    table.add_column('description')
 
     for project in projects:
         table.add_row(str(project.id), project.name, project.description)
@@ -83,10 +83,10 @@ def projects_to_table(projects: List[Project]) -> Table:
 
 
 def missions_to_table(missions: List[Mission]) -> Table:
-    table = Table(title="missions")
-    table.add_column("project")
-    table.add_column("name")
-    table.add_column("id")
+    table = Table(title='missions')
+    table.add_column('project')
+    table.add_column('name')
+    table.add_column('id')
 
     # order by project, name
     missions_tp = []
@@ -104,7 +104,7 @@ def missions_to_table(missions: List[Mission]) -> Table:
     for project, name, id_ in missions_tp:
         # add delimiter row if project changes
         if last_project is not None and last_project != project:
-            table.add_row(*delimiter_row(pmax, nmax, imax, delimiter="="))
+            table.add_row(*delimiter_row(pmax, nmax, imax, delimiter='='))
         last_project = project
 
         table.add_row(project, name, id_)
@@ -112,13 +112,13 @@ def missions_to_table(missions: List[Mission]) -> Table:
 
 
 def files_to_table(
-    files: List[File], *, title: str = "files", delimiters: bool = True
+    files: List[File], *, title: str = 'files', delimiters: bool = True
 ) -> Table:
-    table = Table(title="files")
-    table.add_column("project")
-    table.add_column("mission")
-    table.add_column("name")
-    table.add_column("id")
+    table = Table(title='files')
+    table.add_column('project')
+    table.add_column('mission')
+    table.add_column('name')
+    table.add_column('id')
 
     # order by project, mission, name
     files_tp = []
@@ -138,7 +138,7 @@ def files_to_table(
     for project, mission, name, id_ in files_tp:
         # add delimiter row if project or mission changes
         if last_project is not None and last_project != project and delimiters:
-            table.add_row(*delimiter_row(pmax, mmax, nmax, imax, delimiter="="))
+            table.add_row(*delimiter_row(pmax, mmax, nmax, imax, delimiter='='))
         elif last_mission is not None and last_mission != mission and delimiters:
             table.add_row()
         last_project = project

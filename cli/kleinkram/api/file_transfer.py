@@ -14,7 +14,6 @@ import boto3.s3.transfer
 import botocore.config
 import httpx
 import tqdm
-
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
@@ -24,12 +23,12 @@ from kleinkram.errors import CorruptedFile
 from kleinkram.errors import FailedUpload
 from kleinkram.utils import b64_md5
 
-UPLOAD_CREDS = "/file/temporaryAccess"
-UPLOAD_CONFIRM = "/queue/confirmUpload"
-UPLOAD_CANCEL = "/file/cancelUpload"
+UPLOAD_CREDS = '/file/temporaryAccess'
+UPLOAD_CONFIRM = '/queue/confirmUpload'
+UPLOAD_CANCEL = '/file/cancelUpload'
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
-DOWNLOAD_URL = "/file/download"
+DOWNLOAD_URL = '/file/download'
 
 
 class UploadCredentials(NamedTuple):
@@ -52,15 +51,15 @@ def _get_s3_endpoint() -> str:
     if api_endpoint == LOCAL_API_URL:
         return LOCAL_S3_URL
     else:
-        return api_endpoint.replace("api", "minio")
+        return api_endpoint.replace('api', 'minio')
 
 
 def _confirm_file_upload(
     client: AuthenticatedClient, file_id: UUID, file_hash: str
 ) -> None:
     data = {
-        "uuid": str(file_id),
-        "md5": file_hash,
+        'uuid': str(file_id),
+        'md5': file_hash,
     }
     resp = client.post(UPLOAD_CONFIRM, json=data)
 
@@ -73,8 +72,8 @@ def _cancel_file_upload(
     client: AuthenticatedClient, file_id: UUID, mission_id: UUID
 ) -> None:
     data = {
-        "uuid": [str(file_id)],
-        "missionUUID": str(mission_id),
+        'uuid': [str(file_id)],
+        'missionUUID': str(mission_id),
     }
     resp = client.post(UPLOAD_CANCEL, json=data)
     resp.raise_for_status()
@@ -85,12 +84,12 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     """\
     get the download url for a file by file id
     """
-    resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True})
+    resp = client.get(DOWNLOAD_URL, params={'uuid': str(id), 'expires': True})
 
     if 400 <= resp.status_code < 500:
         raise AccessDeniedException(
             f"Failed to download file: {resp.json()['message']}",
-            "Status Code: " + str(resp.status_code),
+            'Status Code: ' + str(resp.status_code),
         )
 
     resp.raise_for_status()
@@ -102,16 +101,16 @@ def _get_upload_creditials(
     client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
 ) -> Dict[str, UploadCredentials]:
     if mission_id.version != 4:
-        raise ValueError("Mission ID must be a UUIDv4")
+        raise ValueError('Mission ID must be a UUIDv4')
     dct = {
-        "filenames": internal_filenames,
-        "missionUUID": str(mission_id),
+        'filenames': internal_filenames,
+        'missionUUID': str(mission_id),
     }
     resp = client.post(UPLOAD_CREDS, json=dct)
 
     if resp.status_code >= 400:
         raise ValueError(
-            "Failed to get temporary credentials. Status Code: "
+            'Failed to get temporary credentials. Status Code: '
             f"{resp.status_code}\n{resp.json()['message'][0]}"
         )
 
@@ -119,19 +118,19 @@ def _get_upload_creditials(
 
     ret = {}
     for record in data:
-        if "error" in record:
+        if 'error' in record:
             # TODO: handle this better
             continue
 
-        bucket = record["bucket"]
-        file_id = UUID(record["fileUUID"], version=4)
-        filename = record["fileName"]
+        bucket = record['bucket']
+        file_id = UUID(record['fileUUID'], version=4)
+        filename = record['fileName']
 
-        creds = record["accessCredentials"]
+        creds = record['accessCredentials']
 
-        access_key = creds["accessKey"]
-        secret_key = creds["secretKey"]
-        session_token = creds["sessionToken"]
+        access_key = creds['accessKey']
+        secret_key = creds['secretKey']
+        session_token = creds['sessionToken']
 
         ret[filename] = UploadCredentials(
             access_key=access_key,
@@ -157,7 +156,7 @@ def _s3_upload(
         aws_session_token=credentials.session_token,
     )
     boto_config = botocore.config.Config(
-        retries={"max_attempts": 10, "mode": "standard"}
+        retries={'max_attempts': 10, 'mode': 'standard'}
     )
     transfer_config = boto3.s3.transfer.TransferConfig(
         multipart_chunksize=10 * 1024 * 1024,
@@ -165,7 +164,7 @@ def _s3_upload(
     )
 
     # upload file
-    s3_resource = sess.resource("s3", endpoint_url=endpoint, config=boto_config)
+    s3_resource = sess.resource('s3', endpoint_url=endpoint, config=boto_config)
     s3_resource.Bucket(credentials.bucket).upload_file(
         local_path,
         str(credentials.file_id),
@@ -186,9 +185,9 @@ def _upload_file(
 
     pbar = tqdm.tqdm(
         total=os.path.getsize(job.path),
-        unit="B",
+        unit='B',
         unit_scale=True,
-        desc=f"uploading {job.path.name}...",
+        desc=f'uploading {job.path.name}...',
         leave=False,
         disable=hide_progress,
     )
@@ -201,7 +200,7 @@ def _upload_file(
     creds = access.get(job.name)
 
     if creds is None:
-        pbar.write(f"file {job.name} already exists in mission")
+        pbar.write(f'file {job.name} already exists in mission')
         pbar.close()
 
         if progress is not None:
@@ -212,19 +211,19 @@ def _upload_file(
     try:
         _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
     except Exception as e:
-        pbar.write(f"error uploading file: {job.path}: {e}")
+        pbar.write(f'error uploading file: {job.path}: {e}')
 
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            pbar.write(f"error cancelling upload: {e}")
+            pbar.write(f'error cancelling upload: {e}')
     else:
         # tell backend that upload is complete
         try:
             local_hash = b64_md5(job.path)
             _confirm_file_upload(client, creds.file_id, local_hash)
         except Exception as e:
-            pbar.write(f"error confirming upload: {e}")
+            pbar.write(f'error confirming upload: {e}')
     finally:
         if progress is not None:
             progress.update()
@@ -243,8 +242,8 @@ def upload_files(
 
     pbar = tqdm.tqdm(
         total=len(files_map),
-        unit="files",
-        desc="Uploading files",
+        unit='files',
+        desc='Uploading files',
     )
 
     start = monotonic()
@@ -269,22 +268,22 @@ def upload_files(
     pbar.close()
 
     time = monotonic() - start
-    print(f"upload took {time:.2f} seconds")
-    print(f"total size: {int(total_size)} MB")
-    print(f"average speed: {total_size / time:.2f} MB/s")
+    print(f'upload took {time:.2f} seconds')
+    print(f'total size: {int(total_size)} MB')
+    print(f'average speed: {total_size / time:.2f} MB/s')
 
     if errors:
-        raise FailedUpload(f"got unhandled errors: {errors} when uploading files")
+        raise FailedUpload(f'got unhandled errors: {errors} when uploading files')
 
 
 def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:
     if path.exists() and not overwrite:
-        raise FileExistsError(f"File already exists: {path}")
+        raise FileExistsError(f'File already exists: {path}')
 
-    with httpx.stream("GET", url) as response:
-        with open(path, "wb") as f:
+    with httpx.stream('GET', url) as response:
+        with open(path, 'wb') as f:
             with tqdm.tqdm(
-                total=size, desc=f"Downloading {path.name}", unit="B", unit_scale=True
+                total=size, desc=f'Downloading {path.name}', unit='B', unit_scale=True
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     f.write(chunk)
