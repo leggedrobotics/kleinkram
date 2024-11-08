@@ -21,4 +21,16 @@ export class Topic extends BaseEntity {
         this.nrMessages = nrMessages;
         this.frequency = frequency;
     }
+
+    static fromAPIResponse(response: any): Topic {
+        return new Topic(
+            response.uuid,
+            response.name,
+            response.type,
+            response.nrMessages,
+            response.frequency,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

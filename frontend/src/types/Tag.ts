@@ -45,6 +45,21 @@ export class Tag extends BaseEntity {
             case DataType.STRING:
             case DataType.LINK:
                 return this.STRING as string;
+            default:
+                return '';
         }
+    }
+    static fromAPIResponse(response: any): Tag {
+        return new Tag(
+            response.uuid,
+            response.STRING,
+            response.NUMBER,
+            response.BOOLEAN,
+            response.DATE ? new Date(response.DATE) : undefined,
+            response.LOCATION,
+            TagType.fromAPIResponse(response.type),
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
     }
 }

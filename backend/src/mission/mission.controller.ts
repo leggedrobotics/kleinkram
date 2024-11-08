@@ -91,7 +91,7 @@ export class MissionController {
             search,
             descending,
             sortBy,
-            user.user.uuid,
+            user.user,
         );
     }
 

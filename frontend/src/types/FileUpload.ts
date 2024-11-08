@@ -10,7 +10,7 @@ export class FileUpload {
         this.name = name;
         this.size = size;
         this.uuid = uuid;
-        this.mission_uuid = missionUuid;
+        this.missionUuid = missionUuid;
         this.uploaded = 0;
         this.startTime = new Date();
     }

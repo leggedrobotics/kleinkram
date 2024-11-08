@@ -39,4 +39,22 @@ export class Worker extends BaseEntity {
         this.lastSeen = new Date(lastSeen);
         this.reachable = reachable;
     }
+
+    static fromAPIResponse(response: any): Worker {
+        return new Worker(
+            response.uuid,
+            response.identifier,
+            response.hostname,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            response.cpuMemory,
+            response.gpuModel,
+            response.gpuMemory,
+            response.cpuCores,
+            response.cpuModel,
+            response.storage,
+            response.lastSeen,
+            response.reachable,
+        );
+    }
 }
