@@ -157,8 +157,8 @@ export class MissionService {
     ): Promise<[AggregatedMissionDto[], number]> {
         const query = this.missionRepository
             .createQueryBuilder('mission')
-            .addSelect('COUNT(files.uuid)', 'fileCount')
-            .addSelect('SUM(files.size)', 'totalSize')
+            .addSelect('COUNT(files.uuid)::int', 'fileCount')
+            .addSelect('COALESCE(SUM(files.size), 0)::int', 'totalSize')
             .leftJoin('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoin('mission.files', 'files')
