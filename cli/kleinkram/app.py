@@ -6,6 +6,7 @@ from typing import Optional
 
 import typer
 from click import Context
+from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
 from kleinkram.auth import login_flow
@@ -18,7 +19,6 @@ from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
-from kleinkram.utils import get_version
 from typer.core import TyperGroup
 
 
@@ -83,7 +83,7 @@ def claim():
 
 def _version_cb(value: bool) -> None:
     if value:
-        typer.echo(get_version())
+        typer.echo(__version__)
         raise typer.Exit()
 
 

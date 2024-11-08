@@ -4,7 +4,6 @@ import base64
 import glob
 import hashlib
 import os
-import secrets
 import string
 from hashlib import md5
 from pathlib import Path
@@ -34,11 +33,6 @@ def pattern_matched(pattern: str) -> Generator[Path, None, None]:
     """
     expanded = os.path.expandvars(os.path.expanduser(pattern))
     yield from map(Path, glob.iglob(expanded, recursive=True))
-
-
-def get_version() -> str:
-    # TODO
-    return '0.1.0'
 
 
 def is_valid_uuid4(uuid: str) -> bool:
