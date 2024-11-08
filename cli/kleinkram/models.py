@@ -41,13 +41,6 @@ class File:
     project_name: str
 
 
-class User(NamedTuple):
-    id: UUID
-    name: str
-    email: str
-    role: str
-
-
 class DataType(str, Enum):
     LOCATION = "LOCATION"
     STRING = "STRING"
@@ -57,10 +50,12 @@ class DataType(str, Enum):
     DATE = "DATE"
 
 
-class TagType(NamedTuple):
+@dataclass(frozen=True, eq=True)
+class TagType:
     name: str
+    id: UUID
     data_type: DataType
-    id: Optional[UUID] = None
+    description: Optional[str]
 
 
 def delimiter_row(

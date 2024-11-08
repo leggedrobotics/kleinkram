@@ -1,6 +1,7 @@
 """\
 this file contains any functions calling the API
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -12,10 +13,10 @@ from typing import Union
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.errors import MissionExistsError
+from kleinkram.errors import MissionExistsError, MissionDoesNotExist, NoPermission
 from kleinkram.models import File
 from kleinkram.models import Mission
-from kleinkram.models import Project
+from kleinkram.models import Project, TagType, DataType
 from kleinkram.utils import FilesById
 from kleinkram.utils import FilesByMission
 from kleinkram.utils import is_valid_uuid4
@@ -37,6 +38,7 @@ MISSION_BY_NAME = "/mission/byName"
 MISSION_BY_ID = "/mission/one"
 MISSION_CREATE = "/mission/create"
 MISSION_BY_PROJECT_NAME = "/mission/filteredByProjectName"
+MISSION_UPDATE_METADATA = "/mission/tags"
 
 ALL_USERS = "/user/all"
 USER_INFO = "/user/me"
@@ -47,6 +49,8 @@ FILE_DOWNLOAD = "/file/download"
 FILE_QUERY = "/file/filteredByNames"
 FILE_ONE = "/file/one"
 FILE_OF_MISSION = "/file/ofMission"
+
+TAG_TYPE_BY_NAME = "/tag/filtered"
 
 
 def claim_admin(client: AuthenticatedClient) -> None:
@@ -191,7 +195,7 @@ def create_mission(
     project_id: UUID,
     mission_name: str,
     *,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[Dict[UUID, str]] = None,
     ignore_missing_tags: bool = False,
 ) -> UUID:
     """\
@@ -213,7 +217,7 @@ def create_mission(
     payload = {
         "name": mission_name,
         "projectUUID": str(project_id),
-        "tags": tags or {},
+        "tags": {str(k): v for k, v in tags.items()} if tags else {},
         "ignoreTags": ignore_missing_tags,
     }
 
@@ -381,3 +385,59 @@ def get_files_by_file_spec(
         return filtered
 
     return parsed_mission.files
+
+
+def get_tag_type_by_name(
+    client: AuthenticatedClient, tag_name: str
+) -> Optional[TagType]:
+    resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
+
+    if resp.status_code in (403, 404):
+        return None
+
+    resp.raise_for_status()
+
+    data = resp.json()[0]
+    tag_type = TagType(
+        name=data["name"],
+        id=UUID(data["uuid"], version=4),
+        data_type=DataType(data["datatype"]),
+        description=data["description"],
+    )
+    return tag_type
+
+
+def get_tags_map(
+    client: AuthenticatedClient, metadata: Dict[str, str]
+) -> Dict[UUID, str]:
+    # TODO: this needs a better endpoint
+    ret = {}
+    for key, val in metadata.items():
+        tag_type = get_tag_type_by_name(client, key)
+
+        if tag_type is None:
+            print(f"tag: {key} not found")
+            continue
+
+        ret[tag_type.id] = val
+
+    return ret
+
+
+def update_mission_metadata(
+    client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
+) -> None:
+    tags_dct = get_tags_map(client, metadata)
+    payload = {
+        "missionUUID": str(mission_id),
+        "tags": {str(k): v for k, v in tags_dct.items()},
+    }
+    resp = client.post(MISSION_UPDATE_METADATA, json=payload)
+
+    if resp.status_code == 404:
+        raise MissionDoesNotExist
+
+    if resp.status_code == 403:
+        raise NoPermission
+
+    resp.raise_for_status()

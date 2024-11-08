@@ -12,7 +12,7 @@ from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.routes import create_mission
 from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_by_spec
-from kleinkram.api.routes import get_project_id_by_name
+from kleinkram.api.routes import get_project_id_by_name, get_tags_map
 from kleinkram.errors import MissionDoesNotExist
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
@@ -66,9 +66,10 @@ def upload(
             raise ValueError("cannot create mission using mission id, use mission name")
 
         # get the metadata
-        metadata_dct = {}
+        tags_dct = {}
         if metadata is not None:
             metadata_dct = load_metadata(Path(metadata))
+            tags_dct = get_tags_map(client, metadata_dct)
 
         # get project id
         if isinstance(mission_spec.project, UUID):
@@ -82,7 +83,7 @@ def upload(
             client,
             project_id,
             mission_spec.name,
-            tags=metadata_dct,
+            tags=tags_dct,
             ignore_missing_tags=ignore_missing_tags,
         )
 
