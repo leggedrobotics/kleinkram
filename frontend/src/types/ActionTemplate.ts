@@ -63,4 +63,26 @@ export class ActionTemplate extends BaseEntity {
             this.accessRights,
         );
     }
+
+    static fromAPIResponse(response: any): ActionTemplate {
+        const createdBy = response.createdBy
+            ? User.fromAPIResponse(response.createdBy)
+            : null;
+        return new ActionTemplate(
+            response.uuid,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            response.imageName,
+            createdBy,
+            response.name,
+            response.version,
+            response.command,
+            response.cpuCores,
+            response.cpuMemory,
+            response.gpuMemory,
+            response.maxRuntime,
+            response.entrypoint,
+            response.accessRights,
+        );
+    }
 }

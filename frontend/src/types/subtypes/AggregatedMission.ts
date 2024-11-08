@@ -1,15 +1,12 @@
-import { BaseEntity } from 'src/types/BaseEntity';
+import { Mission } from 'src/types/Mission';
 import { Project } from 'src/types/Project';
-import { User } from 'src/types/User';
 import { FileEntity } from 'src/types/FileEntity';
 import { Tag } from 'src/types/Tag';
+import { User } from 'src/types/User';
 
-export class Mission extends BaseEntity {
-    name: string;
-    project: Project | null;
-    files: FileEntity[];
-    creator: User | null;
-    tags: Tag[];
+export class AggregatedMission extends Mission {
+    nrFiles: number;
+    size: number;
 
     constructor(
         uuid: string,
@@ -20,17 +17,16 @@ export class Mission extends BaseEntity {
         creator: User | null,
         createdAt: Date | null,
         updatedAt: Date | null,
+        nrFiles: number,
+        size: number,
     ) {
-        super(uuid, createdAt, updatedAt);
-        this.name = name;
-        this.project = project;
-        this.files = files;
-        this.creator = creator;
-        this.tags = tags;
+        super(uuid, name, project, files, tags, creator, createdAt, updatedAt);
+        this.nrFiles = nrFiles;
+        this.size = size;
     }
 
     clone(): Mission {
-        return new Mission(
+        return new AggregatedMission(
             this.uuid,
             this.name,
             this.project?.clone() || null,
@@ -39,10 +35,12 @@ export class Mission extends BaseEntity {
             this.creator,
             this.createdAt,
             this.updatedAt,
+            this.nrFiles,
+            this.size,
         );
     }
 
-    static fromAPIResponse(response: any): Mission | null {
+    static fromAPIResponse(response: any): AggregatedMission | null {
         if (!response) {
             return null;
         }
@@ -60,7 +58,8 @@ export class Mission extends BaseEntity {
         if (response.tags) {
             tags = response.tags.map((tag: any) => Tag.fromAPIResponse(tag));
         }
-        return new Mission(
+
+        return new AggregatedMission(
             response.uuid,
             response.name,
             project,
@@ -69,6 +68,8 @@ export class Mission extends BaseEntity {
             creator,
             new Date(response.createdAt),
             new Date(response.updatedAt),
+            response.nrFiles,
+            response.size,
         );
     }
 }

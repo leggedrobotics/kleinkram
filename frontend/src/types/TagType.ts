@@ -16,4 +16,14 @@ export class TagType extends BaseEntity {
         this.name = name;
         this.type = type;
     }
+
+    static fromAPIResponse(response: any): TagType {
+        return new TagType(
+            response.uuid,
+            response.name,
+            response.type,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

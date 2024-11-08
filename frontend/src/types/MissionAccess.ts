@@ -21,4 +21,19 @@ export class MissionAccess extends BaseEntity {
         this.accessGroup = accessGroup;
         this.missions = missions;
     }
+
+    static fromAPIResponse(response: any): MissionAccess {
+        const accessGroup = AccessGroup.fromAPIResponse(response.accessGroup);
+        const missions = response.missions.map((mission: any) =>
+            Mission.fromAPIResponse(mission),
+        );
+        return new MissionAccess(
+            response.uuid,
+            response.rights,
+            accessGroup,
+            missions,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

@@ -19,4 +19,22 @@ export class AccessGroupUser extends BaseEntity {
         this.accessGroup = accessGroup;
         this.expirationDate = expirationDate;
     }
+
+    static fromAPIResponse(response: any): AccessGroupUser | null {
+        if (!response) {
+            return null;
+        }
+        const user = User.fromAPIResponse(response.user);
+        const accessGroup = response.accessGroup
+            ? AccessGroup.fromAPIResponse(response.accessGroup)
+            : null;
+        return new AccessGroupUser(
+            response.uuid,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            user,
+            accessGroup,
+            response.expirationDate ? new Date(response.expirationDate) : null,
+        );
+    }
 }
