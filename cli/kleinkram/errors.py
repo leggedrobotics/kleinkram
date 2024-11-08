@@ -17,3 +17,12 @@ class NameIsValidUUID(Exception): ...
 
 
 class FailedUpload(Exception): ...
+
+
+class InvalidCLIVersion(Exception): ...
+
+
+class AccessDeniedException(Exception):
+    def __init__(self, message: str, api_error: str):
+        self.message = message
+        self.api_error = api_error

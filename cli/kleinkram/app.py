@@ -9,6 +9,7 @@ from click import Context
 from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import claim_admin
+from kleinkram.api.routes import get_api_version
 from kleinkram.auth import login_flow
 from kleinkram.commands.download import download_typer
 from kleinkram.commands.endpoint import endpoint_typer
@@ -19,8 +20,9 @@ from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
+from kleinkram.errors import InvalidCLIVersion
+from rich.console import Console
 from typer.core import TyperGroup
-
 
 CLI_HELP = """\
 Kleinkram CLI
@@ -87,6 +89,25 @@ def _version_cb(value: bool) -> None:
         raise typer.Exit()
 
 
+def check_version_compatiblity() -> None:
+    cli_version = tuple(map(int, __version__.split('.')))
+
+    api_version = get_api_version()
+    api_vers_str = '.'.join(map(str, api_version))
+
+    if cli_version[0] != api_version[0]:
+        raise InvalidCLIVersion(
+            f'CLI version {__version__} is not compatible with API version {api_vers_str}'
+        )
+
+    if cli_version[1] != api_version[1]:
+        console = Console()
+        console.print(
+            f'CLI version {__version__} might not be compatible with API version {api_vers_str}',
+            style='red',
+        )
+
+
 @app.callback()
 def cli(
     verbose: bool = typer.Option(True, help='Enable verbose mode.'),
@@ -96,6 +117,8 @@ def cli(
     ),
 ):
     _ = version  # suppress unused variable warning
+    check_version_compatiblity()
+
     shared_state = get_shared_state()
     shared_state.verbose = verbose
     shared_state.debug = debug

@@ -18,7 +18,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.consts import LOCAL_API_URL
 from kleinkram.consts import LOCAL_S3_URL
-from kleinkram.error_handling import AccessDeniedException
+from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
 from kleinkram.errors import FailedUpload
 from kleinkram.utils import b64_md5
