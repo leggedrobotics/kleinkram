@@ -1,7 +1,6 @@
 """\
 this file contains any functions calling the API
 """
-
 from __future__ import annotations
 
 from typing import Any
@@ -9,14 +8,22 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 from uuid import UUID
 
+import httpx
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.errors import MissionExistsError, MissionDoesNotExist, NoPermission
+from kleinkram.config import Config
+from kleinkram.errors import MissionDoesNotExist
+from kleinkram.errors import MissionExistsError
+from kleinkram.errors import NoPermission
+from kleinkram.models import DataType
 from kleinkram.models import File
 from kleinkram.models import Mission
-from kleinkram.models import Project, TagType, DataType
+from kleinkram.models import Project
+from kleinkram.models import TagType
 from kleinkram.utils import FilesById
 from kleinkram.utils import FilesByMission
 from kleinkram.utils import is_valid_uuid4
@@ -51,6 +58,8 @@ FILE_ONE = "/file/one"
 FILE_OF_MISSION = "/file/ofMission"
 
 TAG_TYPE_BY_NAME = "/tag/filtered"
+
+GET_STATUS = "/user/me"
 
 
 def claim_admin(client: AuthenticatedClient) -> None:
@@ -441,3 +450,13 @@ def update_mission_metadata(
         raise NoPermission
 
     resp.raise_for_status()
+
+
+def get_api_version() -> Tuple[int, int, int]:
+    config = Config()
+    client = httpx.Client()
+
+    resp = client.get(f"{config.endpoint}{GET_STATUS}")
+    vers = resp.headers["kleinkram-version"].split(".")
+
+    return tuple(map(int, vers))  # type: ignore

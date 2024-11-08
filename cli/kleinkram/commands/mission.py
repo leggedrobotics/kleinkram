@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-import typer
 from pathlib import Path
 from typing import Optional
+
+import typer
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_mission_by_spec, update_mission_metadata
-from kleinkram.utils import get_valid_mission_spec
+from kleinkram.api.routes import get_mission_by_spec
+from kleinkram.api.routes import update_mission_metadata
 from kleinkram.errors import MissionDoesNotExist
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
+from kleinkram.utils import to_name_or_uuid
 
 mission_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}

@@ -6,6 +6,7 @@ import hashlib
 import os
 import secrets
 import string
+from hashlib import md5
 from pathlib import Path
 from typing import Dict
 from typing import Generator
@@ -14,7 +15,6 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Union
 from uuid import UUID
-from hashlib import md5
 
 import yaml
 

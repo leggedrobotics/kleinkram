@@ -12,7 +12,8 @@ from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.routes import create_mission
 from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_by_spec
-from kleinkram.api.routes import get_project_id_by_name, get_tags_map
+from kleinkram.api.routes import get_project_id_by_name
+from kleinkram.api.routes import get_tags_map
 from kleinkram.errors import MissionDoesNotExist
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec

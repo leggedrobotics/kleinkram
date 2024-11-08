@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-import typer
 import sys
-from typing import List, Optional
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.utils import to_name_or_uuid
-from kleinkram.api.routes import get_mission_by_spec
-from kleinkram.utils import get_valid_mission_spec
-from kleinkram.errors import MissionDoesNotExist
+from enum import Enum
 from pathlib import Path
-from kleinkram.utils import b64_md5
-from kleinkram.utils import get_filename_map
-from kleinkram.config import get_shared_state
+from typing import List
+from typing import Optional
+
+import typer
+from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from rich.console import Console
-from enum import Enum
 from tqdm import tqdm
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import get_mission_by_spec
+from kleinkram.config import get_shared_state
+from kleinkram.errors import MissionDoesNotExist
+from kleinkram.utils import b64_md5
+from kleinkram.utils import get_filename_map
+from kleinkram.utils import get_valid_mission_spec
+from kleinkram.utils import to_name_or_uuid
 
 
 class FileStatus(str, Enum):
