@@ -14,7 +14,7 @@ from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.errors import MissionDoesNotExist
-from kleinkram.utils import get_internal_file_map
+from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
 from kleinkram.utils import MissionByName
@@ -90,7 +90,7 @@ def upload(
         assert mission_parsed is not None, "unreachable"
 
     # upload files
-    files_map = get_internal_file_map(
+    files_map = get_filename_map(
         [Path(file) for file in files], raise_on_change=not fix_filenames
     )
 

@@ -14,6 +14,7 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Union
 from uuid import UUID
+from hashlib import md5
 
 import yaml
 
@@ -56,21 +57,34 @@ def is_valid_name(name: str) -> bool:
 class InvalidFilename(Exception): ...
 
 
-def get_internal_file_map(
+def get_filename(path: Path) -> str:
+    """\
+    takes a path and returns a sanitized filename
+
+    the format for this internal filename is:
+    - replace all disallowed characters with "_"
+    - trim to 40 chars + 10 hashed chars
+        - the 10 hashed chars are deterministic given the original filename
+    """
+
+    stem = "".join(
+        char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem
+    )
+
+    if len(stem) > 50:
+        hash = md5(path.name.encode()).hexdigest()
+        stem = f"{stem[:40]}{hash[:10]}"
+
+    return f"{stem}{path.suffix}"
+
+
+def get_filename_map(
     file_paths: List[Path], raise_on_change: bool = True
 ) -> Dict[str, Path]:
     """\
     takes a list of unique filepaths and returns a mapping
     from the original filename to a sanitized internal filename
-
-    the format for this internal filename is:
-    - replace all disallowed characters with "_"
-    - trim to 40 chars + 10 random chars
-
-    allowed chars are:
-    - ascii letters (upper and lower case)
-    - digits
-    - "_" and "-"
+    see `get_filename` for the internal filename format
     """
 
     if len(file_paths) != len(set(file_paths)):
@@ -81,25 +95,11 @@ def get_internal_file_map(
         if file.is_dir():
             raise ValueError(f"got dir {file} expected file")
 
-        # replace all disallowed characters with "_" and trim to 40 chars + 10 random chars
-        new_stem = "".join(
-            char if char in INTERNAL_ALLOWED_CHARS else "_" for char in file.stem
-        )
-        if len(new_stem) > 50:
-            new_stem = f"{new_stem[:40]}{secrets.token_urlsafe(10)}"
-
-        if new_stem != file.stem and raise_on_change:
-            raise InvalidFilename(file)
-
-        name = f"{new_stem}{file.suffix}"
-        internal_file_map[name] = file
+        internal_file_map[get_filename(file)] = file
 
     # this should never happend since our random token has 64**10 possibilities
     if len(internal_file_map) != len(set(internal_file_map.values())):
-        # universe heat death
-        internal_file_map = get_internal_file_map(
-            file_paths, raise_on_change=raise_on_change
-        )
+        raise RuntimeError("hash collision")
 
     return internal_file_map
 
