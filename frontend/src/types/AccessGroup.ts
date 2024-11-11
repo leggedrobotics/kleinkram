@@ -36,18 +36,18 @@ export class AccessGroup extends BaseEntity {
     }
 
     static fromAPIResponse(response: any): AccessGroup {
-        const accessGroupUsers = response.accessGroupUsers.map(
-            (accessGroupUser: any) =>
+        const accessGroupUsers =
+            response.accessGroupUsers?.map((accessGroupUser: any) =>
                 AccessGroupUser.fromAPIResponse(accessGroupUser),
-        );
-        const projectAccesses = response.projectAccesses.map(
-            (projectAccess: any) =>
+            ) || [];
+        const projectAccesses =
+            response.projectAccesses?.map((projectAccess: any) =>
                 ProjectAccess.fromAPIResponse(projectAccess),
-        );
-        const missionAccesses = response.missionAccesses.map(
-            (missionAccess: any) =>
+            ) || [];
+        const missionAccesses =
+            response.missionAccesses?.map((missionAccess: any) =>
                 MissionAccess.fromAPIResponse(missionAccess),
-        );
+            ) || [];
         const creator = User.fromAPIResponse(response.creator);
         return new AccessGroup(
             response.uuid,

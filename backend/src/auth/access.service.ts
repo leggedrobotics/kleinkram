@@ -369,7 +369,7 @@ export class AccessService {
     async getProjectAccess(projectUUID: string, projectAccessUUID: string) {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
-            relations: ['project'],
+            relations: ['project', 'accessGroup'],
         });
     }
 
