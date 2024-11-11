@@ -228,7 +228,7 @@ export class ActionService {
             })
             .skip(skip)
             .take(take)
-            .orderBy('action.' + sortBy, descending ? 'DESC' : 'ASC');
+            .orderBy('action.' + sortBy, sortDirection);
 
         if (missionUuid) {
             baseQuery.andWhere('mission.uuid = :mission_uuid', {
