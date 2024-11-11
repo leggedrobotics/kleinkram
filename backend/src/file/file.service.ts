@@ -703,7 +703,7 @@ export class FileService implements OnModuleInit {
                 };
             })
             .catch((error) => {
-                console.error('Error:', error);
+                logger.error('Error:', error);
             });
     }
 

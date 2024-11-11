@@ -6,6 +6,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import env from '@common/env';
 import { internalMinio } from '@common/minio_helper';
+import logger from '../logger';
 
 const execAsync = promisify(exec);
 const unlinkAsync = promisify(fs.unlink);
@@ -13,12 +14,12 @@ const unlinkAsync = promisify(fs.unlink);
 @Injectable()
 export class DBDumper {
     constructor(private readonly configService: ConfigService) {
-        console.log('DBDumper service created');
+        logger.debug('DBDumper service created');
     }
 
     @Cron(CronExpression.EVERY_2ND_HOUR)
     async handleCron() {
-        console.log('Dumping database...');
+        logger.debug('Dumping database...');
         // const { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } =
         //     process.env;
         const DB_HOST = this.configService.getOrThrow<string>('database.host');

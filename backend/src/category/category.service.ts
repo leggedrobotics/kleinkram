@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Category from '@common/entities/category/category.entity';
 import { AuthRes } from '../auth/paramDecorator';
 import FileEntity from '@common/entities/file/file.entity';
+import logger from '../logger';
 
 @Injectable()
 export class CategoryService {
@@ -57,7 +58,7 @@ export class CategoryService {
         if (validFileUUIDs.length !== files.length) {
             throw new Error('Some files do not belong to the given mission.');
         }
-        console.log('validFileUUIDs', validFileUUIDs);
+        logger.debug('validFileUUIDs', validFileUUIDs);
 
         const insertValues = validFileUUIDs.flatMap((fileUUID) =>
             categories.map((categoryUUID) => ({
@@ -65,7 +66,7 @@ export class CategoryService {
                 categoryUuid: categoryUUID,
             })),
         );
-        console.log('insertValues', insertValues);
+        logger.debug('insertValues', insertValues);
 
         if (insertValues.length > 0) {
             await this.fileEntityRepository.manager

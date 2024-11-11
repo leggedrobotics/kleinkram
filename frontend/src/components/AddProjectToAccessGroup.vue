@@ -69,7 +69,7 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 
 const search = ref('');
-const accessRight = ref({ label: 'None', value: AccessGroupRights.NONE });
+const accessRight = ref({ label: 'None', value: AccessGroupRights.READ });
 const selected: Ref<User[]> = ref([]);
 const { data: foundProjects } = useQuery({
     queryKey: ['projects', search],

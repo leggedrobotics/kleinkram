@@ -27,15 +27,15 @@ export class MissionService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
-        private userservice: UserService,
-        private tagservice: TagService,
+        private userService: UserService,
+        private tagService: TagService,
     ) {}
 
     async create(
         createMission: CreateMission,
         auth: AuthRes,
     ): Promise<Mission> {
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
@@ -84,7 +84,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(createMission.tags).map(
                 async ([tagTypeUUID, value]) => {
-                    return this.tagservice.addTagType(
+                    return this.tagService.addTagType(
                         newMission.uuid,
                         tagTypeUUID,
                         value,
@@ -142,7 +142,6 @@ export class MissionService {
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, userUUID);
         }
-        console.log(query.getSql());
         return query.getManyAndCount();
     }
 
@@ -351,13 +350,13 @@ export class MissionService {
                     (_tag) => _tag.tagType.uuid === tagTypeUUID,
                 );
                 if (tag) {
-                    return this.tagservice.updateTagType(
+                    return this.tagService.updateTagType(
                         missionUUID,
                         tagTypeUUID,
                         value,
                     );
                 }
-                return this.tagservice.addTagType(
+                return this.tagService.addTagType(
                     missionUUID,
                     tagTypeUUID,
                     value,

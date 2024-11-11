@@ -160,10 +160,10 @@ async function bootstrap() {
         swaggerUiEnabled: false,
     });
 
-    console.log('Listening on port 3000');
-    console.log('Save endpoints as JSON');
+    logger.debug('Listening on port 3000');
+    logger.debug('Save endpoints as JSON');
     saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
-    console.log('Endpoints saved');
+    logger.debug('Endpoints saved');
 
     await app.listen(3000);
 }

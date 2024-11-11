@@ -45,7 +45,7 @@ export class MissionController {
         @Body('name') name: string,
     ) {
         // validate name
-        if (/^[\w\-_]{3,20}$/i.test(name) === false) {
+        if (/^[\w\-_]{3,50}$/i.test(name) === false) {
             throw new Error('Invalid name');
         }
 

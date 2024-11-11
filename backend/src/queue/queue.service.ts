@@ -102,7 +102,7 @@ export class QueueService implements OnModuleInit {
                 }),
             );
         } catch (e) {
-            console.error(e);
+            logger.error(e);
         }
         await Promise.all(
             Object.values(this.actionQueues).map(async (queue) => {
@@ -256,7 +256,7 @@ export class QueueService implements OnModuleInit {
         if (!jobToRemove) {
             logger.debug('Job not found');
         } else {
-            console.log('Removing job:', jobToRemove.data.queueUuid);
+            logger.debug('Removing job:', jobToRemove.data.queueUuid);
             await jobToRemove.remove();
         }
         await this.queueRepository.remove(queue);
@@ -316,7 +316,7 @@ export class QueueService implements OnModuleInit {
         if (!jobToRemove) {
             logger.debug('Job not found');
         } else {
-            console.log('Removing job:', jobToRemove.data.queueUuid);
+            logger.debug('Removing job:', jobToRemove.data.queueUuid);
             await jobToRemove.remove();
         }
         queue.state = QueueState.CANCELED;
@@ -459,7 +459,6 @@ export class QueueService implements OnModuleInit {
                         }
                     } catch (e) {
                         logger.error(e);
-                        console.log('error');
                         return;
                     }
                 }
