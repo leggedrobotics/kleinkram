@@ -1,51 +1,85 @@
 # Getting Started with the CLI
 
-The `kleinkram` CLI allows you to interact with your Kleinkram instance from the command line. This guide will help you
-get started with the CLI.
+The `kleinkram` CLI allows you to interact with kleinkram from the command line. This guide will help you get started with the CLI. The CLI does not yet support all functionalities so for some use cases you will still need to use the web interface.
 
 ## Installation and Prerequisites
 
-The CLI assumes that you have python3 installed on your system. The CLI is distributed as a standalone pip package. You
-can install it using pip. After installing the CLI, you can use the `klein` command to interact with your Kleinkram
-instance.
+The CLI requires python3.8 or later. It is recommended that you use a virtual environment
 
 ```bash
+virtualenv .venv -ppython3.8
+source .venv/bin/activate
+```
+
+You can install the CLI using pip
+```bash
 pip install kleinkram
+```
+This will add the command `klein` to your path. You are ready to get started!
+
+```bash
+klein --help
 ```
 
 ## Authentication
 
-In order to use the CLI, you need to authenticate with your Kleinkram instance. You can do this by running the following
-
+In order to use the CLI, you need to authenticate yourself. If your device has access to a webbrowerse you can simply type
 ```bash
 klein login
 ```
+and follow the instructions.
 
 ::: details Headless Authentication (Optional)
-If you are running the CLI on a headless server, you can use the `--no-open-browser` flag to authenticate without
-opening a browser window:
-
-```bash
-klein login --no-open-browser
+In case your device does not support a browser you can use:
 ```
-
+klein login --headless
+```
 :::
 
-## Advanced Usage
+## General Concepts
+Most commands are based on you specifying a `mission` which you want to interact with. There are multiple ways to specify a mission.
 
-The CLI is designed to support UNIX pipes between commands. Some advanced usage examples are shown below.
+- Specify the mission by ID.
+- Specify a project (either by ID or name) and specify as mission name.
 
-For by default we thus write uuids to stdout and humain readable information to stderr. This allows you to use UNIX
-pipes to chain commands together by passing the output of one command as input to another command.
-
-:::details Generate List of all Mission UUIDs
-The following command generates a list of all mission UUIDs in your Kleinkram instance (where you have the necessary
-permissions):
+This is achieved by specifying the options `-m` / `--mission` and `-p` / `--project` respectively. As an example consider the following:
 
 ```bash
-klein project list 2>/dev/null | xargs -n1 klein project details 2>/dev/null
+klein mycommand -p myproject -m mymission
 ```
 
-The command uses the `project list` command to generate a list of all mission UUIDs, and then uses `xargs` to pass each
-to the `klein project details` command. While suppressing stderr.
+Is telling `mycommand` to do something to the mission `mymission` inside the project `myproject`.
+
+## Uploading Files
+
+You can use the command `upload` to upload files to a specified mission as follows:
+
+```bash
+klein upload -p myproject -m mymission file1 file2 file3
+```
+
+You can also use unix wild cards to specify file patters. Be aware that any file you specify has to have the file suffix `.bag` or `.mcap`.
+
+::: details Creating Mission on Upload
+If you wish to create a mission on upload you can use the flag `--create`. Importantly this will only create the mission if the specified project already exists. Furthermore, in this case you need to specify the mission by name.
+```bash
+klein upload -p myproject -m mymission --create file1 file2 file3
+```
 :::
+
+
+## Downloading Files
+If you wish to download the files of a specific mission you can use the following command:
+```bash
+klein download -p myproject -m mymission --dest dest
+```
+where `dest` is the destination folder for the downloaded files. In case `dest` does not exist it is created and if it already contains files we will skip files that already exist.
+
+## Verifying Files
+If you wish to verify if you correctly uploaded files to a mission you can use the command
+
+```bash
+klein verify -p myproject -m mymission file1 file2 file3
+```
+
+It accepts similar commands to the `upload` command and check if all specified files were uploaded correctly. If you wish to skip file hash verification you can use the `--skip-hash` flag.
