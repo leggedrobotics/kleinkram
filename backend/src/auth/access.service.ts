@@ -252,7 +252,7 @@ export class AccessService {
         }
         if (member) {
             // user in in users of access group
-            where['users'] = { uuid: auth.user.uuid };
+            where['accessGroupUsers'] = { user: { uuid: auth.user.uuid } };
         }
         const [found, count] = await this.accessGroupRepository.findAndCount({
             where,
