@@ -158,7 +158,7 @@ export class MissionService {
         const query = this.missionRepository
             .createQueryBuilder('mission')
             .addSelect('COUNT(files.uuid)::int', 'fileCount')
-            .addSelect('COALESCE(SUM(files.size), 0)::int', 'totalSize')
+            .addSelect('COALESCE(SUM(files.size), 0)::bigint', 'totalSize')
             .leftJoin('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoin('mission.files', 'files')
@@ -198,7 +198,7 @@ export class MissionService {
                 return {
                     ...mission,
                     nrFiles: rawItem.fileCount,
-                    size: rawItem.totalSize,
+                    size: Number(rawItem.totalSize),
                 } as AggregatedMissionDto;
             } else {
                 return {
