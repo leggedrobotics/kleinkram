@@ -49,7 +49,15 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ action?.image?.repoDigests?.[0] }}
+                                {{ action?.template.imageName }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="action?.image?.repoDigests?.[0]"
+                                >
+                                    <br />
+                                    {{ action?.image?.repoDigests?.[0] }}
+                                </span>
                             </td>
                         </tr>
                         <tr>
@@ -81,12 +89,26 @@
                             <td class="q-table__cell">Command</td>
                             <td class="q-table__cell">
                                 {{ action?.template.command }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.command"
+                                >
+                                    No command specified
+                                </span>
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Entrypoint</td>
                             <td class="q-table__cell">
                                 {{ action?.template.entrypoint }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.entrypoint"
+                                >
+                                    No entrypoint specified
+                                </span>
                             </td>
                         </tr>
                         <tr>
@@ -318,10 +340,10 @@ import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
-import { computed, ComputedRef, Ref, ref } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
-import { formatDate, parseDate } from '../services/dateFormating';
+import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 
 const tab = ref('info');
