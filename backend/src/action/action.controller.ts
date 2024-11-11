@@ -16,7 +16,9 @@ import {
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalString,
-    QuerySkip, QuerySortBy, QuerySortDirection,
+    QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
     QueryUUID,
 } from '../validation/queryDecorators';
 import Action from '@common/entities/action/action.entity';
@@ -72,8 +74,12 @@ export class ActionController {
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QuerySortBy('sortBy') sortBy: string,
-        @QuerySortDirection('descending') descending: boolean,
-        @QueryOptionalString('search', 'Searchkey in name, state_cause or image_name') search: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryOptionalString(
+            'search',
+            'Searchkey in name, state_cause or image_name',
+        )
+        search: string,
     ) {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -86,7 +92,7 @@ export class ActionController {
             skip,
             take,
             sortBy,
-            descending,
+            sortDirection,
             search,
         );
     }

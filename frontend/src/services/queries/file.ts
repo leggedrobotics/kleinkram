@@ -35,7 +35,7 @@ export const fetchOverview = async (
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();
         if (sort) params['sort'] = sort;
-        if (desc !== undefined) params['desc'] = desc.toString();
+        if (desc !== undefined) params['sortDirection'] = desc ? 'DESC' : 'ASC';
         const queryParams = new URLSearchParams(params).toString();
         const response = await axios.get(`/file/filtered?${queryParams}`);
         const data = response.data[0];
@@ -98,8 +98,8 @@ export const filesOfMission = async (
     if (categories && categories.length > 0) params['categories'] = categories;
     if (sort) params['sort'] = sort;
     else params['sort'] = 'filename';
-    if (desc !== undefined) params['desc'] = desc;
-    else params['desc'] = false;
+    if (desc !== undefined) params['desc'] = desc ? 'DESC' : 'ASC';
+    else params['desc'] = 'ASC';
     const response = await axios.get('file/ofMission', {
         params,
     });

@@ -118,7 +118,7 @@ export class FileController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('desc') desc: boolean,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @addUser() auth: AuthRes,
     ) {
         let _missionUUID = missionUUID;
@@ -139,7 +139,7 @@ export class FileController {
             take,
             skip,
             sort,
-            desc,
+            sortDirection,
         );
     }
 
@@ -183,7 +183,7 @@ export class FileController {
         )
         categories: string[],
         @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('desc') desc: boolean,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryOptionalString('health', 'File health') health: string,
     ) {
         return this.fileService.findByMission(
@@ -194,7 +194,7 @@ export class FileController {
             fileType,
             categories,
             sort,
-            desc,
+            sortDirection,
             health,
         );
     }
@@ -208,7 +208,8 @@ export class FileController {
     @Post('moveFiles')
     @CanMoveFiles()
     async moveFiles(
-        @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved') fileUUIDs: string[],
+        @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
+        fileUUIDs: string[],
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
     ) {
         return this.fileService.moveFiles(fileUUIDs, missionUUID);
@@ -257,7 +258,11 @@ export class FileController {
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
     async cancelUpload(
-        @BodyUUIDArray('uuids', 'File UUIDs who, if they aren\'t \'OK\', are deleted') uuids: string[],
+        @BodyUUIDArray(
+            'uuids',
+            "File UUIDs who, if they aren't 'OK', are deleted",
+        )
+        uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @addUser() auth: AuthRes,
     ) {
@@ -272,7 +277,8 @@ export class FileController {
     @Post('deleteMultiple')
     @CanDeleteMission()
     async deleteMultiple(
-        @BodyUUIDArray('uuids', 'List of File UUID to be deleted') uuids: string[],
+        @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
+        uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
     ) {
         return this.fileService.deleteMultiple(uuids, missionUUID);

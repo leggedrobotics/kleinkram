@@ -178,7 +178,7 @@ export class ActionService {
         skip: number,
         take: number,
         sortBy: string,
-        descending: boolean,
+        sortDirection: 'ASC' | 'DESC',
         search: string,
     ): Promise<[Action[], number]> {
         const user = await this.userRepository.findOne({
@@ -192,7 +192,7 @@ export class ActionService {
                 .leftJoinAndSelect('action.createdBy', 'createdBy')
                 .leftJoinAndSelect('action.template', 'template')
                 .andWhere('project.uuid = :projectUuid', { projectUuid })
-                .orderBy(`action.${sortBy}`, descending ? 'DESC' : 'ASC')
+                .orderBy(`action.${sortBy}`, sortDirection)
                 .skip(skip)
                 .take(take);
             if (search) {

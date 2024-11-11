@@ -18,7 +18,7 @@ export const filteredProjects = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParams && Object.keys(searchParams).length > 0) {
         params['searchParams'] = searchParams;

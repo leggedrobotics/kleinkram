@@ -91,7 +91,7 @@ export const missionsOfProjectMinimal = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParams && searchParams.name) {
         params['search'] = searchParams.name;
@@ -165,7 +165,7 @@ export const missionsOfProject = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParams && searchParams.name) {
         params['search'] = searchParams.name;

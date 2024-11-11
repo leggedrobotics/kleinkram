@@ -45,7 +45,7 @@ export class ProjectController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy?: string,
-        @QuerySortDirection('descending') descending?: boolean,
+        @QuerySortDirection('sortDirection') sortDirection?: 'ASC' | 'DESC',
         @QueryProjectSearchParam('searchParams', 'search name and creator')
         searchParams?: Map<string, string>,
     ) {
@@ -54,7 +54,7 @@ export class ProjectController {
             skip,
             take,
             sortBy,
-            descending,
+            sortDirection,
             searchParams,
         );
     }
@@ -129,7 +129,8 @@ export class ProjectController {
     @CanWriteProject()
     async updateTagTypes(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set') tagTypeUUIDs: string[],
+        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
+        tagTypeUUIDs: string[],
     ) {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
     }

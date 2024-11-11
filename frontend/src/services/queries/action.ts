@@ -22,7 +22,7 @@ export const getActions = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
 
     if (search) {

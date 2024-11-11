@@ -40,7 +40,7 @@ export class ProjectService {
         skip: number,
         take: number,
         sortBy: string,
-        descending: boolean,
+        sortDirection: 'ASC' | 'DESC',
         searchParams: Map<string, string>,
     ): Promise<[Project[], number]> {
         // convert take and skip to numbers
@@ -74,10 +74,7 @@ export class ProjectService {
             sortBy &&
             ['name', 'createdAt', 'updatedAt', 'creator'].includes(sortBy) // SQL Sanitization
         ) {
-            baseQuery = baseQuery.orderBy(
-                `project.${sortBy}`,
-                descending ? 'DESC' : 'ASC',
-            );
+            baseQuery = baseQuery.orderBy(`project.${sortBy}`, sortDirection);
         }
 
         if (searchParams) {

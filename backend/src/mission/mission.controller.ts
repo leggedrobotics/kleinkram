@@ -57,7 +57,7 @@ export class MissionController {
     async filteredMissionsMinimal(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('descending') descending: boolean,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
@@ -68,7 +68,7 @@ export class MissionController {
             skip,
             take,
             search,
-            descending,
+            sortDirection,
             sortBy,
             user.user.uuid,
         );
@@ -79,7 +79,7 @@ export class MissionController {
     async filteredMissions(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('descending') descending: boolean,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
@@ -90,7 +90,7 @@ export class MissionController {
             skip,
             take,
             search,
-            descending,
+            sortDirection,
             sortBy,
             user.user,
         );

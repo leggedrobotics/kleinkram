@@ -115,7 +115,7 @@ export class MissionService {
         skip: number,
         take: number,
         search?: string,
-        descending?: boolean,
+        sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
         userUUID?: string,
     ): Promise<[Mission[], number]> {
@@ -137,7 +137,7 @@ export class MissionService {
             });
         }
         if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+            query.orderBy(`mission.${sortBy}`, sortDirection);
         }
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, userUUID);
@@ -151,7 +151,7 @@ export class MissionService {
         skip: number,
         take: number,
         search?: string,
-        descending?: boolean,
+        sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
         user?: User,
     ): Promise<[AggregatedMissionDto[], number]> {
@@ -182,7 +182,7 @@ export class MissionService {
             });
         }
         if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+            query.orderBy(`mission.${sortBy}`, sortDirection);
         }
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, user.uuid);
