@@ -191,8 +191,6 @@ function extendWorker(uuid: string) {
 </script>
 
 <style scoped>
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
-
 .row-container {
     display: flex;
     gap: 4px; /* Add spacing between elements */
