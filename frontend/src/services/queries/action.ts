@@ -171,7 +171,7 @@ export const actionDetails = async (actionUuid: string) => {
             response.data.state_cause,
             response.data.artifact_url,
             response.data.artifacts,
-            null,
+            Mission.fromAPIResponse(response.data.mission),
             template,
             response.data.image,
             user,

@@ -39,6 +39,29 @@
                 </q-tab>
             </q-tabs>
         </template>
+
+        <template v-slot:buttons>
+            <button-group>
+                <q-btn
+                    class="button-border"
+                    flat
+                    color="primary"
+                    icon="sym_o_link"
+                    label="Mission"
+                    @click="
+                        $router.push({
+                            name: ROUTES.FILES.routeName,
+                            params: {
+                                project_uuid: action?.mission?.project?.uuid,
+                                mission_uuid: action?.mission?.uuid,
+                            },
+                        })
+                    "
+                >
+                    <q-tooltip> Analyze Actions</q-tooltip>
+                </q-btn>
+            </button-group>
+        </template>
     </title-section>
 
     <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
@@ -178,6 +201,14 @@
                                     <br />
                                 </div>
                                 <div v-else>N/A</div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="q-table__cell">Project / Mission:</td>
+                            <td class="q-table__cell">
+                                {{ action?.mission?.project?.name }} /
+                                {{ action?.mission?.name }}
                             </td>
                         </tr>
 
@@ -335,7 +366,7 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
@@ -345,10 +376,13 @@ import ActionBadge from 'components/ActionBadge.vue';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
+import ButtonGroup from 'components/ButtonGroup.vue';
+import ROUTES from 'src/router/routes';
 
 const tab = ref('info');
 
 const $route = useRoute();
+const $router = useRouter();
 
 const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
