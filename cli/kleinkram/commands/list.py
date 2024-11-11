@@ -20,7 +20,9 @@ List projects, missions, or files.
 """
 
 
-list_typer = typer.Typer(name="list", invoke_without_command=True, help=HELP)
+list_typer = typer.Typer(
+    name="list", invoke_without_command=True, help=HELP, no_args_is_help=True
+)
 
 
 def _parse_metadata(raw: List[str]) -> dict:
