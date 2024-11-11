@@ -32,6 +32,7 @@ import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('project')
 export class ProjectController {
@@ -39,6 +40,11 @@ export class ProjectController {
 
     @Get('filtered')
     @UserOnly()
+    @ApiOperation({
+        summary: 'Get all projects',
+        description:
+            'Get all projects with optional search, filter, and pagination options',
+    })
     async allProjects(
         @addUser()
         user: AuthRes,

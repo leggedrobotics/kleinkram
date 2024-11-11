@@ -29,10 +29,6 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async findOneByEmail(email: string) {
-        return this.userRepository.findOne({ where: { email } });
-    }
-
     async findOneByUUID(uuid: string) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
@@ -63,6 +59,7 @@ export class UserService implements OnModuleInit {
     async me(auth: AuthRes) {
         return await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
+            select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
             relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
         });
     }

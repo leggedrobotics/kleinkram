@@ -30,7 +30,7 @@ export default class User extends BaseEntity {
      *
      * @example 'john.doe@example.com'
      */
-    @Column({ unique: true })
+    @Column({ unique: true, select: false })
     email: string;
 
     /**
@@ -41,7 +41,7 @@ export default class User extends BaseEntity {
      * @see UserRole
      *
      */
-    @Column()
+    @Column({ select: false })
     role: UserRole;
 
     /**
