@@ -171,7 +171,7 @@ export class AccessController {
     })
     @Post('removeUserFromAccessGroup')
     @IsAccessGroupCreator()
-    async removeUserFromAccessGroup(@Body() body: AddUserToProjectDto) {
+    async removeUserFromAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return this.accessService.removeUserFromAccessGroup(
             body.uuid,
             body.userUUID,
