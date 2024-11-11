@@ -9,6 +9,7 @@ from typing import Dict
 from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Tuple
 from uuid import UUID
 
 import boto3.s3.transfer
@@ -181,7 +182,7 @@ def _upload_file(
     job: FileUploadJob,
     hide_progress: bool = False,
     progress: Optional[tqdm.tqdm] = None,
-) -> int:
+) -> Tuple[int, Path]:
     """\
     returns bytes uploaded
     """
@@ -209,7 +210,7 @@ def _upload_file(
         if progress is not None:
             progress.update()
 
-        return 0
+        return (0, job.path)
 
     try:
         _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
@@ -229,17 +230,18 @@ def _upload_file(
             pbar.write(f"error confirming upload: {e}")
     finally:
         if progress is not None:
+            progress.write(f"uploaded {job.path.name}")
             progress.update()
 
         pbar.close()
-        return job.path.stat().st_size
+        return (job.path.stat().st_size, job.path)
 
 
 def upload_files(
     files_map: Dict[str, Path],
     mission_id: UUID,
     *,
-    hide_progress: bool = False,
+    verbose: bool = False,
     n_workers: int = 8,
 ) -> None:
     futures = []
@@ -248,7 +250,7 @@ def upload_files(
         total=len(files_map),
         unit="files",
         desc="Uploading files",
-        disable=hide_progress,
+        disable=not verbose,
     )
 
     start = monotonic()
@@ -262,7 +264,7 @@ def upload_files(
                 client=client,
                 job=job,
                 progress=pbar,
-                hide_progress=hide_progress,
+                hide_progress=not verbose,
             )
             futures.append(future)
 
@@ -270,7 +272,11 @@ def upload_files(
     total_size = 0
     for f in futures:
         try:
-            total_size += f.result() / 1e6
+            size, path = f.result() / 1e6
+            if not verbose and size > 0:
+                print(path.absolte())
+
+            total_size += size
         except Exception as e:
             errors.append(e)
 
