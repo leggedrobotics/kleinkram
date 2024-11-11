@@ -5,44 +5,39 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import {
-    PublicGuard,
-    LoggedInUserGuard,
-    AdminOnlyGuard,
-    ReadProjectGuard,
-    WriteProjectGuard,
-    ReadProjectByNameGuard,
-    DeleteProjectGuard,
-    ReadMissionGuard,
-    ReadMissionByNameGuard,
-    MoveMissionToProjectGuard,
-    ReadFileGuard,
-    ReadFileByNameGuard,
-    WriteFileGuard,
-    WriteMissionByBodyGuard,
-    CreateQueueByBodyGuard,
-    ReadActionGuard,
     AddTagGuard,
-    DeleteTagGuard,
-    CanDeleteMissionGuard,
-    DeleteFileGuard,
     AddUserToAccessGroupGuard,
-    IsAccessGroupCreatorByProjectAccessGuard,
+    AdminOnlyGuard,
+    CanDeleteMissionGuard,
     CanReadManyMissionsGuard,
+    CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
     CreateInMissionByBodyGuard,
     CreateInProjectByBodyGuard,
-    UserGuard,
-    MoveFilesGuard,
-    CreateActionGuard,
+    CreateQueueByBodyGuard,
+    DeleteFileGuard,
+    DeleteProjectGuard,
+    DeleteTagGuard,
     IsAccessGroupCreatorByAccessGroupUserGuard,
+    IsAccessGroupCreatorByProjectAccessGuard,
+    LoggedInUserGuard,
+    MoveFilesGuard,
+    MoveMissionToProjectGuard,
+    PublicGuard,
+    ReadActionGuard,
+    ReadFileByNameGuard,
+    ReadFileGuard,
+    ReadMissionByNameGuard,
+    ReadMissionGuard,
+    ReadProjectByNameGuard,
+    ReadProjectGuard,
+    UserGuard,
+    WriteFileGuard,
+    WriteMissionByBodyGuard,
+    WriteProjectGuard,
 } from './roles.guard';
-import {
-    ApiExtraModels,
-    ApiHeader,
-    ApiHeaders,
-    ApiResponse,
-} from '@nestjs/swagger';
+import { ApiResponse } from '@nestjs/swagger';
 
 // disable naming-convention rule for enum.ts
 /* eslint @typescript-eslint/naming-convention: 0 */
@@ -145,6 +140,7 @@ export function CanReadMission() {
         UseGuards(ReadMissionGuard),
     );
 }
+
 export function CanReadMissionByName() {
     return applyDecorators(
         SetMetadata('CanReadMission', true),
@@ -221,24 +217,28 @@ export function CanCreateQueueByBody() {
         UseGuards(CreateQueueByBodyGuard),
     );
 }
+
 export function CanReadAction() {
     return applyDecorators(
         SetMetadata('CanReadAction', true),
         UseGuards(ReadActionGuard),
     );
 }
+
 export function CanCreateAction() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionGuard),
     );
 }
+
 export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionsGuard),
     );
 }
+
 export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),

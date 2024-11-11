@@ -4,7 +4,6 @@ import { Project } from 'src/types/Project';
 import { User } from 'src/types/User';
 import { TagType } from 'src/types/TagType';
 import { Tag } from 'src/types/Tag';
-import { FileEntity } from 'src/types/FileEntity';
 import { AggregatedMission } from 'src/types/subtypes/AggregatedMission';
 
 export const getMission = async (uuid: string): Promise<Mission> => {

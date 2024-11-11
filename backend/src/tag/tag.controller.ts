@@ -47,7 +47,8 @@ export class TagController {
     @CanAddTag()
     async addTags(
         @BodyUUID('uuid', 'Mission UUID') uuid: string,
-        @BodyNotNull('tags', 'Record Tagtype UUID to Tag value') tags: Record<string, string>,
+        @BodyNotNull('tags', 'Record Tagtype UUID to Tag value')
+        tags: Record<string, string>,
     ) {
         return this.tagService.addTags(uuid, tags);
     }
@@ -71,7 +72,8 @@ export class TagController {
     @LoggedIn()
     async getFiltered(
         @QueryOptionalString('name', 'Filter by TagType name') name: string,
-        @QueryOptionalString('type', 'Filter by TagType datatype') type: DataType,
+        @QueryOptionalString('type', 'Filter by TagType datatype')
+        type: DataType,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {

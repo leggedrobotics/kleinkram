@@ -37,8 +37,10 @@ export class QueueController {
     @Post('confirmUpload')
     @CanCreateQueueByBody()
     async confirmUpload(
-        @BodyUUID('uuid', 'File UUID of file that successfully uploaded') uuid: string,
-        @BodyString('md5', 'MD5 hash to validate uncorrupted upload') md5: string,
+        @BodyUUID('uuid', 'File UUID of file that successfully uploaded')
+        uuid: string,
+        @BodyString('md5', 'MD5 hash to validate uncorrupted upload')
+        md5: string,
     ) {
         return this.queueService.confirmUpload(uuid, md5);
     }
@@ -46,8 +48,10 @@ export class QueueController {
     @Get('active')
     @LoggedIn()
     async active(
-        @QueryDate('startDate', 'Start of time range to filter queue by') startDate: string,
-        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by') stateFilter: string,
+        @QueryDate('startDate', 'Start of time range to filter queue by')
+        startDate: string,
+        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by')
+        stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -98,7 +102,9 @@ export class QueueController {
 
     @Post('stopJob')
     @AdminOnly()
-    async stopJob(@BodyUUID('jobId', 'Bull ID of Job to cancel') jobId: string) {
+    async stopJob(
+        @BodyUUID('jobId', 'Bull ID of Job to cancel') jobId: string,
+    ) {
         return this.queueService.stopJob(jobId);
     }
 }

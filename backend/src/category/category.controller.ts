@@ -22,7 +22,8 @@ export class CategoryController {
     async getAll(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @addUser() user: AuthRes,
-        @QueryOptionalString('filter', 'Filter by Category name') filter?: string,
+        @QueryOptionalString('filter', 'Filter by Category name')
+        filter?: string,
     ) {
         return this.categoryService.getAll(uuid, filter);
     }
@@ -41,8 +42,10 @@ export class CategoryController {
     @CanWriteMissionByBody()
     async addManyCategories(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @BodyUUIDArray('files', 'List of File UUID where Categries are added') files: string[],
-        @BodyUUIDArray('categories', 'List of Category UUID to be added') categories: string[],
+        @BodyUUIDArray('files', 'List of File UUID where Categries are added')
+        files: string[],
+        @BodyUUIDArray('categories', 'List of Category UUID to be added')
+        categories: string[],
     ) {
         return this.categoryService.addManyCategories(
             missionUUID,

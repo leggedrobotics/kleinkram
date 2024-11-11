@@ -10,10 +10,15 @@ export class CreatePreSignedURLSDto {
     @IsNotEmpty({ each: true })
     @IsValidFileName({ each: true })
     @IsNoValidUUID({ each: true })
-    @ApiProperty({description: 'Filenames for which to generate temporary access'})
+    @ApiProperty({
+        description: 'Filenames for which to generate temporary access',
+    })
     filenames: string[];
 
     @IsUUID()
-    @ApiProperty({description: 'UUID of the mission for which to generate temporary access'})
+    @ApiProperty({
+        description:
+            'UUID of the mission for which to generate temporary access',
+    })
     missionUUID: string;
 }

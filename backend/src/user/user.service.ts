@@ -7,7 +7,6 @@ import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 
 @Injectable()
 export class UserService implements OnModuleInit {
