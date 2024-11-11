@@ -243,11 +243,9 @@ h4 {
 .param-col-2 {
     width: 8%;
 }
-.param-col-3 {
-    width: 12%;
-}
+
 .param-col-4 {
-    width: 70%;
+    width: 50%;
 }
 
 .res-col-1 {
