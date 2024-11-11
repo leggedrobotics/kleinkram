@@ -13,6 +13,7 @@ from kleinkram.api.routes import get_mission_by_id
 from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.api.routes import get_tags_map
+from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionDoesNotExist
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
@@ -95,4 +96,7 @@ def upload(
         [Path(file) for file in files], raise_on_change=not fix_filenames
     )
 
-    upload_files(files_map, mission_parsed.id, n_workers=8)
+    state = get_shared_state()
+    upload_files(
+        files_map, mission_parsed.id, n_workers=8, hide_progress=not state.verbose
+    )

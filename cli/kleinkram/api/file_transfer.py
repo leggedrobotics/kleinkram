@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import monotonic
@@ -18,6 +19,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.config import Environment
 from kleinkram.config import get_env
+from kleinkram.config import get_shared_state
 from kleinkram.config import LOCAL_S3
 from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
@@ -237,6 +239,7 @@ def upload_files(
     files_map: Dict[str, Path],
     mission_id: UUID,
     *,
+    hide_progress: bool = False,
     n_workers: int = 8,
 ) -> None:
     futures = []
@@ -245,6 +248,7 @@ def upload_files(
         total=len(files_map),
         unit="files",
         desc="Uploading files",
+        disable=hide_progress,
     )
 
     start = monotonic()
@@ -254,7 +258,11 @@ def upload_files(
             client = AuthenticatedClient()
             job = FileUploadJob(mission_id=mission_id, name=name, path=path)
             future = executor.submit(
-                _upload_file, client=client, job=job, progress=pbar
+                _upload_file,
+                client=client,
+                job=job,
+                progress=pbar,
+                hide_progress=hide_progress,
             )
             futures.append(future)
 
@@ -269,9 +277,9 @@ def upload_files(
     pbar.close()
 
     time = monotonic() - start
-    print(f"upload took {time:.2f} seconds")
-    print(f"total size: {int(total_size)} MB")
-    print(f"average speed: {total_size / time:.2f} MB/s")
+    print(f"upload took {time:.2f} seconds", file=sys.stderr)
+    print(f"total size: {int(total_size)} MB", file=sys.stderr)
+    print(f"average speed: {total_size / time:.2f} MB/s", file=sys.stderr)
 
     if errors:
         raise FailedUpload(f"got unhandled errors: {errors} when uploading files")
