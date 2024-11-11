@@ -12,6 +12,7 @@ from kleinkram.api.file_transfer import download_file
 from kleinkram.api.routes import get_files_by_file_spec
 from kleinkram.config import get_shared_state
 from kleinkram.models import files_to_table
+from kleinkram.utils import b64_md5
 from kleinkram.utils import get_valid_file_spec
 from kleinkram.utils import to_name_or_uuid
 from rich.console import Console
@@ -74,6 +75,10 @@ def download(
                 size=file.size,
             )
         except FileExistsError:
-            print(f"File {file.name} already exists in destination, skipping...")
+            local_hash = b64_md5(dest_dir / file.name)
+            if local_hash == file.hash:
+                print(f"{file.name} already exists in dest, skipping...")
+            else:
+                print(f"{file.name} already exists in dest, but has different hash!")
         except Exception as e:
             print(f"Error downloading file {file.name}: {e}")
