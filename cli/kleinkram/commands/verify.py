@@ -22,15 +22,15 @@ from tqdm import tqdm
 
 
 class FileStatus(str, Enum):
-    UPLAODED = 'uploaded'
-    MISSING = 'missing'
-    CORRUPTED = 'hash mismatch'
+    UPLAODED = "uploaded"
+    MISSING = "missing"
+    CORRUPTED = "hash mismatch"
 
 
 FILE_STATUS_STYLES = {
-    FileStatus.UPLAODED: 'green',
-    FileStatus.MISSING: 'yellow',
-    FileStatus.CORRUPTED: 'red',
+    FileStatus.UPLAODED: "green",
+    FileStatus.MISSING: "yellow",
+    FileStatus.CORRUPTED: "red",
 }
 
 
@@ -38,17 +38,17 @@ HELP = """\
 Verify if files were uploaded correctly.
 """
 
-verify_typer = typer.Typer(name='verify', invoke_without_command=True, help=HELP)
+verify_typer = typer.Typer(name="verify", invoke_without_command=True, help=HELP)
 
 
 @verify_typer.callback()
 def verify(
-    files: List[str] = typer.Argument(help='files to upload'),
+    files: List[str] = typer.Argument(help="files to upload"),
     project: Optional[str] = typer.Option(
-        None, '--project', '-p', help='project id or name'
+        None, "--project", "-p", help="project id or name"
     ),
-    mission: str = typer.Option(..., '--mission', '-m', help='mission id or name'),
-    skip_hash: bool = typer.Option(False, help='skip hash check'),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+    skip_hash: bool = typer.Option(False, help="skip hash check"),
 ) -> None:
     _project = to_name_or_uuid(project) if project else None
     _mission = to_name_or_uuid(mission) if mission else None
@@ -62,7 +62,7 @@ def verify(
     mission_parsed = get_mission_by_spec(client, mission_spec)
 
     if mission_parsed is None:
-        raise MissionDoesNotExist(f'Mission {mission} does not exist')
+        raise MissionDoesNotExist(f"Mission {mission} does not exist")
 
     local_files = [Path(file) for file in files]
     filename_map = get_filename_map(local_files)
@@ -72,8 +72,8 @@ def verify(
     status_dct = {}
     for name, file in tqdm(
         filename_map.items(),
-        desc='verifying files',
-        unit='file',
+        desc="verifying files",
+        unit="file",
         disable=skip_hash or not get_shared_state().verbose,
     ):
         if name not in remote_files:
@@ -89,9 +89,9 @@ def verify(
             status_dct[file] = FileStatus.UPLAODED
 
     if get_shared_state().verbose:
-        table = Table(title='file status')
-        table.add_column('filename', style='cyan')
-        table.add_column('status', style='green')
+        table = Table(title="file status")
+        table.add_column("filename", style="cyan")
+        table.add_column("status", style="green")
 
         for path, status in status_dct.items():
             table.add_row(str(path), Text(status, style=FILE_STATUS_STYLES[status]))

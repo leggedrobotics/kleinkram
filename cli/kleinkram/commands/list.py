@@ -20,25 +20,25 @@ List projects, missions, or files.
 """
 
 
-list_typer = typer.Typer(name='list', invoke_without_command=True, help=HELP)
+list_typer = typer.Typer(name="list", invoke_without_command=True, help=HELP)
 
 
 def _parse_metadata(raw: List[str]) -> dict:
     ret = {}
     for tag in raw:
-        if '=' not in tag:
-            raise BadParameter('tag must be formatted as `key=value`')
-        k, v = tag.split('=')
+        if "=" not in tag:
+            raise BadParameter("tag must be formatted as `key=value`")
+        k, v = tag.split("=")
         ret[k] = v
     return ret
 
 
 @list_typer.command()
 def files(
-    project: Optional[str] = typer.Option(None, '--project', '-p', help='project name'),
-    mission: Optional[str] = typer.Option(None, '--mission', '-m', help='mission name'),
-    topics: List[str] = typer.Option(None, '--topics', '-t', help='topics'),
-    metadata: Optional[List[str]] = typer.Argument(None, help='tag=value pairs'),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project name"),
+    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="mission name"),
+    topics: List[str] = typer.Option(None, "--topics", "-t", help="topics"),
+    metadata: Optional[List[str]] = typer.Argument(None, help="tag=value pairs"),
 ) -> None:
     client = AuthenticatedClient()
 
@@ -74,8 +74,8 @@ def projects() -> None:
 
 @list_typer.command()
 def missions(
-    project: Optional[str] = typer.Option(None, '--project', '-p', help='project name'),
-    metadata: Optional[List[str]] = typer.Argument(None, help='tag=value pairs'),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project name"),
+    metadata: Optional[List[str]] = typer.Argument(None, help="tag=value pairs"),
 ) -> None:
     client = AuthenticatedClient()
 

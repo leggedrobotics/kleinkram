@@ -25,7 +25,7 @@ Upload files to kleinkram.
 """
 
 upload_typer = typer.Typer(
-    name='upload',
+    name="upload",
     no_args_is_help=True,
     invoke_without_command=True,
     help=HELP,
@@ -34,17 +34,17 @@ upload_typer = typer.Typer(
 
 @upload_typer.callback()
 def upload(
-    files: List[str] = typer.Argument(help='files to upload'),
+    files: List[str] = typer.Argument(help="files to upload"),
     project: Optional[str] = typer.Option(
-        None, '--project', '-p', help='project id or name'
+        None, "--project", "-p", help="project id or name"
     ),
-    mission: str = typer.Option(..., '--mission', '-m', help='mission id or name'),
-    create: bool = typer.Option(False, help='create mission if it does not exist'),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+    create: bool = typer.Option(False, help="create mission if it does not exist"),
     metadata: Optional[str] = typer.Option(
-        None, help='path to metadata file (json or yaml)'
+        None, help="path to metadata file (json or yaml)"
     ),
-    fix_filenames: bool = typer.Option(False, help='fix filenames'),
-    ignore_missing_tags: bool = typer.Option(False, help='ignore mission tags'),
+    fix_filenames: bool = typer.Option(False, help="fix filenames"),
+    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     _project = to_name_or_uuid(project) if project else None
     _mission = to_name_or_uuid(mission) if mission else None
@@ -63,7 +63,7 @@ def upload(
     # create missing mission
     if mission_parsed is None:
         if not isinstance(mission_spec, MissionByName):
-            raise ValueError('cannot create mission using mission id, use mission name')
+            raise ValueError("cannot create mission using mission id, use mission name")
 
         # get the metadata
         tags_dct = {}
@@ -77,7 +77,7 @@ def upload(
         else:
             project_id = get_project_id_by_name(client, mission_spec.project)
             if project_id is None:
-                raise ValueError(f'project: {mission_spec.project} not found')
+                raise ValueError(f"project: {mission_spec.project} not found")
 
         mission_id = create_mission(
             client,
@@ -88,7 +88,7 @@ def upload(
         )
 
         mission_parsed = get_mission_by_id(client, mission_id)
-        assert mission_parsed is not None, 'unreachable'
+        assert mission_parsed is not None, "unreachable"
 
     # upload files
     files_map = get_filename_map(

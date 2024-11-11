@@ -18,7 +18,7 @@ from uuid import UUID
 import yaml
 
 
-INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + '_' + '-'
+INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
 
 def patterns_matched(patterns: List[str]) -> Generator[Path, None, None]:
@@ -61,15 +61,15 @@ def get_filename(path: Path) -> str:
         - the 10 hashed chars are deterministic given the original filename
     """
 
-    stem = ''.join(
-        char if char in INTERNAL_ALLOWED_CHARS else '_' for char in path.stem
+    stem = "".join(
+        char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem
     )
 
     if len(stem) > 50:
         hash = md5(path.name.encode()).hexdigest()
-        stem = f'{stem[:40]}{hash[:10]}'
+        stem = f"{stem[:40]}{hash[:10]}"
 
-    return f'{stem}{path.suffix}'
+    return f"{stem}{path.suffix}"
 
 
 def get_filename_map(
@@ -82,29 +82,29 @@ def get_filename_map(
     """
 
     if len(file_paths) != len(set(file_paths)):
-        raise ValueError('files paths must be unique')
+        raise ValueError("files paths must be unique")
 
     internal_file_map = {}
     for file in file_paths:
         if file.is_dir():
-            raise ValueError(f'got dir {file} expected file')
+            raise ValueError(f"got dir {file} expected file")
 
         internal_file_map[get_filename(file)] = file
 
     # this should never happend since our random token has 64**10 possibilities
     if len(internal_file_map) != len(set(internal_file_map.values())):
-        raise RuntimeError('hash collision')
+        raise RuntimeError("hash collision")
 
     return internal_file_map
 
 
 def b64_md5(file: Path) -> str:
     hash_md5 = hashlib.md5()
-    with open(file, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
+    with open(file, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     binary_digest = hash_md5.digest()
-    return base64.b64encode(binary_digest).decode('utf-8')
+    return base64.b64encode(binary_digest).decode("utf-8")
 
 
 class Spec:
@@ -183,9 +183,9 @@ def to_name_or_uuid(s: str) -> Union[UUID, str]:
 
 def load_metadata(path: Path) -> Dict[str, str]:
     if not path.exists():
-        raise FileNotFoundError(f'metadata file not found: {path}')
+        raise FileNotFoundError(f"metadata file not found: {path}")
     try:
         with path.open() as f:
             return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
     except Exception as e:
-        raise ValueError(f'could not parse metadata file: {e}')
+        raise ValueError(f"could not parse metadata file: {e}")

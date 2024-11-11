@@ -23,22 +23,22 @@ Download files from kleinkram.
 
 
 download_typer = typer.Typer(
-    name='download', no_args_is_help=True, invoke_without_command=True, help=HELP
+    name="download", no_args_is_help=True, invoke_without_command=True, help=HELP
 )
 
 
 @download_typer.callback()
 def download(
     files: Optional[List[str]] = typer.Argument(
-        None, help='file names, ids or patterns'
+        None, help="file names, ids or patterns"
     ),
     project: Optional[str] = typer.Option(
-        None, '--project', '-p', help='project name or id'
+        None, "--project", "-p", help="project name or id"
     ),
     mission: Optional[str] = typer.Option(
-        None, '--mission', '-m', help='mission name or id'
+        None, "--mission", "-m", help="mission name or id"
     ),
-    dest: str = typer.Option(prompt='destination', help='local path to save the files'),
+    dest: str = typer.Option(prompt="destination", help="local path to save the files"),
 ) -> None:
     _files = [to_name_or_uuid(f) for f in files or []]
     _project = to_name_or_uuid(project) if project else None
@@ -55,11 +55,11 @@ def download(
     # check if filenames are unique
     if len(set(f.name for f in parsed_files)) != len(parsed_files):
         raise ValueError(
-            'the files you are trying to download do not have unique names'
+            "the files you are trying to download do not have unique names"
         )
 
     if get_shared_state().verbose:
-        table = files_to_table(parsed_files, title='downloading files...')
+        table = files_to_table(parsed_files, title="downloading files...")
         console = Console()
         console.print(table)
 
@@ -74,6 +74,6 @@ def download(
                 size=file.size,
             )
         except FileExistsError:
-            print(f'File {file.name} already exists in destination, skipping...')
+            print(f"File {file.name} already exists in destination, skipping...")
         except Exception as e:
-            print(f'Error downloading file {file.name}: {e}')
+            print(f"Error downloading file {file.name}: {e}")

@@ -35,9 +35,9 @@ for more information.
 
 
 class CommandTypes(str, Enum):
-    AUTH = 'Authentication Commands'
-    CORE = 'Core Commands'
-    CRUD = 'Create Update Delete Commands'
+    AUTH = "Authentication Commands"
+    CORE = "Core Commands"
+    CRUD = "Create Update Delete Commands"
 
 
 class OrderCommands(TyperGroup):
@@ -49,29 +49,29 @@ class OrderCommands(TyperGroup):
 app = typer.Typer(
     cls=OrderCommands,
     help=CLI_HELP,
-    context_settings={'help_option_names': ['-h', '--help']},
+    context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
 )
 
-app.add_typer(download_typer, name='download', rich_help_panel=CommandTypes.CORE)
-app.add_typer(upload_typer, name='upload', rich_help_panel=CommandTypes.CORE)
-app.add_typer(verify_typer, name='verify', rich_help_panel=CommandTypes.CORE)
-app.add_typer(list_typer, name='list', rich_help_panel=CommandTypes.CORE)
-app.add_typer(endpoint_typer, name='endpoint', rich_help_panel=CommandTypes.AUTH)
-app.add_typer(mission_typer, name='mission', rich_help_panel=CommandTypes.CRUD)
-app.add_typer(project_typer, name='project', rich_help_panel=CommandTypes.CRUD)
+app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
+app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
+app.add_typer(verify_typer, name="verify", rich_help_panel=CommandTypes.CORE)
+app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
+app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
+app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
+app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
-    key: Optional[str] = typer.Option(None, help='CLI key'),
+    key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
 ) -> None:
     login_flow(key=key, headless=headless)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
-def logout(all: bool = typer.Option(False, help='logout on all enpoints')) -> None:
+def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> None:
     config = Config()
     config.clear_credentials(all=all)
 
@@ -80,7 +80,7 @@ def logout(all: bool = typer.Option(False, help='logout on all enpoints')) -> No
 def claim():
     client = AuthenticatedClient()
     claim_admin(client)
-    print('admin rights claimed successfully.')
+    print("admin rights claimed successfully.")
 
 
 def _version_cb(value: bool) -> None:
@@ -90,30 +90,30 @@ def _version_cb(value: bool) -> None:
 
 
 def check_version_compatiblity() -> None:
-    cli_version = tuple(map(int, __version__.split('.')))
+    cli_version = tuple(map(int, __version__.split(".")))
 
     api_version = get_api_version()
-    api_vers_str = '.'.join(map(str, api_version))
+    api_vers_str = ".".join(map(str, api_version))
 
     if cli_version[0] != api_version[0]:
         raise InvalidCLIVersion(
-            f'CLI version {__version__} is not compatible with API version {api_vers_str}'
+            f"CLI version {__version__} is not compatible with API version {api_vers_str}"
         )
 
     if cli_version[1] != api_version[1]:
         console = Console()
         console.print(
-            f'CLI version {__version__} might not be compatible with API version {api_vers_str}',
-            style='red',
+            f"CLI version {__version__} might not be compatible with API version {api_vers_str}",
+            style="red",
         )
 
 
 @app.callback()
 def cli(
-    verbose: bool = typer.Option(True, help='Enable verbose mode.'),
-    debug: bool = typer.Option(False, help='Enable debug mode.'),
+    verbose: bool = typer.Option(True, help="Enable verbose mode."),
+    debug: bool = typer.Option(False, help="Enable debug mode."),
     version: Optional[bool] = typer.Option(
-        None, '--version', '-v', callback=_version_cb
+        None, "--version", "-v", callback=_version_cb
     ),
 ):
     _ = version  # suppress unused variable warning

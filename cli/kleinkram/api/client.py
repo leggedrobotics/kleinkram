@@ -5,11 +5,11 @@ from kleinkram.auth import Config
 from kleinkram.config import Credentials
 
 
-COOKIE_AUTH_TOKEN = 'authtoken'
-COOKIE_REFRESH_TOKEN = 'refreshtoken'
-COOKIE_CLI_KEY = 'clikey'
+COOKIE_AUTH_TOKEN = "authtoken"
+COOKIE_REFRESH_TOKEN = "refreshtoken"
+COOKIE_CLI_KEY = "clikey"
 
-LOGIN_MESSAGE = 'Please login using `klein login`.'
+LOGIN_MESSAGE = "Please login using `klein login`."
 
 
 class NotAuthenticatedException(Exception):
@@ -26,11 +26,11 @@ class AuthenticatedClient(httpx.Client):
         self.config = Config()
 
         if self.config.has_cli_key:
-            assert self.config.cli_key, 'unreachable'
+            assert self.config.cli_key, "unreachable"
             self.cookies.set(COOKIE_CLI_KEY, self.config.cli_key)
 
         elif self.config.has_refresh_token:
-            assert self.config.auth_token is not None, 'unreachable'
+            assert self.config.auth_token is not None, "unreachable"
             self.cookies.set(COOKIE_AUTH_TOKEN, self.config.auth_token)
         else:
             raise NotAuthenticatedException(self.config.endpoint)
@@ -46,7 +46,7 @@ class AuthenticatedClient(httpx.Client):
         self.cookies.set(COOKIE_REFRESH_TOKEN, refresh_token)
 
         response = self.post(
-            '/auth/refresh-token',
+            "/auth/refresh-token",
         )
         response.raise_for_status()
 
@@ -57,10 +57,10 @@ class AuthenticatedClient(httpx.Client):
         self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)
 
     def request(self, method, url, *args, **kwargs):
-        full_url = f'{self.config.endpoint}{url}'
+        full_url = f"{self.config.endpoint}{url}"
         response = super().request(method, full_url, *args, **kwargs)
 
-        if (url == '/auth/refresh-token') and response.status_code == 401:
+        if (url == "/auth/refresh-token") and response.status_code == 401:
             raise RuntimeError(LOGIN_MESSAGE)
 
         if response.status_code == 401:
