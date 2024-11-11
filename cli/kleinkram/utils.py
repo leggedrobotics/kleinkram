@@ -12,10 +12,12 @@ from typing import Generator
 from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Tuple
 from typing import Union
 from uuid import UUID
 
 import yaml
+from kleinkram._version import __version__
 
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
@@ -189,3 +191,8 @@ def load_metadata(path: Path) -> Dict[str, str]:
             return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
     except Exception as e:
         raise ValueError(f"could not parse metadata file: {e}")
+
+
+def get_supported_api_version() -> Tuple[int, int, int]:
+    vers = __version__.split(".")
+    return tuple(map(int, vers[:3]))  # type: ignore

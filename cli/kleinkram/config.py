@@ -4,17 +4,48 @@ import json
 import os
 import tempfile
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
+from typing import Tuple
 
-from kleinkram.consts import LOCAL_API_URL
+from kleinkram._version import __local__
+from kleinkram._version import __version__
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
 CORRUPTED_CONFIG_FILE_MESSAGE = (
     "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
 )
+
+
+class Environment(Enum):
+    LOCAL = "local"
+    DEV = "dev"
+    PROD = "prod"
+
+
+DEFAULT_API = {
+    Environment.LOCAL: "http://localhost:3000",
+    Environment.DEV: "https://api.datasets.dev.leggedrobotics.com",
+    Environment.PROD: "https://api.datasets.leggedrobotics.com",
+}
+
+LOCAL_S3 = "http://localhost:9000"
+
+
+def get_env() -> Environment:
+    if __local__:
+        return Environment.LOCAL
+    if "dev" in __version__:
+        return Environment.DEV
+    return Environment.PROD
+
+
+def get_default_endpoints() -> str:
+    env = get_env()
+    return DEFAULT_API[env]
 
 
 class Credentials(NamedTuple):
@@ -42,8 +73,10 @@ class Config:
     credentials: Dict[str, Credentials]
 
     def __init__(self, overwrite: bool = False) -> None:
+        default_endpoint = get_default_endpoints()
+
         self.credentials = {}
-        self.endpoint = LOCAL_API_URL
+        self.endpoint = default_endpoint
 
         if not CONFIG_PATH.exists():
             self.save()
@@ -53,7 +86,7 @@ class Config:
         except (InvalidConfigFile, CorruptedConfigFile):
             if not overwrite:
                 self.credentials = {}
-                self.endpoint = LOCAL_API_URL
+                self.endpoint = default_endpoint
                 self.save()
             else:
                 raise
@@ -66,7 +99,6 @@ class Config:
                 raise CorruptedConfigFile
 
         endpoint = content.get(JSON_ENDPOINT_KEY, None)
-
         if not isinstance(endpoint, str):
             raise InvalidConfigFile
 

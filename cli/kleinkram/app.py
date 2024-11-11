@@ -21,6 +21,7 @@ from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
 from kleinkram.errors import InvalidCLIVersion
+from kleinkram.utils import get_supported_api_version
 from rich.console import Console
 from typer.core import TyperGroup
 
@@ -90,8 +91,7 @@ def _version_cb(value: bool) -> None:
 
 
 def check_version_compatiblity() -> None:
-    cli_version = tuple(map(int, __version__.split(".")))
-
+    cli_version = get_supported_api_version()
     api_version = get_api_version()
     api_vers_str = ".".join(map(str, api_version))
 

@@ -13,12 +13,12 @@ echo "🚀 Rocket"
 
 klein endpoint set $ENDPOINT
 klein login --key $APIKEY
-klein mission byUUID $MISSION_UUID
 
 klein --version
 
 # TODO... this Endpoint needs to be fixed
-klein mission download --mission-uuid $MISSION_UUID --local-path /out
+klein list files -m $MISSION_UUID
+klein mission download -m $MISSION_UUID --dest /out
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"

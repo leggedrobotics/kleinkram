@@ -16,8 +16,9 @@ import httpx
 import tqdm
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
-from kleinkram.consts import LOCAL_API_URL
-from kleinkram.consts import LOCAL_S3_URL
+from kleinkram.config import Environment
+from kleinkram.config import get_env
+from kleinkram.config import LOCAL_S3
 from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
 from kleinkram.errors import FailedUpload
@@ -46,12 +47,12 @@ class FileUploadJob(NamedTuple):
 
 
 def _get_s3_endpoint() -> str:
-    config = Config()
-    api_endpoint = config.endpoint
-    if api_endpoint == LOCAL_API_URL:
-        return LOCAL_S3_URL
+    if get_env() == Environment.LOCAL:
+        return LOCAL_S3
     else:
-        return api_endpoint.replace("api", "minio")
+        config = Config()
+        endpoint = config.endpoint
+        return endpoint.replace("api", "minio")
 
 
 def _confirm_file_upload(
