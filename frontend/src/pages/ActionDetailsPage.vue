@@ -70,7 +70,7 @@
                         <tr>
                             <td class="q-table__cell">Created By</td>
                             <td class="q-table__cell">
-                                {{ action?.createdBy.name }}
+                                {{ action?.createdBy?.name }}
                             </td>
                         </tr>
                         <tr>
