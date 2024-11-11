@@ -48,8 +48,8 @@ export const searchAccessGroups = async (
     if (!response.data) {
         return [[], 0];
     }
-    const data = response.data[0];
-    const total = response.data[1];
+    const data = response.data.entities;
+    const total = response.data.total;
     const res = data.map((group: any) => {
         const agus = group.accessGroupUsers.map((agu: any) => {
             const user = new User(
