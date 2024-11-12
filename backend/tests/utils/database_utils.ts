@@ -5,6 +5,7 @@ import { createAccessGroups, createNewUser } from '../../src/auth/auth.service';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/enum';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
 
 export const db = new DataSource({
     type: 'postgres',
@@ -49,6 +50,7 @@ export const mockDbUser = async (
     const fs = require('fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = db.getRepository(AccessGroup);
+    const accessGroupUserRepository = db.getRepository(AccessGroupUser);
     await createAccessGroups(accessGroupRepository, config);
 
     const userRepository = db.getRepository(User);
@@ -65,6 +67,7 @@ export const mockDbUser = async (
         userRepository,
         accountRepository,
         accessGroupRepository,
+        accessGroupUserRepository,
         {
             oauthID,
             provider: Providers.GOOGLE,

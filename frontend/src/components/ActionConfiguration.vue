@@ -168,6 +168,28 @@
                             v-if="editingTemplate"
                         />
                     </div>
+                    <div>
+                        <label for="action_entrypoint">Entrypoint</label>
+                        <q-input
+                            name="action_entrypoint"
+                            v-model="editingTemplate.entrypoint"
+                            outlined
+                            dense
+                            class="q-mb-sm"
+                            clearable
+                            placeholder="Entrypoint"
+                            v-if="editingTemplate"
+                        />
+                    </div>
+                    <div>
+                        <q-select
+                            v-model="selectedAccessRights"
+                            :options="options"
+                            label="Select Access Rights"
+                            map-options
+                            style=""
+                        />
+                    </div>
                 </div>
 
                 <span class="text-h5" style="margin-top: 32px">
@@ -268,16 +290,17 @@ import { listActionTemplates } from 'src/services/queries/action';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
-
-const search = ref('');
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { accessGroupRightsMap } from 'src/services/generic';
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
 const image_name = ref('rslethz/action:simple-latest');
-const options = [
-    { label: 'no GPU', value: 'no-gpu' },
-    { label: 'GPU needed', value: 'GPU needed' },
-];
+const selectedAccessRights = ref({
+    label: 'Read',
+    value: AccessGroupRights.READ,
+});
+
 const queryClient = useQueryClient();
 const handler = useHandler();
 const _open = ref(false);
@@ -298,7 +321,6 @@ const editingTemplate: Ref<ActionTemplate> = ref(
         '',
         null,
         null,
-        null,
         'rslethz/action:simple-latest',
         null,
         '',
@@ -308,6 +330,8 @@ const editingTemplate: Ref<ActionTemplate> = ref(
         2,
         -1,
         2,
+        '',
+        AccessGroupRights.READ,
     ),
 );
 // QUERYING ####################################################################
@@ -315,7 +339,6 @@ const editingTemplate: Ref<ActionTemplate> = ref(
 
 const hasMissionUUIDs = computed(
     () => !!props.mission_uuids && props.mission_uuids.length > 0,
-    { immediate: true },
 );
 const selected_missions_key = computed(() => [
     'missions',
@@ -340,6 +363,13 @@ const selected_project = computed(() =>
     projects.value.find(
         (project: Project) => project.uuid === handler.value.projectUuid,
     ),
+);
+
+watch(
+    () => selectedAccessRights.value,
+    (newValue) => {
+        editingTemplate.value.accessRights = newValue.value;
+    },
 );
 
 // Fetch mission based on selected project -------------------------------------
@@ -371,7 +401,7 @@ const { data: actionTemplatesRes } = useQuery({
 // MUTATING ###################################################################
 // Save the template ----------------------------------------------------------
 async function saveAsTemplate() {
-    let res: undefined;
+    let res: undefined | ActionTemplate;
     if (isModified.value && editingTemplate.value.uuid) {
         res = await updateTemplate(true);
     } else {
@@ -392,6 +422,8 @@ const { mutateAsync: createTemplate } = useMutation({
             gpuMemory: editingTemplate.value.gpuMemory,
             maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
+            entrypoint: editingTemplate.value.entrypoint,
+            accessRights: editingTemplate.value.accessRights,
         }),
     onSuccess: () => {
         queryClient.invalidateQueries({
@@ -431,6 +463,8 @@ const { mutateAsync: updateTemplate } = useMutation({
             gpuMemory: editingTemplate.value.gpuMemory,
             maxRuntime: editingTemplate.value.maxRuntime,
             searchable,
+            entrypoint: editingTemplate.value.entrypoint,
+            accessRights: editingTemplate.value.accessRights,
         }),
     onSuccess: (newVal) => {
         queryClient.invalidateQueries({
@@ -500,17 +534,26 @@ async function submitAnalysis() {
     editingTemplate.value = res;
     select.value = res.clone();
 
-    let createPromise: undefined | Project<void> = undefined;
+    let createPromise: undefined | Promise<void>;
     if (hasMissionUUIDs.value) {
         createPromise = createMultipleAnalysis({
             missionUUIDs: allMissionUUIDs.value,
             templateUUID: res.uuid,
         });
-    } else {
+    } else if (selected_mission.value) {
         createPromise = createAnalysis({
             missionUUID: selected_mission.value.uuid,
             templateUUID: res.uuid,
         });
+    } else {
+        Notify.create({
+            group: false,
+            message: 'Please select a mission',
+            color: 'negative',
+            position: 'bottom',
+            timeout: 2000,
+        });
+        return;
     }
     // send the action request to the backend and show a notification
     createPromise
@@ -560,7 +603,10 @@ const isModified = computed(() => {
         editingTemplate.value?.cpuCores === select.value?.cpuCores;
     const sameRuntime =
         editingTemplate.value?.maxRuntime === select.value?.maxRuntime;
-
+    const sameEntrypoint =
+        editingTemplate.value?.entrypoint === select.value?.entrypoint;
+    const sameAccessRights =
+        editingTemplate.value?.accessRights === select.value?.accessRights;
     return !(
         sameName &&
         sameImage &&
@@ -568,7 +614,9 @@ const isModified = computed(() => {
         sameGPU &&
         sameMemory &&
         sameCores &&
-        sameRuntime
+        sameRuntime &&
+        sameEntrypoint &&
+        sameAccessRights
     );
 });
 
@@ -599,6 +647,8 @@ function selectTemplate(template: ActionTemplate) {
             2,
             -1,
             2,
+            '',
+            AccessGroupRights.READ,
         );
         select.value = undefined;
         return;
@@ -606,6 +656,10 @@ function selectTemplate(template: ActionTemplate) {
     if (template.hasOwnProperty('_rawValue')) {
         return;
     }
+    selectedAccessRights.value = {
+        label: accessGroupRightsMap[template.accessRights],
+        value: template.accessRights,
+    };
     editingTemplate.value = template.clone();
 }
 
@@ -625,8 +679,6 @@ function removeMission(uuid: string) {
     addedMissions.value = addedMissions.value.filter((id) => id !== uuid);
 }
 
-const memoryOptions = [1, 2, 4, 6, 8, 12, 16, 20, 24, 28];
-
 watch(
     () => props.open,
     (newVal) => {
@@ -642,5 +694,12 @@ watch(
         }
     },
 );
+
+const options = Object.keys(accessGroupRightsMap)
+    .map((key) => ({
+        label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
+        value: parseInt(key, 10),
+    }))
+    .filter((option) => option.value !== AccessGroupRights.NONE);
 </script>
 <style scoped></style>

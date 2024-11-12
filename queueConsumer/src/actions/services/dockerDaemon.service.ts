@@ -60,6 +60,7 @@ export type ContainerStartOptions = {
     needs_gpu?: boolean;
     environment?: ContainerEnv;
     command?: string;
+    entrypoint?: string;
     /* eslint-enable @typescript-eslint/naming-convention */
 };
 
@@ -164,7 +165,6 @@ export class DockerDaemon {
             Cmd: containerOptions.command
                 ? containerOptions.command.split(' ')
                 : [],
-
             HostConfig: {
                 ...(needsGpu ? addGpuCapabilities : {}),
                 Memory: containerOptions.limits.memory_limit, // memory limit in bytes
@@ -190,6 +190,9 @@ export class DockerDaemon {
             },
             /* eslint-enable @typescript-eslint/naming-convention */
         };
+        if (containerOptions.entrypoint) {
+            containerCreateOptions.Entrypoint = containerOptions.entrypoint;
+        }
         await start();
         const container = await this.docker
             .createContainer(containerCreateOptions)

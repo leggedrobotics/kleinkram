@@ -8,6 +8,10 @@ import CategoryEntity from '../category/category.entity';
 
 @Entity()
 export default class Project extends BaseEntity {
+    /**
+     * The name of the project. This is the name that will be displayed in the UI.
+     * The name must be globally unique.
+     */
     @Column({ unique: true })
     name: string;
 
@@ -16,7 +20,6 @@ export default class Project extends BaseEntity {
 
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,
-        eager: true,
     })
     // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses: ProjectAccess[];

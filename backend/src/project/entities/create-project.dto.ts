@@ -1,11 +1,12 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { AccessGroupRights } from '@common/enum';
-import { IsValidName } from '../../validation/propertyDecorator';
+import { IsNoValidUUID, IsValidName } from '../../validation/propertyDecorator';
 
 export class CreateProject {
     @IsString()
     @IsNotEmpty()
     @IsValidName()
+    @IsNoValidUUID()
     name: string;
 
     @IsNotEmpty()
@@ -22,4 +23,8 @@ export class CreateProject {
         | { accessGroupUUID: string; rights: AccessGroupRights }
         | { userUUID: string; rights: AccessGroupRights }
     )[];
+
+    @IsOptional()
+    @IsArray()
+    removedDefaultGroups?: string[];
 }

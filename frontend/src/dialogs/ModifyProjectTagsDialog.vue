@@ -7,29 +7,43 @@
         </template>
 
         <template #actions>
-            <q-btn
-                flat
-                label="Save"
-                class="bg-button-primary"
-                @click="
-                    () => {
-                        mutate();
-                        onDialogOK();
-                    }
-                "
-            />
+            <ButtonGroup>
+                <CreateTagTypeDialogOpener>
+                    <q-btn
+                        class="button-border"
+                        flat
+                        color="primary"
+                        icon="sym_o_sell"
+                        label="Add Tag Type"
+                    />
+                </CreateTagTypeDialogOpener>
+
+                <q-btn
+                    flat
+                    label="Save"
+                    class="bg-button-primary"
+                    @click="
+                        () => {
+                            mutate();
+                            onDialogOK();
+                        }
+                    "
+                />
+            </ButtonGroup>
         </template>
     </base-dialog>
 </template>
 <script setup lang="ts">
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
-import ConfigureTags from 'components/ConfigureTags.vue';
+import ConfigureTags from 'components/ConfigureMetadata.vue';
 import { getProject } from 'src/services/queries/project';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { TagType } from 'src/types/TagType';
 import { updateTagTypes } from 'src/services/mutations/project';
+import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
+import ButtonGroup from 'components/ButtonGroup.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

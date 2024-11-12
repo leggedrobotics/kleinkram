@@ -6,18 +6,18 @@ import { Tag } from 'src/types/Tag';
 
 export class Mission extends BaseEntity {
     name: string;
-    project: Project | undefined;
+    project: Project | null;
     files: FileEntity[];
-    creator?: User;
+    creator: User | null;
     tags: Tag[];
 
     constructor(
         uuid: string,
         name: string,
-        project: Project | undefined,
+        project: Project | null,
         files: FileEntity[],
         tags: Tag[],
-        creator: User | undefined,
+        creator: User | null,
         createdAt: Date | null,
         updatedAt: Date | null,
     ) {
@@ -33,12 +33,42 @@ export class Mission extends BaseEntity {
         return new Mission(
             this.uuid,
             this.name,
-            this.project?.clone(),
+            this.project?.clone() || null,
             this.files,
             this.tags,
             this.creator,
             this.createdAt,
             this.updatedAt,
+        );
+    }
+
+    static fromAPIResponse(response: any): Mission | null {
+        if (!response) {
+            return null;
+        }
+        const project = Project.fromAPIResponse(response.project);
+        const creator = User.fromAPIResponse(response.creator);
+
+        let files: FileEntity[] = [];
+        if (response.files) {
+            files = response.files.map((file: any) =>
+                FileEntity.fromAPIResponse(file),
+            );
+        }
+
+        let tags: Tag[] = [];
+        if (response.tags) {
+            tags = response.tags.map((tag: any) => Tag.fromAPIResponse(tag));
+        }
+        return new Mission(
+            response.uuid,
+            response.name,
+            project,
+            files,
+            tags,
+            creator,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
         );
     }
 }

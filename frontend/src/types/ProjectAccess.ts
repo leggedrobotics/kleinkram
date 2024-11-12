@@ -21,4 +21,21 @@ export class ProjectAccess extends BaseEntity {
         this.accessGroup = accessGroup;
         this.project = project;
     }
+
+    static fromAPIResponse(response: any): ProjectAccess {
+        const accessGroup = response.accessGroup
+            ? AccessGroup.fromAPIResponse(response.accessGroup)
+            : undefined;
+        const project = response.project
+            ? Project.fromAPIResponse(response.project)
+            : undefined;
+        return new ProjectAccess(
+            response.uuid,
+            response.rights,
+            accessGroup,
+            project,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

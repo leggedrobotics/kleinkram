@@ -12,8 +12,9 @@ export const getActions = async (
     skip: number,
     sortBy: string,
     descending: boolean,
+    search: string,
 ): Promise<[Action[], number]> => {
-    const params = {
+    const params: Record<string, string | number | boolean> = {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         project_uuid: projectUUID,
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -21,8 +22,12 @@ export const getActions = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
+
+    if (search) {
+        params['search'] = search;
+    }
 
     const response = await axios.get('/action/listActions', { params });
     if (response.data.length < 2) {
@@ -54,6 +59,8 @@ export const getActions = async (
             res.template.cpuMemory,
             res.template.gpuMemory,
             res.template.maxRuntime,
+            res.template.entrypoint,
+            res.template.accessRights,
         );
 
         const mission = new Mission(
@@ -117,6 +124,7 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.createdBy.role,
         response.data.createdBy.avatarUrl,
         [],
+        [],
         response.data.createdBy.createdAt,
         response.data.createdBy.updatedAt,
     );
@@ -125,7 +133,7 @@ export const actionDetails = async (actionUuid: string) => {
         new Date(response.data.template.createdAt),
         new Date(response.data.template.updatedAt),
         response.data.template.image_name,
-        undefined,
+        null,
         response.data.template.name,
         response.data.template.version,
         response.data.template.command,
@@ -133,6 +141,8 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.template.cpuMemory,
         response.data.template.gpuMemory,
         response.data.template.maxRuntime,
+        response.data.template.entrypoint,
+        response.data.template.accessRights,
     );
     try {
         let worker = null;
@@ -161,7 +171,7 @@ export const actionDetails = async (actionUuid: string) => {
             response.data.state_cause,
             response.data.artifact_url,
             response.data.artifacts,
-            null,
+            Mission.fromAPIResponse(response.data.mission),
             template,
             response.data.image,
             user,
@@ -177,9 +187,8 @@ export const actionDetails = async (actionUuid: string) => {
 };
 
 export const listActionTemplates = async (search: string) => {
-    const params = {};
+    const params: Record<string, string> = {};
     if (search) {
-        console.log('search', search);
         params['search'] = search;
     }
     const response = await axios.get('/action/listTemplates', {
@@ -192,6 +201,7 @@ export const listActionTemplates = async (search: string) => {
             res.createdBy.email,
             res.createdBy.role,
             res.createdBy.avatarUrl,
+            [],
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
@@ -209,6 +219,8 @@ export const listActionTemplates = async (search: string) => {
             res.cpuMemory,
             res.gpuMemory,
             res.maxRuntime,
+            res.entrypoint,
+            res.accessRights,
         );
     });
 };
@@ -224,6 +236,7 @@ export const getRunningActions = async () => {
             res.createdBy.email,
             res.createdBy.role,
             res.createdBy.avatarUrl,
+            [],
             [],
             res.createdBy.createdAt,
             res.createdBy.updatedAt,
@@ -241,6 +254,8 @@ export const getRunningActions = async () => {
             res.template.cpuMemory,
             res.template.gpuMemory,
             res.template.maxRuntime,
+            res.template.entrypoint,
+            res.template.accessRights,
         );
         const mission = new Mission(
             res.mission.uuid,

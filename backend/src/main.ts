@@ -20,6 +20,7 @@ import logger, { NestLoggerWrapper } from './logger';
 import { AddVersionInterceptor } from './versionInjector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 const packageJson: Record<string, string> = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
 ) as Record<string, string>;
@@ -138,7 +139,7 @@ async function bootstrap() {
         }),
     );
     app.enableCors({
-        origin: env.FRONTEND_URL,
+        origin: [env.FRONTEND_URL, env.DOCS_URL],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         preflightContinue: false,
         credentials: true,
@@ -154,19 +155,17 @@ async function bootstrap() {
         .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    // // Save the Swagger JSON
-    try {
-        const swaggerOutputPath = './docs/swagger-spec.json';
-        fs.writeFileSync(swaggerOutputPath, JSON.stringify(document));
-    } catch (e) {
-        console.log(e);
-    }
+    SwaggerModule.setup('swagger', app, document, {
+        jsonDocumentUrl: 'swagger/json',
+        swaggerUiEnabled: false,
+    });
 
-    console.log('Listening on port 3000');
-    await app.listen(3000);
-    console.log('Save endpoints as JSON');
+    logger.debug('Listening on port 3000');
+    logger.debug('Save endpoints as JSON');
     saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
-    console.log('Endpoints saved');
+    logger.debug('Endpoints saved');
+
+    await app.listen(3000);
 }
 
 bootstrap().catch((err) => {

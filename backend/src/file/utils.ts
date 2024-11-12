@@ -18,7 +18,7 @@ export function parseMinioMetrics(metricsText) {
             const labels = {};
             labelsText.split(',').forEach((labelPair) => {
                 const [key, val] = labelPair.split('=');
-                labels[key] = val.replace(/\"/g, ''); // Remove quotes
+                labels[key] = val.replace(/"/g, ''); // Remove quotes
             });
 
             // Add to the result object

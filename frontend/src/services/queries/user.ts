@@ -1,6 +1,7 @@
 import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 import { AccessGroup } from 'src/types/AccessGroup';
+import { AccessGroupUser } from 'src/types/AccessGroupUser';
 
 export const searchUsers = async (search: string): Promise<User[]> => {
     if (!search) {
@@ -25,18 +26,26 @@ export const searchUsers = async (search: string): Promise<User[]> => {
 export const getMe = async (): Promise<User> => {
     const response = await axios.get('/user/me');
     const user = response.data;
-    const accessGroups = user.accessGroups.map((group: any) => {
-        return new AccessGroup(
-            group.uuid,
-            group.name,
+    const accessGroupUsers = user.accessGroupUsers.map((agu: any) => {
+        const accessGroup = new AccessGroup(
+            agu.accessGroup.uuid,
+            agu.accessGroup.name,
             [],
             [],
             [],
-            group.personal,
-            group.inheriting,
+            agu.accessGroup.personal,
+            agu.accessGroup.inheriting,
             undefined,
-            new Date(group.createdAt),
-            new Date(group.updatedAt),
+            new Date(agu.accessGroup.createdAt),
+            new Date(agu.accessGroup.updatedAt),
+        );
+        return new AccessGroupUser(
+            agu.uuid,
+            new Date(agu.createdAt),
+            new Date(agu.updatedAt),
+            null,
+            accessGroup,
+            agu.expirationDate ? new Date(agu.expirationDate) : null,
         );
     });
     return new User(
@@ -46,7 +55,7 @@ export const getMe = async (): Promise<User> => {
         user.role,
         user.avatarUrl,
         [],
-        accessGroups,
+        accessGroupUsers,
         new Date(user.createdAt),
         new Date(user.updatedAt),
     );

@@ -52,6 +52,7 @@ export class MissionGuardService {
     async canAccessMissionByName(
         user: User,
         missionName: string,
+        projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!missionName || !user) {
@@ -61,7 +62,7 @@ export class MissionGuardService {
             return false;
         }
         const mission = await this.missionRepository.findOne({
-            where: { name: missionName },
+            where: { name: missionName, project: { uuid: projectUuid } },
         });
 
         if (!mission) return false;
@@ -177,13 +178,14 @@ export class MissionGuardService {
     async canKeyAccessMissionByName(
         apikey: Apikey,
         missionName: string,
+        projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         if (!missionName) {
             throw new ConflictException('Mission name not provided');
         }
         const mission = await this.missionRepository.findOne({
-            where: { name: missionName },
+            where: { name: missionName, project: { uuid: projectUUID } },
         });
         return this.canKeyAccessMission(apikey, mission.uuid, rights);
     }

@@ -29,14 +29,14 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async findOneByEmail(email: string) {
-        return this.userRepository.findOne({ where: { email } });
-    }
-
     async findOneByUUID(uuid: string) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
-            relations: ['accessGroups', 'account'],
+            relations: [
+                'accessGroupUsers',
+                'accessGroupUsers.accessGroup',
+                'account',
+            ],
         });
     }
 
@@ -59,7 +59,8 @@ export class UserService implements OnModuleInit {
     async me(auth: AuthRes) {
         return await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
-            relations: ['accessGroups'],
+            select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
         });
     }
 
@@ -105,19 +106,21 @@ export class UserService implements OnModuleInit {
         let user = await this.userRepository.findOne({
             where: {
                 uuid: auth.user.uuid,
-                accessGroups: { inheriting: true },
+                accessGroupUsers: { accessGroup: { inheriting: true } },
             },
-            relations: ['accessGroups'],
+            relations: ['accessGroupUsers'],
         });
-
+        let defaultPermission;
         if (!user) {
             user = await this.userRepository.findOneOrFail({
                 where: { uuid: auth.user.uuid },
             });
+            defaultPermission = 0;
+        } else {
+            defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
         }
 
         const role = user.role;
-        const defaultPermission = user.accessGroups.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;
@@ -156,5 +159,15 @@ export class UserService implements OnModuleInit {
             relations: ['action'],
         });
         return { user, apiKey };
+    }
+
+    /**
+     * Get the number of members in a group
+     * @param uuid
+     */
+    async getMemberCount(uuid: string): Promise<number> {
+        return this.userRepository.count({
+            where: { accessGroupUsers: { accessGroup: { uuid } } },
+        });
     }
 }

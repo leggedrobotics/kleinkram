@@ -167,7 +167,7 @@
                     >
                         <q-btn
                             flat
-                            class="bg-button-secondary text-on-color"
+                            class="bg-button-secondary text-on-color full-height"
                             label="Add User"
                             icon="sym_o_add"
                         />
@@ -175,7 +175,7 @@
                 </button-group>
             </div>
             <q-table
-                :rows="accessGroup?.users || []"
+                :rows="accessGroup?.accessGroupUsers || []"
                 v-model:pagination="pagination2"
                 :columns="user_cols"
                 style="margin-top: 8px"
@@ -190,6 +190,27 @@
                         color="grey-8"
                         class="checkbox-with-hitbox"
                     />
+                </template>
+                <template v-slot:body-cell-expiration="props">
+                    <td>
+                        <q-btn
+                            flat
+                            class="button-border"
+                            :label="
+                                props.row.expirationDate
+                                    ? formatDate(props.row.expirationDate)
+                                    : 'Never'
+                            "
+                            icon="sym_o_date_range"
+                            :color="
+                                isExpired(props.row.expirationDate)
+                                    ? 'negative'
+                                    : 'primary'
+                            "
+                            @click="openSetExpirationDialog(props.row)"
+                        >
+                        </q-btn>
+                    </td>
                 </template>
                 <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
@@ -230,7 +251,8 @@
                                         clickable
                                         v-ripple
                                         @click="
-                                            () => _removeUser(props.row.uuid)
+                                            () =>
+                                                _removeUser(props.row.user.uuid)
                                         "
                                     >
                                         <q-item-section>Remove</q-item-section>
@@ -248,29 +270,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
-import { computed, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Notify, QTable, useQuasar } from 'quasar';
-import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
 import TitleSection from 'components/TitleSection.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import {
-    removeAccessGroupFromProject,
     removeUserFromAccessGroup,
+    setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
-import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
+import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { formatDate } from 'src/services/dateFormating';
+import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
 
 const $q = useQuasar();
 const router = useRouter();
 const tab = ref('members');
-const uuid = computed(() => router.currentRoute.value.params.uuid);
+const uuid: ComputedRef<string> = computed(
+    () => router.currentRoute.value.params.uuid,
+) as ComputedRef<string>;
 const selectedProjects = ref([]);
 const selectedUsers = ref([]);
 
@@ -299,8 +324,16 @@ const { data: accessGroup, refetch } = useQuery({
     },
 });
 
+function isExpired(date: Date | null) {
+    if (!date) {
+        return false;
+    }
+    return date < new Date();
+}
+
 const { mutate: _removeUser } = useMutation({
-    mutationFn: (userUUID) => removeUserFromAccessGroup(userUUID, uuid.value),
+    mutationFn: (userUUID: string) =>
+        removeUserFromAccessGroup(userUUID, uuid.value),
     onSuccess: () => {
         queryClient.invalidateQueries({
             queryKey: ['AccessGroup', uuid],
@@ -332,7 +365,8 @@ watch(
 );
 
 const project_rows = computed(() => {
-    return accessGroup.value?.project_accesses.map((project: ProjectAccess) => {
+    console.log(accessGroup.value);
+    return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
         return {
             ...project.project,
             rights: project.rights,
@@ -360,6 +394,48 @@ const drop_columns = (cols: any[], label: string) => {
     return cols.filter((col) => col.label !== label);
 };
 
+const { mutate: setAccessGroup } = useMutation({
+    mutationFn: (data: { aguUUID: string; expirationDate: Date | null }) => {
+        return setAccessGroupExpiry(data.aguUUID, data.expirationDate);
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({
+            predicate: (query) => {
+                return (
+                    query.queryKey[0] === 'AccessGroup' &&
+                    query.queryKey[1] === uuid.value
+                );
+            },
+        });
+        Notify.create({
+            message: 'Expiration date set',
+            color: 'positive',
+            position: 'bottom',
+        });
+    },
+    onError: () => {
+        Notify.create({
+            message: 'Error setting expiration date',
+            color: 'negative',
+            position: 'bottom',
+        });
+    },
+});
+
+function openSetExpirationDialog(agu: AccessGroupUser) {
+    $q.dialog({
+        component: SetAccessGroupExpirationDialog,
+        componentProps: {
+            agu: agu,
+        },
+    }).onOk((expirationDate: Date | null) => {
+        setAccessGroup({
+            aguUUID: agu.uuid,
+            expirationDate,
+        });
+    });
+}
+
 const project_cols = computed(() => {
     {
         let defaultCols = [...explorerPageTableColumns];
@@ -385,7 +461,7 @@ const user_cols = [
         required: true,
         label: 'Name',
         align: 'left',
-        field: (row: any) => row.name,
+        field: (row: AccessGroupUser) => row.user?.name,
         format: (val: string) => `${val}`,
         style: 'width: 10%',
     },
@@ -394,8 +470,13 @@ const user_cols = [
         required: true,
         label: 'Email',
         align: 'left',
-        field: (row: any) => row.email,
-        format: (val: string) => `${val}`,
+        field: (row: AccessGroupUser) => row.user?.email,
+    },
+    {
+        name: 'expiration',
+        required: true,
+        label: 'Expiration',
+        align: 'left',
     },
     {
         name: 'actions',

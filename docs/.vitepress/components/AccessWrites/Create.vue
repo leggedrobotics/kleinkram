@@ -1,13 +1,13 @@
 <template>
     <ClientOnly>
-        <AccessRight :hint="props.hint" class="access-right-view">
-            Create</AccessRight
+        <Hint :hint="props.hint" class="access-right-view">
+            Create</Hint
         >
     </ClientOnly>
 </template>
 
 <script setup lang="ts">
-import AccessRight from './AccessRight.vue';
+import Hint from '../Hint.vue';
 
 const props = defineProps<{
     hint?: string;

@@ -13,9 +13,11 @@
                     name="logs"
                     label="Logs"
                     style="color: #222"
-                    :disable="!data?.logs || data?.logs.length === 0"
+                    :disable="!action?.logs || action?.logs.length === 0"
                 >
-                    <q-tooltip v-if="!data?.logs || data?.logs.length === 0">
+                    <q-tooltip
+                        v-if="!action?.logs || action?.logs.length === 0"
+                    >
                         <span>No logs available</span>
                     </q-tooltip>
                 </q-tab>
@@ -23,15 +25,42 @@
                     name="auditLogs"
                     label="Audit Logs"
                     style="color: #222"
-                    :disable="!data?.auditLogs || data?.auditLogs.length === 0"
+                    :disable="
+                        !action?.auditLogs || action?.auditLogs.length === 0
+                    "
                 >
                     <q-tooltip
-                        v-if="!data?.auditLogs || data?.auditLogs.length === 0"
+                        v-if="
+                            !action?.auditLogs || action?.auditLogs.length === 0
+                        "
                     >
                         <span>No audit logs available</span>
                     </q-tooltip>
                 </q-tab>
             </q-tabs>
+        </template>
+
+        <template v-slot:buttons>
+            <button-group>
+                <q-btn
+                    class="button-border"
+                    flat
+                    color="primary"
+                    icon="sym_o_link"
+                    label="Mission"
+                    @click="
+                        $router.push({
+                            name: ROUTES.FILES.routeName,
+                            params: {
+                                project_uuid: action?.mission?.project?.uuid,
+                                mission_uuid: action?.mission?.uuid,
+                            },
+                        })
+                    "
+                >
+                    <q-tooltip> Analyze Actions</q-tooltip>
+                </q-btn>
+            </button-group>
         </template>
     </title-section>
 
@@ -43,70 +72,152 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ data?.template.image_name }}
+                                {{ action?.template.imageName }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="action?.image?.repoDigests?.[0]"
+                                >
+                                    <br />
+                                    {{ action?.image?.repoDigests?.[0] }}
+                                </span>
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Name</td>
                             <td class="q-table__cell">
-                                {{ data?.template.name }}
-                                v{{ data?.template.version }}
+                                {{ action?.template.name }}
+                                v{{ action?.template.version }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Created By</td>
                             <td class="q-table__cell">
-                                {{ data?.createdBy.name }}
+                                {{ action?.createdBy?.name }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">State</td>
                             <td class="q-table__cell">
-                                <ActionBadge :action="data" v-if="data" />
+                                <ActionBadge :action="action" v-if="action" />
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">State Reason</td>
                             <td class="q-table__cell">
-                                {{ data?.state_cause }}
+                                {{ action?.stateCause }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Command</td>
+                            <td class="q-table__cell">
+                                {{ action?.template.command }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.command"
+                                >
+                                    No command specified
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Entrypoint</td>
+                            <td class="q-table__cell">
+                                {{ action?.template.entrypoint }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.entrypoint"
+                                >
+                                    No entrypoint specified
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q-table__cell">Access Rights</td>
+                            <td class="q-table__cell">
+                                {{
+                                    accessGroupRightsMap[
+                                        action?.template.accessRights
+                                    ]
+                                }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Submitted At:</td>
                             <td class="q-table__cell">
-                                {{ data?.createdAt }}
+                                {{
+                                    action?.createdAt
+                                        ? formatDate(action?.createdAt)
+                                        : 'N/A'
+                                }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Last Updated At:</td>
                             <td class="q-table__cell">
-                                {{ data?.updatedAt }}
+                                {{
+                                    action?.updatedAt
+                                        ? formatDate(action?.updatedAt)
+                                        : 'N/A'
+                                }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Runner CPU Model:</td>
                             <td class="q-table__cell">
-                                {{ data?.worker?.cpuModel || 'N/A' }}
+                                {{ action?.worker?.cpuModel || 'N/A' }}
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Runner Hostname:</td>
                             <td class="q-table__cell">
-                                {{ data?.worker?.hostname || 'N/A' }}
+                                {{ action?.worker?.hostname || 'N/A' }}
                             </td>
                         </tr>
-                        <tr v-if="data && data?.getRuntimeInMS() != 0">
+                        <tr v-if="action && action?.getRuntimeInMS() != 0">
                             <td class="q-table__cell">Runtime:</td>
                             <td class="q-table__cell">
-                                {{ data?.getRuntimeInMS() / 1000 }} seconds
+                                {{ action?.getRuntimeInMS() / 1000 }} seconds
                             </td>
                         </tr>
+                        <tr>
+                            <td class="q-table__cell">
+                                Hardware Requirements:
+                            </td>
+                            <td class="q-table__cell">
+                                <div v-if="action?.template">
+                                    Cores: {{ action?.template.cpuCores }}<br />
+                                    RAM:
+                                    {{ action?.template.cpuMemory }} GB<br />
+                                    min vRAM:
+                                    <template
+                                        v-if="action?.template.gpuMemory >= 0"
+                                    >
+                                        {{ action?.template.gpuMemory }} GB
+                                    </template>
+                                    <template v-else>no GPU requested</template>
+                                    <br />
+                                </div>
+                                <div v-else>N/A</div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="q-table__cell">Project / Mission:</td>
+                            <td class="q-table__cell">
+                                {{ action?.mission?.project?.name }} /
+                                {{ action?.mission?.name }}
+                            </td>
+                        </tr>
+
                         <tr>
                             <td class="q-table__cell">Artifact Files:</td>
                             <td class="q-table__cell">
                                 <q-btn
                                     v-if="
-                                        data?.artifacts ===
+                                        action?.artifacts ===
                                         ArtifactState.UPLOADED
                                     "
                                     label="Open"
@@ -117,7 +228,8 @@
                                     class="button-border"
                                     icon="sym_o_link"
                                     @click="
-                                        () => openArtifactUrl(data?.artifactUrl)
+                                        () =>
+                                            openArtifactUrl(action?.artifactUrl)
                                     "
                                 />
                                 <div v-else>
@@ -151,7 +263,7 @@
             >
                 <q-card-section class="flex column q-pa-none">
                     <div
-                        v-for="log in data?.logs"
+                        v-for="log in action?.logs"
                         :key="log.timestamp"
                         class="flex justify-start q-pb-xs"
                         style="
@@ -164,7 +276,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #525252"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
@@ -184,7 +298,9 @@
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #fd7c7cff"
-                                >{{ log.timestamp }}</span
+                                >{{
+                                    formatDate(new Date(log.timestamp), true)
+                                }}</span
                             >
                             <span
                                 class="q-pr-sm"
@@ -223,7 +339,7 @@
                 bordered
             >
                 <div
-                    v-for="log in data?.auditLogs"
+                    v-for="log in action?.auditLogs"
                     :key="log"
                     class="flex justify-start q-pb-xs"
                     style="
@@ -250,18 +366,23 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
-import { computed, ref } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
+import { formatDate } from '../services/dateFormating';
+import { accessGroupRightsMap } from 'src/services/generic';
+import ButtonGroup from 'components/ButtonGroup.vue';
+import ROUTES from 'src/router/routes';
 
 const tab = ref('info');
 
 const $route = useRoute();
+const $router = useRouter();
 
 const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],
@@ -269,18 +390,20 @@ const { data } = useQuery<Action>({
     refetchInterval: 5_000,
 });
 
+const action: ComputedRef<Action> = computed(
+    () => data.value,
+) as ComputedRef<Action>;
+
 function openArtifactUrl(url: string) {
     window.open(url, '_blank');
 }
 
 const artifactState = computed(() => {
-    console.log(data?.artifacts);
-    console.log(data.value);
-    if (data.value?.artifacts === ArtifactState.UPLOADING) {
+    if (action.value?.artifacts === ArtifactState.UPLOADING) {
         return 'Uploading...';
-    } else if (data.value?.artifacts === ArtifactState.ERROR) {
+    } else if (action.value?.artifacts === ArtifactState.ERROR) {
         return 'N/A';
-    } else if (data.value?.artifacts === ArtifactState.AWAITING_ACTION) {
+    } else if (action.value?.artifacts === ArtifactState.AWAITING_ACTION) {
         return 'Waiting action completion...';
     }
 });

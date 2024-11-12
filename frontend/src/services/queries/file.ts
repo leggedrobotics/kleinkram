@@ -3,7 +3,6 @@ import { Project } from 'src/types/Project';
 import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
-import { Topic } from 'src/types/Topic';
 import { FileType } from 'src/enums/FILE_ENUM';
 import { StorageResponse } from 'src/types/storage';
 
@@ -36,78 +35,21 @@ export const fetchOverview = async (
         if (take) params['take'] = take.toString();
         if (skip) params['skip'] = skip.toString();
         if (sort) params['sort'] = sort;
-        if (desc !== undefined) params['desc'] = desc.toString();
+        if (desc !== undefined) params['sortDirection'] = desc ? 'DESC' : 'ASC';
         const queryParams = new URLSearchParams(params).toString();
-        const projects: Record<string, Project> = {};
-        const creator: Record<string, User> = {};
-        const missions: Record<string, Mission> = {};
         const response = await axios.get(`/file/filtered?${queryParams}`);
         const data = response.data[0];
         if (!data) return [[], 0];
         const total = response.data[1];
-        const res: FileEntity[] = data.map((file: any): FileEntity => {
-            const projectUuid: string = file.mission.project.uuid;
-            let project: Project | undefined = projects[projectUuid];
-            if (!project) {
-                project = new Project(
-                    file.mission.project.uuid,
-                    file.mission.project.name,
-                    file.mission.project.description,
-                    [],
-                    file.mission.project.creator,
-                    undefined,
-                    undefined,
-                    new Date(file.mission.project.createdAt),
-                    new Date(file.mission.project.updatedAt),
-                );
-            }
-            let user: User | undefined = creator[file.creator.uuid];
-            if (!user) {
-                user = new User(
-                    file.creator.uuid,
-                    file.creator.name,
-                    file.creator.email,
-                    file.creator.role,
-                    file.creator.avatarUrl,
-                    [],
-                    new Date(file.creator.createdAt),
-                    new Date(file.creator.updatedAt),
-                );
-                creator[file.creator.uuid] = user;
-            }
-            const missionUuid: string = file.mission.uuid;
-            let mission: Mission | undefined = missions[missionUuid];
-            if (!mission) {
-                mission = new Mission(
-                    file.mission.uuid,
-                    file.mission.name,
-                    project,
-                    [],
-                    [],
-                    file.mission.creator,
-                    new Date(file.mission.createdAt),
-                    new Date(file.mission.updatedAt),
-                );
-            }
-            const newFile = new FileEntity(
-                file.uuid,
-                file.filename,
-                mission,
-                user,
-                new Date(file.date),
-                file.topics,
-                file.size,
-                file.type,
-                file.state,
-                file.hash,
-                file.categories,
-                new Date(file.createdAt),
-                new Date(file.updatedAt),
-            );
-            mission.files.push(newFile);
-            return newFile;
-        });
-        return [res, total];
+        try {
+            const res: FileEntity[] = data.map((file: any): FileEntity => {
+                return FileEntity.fromAPIResponse(file);
+            });
+            return [res, total];
+        } catch (error) {
+            console.error('Error parsing overview:', error);
+            throw error; // Rethrow or handle as appropriate
+        }
     } catch (error) {
         console.error('Error fetching overview:', error);
         throw error; // Rethrow or handle as appropriate
@@ -118,68 +60,7 @@ export const fetchFile = async (uuid: string): Promise<FileEntity> => {
     try {
         const response = await axios.get('/file/one', { params: { uuid } });
         const file = response.data;
-        const project = new Project(
-            file.mission.project.uuid,
-            file.mission.project.name,
-            file.mission.project.description,
-            [],
-            undefined,
-            undefined,
-            undefined,
-            new Date(file.mission.project.createdAt),
-            new Date(file.mission.project.updatedAt),
-        );
-
-        const mission = new Mission(
-            file.mission.uuid,
-            file.mission.name,
-            project,
-            [],
-            [],
-            undefined,
-            new Date(file.mission.createdAt),
-            new Date(file.mission.updatedAt),
-        );
-        const creator = new User(
-            file.creator.uuid,
-            file.creator.name,
-            file.creator.email,
-            file.creator.role,
-            file.creator.avatarUrl,
-            [],
-            new Date(file.creator.createdAt),
-            new Date(file.creator.updatedAt),
-        );
-
-        project.missions.push(mission);
-        const topics = file.topics.map((topic: any) => {
-            return new Topic(
-                topic.uuid,
-                topic.name,
-                topic.type,
-                topic.nrMessages,
-                topic.frequency,
-                new Date(topic.createdAt),
-                new Date(topic.updatedAt),
-            );
-        });
-        const newFile = new FileEntity(
-            file.uuid,
-            file.filename,
-            mission,
-            creator,
-            new Date(file.date),
-            topics,
-            file.size,
-            file.type,
-            file.state,
-            file.hash,
-            file.categories,
-            new Date(file.createdAt),
-            new Date(file.updatedAt),
-        );
-        mission.files.push(newFile);
-        return newFile;
+        return FileEntity.fromAPIResponse(file);
     } catch (error) {
         console.error('Error fetching file:', error);
         throw error; // Rethrow or handle as appropriate
@@ -202,15 +83,23 @@ export const filesOfMission = async (
     fileType?: FileType,
     filename?: string,
     categories?: string[],
+    sort?: string,
+    desc?: boolean,
+    health?: 'Healthy' | 'Unhealthy' | 'Uploading',
 ): Promise<[FileEntity[], number]> => {
-    const params: Record<string, string | number> = {
+    const params: Record<string, string | number | boolean | string[]> = {
         uuid: missionUUID,
         take,
         skip,
     };
     if (fileType && fileType !== FileType.ALL) params['fileType'] = fileType;
     if (filename) params['filename'] = filename;
+    if (health) params['health'] = health;
     if (categories && categories.length > 0) params['categories'] = categories;
+    if (sort) params['sort'] = sort;
+    else params['sort'] = 'filename';
+    if (desc !== undefined) params['desc'] = desc ? 'DESC' : 'ASC';
+    else params['desc'] = 'ASC';
     const response = await axios.get('file/ofMission', {
         params,
     });
@@ -230,6 +119,7 @@ export const filesOfMission = async (
             data[0].mission.creator.role,
             data[0].mission.creator.avatarUrl,
             [],
+            [],
             new Date(data[0].mission.creator.createdAt),
             new Date(data[0].mission.creator.updatedAt),
         );
@@ -240,7 +130,7 @@ export const filesOfMission = async (
         data[0].mission.project.name,
         data[0].mission.project.description,
         [],
-        undefined,
+        null,
         undefined,
         undefined,
         new Date(data[0].mission.project.createdAt),
@@ -265,6 +155,7 @@ export const filesOfMission = async (
                 file.creator.email,
                 file.creator.role,
                 file.creator.avatarUrl,
+                [],
                 [],
                 new Date(file.creator.createdAt),
                 new Date(file.creator.updatedAt),
@@ -305,32 +196,7 @@ export const findOneByNameAndMission = async (
         },
     });
     const file = response.data;
-    const creator = new User(
-        file.creator.uuid,
-        file.creator.name,
-        file.creator.email,
-        file.creator.role,
-        file.creator.avatarUrl,
-        [],
-        new Date(file.creator.createdAt),
-        new Date(file.creator.updatedAt),
-    );
-
-    return new FileEntity(
-        file.uuid,
-        file.filename,
-        null,
-        creator,
-        new Date(file.date),
-        [],
-        file.size,
-        file.type,
-        file.state,
-        file.hash,
-        file.categories,
-        new Date(file.createdAt),
-        new Date(file.updatedAt),
-    );
+    return FileEntity.fromAPIResponse(file);
 };
 
 export const getStorage = async (): Promise<StorageResponse> => {
@@ -343,7 +209,7 @@ export const getIsUploading = async (): Promise<boolean> => {
     return response.data as boolean;
 };
 
-export const existsFile = async (uuid) => {
+export const existsFile = async (uuid: string) => {
     try {
         const response = await axios.get('/file/exists', {
             params: { uuid },

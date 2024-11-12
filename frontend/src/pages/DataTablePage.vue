@@ -356,7 +356,8 @@ const $q = useQuasar();
 const tableRef: Ref<QTable | null> = ref(null);
 
 const handler = useHandler();
-handler.value.sortBy = 'file.date';
+handler.value.sortBy = 'file.createdAt';
+handler.value.descending = true;
 
 const loading = ref(false);
 const filter = ref('');

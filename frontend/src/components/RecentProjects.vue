@@ -6,12 +6,14 @@
             <div class="arrow-buttons">
                 <q-btn
                     @click="scrollLeft"
+                    :disable="!canScrollLeft"
                     flat
                     icon="sym_o_arrow_back"
                     class="scroll-button"
                 />
                 <q-btn
                     @click="scrollRight"
+                    :disable="!canScrollRight"
                     flat
                     icon="sym_o_arrow_forward"
                     class="scroll-button"
@@ -22,7 +24,7 @@
         <q-separator />
 
         <!-- Scrollable Card Section -->
-        <div ref="cardWrapper" class="card-wrapper">
+        <div ref="cardWrapper" class="card-wrapper" @scroll="checkScroll">
             <template v-for="project in projects" :key="project.uuid">
                 <div class="card">
                     <q-card
@@ -64,18 +66,18 @@
 import { computed, nextTick, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import { filteredProjects } from 'src/services/queries/project';
+import { filteredProjects, recentProjects } from 'src/services/queries/project';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
 const { data } = useQuery<Project[]>({
-    queryKey: ['projects', 5, 0, 'updatedAt', true],
-    queryFn: () => filteredProjects(5, 0, 'updatedAt', true),
+    queryKey: ['projects', 5],
+    queryFn: () => recentProjects(5),
 });
 
-const projects = computed(() => (data.value ? data.value[0] : []));
+const projects = computed(() => (data.value ? data.value : []));
 
 const cardWrapper = ref<HTMLElement | null>(null);
 
@@ -98,6 +100,19 @@ const scrollRight = () => {
         });
     }
 };
+const canScrollRight = ref(true);
+const canScrollLeft = ref(false);
+
+function checkScroll() {
+    if (cardWrapper.value) {
+        canScrollRight.value =
+            cardWrapper.value.scrollWidth - cardWrapper.value.scrollLeft >
+            cardWrapper.value.clientWidth;
+        canScrollLeft.value = cardWrapper.value.scrollLeft > 0;
+    }
+}
+
+checkScroll();
 
 function goToProject(uuid: string) {
     router.push(`/project/${uuid}/missions`);

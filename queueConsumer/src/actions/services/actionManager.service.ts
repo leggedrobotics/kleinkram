@@ -6,12 +6,7 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import {
-    AccessGroupRights,
-    ActionState,
-    ArtifactState,
-    KeyTypes,
-} from '@common/enum';
+import { ActionState, ArtifactState, KeyTypes } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
@@ -20,6 +15,7 @@ import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposableAPIKey';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import env from '@common/env';
+import si from 'systeminformation';
 
 @Injectable()
 export class ActionManagerService {
@@ -47,7 +43,7 @@ export class ActionManagerService {
     async createAPIkey(action: Action) {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
-            rights: AccessGroupRights.WRITE, // todo read from frontend
+            rights: action.template.accessRights,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.CONTAINER,
             action: action,
@@ -108,13 +104,13 @@ export class ActionManagerService {
                         needs_gpu: needsGpu,
                         environment: envVariables,
                         command: action.template.command,
+                        entrypoint: action.template.entrypoint,
                         /* eslint-enable @typescript-eslint/naming-convention */
                     },
                 );
 
             // capture runner information
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            action.image = { repo_digests: repoDigests, sha };
+            action.image = { repoDigests: repoDigests, sha };
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 
@@ -149,6 +145,10 @@ export class ActionManagerService {
                 where: { uuid: action.uuid },
                 relations: ['worker', 'template'],
             });
+
+            action.state = ActionState.STOPPING;
+            await this.actionRepository.save(action);
+
             await this.containerDaemon.removeContainer(container.id, true);
             await this.setActionState(container, action);
             action.executionEndedAt = new Date();
@@ -333,14 +333,19 @@ export class ActionManagerService {
         const actionIds = runningActionContainers.map((container) =>
             container.Names[0].replace(`/${DockerDaemon.CONTAINER_PREFIX}`, ''),
         );
-
-        const actionsInProcess = await this.actionRepository.find({
-            where: { state: ActionState.PROCESSING },
+        const name = (await si.osInfo()).hostname;
+        const actionsInLocalProcess = await this.actionRepository.find({
+            where: {
+                state: ActionState.PROCESSING,
+                worker: { identifier: name },
+            },
             relations: ['mission', 'mission.project'],
         });
-        logger.info(`Checking ${actionsInProcess.length} pending Actions.`);
+        logger.info(
+            `Checking ${actionsInLocalProcess.length} pending Actions.`,
+        );
 
-        for (const action of actionsInProcess) {
+        for (const action of actionsInLocalProcess) {
             if (!actionIds.includes(action.uuid)) {
                 logger.info(
                     `Action ${action.uuid} is running but has no running container.`,
@@ -375,7 +380,10 @@ export class ActionManagerService {
                 continue;
             }
             // ignore containers which are not in processing state
-            if (action.state === ActionState.PROCESSING) {
+            if (
+                action.state === ActionState.PROCESSING ||
+                action.state === ActionState.STOPPING
+            ) {
                 // kill if older than 24 hours
                 const createdAt = new Date(container.Created * 1000);
                 const now = new Date();

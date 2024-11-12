@@ -42,7 +42,7 @@ export class FileGuardService {
             relations: ['mission', 'mission.project', 'creator'],
         });
         if (!file) {
-            console.log('File not found');
+            logger.debug('File not found');
             return false;
         }
         if (file.creator.uuid === user.uuid) {
@@ -113,5 +113,24 @@ export class FileGuardService {
         return (
             apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
         );
+    }
+
+    async canAccessFiles(
+        user: User,
+        fileUUIDs: string[],
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ) {
+        if (!fileUUIDs || !user) {
+            logger.error(
+                `FileGuard: File UUIDs (${fileUUIDs}) or User (${user}) not provided. Requesting ${rights} access.`,
+            );
+            return false;
+        }
+        for (const fileUUID of fileUUIDs) {
+            if (!(await this.canAccessFile(user, fileUUID, rights))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -1,9 +1,10 @@
 import { User } from 'src/types/User';
 import { BaseEntity } from 'src/types/BaseEntity';
+import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 
 export class ActionTemplate extends BaseEntity {
     imageName: string;
-    createdBy: User;
+    createdBy: User | null;
     name: string;
     version: number;
     cpuCores: number;
@@ -11,13 +12,15 @@ export class ActionTemplate extends BaseEntity {
     gpuMemory: number;
     maxRuntime: number;
     command: string;
+    entrypoint: string;
+    accessRights: AccessGroupRights;
 
     constructor(
         uuid: string,
         createdAt: Date | null,
         updatedAt: Date | null,
         imageName: string,
-        createdBy: User,
+        createdBy: User | null,
         name: string,
         version: number,
         command: string,
@@ -25,6 +28,8 @@ export class ActionTemplate extends BaseEntity {
         cpuMemory: number,
         gpuMemory: number,
         maxRuntime: number,
+        entrypoint: string,
+        accessRights: AccessGroupRights,
     ) {
         super(uuid, createdAt, updatedAt);
         this.imageName = imageName;
@@ -36,6 +41,8 @@ export class ActionTemplate extends BaseEntity {
         this.cpuMemory = cpuMemory;
         this.gpuMemory = gpuMemory;
         this.maxRuntime = maxRuntime;
+        this.entrypoint = entrypoint;
+        this.accessRights = accessRights;
     }
 
     clone(): ActionTemplate {
@@ -52,6 +59,30 @@ export class ActionTemplate extends BaseEntity {
             this.cpuMemory,
             this.gpuMemory,
             this.maxRuntime,
+            this.entrypoint,
+            this.accessRights,
+        );
+    }
+
+    static fromAPIResponse(response: any): ActionTemplate {
+        const createdBy = response.createdBy
+            ? User.fromAPIResponse(response.createdBy)
+            : null;
+        return new ActionTemplate(
+            response.uuid,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            response.imageName,
+            createdBy,
+            response.name,
+            response.version,
+            response.command,
+            response.cpuCores,
+            response.cpuMemory,
+            response.gpuMemory,
+            response.maxRuntime,
+            response.entrypoint,
+            response.accessRights,
         );
     }
 }

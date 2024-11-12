@@ -9,7 +9,7 @@ import Tag from '../tag/tag.entity';
 import MissionAccess from '../auth/mission_access.entity';
 import Action from '../action/action.entity';
 
-@Unique(['name', 'project'])
+@Unique('unique_mission_name_per_project', ['name', 'project'])
 @Entity()
 export default class Mission extends BaseEntity {
     @Column()

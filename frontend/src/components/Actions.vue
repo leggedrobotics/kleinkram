@@ -106,6 +106,7 @@ props.handler.setSort('createdAt');
 props.handler.setDescending(true);
 const actionKey = computed(() => [
     'action_mission',
+    props.handler.projectUuid,
     props.handler.missionUuid,
     props.handler.queryKey,
 ]);
@@ -119,6 +120,7 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
             props.handler.skip,
             props.handler.sortBy,
             props.handler.descending,
+            props.handler.searchParams['name'],
         ),
     staleTime: 0,
     refetchInterval: 4000,

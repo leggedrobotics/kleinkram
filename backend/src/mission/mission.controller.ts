@@ -13,9 +13,10 @@ import {
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
-    QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryStringArray,
     QueryTake,
@@ -40,11 +41,11 @@ export class MissionController {
     @Post('updateName')
     @CanWriteMissionByBody()
     async updateMissionName(
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('name') name: string,
     ) {
         // validate name
-        if (/^[\w\-_]{3,20}$/i.test(name) === false) {
+        if (/^[\w\-_]{3,50}$/i.test(name) === false) {
             throw new Error('Invalid name');
         }
 
@@ -54,10 +55,10 @@ export class MissionController {
     @Get('filteredMinimal')
     @UserOnly()
     async filteredMissionsMinimal(
-        @QueryUUID('uuid') uuid: string,
-        @QueryOptionalString('search') search: string,
-        @QueryOptionalBoolean('descending') descending: boolean,
-        @QueryOptionalString('sortBy') sortBy: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryOptionalString('search', 'Search in mission name') search: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -67,7 +68,7 @@ export class MissionController {
             skip,
             take,
             search,
-            descending,
+            sortDirection,
             sortBy,
             user.user.uuid,
         );
@@ -76,10 +77,10 @@ export class MissionController {
     @Get('filtered')
     @UserOnly()
     async filteredMissions(
-        @QueryUUID('uuid') uuid: string,
-        @QueryOptionalString('search') search: string,
-        @QueryOptionalBoolean('descending') descending: boolean,
-        @QueryOptionalString('sortBy') sortBy: string,
+        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryOptionalString('search', 'Search in mission name') search: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -89,15 +90,15 @@ export class MissionController {
             skip,
             take,
             search,
-            descending,
+            sortDirection,
             sortBy,
-            user.user.uuid,
+            user.user,
         );
     }
 
     @Get('one')
     @CanReadMission()
-    async getMissionById(@QueryUUID('uuid') uuid: string) {
+    async getMissionById(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
         return this.missionService.findOne(uuid);
     }
 
@@ -113,20 +114,23 @@ export class MissionController {
 
     @Get('byName')
     @CanReadMissionByName()
-    async getMissionByName(@QueryString('name') name: string) {
-        return await this.missionService.findOneByName(name);
+    async getMissionByName(
+        @QueryString('name', 'Mission Name') name: string,
+        @QueryUUID('projectUUID', 'Project UUID') projectUuid: string,
+    ) {
+        return await this.missionService.findOneByName(name, projectUuid);
     }
 
     @Get('download')
     @CanReadMission()
-    async downloadWithToken(@QueryUUID('uuid') uuid: string) {
+    async downloadWithToken(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
         return this.missionService.download(uuid);
     }
 
     @Get('filteredByProjectName')
     @UserOnly()
     async filteredByProjectName(
-        @QueryString('projectName') projectName: string,
+        @QueryString('projectName', 'Project Name') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
@@ -142,8 +146,8 @@ export class MissionController {
     @Post('move')
     @CanMoveMission()
     async moveMission(
-        @QueryUUID('missionUUID') missionUUID: string,
-        @QueryUUID('projectUUID') projectUUID: string,
+        @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
     ) {
         return this.missionService.moveMission(missionUUID, projectUUID);
     }
@@ -157,7 +161,7 @@ export class MissionController {
     @Post('tags')
     @CanWriteMissionByBody()
     async updateMissionTags(
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('tags') tags: Record<string, string>,
     ) {
         return this.missionService.updateTags(missionUUID, tags);
@@ -165,7 +169,9 @@ export class MissionController {
 
     @Get('many')
     @CanReadManyMissions()
-    async getManyMissions(@QueryStringArray('uuids') uuids: string[]) {
+    async getManyMissions(
+        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
+    ) {
         return this.missionService.findMany(uuids);
     }
 }

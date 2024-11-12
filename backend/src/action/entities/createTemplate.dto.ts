@@ -1,11 +1,13 @@
 import {
     IsBoolean,
+    IsEnum,
     IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
     IsUUID,
 } from 'class-validator';
+import { AccessGroupRights } from '@common/enum';
 
 export class CreateTemplateDto {
     @IsString()
@@ -34,6 +36,13 @@ export class CreateTemplateDto {
 
     @IsBoolean()
     searchable: boolean;
+
+    @IsString()
+    @IsOptional()
+    entrypoint: string;
+
+    @IsEnum(AccessGroupRights)
+    accessRights: AccessGroupRights;
 }
 
 export class UpdateTemplateDto extends CreateTemplateDto {

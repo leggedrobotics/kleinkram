@@ -3,6 +3,7 @@ import { formatDate } from 'src/services/dateFormating';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
 import { formatSize } from 'src/services/generalFormatting';
+import { AggregatedMission } from 'src/types/subtypes/AggregatedMission';
 
 export type ProjectColumnType = {
     name: string;
@@ -12,7 +13,8 @@ export type ProjectColumnType = {
     field?:
         | ((row: Project) => any)
         | ((row: Mission) => any)
-        | ((row: FileEntity) => any);
+        | ((row: FileEntity) => any)
+        | ((row: AggregatedMission) => any);
     format?: ((val: string) => string) | ((val: number) => string);
     sortable?: boolean;
     style?: string;
@@ -90,7 +92,7 @@ export const missionColumns: Array<ProjectColumnType> = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: Mission) => row.files.length,
+        field: (row: AggregatedMission) => row.nrFiles,
         format: (val: number) => `${val}`,
     },
     {
@@ -101,7 +103,7 @@ export const missionColumns: Array<ProjectColumnType> = [
         field: (row: Project) => (row.creator ? row.creator.name : ''),
         format: (val: number) => `${val}`,
         style: 'min-width: 100px',
-        sortable: true,
+        sortable: false,
     },
     {
         name: 'Created',
@@ -122,8 +124,7 @@ export const missionColumns: Array<ProjectColumnType> = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: Mission) =>
-            row.files.map((f) => f.size).reduce((a, b) => a + b, 0),
+        field: (row: AggregatedMission) => row.size,
         format: formatSize,
     },
     {
@@ -139,16 +140,18 @@ export const fileColumns: Array<ProjectColumnType> = [
         name: 'state',
         required: true,
         label: 'Health',
-        style: 'width: 10px',
+        style: 'width: 100px',
         align: 'center',
+        sortable: true,
     },
     {
-        name: 'name',
+        name: 'filename',
         required: true,
         label: 'File',
         align: 'left',
         field: (row: FileEntity) => row.filename,
         format: (val: string) => `${val}`,
+        sortable: true,
     },
     {
         name: 'cats',
@@ -157,15 +160,16 @@ export const fileColumns: Array<ProjectColumnType> = [
         align: 'right',
     },
     {
-        name: 'Created',
+        name: 'createdAt',
         required: true,
         label: 'Created',
         align: 'left',
         field: (row: FileEntity) => row.date,
         format: (val: string) => formatDate(new Date(val)),
+        sortable: true,
     },
     {
-        name: 'Size',
+        name: 'size',
         required: true,
         label: 'Size',
         align: 'left',
@@ -174,6 +178,7 @@ export const fileColumns: Array<ProjectColumnType> = [
         sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
             a.size - b.size,
         style: 'width: 40px',
+        sortable: true,
     },
     {
         name: 'fileaction',

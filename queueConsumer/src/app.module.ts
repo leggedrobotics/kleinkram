@@ -32,6 +32,8 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
 import CategoryEntity from '@common/entities/category/category.entity';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import { AccessGroupExpiryProvider } from './accessGroupExpiry/accessGroupExpiry.provider';
 
 @Module({
     imports: [
@@ -95,6 +97,7 @@ import CategoryEntity from '@common/entities/category/category.entity';
                         MissionAccessViewEntity,
                         Worker,
                         CategoryEntity,
+                        AccessGroupUser,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -119,6 +122,7 @@ import CategoryEntity from '@common/entities/category/category.entity';
             MissionAccessViewEntity,
             Worker,
             CategoryEntity,
+            AccessGroupUser,
         ]),
         ScheduleModule.forRoot(),
     ],
@@ -129,6 +133,7 @@ import CategoryEntity from '@common/entities/category/category.entity';
         DockerDaemon,
         ActionManagerService,
         ContainerCleanupService,
+        AccessGroupExpiryProvider,
     ],
 })
 export class AppModule {}

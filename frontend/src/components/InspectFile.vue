@@ -12,11 +12,9 @@
                         label="Download"
                         @click="() => _downloadFile(data?.uuid, data?.filename)"
                         :disable="
-                            [
-                                FileState.LOST,
-                                FileState.UPLOADING,
-                                FileState.MOVING,
-                            ].indexOf(data?.state) !== -1
+                            [FileState.LOST, FileState.UPLOADING].indexOf(
+                                data?.state,
+                            ) !== -1
                         "
                     />
 
@@ -276,7 +274,7 @@ import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
 import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
 import EditFileButton from 'components/buttons/EditFileButton.vue';
-import KleinDownloadFile from 'components/CLILinks/KleinDownloadFile.vue';
+import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
 
 const $router = useRouter();
@@ -417,7 +415,3 @@ const pagination = ref({
     rowsPerPage: 20,
 });
 </script>
-<style scoped>
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
-</style>

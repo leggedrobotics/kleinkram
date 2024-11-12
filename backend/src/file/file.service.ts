@@ -7,7 +7,15 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, ILike, In, MoreThan, Repository } from 'typeorm';
+import {
+    Brackets,
+    DataSource,
+    FindOptionsSelectByString,
+    ILike,
+    In,
+    MoreThan,
+    Repository,
+} from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from './entities/update-file.dto';
 import env from '@common/env';
@@ -68,7 +76,7 @@ export class FileService implements OnModuleInit {
     ) {}
 
     onModuleInit(): any {
-        this.fileCleanupQueue = new Queue('action-queue', {
+        this.fileCleanupQueue = new Queue('file-cleanup', {
             redis,
         });
     }
@@ -209,13 +217,11 @@ export class FileService implements OnModuleInit {
         take: number,
         skip: number,
         sort: string,
-        desc: boolean,
+        sortOrder: 'ASC' | 'DESC',
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        // const sortColumn = `file.${sort || 'date'}`;
-        const sortOrder = desc ? 'DESC' : 'ASC';
         // Start building your query with basic filters
         let query = this.fileRepository
             .createQueryBuilder('file')
@@ -526,6 +532,9 @@ export class FileService implements OnModuleInit {
         filename?: string,
         fileType?: FileType,
         categories?: string[],
+        sort?: string,
+        sortDirection?: 'ASC' | 'DESC',
+        health?: string,
     ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = {
             mission: { uuid: missionUUID },
@@ -539,12 +548,31 @@ export class FileService implements OnModuleInit {
         if (categories && categories.length > 0) {
             where.categories = { uuid: In(categories) };
         }
+        switch (health) {
+            case 'Healthy':
+                where.state = In([FileState.OK, FileState.FOUND]);
+                break;
+            case 'Unhealthy':
+                where.state = In([
+                    FileState.ERROR,
+                    FileState.CONVERSION_ERROR,
+                    FileState.LOST,
+                    FileState.CORRUPTED,
+                ]);
+                break;
+            case 'Uploading':
+                where.state = FileState.UPLOADING;
+        }
+        const select = [
+            'uuid',
+            `${sort}`,
+        ] as FindOptionsSelectByString<FileEntity>;
         const [resUUIDs, count] = await this.fileRepository.findAndCount({
-            select: ['uuid', 'filename'],
+            select,
             where,
             take,
             skip,
-            order: { filename: 'ASC' },
+            order: { [sort]: sortDirection },
         });
         if (resUUIDs.length === 0) {
             return [[], count];
@@ -562,7 +590,7 @@ export class FileService implements OnModuleInit {
                 'mission.creator',
                 'creator',
             ],
-            order: { filename: 'ASC' },
+            order: { [sort]: sortDirection },
         });
         return [files, count];
     }
@@ -572,6 +600,36 @@ export class FileService implements OnModuleInit {
             where: { mission: { uuid: missionUUID }, filename: name },
             relations: ['creator'],
         });
+    }
+
+    async moveFiles(fileUUIDs: string[], missionUUID: string) {
+        await Promise.all(
+            fileUUIDs.map(async (uuid) => {
+                try {
+                    const file = await this.fileRepository.findOneOrFail({
+                        where: { uuid },
+                    });
+                    file.mission = { uuid: missionUUID } as Mission;
+                    await this.fileRepository.save(file);
+                    const newFile = await this.fileRepository.findOneOrFail({
+                        where: { uuid },
+                        relations: ['mission', 'mission.project'],
+                    });
+                    const bucket = getBucketFromFileType(file.type);
+                    await addTagsToMinioObject(bucket, file.uuid, {
+                        filename: file.filename,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        mission_uuid: missionUUID,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        project_uuid: newFile.mission.project.uuid,
+                    });
+                } catch (e) {
+                    logger.error(
+                        `Error moving file ${uuid} to mission ${missionUUID}: ${e}`,
+                    );
+                }
+            }),
+        );
     }
 
     /**
@@ -645,7 +703,7 @@ export class FileService implements OnModuleInit {
                 };
             })
             .catch((error) => {
-                console.error('Error:', error);
+                logger.error('Error:', error);
             });
     }
 
@@ -718,7 +776,7 @@ export class FileService implements OnModuleInit {
                     : FileType.MCAP;
 
                 // check if file already exists
-                const existingFile = await this.fileRepository.count({
+                const existingFile = await this.fileRepository.exists({
                     where: {
                         filename,
                         mission: {
@@ -726,7 +784,7 @@ export class FileService implements OnModuleInit {
                         },
                     },
                 });
-                if (existingFile > 0) {
+                if (existingFile) {
                     emptyCredentials.error = 'File already exists';
                     emptyCredentials.fileName = filename;
                     return emptyCredentials;
@@ -847,6 +905,10 @@ export class FileService implements OnModuleInit {
         const filesList = await files.toArray();
         await Promise.all(
             filesList.map(async (file: BucketItem) => {
+                if (!file.name) {
+                    logger.debug(`Filename is empty: ${JSON.stringify(file)}`);
+                    return;
+                }
                 const fileEntity = await this.fileRepository.findOne({
                     where: { uuid: file.name },
                     relations: ['mission', 'mission.project'],
@@ -867,6 +929,33 @@ export class FileService implements OnModuleInit {
                     mission_uuid: fileEntity.mission.uuid,
                     filename: fileEntity.filename,
                 });
+            }),
+        ).catch((err) => {
+            logger.error(err);
+        });
+    }
+
+    async recomputeFileSizes() {
+        const files = await this.fileRepository.find({
+            where: {
+                state: In([FileState.OK, FileState.FOUND]),
+            },
+        });
+        await Promise.all(
+            files.map(async (file) => {
+                const stats = await getInfoFromMinio(file.type, file.uuid);
+                if (!stats) {
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                    );
+                    file.state = FileState.LOST;
+                } else {
+                    file.size = stats.size;
+                    logger.debug(
+                        `Updated size for ${file.filename}: ${file.size}`,
+                    );
+                }
+                await this.fileRepository.save(file);
             }),
         );
     }

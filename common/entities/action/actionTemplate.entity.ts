@@ -2,9 +2,10 @@ import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Action from './action.entity';
 import User from '../user/user.entity';
+import { AccessGroupRights } from '../../enum';
 
 @Entity()
-@Unique(['name', 'version'])
+@Unique('unique_versioned_action_name', ['name', 'version'])
 export default class ActionTemplate extends BaseEntity {
     @Column()
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -39,4 +40,10 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column()
     maxRuntime: number; // in hours
+
+    @Column({ nullable: true })
+    entrypoint: string;
+
+    @Column()
+    accessRights: AccessGroupRights;
 }

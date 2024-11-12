@@ -18,6 +18,7 @@ import { FileGuardService } from './fileGuard.service';
 import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
 import { AuthGuardService } from './authGuard.service';
+import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -197,7 +198,8 @@ export class DeleteProjectGuard extends BaseGuard {
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot delete projects');
         }
-        const projectUUID = request.query.uuid || request.params.uuid;
+        const projectUUID =
+            request.query.uuid || request.params.uuid || request.body.uuid;
         return this.projectGuardService.canAccessProject(
             user,
             projectUUID,
@@ -315,17 +317,20 @@ export class ReadMissionByNameGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const missionName = request.query.name;
+        const projectUuid = request.query.projectUUID;
 
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMissionByName(
                 apiKey,
                 missionName,
+                projectUuid,
                 AccessGroupRights.READ,
             );
         }
         return this.missionGuardService.canAccessMissionByName(
             user,
             missionName,
+            projectUuid,
         );
     }
 }
@@ -623,6 +628,39 @@ export class WriteFileGuard extends BaseGuard {
 }
 
 @Injectable()
+export class MoveFilesGuard extends BaseGuard {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+        const fileUUIDs = request.body.fileUUIDs;
+        const missionUUID = request.body.missionUUID;
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot move files');
+        }
+        const canDeleteFiles = this.fileGuardService.canAccessFiles(
+            user,
+            fileUUIDs,
+            AccessGroupRights.DELETE,
+        );
+        if (!canDeleteFiles) {
+            return false;
+        }
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            AccessGroupRights.CREATE,
+        );
+    }
+}
+
+@Injectable()
 export class ReadActionGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
@@ -644,12 +682,47 @@ export class ReadActionGuard extends BaseGuard {
         return this.actionGuardService.canAccessAction(user, actionUUID);
     }
 }
+@Injectable()
+export class CreateActionGuard extends BaseGuard {
+    constructor(
+        private reflector: Reflector,
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(ActionTemplate)
+        private actionTemplateRepository: Repository<ActionTemplate>,
+    ) {
+        super();
+    }
 
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+        const missionUUID = request.body.missionUUID;
+        const actionTemplateUUID = request.body.templateUUID;
+        const actionTemplate =
+            await this.actionTemplateRepository.findOneOrFail({
+                where: { uuid: actionTemplateUUID },
+            });
+
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                actionTemplate.accessRights,
+            );
+        }
+        return this.missionGuardService.canAccessMission(
+            user.uuid,
+            missionUUID,
+            actionTemplate.accessRights,
+        );
+    }
+}
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private missionGuardService: MissionGuardService,
+        @InjectRepository(ActionTemplate)
+        private actionTemplateRepository: Repository<ActionTemplate>,
     ) {
         super();
     }
@@ -657,14 +730,18 @@ export class CreateActionsGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
         const missionUUIDs = request.body.missionUUIDs;
-
+        const actionTemplateUUID = request.body.templateUUID;
+        const actionTemplate =
+            await this.actionTemplateRepository.findOneOrFail({
+                where: { uuid: actionTemplateUUID },
+            });
         if (apiKey) {
             const allCanAccess = await Promise.all(
                 missionUUIDs.map((missionUUID) =>
                     this.missionGuardService.canKeyAccessMission(
                         apiKey,
                         missionUUID,
-                        AccessGroupRights.CREATE,
+                        actionTemplate.accessRights,
                     ),
                 ),
             );
@@ -675,7 +752,7 @@ export class CreateActionsGuard extends BaseGuard {
                 this.missionGuardService.canAccessMission(
                     user.uuid,
                     missionUUID,
-                    AccessGroupRights.CREATE,
+                    actionTemplate.accessRights,
                 ),
             ),
         );
@@ -730,6 +807,31 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
         return this.authGuardService.isAccessGroupCreatorByProjectAccess(
             user,
             projectAccessUUID,
+        );
+    }
+}
+
+@Injectable()
+export class IsAccessGroupCreatorByAccessGroupUserGuard extends BaseGuard {
+    constructor(
+        private reflector: Reflector,
+        private authGuardService: AuthGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        if (apiKey) {
+            throw new UnauthorizedException(
+                'CLI Keys cannot check access group creator',
+            );
+        }
+        const aguUUID = request.body.aguUUID || request.params.aguUUID;
+        return this.authGuardService.isAccessGroupCreatorByAccessGroupUserGuard(
+            user,
+            aguUUID,
         );
     }
 }

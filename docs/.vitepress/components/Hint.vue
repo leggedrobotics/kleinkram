@@ -35,7 +35,7 @@ const hideTooltip = () => {
 </script>
 
 <style scoped>
-@import 'access-badge.css';
+@import 'AccessWrites/access-badge.css';
 
 .tooltip {
     position: absolute;

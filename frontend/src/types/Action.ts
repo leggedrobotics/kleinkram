@@ -4,6 +4,7 @@ import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
+import { Worker } from 'src/types/Worker';
 
 type ContainerLog = {
     timestamp: string;
@@ -20,7 +21,7 @@ export class Action extends BaseEntity {
     state: ActionState;
     stateCause: string;
     image: Image;
-    createdBy: User;
+    createdBy: User | null;
 
     mission: Mission | null;
     logs: ContainerLog[] | null;
@@ -51,7 +52,7 @@ export class Action extends BaseEntity {
         mission: Mission | null,
         template: ActionTemplate,
         image: Image,
-        createdBy: User,
+        createdBy: User | null,
         logs: ContainerLog[] | null = null,
         auditLogs:
             | {
@@ -90,6 +91,51 @@ export class Action extends BaseEntity {
 
         return (
             this.executionEndedAt.getTime() - this.executionStartedAt.getTime()
+        );
+    }
+
+    static fromAPIResponse(response: any): Action {
+        const mission = response.mission
+            ? Mission.fromAPIResponse(response.mission)
+            : null;
+        const createdBy = User.fromAPIResponse(response.createdBy);
+        const template = ActionTemplate.fromAPIResponse(response.template);
+        const worker = response.worker
+            ? Worker.fromAPIResponse(response.worker)
+            : null;
+        const logs = response.logs
+            ? response.logs.map((log: any) => ({
+                  timestamp: log.timestamp,
+                  message: log.message,
+                  type: log.type,
+              }))
+            : null;
+        const auditLogs = response.auditLogs
+            ? response.auditLogs.map((log: any) => ({
+                  method: log.method,
+                  url: log.url,
+              }))
+            : null;
+        return new Action(
+            response.uuid,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            response.state,
+            response.stateCause,
+            response.artifactUrl,
+            response.artifacts,
+            mission,
+            template,
+            {
+                sha: response.image.sha,
+                repoDigests: response.image.repoDigests,
+            },
+            createdBy,
+            logs,
+            auditLogs,
+            worker,
+            response.executionStartedAt,
+            response.executionEndedAt,
         );
     }
 }

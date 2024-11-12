@@ -2,16 +2,16 @@
     <q-dialog ref="dialogRef">
         <q-card
             class="q-pa-sm text-center"
-            style="width: 80%; min-height: 200px; max-width: 500px"
+            style="width: 80%; min-height: 100px; max-width: 500px"
         >
-            <h5>Move mission {{ mission.name }} to another project</h5>
-            <div class="row q-gutter-sm">
+            <h5>Move mission {{ mission?.name }} to another project</h5>
+            <div class="row q-gutter-sm q-ma-md">
                 <div class="col-7 col-md-7">
                     <q-btn-dropdown
                         v-model="dd_open"
-                        outlined
                         dense
-                        class="full-width"
+                        flat
+                        class="full-width button-border"
                         :label="selected_project?.name || 'Project'"
                     >
                         <q-list>
@@ -37,6 +37,7 @@
                     <q-btn
                         label="OK"
                         color="primary"
+                        unelevated
                         @click="onOk"
                         style="margin-right: 5px"
                     />
@@ -62,7 +63,7 @@ import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
 import { moveMission } from 'src/services/mutations/mission';
 
-const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
 const props = defineProps<{
     mission?: Mission;
@@ -112,16 +113,16 @@ async function onOk() {
         filtered.forEach((query) => {
             queryClient.invalidateQueries(query.queryKey);
         });
+        onDialogOK(selected_project.value.uuid);
     } catch (e) {
-        console.error(e);
         creating({
             message: `Error moving mission ${props.mission.name} to project ${selected_project.value.name}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,
         });
+        onDialogHide();
     }
-    onDialogOK();
 }
 </script>
 

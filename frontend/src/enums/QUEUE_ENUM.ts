@@ -26,4 +26,5 @@ export enum ActionState {
     DONE = 'DONE',
     FAILED = 'FAILED',
     UNPROCESSABLE = 'UNPROCESSABLE',
+    STOPPING = 'STOPPING',
 }

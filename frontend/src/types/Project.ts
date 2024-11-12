@@ -9,7 +9,7 @@ export class Project extends BaseEntity {
     description: string;
     missions: Mission[];
     requiredTags: TagType[];
-    creator?: User;
+    creator: User | null;
     projectAccesses: ProjectAccess[];
 
     constructor(
@@ -17,7 +17,7 @@ export class Project extends BaseEntity {
         name: string,
         description: string,
         missions: Mission[],
-        creator: User | undefined,
+        creator: User | null,
         requiredTags: TagType[] | undefined,
         projectAccesses: ProjectAccess[] | undefined,
         createdAt: Date | null,
@@ -43,6 +43,43 @@ export class Project extends BaseEntity {
             this.projectAccesses,
             this.createdAt,
             this.updatedAt,
+        );
+    }
+
+    static fromAPIResponse(response: any): Project | null {
+        if (!response) {
+            return null;
+        }
+        const creator = User.fromAPIResponse(response.creator);
+        let missions: Mission[] = [];
+        if (response.missions) {
+            missions = response.missions.map((mission: any) =>
+                Mission.fromAPIResponse(mission),
+            );
+        }
+        let projectAccesses: ProjectAccess[] = [];
+        if (response.projectAccesses) {
+            projectAccesses = response.projectAccesses.map(
+                (projectAccess: any) =>
+                    ProjectAccess.fromAPIResponse(projectAccess),
+            );
+        }
+        let requiredTags: TagType[] = [];
+        if (response.requiredTags) {
+            requiredTags = response.requiredTags.map((tagType: any) =>
+                TagType.fromAPIResponse(tagType),
+            );
+        }
+        return new Project(
+            response.uuid,
+            response.name,
+            response.description,
+            missions,
+            creator,
+            requiredTags,
+            projectAccesses,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
         );
     }
 }

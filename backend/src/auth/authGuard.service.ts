@@ -31,7 +31,7 @@ export class AuthGuardService {
 
         return await this.accessGroupRepository.exists({
             where: { uuid: accessGroupUUID, creator: { uuid: user.uuid } },
-            relations: ['users'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
         });
     }
 
@@ -52,6 +52,27 @@ export class AuthGuardService {
             where: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
+                creator: { uuid: user.uuid },
+            },
+        });
+    }
+
+    async isAccessGroupCreatorByAccessGroupUserGuard(
+        user: User,
+        aguUUID: string,
+    ) {
+        if (!user || !aguUUID) {
+            logger.error(
+                `AuthGuard: aguUUID (${aguUUID}) or User (${user}) not provided.`,
+            );
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        return await this.accessGroupRepository.exists({
+            where: {
+                accessGroupUsers: { uuid: aguUUID },
                 creator: { uuid: user.uuid },
             },
         });

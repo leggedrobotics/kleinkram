@@ -1,7 +1,7 @@
 <template>
     <div v-if="filteredSpec">
         <div v-for="[path, spec] in Object.entries(filteredSpec.paths)">
-            <Endpoint :endpoint="path" :spec="spec" />
+            <Endpoint :endpoint="path" :spec="spec" :schema="schema" />
         </div>
     </div>
     <div v-else>Loading Swagger spec...</div>
@@ -16,14 +16,8 @@ const props = defineProps<{
 }>();
 const swaggerSpec = ref(null);
 
-// check if the swagger-spec.json exists in the docs folder
-if (import.meta.env.DEV) {
-    import('./../../docs/swagger-spec.json').then((spec) => {
-        swaggerSpec.value = spec;
-    });
-}
-
 const filteredSpec = ref(null);
+const schema = ref(null);
 
 // Function to filter the OpenAPI spec by path prefix
 function filterSpecByPath(spec: any, pathPrefix: string) {
@@ -53,7 +47,7 @@ watch(
 onMounted(async () => {
     try {
         if (!swaggerSpec.value) {
-            const response = await fetch('/swagger/swagger-spec.json');
+            const response = await fetch('http://localhost:3000/swagger/json');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -65,6 +59,8 @@ onMounted(async () => {
             swaggerSpec.value,
             '/' + props.module,
         );
+        console.log(swaggerSpec.value);
+        schema.value = swaggerSpec.value.components.schemas;
     } catch (error) {
         console.error('Error loading swagger-spec.json:', error);
     }

@@ -95,8 +95,14 @@
                             >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Move</q-item-section>
+                            <q-item clickable v-ripple>
+                                <q-item-section>
+                                    <MoveFileDialogOpener
+                                        :files="[props.row]"
+                                        :mission="props.row.mission"
+                                        >Move</MoveFileDialogOpener
+                                    >
+                                </q-item-section>
                             </q-item>
                             <q-item clickable v-ripple>
                                 <q-item-section>
@@ -137,6 +143,7 @@ import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { Category } from 'src/types/Category';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import { FileEntity } from 'src/types/FileEntity';
+import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -151,6 +158,10 @@ const props = defineProps({
     },
 });
 
+if (props.url_handler?.sortBy === 'name') {
+    props.url_handler.setSort('filename');
+}
+
 function setPagination(update: TableRequest) {
     props.url_handler.setPage(update.pagination.page);
     props.url_handler.setTake(update.pagination.rowsPerPage);
@@ -164,7 +175,7 @@ const pagination = computed(() => {
         rowsPerPage: props.url_handler.take,
         rowsNumber: props.url_handler.rowsNumber,
         sortBy: props.url_handler.sortBy,
-        descending: false,
+        descending: props.url_handler.descending,
     };
 });
 
@@ -187,6 +198,9 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler.fileType,
             props.url_handler.searchParams.name,
             props.url_handler?.categories,
+            props.url_handler.sortBy,
+            props.url_handler.descending,
+            props.url_handler.searchParams.health,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value[0] : []));
@@ -228,8 +242,3 @@ function sortedCats(file: FileEntity) {
     return cats.sort((a, b) => a.name.localeCompare(b.name));
 }
 </script>
-
-<style scoped>
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
-</style>

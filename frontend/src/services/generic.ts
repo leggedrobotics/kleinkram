@@ -25,15 +25,19 @@ export const icon = (type: DataType) => {
 };
 
 export const accessGroupRightsMap = {
-    [AccessGroupRights.NONE]: 'None',
     [AccessGroupRights.READ]: 'Read',
     [AccessGroupRights.CREATE]: 'Create',
     [AccessGroupRights.WRITE]: 'Write',
     [AccessGroupRights.DELETE]: 'Delete',
 };
 
-export function getAccessRightDescription(value: AccessGroupRights): string {
-    return accessGroupRightsMap[value] || 'Unknown';
+export function getAccessRightDescription(
+    value: AccessGroupRights | undefined,
+): string {
+    if (value === undefined) {
+        return 'Unknown';
+    }
+    return accessGroupRightsMap[value];
 }
 
 export function getColor(state: QueueState) {
@@ -225,6 +229,8 @@ export function getActionColor(state: ActionState) {
             return 'blue';
         case ActionState.UNPROCESSABLE:
             return 'purple';
+        case ActionState.STOPPING:
+            return 'light-green';
         default:
             return 'grey'; // Default color for unknown states
     }
@@ -240,8 +246,6 @@ export function getTooltip(state: FileState) {
             return 'File is uploading';
         case FileState.CORRUPTED:
             return 'File is corrupted';
-        case FileState.MOVING:
-            return 'File is currently moving';
         case FileState.LOST:
             return 'File cannot be found in storage';
         case FileState.FOUND:
@@ -261,8 +265,6 @@ export function getIcon(state: FileState) {
             return 'sym_o_arrow_upload_progress';
         case FileState.CORRUPTED:
             return 'sym_o_sentiment_very_dissatisfied';
-        case FileState.MOVING:
-            return 'sym_o_move_up';
         case FileState.LOST:
             return 'sym_o_pulse_alert';
         case FileState.FOUND:
@@ -282,8 +284,6 @@ export function getColorFileState(state: FileState) {
             return 'warning';
         case FileState.CORRUPTED:
             return 'negative';
-        case FileState.MOVING:
-            return 'warning';
         case FileState.LOST:
             return 'negative';
         case FileState.FOUND:

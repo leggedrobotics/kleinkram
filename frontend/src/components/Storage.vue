@@ -29,6 +29,7 @@ import {
     formatGenericNumber,
     formatSize,
 } from 'src/services/generalFormatting';
+import { StorageResponse } from 'src/types/storage';
 
 use([
     TitleComponent,
