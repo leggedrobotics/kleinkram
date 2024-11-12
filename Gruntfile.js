@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const toml = require('@iarna/toml');
+const ini = require('ini');
 
 module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-bump');
@@ -11,17 +11,17 @@ module.exports = function (grunt) {
                 commit: false,
                 push: false,
                 createTag: false,
-                taskList: ['pyproject'],
+                taskList: ['python-bump'],
             },
         },
     });
 
     grunt.registerTask(
-        'pyproject',
-        'Bump the version in pyproject.toml',
+        'python-bump',
+        'Bump the version in setup.cfg',
         function () {
             const opts = this.options({
-                file: 'CLI/pyproject.toml',
+                file: 'cli/setup.cfg',
             });
 
             const filePath = opts.file;
@@ -42,19 +42,19 @@ module.exports = function (grunt) {
 
             try {
                 const data = fs.readFileSync(filePath, 'utf8');
-                const parsed = toml.parse(data);
+                const parsed = ini.parse(data);
 
-                if (parsed.project && parsed.project.version) {
-                    parsed.project.version = version;
+                if (parsed.metadata && parsed.metadata.version) {
+                    parsed.metadata.version = version;
 
-                    const output = toml.stringify(parsed);
+                    const output = ini.stringify(parsed);
                     fs.writeFileSync(filePath, output, 'utf8');
                     grunt.log.writeln(
                         `Version bumped to ${version} in ${filePath}`,
                     );
                 } else {
                     grunt.fail.warn(
-                        'No [project] section or version found in pyproject.toml',
+                        'No [metadata] section or version found in setup.cfg',
                     );
                 }
             } catch (err) {
@@ -69,7 +69,7 @@ module.exports = function (grunt) {
             target = 'patch'; // default to 'patch' if no target is specified
         }
         grunt.task.run(`bump:${target}`);
-        grunt.task.run('pyproject');
+        grunt.task.run('python-bump');
     });
 
     grunt.registerTask('validateVersions', function () {
@@ -93,18 +93,18 @@ module.exports = function (grunt) {
         });
 
         // check if pyproject.toml has the same version
-        const filePath = 'CLI/pyproject.toml';
+        const filePath = 'cli/setup.cfg';
         if (!fs.existsSync(filePath)) {
             grunt.fail.warn(`File not found: ${filePath}`);
             return;
         }
         const data = fs.readFileSync(filePath, 'utf8');
-        const parsed = toml.parse(data);
+        const parsed = ini.parse(data);
 
-        if (parsed.project && parsed.project.version) {
-            if (parsed.project.version !== version) {
+        if (parsed.metadata && parsed.metadata.version) {
+            if (parsed.metadata.version !== version) {
                 grunt.fail.warn(
-                    `Version mismatch: ${filePath} has version ${parsed.project.version} instead of ${version}`,
+                    `Version mismatch: ${filePath} has version ${parsed.metadata.version} instead of ${version}`,
                 );
             } else {
                 console.log(`Version in ${filePath} matches ${version}`);
