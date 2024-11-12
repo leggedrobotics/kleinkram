@@ -42,21 +42,30 @@ module.exports = function (grunt) {
 
             try {
                 const data = fs.readFileSync(filePath, 'utf8');
-                const parsed = ini.parse(data);
 
-                if (parsed.metadata && parsed.metadata.version) {
-                    parsed.metadata.version = version;
+                // the ini/npm parser doesnt support multiline values, which is required for setup.cfg
+                // Split the data into lines
+                const lines = data.split(/\r?\n/);
 
-                    const output = ini.stringify(parsed);
-                    fs.writeFileSync(filePath, output, 'utf8');
-                    grunt.log.writeln(
-                        `Version bumped to ${version} in ${filePath}`,
-                    );
-                } else {
-                    grunt.fail.warn(
-                        'No [metadata] section or version found in setup.cfg',
-                    );
+                // Find and return the first line that starts with "version"
+                const versionLine = lines.find(line => line.trim().toLowerCase().startsWith('version'));
+
+                if (!versionLine) {
+                    grunt.fail.warn('No version found in setup.cfg');
+                    return;
                 }
+
+                // Replace the version in the line
+                const newVersionLine = versionLine.replace(/=.*$/, `= ${version}`);
+
+                // Replace the old version line with the new one
+                const newData = data.replace(versionLine, newVersionLine);
+
+                // Write the new data back to the file
+                fs.writeFileSync(filePath, newData, 'utf8');
+                grunt.log.writeln(
+                    `Version bumped to ${version} in ${filePath}`,
+                );
             } catch (err) {
                 grunt.fail.warn(`Error processing file: ${err.message}`);
             }
@@ -99,20 +108,24 @@ module.exports = function (grunt) {
             return;
         }
         const data = fs.readFileSync(filePath, 'utf8');
-        const parsed = ini.parse(data);
 
-        if (parsed.metadata && parsed.metadata.version) {
-            if (parsed.metadata.version !== version) {
-                grunt.fail.warn(
-                    `Version mismatch: ${filePath} has version ${parsed.metadata.version} instead of ${version}`,
-                );
-            } else {
-                console.log(`Version in ${filePath} matches ${version}`);
-            }
+        // the ini/npm parser doesnt support multiline values, which is required for setup.cfg
+        // Split the data into lines
+        const lines = data.split(/\r?\n/);
+
+        // Find and return the first line that starts with "version"
+        const versionLine = lines.find(line => line.trim().toLowerCase().startsWith('version'));
+
+        if (!versionLine) {
+            grunt.fail.warn('No version found in setup.cfg');
+            return;
+        }
+
+        cfg_version = versionLine.split('=')[1].trim();
+        if (cfg_version !== version) {
+            grunt.fail.warn(`Version mismatch: ${filePath} has version ${cfg_version} instead of ${version}`);
         } else {
-            grunt.fail.warn(
-                'No [project] section or version found in pyproject.toml',
-            );
+            console.log(`Version in ${filePath} matches ${version}`);
         }
     });
 };
