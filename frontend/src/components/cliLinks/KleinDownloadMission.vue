@@ -5,28 +5,21 @@
         </p>
         <div class="button-border">
             <div class="q-ml-sm row items-center no-wrap">
-                <div
-                    class="text-truncate"
-                    style="
+                <div class="text-truncate" style="
                         flex: 1 1 auto;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         font-size: smaller;
-                    "
-                >
+                    ">
                     klein mission download
                     <span style="opacity: 0.8">
                         --mission-uuid="{{ props.mission.uuid }}"
                         --local-path="." --pattern "*.bag" --pattern="*.bag"
                     </span>
                 </div>
-                <q-btn
-                    icon="sym_o_content_copy"
-                    flat
-                    style="padding: 3px; color: #0f62fe; rotate: 180deg"
-                    @click.stop="clicked"
-                />
+                <q-btn icon="sym_o_content_copy" flat style="padding: 3px; color: #0f62fe; rotate: 180deg"
+                    @click.stop="clicked" />
             </div>
         </div>
     </div>
@@ -39,7 +32,7 @@ const props = defineProps<{
 }>();
 
 function clicked() {
-    const text = `klein mission download --mission-uuid="${props.mission.uuid}" --local-path="." --pattern="*.bag"`;
+    const text = `klein download --dest=. -m=${props.mission.uuid}`;
     navigator.clipboard.writeText(text);
 }
 </script>

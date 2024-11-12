@@ -2,28 +2,21 @@
     <div style="width: 100%">
         <div class="button-border">
             <div class="q-ml-sm row items-center no-wrap">
-                <div
-                    class="text-truncate"
-                    style="
+                <div class="text-truncate" style="
                         flex: 1 1 auto;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         font-size: smaller;
                         color: white;
-                    "
-                >
+                    ">
                     klein file download
                     <span style="opacity: 0.8">
                         {{ fileArguments }} --local-path="."
                     </span>
                 </div>
-                <q-btn
-                    icon="sym_o_content_copy"
-                    flat
-                    style="padding: 3px; color: white; rotate: 180deg"
-                    @click.stop="clicked"
-                />
+                <q-btn icon="sym_o_content_copy" flat style="padding: 3px; color: white; rotate: 180deg"
+                    @click.stop="clicked" />
             </div>
         </div>
     </div>
@@ -39,13 +32,13 @@ const props = defineProps<{
 const fileArguments = computed(() => {
     return props.files
         .map((file) => {
-            return `--file-uuid="${file.uuid}"`;
+            return `${file.uuid}`;
         })
         .join(' ');
 });
 
 function clicked() {
-    const text = `klein file download ${fileArguments.value} --local-path="."`;
+    const text = `klein download --dest=. ${fileArguments.value};
     navigator.clipboard.writeText(text);
 }
 </script>

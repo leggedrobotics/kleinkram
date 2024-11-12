@@ -2,25 +2,18 @@
     <div class="q-pa-sm">
         <div class="button-border">
             <div class="q-ml-sm row items-center no-wrap">
-                <div
-                    class="text-truncate"
-                    style="
+                <div class="text-truncate" style="
                         flex: 1 1 auto;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         color: white;
-                    "
-                >
+                    ">
                     klein mission download
                     <span style="opacity: 0.8"> {{ params }} </span>
                 </div>
-                <q-btn
-                    icon="sym_o_content_copy"
-                    flat
-                    style="padding: 3px; color: white; rotate: 180deg"
-                    @click.stop="clicked"
-                />
+                <q-btn icon="sym_o_content_copy" flat style="padding: 3px; color: white; rotate: 180deg"
+                    @click.stop="clicked" />
             </div>
         </div>
     </div>
@@ -36,14 +29,13 @@ const props = defineProps<{
 const params = computed(() => {
     return (
         props.missions
-            .map((mission) => mission.uuid)
-            .map((uuid) => `--mission-uuid="${uuid}"`)
-            .join(' ') + ' --local-path="."'
+            .map((mission) => `${mission.uuid}`)
+            .join(' ')
     );
 });
 
 function clicked() {
-    const text = `klein mission download ${params.value}`;
+    const text = `echo ${params.value} | xargs -n 1 klein download --dest=.`;
     navigator.clipboard.writeText(text);
 }
 </script>
