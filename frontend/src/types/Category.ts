@@ -23,9 +23,10 @@ export class Category extends BaseEntity {
 
     static fromAPIResponse(response: any): Category {
         const project = Project.fromAPIResponse(response.project);
-        const files = response.files.map((file: any) =>
-            FileEntity.fromAPIResponse(file),
-        );
+        const files =
+            response.files?.map((file: any) =>
+                FileEntity.fromAPIResponse(file),
+            ) || [];
         return new Category(
             response.uuid,
             new Date(response.createdAt),
