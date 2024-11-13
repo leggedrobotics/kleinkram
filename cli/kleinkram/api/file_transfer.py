@@ -50,11 +50,12 @@ class FileUploadJob(NamedTuple):
 
 
 def _get_s3_endpoint() -> str:
-    if get_env() == Environment.LOCAL:
+    config = Config()
+    endpoint = config.endpoint
+
+    if "localhost" in endpoint:
         return LOCAL_S3
     else:
-        config = Config()
-        endpoint = config.endpoint
         return endpoint.replace("api", "minio")
 
 
