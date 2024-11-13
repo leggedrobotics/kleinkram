@@ -22,7 +22,7 @@ export class ProjectService {
     constructor(
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
-        private userservice: UserService,
+        private userService: UserService,
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
         @InjectRepository(TagType)
@@ -264,7 +264,7 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const accessGroupUsersDefault = creator.accessGroupUsers.filter(
             (accessGroupUser) =>
                 accessGroupUser.accessGroup.personal ||
@@ -489,7 +489,7 @@ export class ProjectService {
     }
 
     async getDefaultRights(auth: AuthRes) {
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const rights = creator.accessGroupUsers
             .map((agu) => agu.accessGroup)
             .filter(
@@ -504,7 +504,7 @@ export class ProjectService {
                     _rights = this.config.access_groups.find(
                         (group) => group.uuid === right.uuid,
                     ).rights;
-                    memberCount = await this.userservice.getMemberCount(
+                    memberCount = await this.userService.getMemberCount(
                         right.uuid,
                     );
                 } else if (right.personal) {
