@@ -57,7 +57,7 @@ export class Tag extends BaseEntity {
             response.BOOLEAN,
             response.DATE ? new Date(response.DATE) : undefined,
             response.LOCATION,
-            TagType.fromAPIResponse(response.type),
+            TagType.fromAPIResponse(response.tagType),
             new Date(response.createdAt),
             new Date(response.updatedAt),
         );
