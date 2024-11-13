@@ -175,7 +175,7 @@ def cli(
         raise
     except Exception:
         console = Console()
-        console.print("failed to check version compatibility", style="orange")
+        console.print("failed to check version compatibility", style="yellow")
 
     shared_state = get_shared_state()
     shared_state.verbose = verbose
