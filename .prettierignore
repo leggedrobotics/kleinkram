@@ -9,3 +9,5 @@
 **/.vscode
 **/.vitepress
 **/__generated__endpoints.json
+**/.mypy_cache
+**/cli

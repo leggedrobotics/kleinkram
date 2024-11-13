@@ -5,21 +5,27 @@
         </p>
         <div class="button-border">
             <div class="q-ml-sm row items-center no-wrap">
-                <div class="text-truncate" style="
+                <div
+                    class="text-truncate"
+                    style="
                         flex: 1 1 auto;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         font-size: smaller;
-                    ">
-                    klein mission download
+                    "
+                >
+                    klein download
                     <span style="opacity: 0.8">
-                        --mission-uuid="{{ props.mission.uuid }}"
-                        --local-path="." --pattern "*.bag" --pattern="*.bag"
+                        --dest=. -m={{ props.mission.uuid }}
                     </span>
                 </div>
-                <q-btn icon="sym_o_content_copy" flat style="padding: 3px; color: #0f62fe; rotate: 180deg"
-                    @click.stop="clicked" />
+                <q-btn
+                    icon="sym_o_content_copy"
+                    flat
+                    style="padding: 3px; color: #0f62fe; rotate: 180deg"
+                    @click.stop="clicked"
+                />
             </div>
         </div>
     </div>

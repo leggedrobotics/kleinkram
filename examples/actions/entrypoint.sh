@@ -18,7 +18,7 @@ klein --version
 
 # TODO... this Endpoint needs to be fixed
 klein list files -m $MISSION_UUID
-klein mission download -m $MISSION_UUID --dest /out
+klein download -m $MISSION_UUID --dest /out
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"

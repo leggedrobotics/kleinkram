@@ -48,7 +48,9 @@ module.exports = function (grunt) {
                 const lines = data.split(/\r?\n/);
 
                 // Find and return the first line that starts with "version"
-                const versionLine = lines.find(line => line.trim().toLowerCase().startsWith('version'));
+                const versionLine = lines.find((line) =>
+                    line.trim().toLowerCase().startsWith('version'),
+                );
 
                 if (!versionLine) {
                     grunt.fail.warn('No version found in setup.cfg');
@@ -56,7 +58,10 @@ module.exports = function (grunt) {
                 }
 
                 // Replace the version in the line
-                const newVersionLine = versionLine.replace(/=.*$/, `= ${version}`);
+                const newVersionLine = versionLine.replace(
+                    /=.*$/,
+                    `= ${version}`,
+                );
 
                 // Replace the old version line with the new one
                 const newData = data.replace(versionLine, newVersionLine);
@@ -114,7 +119,9 @@ module.exports = function (grunt) {
         const lines = data.split(/\r?\n/);
 
         // Find and return the first line that starts with "version"
-        const versionLine = lines.find(line => line.trim().toLowerCase().startsWith('version'));
+        const versionLine = lines.find((line) =>
+            line.trim().toLowerCase().startsWith('version'),
+        );
 
         if (!versionLine) {
             grunt.fail.warn('No version found in setup.cfg');
@@ -123,7 +130,9 @@ module.exports = function (grunt) {
 
         cfg_version = versionLine.split('=')[1].trim();
         if (cfg_version !== version) {
-            grunt.fail.warn(`Version mismatch: ${filePath} has version ${cfg_version} instead of ${version}`);
+            grunt.fail.warn(
+                `Version mismatch: ${filePath} has version ${cfg_version} instead of ${version}`,
+            );
         } else {
             console.log(`Version in ${filePath} matches ${version}`);
         }
