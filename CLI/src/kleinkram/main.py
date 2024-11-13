@@ -164,7 +164,7 @@ def upload(
             "'some-name.mcap' file will be deleted."
         ),
     ] = False,
-        ignore_tags: Annotated[
+    ignore_tags: Annotated[
         bool,
         typer.Option(help="Ignore required tags for the mission."),
     ] = False,
@@ -237,8 +237,6 @@ def upload(
             "Access Denied",
         )
 
-
-
     ##############################
     # Check if mission exists
     ##############################
@@ -247,7 +245,10 @@ def upload(
         mission_response = client.get(get_mission_url, params={"uuid": mission})
     else:
         get_mission_url = "/mission/byName"
-        mission_response = client.get(get_mission_url, params={"name": mission, "projectUUID": project_json["uuid"]})
+        mission_response = client.get(
+            get_mission_url,
+            params={"name": mission, "projectUUID": project_json["uuid"]},
+        )
 
     if mission_response.status_code >= 400:
         if not create_mission:
@@ -266,7 +267,11 @@ def upload(
             required_tags = (
                 project_json["requiredTags"] if "requiredTags" in project_json else []
             )
-            missing_tags = [tag_key for tag_key in required_tags if (tag_key["uuid"] not in tags_dict)]
+            missing_tags = [
+                tag_key
+                for tag_key in required_tags
+                if (tag_key["uuid"] not in tags_dict)
+            ]
             if not ignore_tags:
                 if missing_tags and not ignore_tags:
                     promptForTags(tags_dict, required_tags)
