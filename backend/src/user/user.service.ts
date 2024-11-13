@@ -37,6 +37,9 @@ export class UserService implements OnModuleInit {
                 'accessGroupUsers.accessGroup',
                 'account',
             ],
+            // here we need to explicitly select the fields we want to return
+            // as role and email are not selected by default
+            select: ['uuid', 'name', 'email', 'role'],
         });
     }
 
@@ -153,6 +156,7 @@ export class UserService implements OnModuleInit {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
+            select: ['uuid', 'name', 'role'],
         });
         const apiKey = await this.apikeyRepository.findOneOrFail({
             where: { apikey },

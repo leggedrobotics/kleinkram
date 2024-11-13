@@ -93,5 +93,7 @@ export const getJwtToken = async (user: User) => {
 
 export const getUserFromDb = async (uuid: string) => {
     const userRepository = db.getRepository(User);
-    return await userRepository.findOneOrFail({ where: { uuid: uuid } });
+    return await userRepository.findOneOrFail({
+        where: { uuid: uuid },
+    });
 };

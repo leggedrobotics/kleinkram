@@ -7,6 +7,7 @@ import {
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
 } from '../utils';
+import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
 
 /**
  * This test suite tests the access control of the application.
@@ -43,19 +44,22 @@ describe('Verify Access Groups', () => {
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['accessGroups'],
+            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            select: ['uuid', 'email'],
         });
         expect(user.email).toBe(mockEmail);
 
         // check if the user with a non default email is not added to the default group
-        user.accessGroups.forEach((accessGroup: AccessGroup) => {
-            expect(DEFAULT_GROUP_UUIDS.includes(accessGroup.uuid)).toBe(false);
+        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
+            expect(
+                DEFAULT_GROUP_UUIDS.includes(accessGroup.accessGroup.uuid),
+            ).toBe(false);
         });
 
         // user is only part of the personal group
-        expect(user.accessGroups.length).toBe(1);
-        user.accessGroups.forEach((accessGroup: AccessGroup) => {
-            expect(accessGroup.personal).toBe(true);
+        expect(user.accessGroupUsers.length).toBe(1);
+        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
+            expect(accessGroup.accessGroup.personal).toBe(true);
         });
     });
 
@@ -81,7 +85,7 @@ describe('Verify Access Groups', () => {
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: internalUuid },
-            relations: ['accessGroups'],
+            select: ['email'],
         });
 
         expect(user.email).toBe('internal-user@leggedrobotics.com');

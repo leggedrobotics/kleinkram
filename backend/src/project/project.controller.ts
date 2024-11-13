@@ -33,6 +33,8 @@ import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
 import { ApiOperation } from '@nestjs/swagger';
+import User from '@common/entities/user/user.entity';
+import logger from '../logger';
 
 @Controller('project')
 export class ProjectController {
@@ -47,7 +49,7 @@ export class ProjectController {
     })
     async allProjects(
         @addUser()
-        user: AuthRes,
+        authRes: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy?: string,
@@ -56,7 +58,7 @@ export class ProjectController {
         searchParams?: Map<string, string>,
     ) {
         return this.projectService.findAll(
-            user,
+            authRes.user,
             skip,
             take,
             sortBy,

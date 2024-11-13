@@ -44,7 +44,9 @@ describe('Test Suite Utils', () => {
         await mockDbUser('test-01@leggedrobotics.com');
 
         const userRepository = db.getRepository(User);
-        const users = await userRepository.find();
+        const users = await userRepository.find({
+            select: ['email', 'uuid'],
+        });
         expect(users.length).toBe(1);
         expect(users[0].email).toBe('test-01@leggedrobotics.com');
 
