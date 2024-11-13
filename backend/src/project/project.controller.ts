@@ -33,8 +33,6 @@ import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/enum';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
 import { ApiOperation } from '@nestjs/swagger';
-import User from '@common/entities/user/user.entity';
-import logger from '../logger';
 
 @Controller('project')
 export class ProjectController {
