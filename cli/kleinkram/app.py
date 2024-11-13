@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from enum import Enum
+from typing import Any
+from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
 
 import typer
 from click import Context
@@ -24,6 +29,7 @@ from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import get_supported_api_version
 from rich.console import Console
 from typer.core import TyperGroup
+
 
 CLI_HELP = """\
 Kleinkram CLI
@@ -47,12 +53,57 @@ class OrderCommands(TyperGroup):
         return list(self.commands)
 
 
-app = typer.Typer(
+ExceptionHandler = Callable[[Exception], int]
+
+
+class ErrorHandledTyper(typer.Typer):
+    """\
+    error handlers that are last added will be used first
+    """
+
+    _error_handlers: OrderedDict[Type[Exception], ExceptionHandler]
+
+    def error_handler(
+        self, exc: type[Exception]
+    ) -> Callable[[ExceptionHandler], ExceptionHandler]:
+        def dec(func: ExceptionHandler) -> ExceptionHandler:
+            self._error_handlers[exc] = func
+            return func
+
+        return dec
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._error_handlers = OrderedDict()
+
+    def __call__(self, *args: Any, **kwargs: Any) -> int:
+        try:
+            return super().__call__(*args, **kwargs)
+        except Exception as e:
+            for tp, handler in reversed(self._error_handlers.items()):
+                if isinstance(e, tp):
+                    exit_code = handler(e)
+                    raise SystemExit(exit_code)
+            raise
+
+
+app = ErrorHandledTyper(
     cls=OrderCommands,
     help=CLI_HELP,
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
 )
+
+
+@app.error_handler(Exception)
+def base_handler(exc: Exception) -> int:
+    if not get_shared_state().debug:
+        console = Console()
+        console.print(f"{type(exc).__name__}: {exc}", style="red")
+        return 1
+
+    raise exc
+
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
@@ -117,7 +168,14 @@ def cli(
     ),
 ):
     _ = version  # suppress unused variable warning
-    check_version_compatiblity()
+
+    try:
+        check_version_compatiblity()
+    except InvalidCLIVersion:
+        raise
+    except Exception:
+        console = Console()
+        console.print("failed to check version compatibility", style="orange")
 
     shared_state = get_shared_state()
     shared_state.verbose = verbose

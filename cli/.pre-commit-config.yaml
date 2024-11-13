@@ -1,25 +1,30 @@
 files: ^cli/
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: check-docstring-first
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: requirements-txt-fixer
-      - id: trailing-whitespace
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: [--config, cli/setup.cfg]
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.13.0
-    hooks:
-      - id: reorder-python-imports
-        args: [--py37-plus, --add-import, "from __future__ import annotations"]
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-        language_version: python3.8
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.6.0
+      hooks:
+          - id: check-docstring-first
+          - id: check-yaml
+          - id: end-of-file-fixer
+          - id: requirements-txt-fixer
+          - id: trailing-whitespace
+    - repo: https://github.com/PyCQA/flake8
+      rev: 7.0.0
+      hooks:
+          - id: flake8
+            args: [--config, cli/setup.cfg]
+    - repo: https://github.com/asottile/reorder-python-imports
+      rev: v3.13.0
+      hooks:
+          - id: reorder-python-imports
+            args:
+                [
+                    --py37-plus,
+                    --add-import,
+                    'from __future__ import annotations',
+                ]
+    - repo: https://github.com/psf/black
+      rev: 24.4.2
+      hooks:
+          - id: black
+            language_version: python3.8
