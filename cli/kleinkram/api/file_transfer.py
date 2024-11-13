@@ -272,7 +272,9 @@ def upload_files(
     total_size = 0
     for f in futures:
         try:
-            size, path = f.result() / 1e6
+            size, path = f.result()
+            size = size / 1024 / 1024  # convert to MB
+
             if not verbose and size > 0:
                 print(path.absolte())
 
@@ -320,4 +322,4 @@ def download_file(
     observed_hash = b64_md5(file_path)
 
     if observed_hash != hash:
-        raise CorruptedFile
+        raise CorruptedFile("file hash does not match")

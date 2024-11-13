@@ -81,4 +81,4 @@ def download(
             else:
                 print(f"{file.name} already exists in dest, but has different hash!")
         except Exception as e:
-            print(f"Error downloading file {file.name}: {e}")
+            print(f"Error downloading file {file.name}: {repr(e)}")
