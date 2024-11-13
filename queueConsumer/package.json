@@ -29,7 +29,7 @@
         "@opentelemetry/sdk-node": "^0.54.2",
         "@opentelemetry/sdk-trace-base": "^1.27.0",
         "@types/multer": "^1.4.12",
-        "bull": "^4.12.2",
+        "bull": "^4.16.4",
         "dockerode": "^4.0.2",
         "googleapis": "^144.0.0",
         "minio": "^8.0.1",
