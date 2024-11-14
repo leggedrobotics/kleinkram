@@ -10,9 +10,9 @@ import typer
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.config import get_shared_state
-from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import MissionDoesNotExist
 from kleinkram.utils import b64_md5
+from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import to_name_or_uuid
@@ -67,15 +67,7 @@ def verify(
 
     # check file types
     file_paths = [Path(file) for file in files]
-    for f in file_paths:
-        if f.is_dir():
-            raise FileNotFoundError(f"{f} is a directory and not a file")
-        if not f.exists():
-            raise FileNotFoundError(f"{f} does not exist")
-        if f.suffix not in (".bag", ".mcap"):
-            raise FileTypeNotSupported(
-                f"only `.bag` or `.mcap` files are supported: {f}"
-            )
+    check_file_paths(file_paths)
 
     filename_map = get_filename_map(file_paths)
     remote_files = {file.name: file.hash for file in mission_parsed.files}
