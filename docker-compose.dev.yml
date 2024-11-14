@@ -182,6 +182,8 @@ services:
         build:
             context: docs/.
             dockerfile: Dockerfile
+            args:
+                - MODE=staging
 
     artifact-uploader:
         image: rslethz/kleinkram:artifact-uploader-dev

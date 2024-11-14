@@ -143,6 +143,11 @@ export class ProjectController {
 
     @Get('getDefaultRights')
     @LoggedIn()
+    @ApiOperation({
+        summary: 'Get default rights',
+        description: `Get the default rights for a project, the default rights 
+        are the rights that should be assigned to a new project upon creation`,
+    })
     async getDefaultRights(
         @addUser() user: AuthRes,
     ): Promise<{ name: string; uuid: string; rights: AccessGroupRights }[]> {

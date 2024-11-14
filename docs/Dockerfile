@@ -1,3 +1,5 @@
+ARG MODE=production
+
 # Build Stage
 FROM node:18.14-alpine3.17 AS builder
 
@@ -9,7 +11,9 @@ RUN yarn install
 
 # Build the docs
 COPY . ./
-RUN yarn run docs:build
+
+# run docs:build:staging or docs:build depending on the MODE
+RUN yarn run docs:build:${MODE}
 
 
 FROM nginx:1.23.2-alpine

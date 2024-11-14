@@ -3,7 +3,9 @@
     "version": "0.37.0",
     "target": "es2022",
     "scripts": {
-        "docs:dev": "vitepress dev --port 4000 --host 0.0.0.0",
+        "docs:dev": "vitepress dev --port 4000 --host 0.0.0.0 --mode development",
+        "docs:build:staging": "vitepress build --mode staging",
+        "docs:build:production": "vitepress build --mode production",
         "docs:build": "vitepress build",
         "docs:serve": "vitepress build && vitepress serve --port 4000"
     },
