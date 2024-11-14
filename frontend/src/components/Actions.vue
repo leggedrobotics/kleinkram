@@ -87,8 +87,8 @@
 </template>
 
 <script setup lang="ts">
-import { Notify, QTable } from 'quasar';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { QTable } from 'quasar';
+import { useQuery } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
@@ -99,11 +99,6 @@ import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
-import axios from 'axios';
-import {
-    createActionTemplate,
-    deleteAction,
-} from 'src/services/mutations/action';
 import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 
 const router = useRouter();

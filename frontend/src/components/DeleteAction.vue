@@ -43,17 +43,6 @@ async function deleteActionAction() {
                     timeout: 2000,
                     position: 'bottom',
                 });
-
-                // // Redirect to missions page if we are on the file page
-                // if (route.name === ROUTES.FILE.routeName) {
-                //     router.push({
-                //         name: ROUTES.FILES.routeName,
-                //         params: {
-                //             project_uuid: route.params.project_uuid,
-                //             mission_uuid: route.params.mission_uuid,
-                //         },
-                //     });
-                // }
             })
             .catch((e) => {
                 Notify.create({
