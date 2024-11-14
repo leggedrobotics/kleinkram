@@ -19,11 +19,23 @@ from uuid import UUID
 
 import yaml
 from kleinkram._version import __version__
+from kleinkram.errors import FileTypeNotSupported
 from rich.console import Console
-from rich.text import Text
 
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
+
+
+def check_file_paths(files: List[Path]) -> None:
+    for file in files:
+        if file.is_dir():
+            raise FileNotFoundError(f"{file} is a directory and not a file")
+        if not file.exists():
+            raise FileNotFoundError(f"{file} does not exist")
+        if file.suffix not in (".bag", ".mcap"):
+            raise FileTypeNotSupported(
+                f"only `.bag` or `.mcap` files are supported: {file}"
+            )
 
 
 def raw_rich(*objects: Any) -> str:

@@ -14,8 +14,8 @@ from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.api.routes import get_tags_map
 from kleinkram.config import get_shared_state
-from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import MissionDoesNotExist
+from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
@@ -94,13 +94,7 @@ def upload(
 
     # upload files
     file_paths = [Path(file) for file in files]
-    for f in file_paths:
-        if f.is_dir():
-            raise FileNotFoundError(f"{f} is a directory and not a file")
-        if f.suffix not in (".bag", ".mcap"):
-            raise FileTypeNotSupported(
-                f"only `.bag` or `.mcap` files are supported: {f}"
-            )
+    check_file_paths(file_paths)
 
     files_map = get_filename_map(
         [Path(file) for file in files], raise_on_change=not fix_filenames

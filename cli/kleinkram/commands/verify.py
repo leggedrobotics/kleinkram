@@ -70,10 +70,13 @@ def verify(
     for f in file_paths:
         if f.is_dir():
             raise FileNotFoundError(f"{f} is a directory and not a file")
+        if not f.exists():
+            raise FileNotFoundError(f"{f} does not exist")
         if f.suffix not in (".bag", ".mcap"):
             raise FileTypeNotSupported(
                 f"only `.bag` or `.mcap` files are supported: {f}"
             )
+
     filename_map = get_filename_map(file_paths)
     remote_files = {file.name: file.hash for file in mission_parsed.files}
 
