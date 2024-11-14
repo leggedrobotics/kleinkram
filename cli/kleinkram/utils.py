@@ -20,6 +20,8 @@ from uuid import UUID
 import yaml
 from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.errors import InvalidFileSpec
+from kleinkram.errors import InvalidMissionSpec
 from rich.console import Console
 
 
@@ -77,9 +79,6 @@ def is_valid_uuid4(uuid: str) -> bool:
 def is_valid_name(name: str) -> bool:
     # TODO: this is a placeholder
     return not is_valid_uuid4(name)
-
-
-class InvalidFilename(Exception): ...
 
 
 def get_filename(path: Path) -> str:
@@ -159,12 +158,6 @@ class FilesById(NamedTuple):
 class FilesByMission(NamedTuple):
     mission: MissionById | MissionByName
     files: List[Union[str, UUID]]
-
-
-class InvalidMissionSpec(Exception): ...
-
-
-class InvalidFileSpec(Exception): ...
 
 
 def get_valid_mission_spec(

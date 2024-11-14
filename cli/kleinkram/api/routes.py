@@ -13,7 +13,7 @@ import httpx
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.errors import MissionDoesNotExist
-from kleinkram.errors import MissionExistsError
+from kleinkram.errors import MissionExists
 from kleinkram.errors import NoPermission
 from kleinkram.models import DataType
 from kleinkram.models import File
@@ -211,7 +211,7 @@ def create_mission(
     """
 
     if get_mission_id_by_name(client, mission_name, project_id) is not None:
-        raise MissionExistsError(f"Mission with name: `{mission_name}` already exists")
+        raise MissionExists(f"Mission with name: `{mission_name}` already exists")
 
     if is_valid_uuid4(mission_name):
         raise ValueError(

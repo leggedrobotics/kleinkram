@@ -19,7 +19,7 @@ from kleinkram.config import Config
 from kleinkram.config import LOCAL_S3
 from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
-from kleinkram.errors import FailedUpload
+from kleinkram.errors import UploadFailed
 from kleinkram.utils import b64_md5
 from kleinkram.utils import raw_rich
 from rich.text import Text
@@ -293,7 +293,7 @@ def upload_files(
     print(f"average speed: {total_size / time:.2f} MB/s", file=sys.stderr)
 
     if errors:
-        raise FailedUpload(f"got unhandled errors: {errors} when uploading files")
+        raise UploadFailed(f"got unhandled errors: {errors} when uploading files")
 
 
 def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:

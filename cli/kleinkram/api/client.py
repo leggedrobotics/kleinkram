@@ -3,21 +3,13 @@ from __future__ import annotations
 import httpx
 from kleinkram.auth import Config
 from kleinkram.config import Credentials
+from kleinkram.errors import LOGIN_MESSAGE
+from kleinkram.errors import NotAuthenticatedException
 
 
 COOKIE_AUTH_TOKEN = "authtoken"
 COOKIE_REFRESH_TOKEN = "refreshtoken"
 COOKIE_CLI_KEY = "clikey"
-
-LOGIN_MESSAGE = "Please login using `klein login`."
-
-
-class NotAuthenticatedException(Exception):
-    def __init__(self, endpoint: str):
-        message = (
-            f"You are not authenticated on endpoint '{endpoint}'.\n{LOGIN_MESSAGE}"
-        )
-        super().__init__(message)
 
 
 class AuthenticatedClient(httpx.Client):

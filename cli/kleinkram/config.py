@@ -9,15 +9,13 @@ from pathlib import Path
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
-from typing import Tuple
 
 from kleinkram._version import __local__
 from kleinkram._version import __version__
+from kleinkram.errors import CorruptedConfigFile
+from kleinkram.errors import InvalidConfigFile
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
-CORRUPTED_CONFIG_FILE_MESSAGE = (
-    "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
-)
 
 
 class Environment(Enum):
@@ -56,16 +54,6 @@ class Credentials(NamedTuple):
 
 JSON_ENDPOINT_KEY = "endpoint"
 JSON_CREDENTIALS_KEY = "credentials"
-
-
-class InvalidConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__("Invalid config file.")
-
-
-class CorruptedConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__(CORRUPTED_CONFIG_FILE_MESSAGE)
 
 
 class Config:
