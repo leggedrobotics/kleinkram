@@ -19,6 +19,7 @@
                 <slot name="tabs"></slot>
             </div>
         </div>
+        <div style="height: 14px" v-else />
     </div>
 
     <q-separator style="margin: 0 -24px; padding: 0 24px" />
