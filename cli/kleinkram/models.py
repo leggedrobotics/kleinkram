@@ -94,6 +94,9 @@ def missions_to_table(missions: List[Mission]) -> Table:
         missions_tp.append((mission.project_name, mission.name, str(mission.id)))
     missions_tp.sort()
 
+    if not missions_tp:
+        return table
+
     # this is used to place table delimiters
     # somehow this is not supported out of the box by rich
     pmax = max(len(x[0]) for x in missions_tp)
@@ -114,7 +117,7 @@ def missions_to_table(missions: List[Mission]) -> Table:
 def files_to_table(
     files: List[File], *, title: str = "files", delimiters: bool = True
 ) -> Table:
-    table = Table(title="files")
+    table = Table(title=title)
     table.add_column("project")
     table.add_column("mission")
     table.add_column("name")
@@ -125,6 +128,9 @@ def files_to_table(
     for file in files:
         files_tp.append((file.project_name, file.mission_name, file.name, str(file.id)))
     files_tp.sort()
+
+    if not files_tp:
+        return table
 
     # this is used to place table delimiters
     # somehow this is not supported out of the box by rich
