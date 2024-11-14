@@ -107,4 +107,4 @@ def upload(
     )
 
     state = get_shared_state()
-    upload_files(files_map, mission_parsed.id, n_workers=8, verbose=state.verbose)
+    upload_files(files_map, mission_parsed.id, n_workers=2, verbose=state.verbose)

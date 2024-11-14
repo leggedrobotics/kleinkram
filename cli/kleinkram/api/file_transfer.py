@@ -18,9 +18,6 @@ import httpx
 import tqdm
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
-from kleinkram.config import Environment
-from kleinkram.config import get_env
-from kleinkram.config import get_shared_state
 from kleinkram.config import LOCAL_S3
 from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
@@ -182,7 +179,7 @@ def _upload_file(
     client: AuthenticatedClient,
     job: FileUploadJob,
     hide_progress: bool = False,
-    progress: Optional[tqdm.tqdm] = None,
+    global_pbar: Optional[tqdm.tqdm] = None,
 ) -> Tuple[int, Path]:
     """\
     returns bytes uploaded
@@ -197,22 +194,22 @@ def _upload_file(
         disable=hide_progress,
     )
 
-    # get upload credentials for a single file
-    access = _get_upload_creditials(
-        client, internal_filenames=[job.name], mission_id=job.mission_id
-    )
-    # upload file
-    creds = access.get(job.name)
-
-    if creds is None:
-        pbar.write(f"file {job.name} already exists in mission")
+    # get creditials for the upload
+    try:
+        # get upload credentials for a single file
+        access = _get_upload_creditials(
+            client, internal_filenames=[job.name], mission_id=job.mission_id
+        )
+        # upload file
+        creds = access[job.name]
+    except Exception as e:
+        pbar.write(f"unable to get upload credentials for file {job.path.name}: {e}")
         pbar.close()
-
-        if progress is not None:
-            progress.update()
-
+        if global_pbar is not None:
+            global_pbar.update()
         return (0, job.path)
 
+    # do the upload
     try:
         _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
     except Exception as e:
@@ -221,7 +218,7 @@ def _upload_file(
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            pbar.write(f"error cancelling upload: {e}")
+            pbar.write(f"failed to cancel upload: {e}")
     else:
         # tell backend that upload is complete
         try:
@@ -230,9 +227,9 @@ def _upload_file(
         except Exception as e:
             pbar.write(f"error confirming upload: {e}")
     finally:
-        if progress is not None:
-            progress.write(f"uploaded {job.path.name}")
-            progress.update()
+        if global_pbar is not None:
+            global_pbar.write(f"uploaded {job.path.name}")
+            global_pbar.update()
 
         pbar.close()
         return (job.path.stat().st_size, job.path)
@@ -243,7 +240,7 @@ def upload_files(
     mission_id: UUID,
     *,
     verbose: bool = False,
-    n_workers: int = 8,
+    n_workers: int = 2,
 ) -> None:
     futures = []
 
@@ -264,8 +261,8 @@ def upload_files(
                 _upload_file,
                 client=client,
                 job=job,
-                progress=pbar,
                 hide_progress=not verbose,
+                global_pbar=pbar,
             )
             futures.append(future)
 
