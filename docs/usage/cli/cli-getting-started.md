@@ -42,7 +42,7 @@ klein login --headless
 
 :::
 
-## General Concepts
+## General Concepts (Mission Spec)
 
 Most commands are based on you specifying a `mission` which you want to interact with. There are multiple ways to specify a mission.
 
@@ -62,7 +62,7 @@ Is telling `mycommand` to do something to the mission `mymission` inside the pro
 You can use the command `upload` to upload files to a specified mission as follows:
 
 ```bash
-klein upload -p myproject -m mymission file1 file2 file3
+klein upload -p myproject -m mymission a.bag b.bag c.bag
 ```
 
 You can also use unix wild cards to specify file patters. Be aware that any file you specify has to have the file suffix `.bag` or `.mcap`.
@@ -71,7 +71,7 @@ You can also use unix wild cards to specify file patters. Be aware that any file
 If you wish to create a mission on upload you can use the flag `--create`. Importantly this will only create the mission if the specified project already exists. Furthermore, in this case you need to specify the mission by name.
 
 ```bash
-klein upload -p myproject -m mymission --create file1 file2 file3
+klein upload --create -p myproject -m mymission a.bag b.bag c.bag
 ```
 
 :::
@@ -91,7 +91,7 @@ where `dest` is the destination folder for the downloaded files. In case `dest` 
 If you wish to verify if you correctly uploaded files to a mission you can use the command
 
 ```bash
-klein verify -p myproject -m mymission file1 file2 file3
+klein verify -p myproject -m mymission a.bag b.bag c.bag
 ```
 
 It accepts similar commands to the `upload` command and check if all specified files were uploaded correctly. If you wish to skip file hash verification you can use the `--skip-hash` flag.
