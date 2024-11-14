@@ -3,3 +3,4 @@ flake8
 mypy
 pre-commit
 pytest
+types-boto3

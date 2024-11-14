@@ -13,9 +13,7 @@ from typing import Tuple
 from uuid import UUID
 
 import boto3.s3.transfer
-import botocore.config
 import httpx
-import tqdm
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.config import LOCAL_S3
@@ -23,6 +21,9 @@ from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
 from kleinkram.errors import FailedUpload
 from kleinkram.utils import b64_md5
+from kleinkram.utils import raw_rich
+from rich.text import Text
+from tqdm import tqdm
 
 UPLOAD_CREDS = "/file/temporaryAccess"
 UPLOAD_CONFIRM = "/queue/confirmUpload"
@@ -147,45 +148,44 @@ def _get_upload_creditials(
 
 def _s3_upload(
     local_path: Path,
+    *,
     endpoint: str,
     credentials: UploadCredentials,
-    progress: tqdm.tqdm,
-) -> None:
+    pbar: tqdm,
+) -> bool:
     # configure boto3
-    sess = boto3.Session(
-        aws_access_key_id=credentials.access_key,
-        aws_secret_access_key=credentials.secret_key,
-        aws_session_token=credentials.session_token,
-    )
-    boto_config = botocore.config.Config(
-        retries={"max_attempts": 10, "mode": "standard"}
-    )
-    transfer_config = boto3.s3.transfer.TransferConfig(
-        multipart_chunksize=10 * 1024 * 1024,
-        max_concurrency=5,
-    )
-
-    # upload file
-    s3_resource = sess.resource("s3", endpoint_url=endpoint, config=boto_config)
-    s3_resource.Bucket(credentials.bucket).upload_file(
-        local_path,
-        str(credentials.file_id),
-        Config=transfer_config,
-        Callback=progress.update,
-    )
+    try:
+        client = boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=credentials.access_key,
+            aws_secret_access_key=credentials.secret_key,
+            aws_session_token=credentials.session_token,
+        )
+        client.upload_file(
+            str(local_path),
+            credentials.bucket,
+            str(credentials.file_id),
+            Callback=pbar.update,
+        )
+    except Exception as e:
+        err = f"error uploading file: {local_path}: {type(e).__name__}"
+        pbar.write(raw_rich(Text(err, style="red")))
+        return False
+    return True
 
 
 def _upload_file(
     client: AuthenticatedClient,
     job: FileUploadJob,
     hide_progress: bool = False,
-    global_pbar: Optional[tqdm.tqdm] = None,
+    global_pbar: Optional[tqdm] = None,
 ) -> Tuple[int, Path]:
     """\
     returns bytes uploaded
     """
 
-    pbar = tqdm.tqdm(
+    pbar = tqdm(
         total=os.path.getsize(job.path),
         unit="B",
         unit_scale=True,
@@ -210,29 +210,34 @@ def _upload_file(
         return (0, job.path)
 
     # do the upload
-    try:
-        _s3_upload(job.path, _get_s3_endpoint(), creds, pbar)
-    except Exception as e:
-        pbar.write(f"error uploading file: {job.path}: {e}")
+    endpoint = _get_s3_endpoint()
+    success = _s3_upload(job.path, endpoint=endpoint, credentials=creds, pbar=pbar)
 
+    if not success:
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            pbar.write(f"failed to cancel upload: {e}")
+            msg = Text(f"failed to cancel upload: {type(e).__name__}", style="red")
+            pbar.write(raw_rich(msg))
     else:
         # tell backend that upload is complete
         try:
             local_hash = b64_md5(job.path)
             _confirm_file_upload(client, creds.file_id, local_hash)
-        except Exception as e:
-            pbar.write(f"error confirming upload: {e}")
-    finally:
-        if global_pbar is not None:
-            global_pbar.write(f"uploaded {job.path.name}")
-            global_pbar.update()
 
-        pbar.close()
-        return (job.path.stat().st_size, job.path)
+            if global_pbar is not None:
+                msg = Text(f"uploaded {job.path}", style="green")
+                global_pbar.write(raw_rich(msg))
+                global_pbar.update()
+
+        except Exception as e:
+            msg = Text(
+                f"error confirming upload {job.path}: {type(e).__name__}", style="red"
+            )
+            pbar.write(raw_rich(msg))
+
+    pbar.close()
+    return (job.path.stat().st_size, job.path)
 
 
 def upload_files(
@@ -244,7 +249,7 @@ def upload_files(
 ) -> None:
     futures = []
 
-    pbar = tqdm.tqdm(
+    pbar = tqdm(
         total=len(files_map),
         unit="files",
         desc="Uploading files",
@@ -297,7 +302,7 @@ def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> N
 
     with httpx.stream("GET", url) as response:
         with open(path, "wb") as f:
-            with tqdm.tqdm(
+            with tqdm(
                 total=size, desc=f"Downloading {path.name}", unit="B", unit_scale=True
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):

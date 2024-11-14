@@ -7,6 +7,7 @@ import os
 import string
 from hashlib import md5
 from pathlib import Path
+from typing import Any
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -18,9 +19,25 @@ from uuid import UUID
 
 import yaml
 from kleinkram._version import __version__
+from rich.console import Console
+from rich.text import Text
 
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
+
+
+def raw_rich(*objects: Any) -> str:
+    """\
+    accepts any object that Console.print can print
+    returns the raw string output
+    """
+
+    console = Console()
+
+    with console.capture() as capture:
+        console.print(*objects, end="")
+
+    return capture.get()
 
 
 def patterns_matched(patterns: List[str]) -> Generator[Path, None, None]:
