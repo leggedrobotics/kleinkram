@@ -38,7 +38,7 @@ const props = defineProps<{
 }>();
 
 function clicked() {
-    const text = `klein download --dest=. -m=${props.mission.uuid}`;
+    const text = `klein download --dest=. -m ${props.mission.uuid}`;
     navigator.clipboard.writeText(text);
 }
 </script>

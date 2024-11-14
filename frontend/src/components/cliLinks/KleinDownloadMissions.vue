@@ -41,7 +41,7 @@ const params = computed(() => {
 });
 
 function clicked() {
-    const text = `echo ${params.value} | xargs -n 1 klein download --dest=.`;
+    const text = `echo ${params.value} | xargs -n 1 klein download --dest=. -m`;
     navigator.clipboard.writeText(text);
 }
 </script>
