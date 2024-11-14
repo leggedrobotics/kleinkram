@@ -30,6 +30,7 @@ import {
     UserGuard,
     MoveFilesGuard,
     CreateActionGuard,
+    DeleteActionGuard,
 } from './roles.guard';
 
 // disable naming-convention rule for enum.ts
@@ -209,6 +210,13 @@ export function CanCreateActions() {
         UseGuards(CreateActionsGuard),
     );
 }
+export function CanDeleteAction() {
+    return applyDecorators(
+        SetMetadata('CanDeleteAction', true),
+        UseGuards(DeleteActionGuard),
+    );
+}
+
 export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),

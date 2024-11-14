@@ -65,15 +65,19 @@
                                 v-ripple
                                 @click="router.push('action/' + props.row.uuid)"
                             >
-                                <q-item-section>View Details </q-item-section>
+                                <q-item-section>View Details</q-item-section>
                             </q-item>
 
                             <q-item clickable v-ripple disabled>
-                                <q-item-section>Cancel Action </q-item-section>
+                                <q-item-section>Cancel Action</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete Action </q-item-section>
-                            </q-item>
+                            <DeleteActionDialogOpener :action="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>
+                                        Delete Action
+                                    </q-item-section>
+                                </q-item>
+                            </DeleteActionDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -83,8 +87,8 @@
 </template>
 
 <script setup lang="ts">
-import { QTable } from 'quasar';
-import { useQuery } from '@tanstack/vue-query';
+import { Notify, QTable } from 'quasar';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
@@ -95,6 +99,12 @@ import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
+import axios from 'axios';
+import {
+    createActionTemplate,
+    deleteAction,
+} from 'src/services/mutations/action';
+import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 
 const router = useRouter();
 

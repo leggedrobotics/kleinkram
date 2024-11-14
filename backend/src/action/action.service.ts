@@ -64,6 +64,11 @@ export class ActionService {
         return action;
     }
 
+    async delete(actionUUID: string) {
+        await this.actionRepository.delete(actionUUID);
+        return true;
+    }
+
     async multiSubmit(data: SubmitActionMulti, user: AuthRes) {
         return Promise.all(
             data.missionUUIDs.map((uuid) =>

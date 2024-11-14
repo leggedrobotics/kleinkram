@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
 import {
     ActionQuery,
@@ -9,6 +9,7 @@ import {
     CanCreate,
     CanCreateAction,
     CanCreateActions,
+    CanDeleteAction,
     CanReadAction,
     LoggedIn,
     UserOnly,
@@ -18,6 +19,7 @@ import {
     QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import Action from '@common/entities/action/action.entity';
@@ -25,6 +27,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('action')
 export class ActionController {
@@ -37,6 +40,12 @@ export class ActionController {
         @addUser() user: AuthRes,
     ): Promise<Action> {
         return this.actionService.submit(dto, user);
+    }
+
+    @Delete(':uuid')
+    @CanDeleteAction()
+    async deleteAction(@ParamUUID('uuid') uuid: string): Promise<boolean> {
+        return this.actionService.delete(uuid);
     }
 
     @Post('multiSubmit')
@@ -65,13 +74,14 @@ export class ActionController {
     ) {
         return this.actionService.createNewVersion(dto, user);
     }
+
     @Get('listActions')
     @LoggedIn()
     async list(
         @Query() dto: ActionQuery,
         @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
-        @QuerySkip('take') take: number,
+        @QueryTake('take') take: number,
         @QueryOptionalString('sortBy') sortBy: string,
         @QueryOptionalBoolean('descending') descending: boolean,
         @QueryOptionalString('search') search: string,

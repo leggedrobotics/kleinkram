@@ -95,8 +95,8 @@
                                 </q-item-section>
                                 <q-tooltip>
                                     Manage Access on Mission Level is not
-                                    supported yet</q-tooltip
-                                >
+                                    supported yet
+                                </q-tooltip>
                             </q-item>
 
                             <EditMissionDialogOpener :mission="mission">
@@ -578,6 +578,7 @@ function fileHealthColor(health: string) {
             return 'grey';
     }
 }
+
 function fileHealthTextColor(health: string) {
     switch (health) {
         case 'Healthy':
