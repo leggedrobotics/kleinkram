@@ -1,6 +1,7 @@
 import axios from 'src/api/axios';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { Action } from 'src/types/Action';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
@@ -105,3 +106,7 @@ export const createNewActionTemplateVersion = async (template: {
         res.accessRights,
     );
 };
+
+export async function deleteAction(action: Action) {
+    return await axios.delete('/action/' + action.uuid);
+}
