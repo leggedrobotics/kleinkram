@@ -12,6 +12,8 @@ import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { getPermissions } from 'src/services/queries/user';
+import { getUser } from 'src/services/auth';
+import { User } from 'src/types/User';
 
 type Permissions = {
     role: string;
@@ -39,10 +41,20 @@ export const usePermissionsQuery = (): UseQueryReturnType<
     });
 };
 
+/**
+ * Fetches the user data
+ */
+export const useUser = () => {
+    return useQuery<User | null>({
+        queryKey: ['user'],
+        queryFn: () => getUser(),
+    });
+};
+
 export const getPermissionForProject = (
     projectUuid: string,
     permissions: Permissions,
-): number => {
+): AccessGroupRights => {
     if (!permissions) return 0;
     if (permissions.role === 'ADMIN') return 100;
     const defaultPermission = permissions.default_permission;
@@ -58,7 +70,7 @@ export const getPermissionForProject = (
 export const getPermissionForMission = (
     missionUuid: string,
     permissions: Permissions,
-): number => {
+): AccessGroupRights => {
     if (!permissions) return 0;
     if (permissions.role === 'ADMIN') return 100;
     const defaultPermission = permissions.default_permission;
@@ -105,12 +117,12 @@ export const canModifyMission = (
 ): boolean => {
     if (!permissions) return false;
     if (!missionUuid && !projectUuid) return false;
-    const missionPermission = getPermissionForMission(missionUuid, permissions);
+
     const projectPermission = getPermissionForProject(projectUuid, permissions);
-    return (
-        Math.max(missionPermission, projectPermission) >=
-        AccessGroupRights.WRITE
-    );
+    if (projectPermission >= AccessGroupRights.WRITE) return true;
+
+    const missionPermission = getPermissionForMission(missionUuid, permissions);
+    if (missionPermission >= AccessGroupRights.WRITE) return true;
 };
 
 export const canDeleteMission = (
@@ -120,12 +132,12 @@ export const canDeleteMission = (
 ): boolean => {
     if (!permissions) return false;
     if (!missionUuid && !projectUuid) return false;
-    const missionPermission = getPermissionForMission(missionUuid, permissions);
+
     const projectPermission = getPermissionForProject(projectUuid, permissions);
-    return (
-        Math.max(missionPermission, projectPermission) >=
-        AccessGroupRights.DELETE
-    );
+    if (projectPermission >= AccessGroupRights.DELETE) return true;
+
+    const missionPermission = getPermissionForMission(missionUuid, permissions);
+    return missionPermission >= AccessGroupRights.DELETE;
 };
 
 export const canLaunchInMission = (
@@ -134,18 +146,18 @@ export const canLaunchInMission = (
 ): boolean => {
     if (!permissions) return false;
     if (!mission) return false;
-    const missionPermission = getPermissionForMission(
-        mission.uuid,
-        permissions,
-    );
+
     const projectPermission = getPermissionForProject(
         mission.project?.uuid as string,
         permissions,
     );
-    return (
-        Math.max(missionPermission, projectPermission) >=
-        AccessGroupRights.CREATE
+    if (projectPermission >= AccessGroupRights.WRITE) return true;
+
+    const missionPermission = getPermissionForMission(
+        mission.uuid,
+        permissions,
     );
+    return missionPermission >= AccessGroupRights.WRITE;
 };
 
 export const canDeleteProject = (
@@ -180,7 +192,8 @@ export const useProjectQuery = (
     useQuery<Project>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
         queryFn: (): Promise<Project> => {
-            if (!projectUuid.value) return Promise.reject();
+            if (!projectUuid.value)
+                return Promise.reject(new Error('Project UUID is not defined'));
             return getProject(projectUuid.value);
         },
         enabled: () => !!projectUuid.value,

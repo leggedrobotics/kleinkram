@@ -11,14 +11,14 @@
 
             <q-separator vertical />
 
-            <header-tabs :main_menu="main_menu" class="q-ml-lg" />
+            <header-navigation-tabs :main_menu="main_menu" class="q-ml-lg" />
 
             <q-space />
             <Suspense>
-                <header-menu-right />
+                <header-right-menu />
             </Suspense>
         </q-toolbar>
-        <navigation-bread-crumbs />
+        <breadcrumb-navigation />
     </q-header>
 </template>
 
@@ -26,13 +26,11 @@
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import KleinkramLogo from 'components/header/KleinkramLogo.vue';
-import HeaderTabs from 'components/header/HeaderTabs.vue';
-import HeaderMenuRight from 'components/HeaderMenuRight.vue';
-import NavigationBreadCrumbs from 'components/BreadCrumbs.vue';
-import { useQuasar } from 'quasar';
+import HeaderNavigationTabs from 'components/header/HeaderTabs.vue';
+import HeaderRightMenu from 'components/header/HeaderMenuRight.vue';
+import BreadcrumbNavigation from 'components/BreadCrumbs.vue';
 
 const $router = useRouter();
-const $q = useQuasar();
 
 const main_menu = [
     {
@@ -45,7 +43,11 @@ const main_menu = [
         title: 'Projects',
         icon: 'sym_o_box',
         to: ROUTES.PROJECTS.path,
-        subpage_names: [ROUTES.FILES.name, ROUTES.MISSIONS.name],
+        subpage_names: [
+            ROUTES.FILES.name,
+            ROUTES.MISSIONS.name,
+            ROUTES.FILE.name,
+        ],
     },
     {
         title: 'Datatable',

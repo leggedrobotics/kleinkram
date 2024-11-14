@@ -76,7 +76,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         logger.debug('Status: ' + this.analysisQueue.client.status);
     }
 
-    @Process({ concurrency: 2, name: `action` })
+    @Process({ concurrency: 1, name: `action` })
     async processAction(job: Job<{ uuid: string }>) {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },

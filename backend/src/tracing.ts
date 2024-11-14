@@ -12,6 +12,7 @@ import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
+import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
@@ -52,8 +53,8 @@ const sdk = new NodeSDK({
 // gracefully shut down the SDK on process exit
 process.on('SIGTERM', () => {
     sdk.shutdown()
-        .then(() => console.log('Tracing terminated'))
-        .catch((error) => console.log('Error terminating tracing', error))
+        .then(() => logger.debug('Tracing terminated'))
+        .catch((error) => logger.error('Error terminating tracing', error))
         .finally(() => process.exit(0));
 });
 

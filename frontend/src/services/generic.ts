@@ -25,15 +25,19 @@ export const icon = (type: DataType) => {
 };
 
 export const accessGroupRightsMap = {
-    [AccessGroupRights.NONE]: 'None',
     [AccessGroupRights.READ]: 'Read',
     [AccessGroupRights.CREATE]: 'Create',
     [AccessGroupRights.WRITE]: 'Write',
     [AccessGroupRights.DELETE]: 'Delete',
 };
 
-export function getAccessRightDescription(value: AccessGroupRights): string {
-    return accessGroupRightsMap[value] || 'Unknown';
+export function getAccessRightDescription(
+    value: AccessGroupRights | undefined,
+): string {
+    if (value === undefined) {
+        return 'Unknown';
+    }
+    return accessGroupRightsMap[value];
 }
 
 export function getColor(state: QueueState) {
@@ -225,6 +229,8 @@ export function getActionColor(state: ActionState) {
             return 'blue';
         case ActionState.UNPROCESSABLE:
             return 'purple';
+        case ActionState.STOPPING:
+            return 'light-green';
         default:
             return 'grey'; // Default color for unknown states
     }

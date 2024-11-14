@@ -1,5 +1,5 @@
 <template>
-    <div class="projects-container">
+    <div class="projects-container dashboard-card">
         <!-- Static Row with Title and Arrows -->
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
@@ -73,7 +73,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const { data } = useQuery<Project[]>({
-    queryKey: ['projects', 5, 0, 'updatedAt', true],
+    queryKey: ['projects', 5],
     queryFn: () => recentProjects(5),
 });
 
@@ -165,10 +165,6 @@ nextTick(() => {
 .card {
     min-width: 300px; /* Prevent card from shrinking */
     cursor: pointer;
-}
-
-.q-card {
-    border-radius: 0;
 }
 
 .card .q-card:hover {

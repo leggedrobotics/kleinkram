@@ -42,7 +42,7 @@ export class FileGuardService {
             relations: ['mission', 'mission.project', 'creator'],
         });
         if (!file) {
-            console.log('File not found');
+            logger.debug('File not found');
             return false;
         }
         if (file.creator.uuid === user.uuid) {

@@ -7,6 +7,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights, UserRole } from '@common/enum';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import logger from '../logger';
 
 @Injectable()
 export class ProjectGuardService {
@@ -42,7 +43,7 @@ export class ProjectGuardService {
             },
         });
         if (!res) {
-            console.log(
+            logger.debug(
                 `User ${user.name} (${user.uuid}) does not have access to project ${projectUUID} with rights ${rights}`,
             );
         }

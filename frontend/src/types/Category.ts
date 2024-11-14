@@ -20,4 +20,20 @@ export class Category extends BaseEntity {
         this.project = project;
         this.files = files;
     }
+
+    static fromAPIResponse(response: any): Category {
+        const project = Project.fromAPIResponse(response.project);
+        const files =
+            response.files?.map((file: any) =>
+                FileEntity.fromAPIResponse(file),
+            ) || [];
+        return new Category(
+            response.uuid,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+            response.name,
+            project,
+            files,
+        );
+    }
 }

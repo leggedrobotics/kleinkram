@@ -30,4 +30,20 @@ export class Queue extends BaseEntity {
         this.mission = mission;
         this.creator = creator;
     }
+
+    static fromAPIResponse(response: any): Queue {
+        const mission = Mission.fromAPIResponse(response.mission);
+        const creator = User.fromAPIResponse(response.creator);
+        return new Queue(
+            response.uuid,
+            response.identifier,
+            response.displayName,
+            response.state,
+            response.location,
+            mission,
+            creator,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

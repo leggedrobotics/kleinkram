@@ -164,6 +164,10 @@ def upload(
             "'some-name.mcap' file will be deleted."
         ),
     ] = False,
+    ignore_tags: Annotated[
+        bool,
+        typer.Option(help="Ignore required tags for the mission."),
+    ] = False,
 ):
     """
     Upload files matching the path to a mission in a project.
@@ -233,15 +237,6 @@ def upload(
             "Access Denied",
         )
 
-    if not tags:
-        tags = []
-    tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
-
-    required_tags = (
-        project_json["requiredTags"] if "requiredTags" in project_json else []
-    )
-    promptForTags(tags_dict, required_tags)
-
     ##############################
     # Check if mission exists
     ##############################
@@ -250,7 +245,10 @@ def upload(
         mission_response = client.get(get_mission_url, params={"uuid": mission})
     else:
         get_mission_url = "/mission/byName"
-        mission_response = client.get(get_mission_url, params={"name": mission})
+        mission_response = client.get(
+            get_mission_url,
+            params={"name": mission, "projectUUID": project_json["uuid"]},
+        )
 
     if mission_response.status_code >= 400:
         if not create_mission:
@@ -263,12 +261,32 @@ def upload(
         else:
             print(f"Mission '{mission}' does not exist. Creating it now.")
             create_mission_url = "/mission/create"
+            if not tags:
+                tags = []
+            tags_dict = {item.split(":")[0]: item.split(":")[1] for item in tags}
+            required_tags = (
+                project_json["requiredTags"] if "requiredTags" in project_json else []
+            )
+            missing_tags = [
+                tag_key
+                for tag_key in required_tags
+                if (tag_key["uuid"] not in tags_dict)
+            ]
+            if not ignore_tags:
+                if missing_tags and not ignore_tags:
+                    promptForTags(tags_dict, required_tags)
+            else:
+                print("Ignoring required tags for the mission:")
+                for tag_key in missing_tags:
+                    print(f" - {tag_key}")
+
             mission_response = client.post(
                 create_mission_url,
                 json={
                     "name": mission,
                     "projectUUID": project_json["uuid"],
                     "tags": tags_dict,
+                    "ignoreTags": ignore_tags,
                 },
             )
             if mission_response.status_code >= 400:
@@ -316,7 +334,7 @@ def upload(
                     f"hyphens. Consider using the '--fix-filenames' option to automatically fix the filenames."
                 )
 
-            if not 3 <= len(filename_without_extension) <= 40:
+            if not 3 <= len(filename_without_extension) <= 50:
                 raise ValueError(
                     f"Filename '{filename}' is not valid. It must be between 3 and 40 characters long. Consider using "
                     f"the '--fix-filenames' option to automatically fix the filenames."

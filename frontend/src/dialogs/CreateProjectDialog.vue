@@ -1,6 +1,6 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title>Create Project</template>
+    <BaseDialog ref="dialogRef">
+        <template #title>New Project</template>
 
         <template #tabs>
             <q-tabs
@@ -15,11 +15,17 @@
                     label="Project Details*"
                     style="color: #222"
                 />
-                <q-tab name="tags" label="Configure Tags" style="color: #222" />
+                <q-tab
+                    name="tags"
+                    label="Mission Metadata"
+                    style="color: #222"
+                    :disable="!formIsValid"
+                />
                 <q-tab
                     name="manage_access"
                     label="Manage Access"
                     style="color: #222"
+                    :disable="!formIsValid"
                 />
             </q-tabs>
         </template>
@@ -74,29 +80,18 @@
                 </q-tab-panel>
 
                 <q-tab-panel name="tags">
-                    <div class="text-h6">Configure Tags</div>
-                    <ConfigureTags v-model:selected="selected" />
+                    <ConfigureMetadata v-model:selected="selected" />
                 </q-tab-panel>
 
                 <q-tab-panel name="manage_access">
-                    <div class="text-h6">Manage Access</div>
-                    <q-table
-                        :columns="AccessRightsColumns"
-                        :rows="accessRightsRows"
-                        hide-pagination
-                        flat
-                        bordered
-                        style="margin-top: 6px"
-                    />
-                    <ModifyAccessGroups
-                        :existing-rights="{}"
-                        @add-access-group-to-project="addAccessGroupToProject"
-                        @add-users-to-project="addUserToProject"
+                    <ConfigureAccess
+                        v-model="accessGroups"
+                        :min-access-rights="minAccessRights"
                     />
                 </q-tab-panel>
             </q-tab-panels>
         </template>
-        <template #actions>
+        <template #actions v-if="tab === 'manage_access'">
             <q-btn
                 flat
                 label="Create Project"
@@ -105,24 +100,32 @@
                 :disable="!formIsValid"
             />
         </template>
-    </base-dialog>
+        <template #actions v-else>
+            <q-btn
+                flat
+                label="Next"
+                class="bg-button-primary"
+                :disable="!formIsValid"
+                @click="nextTab"
+            />
+        </template>
+    </BaseDialog>
 </template>
 
 <script setup lang="ts">
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
-import { computed, Ref, ref } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getFilteredTagTypes } from 'src/services/queries/tag';
-import { DataType } from 'src/enums/TAG_TYPES';
-import { getAccessRightDescription } from 'src/services/generic';
-import ModifyAccessGroups from 'components/ModifyAccessGroups.vue';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { TagType } from 'src/types/TagType';
-import ConfigureTags from 'components/ConfigureTags.vue';
+import ConfigureMetadata from 'components/ConfigureMetadata.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
-import { getDefaultAccessGroups } from 'src/services/queries/project';
+import ConfigureAccess from 'components/ConfigureAccess.vue';
+import {
+    AccessRight,
+    getDefaultAccessGroups,
+} from 'src/services/queries/project';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);
@@ -139,78 +142,25 @@ const newProjectDescription = ref('');
 const invalidProjectNames = ref<string[]>([]);
 
 const tab = ref('meta_data');
-const tagSearch = ref('');
-const selectedDataType = ref(DataType.ANY);
+
 const selected: Ref<TagType[]> = ref([]);
 const $q = useQuasar();
-
-const queryKey = computed(() => [
-    'tags',
-    tagSearch.value,
-    selectedDataType.value,
-]);
-const { data: tags } = useQuery({
-    queryKey: queryKey,
-    queryFn: async () => {
-        return getFilteredTagTypes(tagSearch.value, selectedDataType.value);
-    },
-});
 
 const { data: defaultRights } = useQuery({
     queryKey: ['defaultRights'],
     queryFn: getDefaultAccessGroups,
 });
 
-const usersToAdd = ref<
-    { userUUID: string; rights: AccessGroupRights; name: string }[]
->([]);
-const accessGroupsToAdd = ref<
-    { accessGroupUUID: string; rights: AccessGroupRights; name: string }[]
->([]);
+const minAccessRights = computed(() =>
+    defaultRights.value
+        ? defaultRights.value.filter((r) => r.name.startsWith('Personal: '))
+        : [],
+);
 
-function addUserToProject(newUser: {
-    userUUID: string;
-    rights: AccessGroupRights;
-    name: string;
-}) {
-    const previousRights = usersToAdd.value.findIndex(
-        (user) => user.userUUID === newUser.userUUID,
-    );
-
-    if (previousRights !== -1) {
-        if (newUser.rights === AccessGroupRights.NONE) {
-            usersToAdd.value.splice(previousRights, 1);
-        }
-        usersToAdd.value[previousRights].rights = newUser.rights;
-        return;
-    }
-    if (newUser.rights === AccessGroupRights.NONE) {
-        return;
-    }
-    usersToAdd.value.push(newUser);
-}
-
-function addAccessGroupToProject(newAccessGroup: {
-    accessGroupUUID: string;
-    rights: AccessGroupRights;
-    name: string;
-}) {
-    const previousRights = accessGroupsToAdd.value.findIndex(
-        (group) => group.accessGroupUUID === newAccessGroup.accessGroupUUID,
-    );
-
-    if (previousRights !== -1) {
-        if (newAccessGroup.rights === AccessGroupRights.NONE) {
-            accessGroupsToAdd.value.splice(previousRights, 1);
-        }
-        accessGroupsToAdd.value[previousRights].rights = newAccessGroup.rights;
-        return;
-    }
-    if (newAccessGroup.rights === AccessGroupRights.NONE) {
-        return;
-    }
-    accessGroupsToAdd.value.push(newAccessGroup);
-}
+const accessGroups = ref<AccessRight[]>(defaultRights.value || []);
+watch(defaultRights, () => {
+    accessGroups.value = defaultRights.value || [];
+});
 
 const verify_input = () => {
     formIsValid.value =
@@ -241,15 +191,30 @@ const verify_input = () => {
     }
 };
 
+const nextTab = () => {
+    if (tab.value === 'meta_data') {
+        tab.value = 'tags';
+    } else if (tab.value === 'tags') {
+        tab.value = 'manage_access';
+    }
+};
+
 const submitNewProject = async () => {
     await createProject(
         newProjectName.value,
         newProjectDescription.value,
         selected.value.map((tag) => tag.uuid),
-        accessRightsRows.value,
+        accessGroups.value?.map((r) => ({
+            accessGroupUUID: r.uuid,
+            rights: r.rights,
+        })) || [],
+        defaultRights.value
+            ?.filter((r) => !accessGroups.value?.find((a) => a.uuid === r.uuid))
+            .map((r) => r.uuid),
     )
         .then(() => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['permissions'] });
 
             $q.notify({
                 message: 'Project created successfully',
@@ -275,32 +240,4 @@ const submitNewProject = async () => {
             tab.value = 'meta_data';
         });
 };
-
-const accessRightsRows = computed(() => {
-    return [
-        ...usersToAdd.value,
-        ...accessGroupsToAdd.value,
-        ...defaultRights.value,
-    ];
-});
-
-const AccessRightsColumns = [
-    {
-        name: 'name',
-        required: true,
-        label: 'Name',
-        align: 'left',
-        field: (row: { name: string; rights: AccessGroupRights }) => row.name,
-        sortable: true,
-    },
-    {
-        name: 'rights',
-        required: true,
-        label: 'Rights',
-        align: 'left',
-        field: (row: { name: string; rights: AccessGroupRights }) =>
-            `${getAccessRightDescription(row.rights)} (${row.rights})`,
-        sortable: true,
-    },
-];
 </script>

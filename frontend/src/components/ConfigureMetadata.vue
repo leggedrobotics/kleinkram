@@ -1,5 +1,11 @@
 <template>
-    <div class="row">
+    <div>
+        <span class="help-text">
+            Metadata are optional or enforced key-value pairs that are attached
+            to every mission within the project, e.g. the 'location' of the
+            mission.
+        </span>
+
         <div class="col-9">
             <q-select
                 v-model="_selected"
@@ -51,11 +57,12 @@
 <script setup lang="ts">
 import { icon } from 'src/services/generic';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { TagType } from 'src/types/TagType';
 import { DataType } from 'src/enums/TAG_TYPES';
 import { useQuery } from '@tanstack/vue-query';
 import { getFilteredTagTypes } from 'src/services/queries/tag';
+
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const props = defineProps<{

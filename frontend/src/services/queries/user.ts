@@ -45,7 +45,7 @@ export const getMe = async (): Promise<User> => {
             new Date(agu.updatedAt),
             null,
             accessGroup,
-            new Date(agu.expirationDate),
+            agu.expirationDate ? new Date(agu.expirationDate) : null,
         );
     });
     return new User(

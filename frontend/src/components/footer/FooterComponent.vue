@@ -20,8 +20,8 @@
                     >
                         <q-tooltip
                             >The API is running
-                            {{ kleinkramVersion }}</q-tooltip
-                        >
+                            {{ kleinkramVersion }}
+                        </q-tooltip>
                     </q-icon>
                     <a
                         class="text-placeholder"

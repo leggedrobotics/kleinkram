@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
-import ConfigureTags from 'components/ConfigureTags.vue';
+import ConfigureTags from 'components/ConfigureMetadata.vue';
 import { getProject } from 'src/services/queries/project';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';

@@ -45,6 +45,7 @@ describe('Verify File Handling', () => {
                 name: 'test_mission2',
                 projectUUID: projectUuid,
                 tags: {},
+                ignoreTags: true,
             },
             user,
         );

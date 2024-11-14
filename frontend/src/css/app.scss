@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////
 // app global css in SCSS form
 /////////////////////////////////////////////////////////////////
+@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
 
 body {
     overflow-y: scroll;
@@ -138,6 +139,10 @@ label {
 
 .q-table tbody {
     background-color: $layer-01;
+}
+
+.table-white tbody {
+    background-color: white;
 }
 
 .q-table thead {

@@ -23,4 +23,8 @@ export class CreateProject {
         | { accessGroupUUID: string; rights: AccessGroupRights }
         | { userUUID: string; rights: AccessGroupRights }
     )[];
+
+    @IsOptional()
+    @IsArray()
+    removedDefaultGroups?: string[];
 }

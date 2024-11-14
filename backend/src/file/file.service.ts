@@ -76,7 +76,7 @@ export class FileService implements OnModuleInit {
     ) {}
 
     onModuleInit(): any {
-        this.fileCleanupQueue = new Queue('action-queue', {
+        this.fileCleanupQueue = new Queue('file-cleanup', {
             redis,
         });
     }
@@ -217,13 +217,11 @@ export class FileService implements OnModuleInit {
         take: number,
         skip: number,
         sort: string,
-        desc: boolean,
+        sortOrder: 'ASC' | 'DESC',
     ) {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        // const sortColumn = `file.${sort || 'date'}`;
-        const sortOrder = desc ? 'DESC' : 'ASC';
         // Start building your query with basic filters
         let query = this.fileRepository
             .createQueryBuilder('file')
@@ -535,7 +533,7 @@ export class FileService implements OnModuleInit {
         fileType?: FileType,
         categories?: string[],
         sort?: string,
-        desc?: boolean,
+        sortDirection?: 'ASC' | 'DESC',
         health?: string,
     ): Promise<[FileEntity[], number]> {
         const where: Record<string, any> = {
@@ -574,7 +572,7 @@ export class FileService implements OnModuleInit {
             where,
             take,
             skip,
-            order: { [sort]: desc ? 'DESC' : 'ASC' },
+            order: { [sort]: sortDirection },
         });
         if (resUUIDs.length === 0) {
             return [[], count];
@@ -592,7 +590,7 @@ export class FileService implements OnModuleInit {
                 'mission.creator',
                 'creator',
             ],
-            order: { [sort]: desc ? 'DESC' : 'ASC' },
+            order: { [sort]: sortDirection },
         });
         return [files, count];
     }
@@ -705,7 +703,7 @@ export class FileService implements OnModuleInit {
                 };
             })
             .catch((error) => {
-                console.error('Error:', error);
+                logger.error('Error:', error);
             });
     }
 
@@ -778,7 +776,7 @@ export class FileService implements OnModuleInit {
                     : FileType.MCAP;
 
                 // check if file already exists
-                const existingFile = await this.fileRepository.count({
+                const existingFile = await this.fileRepository.exists({
                     where: {
                         filename,
                         mission: {
@@ -786,7 +784,7 @@ export class FileService implements OnModuleInit {
                         },
                     },
                 });
-                if (existingFile > 0) {
+                if (existingFile) {
                     emptyCredentials.error = 'File already exists';
                     emptyCredentials.fileName = filename;
                     return emptyCredentials;
@@ -935,5 +933,30 @@ export class FileService implements OnModuleInit {
         ).catch((err) => {
             logger.error(err);
         });
+    }
+
+    async recomputeFileSizes() {
+        const files = await this.fileRepository.find({
+            where: {
+                state: In([FileState.OK, FileState.FOUND]),
+            },
+        });
+        await Promise.all(
+            files.map(async (file) => {
+                const stats = await getInfoFromMinio(file.type, file.uuid);
+                if (!stats) {
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                    );
+                    file.state = FileState.LOST;
+                } else {
+                    file.size = stats.size;
+                    logger.debug(
+                        `Updated size for ${file.filename}: ${file.size}`,
+                    );
+                }
+                await this.fileRepository.save(file);
+            }),
+        );
     }
 }

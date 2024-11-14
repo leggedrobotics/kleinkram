@@ -10,7 +10,7 @@ import {
     createProjectUsingPost,
     uploadFile,
 } from './utils/api_calls';
-import { ActionState } from '@common/enum';
+import { AccessGroupRights, ActionState } from '@common/enum';
 import { SubmitAction } from '../src/action/entities/submit_action.dto';
 
 describe('Verify Action', () => {
@@ -46,6 +46,7 @@ describe('Verify Action', () => {
                 name: 'test_mission',
                 projectUUID: projectUuid,
                 tags: {},
+                ignoreTags: true,
             },
             user,
         );
@@ -71,6 +72,7 @@ describe('Verify Action', () => {
                     gpuMemory: -1,
                     maxRuntime: 2,
                     searchable: true,
+                    accessRights: AccessGroupRights.READ,
                 }),
             },
         );

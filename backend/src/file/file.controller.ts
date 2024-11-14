@@ -1,12 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -15,18 +7,17 @@ import {
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
+    CanMoveFiles,
     CanReadFile,
     CanReadFileByName,
     CanReadMission,
     CanWriteFile,
-    CanMoveFiles,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryBoolean,
-    QueryOptionalBoolean,
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
@@ -34,6 +25,7 @@ import {
     QueryOptionalUUID,
     QuerySkip,
     QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -61,10 +53,20 @@ export class FileController {
     @Get('filteredByNames')
     @UserOnly()
     async filteredByNames(
-        @QueryOptionalString('projectName') projectName: string,
-        @QueryOptionalString('missionName') missionName: string,
-        @QueryOptionalString('topics') topics: string,
-        @QueryOptionalRecord('tags') tags: Record<string, any>,
+        @QueryOptionalString(
+            'projectName',
+            'Name of a Project (or part there of)',
+        )
+        projectName: string,
+        @QueryOptionalString(
+            'missionName',
+            'Name of a Mission (or part there of)',
+        )
+        missionName: string,
+        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
+        topics: string,
+        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
+        tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @addUser() auth: AuthRes,
@@ -83,19 +85,40 @@ export class FileController {
     @Get('filtered')
     @LoggedIn()
     async filteredFiles(
-        @QueryOptionalString('fileName') fileName: string,
-        @QueryOptionalUUID('projectUUID') projectUUID: string,
-        @QueryOptionalUUID('missionUUID') missionUUID: string,
-        @QueryOptionalDate('startDate') startDate: Date | undefined,
-        @QueryOptionalDate('endDate') endDate: Date | undefined,
-        @Query('topics') topics: string,
-        @Query('fileTypes') fileTypes: string,
-        @Query('andOr') andOr: boolean,
-        @QueryOptionalString('tags') tags: string,
+        @QueryOptionalString('fileName', 'Filter for Filename')
+        fileName: string,
+        @QueryOptionalUUID('projectUUID', 'UUID of Project to filter by')
+        projectUUID: string,
+        @QueryOptionalUUID('missionUUID', 'UUID of Mission to filter by')
+        missionUUID: string,
+        @QueryOptionalDate(
+            'startDate',
+            'Date specifying the start of the filtered time range',
+        )
+        startDate: Date | undefined,
+        @QueryOptionalDate(
+            'endDate',
+            'Date specifying the end of the filtered time range',
+        )
+        endDate: Date | undefined,
+        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
+        topics: string,
+        @QueryOptionalString(
+            'fileTypes',
+            "Filetypes: 'bag' | 'mcap' | 'bag,mcap' ",
+        )
+        fileTypes: string,
+        @QueryBoolean(
+            'andOr',
+            'Returned File needs all specified topics (true) or any specified topics (false)',
+        )
+        andOr: boolean,
+        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
+        tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
-        @QueryOptionalBoolean('desc') desc: boolean,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @addUser() auth: AuthRes,
     ) {
         let _missionUUID = missionUUID;
@@ -111,20 +134,24 @@ export class FileController {
             topics,
             andOr,
             fileTypes,
-            JSON.parse(tags),
+            tags, // todo check if this is correct
             auth.user.uuid,
             take,
             skip,
             sort,
-            desc,
+            sortDirection,
         );
     }
 
     @Get('download')
     @CanReadFile()
     async download(
-        @QueryUUID('uuid') uuid: string,
-        @QueryBoolean('expires') expires: boolean,
+        @QueryUUID('uuid', 'File UUID') uuid: string,
+        @QueryBoolean(
+            'expires',
+            'Whether the download link should stay valid for on week (false) or 4h (true)',
+        )
+        expires: boolean,
     ) {
         logger.debug('download ' + uuid + ': expires=' + expires);
         return this.fileService.generateDownload(uuid, expires);
@@ -132,28 +159,32 @@ export class FileController {
 
     @Get('one')
     @CanReadFile()
-    async getFileById(@QueryUUID('uuid') uuid: string) {
+    async getFileById(@QueryUUID('uuid', 'File UUID') uuid: string) {
         return this.fileService.findOne(uuid);
     }
 
     @Get('byName')
     @CanReadFileByName()
-    async getFileByName(@QueryString('name') name: string) {
+    async getFileByName(@QueryString('name', 'Filename') name: string) {
         return this.fileService.findByFilename(name);
     }
 
     @Get('ofMission')
     @CanReadMission()
     async getFilesOfMission(
-        @QueryUUID('uuid') uuid: string,
+        @QueryUUID('uuid', 'File UUID') uuid: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QueryOptionalString('filename') filename: string,
-        @QueryOptionalString('fileType') fileType: FileType,
-        @QueryOptionalStringArray('categories') categories: string[],
+        @QueryOptionalString('filename', 'Filename filter') filename: string,
+        @QueryOptionalString('fileType', 'Filetype filter') fileType: FileType,
+        @QueryOptionalStringArray(
+            'categories',
+            'Categories to filter by (logical OR)',
+        )
+        categories: string[],
         @QuerySortBy('sort') sort: string,
-        @QueryOptionalBoolean('desc') desc: boolean,
-        @QueryOptionalString('health') health: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryOptionalString('health', 'File health') health: string,
     ) {
         return this.fileService.findByMission(
             uuid,
@@ -163,7 +194,7 @@ export class FileController {
             fileType,
             categories,
             sort,
-            desc,
+            sortDirection,
             health,
         );
     }
@@ -177,8 +208,9 @@ export class FileController {
     @Post('moveFiles')
     @CanMoveFiles()
     async moveFiles(
-        @BodyUUIDArray('fileUUIDs') fileUUIDs: string[],
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
+        fileUUIDs: string[],
+        @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
     ) {
         return this.fileService.moveFiles(fileUUIDs, missionUUID);
     }
@@ -186,8 +218,8 @@ export class FileController {
     @Get('oneByName')
     @CanReadMission()
     async getOneFileByName(
-        @QueryUUID('uuid') uuid: string,
-        @QueryString('filename') name: string,
+        @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
+        @QueryString('filename', 'Filename searched for') name: string,
     ) {
         return this.fileService.findOneByName(uuid, name);
     }
@@ -226,8 +258,12 @@ export class FileController {
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
     async cancelUpload(
-        @BodyUUIDArray('uuids') uuids: string[],
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUIDArray(
+            'uuids',
+            "File UUIDs who, if they aren't 'OK', are deleted",
+        )
+        uuids: string[],
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @addUser() auth: AuthRes,
     ) {
         logger.debug('cancelUpload ' + uuids);
@@ -241,15 +277,16 @@ export class FileController {
     @Post('deleteMultiple')
     @CanDeleteMission()
     async deleteMultiple(
-        @BodyUUIDArray('uuids') uuids: string[],
-        @BodyUUID('missionUUID') missionUUID: string,
+        @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
+        uuids: string[],
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
     ) {
         return this.fileService.deleteMultiple(uuids, missionUUID);
     }
 
     @Get('exists')
     @CanReadFile()
-    async exists(@QueryUUID('uuid') uuid: string) {
+    async exists(@QueryUUID('uuid', 'FileUUID searched') uuid: string) {
         return this.fileService.exists(uuid);
     }
 
@@ -259,5 +296,12 @@ export class FileController {
         logger.debug('Resetting Minio tags');
         await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
         await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
+    }
+
+    @Post('recomputeFileSizes')
+    @AdminOnly()
+    async recomputeFileSizes() {
+        logger.debug('Recomputing file sizes');
+        await this.fileService.recomputeFileSizes();
     }
 }

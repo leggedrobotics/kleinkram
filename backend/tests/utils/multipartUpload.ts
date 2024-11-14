@@ -5,6 +5,7 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import logger from '../../src/logger';
 
 export async function uploadFileMultipart(
     file: Buffer,
@@ -68,7 +69,7 @@ export async function uploadFileMultipart(
             });
         return await minioClient.send(completeMultipartUploadCommand);
     } catch (error) {
-        console.error('Multipart upload failed:', error);
+        logger.error('Multipart upload failed:', error);
 
         // Step 4 (Optional): Abort Multipart Upload
         if (uploadId) {
@@ -83,7 +84,7 @@ export async function uploadFileMultipart(
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);
-            console.log('Multipart upload aborted.');
+            logger.debug('Multipart upload aborted.');
         }
 
         throw error;

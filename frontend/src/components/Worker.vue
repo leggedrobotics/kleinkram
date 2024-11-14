@@ -1,5 +1,8 @@
 <template>
-    <div style="grid-row: span 2; grid-column: span 1; background-color: white">
+    <div
+        class="dashboard-card"
+        style="grid-row: span 2; grid-column: span 1; background-color: white"
+    >
         <!-- Top row with Device Availability -->
         <q-card class="full-width q-pa-md" flat>
             <span style="font-size: larger">Device Availability</span>
@@ -114,6 +117,11 @@
                             <div
                                 class="row-container"
                                 style="align-items: center; width: 100%"
+                                v-if="
+                                    singleWorker?.gpuModel &&
+                                    singleWorker?.gpuMemory &&
+                                    singleWorker?.gpuMemory > 0
+                                "
                             >
                                 <div class="q-mt-md">
                                     <q-icon
@@ -121,7 +129,7 @@
                                         size="20px"
                                     />
                                     <span class="worker-name">{{
-                                        singleWorker.gpuModel
+                                        singleWorker.gpuModel || 'No GPU'
                                     }}</span>
                                 </div>
                             </div>
@@ -186,8 +194,6 @@ function extendWorker(uuid: string) {
 </script>
 
 <style scoped>
-@import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0';
-
 .row-container {
     display: flex;
     gap: 4px; /* Add spacing between elements */

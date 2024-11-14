@@ -1,14 +1,15 @@
 services:
     action_test_file_hash:
-        image: rslethz/action:file-hash-latest
+        image: rslethz/kleinkram_actions:file-hash-latest
+        container_name: kleinkram-action-test-file-hash
         build:
             context: ./
             dockerfile: backend/tests/actions/file-hash/Dockerfile
         entrypoint: sh
 
-    main:
-        image: rslethz/grandtour-datasets:api-server-latest
-        container_name: API
+    api-server:
+        image: rslethz/kleinkram:api-server-latest
+        container_name: kleinkram-api-server
         build:
             context: .
             dockerfile: ./backend/prod.Dockerfile
@@ -28,8 +29,8 @@ services:
             - database
 
     database:
-        image: postgres:13
-        container_name: postgres_db
+        image: postgres:16
+        container_name: kleinkram-postgres
         ports:
             - '5432:5432'
         networks:
@@ -43,6 +44,7 @@ services:
 
     minio:
         image: minio/minio
+        container_name: kleinkram-minio
         volumes:
             - minio_data_test:/data
         environment:
@@ -69,38 +71,34 @@ services:
             - privatenet
 
     frontend:
-        image: rslethz/grandtour-datasets:vuejs_frontend-latest
+        image: rslethz/kleinkram:frontend-dev
+        container_name: kleinkram-frontend
+
         build:
             context: .
             dockerfile: ./frontend/Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
-        container_name: vuejs_frontend
         ports:
             - '8003:8003'
 
         env_file:
             - .env
 
-        develop:
-            watch:
-                - action: sync
-                  path: ./frontend
-                  target: /app
-
         networks:
             - webnet
 
     redis:
         image: redis:latest
+        container_name: kleinkram-redis
         ports:
             - '6379:6379'
         networks:
             - privatenet
 
-    bullconsumer:
-        image: rslethz/grandtour-datasets:bull-consumer-latest
-        container_name: bullconsumer
+    queue-consumer:
+        image: rslethz/kleinkram:queue-consumer-latest
+        container_name: kleinkram-queue-consumer
         hostname: 'DO_NOT_CHANGE'
         build:
             context: .
@@ -108,14 +106,6 @@ services:
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
-        develop:
-            watch:
-                - action: sync
-                  path: ./queueConsumer
-                  target: /usr/src/queueConsumer
-                  ignore:
-                      - node_modules/
-                      - dist/
         env_file:
             - .env
         networks:
@@ -126,6 +116,7 @@ services:
 
     prometheus:
         image: prom/prometheus
+        container_name: kleinkram-prometheus
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -142,6 +133,7 @@ services:
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
+        container_name: kleinkram-tempo
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -156,7 +148,7 @@ services:
 
     loki:
         image: grafana/loki
-        container_name: loki
+        container_name: kleinkram-loki
         ports:
             - '3100:3100'
         command:
