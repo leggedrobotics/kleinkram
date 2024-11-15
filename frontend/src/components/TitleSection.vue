@@ -35,4 +35,6 @@ const slots = defineSlots<{
     buttons: string;
     tabs: string;
 }>();
+
+// console.log(tabs);
 </script>

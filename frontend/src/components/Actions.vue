@@ -204,8 +204,7 @@ const columns = [
         align: 'left',
         sortable: true,
         style:
-            'background-color: red;' +
-            'max-width: 200px;' +
+            'max-width: 10vw;' +
             'overflow:hidden;' +
             'whitespace:nowrap;' +
             'text-overflow: ellipsis',

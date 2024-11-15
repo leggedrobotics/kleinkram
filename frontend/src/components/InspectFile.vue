@@ -104,7 +104,11 @@
                         <div class="text-placeholder">Mission</div>
                         <div
                             class="text-caption text-primary"
-                            style="font-size: 16px"
+                            style="
+                                font-size: 16px;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            "
                         >
                             {{ data?.mission.name }}
                         </div>
