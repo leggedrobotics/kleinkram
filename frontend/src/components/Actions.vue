@@ -65,15 +65,19 @@
                                 v-ripple
                                 @click="router.push('action/' + props.row.uuid)"
                             >
-                                <q-item-section>View Details </q-item-section>
+                                <q-item-section>View Details</q-item-section>
                             </q-item>
 
                             <q-item clickable v-ripple disabled>
-                                <q-item-section>Cancel Action </q-item-section>
+                                <q-item-section>Cancel Action</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete Action </q-item-section>
-                            </q-item>
+                            <DeleteActionDialogOpener :action="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>
+                                        Delete Action
+                                    </q-item-section>
+                                </q-item>
+                            </DeleteActionDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -95,6 +99,7 @@ import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
+import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 
 const router = useRouter();
 
