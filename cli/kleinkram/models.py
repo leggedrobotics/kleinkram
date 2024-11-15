@@ -41,7 +41,7 @@ class FileState(str, Enum):
     FOUND = "FOUND"
 
 
-STATE_COLOR = {
+FILE_STATE_COLOR = {
     FileState.OK: "green",
     FileState.CORRUPTED: "red",
     FileState.UPLOADING: "yellow",
@@ -162,7 +162,7 @@ def files_to_table(
             file.mission_name,
             file.name,
             Text(str(file.id), style="green"),
-            Text(file.state.value, style=STATE_COLOR[file.state]),
+            Text(file.state.value, style=FILE_STATE_COLOR[file.state]),
         )
 
     return table
