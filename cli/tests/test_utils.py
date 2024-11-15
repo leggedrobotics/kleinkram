@@ -19,6 +19,7 @@ from kleinkram.utils import InvalidMissionSpec
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import MissionById
 from kleinkram.utils import MissionByName
+from kleinkram.utils import to_name_or_uuid
 
 
 def test_check_file_paths():
@@ -142,3 +143,11 @@ def test_get_valid_file_spec():
     assert get_valid_file_spec(
         file_ids + ["name"], "mission", "project"
     ) == FilesByMission(MissionByName("mission", "project"), file_ids + ["name"])
+
+
+def test_to_name_or_uuid():
+    id_ = uuid4()
+    not_id = "not an id"
+
+    assert to_name_or_uuid(str(id_)) == id_
+    assert to_name_or_uuid(not_id) == not_id
