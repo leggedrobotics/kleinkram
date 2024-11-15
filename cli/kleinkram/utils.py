@@ -9,10 +9,10 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import Generator
 from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 from uuid import UUID
@@ -28,7 +28,7 @@ from rich.console import Console
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
 
-def check_file_paths(files: List[Path]) -> None:
+def check_file_paths(files: Sequence[Path]) -> None:
     for file in files:
         if file.is_dir():
             raise FileNotFoundError(f"{file} is a directory and not a file")
@@ -83,7 +83,7 @@ def get_filename(path: Path) -> str:
     return f"{stem}{path.suffix}"
 
 
-def get_filename_map(file_paths: List[Path]) -> Dict[str, Path]:
+def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
     """\
     takes a list of unique filepaths and returns a mapping
     from the original filename to a sanitized internal filename
@@ -100,7 +100,6 @@ def get_filename_map(file_paths: List[Path]) -> Dict[str, Path]:
 
         internal_file_map[get_filename(file)] = file
 
-    # this should never happend since our random token has 64**10 possibilities
     if len(internal_file_map) != len(set(internal_file_map.values())):
         raise RuntimeError("hash collision")
 
@@ -116,11 +115,6 @@ def b64_md5(file: Path) -> str:
     return base64.b64encode(binary_digest).decode("utf-8")
 
 
-class Spec:
-    FILES_BY_ID = 1
-    FILES_IN_MISSION = 2
-
-
 class MissionById(NamedTuple):
     id: UUID
 
@@ -128,6 +122,23 @@ class MissionById(NamedTuple):
 class MissionByName(NamedTuple):
     name: str
     project: Union[str, UUID]
+
+
+def get_valid_mission_spec(
+    mission: Union[str, UUID],
+    project: Optional[Union[str, UUID]] = None,
+) -> Union[MissionById, MissionByName]:
+    """\
+    checks if:
+    - atleast one is speicifed
+    - if project is not specified then mission must be a valid uuid4
+    """
+
+    if isinstance(mission, UUID):
+        return MissionById(id=mission)
+    if isinstance(mission, str) and project is not None:
+        return MissionByName(name=mission, project=project)
+    raise InvalidMissionSpec("must specify mission id or project name / id")
 
 
 class FilesById(NamedTuple):
@@ -139,27 +150,8 @@ class FilesByMission(NamedTuple):
     files: List[Union[str, UUID]]
 
 
-def get_valid_mission_spec(
-    mission: Optional[Union[str, UUID]],
-    project: Optional[Union[str, UUID]] = None,
-) -> Union[MissionById, MissionByName]:
-    """\
-    checks if:
-    - atleast one is speicifed
-    - if project is not specified then mission must be a valid uuid4
-    """
-
-    if mission is None:
-        raise InvalidMissionSpec
-    if isinstance(mission, UUID):
-        return MissionById(id=mission)
-    if isinstance(mission, str) and project is not None:
-        return MissionByName(name=mission, project=project)
-    raise InvalidMissionSpec
-
-
 def get_valid_file_spec(
-    files: List[Union[str, UUID]],
+    files: Sequence[Union[str, UUID]],
     mission: Optional[Union[str, UUID]] = None,
     project: Optional[Union[str, UUID]] = None,
 ) -> Union[FilesById, FilesByMission]:
@@ -174,8 +166,10 @@ def get_valid_file_spec(
             return FilesById(ids=files)  # type: ignore
         raise InvalidFileSpec
 
+    if mission is None:
+        raise InvalidMissionSpec("mission must be specified")
     mission_spec = get_valid_mission_spec(mission, project)
-    return FilesByMission(mission=mission_spec, files=files)
+    return FilesByMission(mission=mission_spec, files=list(files))
 
 
 def to_name_or_uuid(s: str) -> Union[UUID, str]:
