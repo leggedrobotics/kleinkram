@@ -78,5 +78,12 @@ pre-commit install
 Run the CLI
 
 ```bash
-klein
+klein --help
 ```
+
+### Run Tests
+```bash
+pytest .
+```
+
+You can also look in `scripts` for some scripts that might be useful for testing.
