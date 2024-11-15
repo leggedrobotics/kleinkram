@@ -40,7 +40,7 @@ def check_file_paths(files: List[Path]) -> None:
             )
 
 
-def raw_rich(*objects: Any) -> str:
+def raw_rich(*objects: Any, **kwargs: Any) -> str:
     """\
     accepts any object that Console.print can print
     returns the raw string output
@@ -49,23 +49,9 @@ def raw_rich(*objects: Any) -> str:
     console = Console()
 
     with console.capture() as capture:
-        console.print(*objects, end="")
+        console.print(*objects, **kwargs, end="")
 
     return capture.get()
-
-
-def patterns_matched(patterns: List[str]) -> Generator[Path, None, None]:
-    for pattern in patterns:
-        yield from pattern_matched(pattern)
-
-
-def pattern_matched(pattern: str) -> Generator[Path, None, None]:
-    """\
-    yields path to files matching a glob pattern
-    expanding user and environment variables
-    """
-    expanded = os.path.expandvars(os.path.expanduser(pattern))
-    yield from map(Path, glob.iglob(expanded, recursive=True))
 
 
 def is_valid_uuid4(uuid: str) -> bool:
@@ -74,11 +60,6 @@ def is_valid_uuid4(uuid: str) -> bool:
         return True
     except ValueError:
         return False
-
-
-def is_valid_name(name: str) -> bool:
-    # TODO: this is a placeholder
-    return not is_valid_uuid4(name)
 
 
 def get_filename(path: Path) -> str:
