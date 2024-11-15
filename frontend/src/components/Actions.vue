@@ -20,7 +20,7 @@
         @request="setPagination"
     >
         <template v-slot:body-cell-state="props">
-            <q-td :props="props">
+            <q-td :props="props" class="truncate-cell">
                 <template
                     v-if="
                         props.row.state === ActionState.PROCESSING ||
@@ -203,6 +203,13 @@ const columns = [
         label: 'State Reason',
         align: 'left',
         sortable: true,
+        style:
+            'background-color: red;' +
+            'max-width: 200px;' +
+            'overflow:hidden;' +
+            'whitespace:nowrap;' +
+            'text-overflow: ellipsis',
+
         field: (row: Action) => (row.stateCause ? row.stateCause : ''),
     },
 
@@ -239,4 +246,11 @@ const columns = [
 ];
 </script>
 
-<style scoped></style>
+<style scoped>
+.truncate-cell {
+    max-width: 150px; /* Adjust as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
