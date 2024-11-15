@@ -45,6 +45,10 @@ def download(
 
     # create destionation directory
     dest_dir = Path(dest)
+
+    if not dest_dir.exists():
+        typer.confirm(f"Destination {dest_dir} does not exist. Create it?", abort=True)
+
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     client = AuthenticatedClient()
