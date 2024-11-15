@@ -21,6 +21,7 @@ from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
 from kleinkram.utils import to_name_or_uuid
+from rich.console import Console
 
 
 HELP = """\
@@ -113,7 +114,25 @@ def upload(
         mission_parsed = get_mission_by_id(client, mission_id)
         assert mission_parsed is not None, "unreachable"
 
-    # do the uploading
+    filtered_files_map = {}
+    remote_file_names = [file.name for file in mission_parsed.files]
+
+    console = Console()
+    for name, path in files_map.items():
+        if name in remote_file_names:
+            console.print(
+                f"file: {name} (path: {path}) already exists in mission", style="yellow"
+            )
+        else:
+            filtered_files_map[name] = path
+
+    if not filtered_files_map:
+        console.print("\nNO FILES UPLOADED", style="yellow")
+        return
+
     upload_files(
-        files_map, mission_parsed.id, n_workers=2, verbose=get_shared_state().verbose
+        filtered_files_map,
+        mission_parsed.id,
+        n_workers=2,
+        verbose=get_shared_state().verbose,
     )
