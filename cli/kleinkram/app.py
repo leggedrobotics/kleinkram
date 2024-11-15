@@ -4,7 +4,6 @@ from collections import OrderedDict
 from enum import Enum
 from typing import Any
 from typing import Callable
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Type
@@ -168,6 +167,9 @@ def cli(
     ),
 ):
     _ = version  # suppress unused variable warning
+    shared_state = get_shared_state()
+    shared_state.verbose = verbose
+    shared_state.debug = debug
 
     try:
         check_version_compatiblity()
@@ -176,7 +178,3 @@ def cli(
     except Exception:
         console = Console()
         console.print("failed to check version compatibility", style="yellow")
-
-    shared_state = get_shared_state()
-    shared_state.verbose = verbose
-    shared_state.debug = debug

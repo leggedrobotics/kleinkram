@@ -102,9 +102,7 @@ def get_filename(path: Path) -> str:
     return f"{stem}{path.suffix}"
 
 
-def get_filename_map(
-    file_paths: List[Path], raise_on_change: bool = True
-) -> Dict[str, Path]:
+def get_filename_map(file_paths: List[Path]) -> Dict[str, Path]:
     """\
     takes a list of unique filepaths and returns a mapping
     from the original filename to a sanitized internal filename

@@ -159,6 +159,7 @@ class Config:
 
 @dataclass
 class _SharedState:
+    log_file: Optional[Path] = None
     verbose: bool = True
     debug: bool = False
 

@@ -53,7 +53,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                     refresh_token=params.get("refreshtoken")[0],  # type: ignore
                 )
             except Exception:
-                raise Exception("Failed to get authentication tokens.")
+                raise RuntimeError("Failed to fetch authentication tokens.")
 
             config = Config()
             config.save_credentials(creds)

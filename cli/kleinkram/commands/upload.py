@@ -22,6 +22,7 @@ from kleinkram.utils import load_metadata
 from kleinkram.utils import MissionByName
 from kleinkram.utils import to_name_or_uuid
 
+
 HELP = """\
 Upload files to kleinkram.
 """
@@ -53,19 +54,37 @@ def upload(
 
     client = AuthenticatedClient()
 
+    # check files and `fix` filenames
     if files is None:
         files = []
 
+    file_paths = [Path(file) for file in files]
+    check_file_paths(file_paths)
+
+    files_map = get_filename_map(
+        [Path(file) for file in files],
+    )
+
+    if not fix_filenames:
+        for name, path in files_map.items():
+            if name != path.name:
+                raise ValueError(
+                    f"invalid filename format {path.name}, use `--fix-filenames`"
+                )
+
+    # parse the mission spec and get mission
     mission_spec = get_valid_mission_spec(_mission, _project)
     mission_parsed = get_mission_by_spec(client, mission_spec)
 
     if not create and mission_parsed is None:
-        raise MissionDoesNotExist()
+        raise MissionDoesNotExist(f"mission: {mission} does not exist, use `--create`")
 
     # create missing mission
     if mission_parsed is None:
         if not isinstance(mission_spec, MissionByName):
-            raise ValueError("cannot create mission using mission id, use mission name")
+            raise ValueError(
+                "cannot create mission using mission id, pecify a mission name"
+            )
 
         # get the metadata
         tags_dct = {}
@@ -79,7 +98,9 @@ def upload(
         else:
             project_id = get_project_id_by_name(client, mission_spec.project)
             if project_id is None:
-                raise ValueError(f"project: {mission_spec.project} not found")
+                raise ValueError(
+                    f"unable to create mission, project: {mission_spec.project} not found"
+                )
 
         mission_id = create_mission(
             client,
@@ -92,13 +113,7 @@ def upload(
         mission_parsed = get_mission_by_id(client, mission_id)
         assert mission_parsed is not None, "unreachable"
 
-    # upload files
-    file_paths = [Path(file) for file in files]
-    check_file_paths(file_paths)
-
-    files_map = get_filename_map(
-        [Path(file) for file in files], raise_on_change=not fix_filenames
+    # do the uploading
+    upload_files(
+        files_map, mission_parsed.id, n_workers=2, verbose=get_shared_state().verbose
     )
-
-    state = get_shared_state()
-    upload_files(files_map, mission_parsed.id, n_workers=2, verbose=state.verbose)
