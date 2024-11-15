@@ -111,6 +111,7 @@
                             "
                         >
                             {{ data?.mission.name }}
+                            <q-tooltip> {{ data?.mission.name }}</q-tooltip>
                         </div>
                     </div>
                     <div class="col-3">
