@@ -159,8 +159,6 @@ def get_mission_by_id(
     params = {"uuid": str(mission_id), "take": MAX_PAGINATION}
     resp = client.get(FILE_OF_MISSION, params=params)
 
-    resp.raise_for_status()
-
     if resp.status_code in (403, 404):
         return None
 

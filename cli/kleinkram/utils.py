@@ -144,13 +144,13 @@ def get_valid_file_spec(
     """\
     """
     if not any([project, mission, files]):
-        raise InvalidFileSpec
+        raise InvalidFileSpec("must specify `project`, `mission` or `files`")
 
     # if only files are specified they must be valid uuid4
     if project is None and mission is None:
         if all(map(lambda file: isinstance(file, UUID), files)):
             return FilesById(ids=files)  # type: ignore
-        raise InvalidFileSpec
+        raise InvalidFileSpec("if no mission is specified files must be valid uuid4")
 
     if mission is None:
         raise InvalidMissionSpec("mission must be specified")
