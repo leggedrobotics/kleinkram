@@ -17,14 +17,16 @@ from kleinkram.errors import MissionExists
 from kleinkram.errors import NoPermission
 from kleinkram.models import DataType
 from kleinkram.models import File
+from kleinkram.models import FilesById
+from kleinkram.models import FilesByMission
+from kleinkram.models import FileState
 from kleinkram.models import Mission
+from kleinkram.models import MissionById
+from kleinkram.models import MissionByName
 from kleinkram.models import Project
 from kleinkram.models import TagType
-from kleinkram.utils import FilesById
-from kleinkram.utils import FilesByMission
 from kleinkram.utils import is_valid_uuid4
-from kleinkram.utils import MissionById
-from kleinkram.utils import MissionByName
+
 
 # TODO: change to 10000
 MAX_PAGINATION = 1_000
@@ -270,6 +272,7 @@ def _parse_file(file: Dict[str, Any]) -> File:
         project_name=project_name,
         mission_id=mission_id,
         mission_name=mission_name,
+        state=FileState(file["state"]),
     )
     return parsed
 
@@ -277,6 +280,7 @@ def _parse_file(file: Dict[str, Any]) -> File:
 def get_file(client: AuthenticatedClient, id: UUID) -> File:
     resp = client.get(FILE_ONE, params={"uuid": str(id)})
     resp.raise_for_status()
+
     return _parse_file(resp.json())
 
 

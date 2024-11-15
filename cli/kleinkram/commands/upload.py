@@ -15,11 +15,11 @@ from kleinkram.api.routes import get_project_id_by_name
 from kleinkram.api.routes import get_tags_map
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionDoesNotExist
+from kleinkram.models import MissionByName
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
-from kleinkram.utils import MissionByName
 from kleinkram.utils import to_name_or_uuid
 
 
@@ -50,7 +50,7 @@ def upload(
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     _project = to_name_or_uuid(project) if project else None
-    _mission = to_name_or_uuid(mission) if mission else None
+    _mission = to_name_or_uuid(mission)
 
     client = AuthenticatedClient()
 

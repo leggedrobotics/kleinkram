@@ -22,6 +22,10 @@ from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import InvalidFileSpec
 from kleinkram.errors import InvalidMissionSpec
+from kleinkram.models import FilesById
+from kleinkram.models import FilesByMission
+from kleinkram.models import MissionById
+from kleinkram.models import MissionByName
 from rich.console import Console
 
 
@@ -115,15 +119,6 @@ def b64_md5(file: Path) -> str:
     return base64.b64encode(binary_digest).decode("utf-8")
 
 
-class MissionById(NamedTuple):
-    id: UUID
-
-
-class MissionByName(NamedTuple):
-    name: str
-    project: Union[str, UUID]
-
-
 def get_valid_mission_spec(
     mission: Union[str, UUID],
     project: Optional[Union[str, UUID]] = None,
@@ -139,15 +134,6 @@ def get_valid_mission_spec(
     if isinstance(mission, str) and project is not None:
         return MissionByName(name=mission, project=project)
     raise InvalidMissionSpec("must specify mission id or project name / id")
-
-
-class FilesById(NamedTuple):
-    ids: List[UUID]
-
-
-class FilesByMission(NamedTuple):
-    mission: MissionById | MissionByName
-    files: List[Union[str, UUID]]
 
 
 def get_valid_file_spec(
