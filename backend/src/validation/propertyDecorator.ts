@@ -1,18 +1,20 @@
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { Matches } from 'class-validator';
-import { missionNameRegex } from './validationLogic';
+import {
+    FILE_NAME_REGEX,
+    MISSION_NAME_REGEX,
+    PROJECT_NAME_REGEX,
+    UUID_REGEX,
+} from './validationLogic';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsNoValidUUID = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(
-        /^(?![0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/,
-        {
-            message: 'File name is not valid, are you trying to use a UUID?',
-            ...validationOptions,
-        },
-    );
+    Matches(UUID_REGEX, {
+        message: 'File name is not valid, are you trying to use a UUID?',
+        ...validationOptions,
+    });
 
 /**
  * Validates that the property is a valid filename.
@@ -29,7 +31,7 @@ export const IsNoValidUUID = (
 export const IsValidFileName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-.() ]{3,50}.(bag|mcap)$/, {
+    Matches(FILE_NAME_REGEX, {
         message: 'Filename is not valid!',
         ...validationOptions,
     });
@@ -51,7 +53,7 @@ export const IsValidFileName = (
 export const IsValidName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-_]{3,50}$/, {
+    Matches(PROJECT_NAME_REGEX, {
         message: 'Project name is not valid!',
         ...validationOptions,
     });
@@ -73,7 +75,7 @@ export const IsValidName = (
 export const IsValidMissionName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(missionNameRegex, {
+    Matches(MISSION_NAME_REGEX, {
         message: 'Mission name is not valid!',
         ...validationOptions,
     });
