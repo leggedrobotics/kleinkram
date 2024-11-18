@@ -5,7 +5,7 @@ import FileEntity from '../file/file.entity';
 import User from '../user/user.entity';
 
 @Entity()
-@Unique(['name', 'project'])
+@Unique('unique_category_name_per_project', ['name', 'project'])
 export default class Category extends BaseEntity {
     @Column()
     name: string;

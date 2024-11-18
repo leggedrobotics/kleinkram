@@ -58,7 +58,7 @@ export default tseslint.config(
         ignores: [
             '**/node_modules',
             '**/dist/**',
-            'CLI/**',
+            'cli/**',
             '**.py',
             '**/docs/.vitepress/**',
             '**/.venv/**',

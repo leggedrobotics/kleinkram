@@ -324,10 +324,10 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 )[0] as unknown as Tag[];
                 const missionUUID = tags.find(
                     (tag) => tag.Key === 'mission_uuid',
-                )?.Value;
+                ).Value;
                 const filename = tags.find(
                     (tag) => tag.Key === 'filename',
-                )?.Value;
+                ).Value;
                 const minioObject = await internalMinio.statObject(bucket, obj);
                 const mission = await this.missionRepository.findOne({
                     where: {

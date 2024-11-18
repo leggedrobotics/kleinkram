@@ -46,7 +46,6 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import ROUTES from 'src/router/routes';
 import { computed } from 'vue';
 
 interface MainMenu {

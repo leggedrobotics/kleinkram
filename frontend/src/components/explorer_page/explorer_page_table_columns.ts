@@ -3,6 +3,7 @@ import { formatDate } from 'src/services/dateFormating';
 import { Mission } from 'src/types/Mission';
 import { FileEntity } from 'src/types/FileEntity';
 import { formatSize } from 'src/services/generalFormatting';
+import { AggregatedMission } from 'src/types/subtypes/AggregatedMission';
 
 export type ProjectColumnType = {
     name: string;
@@ -12,7 +13,8 @@ export type ProjectColumnType = {
     field?:
         | ((row: Project) => any)
         | ((row: Mission) => any)
-        | ((row: FileEntity) => any);
+        | ((row: FileEntity) => any)
+        | ((row: AggregatedMission) => any);
     format?: ((val: string) => string) | ((val: number) => string);
     sortable?: boolean;
     style?: string;
@@ -90,7 +92,7 @@ export const missionColumns: Array<ProjectColumnType> = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: Mission) => row.files.length,
+        field: (row: AggregatedMission) => row.nrFiles,
         format: (val: number) => `${val}`,
     },
     {
@@ -122,8 +124,7 @@ export const missionColumns: Array<ProjectColumnType> = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: Mission) =>
-            row.files.map((f) => f.size).reduce((a, b) => a + b, 0),
+        field: (row: AggregatedMission) => row.size,
         format: formatSize,
     },
     {

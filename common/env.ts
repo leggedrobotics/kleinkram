@@ -175,4 +175,8 @@ export default {
     get ARTIFACTS_UPLOADER_IMAGE(): string {
         return asString(process.env.ARTIFACTS_UPLOADER_IMAGE);
     },
+
+    get DOCS_URL(): string {
+        return asString(process.env.DOCS_URL);
+    },
 };

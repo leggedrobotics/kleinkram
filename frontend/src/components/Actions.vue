@@ -20,7 +20,7 @@
         @request="setPagination"
     >
         <template v-slot:body-cell-state="props">
-            <q-td :props="props">
+            <q-td :props="props" class="truncate-cell">
                 <template
                     v-if="
                         props.row.state === ActionState.PROCESSING ||
@@ -65,15 +65,19 @@
                                 v-ripple
                                 @click="router.push('action/' + props.row.uuid)"
                             >
-                                <q-item-section>View Details </q-item-section>
+                                <q-item-section>View Details</q-item-section>
                             </q-item>
 
                             <q-item clickable v-ripple disabled>
-                                <q-item-section>Cancel Action </q-item-section>
+                                <q-item-section>Cancel Action</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple disabled>
-                                <q-item-section>Delete Action </q-item-section>
-                            </q-item>
+                            <DeleteActionDialogOpener :action="props.row">
+                                <q-item clickable v-ripple>
+                                    <q-item-section>
+                                        Delete Action
+                                    </q-item-section>
+                                </q-item>
+                            </DeleteActionDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -95,6 +99,7 @@ import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
+import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 
 const router = useRouter();
 
@@ -198,6 +203,12 @@ const columns = [
         label: 'State Reason',
         align: 'left',
         sortable: true,
+        style:
+            'max-width: 10vw;' +
+            'overflow:hidden;' +
+            'whitespace:nowrap;' +
+            'text-overflow: ellipsis',
+
         field: (row: Action) => (row.stateCause ? row.stateCause : ''),
     },
 
@@ -234,4 +245,11 @@ const columns = [
 ];
 </script>
 
-<style scoped></style>
+<style scoped>
+.truncate-cell {
+    max-width: 150px; /* Adjust as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>

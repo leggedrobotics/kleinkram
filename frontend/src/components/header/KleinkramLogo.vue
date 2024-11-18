@@ -1,6 +1,6 @@
 <template>
     <div class="flex row justify-center cursor-pointer q-my-auto q-pa-none">
-        <img src="/logoRSL.png" style="height: 28px" />
+        <img src="/logoRSL.png" style="height: 28px" alt="RSL Logo" />
         <div
             class="flex column justify-center"
             style="margin-left: 12px"
@@ -17,8 +17,14 @@
                 Kleinkram
             </span>
             <span style="font-size: 10px; line-height: 12px"
-                >by Robotics Systems Lab</span
+                >by Robotic Systems Lab</span
             >
         </div>
     </div>
 </template>
+
+<script setup lang="ts">
+import { useQuasar } from 'quasar';
+
+const $q = useQuasar();
+</script>

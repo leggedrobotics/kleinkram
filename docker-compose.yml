@@ -1,10 +1,11 @@
 services:
-    main:
-        image: rslethz/grandtour-datasets:api-server-latest
-        container_name: API
+    api-server:
+        container_name: kleinkram-api-server
+
         build:
             context: .
             dockerfile: backend/Dockerfile
+
         volumes:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
@@ -12,42 +13,56 @@ services:
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
+
         env_file:
             - .env
+
         networks:
-            - webnet
-            - privatenet
+            - public-network
+            - private-network
 
         environment:
             DEVBUILD: 'true'
 
         depends_on:
             - database
-            - bullconsumer
+            - minio
+            - redis
 
     database:
-        image: postgres:13
-        container_name: postgres_db
+        image: postgres:16
+
+        container_name: kleinkram-postgres
+
         ports:
             - '5432:5432'
+
         networks:
-            - privatenet
+            - private-network
+
         environment:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USER}
             POSTGRES_PASSWORD: ${DB_PASSWORD}
+
         volumes:
             - db_data:/var/lib/postgresql/data
 
     minio:
         image: minio/minio
+
+        container_name: kleinkram-minio
+
         volumes:
             - minio_data:/data
+
         environment:
             MINIO_ROOT_USER: ${MINIO_USER}
             MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
             MINIO_PROMETHEUS_AUTH_TYPE: 'public'
+
         entrypoint: sh
+
         # initialize buckets (see https://github.com/minio/minio/issues/4769#issuecomment-331033735)
         # and add service worker access key after startup of the minio server
         command: >
@@ -60,21 +75,24 @@ services:
             mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
             echo 'minio is ready' &&
             sleep infinity"
+
         ports:
             - '127.0.0.1:9000:9000'
             - '127.0.0.1:9001:9001'
+
         networks:
-            - webnet
-            - privatenet
+            - public-network
+            - private-network
 
     frontend:
-        image: rslethz/grandtour-datasets:vuejs_frontend-latest
+        container_name: kleinkram-frontend
+
         build:
             context: .
             dockerfile: ./frontend/dev.Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
-        container_name: vuejs_frontend
+
         ports:
             - '8003:8003'
 
@@ -87,22 +105,31 @@ services:
                   path: ./frontend
                   target: /app
 
+        depends_on:
+            - api-server
+            - minio
+
         networks:
-            - webnet
+            - public-network
 
     redis:
         image: redis:latest
+
+        container_name: kleinkram-redis
+
         ports:
             - '6379:6379'
-        networks:
-            - privatenet
 
-    bullconsumer:
-        image: rslethz/grandtour-datasets:bull-consumer-latest
-        container_name: bullconsumer
+        networks:
+            - private-network
+
+    queue-consumer:
+        container_name: kleinkram-queue-consumer
+
         build:
             context: .
             dockerfile: queueConsumer/Dockerfile
+
         volumes:
             - ./queueConsumer:/usr/src/queueConsumer
             - ./common:/usr/src/common
@@ -110,6 +137,7 @@ services:
             - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+
         develop:
             watch:
                 - action: sync
@@ -118,17 +146,20 @@ services:
                   ignore:
                       - node_modules/
                       - dist/
+
         env_file:
             - .env
+
         networks:
-            - privatenet
+            - private-network
+
         depends_on:
             - database
-            - loki
             - redis
 
     prometheus:
         image: prom/prometheus
+        container_name: kleinkram-prometheus
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -139,12 +170,13 @@ services:
         ports:
             - '9090:9090'
         networks:
-            - privatenet
-            - webnet
+            - private-network
+            - public-network
 
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
+        container_name: kleinkram-tempo
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -154,12 +186,12 @@ services:
             - '4317' # otlp grpc
             - '4318' # otlp http
         networks:
-            - privatenet
-            - webnet
+            - private-network
+            - public-network
 
     loki:
         image: grafana/loki
-        container_name: loki
+        container_name: kleinkram-loki
         ports:
             - '3100:3100'
         command:
@@ -167,11 +199,12 @@ services:
         volumes:
             - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
         networks:
-            - privatenet
-            - webnet
+            - private-network
+            - public-network
 
     grafana:
         image: grafana/grafana
+        container_name: kleinkram-grafana
         volumes:
             - logging-grafana-storage:/var/lib/grafana
             - ./observability/grafana/provisioning:/etc/grafana/provisioning
@@ -187,13 +220,13 @@ services:
         ports:
             - '9050:3000' # localhost:9050 for accessing grafana
         networks:
-            - privatenet
-            - webnet
+            - private-network
+            - public-network
 
     docs:
+        container_name: kleinkram-docs
         depends_on:
-            - main
-        image: rslethz/grandtour-datasets:docs-latest
+            - api-server
         build:
             context: docs/.
             dockerfile: local-dev.Dockerfile
@@ -208,6 +241,7 @@ services:
             - ./backend/docs:/app/src/docs/
 
     artifactUploader:
+        container_name: kleinkram-artifact-uploader
         image: rslethz/grandtour-datasets:artifact-uploader-latest
         build:
             context: queueConsumer/src/artifactUpload
@@ -215,6 +249,7 @@ services:
 
     postgres-exporter:
         image: prometheuscommunity/postgres-exporter
+        container_name: kleinkram-postgres-exporter
         ports:
             - 9187:9187
         env_file:
@@ -223,7 +258,7 @@ services:
             - database
             - prometheus
         networks:
-            - privatenet
+            - private-network
 
 volumes:
     db_data:
@@ -235,5 +270,5 @@ volumes:
     node_modules:
 
 networks:
-    webnet:
-    privatenet:
+    public-network:
+    private-network:

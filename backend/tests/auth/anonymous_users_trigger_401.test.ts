@@ -6,6 +6,8 @@ const UNAUTHENTICATED_ENDPOINTS = [
     '/auth/google/callback',
     '/auth/logout',
     '/metrics',
+    '/swagger/json',
+    '/swagger-yaml',
 ];
 
 /**

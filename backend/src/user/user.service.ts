@@ -29,10 +29,6 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async findOneByEmail(email: string) {
-        return this.userRepository.findOne({ where: { email } });
-    }
-
     async findOneByUUID(uuid: string) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
@@ -41,6 +37,9 @@ export class UserService implements OnModuleInit {
                 'accessGroupUsers.accessGroup',
                 'account',
             ],
+            // here we need to explicitly select the fields we want to return
+            // as role and email are not selected by default
+            select: ['uuid', 'name', 'email', 'role'],
         });
     }
 
@@ -63,6 +62,7 @@ export class UserService implements OnModuleInit {
     async me(auth: AuthRes) {
         return await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
+            select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
             relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
         });
     }
@@ -113,15 +113,17 @@ export class UserService implements OnModuleInit {
             },
             relations: ['accessGroupUsers'],
         });
-
+        let defaultPermission;
         if (!user) {
             user = await this.userRepository.findOneOrFail({
                 where: { uuid: auth.user.uuid },
             });
+            defaultPermission = 0;
+        } else {
+            defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
         }
 
         const role = user.role;
-        const defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
 
         const projects: {
             uuid: string;
@@ -154,11 +156,22 @@ export class UserService implements OnModuleInit {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
+            select: ['uuid', 'name', 'role'],
         });
         const apiKey = await this.apikeyRepository.findOneOrFail({
             where: { apikey },
             relations: ['action'],
         });
         return { user, apiKey };
+    }
+
+    /**
+     * Get the number of members in a group
+     * @param uuid
+     */
+    async getMemberCount(uuid: string): Promise<number> {
+        return this.userRepository.count({
+            where: { accessGroupUsers: { accessGroup: { uuid } } },
+        });
     }
 }

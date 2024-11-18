@@ -43,7 +43,6 @@
             v-model="projectDescription"
             type="textarea"
             outlined
-            style="padding-bottom: 10px"
             placeholder="Description..."
             :rules="[(val) => !!val || 'Project Description is required']"
             @update:model-value="

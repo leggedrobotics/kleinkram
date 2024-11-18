@@ -8,6 +8,7 @@ import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import { CountedAccessGroups } from './dto/CountedAccessGroups.dto';
 
 @Injectable()
 export class AccessService {
@@ -251,9 +252,9 @@ export class AccessService {
         }
         if (member) {
             // user in in users of access group
-            where['users'] = { uuid: auth.user.uuid };
+            where['accessGroupUsers'] = { user: { uuid: auth.user.uuid } };
         }
-        return this.accessGroupRepository.findAndCount({
+        const [found, count] = await this.accessGroupRepository.findAndCount({
             where,
             skip,
             take,
@@ -265,6 +266,7 @@ export class AccessService {
                 'creator',
             ],
         });
+        return { entities: found, total: count } as CountedAccessGroups;
     }
 
     async addAccessGroupToProject(
@@ -334,7 +336,7 @@ export class AccessService {
         projectUUID: string,
         accessGroupUUID: string,
         auth: AuthRes,
-    ): Promise<AccessGroup> {
+    ) {
         const canDelete = await this.hasProjectRights(
             projectUUID,
             auth,
@@ -353,10 +355,6 @@ export class AccessService {
             },
         });
         await this.projectAccessRepository.remove(projectAccess);
-        return this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['users'],
-        });
     }
 
     async deleteAccessGroup(uuid: string) {
@@ -371,20 +369,16 @@ export class AccessService {
     async getProjectAccess(projectUUID: string, projectAccessUUID: string) {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
-            relations: ['project'],
+            relations: ['project', 'accessGroup'],
         });
     }
 
     async updateProjectAccess(
         projectUUID: string,
-        projectAccessUUID: string,
+        groupUuid: string,
         rights: AccessGroupRights,
         auth: AuthRes,
     ) {
-        const projectAccess = await this.projectAccessRepository.findOneOrFail({
-            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
-        });
-
         if (rights === AccessGroupRights.DELETE) {
             const canDelete = await this.hasProjectRights(
                 projectUUID,
@@ -398,11 +392,14 @@ export class AccessService {
             }
         }
 
-        projectAccess.rights = rights;
-        await this.projectAccessRepository.save(projectAccess);
-        return this.projectAccessRepository.findOneOrFail({
-            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
-        });
+        return await this.projectAccessRepository.upsert(
+            {
+                rights,
+                project: { uuid: projectUUID },
+                accessGroup: { uuid: groupUuid },
+            },
+            { conflictPaths: ['project.uuid', 'accessGroup.uuid'] },
+        );
     }
 
     async setExpireDate(uuid: string, expireDate: Date | null) {

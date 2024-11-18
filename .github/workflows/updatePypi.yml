@@ -6,7 +6,7 @@ on:
             - main
             - dev
         paths:
-            - 'CLI/**'
+            - 'cli/**'
 
 jobs:
     build_and_deploy:
@@ -25,25 +25,25 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install build twine
 
-            - name: Generate consts.py
-              run: |
-                  echo "API_URL='https://api.datasets.leggedrobotics.com'" > CLI/src/kleinkram/consts.py
-
-            - name: Modify version for dev release
+            - name: Run release script in dev mode to set __local__ False
               if: github.ref == 'refs/heads/dev'
               run: |
-                  pip install tomlkit
-                  python .github/scripts/addDevToPyPiRelease.py
+                  python .github/scripts/release.py --dev
+
+            - name: Run release script to set __local__ False
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  python .github/scripts/release.py
 
             - name: Build package
               run: |
-                  cd CLI
+                  cd cli
                   python -m build
 
             - name: Publish to PyPI
-              uses: pypa/gh-action-pypi-publish@v1.10.3
+              uses: pypa/gh-action-pypi-publish@v1.12.2
               with:
                   user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
-                  package: CLI/dist/*
-                  packages_dir: CLI/dist
+                  package: cli/dist/*
+                  packages_dir: cli/dist

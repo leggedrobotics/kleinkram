@@ -9,7 +9,7 @@
                 class="rotating-element"
                 :key="tag.uuid"
                 removable
-                @remove="removeTagCallback(tag)"
+                @remove="() => removeTagCallback(tag)"
             >
                 <b>{{ tag.type.name }}:&nbsp;</b>{{ tag.asString() }}
             </q-chip>

@@ -22,7 +22,7 @@ export const getActions = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
 
     if (search) {
@@ -171,7 +171,7 @@ export const actionDetails = async (actionUuid: string) => {
             response.data.state_cause,
             response.data.artifact_url,
             response.data.artifacts,
-            null,
+            Mission.fromAPIResponse(response.data.mission),
             template,
             response.data.image,
             user,

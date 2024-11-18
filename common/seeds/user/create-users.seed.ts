@@ -2,7 +2,7 @@ import { Factory, Seeder } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
 import { UserContext } from '../../factories/user/user.factory';
 import { FileType, UserRole } from '../../enum';
-import { Connection } from 'typeorm';
+import { Connection, Not } from 'typeorm';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { AccessGroupFactoryContext } from '../../factories/auth/accessgroup.factory';
 import Project from '../../entities/project/project.entity';
@@ -29,13 +29,16 @@ export default class CreateUsers implements Seeder {
         // //////////////////////////////////////////
         // Abort Seeding if Users already exist
         // //////////////////////////////////////////
-        const usersCount = await conn.getRepository(User).count();
+        const usersCount = await conn.getRepository(User).count({
+            where: { uuid: Not('10000000-0000-0000-0000-000000000000') },
+        });
         if (usersCount > 0) {
             console.log(
                 '\n\n »» Users already exist in the DB; skipping seeding\n\n',
             );
             return;
         }
+        console.log('\n\n »» Seeding Users...\n\n');
 
         // //////////////////////////////////////////
         // Start Seeding

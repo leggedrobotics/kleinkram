@@ -5,7 +5,7 @@
         <template #content>
             <q-form @submit="onDialogOK" class="row flex">
                 <b style="align-content: center" v-if="projectAccess">{{
-                    projectAccess.project.name
+                    projectAccess.project?.name
                 }}</b>
                 <q-select
                     v-model="rights"
@@ -45,7 +45,7 @@ const props = defineProps<{
     project_access_uuid: string;
 }>();
 
-const rights = ref({ label: 'None', value: AccessGroupRights.NONE });
+const rights = ref({ label: 'None', value: AccessGroupRights.READ });
 const queryClient = useQueryClient();
 
 const { data: projectAccess } = useQuery<ProjectAccess>({
@@ -58,7 +58,7 @@ const { mutate: changeAccessRights } = useMutation({
     mutationFn: () => {
         return updateProjectAccess(
             props.project_uuid,
-            props.project_access_uuid,
+            projectAccess.value?.accessGroup.uuid,
             rights.value.value,
         );
     },
@@ -72,7 +72,7 @@ const { mutate: changeAccessRights } = useMutation({
     },
     onError: (e) => {
         Notify.create({
-            message: `Failed to change access rights:  ${e.response.data.message}`,
+            message: `Failed to change access rights:  ${e.response?.data.message}`,
             color: 'negative',
             position: 'bottom',
         });
@@ -96,7 +96,7 @@ const options = Object.keys(accessGroupRightsMap)
         label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
         value: parseInt(key, 10),
     }))
-    .filter((option) => option.value !== AccessGroupRights.NONE);
+    .filter((option) => option.value !== AccessGroupRights.READ);
 
 function confirmAction() {
     changeAccessRights();

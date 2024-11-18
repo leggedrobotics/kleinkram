@@ -30,4 +30,35 @@ export class User extends BaseEntity {
         this.accessGroupUsers = accessGroupUsers;
         this.avatarUrl = avatarUrl;
     }
+
+    static fromAPIResponse(response: any): User | null {
+        if (!response) {
+            return null;
+        }
+        let projects: Project[] = [];
+        if (response.projects) {
+            projects = response.projects.map((project: any) =>
+                Project.fromAPIResponse(project),
+            );
+        }
+
+        let accessGroupUsers: AccessGroupUser[] = [];
+        if (response.accessGroupUsers) {
+            accessGroupUsers = response.accessGroupUsers.map(
+                (accessGroupUser: any) =>
+                    AccessGroupUser.fromAPIResponse(accessGroupUser),
+            );
+        }
+        return new User(
+            response.uuid,
+            response.name,
+            response.email,
+            response.role,
+            response.avatarUrl,
+            projects,
+            accessGroupUsers,
+            new Date(response.createdAt),
+            new Date(response.updatedAt),
+        );
+    }
 }

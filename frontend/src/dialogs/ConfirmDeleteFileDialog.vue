@@ -3,10 +3,6 @@
         <template #title> Delete File</template>
         <template #content>
             <q-card-section class="q-pa-md">
-                <p v-if="filename.endsWith('.bag')">
-                    This will not only delete the bag-file but also the MCAP if
-                    it exists!
-                </p>
                 <p>
                     Please confirm by entering the Filename:
                     <b>{{ filename }}</b>

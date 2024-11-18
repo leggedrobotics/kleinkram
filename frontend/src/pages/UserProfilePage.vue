@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import UserProfileDetails from 'components/UserProfileDetails.vue';
+import UserProfileDetails from 'components/userProfile/UserProfileDetails.vue';
 </script>

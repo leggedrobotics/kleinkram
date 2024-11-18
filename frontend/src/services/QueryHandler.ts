@@ -346,7 +346,16 @@ export class QueryURLHandler extends QueryHandler {
             categories:
                 this.categories.length > 0 ? this.categories : undefined,
         };
-        this.router.push({ query: newQuery });
+
+        // check if any query was set before writing to the URL
+        const queries = this.router.currentRoute.value.query;
+        const hasQueries = Object.keys(queries).length > 0;
+        if (!hasQueries) {
+            this.router.replace({ query: newQuery });
+        } else {
+            this.router.push({ query: newQuery });
+        }
+
         this.internalUpdate = false;
     }
 }

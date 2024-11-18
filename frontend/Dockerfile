@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine as build-stage
+FROM node:22-alpine AS build-stage
 
 ARG QUASAR_ENDPOINT
 ENV VITE_QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
@@ -22,7 +22,7 @@ RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") &
     yarn build
 
 # Production stage
-FROM nginx:alpine as production-stage
+FROM nginx:alpine AS production-stage
 
 # copy the nginx configuration file to the container
 COPY ./frontend/nginx.conf /etc/nginx/conf.d/default.conf

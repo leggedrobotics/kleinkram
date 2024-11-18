@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
 import {
     ActionQuery,
@@ -9,15 +9,18 @@ import {
     CanCreate,
     CanCreateAction,
     CanCreateActions,
+    CanDeleteAction,
     CanReadAction,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import {
-    QueryOptionalBoolean,
     QueryOptionalString,
     QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
+    QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
 import Action from '@common/entities/action/action.entity';
@@ -25,6 +28,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
+import { ParamUUID } from '../validation/paramDecorators';
 
 @Controller('action')
 export class ActionController {
@@ -37,6 +41,12 @@ export class ActionController {
         @addUser() user: AuthRes,
     ): Promise<Action> {
         return this.actionService.submit(dto, user);
+    }
+
+    @Delete(':uuid')
+    @CanDeleteAction()
+    async deleteAction(@ParamUUID('uuid') uuid: string): Promise<boolean> {
+        return this.actionService.delete(uuid);
     }
 
     @Post('multiSubmit')
@@ -65,16 +75,21 @@ export class ActionController {
     ) {
         return this.actionService.createNewVersion(dto, user);
     }
+
     @Get('listActions')
     @LoggedIn()
     async list(
         @Query() dto: ActionQuery,
         @addUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
-        @QuerySkip('take') take: number,
-        @QueryOptionalString('sortBy') sortBy: string,
-        @QueryOptionalBoolean('descending') descending: boolean,
-        @QueryOptionalString('search') search: string,
+        @QueryTake('take') take: number,
+        @QuerySortBy('sortBy') sortBy: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryOptionalString(
+            'search',
+            'Searchkey in name, state_cause or image_name',
+        )
+        search: string,
     ) {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -87,7 +102,7 @@ export class ActionController {
             skip,
             take,
             sortBy,
-            descending,
+            sortDirection,
             search,
         );
     }
@@ -108,14 +123,14 @@ export class ActionController {
         @addUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
-        @QueryOptionalString('search') search: string,
+        @QueryOptionalString('search', 'Searchkey in name') search: string,
     ) {
         return this.actionService.listTemplates(skip, take, search);
     }
 
     @Get('details')
     @CanReadAction()
-    async details(@QueryUUID('uuid') uuid: string) {
+    async details(@QueryUUID('uuid', 'ActionUUID') uuid: string) {
         return this.actionService.details(uuid);
     }
 }

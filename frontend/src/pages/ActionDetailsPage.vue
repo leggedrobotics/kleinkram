@@ -39,6 +39,29 @@
                 </q-tab>
             </q-tabs>
         </template>
+
+        <template v-slot:buttons>
+            <button-group>
+                <q-btn
+                    class="button-border"
+                    flat
+                    color="primary"
+                    icon="sym_o_link"
+                    label="Mission"
+                    @click="
+                        $router.push({
+                            name: ROUTES.FILES.routeName,
+                            params: {
+                                project_uuid: action?.mission?.project?.uuid,
+                                mission_uuid: action?.mission?.uuid,
+                            },
+                        })
+                    "
+                >
+                    <q-tooltip> Analyze Actions</q-tooltip>
+                </q-btn>
+            </button-group>
+        </template>
     </title-section>
 
     <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
@@ -49,7 +72,15 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ action?.image?.repoDigests?.[0] }}
+                                {{ action?.template.imageName }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="action?.image?.repoDigests?.[0]"
+                                >
+                                    <br />
+                                    {{ action?.image?.repoDigests?.[0] }}
+                                </span>
                             </td>
                         </tr>
                         <tr>
@@ -62,7 +93,7 @@
                         <tr>
                             <td class="q-table__cell">Created By</td>
                             <td class="q-table__cell">
-                                {{ action?.createdBy.name }}
+                                {{ action?.createdBy?.name }}
                             </td>
                         </tr>
                         <tr>
@@ -81,12 +112,26 @@
                             <td class="q-table__cell">Command</td>
                             <td class="q-table__cell">
                                 {{ action?.template.command }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.command"
+                                >
+                                    No command specified
+                                </span>
                             </td>
                         </tr>
                         <tr>
                             <td class="q-table__cell">Entrypoint</td>
                             <td class="q-table__cell">
                                 {{ action?.template.entrypoint }}
+
+                                <span
+                                    style="color: #525252; font-size: 0.8em"
+                                    v-if="!action?.template.entrypoint"
+                                >
+                                    No entrypoint specified
+                                </span>
                             </td>
                         </tr>
                         <tr>
@@ -156,6 +201,14 @@
                                     <br />
                                 </div>
                                 <div v-else>N/A</div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="q-table__cell">Project / Mission:</td>
+                            <td class="q-table__cell">
+                                {{ action?.mission?.project?.name }} /
+                                {{ action?.mission?.name }}
                             </td>
                         </tr>
 
@@ -313,20 +366,23 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
-import { computed, ComputedRef, Ref, ref } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
 import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
-import { formatDate, parseDate } from '../services/dateFormating';
+import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
+import ButtonGroup from 'components/ButtonGroup.vue';
+import ROUTES from 'src/router/routes';
 
 const tab = ref('info');
 
 const $route = useRoute();
+const $router = useRouter();
 
 const { data } = useQuery<Action>({
     queryKey: ['missions_action', $route.params.id],

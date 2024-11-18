@@ -5,7 +5,18 @@ export const DEFAULT_GROUP_UUIDS = ['00000000-0000-0000-0000-000000000000'];
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
     const accessGroupRepository = db.getRepository('AccessGroup');
     return (await accessGroupRepository.find({
-        relations: ['users'],
+        relations: ['accessGroupUsers', 'accessGroupUsers.user'],
+        select: {
+            accessGroupUsers: {
+                uuid: true,
+                user: {
+                    uuid: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            },
+        },
     })) as AccessGroup[];
 };
 /**
@@ -35,9 +46,13 @@ export const getAccessGroupForEmail = (
     email: string,
     accessGroups: AccessGroup[],
 ): AccessGroup => {
-    const group = accessGroups.filter((_group: AccessGroup) =>
-        _group.users.some((user) => user.email === email && _group.personal),
-    );
+    const group: AccessGroup[] =
+        accessGroups.filter((_group: AccessGroup) =>
+            _group.accessGroupUsers?.some(
+                (accessGroupUser) =>
+                    accessGroupUser.user.email === email && _group.personal,
+            ),
+        ) || [];
 
     const thereIsOnlyOnePersonalGroup = group.length === 1;
     expect(thereIsOnlyOnePersonalGroup).toBe(true);

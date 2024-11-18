@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-    main:
-        image: rslethz/grandtour-datasets:api-server-latest
-        container_name: api-server
+    api-server:
+        image: rslethz/kleinkram:api-server-latest
+        container_name: kleinkram-api-server
 
         build:
             context: .
@@ -23,11 +23,11 @@ services:
             DEVBUILD: 'false'
 
         depends_on:
-            - database
+            - postgres
 
-    database:
-        image: postgres:13
-        container_name: postgres_db
+    postgres:
+        image: postgres:16
+        container_name: kleinkram-postgres
 
         ports:
             - '5432:5432'
@@ -45,7 +45,7 @@ services:
 
     minio:
         image: minio/minio
-        container_name: minio_file_storage
+        container_name: kleinkram-minio
 
         volumes:
             - minio_data:/data
@@ -73,8 +73,8 @@ services:
             - privatenet
 
     frontend:
-        image: rslethz/grandtour-datasets:vuejs_frontend-latest
-        container_name: vuejs_frontend
+        image: rslethz/kleinkram:frontend-latest
+        container_name: kleinkram-frontend
 
         build:
             context: .
@@ -90,14 +90,15 @@ services:
 
     redis:
         image: redis:latest
+        container_name: kleinkram-redis
         ports:
             - '6379:6379'
         networks:
             - privatenet
 
-    bullconsumer:
-        image: rslethz/grandtour-datasets:bull-consumer-latest
-        container_name: bullconsumer
+    queue-consumer:
+        image: rslethz/kleinkram:queue-consumer-latest
+        container_name: kleinkram-queue-consumer
         build:
             context: .
             dockerfile: ./queueConsumer/prod.Dockerfile
@@ -106,13 +107,15 @@ services:
         networks:
             - privatenet
         depends_on:
-            - database
+            - postgres
             - loki
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+
     prometheus:
         image: prom/prometheus
+        container_name: kleinkram-prometheus
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -128,6 +131,7 @@ services:
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
+        container_name: kleinkram-tempo
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -141,7 +145,7 @@ services:
 
     loki:
         image: grafana/loki
-        container_name: loki
+        container_name: kleinkram-loki
         ports:
             - '3100:3100'
         command:
@@ -153,6 +157,7 @@ services:
 
     grafana:
         image: grafana/grafana
+        container_name: kleinkram-grafana
         volumes:
             - logging-grafana-storage:/var/lib/grafana
             - ./observability/grafana/provisioning:/etc/grafana/provisioning
@@ -164,14 +169,15 @@ services:
         networks:
             - privatenet
 
-    awt-docs:
-        image: rslethz/grandtour-datasets:docs-latest
+    documentation:
+        image: rslethz/kleinkram:docs-latest
+        container_name: kleinkram-documentation
         build:
             context: docs/.
             dockerfile: Dockerfile
 
-    artifactUploader:
-        image: rslethz/grandtour-datasets:artifact-uploader-latest
+    artifact-uploader:
+        image: rslethz/kleinkram:artifact-uploader-latest
         build:
             context: queueConsumer/src/artifactUpload
             dockerfile: Dockerfile

@@ -1,37 +1,44 @@
-import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import {
-    PublicGuard,
-    LoggedInUserGuard,
-    AdminOnlyGuard,
-    ReadProjectGuard,
-    WriteProjectGuard,
-    ReadProjectByNameGuard,
-    DeleteProjectGuard,
-    ReadMissionGuard,
-    ReadMissionByNameGuard,
-    MoveMissionToProjectGuard,
-    ReadFileGuard,
-    ReadFileByNameGuard,
-    WriteFileGuard,
-    WriteMissionByBodyGuard,
-    CreateQueueByBodyGuard,
-    ReadActionGuard,
+    applyDecorators,
+    SetMetadata,
+    UnauthorizedException,
+    UseGuards,
+} from '@nestjs/common';
+import {
     AddTagGuard,
-    DeleteTagGuard,
-    CanDeleteMissionGuard,
-    DeleteFileGuard,
     AddUserToAccessGroupGuard,
-    IsAccessGroupCreatorByProjectAccessGuard,
+    AdminOnlyGuard,
+    CanDeleteMissionGuard,
     CanReadManyMissionsGuard,
+    CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
     CreateInMissionByBodyGuard,
     CreateInProjectByBodyGuard,
-    UserGuard,
-    MoveFilesGuard,
-    CreateActionGuard,
+    CreateQueueByBodyGuard,
+    DeleteFileGuard,
+    DeleteProjectGuard,
+    DeleteTagGuard,
     IsAccessGroupCreatorByAccessGroupUserGuard,
+    IsAccessGroupCreatorByProjectAccessGuard,
+    LoggedInUserGuard,
+    MoveFilesGuard,
+    MoveMissionToProjectGuard,
+    PublicGuard,
+    ReadActionGuard,
+    ReadFileByNameGuard,
+    ReadFileGuard,
+    ReadMissionByNameGuard,
+    ReadMissionGuard,
+    ReadProjectByNameGuard,
+    ReadProjectGuard,
+    UserGuard,
+    WriteFileGuard,
+    WriteMissionByBodyGuard,
+    WriteProjectGuard,
+    DeleteActionGuard,
 } from './roles.guard';
+import { ApiResponse } from '@nestjs/swagger';
 
 // disable naming-convention rule for enum.ts
 /* eslint @typescript-eslint/naming-convention: 0 */
@@ -57,6 +64,12 @@ export function UserOnly() {
     return applyDecorators(
         SetMetadata('isLoggedIn', true),
         UseGuards(UserGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'Not authenticated. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -93,6 +106,12 @@ export function CanWriteProject() {
     return applyDecorators(
         SetMetadata('CanWriteProject', true),
         UseGuards(WriteProjectGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Modify permissions on the specified project. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -107,6 +126,12 @@ export function CanCreate() {
     return applyDecorators(
         SetMetadata('CanCreate', true),
         UseGuards(CreateGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have global create permissions. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -116,6 +141,7 @@ export function CanReadMission() {
         UseGuards(ReadMissionGuard),
     );
 }
+
 export function CanReadMissionByName() {
     return applyDecorators(
         SetMetadata('CanReadMission', true),
@@ -192,24 +218,34 @@ export function CanCreateQueueByBody() {
         UseGuards(CreateQueueByBodyGuard),
     );
 }
+
 export function CanReadAction() {
     return applyDecorators(
         SetMetadata('CanReadAction', true),
         UseGuards(ReadActionGuard),
     );
 }
+
 export function CanCreateAction() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionGuard),
     );
 }
+
 export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionsGuard),
     );
 }
+export function CanDeleteAction() {
+    return applyDecorators(
+        SetMetadata('CanDeleteAction', true),
+        UseGuards(DeleteActionGuard),
+    );
+}
+
 export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),
@@ -228,6 +264,12 @@ export function IsAccessGroupCreator() {
     return applyDecorators(
         SetMetadata('IsAccessGroupCreator', true),
         UseGuards(AddUserToAccessGroupGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User is not the creator of the access group. API keys are not valid on this endpoint.',
+        }),
     );
 }
 

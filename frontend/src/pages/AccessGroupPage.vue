@@ -270,22 +270,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
-import { computed, ComputedRef, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Notify, QTable, useQuasar } from 'quasar';
-import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
 import TitleSection from 'components/TitleSection.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import {
-    removeAccessGroupFromProject,
     removeUserFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
-import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';

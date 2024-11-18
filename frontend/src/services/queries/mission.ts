@@ -4,7 +4,7 @@ import { Project } from 'src/types/Project';
 import { User } from 'src/types/User';
 import { TagType } from 'src/types/TagType';
 import { Tag } from 'src/types/Tag';
-import { FileEntity } from 'src/types/FileEntity';
+import { AggregatedMission } from 'src/types/subtypes/AggregatedMission';
 
 export const getMission = async (uuid: string): Promise<Mission> => {
     const response = await axios.get('/mission/one', { params: { uuid } });
@@ -35,6 +35,7 @@ export const getMission = async (uuid: string): Promise<Mission> => {
         mission.creator.email,
         mission.creator.role,
         mission.creator.avatarUrl,
+        [],
         [],
         new Date(mission.creator.createdAt),
         new Date(mission.creator.updatedAt),
@@ -89,7 +90,7 @@ export const missionsOfProjectMinimal = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParams && searchParams.name) {
         params['search'] = searchParams.name;
@@ -123,6 +124,7 @@ export const missionsOfProjectMinimal = async (
                 mission.creator.email,
                 mission.creator.role,
                 mission.creator.avatarUrl,
+                [],
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),
@@ -162,7 +164,7 @@ export const missionsOfProject = async (
         take,
         skip,
         sortBy,
-        descending,
+        sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParams && searchParams.name) {
         params['search'] = searchParams.name;
@@ -175,95 +177,13 @@ export const missionsOfProject = async (
     if (data.length === 0) {
         return [[], 0];
     }
-    const users: Record<string, User> = {};
     const res = data.map((mission: any) => {
-        const project = new Project(
-            mission.project.uuid,
-            mission.project.name,
-            mission.project.description,
-            [],
-            undefined,
-            undefined,
-            undefined,
-            new Date(mission.project.createdAt),
-            new Date(mission.project.updatedAt),
-        );
-        let missionCreator: User | undefined = users[mission.creator.uuid];
-        if (!missionCreator) {
-            missionCreator = new User(
-                mission.creator.uuid,
-                mission.creator.name,
-                mission.creator.email,
-                mission.creator.role,
-                mission.creator.avatarUrl,
-                [],
-                new Date(mission.creator.createdAt),
-                new Date(mission.creator.updatedAt),
-            );
-            users[mission.creator.uuid] = missionCreator;
+        try {
+            return AggregatedMission.fromAPIResponse(mission);
+        } catch (e) {
+            console.error(e);
+            return null;
         }
-        const tags = mission.tags.map((tag: any) => {
-            const tagType = new TagType(
-                tag.tagType.uuid,
-                tag.tagType.name,
-                tag.tagType.datatype,
-                new Date(tag.tagType.createdAt),
-                new Date(tag.tagType.updatedAt),
-            );
-            return new Tag(
-                tag.uuid,
-                tag.STRING,
-                tag.NUMBER ? parseInt(tag.NUMBER) : tag.NUMBER,
-                tag.BOOLEAN ? !!tag.BOOLEAN : tag.BOOLEAN,
-                tag.DATE ? new Date(tag.DATE) : tag.DATE,
-                tag.LOCATION,
-                tagType,
-                new Date(tag.createdAt),
-                new Date(tag.updatedAt),
-            );
-        });
-        const missionEntity = new Mission(
-            mission.uuid,
-            mission.name,
-            project,
-            [],
-            tags,
-            missionCreator,
-            new Date(mission.createdAt),
-            new Date(mission.updatedAt),
-        );
-        missionEntity.files = mission.files.map((file: any) => {
-            let fileCreator: User | undefined = users[file.creator.uuid];
-            if (!fileCreator) {
-                fileCreator = new User(
-                    file.creator.uuid,
-                    file.creator.name,
-                    file.creator.email,
-                    file.creator.role,
-                    file.creator.avatarUrl,
-                    [],
-                    new Date(file.creator.createdAt),
-                    new Date(file.creator.updatedAt),
-                );
-                users[file.creator.uuid] = fileCreator;
-            }
-            return new FileEntity(
-                file.uuid,
-                file.filename,
-                null,
-                fileCreator,
-                new Date(file.date),
-                file.topics,
-                file.size,
-                file.type,
-                file.state,
-                file.hash,
-                file.categories,
-                new Date(file.createdAt),
-                new Date(file.updatedAt),
-            );
-        });
-        return missionEntity;
     });
     return [res, total];
 };
@@ -295,6 +215,7 @@ export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
                 mission.creator.email,
                 mission.creator.role,
                 mission.creator.avatarUrl,
+                [],
                 [],
                 new Date(mission.creator.createdAt),
                 new Date(mission.creator.updatedAt),

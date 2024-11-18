@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, ActionState, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -19,6 +19,7 @@ import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
 import { AuthGuardService } from './authGuard.service';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
+import Action from '@common/entities/action/action.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -682,6 +683,7 @@ export class ReadActionGuard extends BaseGuard {
         return this.actionGuardService.canAccessAction(user, actionUUID);
     }
 }
+
 @Injectable()
 export class CreateActionGuard extends BaseGuard {
     constructor(
@@ -716,6 +718,55 @@ export class CreateActionGuard extends BaseGuard {
         );
     }
 }
+
+@Injectable()
+export class DeleteActionGuard extends BaseGuard {
+    constructor(
+        private reflector: Reflector,
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(Action)
+        private actionRepository: Repository<Action>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+        const actionUUID = request.body.actionUUID;
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUUID },
+            relations: ['mission', 'createdBy'],
+        });
+
+        if (apiKey) {
+            throw new BadRequestException(
+                'apiKey in DeleteActionGuard is not supported',
+            );
+        }
+        if (
+            !(
+                action.state === ActionState.DONE ||
+                action.state === ActionState.FAILED ||
+                action.state === ActionState.UNPROCESSABLE
+            )
+        ) {
+            throw new BadRequestException(
+                "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
+            );
+        }
+        if (action.createdBy.uuid === user.uuid) {
+            return true;
+        }
+
+        const missionUUID = action.mission.uuid;
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            AccessGroupRights.DELETE,
+        );
+    }
+}
+
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(

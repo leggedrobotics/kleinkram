@@ -20,7 +20,6 @@ export default class Project extends BaseEntity {
 
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,
-        eager: true,
     })
     // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses: ProjectAccess[];
@@ -28,11 +27,12 @@ export default class Project extends BaseEntity {
     @Column({ nullable: true })
     description: string;
 
-    @ManyToOne(() => User, (user) => user.projects)
+    @ManyToOne(() => User, (user) => user.projects, { nullable: false })
     creator: User;
 
     @ManyToMany(() => TagType, (tag) => tag.project, {
         onDelete: 'CASCADE',
+        nullable: false,
     })
     requiredTags: TagType[];
 

@@ -75,11 +75,11 @@ export const deleteAccessGroup = async (accessGroupUUID: string) => {
 
 export const updateProjectAccess = async (
     projectUUID: string,
-    projectAccessUUID: string,
+    groupUuid: string,
     rights: AccessGroupRights,
 ) => {
     const response = await axios.post('/access/updateProjectAccess', {
-        projectAccessUUID: projectAccessUUID,
+        accessGroupUUID: groupUuid,
         rights,
         uuid: projectUUID,
     });

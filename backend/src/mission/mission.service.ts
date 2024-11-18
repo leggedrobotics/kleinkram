@@ -17,6 +17,7 @@ import {
     getBucketFromFileType,
 } from '@common/minio_helper';
 import logger from '../logger';
+import { AggregatedMissionDto } from './entities/AggregatedMission.dto';
 
 @Injectable()
 export class MissionService {
@@ -26,15 +27,15 @@ export class MissionService {
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
-        private userservice: UserService,
-        private tagservice: TagService,
+        private userService: UserService,
+        private tagService: TagService,
     ) {}
 
     async create(
         createMission: CreateMission,
         auth: AuthRes,
     ): Promise<Mission> {
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
@@ -83,7 +84,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(createMission.tags).map(
                 async ([tagTypeUUID, value]) => {
-                    return this.tagservice.addTagType(
+                    return this.tagService.addTagType(
                         newMission.uuid,
                         tagTypeUUID,
                         value,
@@ -114,7 +115,7 @@ export class MissionService {
         skip: number,
         take: number,
         search?: string,
-        descending?: boolean,
+        sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
         userUUID?: string,
     ): Promise<[Mission[], number]> {
@@ -136,12 +137,11 @@ export class MissionService {
             });
         }
         if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+            query.orderBy(`mission.${sortBy}`, sortDirection);
         }
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, userUUID);
         }
-        console.log(query.getSql());
         return query.getManyAndCount();
     }
 
@@ -150,25 +150,30 @@ export class MissionService {
         skip: number,
         take: number,
         search?: string,
-        descending?: boolean,
+        sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
-        userUUID?: string,
-    ): Promise<[Mission[], number]> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-
+        user?: User,
+    ): Promise<[AggregatedMissionDto[], number]> {
         const query = this.missionRepository
             .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
+            .addSelect('COUNT(files.uuid)::int', 'fileCount')
+            .addSelect('COALESCE(SUM(files.size), 0)::bigint', 'totalSize')
+            .leftJoin('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoinAndSelect('mission.files', 'files')
+            .leftJoin('mission.files', 'files')
             .leftJoinAndSelect('mission.tags', 'tags')
             .leftJoinAndSelect('tags.tagType', 'tagType')
-            .leftJoinAndSelect('files.creator', 'fileCreator')
             .where('project.uuid = :projectUUID', { projectUUID })
             .take(take)
             .skip(skip);
+
+        query
+            .addGroupBy('mission.uuid')
+            .addGroupBy('project.uuid')
+            .addGroupBy('project.name')
+            .addGroupBy('creator.uuid')
+            .addGroupBy('tags.uuid')
+            .addGroupBy('tagType.uuid');
 
         if (search) {
             query.andWhere('mission.name ILIKE :search', {
@@ -176,12 +181,34 @@ export class MissionService {
             });
         }
         if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, descending ? 'DESC' : 'ASC');
+            query.orderBy(`mission.${sortBy}`, sortDirection);
         }
         if (user.role !== UserRole.ADMIN) {
-            addAccessConstraints(query, userUUID);
+            addAccessConstraints(query, user.uuid);
         }
-        return query.getManyAndCount();
+        const res: { entities: Mission[]; raw: any[] } =
+            await query.getRawAndEntities();
+        const aggregatedRes = res.entities.map((mission) => {
+            // Find the corresponding raw item for this mission by id
+            const rawItem = res.raw.find(
+                (raw) => raw.mission_uuid === mission.uuid,
+            );
+            if (rawItem) {
+                return {
+                    ...mission,
+                    nrFiles: rawItem.fileCount,
+                    size: Number(rawItem.totalSize),
+                } as AggregatedMissionDto;
+            } else {
+                return {
+                    ...mission,
+                    nrFiles: 0,
+                    size: 0,
+                } as AggregatedMissionDto;
+            }
+        });
+
+        return [aggregatedRes, res.entities.length];
     }
 
     async filteredByProjectName(
@@ -323,13 +350,13 @@ export class MissionService {
                     (_tag) => _tag.tagType.uuid === tagTypeUUID,
                 );
                 if (tag) {
-                    return this.tagservice.updateTagType(
+                    return this.tagService.updateTagType(
                         missionUUID,
                         tagTypeUUID,
                         value,
                     );
                 }
-                return this.tagservice.addTagType(
+                return this.tagService.addTagType(
                     missionUUID,
                     tagTypeUUID,
                     value,

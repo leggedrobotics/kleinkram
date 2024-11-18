@@ -5,6 +5,7 @@ import ProjectAccess from './project_access.entity';
 import MissionAccess from './mission_access.entity';
 import AccessGroupUser from './accessgroup_user.entity';
 
+// @Unique('unique_access_group_name', ['name'])
 @Entity()
 export default class AccessGroup extends BaseEntity {
     @Column()

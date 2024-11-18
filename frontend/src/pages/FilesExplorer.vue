@@ -95,8 +95,8 @@
                                 </q-item-section>
                                 <q-tooltip>
                                     Manage Access on Mission Level is not
-                                    supported yet</q-tooltip
-                                >
+                                    supported yet
+                                </q-tooltip>
                             </q-item>
 
                             <EditMissionDialogOpener :mission="mission">
@@ -370,14 +370,15 @@ import { Tag } from 'src/types/Tag';
 import { DataType } from 'src/enums/TAG_TYPES';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
-import KleinDownloadMission from 'components/CLILinks/KleinDownloadMission.vue';
-import KleinDownloadFiles from 'components/CLILinks/KleinDownloadFiles.vue';
+import KleinDownloadMission from 'components/cliLinks/KleinDownloadMission.vue';
+import KleinDownloadFiles from 'components/cliLinks/KleinDownloadFiles.vue';
 import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
 import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
+import ConfirmDeleteFileDialog from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -527,16 +528,29 @@ function openLink(tag: Tag) {
 }
 
 function deleteFilesCallback() {
-    $q.dialog({
-        component: ConfirmDeleteDialog,
-        componentProps: {
-            filenames: selectedFiles.value.map((file) => file.filename),
-        },
-    }).onOk(() => {
-        const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-        _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
-        deselect();
-    });
+    if (selectedFiles.value.length == 1) {
+        $q.dialog({
+            component: ConfirmDeleteFileDialog,
+            componentProps: {
+                filename: selectedFiles.value.map((file) => file.filename)[0],
+            },
+        }).onOk(() => {
+            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
+            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            deselect();
+        });
+    } else {
+        $q.dialog({
+            component: ConfirmDeleteDialog,
+            componentProps: {
+                filenames: selectedFiles.value.map((file) => file.filename),
+            },
+        }).onOk(() => {
+            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
+            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            deselect();
+        });
+    }
 }
 
 function deselect() {
@@ -578,6 +592,7 @@ function fileHealthColor(health: string) {
             return 'grey';
     }
 }
+
 function fileHealthTextColor(health: string) {
     switch (health) {
         case 'Healthy':

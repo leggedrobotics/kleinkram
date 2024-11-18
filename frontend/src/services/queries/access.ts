@@ -48,8 +48,8 @@ export const searchAccessGroups = async (
     if (!response.data) {
         return [[], 0];
     }
-    const data = response.data[0];
-    const total = response.data[1];
+    const data = response.data.entities;
+    const total = response.data.total;
     const res = data.map((group: any) => {
         const agus = group.accessGroupUsers.map((agu: any) => {
             const user = new User(
@@ -78,7 +78,7 @@ export const searchAccessGroups = async (
                 access.project.name,
                 access.project.description,
                 [],
-                undefined,
+                null,
                 undefined,
                 undefined,
                 new Date(access.project.createdAt),
@@ -187,23 +187,8 @@ export const getProjectAccess = async (
         params: { uuid: projectUUID, projectAccessUUID },
     });
     const access = response.data;
-    const project = new Project(
-        access.project.uuid,
-        access.project.name,
-        access.project.description,
-        [],
-        undefined,
-        undefined,
-        undefined,
-        new Date(access.project.createdAt),
-        new Date(access.project.updatedAt),
-    );
-    return new ProjectAccess(
-        access.uuid,
-        access.rights,
-        undefined,
-        project,
-        new Date(access.createdAt),
-        new Date(access.updatedAt),
-    );
+    console.log(`access: ${JSON.stringify(access)}`);
+    const res = ProjectAccess.fromAPIResponse(access);
+    console.log(`res: ${JSON.stringify(res)}`);
+    return res;
 };

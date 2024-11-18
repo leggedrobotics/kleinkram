@@ -21,8 +21,7 @@ export class ProjectService {
     constructor(
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
-        @InjectRepository(User) private userRepository: Repository<User>,
-        private userservice: UserService,
+        private userService: UserService,
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
         @InjectRepository(TagType)
@@ -36,20 +35,16 @@ export class ProjectService {
     }
 
     async findAll(
-        auth: AuthRes,
+        user: User,
         skip: number,
         take: number,
         sortBy: string,
-        descending: boolean,
+        sortDirection: 'ASC' | 'DESC',
         searchParams: Map<string, string>,
     ): Promise<[Project[], number]> {
         // convert take and skip to numbers
         take = Number(take);
         skip = Number(skip);
-
-        const dbUser = await this.userRepository.findOne({
-            where: { uuid: auth.user.uuid },
-        });
 
         let baseQuery = this.projectRepository
             .createQueryBuilder('project')
@@ -57,7 +52,7 @@ export class ProjectService {
             .leftJoinAndSelect('project.missions', 'missions');
 
         // if not admin, only show projects that the user has access to
-        if (dbUser.role !== UserRole.ADMIN) {
+        if (user.role !== UserRole.ADMIN) {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
@@ -66,7 +61,7 @@ export class ProjectService {
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
                 })
-                .andWhere('user.uuid = :uuid', { uuid: auth.user.uuid });
+                .andWhere('user.uuid = :uuid', { uuid: user.uuid });
         }
 
         // add sorting
@@ -74,10 +69,7 @@ export class ProjectService {
             sortBy &&
             ['name', 'createdAt', 'updatedAt', 'creator'].includes(sortBy) // SQL Sanitization
         ) {
-            baseQuery = baseQuery.orderBy(
-                `project.${sortBy}`,
-                descending ? 'DESC' : 'ASC',
-            );
+            baseQuery = baseQuery.orderBy(`project.${sortBy}`, sortDirection);
         }
 
         if (searchParams) {
@@ -270,7 +262,7 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const accessGroupUsersDefault = creator.accessGroupUsers.filter(
             (accessGroupUser) =>
                 accessGroupUser.accessGroup.personal ||
@@ -311,6 +303,7 @@ export class ProjectService {
                 }
             });
         }
+
         const transactedProject = await this.dataSource.transaction(
             async (manager) => {
                 const savedProject = await manager.save(Project, newProject);
@@ -318,6 +311,7 @@ export class ProjectService {
                     manager,
                     defaultAccessGroups,
                     savedProject,
+                    project.removedDefaultGroups,
                 );
 
                 if (project.accessGroups) {
@@ -416,11 +410,19 @@ export class ProjectService {
         manager: EntityManager,
         accessGroups: AccessGroup[],
         project: Project,
+        removedDefaultGroups?: string[],
     ) {
+        if (!removedDefaultGroups) {
+            removedDefaultGroups = [];
+        }
+
         return await Promise.all(
             accessGroups.map(async (accessGroup) => {
                 let rights = AccessGroupRights.WRITE;
                 if (accessGroup.inheriting) {
+                    if (removedDefaultGroups.includes(accessGroup.uuid)) {
+                        return;
+                    }
                     rights = this.config.access_groups.find((group) => {
                         return group.uuid === accessGroup.uuid;
                     }).rights;
@@ -485,28 +487,34 @@ export class ProjectService {
     }
 
     async getDefaultRights(auth: AuthRes) {
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const rights = creator.accessGroupUsers
             .map((agu) => agu.accessGroup)
             .filter(
                 (accessGroup) => accessGroup.personal || accessGroup.inheriting,
             );
-        return rights.map((right) => {
-            const name = right.name;
-            const accessGroupUUID = right.uuid;
-            let _rights = AccessGroupRights.WRITE;
-            if (right.inheriting) {
-                _rights = this.config.access_groups.find(
-                    (group) => group.uuid === right.uuid,
-                ).rights;
-            } else if (right.personal) {
-                _rights = AccessGroupRights.DELETE;
-            }
-            return {
-                name,
-                accessGroupUUID,
-                rights: _rights,
-            };
-        });
+        return Promise.all(
+            rights.map(async (right) => {
+                const name = right.name;
+                let memberCount = 1;
+                let _rights = AccessGroupRights.WRITE;
+                if (right.inheriting) {
+                    _rights = this.config.access_groups.find(
+                        (group) => group.uuid === right.uuid,
+                    ).rights;
+                    memberCount = await this.userService.getMemberCount(
+                        right.uuid,
+                    );
+                } else if (right.personal) {
+                    _rights = AccessGroupRights.DELETE;
+                }
+                return {
+                    name,
+                    uuid: right.uuid,
+                    memberCount,
+                    rights: _rights,
+                };
+            }),
+        );
     }
 }

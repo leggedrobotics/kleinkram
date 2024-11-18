@@ -9,13 +9,15 @@ import Tag from '../tag/tag.entity';
 import MissionAccess from '../auth/mission_access.entity';
 import Action from '../action/action.entity';
 
-@Unique(['name', 'project'])
+@Unique('unique_mission_name_per_project', ['name', 'project'])
 @Entity()
 export default class Mission extends BaseEntity {
     @Column()
     name: string;
 
-    @ManyToOne(() => Project, (project) => project.missions)
+    @ManyToOne(() => Project, (project) => project.missions, {
+        nullable: false,
+    })
     project: Project;
 
     @OneToMany(() => FileEntity, (file) => file.mission)
@@ -27,7 +29,7 @@ export default class Mission extends BaseEntity {
     @OneToMany(() => QueueEntity, (queue) => queue.mission)
     queues: QueueEntity[];
 
-    @ManyToOne(() => User, (user) => user.missions)
+    @ManyToOne(() => User, (user) => user.missions, { nullable: false })
     creator: User;
 
     @OneToMany(() => Apikey, (apiKey) => apiKey.mission)
