@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections import OrderedDict
 from enum import Enum
@@ -28,17 +29,15 @@ from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
 from kleinkram.errors import InvalidCLIVersion
+from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
 from rich.console import Console
 from typer.core import TyperGroup
 
-LOG_DIR = Path() / "data" / "logs"
+LOG_DIR = Path() / "logs"
 LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"
 
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE.touch()
-
-logging.basicConfig(level=logging.ERROR, filename=LOG_FILE)
+# setup default logging
 logger = logging.getLogger(__name__)
 
 
@@ -111,6 +110,8 @@ def base_handler(exc: Exception) -> int:
     if not get_shared_state().debug:
         console = Console()
         console.print(f"{type(exc).__name__}: {exc}", style="red")
+        logger.error(format_traceback(exc))
+
         return 1
 
     raise exc
@@ -182,6 +183,15 @@ def cli(
     shared_state = get_shared_state()
     shared_state.verbose = verbose
     shared_state.debug = debug
+
+    if shared_state.debug:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
+
+    logger.debug(f"CLI version: {__version__}")
+    logger.warning("debug mode enabled")
+
+    print("here")
 
     try:
         check_version_compatiblity()

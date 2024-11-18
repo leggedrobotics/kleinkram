@@ -22,7 +22,7 @@ from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
 from kleinkram.errors import UploadFailed
 from kleinkram.utils import b64_md5
-from kleinkram.utils import raw_rich
+from kleinkram.utils import styled_string
 from rich.text import Text
 from tqdm import tqdm
 
@@ -179,7 +179,7 @@ def _s3_upload(
         )
     except Exception as e:
         err = f"error uploading file: {local_path}: {type(e).__name__}"
-        pbar.write(raw_rich(Text(err, style="red")))
+        pbar.write(styled_string(err, style="red"))
         return False
     return True
 
@@ -226,8 +226,10 @@ def _upload_file(
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            msg = Text(f"failed to cancel upload: {type(e).__name__}", style="red")
-            pbar.write(raw_rich(msg))
+            msg = styled_string(
+                f"failed to cancel upload: {type(e).__name__}", style="red"
+            )
+            pbar.write(msg)
     else:
         # tell backend that upload is complete
         try:
@@ -235,15 +237,14 @@ def _upload_file(
             _confirm_file_upload(client, creds.file_id, local_hash)
 
             if global_pbar is not None:
-                msg = Text(f"uploaded {job.path}", style="green")
-                global_pbar.write(raw_rich(msg))
+                global_pbar.write(styled_string(f"uploaded {job.path}", style="green"))
                 global_pbar.update()
 
         except Exception as e:
-            msg = Text(
+            msg = styled_string(
                 f"error confirming upload {job.path}: {type(e).__name__}", style="red"
             )
-            pbar.write(raw_rich(msg))
+            pbar.write(msg)
 
     pbar.close()
     return (job.path.stat().st_size, job.path)

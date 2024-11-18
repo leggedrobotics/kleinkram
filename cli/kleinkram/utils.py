@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import base64
-import glob
 import hashlib
-import os
 import string
+import traceback
 from hashlib import md5
 from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import List
-from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -44,7 +41,13 @@ def check_file_paths(files: Sequence[Path]) -> None:
             )
 
 
-def raw_rich(*objects: Any, **kwargs: Any) -> str:
+def format_traceback(exc: Exception) -> str:
+    return "".join(
+        traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+    )
+
+
+def styled_string(*objects: Any, **kwargs: Any) -> str:
     """\
     accepts any object that Console.print can print
     returns the raw string output
