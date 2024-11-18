@@ -41,6 +41,14 @@ def check_file_paths(files: Sequence[Path]) -> None:
             )
 
 
+def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
+    if not verbose:
+        ret = f"{msg}: {type(exc).__name__}"
+    else:
+        ret = f"{msg}: {exc}"
+    return styled_string(ret, style="red")
+
+
 def format_traceback(exc: Exception) -> str:
     return "".join(
         traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
@@ -52,12 +60,9 @@ def styled_string(*objects: Any, **kwargs: Any) -> str:
     accepts any object that Console.print can print
     returns the raw string output
     """
-
     console = Console()
-
     with console.capture() as capture:
         console.print(*objects, **kwargs, end="")
-
     return capture.get()
 
 
