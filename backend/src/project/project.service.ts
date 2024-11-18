@@ -56,7 +56,11 @@ export class ProjectService {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-                .leftJoin('accessGroup.accessGroupUsers', 'accessGroupUsers')
+                .innerJoin(
+                    'accessGroup.accessGroupUsers',
+                    'accessGroupUsers',
+                    'accessGroupUsers.expirationDate IS NULL OR accessGroupUsers.expirationDate > NOW()',
+                )
                 .leftJoin('accessGroupUsers.user', 'user')
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
