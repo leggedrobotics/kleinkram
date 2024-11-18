@@ -13,7 +13,9 @@ export default class Account extends BaseEntity {
     @Column()
     provider: Providers;
 
-    @OneToOne(() => User, (user) => user.account)
+    @OneToOne(() => User, (user) => user.account, {
+        onDelete: 'CASCADE',
+    })
     user: User;
 
     @Column()

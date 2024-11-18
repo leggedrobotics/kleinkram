@@ -11,7 +11,7 @@ import Action from '../action/action.entity';
 import ActionTemplate from '../action/actionTemplate.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
-import AccessGroupUser from '../auth/accessgroup_user.entity';
+import GroupMembership from '../auth/group_membership.entity';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -29,8 +29,11 @@ export default class User extends BaseEntity {
      * The email gets automatically extracted from the oauth provider.
      *
      * @example 'john.doe@example.com'
+     *
+     * The email is unique and cannot be changed.
+     *
      */
-    @Column({ unique: true, select: false })
+    @Column({ unique: true, select: false, update: false })
     email: string;
 
     /**
@@ -41,8 +44,25 @@ export default class User extends BaseEntity {
      * @see UserRole
      *
      */
-    @Column({ select: false })
+    @Column({
+        select: false,
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.USER,
+    })
     role: UserRole;
+
+    /**
+     * A hidden user is not returned in any search queries.
+     * Hidden users may still be accessed by their UUID (e.g., when
+     * listing group memberships).
+     *
+     */
+    @Column({
+        select: false,
+        default: false,
+    })
+    hidden: boolean;
 
     /**
      * The avatar url of the user. This is the url of the avatar that will be displayed in the UI.
@@ -57,8 +77,8 @@ export default class User extends BaseEntity {
     @JoinColumn({ name: 'account_uuid' })
     account: Account;
 
-    @OneToMany(() => AccessGroupUser, (accessGroupUser) => accessGroupUser.user)
-    accessGroupUsers: AccessGroupUser[];
+    @OneToMany(() => GroupMembership, (membership) => membership.user)
+    memberships: GroupMembership[];
 
     @OneToMany(() => Project, (project) => project.creator)
     projects: Project[];

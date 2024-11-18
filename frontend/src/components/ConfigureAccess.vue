@@ -355,7 +355,7 @@ const searchResults = computed(() => {
             uuid: group.uuid,
             name: group.name,
             rights: null,
-            memberCount: group.accessGroupUsers.length || 0,
+            memberCount: group.memberships.length || 0,
         });
     });
 

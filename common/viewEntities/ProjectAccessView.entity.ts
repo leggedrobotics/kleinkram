@@ -10,11 +10,11 @@ import Project from '../entities/project/project.entity';
             .innerJoin('project.project_accesses', 'projectAccesses')
             .innerJoin('projectAccesses.accessGroup', 'accessGroup')
             .innerJoin(
-                'accessGroup.accessGroupUsers',
-                'accessGroupUsers',
-                'accessGroupUsers.expirationDate IS NULL OR accessGroupUsers.expirationDate > NOW()',
+                'accessGroup.memberships',
+                'memberships',
+                'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
             )
-            .innerJoin('accessGroupUsers.user', 'users')
+            .innerJoin('memberships.user', 'users')
             .select([
                 'project.uuid as projectUUID',
                 'users.uuid as userUUID',

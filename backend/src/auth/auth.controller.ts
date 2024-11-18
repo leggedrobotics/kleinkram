@@ -112,7 +112,12 @@ export class AuthController {
         try {
             const payload = this.jwtService.verify(refreshToken);
 
-            const user = await this.userService.findOneByUUID(payload.uuid);
+            const user = await this.userService.findOneByUUID(payload.uuid, {
+                uuid: true,
+                email: true,
+                role: true,
+            });
+
             if (!user) {
                 return res
                     .status(401)

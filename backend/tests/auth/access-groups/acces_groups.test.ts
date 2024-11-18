@@ -7,7 +7,8 @@ import {
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
 } from '../utils';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import GroupMembership from '@common/entities/auth/group_membership.entity';
+import { AccessGroupType } from '@common/enum';
 
 /**
  * This test suite tests the access control of the application.
@@ -32,8 +33,8 @@ describe('Verify Access Groups', () => {
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
 
-        const personalGroup = getAccessGroupForEmail(mockEmail, accessGroups);
-        expect(personalGroup).toBeDefined();
+        const primaryGroup = getAccessGroupForEmail(mockEmail, accessGroups);
+        expect(primaryGroup).toBeDefined();
 
         // one access group should have the default uuid
         const defaultGroup = accessGroups.filter(
@@ -44,22 +45,22 @@ describe('Verify Access Groups', () => {
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
             select: ['uuid', 'email'],
         });
         expect(user.email).toBe(mockEmail);
 
         // check if the user with a non default email is not added to the default group
-        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
+        user.memberships.forEach((accessGroup: GroupMembership) => {
             expect(
                 DEFAULT_GROUP_UUIDS.includes(accessGroup.accessGroup.uuid),
             ).toBe(false);
         });
 
         // user is only part of the personal group
-        expect(user.accessGroupUsers.length).toBe(1);
-        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
-            expect(accessGroup.accessGroup.personal).toBe(true);
+        expect(user.memberships.length).toBe(1);
+        user.memberships.forEach((accessGroup: GroupMembership) => {
+            expect(accessGroup.accessGroup.type).toBe(AccessGroupType.PRIMARY);
         });
     });
 
@@ -72,7 +73,7 @@ describe('Verify Access Groups', () => {
 
         // one access group should be personal
         const personalGroup = accessGroups.filter(
-            (group: AccessGroup) => group.personal === true,
+            (group: AccessGroup) => group.type === AccessGroupType.PRIMARY,
         );
         expect(personalGroup.length).toBe(1);
 

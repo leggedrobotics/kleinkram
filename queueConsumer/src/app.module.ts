@@ -32,7 +32,7 @@ import ActionTemplate from '@common/entities/action/actionTemplate.entity';
 import Worker from '@common/entities/worker/worker.entity';
 import os from 'node:os';
 import CategoryEntity from '@common/entities/category/category.entity';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import GroupMembership from '@common/entities/auth/group_membership.entity';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/accessGroupExpiry.provider';
 
 @Module({
@@ -97,7 +97,7 @@ import { AccessGroupExpiryProvider } from './accessGroupExpiry/accessGroupExpiry
                         MissionAccessViewEntity,
                         Worker,
                         CategoryEntity,
-                        AccessGroupUser,
+                        GroupMembership,
                     ],
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
@@ -122,7 +122,7 @@ import { AccessGroupExpiryProvider } from './accessGroupExpiry/accessGroupExpiry
             MissionAccessViewEntity,
             Worker,
             CategoryEntity,
-            AccessGroupUser,
+            GroupMembership,
         ]),
         ScheduleModule.forRoot(),
     ],

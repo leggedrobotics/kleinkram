@@ -107,7 +107,7 @@ const { data } = useUser();
 const tab = ref('Details');
 
 const defaultGroup = computed<AccessGroup | undefined>(() => {
-    return data.value?.accessGroupUsers.find(
+    return data.value?.memberships.find(
         (group) => group.accessGroup?.inheriting,
     )?.accessGroup as AccessGroup | undefined;
 });

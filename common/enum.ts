@@ -29,8 +29,55 @@ export enum FileLocation {
 }
 
 export enum UserRole {
+    /**
+     * A user with full access to all resources.
+     * This role is reserved for system administrators and
+     * should not be assigned in regular use.
+     *
+     */
     ADMIN = 'ADMIN',
+
+    /**
+     * A regular user with no special permissions.
+     * This is the default role for new users.
+     *
+     */
     USER = 'USER',
+}
+
+export enum AccessGroupType {
+    /**
+     * A group that is created by the system. Users are added
+     * to this group automatically based on their email domain.
+     *
+     * Example: All users with an email ending in `@example.com`
+     * are automatically added to the `AFFILIATION` group with
+     * the name `example.com`.
+     *
+     * Affiliation groups are created by the system and cannot
+     * be deleted or modified. They may be granted some global
+     * permissions (e.g., project create permission).
+     *
+     */
+    AFFILIATION = 'AFFILIATION',
+
+    /**
+     * A group that is created by the system. Every user has
+     * their own primary group. Primary groups are created
+     * by the system and cannot be deleted or modified.
+     *
+     * Primary groups are used to store permissions that are
+     * specific to a single user.
+     *
+     */
+    PRIMARY = 'PRIMARY',
+
+    /**
+     * A group created via API or the UI. These groups can be
+     * deleted or modified by the user who created them.
+     *
+     */
+    CUSTOM = 'CUSTOM',
 }
 
 export enum ActionState {

@@ -8,14 +8,19 @@ import { AuthFlowException } from './authFlowException';
 import Account from '@common/entities/auth/account.entity';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { CookieNames, Providers, UserRole } from '@common/enum';
+import {
+    AccessGroupType,
+    CookieNames,
+    Providers,
+    UserRole,
+} from '@common/enum';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import GroupMembership from '@common/entities/auth/group_membership.entity';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
-    private config: AccessGroupConfig;
+    private readonly config: AccessGroupConfig;
 
     constructor(
         private jwtService: JwtService,
@@ -25,8 +30,8 @@ export class AuthService implements OnModuleInit {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(AccessGroupUser)
-        private accessGroupUserRepository: Repository<AccessGroupUser>,
+        @InjectRepository(GroupMembership)
+        private groupMembershipRepository: Repository<GroupMembership>,
         private configService: ConfigService,
     ) {
         this.config = this.configService.get('accessConfig');
@@ -103,7 +108,7 @@ export class AuthService implements OnModuleInit {
             this.userRepository,
             this.accountRepository,
             this.accessGroupRepository,
-            this.accessGroupUserRepository,
+            this.groupMembershipRepository,
             {
                 oauthID,
                 provider,
@@ -115,8 +120,14 @@ export class AuthService implements OnModuleInit {
     }
 }
 
+/**
+ * Create access groups from the access group config.
+ *
+ * @param accessGroupRepository
+ * @param config
+ */
 export const createAccessGroups = async (
-    accessGroupRepository,
+    accessGroupRepository: Repository<AccessGroup>,
     config: AccessGroupConfig,
 ) => {
     // Read access_config/*.json and create access groups
@@ -129,8 +140,7 @@ export const createAccessGroups = async (
                 const newGroup = accessGroupRepository.create({
                     name: group.name,
                     uuid: group.uuid,
-                    personal: false,
-                    inheriting: true,
+                    type: AccessGroupType.AFFILIATION,
                     creator: null,
                 });
                 return accessGroupRepository.save(newGroup);
@@ -139,12 +149,79 @@ export const createAccessGroups = async (
     );
 };
 
+/**
+ * Create a primary access group for the user.
+ *
+ * @param user
+ * @param accessGroupRepository
+ */
+async function createPrimaryGroup(
+    user: User,
+    accessGroupRepository: Repository<AccessGroup>,
+) {
+    logger.debug(`Add user ${user.uuid} to primary access group`);
+
+    let primaryGroupName = `${user.name}`;
+
+    const exists = await accessGroupRepository.exists({
+        where: { name: primaryGroupName },
+    });
+
+    if (exists) {
+        const randomSuffix = Math.random().toString(36).substring(7);
+        primaryGroupName = `${user.name} ${randomSuffix}`;
+    }
+
+    const primaryGroup = accessGroupRepository.create({
+        name: primaryGroupName,
+        type: AccessGroupType.PRIMARY,
+        hidden: false,
+        memberships: [
+            {
+                isGroupAdmin: false,
+                user: { uuid: user.uuid },
+            },
+        ],
+    });
+    await accessGroupRepository.save(primaryGroup);
+}
+
+/**
+ * Add user to affiliation groups based on their email address.
+ *
+ * @param config
+ * @param user
+ * @param accessGroupRepository
+ * @param groupMembershipRepository
+ */
+function addToAffiliationGroups(
+    config: AccessGroupConfig,
+    user: User,
+    accessGroupRepository: Repository<AccessGroup>,
+    groupMembershipRepository: Repository<GroupMembership>,
+) {
+    config.emails?.forEach((_config) => {
+        if (user.email.endsWith(_config.email)) {
+            _config.access_groups?.forEach(async (uuid) => {
+                const group = await accessGroupRepository.findOneOrFail({
+                    where: { uuid },
+                });
+                const affiliationGroup = groupMembershipRepository.create({
+                    user: { uuid: user.uuid },
+                    accessGroup: { uuid: group.uuid },
+                });
+                await groupMembershipRepository.save(affiliationGroup);
+            });
+        }
+    });
+}
+
 export const createNewUser = async (
-    config,
-    userRepository,
-    accountRepository,
-    accessGroupRepository,
-    accessGroupUserRepository,
+    config: AccessGroupConfig,
+    userRepository: Repository<User>,
+    accountRepository: Repository<Account>,
+    accessGroupRepository: Repository<AccessGroup>,
+    groupMembershipRepository: Repository<GroupMembership>,
     options: {
         oauthID: string;
         provider: Providers;
@@ -152,7 +229,7 @@ export const createNewUser = async (
         username: string;
         picture: string;
     },
-) => {
+): Promise<User> => {
     const existingUser = await userRepository.findOne({
         where: { email: options.email },
         relations: ['account'],
@@ -172,19 +249,20 @@ export const createNewUser = async (
 
     // if the user exists but has no linked account
     if (!!existingUser && !existingUser.account) {
-        logger.debug(
+        logger.info(
             `Linking account ${account} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
         return accountRepository.save(account).then(() => existingUser);
     }
 
-    logger.debug(`Creating new user with email ${options.email}`);
-
     /////////////////////////////////////////////////////////
     // Create New User and Link Account
     /////////////////////////////////////////////////////////
-    const user: User = userRepository.create({
+
+    logger.debug(`Creating new user with email ${options.email}`);
+
+    let user: User = userRepository.create({
         email: options.email,
         name: options.username,
         role: UserRole.USER,
@@ -192,68 +270,29 @@ export const createNewUser = async (
     });
 
     user.account = await accountRepository.save(account);
-    const savedUser = await userRepository.save(user);
-
-    /////////////////////////////////////////////////////////
-    // Create Personal Access Group
-    /////////////////////////////////////////////////////////
-
-    let personalGroupName = `Personal: ${savedUser.name}`;
-
-    const exists = await accessGroupRepository.exists({
-        where: { name: personalGroupName },
+    user = await userRepository.save(user);
+    user = await userRepository.findOneOrFail({
+        where: { uuid: user.uuid },
+        relations: ['memberships'],
+        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
     });
 
-    if (exists) {
-        const randomSuffix = Math.random().toString(36).substring(7);
-        personalGroupName = `Personal: ${savedUser.name} ${randomSuffix}`;
-    }
-
-    const personalGroup = accessGroupRepository.create({
-        name: personalGroupName,
-        users: [savedUser],
-        personal: true,
-    });
-    await accessGroupRepository.save(personalGroup);
-
-    const personalAccessGroupUser = accessGroupUserRepository.create({
-        user: { uuid: savedUser.uuid },
-        accessGroup: { uuid: personalGroup.uuid },
-        expirationDate: null,
-    });
-    await accessGroupUserRepository.save(personalAccessGroupUser);
-
-    user.accessGroupUsers = [personalAccessGroupUser];
-
     /////////////////////////////////////////////////////////
-    // Link User to Institutional Access Groups
+    // Create and Link Access Groups
     /////////////////////////////////////////////////////////
 
-    config.emails?.forEach((_config) => {
-        if (user.email.endsWith(_config.email)) {
-            _config.access_groups?.forEach(async (uuid) => {
-                const group = await accessGroupRepository.findOne({
-                    where: { uuid },
-                });
-                if (group) {
-                    const institutionalAccessGroupUser =
-                        accessGroupUserRepository.create({
-                            user: { uuid: savedUser.uuid },
-                            accessGroup: { uuid: group.uuid },
-                            expirationDate: null,
-                        });
-                    await accessGroupUserRepository.save(
-                        institutionalAccessGroupUser,
-                    );
-                    user.accessGroupUsers.push(institutionalAccessGroupUser);
-                }
-            });
-        }
-    });
+    await createPrimaryGroup(user, accessGroupRepository);
 
-    const newUser = await userRepository.save(user);
-    return userRepository.findOneOrFail({
-        where: { uuid: newUser.uuid },
-        relations: ['account'],
+    addToAffiliationGroups(
+        config,
+        user,
+        accessGroupRepository,
+        groupMembershipRepository,
+    );
+
+    return await userRepository.findOneOrFail({
+        where: { uuid: user.uuid },
+        relations: ['memberships'],
+        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
     });
 };

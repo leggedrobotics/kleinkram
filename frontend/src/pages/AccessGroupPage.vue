@@ -175,7 +175,7 @@
                 </button-group>
             </div>
             <q-table
-                :rows="accessGroup?.accessGroupUsers || []"
+                :rows="accessGroup?.memberships || []"
                 v-model:pagination="pagination2"
                 :columns="user_cols"
                 style="margin-top: 8px"
@@ -286,7 +286,7 @@ import ROUTES from 'src/router/routes';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { GroupMembership } from 'src/types/AccessGroupUser';
 import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
 
@@ -422,7 +422,7 @@ const { mutate: setAccessGroup } = useMutation({
     },
 });
 
-function openSetExpirationDialog(agu: AccessGroupUser) {
+function openSetExpirationDialog(agu: GroupMembership) {
     $q.dialog({
         component: SetAccessGroupExpirationDialog,
         componentProps: {
@@ -461,7 +461,7 @@ const user_cols = [
         required: true,
         label: 'Name',
         align: 'left',
-        field: (row: AccessGroupUser) => row.user?.name,
+        field: (row: GroupMembership) => row.user?.name,
         format: (val: string) => `${val}`,
         style: 'width: 10%',
     },
@@ -470,7 +470,7 @@ const user_cols = [
         required: true,
         label: 'Email',
         align: 'left',
-        field: (row: AccessGroupUser) => row.user?.email,
+        field: (row: GroupMembership) => row.user?.email,
     },
     {
         name: 'expiration',

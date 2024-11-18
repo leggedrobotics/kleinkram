@@ -2,10 +2,10 @@
     <router-view />
 </template>
 <script setup lang="ts">
-import { ref, provide } from 'vue';
+import { provide, ref } from 'vue';
 import { FileUpload } from 'src/types/FileUpload';
 
-const uploads: ref<ref<FileUpload>[]> = ref([]);
+const uploads: Ref<Ref<FileUpload>[]> = ref([]);
 // Provide the globalState object
 provide('uploads', uploads);
 </script>

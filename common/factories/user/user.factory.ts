@@ -29,7 +29,7 @@ define(User, (_, context: Partial<UserContext> = {}) => {
     user.uuid = extendedFaker.string.uuid();
 
     if (context.defaultGroupIds) {
-        user.accessGroups = context.defaultGroupIds.map((id) => {
+        user.memberships = context.defaultGroupIds.map((id) => {
             const accessGroup = new AccessGroup();
             accessGroup.uuid = id;
             return accessGroup;

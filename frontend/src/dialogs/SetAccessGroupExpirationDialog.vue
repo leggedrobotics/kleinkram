@@ -35,11 +35,11 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { GroupMembership } from 'src/types/AccessGroupUser';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 
 const props = defineProps<{
-    agu: AccessGroupUser;
+    agu: GroupMembership;
 }>();
 
 const expirationDate = ref<string | null>(

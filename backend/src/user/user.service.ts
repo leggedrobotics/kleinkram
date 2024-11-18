@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
-import { UserRole } from '@common/enum';
+import { AccessGroupType, UserRole } from '@common/enum';
 import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -29,17 +29,22 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async findOneByUUID(uuid: string) {
+    /**
+     * Find a user by their UUID.
+     *
+     * @param uuid
+     * @param select
+     * @param relations
+     */
+    async findOneByUUID(
+        uuid: string,
+        select?: FindOptionsSelect<User>,
+        relations?: FindOptionsRelations<User>,
+    ) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'accessGroupUsers',
-                'accessGroupUsers.accessGroup',
-                'account',
-            ],
-            // here we need to explicitly select the fields we want to return
-            // as role and email are not selected by default
-            select: ['uuid', 'name', 'email', 'role'],
+            select,
+            relations,
         });
     }
 
@@ -63,7 +68,7 @@ export class UserService implements OnModuleInit {
         return await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
         });
     }
 
@@ -109,9 +114,11 @@ export class UserService implements OnModuleInit {
         let user = await this.userRepository.findOne({
             where: {
                 uuid: auth.user.uuid,
-                accessGroupUsers: { accessGroup: { inheriting: true } },
+                memberships: {
+                    accessGroup: { type: AccessGroupType.AFFILIATION },
+                },
             },
-            relations: ['accessGroupUsers'],
+            relations: ['memberships'],
             select: ['uuid', 'role'],
         });
         let defaultPermission;
@@ -122,7 +129,7 @@ export class UserService implements OnModuleInit {
             });
             defaultPermission = 0;
         } else {
-            defaultPermission = user.accessGroupUsers.length > 0 ? 10 : 0;
+            defaultPermission = user.memberships.length > 0 ? 10 : 0;
         }
 
         const role = user.role;
@@ -173,7 +180,7 @@ export class UserService implements OnModuleInit {
      */
     async getMemberCount(uuid: string): Promise<number> {
         return this.userRepository.count({
-            where: { accessGroupUsers: { accessGroup: { uuid } } },
+            where: { memberships: { accessGroup: { uuid } } },
         });
     }
 }

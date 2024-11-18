@@ -1,7 +1,7 @@
 import ROLE from 'src/enums/USER_ROLES';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Project } from 'src/types/Project';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { GroupMembership } from 'src/types/AccessGroupUser';
 
 export class User extends BaseEntity {
     name: string;
@@ -9,16 +9,16 @@ export class User extends BaseEntity {
     avatarUrl: string;
     role: ROLE;
     projects: Project[];
-    accessGroupUsers: AccessGroupUser[];
+    memberships: GroupMembership[];
 
-    constructor(
+    private constructor(
         uuid: string,
         name: string,
         email: string,
         role: ROLE,
         avatarUrl: string,
         projects: Project[],
-        accessGroupUsers: AccessGroupUser[],
+        memberships: GroupMembership[],
         createdAt: Date | null,
         updatedAt: Date | null,
     ) {
@@ -27,7 +27,7 @@ export class User extends BaseEntity {
         this.email = email;
         this.role = role;
         this.projects = projects;
-        this.accessGroupUsers = accessGroupUsers;
+        this.memberships = memberships;
         this.avatarUrl = avatarUrl;
     }
 
@@ -35,20 +35,21 @@ export class User extends BaseEntity {
         if (!response) {
             return null;
         }
-        let projects: Project[] = [];
-        if (response.projects) {
-            projects = response.projects.map((project: any) =>
-                Project.fromAPIResponse(project),
-            );
-        }
 
-        let accessGroupUsers: AccessGroupUser[] = [];
-        if (response.accessGroupUsers) {
-            accessGroupUsers = response.accessGroupUsers.map(
-                (accessGroupUser: any) =>
-                    AccessGroupUser.fromAPIResponse(accessGroupUser),
-            );
-        }
+        const projects: Project[] =
+            response?.projects?.map((project: any) =>
+                Project.fromAPIResponse(project),
+            ) || [];
+
+        console.log('response', response);
+
+        const memberships: GroupMembership[] =
+            response?.memberships?.map((_memberships: any) =>
+                GroupMembership.fromAPIResponse(_memberships),
+            ) || [];
+
+        console.log('memberships', memberships);
+
         return new User(
             response.uuid,
             response.name,
@@ -56,7 +57,7 @@ export class User extends BaseEntity {
             response.role,
             response.avatarUrl,
             projects,
-            accessGroupUsers,
+            memberships,
             new Date(response.createdAt),
             new Date(response.updatedAt),
         );

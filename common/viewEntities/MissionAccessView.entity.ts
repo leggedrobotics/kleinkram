@@ -9,8 +9,8 @@ import Mission from '../entities/mission/mission.entity';
             .from(Mission, 'mission')
             .innerJoin('mission.mission_accesses', 'missionAccesses')
             .innerJoin('missionAccesses.accessGroup', 'accessGroup')
-            .innerJoin('accessGroup.accessGroupUsers', 'accessGroupUsers')
-            .innerJoin('accessGroupUsers.user', 'users')
+            .innerJoin('accessGroup.memberships', 'memberships')
+            .innerJoin('memberships.user', 'users')
             .select([
                 'mission.uuid as missionUUID',
                 'users.uuid as userUUID',

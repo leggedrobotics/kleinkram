@@ -7,7 +7,7 @@ import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
 import TagType from '@common/entities/tagType/tagType.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
@@ -57,11 +57,11 @@ export class ProjectService {
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
                 .innerJoin(
-                    'accessGroup.accessGroupUsers',
-                    'accessGroupUsers',
-                    'accessGroupUsers.expirationDate IS NULL OR accessGroupUsers.expirationDate > NOW()',
+                    'accessGroup.memberships',
+                    'memberships',
+                    'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
                 )
-                .leftJoin('accessGroupUsers.user', 'user')
+                .leftJoin('memberships.user', 'user')
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
                 })
@@ -111,11 +111,8 @@ export class ProjectService {
             .leftJoinAndSelect('project.requiredTags', 'requiredTags')
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
-            .leftJoinAndSelect(
-                'accessGroup.accessGroupUsers',
-                'accessGroupUsers',
-            )
-            .leftJoinAndSelect('accessGroupUsers.user', 'user')
+            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+            .leftJoinAndSelect('memberships.user', 'user')
             .getOne();
     }
 
@@ -266,14 +263,17 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
-        const creator = await this.userService.findOneByUUID(auth.user.uuid);
-        const accessGroupUsersDefault = creator.accessGroupUsers.filter(
+        const creator = await this.userService.findOneByUUID(
+            auth.user.uuid,
+            {},
+            { memberships: { accessGroup: true } },
+        );
+        const defaultMemberships = creator.memberships.filter(
             (accessGroupUser) =>
-                accessGroupUser.accessGroup.personal ||
-                accessGroupUser.accessGroup.inheriting,
+                accessGroupUser.accessGroup.type !== AccessGroupType.CUSTOM,
         );
 
-        const defaultAccessGroups = accessGroupUsersDefault.map(
+        const defaultAccessGroups = defaultMemberships.map(
             (ag) => ag.accessGroup,
         );
 
@@ -423,16 +423,21 @@ export class ProjectService {
         return await Promise.all(
             accessGroups.map(async (accessGroup) => {
                 let rights = AccessGroupRights.WRITE;
-                if (accessGroup.inheriting) {
-                    if (removedDefaultGroups.includes(accessGroup.uuid)) {
-                        return;
-                    }
-                    rights = this.config.access_groups.find((group) => {
-                        return group.uuid === accessGroup.uuid;
-                    }).rights;
-                } else if (accessGroup.personal) {
-                    rights = AccessGroupRights.DELETE;
+
+                switch (accessGroup.type) {
+                    case AccessGroupType.AFFILIATION:
+                        if (removedDefaultGroups.includes(accessGroup.uuid)) {
+                            return;
+                        }
+                        rights = this.config.access_groups.find((group) => {
+                            return group.uuid === accessGroup.uuid;
+                        }).rights;
+                        break;
+
+                    case AccessGroupType.PRIMARY:
+                        rights = AccessGroupRights.DELETE;
                 }
+
                 const projectAccess = this.projectAccessRepository.create({
                     rights,
                     accessGroup,
@@ -465,14 +470,14 @@ export class ProjectService {
                     accessGroupDB =
                         await this.accessGroupRepository.findOneOrFail({
                             where: {
-                                accessGroupUsers: {
+                                memberships: {
                                     user: [
                                         {
                                             uuid: accessGroup.userUUID,
                                         },
                                     ],
                                 },
-                                personal: true,
+                                type: AccessGroupType.PRIMARY,
                             },
                         });
                 } else {
@@ -491,34 +496,43 @@ export class ProjectService {
     }
 
     async getDefaultRights(auth: AuthRes) {
-        const creator = await this.userService.findOneByUUID(auth.user.uuid);
-        const rights = creator.accessGroupUsers
-            .map((agu) => agu.accessGroup)
-            .filter(
-                (accessGroup) => accessGroup.personal || accessGroup.inheriting,
-            );
+        const creator = await this.userService.findOneByUUID(
+            auth.user.uuid,
+            {},
+            { memberships: { accessGroup: true } },
+        );
+
         return Promise.all(
-            rights.map(async (right) => {
-                const name = right.name;
-                let memberCount = 1;
-                let _rights = AccessGroupRights.WRITE;
-                if (right.inheriting) {
-                    _rights = this.config.access_groups.find(
-                        (group) => group.uuid === right.uuid,
-                    ).rights;
-                    memberCount = await this.userService.getMemberCount(
-                        right.uuid,
-                    );
-                } else if (right.personal) {
-                    _rights = AccessGroupRights.DELETE;
-                }
-                return {
-                    name,
-                    uuid: right.uuid,
-                    memberCount,
-                    rights: _rights,
-                };
-            }),
+            creator.memberships
+                .map((membership) => membership.accessGroup)
+                .map(async (right) => {
+                    const name = right.name;
+                    let memberCount = 1;
+                    let _rights = AccessGroupRights.WRITE;
+
+                    switch (right.type) {
+                        case AccessGroupType.AFFILIATION:
+                            _rights = this.config.access_groups.find(
+                                (group) => group.uuid === right.uuid,
+                            ).rights;
+                            memberCount = await this.userService.getMemberCount(
+                                right.uuid,
+                            );
+                            break;
+                        case AccessGroupType.PRIMARY:
+                            _rights = AccessGroupRights.DELETE;
+                            break;
+                        case AccessGroupType.CUSTOM:
+                            return null;
+                    }
+
+                    return {
+                        name,
+                        uuid: right.uuid,
+                        memberCount,
+                        rights: _rights,
+                    };
+                }),
         );
     }
 }

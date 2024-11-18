@@ -8,7 +8,7 @@ export class MissionAccess extends BaseEntity {
     accessGroup: AccessGroup;
     missions: Mission[];
 
-    constructor(
+    private constructor(
         uuid: string,
         rights: AccessGroupRights,
         accessGroup: AccessGroup,

@@ -133,7 +133,7 @@ import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 
-import { AccessGroup } from 'src/types/AccessGroup';
+import { AccessGroup, AccessGroupType } from 'src/types/AccessGroup';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
@@ -163,7 +163,7 @@ const filterOptions: Ref<{
     creator: boolean;
     member: boolean;
 }> = ref({
-    personal: false,
+    type: AccessGroupType,
     search: '',
     creator: false,
     member: false,
@@ -266,7 +266,7 @@ const accessGroupsColumns = [
         required: true,
         label: 'Nr of Users',
         align: 'center',
-        field: (row: AccessGroup) => row.accessGroupUsers.length,
+        field: (row: AccessGroup) => row.memberships.length,
         format: (val: number) => `${val}`,
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',

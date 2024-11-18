@@ -5,7 +5,7 @@ import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import logger from '../logger';
 
@@ -77,11 +77,12 @@ export class ProjectGuardService {
 
         return this.accessGroupRepository
             .createQueryBuilder('access_group')
-            .leftJoin('access_group.accessGroupUsers', 'accessGroupUsers')
-            .leftJoin('accessGroupUsers.user', 'user')
+            .leftJoin('access_group.memberships', 'memberships')
+            .leftJoin('memberships.user', 'user')
             .andWhere('user.uuid = :user', { user: user.uuid })
-            .andWhere('access_group.personal = false')
-            .andWhere('access_group.inheriting = true')
+            .andWhere('access_group.type = :type', {
+                type: AccessGroupType.AFFILIATION,
+            })
             .getExists();
     }
 }

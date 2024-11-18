@@ -56,7 +56,7 @@ export class AccessController {
     @ApiOperation({
         summary: 'Get AccessGroup by UUID',
         description:
-            'Joins: accessGroupUsers, accessGroupUsers.user, project_access, project_access.project,  project_access.project.creator',
+            'Joins: memberships, memberships.user, project_access, project_access.project,  project_access.project.creator',
     })
     async getAccessGroup(
         @QueryUUID('uuid', 'AccessGroup UUID') uuid: string,
@@ -186,7 +186,7 @@ export class AccessController {
     @ApiOperation({
         summary: 'Get filtered AccessGroups',
         description:
-            'Joins: accessGroupUsers, accessGroupUsers.user, project_access, project_access.project, creator',
+            'Joins: memberships, memberships.user, project_access, project_access.project, creator',
     })
     @Get('filtered')
     @CanCreate()

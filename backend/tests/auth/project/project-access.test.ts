@@ -391,7 +391,7 @@ describe('Verify Project Level Access', () => {
         const userRepository = db.getRepository(User);
         const externalUser = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
         });
 
         const projectRepository = db.getRepository('Project');
@@ -419,7 +419,7 @@ describe('Verify Project Level Access', () => {
         project.project_accesses = [
             {
                 rights: AccessGroupRights.DELETE,
-                accessGroup: externalUser.accessGroupUsers.find(
+                accessGroup: externalUser.memberships.find(
                     (group) => group.accessGroup.personal,
                 )?.accessGroup.uuid,
             },

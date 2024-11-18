@@ -2,43 +2,46 @@ import { BaseEntity } from 'src/types/BaseEntity';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 import { User } from 'src/types/User';
 import { MissionAccess } from 'src/types/MissionAccess';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { GroupMembership } from 'src/types/AccessGroupUser';
+
+export enum AccessGroupType {
+    PRIMARY = 'PRIMARY',
+    AFFILIATION = 'AFFILIATION',
+    CUSTOM = 'CUSTOM',
+}
 
 export class AccessGroup extends BaseEntity {
     name: string;
-    accessGroupUsers: AccessGroupUser[];
+    memberships: GroupMembership[];
     projectAccesses: ProjectAccess[];
     missionAccesses: MissionAccess[];
     creator?: User;
-    personal: boolean;
-    inheriting: boolean;
+    type: AccessGroupType;
 
-    constructor(
+    private constructor(
         uuid: string,
         name: string,
-        accessGroupUsers: AccessGroupUser[],
+        memberships: GroupMembership[],
         projectAccesses: ProjectAccess[],
         missionAccesses: MissionAccess[],
-        personal: boolean,
-        inheriting: boolean,
-        creator: User | undefined,
+        type: AccessGroupType,
+        creator: User | undefined | null,
         createdAt: Date,
         updatedAt: Date,
     ) {
         super(uuid, createdAt, updatedAt);
         this.name = name;
-        this.accessGroupUsers = accessGroupUsers;
+        this.memberships = memberships;
         this.projectAccesses = projectAccesses;
         this.missionAccesses = missionAccesses;
-        this.personal = personal;
-        this.inheriting = inheriting;
+        this.type = type;
         this.creator = creator;
     }
 
     static fromAPIResponse(response: any): AccessGroup {
-        const accessGroupUsers =
-            response.accessGroupUsers?.map((accessGroupUser: any) =>
-                AccessGroupUser.fromAPIResponse(accessGroupUser),
+        const memberships =
+            response.memberships?.map((accessGroupUser: any) =>
+                GroupMembership.fromAPIResponse(accessGroupUser),
             ) || [];
         const projectAccesses =
             response.projectAccesses?.map((projectAccess: any) =>
@@ -52,11 +55,10 @@ export class AccessGroup extends BaseEntity {
         return new AccessGroup(
             response.uuid,
             response.name,
-            accessGroupUsers,
+            memberships,
             projectAccesses,
             missionAccesses,
-            response.personal,
-            response.inheriting,
+            response.type,
             creator,
             new Date(response.createdAt),
             new Date(response.updatedAt),

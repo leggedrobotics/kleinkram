@@ -3,6 +3,7 @@ import User from '../../entities/user/user.entity';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { extendedFaker } from '../../faker_extended';
 import { faker } from '@faker-js/faker';
+import { AccessGroupType } from '../../enum';
 
 export type AccessGroupFactoryContext = {
     user: User;
@@ -18,10 +19,8 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
             context.user,
             'No user provided for personal access group',
         );
-        accessGroup.name = 'Personal: ' + context.user.name;
-        accessGroup.personal = true;
-        accessGroup.inheriting = false;
-        accessGroup.users = [context.user];
+        accessGroup.name = context.user.name;
+        accessGroup.type = AccessGroupType.PRIMARY;
         accessGroup.creator = context.user;
     } else {
         console.assert(
@@ -29,12 +28,7 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
             'No users provided for access group',
         );
         accessGroup.name = 'Group: ' + extendedFaker.company.name();
-        accessGroup.personal = false;
-        accessGroup.inheriting = false;
-        accessGroup.users = faker.helpers.arrayElements(context.allUsers, {
-            min: 0,
-            max: context.allUsers.length,
-        });
+        accessGroup.type = AccessGroupType.CUSTOM;
         accessGroup.creator = faker.helpers.arrayElement(context.allUsers);
     }
 

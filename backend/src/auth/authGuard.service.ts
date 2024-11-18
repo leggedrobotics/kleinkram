@@ -31,7 +31,7 @@ export class AuthGuardService {
 
         return await this.accessGroupRepository.exists({
             where: { uuid: accessGroupUUID, creator: { uuid: user.uuid } },
-            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
+            relations: ['members', 'members.user'],
         });
     }
 
@@ -72,7 +72,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
-                accessGroupUsers: { uuid: aguUUID },
+                memberships: { uuid: aguUUID },
                 creator: { uuid: user.uuid },
             },
         });

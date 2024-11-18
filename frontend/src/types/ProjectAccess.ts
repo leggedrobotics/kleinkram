@@ -8,7 +8,7 @@ export class ProjectAccess extends BaseEntity {
     accessGroup?: AccessGroup;
     project?: Project;
 
-    constructor(
+    private constructor(
         uuid: string,
         rights: AccessGroupRights,
         accessGroup: AccessGroup | undefined,

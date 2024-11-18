@@ -56,7 +56,7 @@ export class LoggedInUserGuard extends BaseGuard {
 
 @Injectable()
 export class UserGuard extends BaseGuard {
-    constructor(private reflector: Reflector) {
+    constructor() {
         super();
     }
 

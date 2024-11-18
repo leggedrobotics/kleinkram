@@ -1,9 +1,6 @@
 import axios from 'src/api/axios';
-import { AccessGroup } from 'src/types/AccessGroup';
-import { User } from 'src/types/User';
+import { AccessGroup, AccessGroupType } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import { Project } from 'src/types/Project';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
 
 export const canAddAccessGroup = async (
     projectUuid: string,
@@ -50,133 +47,14 @@ export const searchAccessGroups = async (
     }
     const data = response.data.entities;
     const total = response.data.total;
-    const res = data.map((group: any) => {
-        const agus = group.accessGroupUsers.map((agu: any) => {
-            const user = new User(
-                agu.user.uuid,
-                agu.user.name,
-                agu.user.email,
-                agu.user.role,
-                agu.user.avatarUrl,
-                [],
-                [],
-                new Date(agu.user.createdAt),
-                new Date(agu.user.updatedAt),
-            );
-            return new AccessGroupUser(
-                agu.uuid,
-                new Date(agu.createdAt),
-                new Date(agu.updatedAt),
-                user,
-                null,
-                agu.expirationDate ? new Date(agu.expirationDate) : null,
-            );
-        });
-        const projectAccess = group.project_accesses.map((access: any) => {
-            const project = new Project(
-                access.project.uuid,
-                access.project.name,
-                access.project.description,
-                [],
-                null,
-                undefined,
-                undefined,
-                new Date(access.project.createdAt),
-                new Date(access.project.updatedAt),
-            );
-            return new ProjectAccess(
-                access.uuid,
-                access.rights,
-                undefined,
-                project,
-                new Date(access.createdAt),
-                new Date(access.updatedAt),
-            );
-        });
-        return new AccessGroup(
-            group.uuid,
-            group.name,
-            agus,
-            projectAccess,
-            [],
-            group.personal,
-            group.inheriting,
-            group.creator,
-            new Date(group.createdAt),
-            new Date(group.updatedAt),
-        );
-    });
+    const res = data.map((group: any) => AccessGroup.fromAPIResponse(group));
     return [res, total];
 };
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
     const response = await axios.get(`/access/one`, { params: { uuid } });
     const group = response.data;
-    const agus = group.accessGroupUsers.map((agu: any) => {
-        const user = new User(
-            agu.user.uuid,
-            agu.user.name,
-            agu.user.email,
-            agu.user.role,
-            agu.user.avatarUrl,
-            [],
-            [],
-            new Date(agu.user.createdAt),
-            new Date(agu.user.updatedAt),
-        );
-        return new AccessGroupUser(
-            agu.uuid,
-            new Date(agu.createdAt),
-            new Date(agu.updatedAt),
-            user,
-            null,
-            agu.expirationDate ? new Date(agu.expirationDate) : null,
-        );
-    });
-    const projectAccess = group.project_accesses.map((access: any) => {
-        const creator = new User(
-            access.project.creator.uuid,
-            access.project.creator.name,
-            access.project.creator.email,
-            access.project.creator.role,
-            access.project.creator.avatarUrl,
-            [],
-            [],
-            new Date(access.project.creator.createdAt),
-            new Date(access.project.creator.updatedAt),
-        );
-        const project = new Project(
-            access.project.uuid,
-            access.project.name,
-            access.project.description,
-            [],
-            creator,
-            undefined,
-            undefined,
-            new Date(access.project.createdAt),
-            new Date(access.project.updatedAt),
-        );
-        return new ProjectAccess(
-            access.uuid,
-            access.rights,
-            undefined,
-            project,
-            new Date(access.createdAt),
-            new Date(access.updatedAt),
-        );
-    });
-    return new AccessGroup(
-        group.uuid,
-        group.name,
-        agus,
-        projectAccess,
-        [],
-        group.personal,
-        group.inheriting,
-        group.creator,
-        new Date(group.createdAt),
-        new Date(group.updatedAt),
-    );
+    return AccessGroup.fromAPIResponse(group);
 };
 
 export const getProjectAccess = async (

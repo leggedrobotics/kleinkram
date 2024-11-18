@@ -3,11 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
 import { EntityManager, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
 import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import GroupMembership from '@common/entities/auth/group_membership.entity';
 import { CountedAccessGroups } from './dto/CountedAccessGroups.dto';
 
 @Injectable()
@@ -17,8 +17,8 @@ export class AccessService {
         private userRepository: Repository<User>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(AccessGroupUser)
-        private accessGroupUserRepository: Repository<AccessGroupUser>,
+        @InjectRepository(GroupMembership)
+        private groupMembershipRepository: Repository<GroupMembership>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
         @InjectRepository(ProjectAccess)
@@ -30,11 +30,8 @@ export class AccessService {
         return this.accessGroupRepository
             .createQueryBuilder('accessGroup')
             .withDeleted()
-            .leftJoinAndSelect(
-                'accessGroup.accessGroupUsers',
-                'accessGroupUsers',
-            )
-            .leftJoinAndSelect('accessGroupUsers.user', 'user')
+            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+            .leftJoinAndSelect('memberships.user', 'user')
             .leftJoinAndSelect(
                 'accessGroup.project_accesses',
                 'project_accesses',
@@ -53,19 +50,16 @@ export class AccessService {
 
         const newGroup = this.accessGroupRepository.create({
             name,
-            personal: false,
-            inheriting: false,
-            accessGroupUsers: [],
+            type: AccessGroupType.CUSTOM,
+            memberships: [
+                {
+                    user: { uuid: user.uuid },
+                    expirationDate: undefined,
+                },
+            ],
             creator: user,
         });
-        const saved = await this.accessGroupRepository.save(newGroup);
-        const accessGroupUser = this.accessGroupUserRepository.create({
-            accessGroup: { uuid: saved.uuid },
-            user: { uuid: user.uuid },
-            expirationDate: undefined,
-        });
-        await this.accessGroupUserRepository.save(accessGroupUser);
-        return saved;
+        return await this.accessGroupRepository.save(newGroup);
     }
 
     async hasProjectRights(
@@ -110,11 +104,12 @@ export class AccessService {
         });
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
         });
 
-        const personalAccessGroup = dbuser.accessGroupUsers.find(
-            (accessGroup) => accessGroup.accessGroup.personal,
+        const personalAccessGroup = dbuser.memberships.find(
+            (accessGroup) =>
+                accessGroup.accessGroup.type === AccessGroupType.PRIMARY,
         );
         const canUpdate = await this.hasProjectRights(
             projectUUID,
@@ -179,7 +174,7 @@ export class AccessService {
                         AccessGroup,
                         {
                             where: { uuid: accessGroupUUID },
-                            relations: ['accessGroupUsers'],
+                            relations: ['memberships'],
                         },
                     );
                 const user = await transactionalEntityManager.findOneOrFail(
@@ -188,28 +183,25 @@ export class AccessService {
                         where: { uuid: userUUID },
                     },
                 );
-                const agu = transactionalEntityManager.create(AccessGroupUser, {
+                const agu = transactionalEntityManager.create(GroupMembership, {
                     expirationDate: undefined,
                 });
                 await transactionalEntityManager.save(agu);
                 await transactionalEntityManager
                     .createQueryBuilder()
-                    .relation(AccessGroup, 'accessGroupUsers')
+                    .relation(AccessGroup, 'memberships')
                     .of(accessGroup)
                     .add(agu);
                 await transactionalEntityManager
                     .createQueryBuilder()
-                    .relation(User, 'accessGroupUsers')
+                    .relation(User, 'memberships')
                     .of(user)
                     .add(agu);
                 return await transactionalEntityManager.findOneOrFail(
                     AccessGroup,
                     {
                         where: { uuid: accessGroupUUID },
-                        relations: [
-                            'accessGroupUsers',
-                            'accessGroupUsers.user',
-                        ],
+                        relations: ['memberships', 'memberships.user'],
                     },
                 );
             },
@@ -220,14 +212,14 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        await this.accessGroupUserRepository.delete({
+        await this.groupMembershipRepository.delete({
             accessGroup: { uuid: accessGroupUUID },
             user: { uuid: userUUID },
         });
 
         return this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
+            relations: ['memberships', 'memberships.user'],
         });
     }
 
@@ -240,27 +232,27 @@ export class AccessService {
         skip: number,
         take: number,
     ) {
-        const where = { inheriting: false, personal: false };
+        const where = { type: AccessGroupType.CUSTOM };
         if (search) {
             where['name'] = ILike(`%${search}%`);
         }
         if (personal) {
-            where['personal'] = true;
+            where['type'] = AccessGroupType.PRIMARY;
         }
         if (creator) {
             where['creator'] = { uuid: auth.user.uuid };
         }
         if (member) {
-            // user in in users of access group
-            where['accessGroupUsers'] = { user: { uuid: auth.user.uuid } };
+            // user in users of access group
+            where['memberships'] = { user: { uuid: auth.user.uuid } };
         }
         const [found, count] = await this.accessGroupRepository.findAndCount({
             where,
             skip,
             take,
             relations: [
-                'accessGroupUsers',
-                'accessGroupUsers.user',
+                'memberships',
+                'memberships.user',
                 'project_accesses',
                 'project_accesses.project',
                 'creator',
@@ -281,7 +273,7 @@ export class AccessService {
         });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: ['accessGroupUsers', 'accessGroupUsers.user'],
+            relations: ['memberships', 'memberships.user'],
         });
 
         if (rights === AccessGroupRights.DELETE) {
@@ -403,10 +395,10 @@ export class AccessService {
     }
 
     async setExpireDate(uuid: string, expireDate: Date | null) {
-        const agu = await this.accessGroupUserRepository.findOneOrFail({
+        const agu = await this.groupMembershipRepository.findOneOrFail({
             where: { uuid },
         });
         agu.expirationDate = expireDate;
-        return this.accessGroupUserRepository.save(agu);
+        return this.groupMembershipRepository.save(agu);
     }
 }

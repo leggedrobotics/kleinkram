@@ -22,7 +22,6 @@ axiosInstance.interceptors.response.use(
         const originalRequest = error.config;
 
         if (error.response) {
-            console.log('error:', error);
             const headers = error.response.headers;
             setVersion(headers);
         }
@@ -47,8 +46,7 @@ function setVersion(headers: RawAxiosResponseHeaders) {
         validVersion.test(kleinkramVersion.value) &&
         kleinkramVersion.value !== headers['kleinkram-version']
     ) {
-        console.log('updating version');
-        kleinkramVersion.value = headers['kleinkram-version'];
+        kleinkramVersion.value = `${headers['kleinkram-version']}`;
     }
 }
 
