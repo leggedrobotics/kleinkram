@@ -32,6 +32,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import DeleteActionDialog from 'src/dialogs/DeleteActionDialog.vue';
 import { Action } from 'src/types/Action';
 import { getMe } from 'src/services/queries/user';
+import { ActionState } from 'src/enums/QUEUE_ENUM';
 
 const $q = useQuasar();
 
@@ -42,16 +43,26 @@ const props = defineProps({
 const { data: permissions } = usePermissionsQuery();
 
 const canDelete = computed(
-    () => deletePermissions.value >= 30 || creatorDeleteRights.value,
+    () =>
+        actionInDeletableState.value &&
+        (deletePermissions.value >= 30 || isCreator.value),
 );
 
-const creatorDeleteRights = ref<boolean>(false);
+const actionInDeletableState = computed(() => {
+    const state = props.action?.state;
+    return (
+        state === ActionState.FAILED ||
+        state === ActionState.DONE ||
+        state === ActionState.UNPROCESSABLE
+    );
+});
+
+const isCreator = ref<boolean>(false);
 
 watchEffect(async () => {
     const me = await getMe();
-
     const actionCreator = props.action?.createdBy;
-    creatorDeleteRights.value = me.uuid === actionCreator?.uuid;
+    isCreator.value = me.uuid === actionCreator?.uuid;
 });
 
 const deletePermissions = computed(() => {
