@@ -73,7 +73,11 @@ export class UserService implements OnModuleInit {
     }
 
     async findAll(skip: number, take: number) {
-        return this.userRepository.find({ skip, take });
+        return this.userRepository.find({
+            skip,
+            take,
+            where: { hidden: false },
+        });
     }
 
     async promoteUser(usermail: string) {
@@ -105,6 +109,7 @@ export class UserService implements OnModuleInit {
             .createQueryBuilder('user')
             .where('user.name ILIKE :search', { search: `%${search}%` })
             .orWhere('user.email ILIKE :search', { search: `%${search}%` })
+            .andWhere('user.hidden = false')
             .skip(skip)
             .take(take)
             .getMany();
