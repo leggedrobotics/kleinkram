@@ -378,6 +378,7 @@ import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
+import ConfirmDeleteFileDialog from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -527,16 +528,29 @@ function openLink(tag: Tag) {
 }
 
 function deleteFilesCallback() {
-    $q.dialog({
-        component: ConfirmDeleteDialog,
-        componentProps: {
-            filenames: selectedFiles.value.map((file) => file.filename),
-        },
-    }).onOk(() => {
-        const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-        _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
-        deselect();
-    });
+    if (selectedFiles.value.length == 1) {
+        $q.dialog({
+            component: ConfirmDeleteFileDialog,
+            componentProps: {
+                filename: selectedFiles.value.map((file) => file.filename)[0],
+            },
+        }).onOk(() => {
+            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
+            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            deselect();
+        });
+    } else {
+        $q.dialog({
+            component: ConfirmDeleteDialog,
+            componentProps: {
+                filenames: selectedFiles.value.map((file) => file.filename),
+            },
+        }).onOk(() => {
+            const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
+            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            deselect();
+        });
+    }
 }
 
 function deselect() {
