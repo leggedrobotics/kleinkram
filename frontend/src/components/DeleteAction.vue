@@ -29,7 +29,6 @@ const client = useQueryClient();
 const route = useRoute();
 const router = useRouter();
 
-//Error gets thrown here
 async function deleteActionAction() {
     if (action_name_check.value === props.action.template.name) {
         await deleteAction(props.action)
