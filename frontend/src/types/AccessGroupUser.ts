@@ -6,7 +6,7 @@ export class GroupMembership extends BaseEntity {
     user: User | null;
     accessGroup: AccessGroup | null;
     expirationDate: Date | null;
-    isGroupAdmin: boolean = false;
+    canEditGroup: boolean = false;
 
     private constructor(
         uuid: string,
@@ -15,13 +15,13 @@ export class GroupMembership extends BaseEntity {
         user: User | null,
         accessGroup: AccessGroup | null,
         expirationDate: Date | null = null,
-        isGroupAdmin = false,
+        canEditGroup = false,
     ) {
         super(uuid, createdAt, updatedAt);
         this.user = user;
         this.accessGroup = accessGroup;
         this.expirationDate = expirationDate;
-        this.isGroupAdmin = isGroupAdmin;
+        this.canEditGroup = canEditGroup;
     }
 
     static fromAPIResponse(response: any): GroupMembership | null {

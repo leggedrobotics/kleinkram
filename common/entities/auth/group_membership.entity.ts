@@ -35,5 +35,5 @@ export default class GroupMembership extends BaseEntity {
      *
      */
     @Column({ default: false })
-    isGroupAdmin: boolean;
+    canEditGroup: boolean;
 }

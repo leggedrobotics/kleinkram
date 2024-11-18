@@ -98,7 +98,7 @@ export class UserService implements OnModuleInit {
         return user;
     }
 
-    async search(user: AuthRes, search: string, skip: number, take: number) {
+    async search(search: string, skip: number, take: number) {
         // Ensure the search string is not empty or null
         if (!search) {
             return [];
@@ -107,9 +107,11 @@ export class UserService implements OnModuleInit {
         // Use query builder to perform a search on both 'name' and 'email' fields
         return this.userRepository
             .createQueryBuilder('user')
-            .where('user.name ILIKE :search', { search: `%${search}%` })
-            .orWhere('user.email ILIKE :search', { search: `%${search}%` })
-            .andWhere('user.hidden = false')
+            .where('(user.name ILIKE :name OR user.email ILIKE :email)', {
+                name: `%${search}%`,
+                email: `%${search}%`,
+            })
+            .andWhere('user.hidden = :hidden', { hidden: false })
             .skip(skip)
             .take(take)
             .getMany();

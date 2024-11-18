@@ -14,7 +14,7 @@ import {
     CanReadProject,
     CanWriteProject,
     IsAccessGroupCreator,
-    IsAccessGroupCreatorByAccessGroupUser,
+    CanEditGroup,
     UserOnly,
 } from './roles.decorator';
 import { addUser, AuthRes } from './paramDecorator';
@@ -282,7 +282,7 @@ export class AccessController {
     }
 
     @Post('setExpireDate')
-    @IsAccessGroupCreatorByAccessGroupUser()
+    @CanEditGroup()
     async setExpireDate(@Body() body: SetAccessGroupUserExpirationDto) {
         return this.accessService.setExpireDate(body.aguUUID, body.expireDate);
     }

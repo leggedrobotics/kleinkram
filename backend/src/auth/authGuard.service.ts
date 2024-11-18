@@ -11,8 +11,6 @@ export class AuthGuardService {
     constructor(
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
     ) {}
 
     async canAddUserToAccessGroup(user: User, accessGroupUUID: string) {
@@ -35,7 +33,7 @@ export class AuthGuardService {
         });
     }
 
-    async isAccessGroupCreatorByProjectAccess(
+    async canEditAccessGroupByProjectUuid(
         user: User,
         projectAccessUUID: string,
     ) {
@@ -57,10 +55,7 @@ export class AuthGuardService {
         });
     }
 
-    async isAccessGroupCreatorByAccessGroupUserGuard(
-        user: User,
-        aguUUID: string,
-    ) {
+    async canEditAccessGroupByGroupUuid(user: User, aguUUID: string) {
         if (!user || !aguUUID) {
             logger.error(
                 `AuthGuard: aguUUID (${aguUUID}) or User (${user}) not provided.`,
@@ -72,8 +67,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
-                memberships: { uuid: aguUUID },
-                creator: { uuid: user.uuid },
+                memberships: { uuid: aguUUID, canEditGroup: true },
             },
         });
     }

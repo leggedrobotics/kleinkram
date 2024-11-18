@@ -51,9 +51,8 @@ export class UserController {
         @QueryString('search', 'Searchkey on name or email') search: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user?: AuthRes,
     ) {
-        return this.userService.search(user, search, skip, take);
+        return this.userService.search(search, skip, take);
     }
 
     /**

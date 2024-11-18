@@ -19,7 +19,7 @@ import {
     DeleteFileGuard,
     DeleteProjectGuard,
     DeleteTagGuard,
-    IsAccessGroupCreatorByAccessGroupUserGuard,
+    CanEditGroup,
     IsAccessGroupCreatorByProjectAccessGuard,
     LoggedInUserGuard,
     MoveFilesGuard,
@@ -280,10 +280,10 @@ export function IsAccessGroupCreatorByProjectAccess() {
     );
 }
 
-export function IsAccessGroupCreatorByAccessGroupUser() {
+export function CanEditGroup() {
     return applyDecorators(
-        SetMetadata('IsAccessGroupCreatorByAccessGroupUser', true),
-        UseGuards(IsAccessGroupCreatorByAccessGroupUserGuard),
+        SetMetadata('CanEditGroup', true),
+        UseGuards(CanEditGroup),
     );
 }
 

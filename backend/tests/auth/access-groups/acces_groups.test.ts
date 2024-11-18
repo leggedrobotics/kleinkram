@@ -57,7 +57,7 @@ describe('Verify Access Groups', () => {
             ).toBe(false);
         });
 
-        // user is only part of the personal group
+        // user is only part of the primary group
         expect(user.memberships.length).toBe(1);
         user.memberships.forEach((accessGroup: GroupMembership) => {
             expect(accessGroup.accessGroup.type).toBe(AccessGroupType.PRIMARY);
@@ -97,17 +97,17 @@ describe('Verify Access Groups', () => {
         expect(true).toBe(true);
     });
 
-    test('if personal group cannot be deleted', async () => {
+    test('if primary group cannot be deleted', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if admin cannot delete personal group of any user', async () => {
+    test('if admin cannot delete primary group of any user', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if member of personal group cannot delete personal group ', async () => {
+    test('if member of primary group cannot delete primary group ', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

@@ -178,7 +178,7 @@ async function createPrimaryGroup(
         hidden: false,
         memberships: [
             {
-                isGroupAdmin: false,
+                canEditGroup: false,
                 user: { uuid: user.uuid },
             },
         ],

@@ -855,7 +855,7 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
         }
         const projectAccessUUID =
             request.body.projectAccessUUID || request.params.projectAccessUUID;
-        return this.authGuardService.isAccessGroupCreatorByProjectAccess(
+        return this.authGuardService.canEditAccessGroupByProjectUuid(
             user,
             projectAccessUUID,
         );
@@ -863,7 +863,7 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
 }
 
 @Injectable()
-export class IsAccessGroupCreatorByAccessGroupUserGuard extends BaseGuard {
+export class CanEditGroup extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private authGuardService: AuthGuardService,
@@ -879,8 +879,9 @@ export class IsAccessGroupCreatorByAccessGroupUserGuard extends BaseGuard {
                 'CLI Keys cannot check access group creator',
             );
         }
+
         const aguUUID = request.body.aguUUID || request.params.aguUUID;
-        return this.authGuardService.isAccessGroupCreatorByAccessGroupUserGuard(
+        return this.authGuardService.canEditAccessGroupByGroupUuid(
             user,
             aguUUID,
         );
