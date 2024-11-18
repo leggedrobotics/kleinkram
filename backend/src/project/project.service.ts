@@ -13,7 +13,6 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import logger from '../logger';
 
 @Injectable()
 export class ProjectService {
