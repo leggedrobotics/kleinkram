@@ -1,10 +1,5 @@
 #!/bin/sh
 
-# the following command is necessary as we didn't installed the package,
-# instead we are running it from the source code
-alias klein='python ./cli/src/klein.py'
-
-
 env
 echo ""
 echo ""
@@ -16,11 +11,11 @@ echo "🚀 Rocket"
 
 klein endpoint set $ENDPOINT
 klein login --key $APIKEY
-klein mission byUUID $MISSION_UUID
+klein list files -m $MISSION_UUID
 
 # TODO... this Endpoint needs to be fixed
 mkdir data
-klein mission download --mission-uuid $MISSION_UUID --local-path ./data
+klein download -m $MISSION_UUID --dest ./data
 
 echo ""
 echo "List files of mission with UUID $MISSION_UUID"

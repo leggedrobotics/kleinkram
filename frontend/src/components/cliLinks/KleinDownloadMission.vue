@@ -15,10 +15,9 @@
                         font-size: smaller;
                     "
                 >
-                    klein mission download
+                    klein download
                     <span style="opacity: 0.8">
-                        --mission-uuid="{{ props.mission.uuid }}"
-                        --local-path="." --pattern "*.bag" --pattern="*.bag"
+                        --dest=. -m={{ props.mission.uuid }}
                     </span>
                 </div>
                 <q-btn
@@ -39,7 +38,7 @@ const props = defineProps<{
 }>();
 
 function clicked() {
-    const text = `klein mission download --mission-uuid="${props.mission.uuid}" --local-path="." --pattern="*.bag"`;
+    const text = `klein download --dest=. -m ${props.mission.uuid}`;
     navigator.clipboard.writeText(text);
 }
 </script>

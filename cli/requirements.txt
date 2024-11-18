@@ -1,0 +1,7 @@
+boto3
+botocore
+httpx
+pyyaml
+rich
+tqdm
+typer

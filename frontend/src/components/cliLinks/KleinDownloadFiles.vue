@@ -13,9 +13,9 @@
                         color: white;
                     "
                 >
-                    klein file download
+                    klein download
                     <span style="opacity: 0.8">
-                        {{ fileArguments }} --local-path="."
+                        --dest=. {{ fileArguments }}
                     </span>
                 </div>
                 <q-btn
@@ -39,13 +39,13 @@ const props = defineProps<{
 const fileArguments = computed(() => {
     return props.files
         .map((file) => {
-            return `--file-uuid="${file.uuid}"`;
+            return `${file.uuid}`;
         })
         .join(' ');
 });
 
 function clicked() {
-    const text = `klein file download ${fileArguments.value} --local-path="."`;
+    const text = `klein download --dest=. ${fileArguments.value}`;
     navigator.clipboard.writeText(text);
 }
 </script>
