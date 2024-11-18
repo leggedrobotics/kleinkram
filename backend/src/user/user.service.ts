@@ -112,11 +112,13 @@ export class UserService implements OnModuleInit {
                 accessGroupUsers: { accessGroup: { inheriting: true } },
             },
             relations: ['accessGroupUsers'],
+            select: ['uuid', 'role'],
         });
         let defaultPermission;
         if (!user) {
             user = await this.userRepository.findOneOrFail({
                 where: { uuid: auth.user.uuid },
+                select: ['uuid', 'role'],
             });
             defaultPermission = 0;
         } else {
