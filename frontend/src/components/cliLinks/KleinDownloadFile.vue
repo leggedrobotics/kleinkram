@@ -23,11 +23,9 @@
                         font-size: smaller;
                     "
                 >
-                    klein file download
+                    klein download
                     <span style="opacity: 0.8">
-                        --file-uuid="{{ props.file.uuid }}" --local-path="./{{
-                            props.file.filename
-                        }}"
+                        --dest=. {{ props.file.uuid }}
                     </span>
                 </div>
                 <q-btn
@@ -48,7 +46,7 @@ const props = defineProps<{
 }>();
 
 function clicked() {
-    const text = `klein file download --file-uuid="${props.file.uuid}" --local-path="./${props.file.filename}"`;
+    const text = `klein download --dest=. ${props.file.uuid}`;
     navigator.clipboard.writeText(text);
 }
 </script>

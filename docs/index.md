@@ -6,7 +6,7 @@ titleTemplate: A structured bag and mcap storage solution
 
 hero:
     name: Kleinkram
-    text: Robotics Systems Lab
+    text: Robotic Systems Lab
     tagline: A structured bag and mcap storage solution
     actions:
         - theme: brand

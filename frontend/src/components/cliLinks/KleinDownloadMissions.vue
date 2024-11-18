@@ -12,8 +12,11 @@
                         color: white;
                     "
                 >
-                    klein mission download
-                    <span style="opacity: 0.8"> {{ params }} </span>
+                    <span style="opacity: 0.8">
+                        echo {{ params }} | xargs -n 1
+                    </span>
+                    klein download
+                    <span style="opacity: 0.8"> --dest=. </span>
                 </div>
                 <q-btn
                     icon="sym_o_content_copy"
@@ -34,16 +37,11 @@ const props = defineProps<{
 }>();
 
 const params = computed(() => {
-    return (
-        props.missions
-            .map((mission) => mission.uuid)
-            .map((uuid) => `--mission-uuid="${uuid}"`)
-            .join(' ') + ' --local-path="."'
-    );
+    return props.missions.map((mission) => `${mission.uuid}`).join(' ');
 });
 
 function clicked() {
-    const text = `klein mission download ${params.value}`;
+    const text = `echo ${params.value} | xargs -n 1 klein download --dest=. -m`;
     navigator.clipboard.writeText(text);
 }
 </script>

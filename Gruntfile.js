@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const toml = require('@iarna/toml');
+const ini = require('ini');
 
 module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-bump');
@@ -11,17 +11,17 @@ module.exports = function (grunt) {
                 commit: false,
                 push: false,
                 createTag: false,
-                taskList: ['pyproject'],
+                taskList: ['python-bump'],
             },
         },
     });
 
     grunt.registerTask(
-        'pyproject',
-        'Bump the version in pyproject.toml',
+        'python-bump',
+        'Bump the version in setup.cfg',
         function () {
             const opts = this.options({
-                file: 'CLI/pyproject.toml',
+                file: 'cli/setup.cfg',
             });
 
             const filePath = opts.file;
@@ -42,21 +42,35 @@ module.exports = function (grunt) {
 
             try {
                 const data = fs.readFileSync(filePath, 'utf8');
-                const parsed = toml.parse(data);
 
-                if (parsed.project && parsed.project.version) {
-                    parsed.project.version = version;
+                // the ini/npm parser doesnt support multiline values, which is required for setup.cfg
+                // Split the data into lines
+                const lines = data.split(/\r?\n/);
 
-                    const output = toml.stringify(parsed);
-                    fs.writeFileSync(filePath, output, 'utf8');
-                    grunt.log.writeln(
-                        `Version bumped to ${version} in ${filePath}`,
-                    );
-                } else {
-                    grunt.fail.warn(
-                        'No [project] section or version found in pyproject.toml',
-                    );
+                // Find and return the first line that starts with "version"
+                const versionLine = lines.find((line) =>
+                    line.trim().toLowerCase().startsWith('version'),
+                );
+
+                if (!versionLine) {
+                    grunt.fail.warn('No version found in setup.cfg');
+                    return;
                 }
+
+                // Replace the version in the line
+                const newVersionLine = versionLine.replace(
+                    /=.*$/,
+                    `= ${version}`,
+                );
+
+                // Replace the old version line with the new one
+                const newData = data.replace(versionLine, newVersionLine);
+
+                // Write the new data back to the file
+                fs.writeFileSync(filePath, newData, 'utf8');
+                grunt.log.writeln(
+                    `Version bumped to ${version} in ${filePath}`,
+                );
             } catch (err) {
                 grunt.fail.warn(`Error processing file: ${err.message}`);
             }
@@ -69,7 +83,7 @@ module.exports = function (grunt) {
             target = 'patch'; // default to 'patch' if no target is specified
         }
         grunt.task.run(`bump:${target}`);
-        grunt.task.run('pyproject');
+        grunt.task.run('python-bump');
     });
 
     grunt.registerTask('validateVersions', function () {
@@ -93,26 +107,34 @@ module.exports = function (grunt) {
         });
 
         // check if pyproject.toml has the same version
-        const filePath = 'CLI/pyproject.toml';
+        const filePath = 'cli/setup.cfg';
         if (!fs.existsSync(filePath)) {
             grunt.fail.warn(`File not found: ${filePath}`);
             return;
         }
         const data = fs.readFileSync(filePath, 'utf8');
-        const parsed = toml.parse(data);
 
-        if (parsed.project && parsed.project.version) {
-            if (parsed.project.version !== version) {
-                grunt.fail.warn(
-                    `Version mismatch: ${filePath} has version ${parsed.project.version} instead of ${version}`,
-                );
-            } else {
-                console.log(`Version in ${filePath} matches ${version}`);
-            }
-        } else {
+        // the ini/npm parser doesnt support multiline values, which is required for setup.cfg
+        // Split the data into lines
+        const lines = data.split(/\r?\n/);
+
+        // Find and return the first line that starts with "version"
+        const versionLine = lines.find((line) =>
+            line.trim().toLowerCase().startsWith('version'),
+        );
+
+        if (!versionLine) {
+            grunt.fail.warn('No version found in setup.cfg');
+            return;
+        }
+
+        cfg_version = versionLine.split('=')[1].trim();
+        if (cfg_version !== version) {
             grunt.fail.warn(
-                'No [project] section or version found in pyproject.toml',
+                `Version mismatch: ${filePath} has version ${cfg_version} instead of ${version}`,
             );
+        } else {
+            console.log(`Version in ${filePath} matches ${version}`);
         }
     });
 };

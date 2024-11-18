@@ -1,7 +1,7 @@
 # Kleinkram - A structured bag and mcap storage solution
 
 Kleinkram is a structured bag and mcap storage solution for ROS1 and ROS2. It is designed to be a simple and efficient
-way to store and retrieve bags and mcaps. Kleinkram is developed by the Robotics Systems Lab at ETH Zurich.
+way to store and retrieve bags and mcaps. Kleinkram is developed by the Robotic Systems Lab at ETH Zurich.
 
 ## Features
 

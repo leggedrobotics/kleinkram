@@ -17,7 +17,7 @@
                 Kleinkram
             </span>
             <span style="font-size: 10px; line-height: 12px"
-                >by Robotics Systems Lab</span
+                >by Robotic Systems Lab</span
             >
         </div>
     </div>

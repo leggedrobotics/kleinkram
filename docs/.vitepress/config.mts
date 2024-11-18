@@ -295,7 +295,7 @@ export default withMermaid({
 
         footer: {
             message: 'Released under the ??? License.',
-            copyright: 'Copyright © 2024-present Robotics Systems Lab',
+            copyright: 'Copyright © 2024-present Robotic Systems Lab',
         },
     },
 });
