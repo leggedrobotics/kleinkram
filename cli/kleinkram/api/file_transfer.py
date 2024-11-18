@@ -13,6 +13,7 @@ from typing import Tuple
 from uuid import UUID
 
 import boto3.s3.transfer
+import botocore.config
 import httpx
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
@@ -31,6 +32,9 @@ UPLOAD_CANCEL = "/file/cancelUpload"
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 DOWNLOAD_URL = "/file/download"
+
+S3_MAX_RETRIES = 60  # same as frontend
+S3_READ_TIMEOUT = 60 * 5  # 5 minutes
 
 
 class UploadCredentials(NamedTuple):
@@ -155,12 +159,17 @@ def _s3_upload(
 ) -> bool:
     # configure boto3
     try:
+        config = botocore.config.Config(
+            retries={"max_attempts": S3_MAX_RETRIES},
+            read_timeout=S3_READ_TIMEOUT,
+        )
         client = boto3.client(
             "s3",
             endpoint_url=endpoint,
             aws_access_key_id=credentials.access_key,
             aws_secret_access_key=credentials.secret_key,
             aws_session_token=credentials.session_token,
+            config=config,
         )
         client.upload_file(
             str(local_path),
