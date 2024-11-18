@@ -40,7 +40,7 @@ export default class Action extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     container: Container;
 
-    @ManyToOne(() => User, (user) => user.submittedActions)
+    @ManyToOne(() => User, (user) => user.submittedActions, { nullable: false })
     createdBy: User;
 
     @Column({ nullable: true })
@@ -55,6 +55,7 @@ export default class Action extends BaseEntity {
 
     @ManyToOne(() => Mission, (mission) => mission.actions, {
         onDelete: 'CASCADE',
+        nullable: false,
     })
     mission: Mission;
 
@@ -79,7 +80,11 @@ export default class Action extends BaseEntity {
     @JoinColumn()
     key: Apikey;
 
-    @ManyToOne(() => ActionTemplate, (actionTemplate) => actionTemplate.actions)
+    @ManyToOne(
+        () => ActionTemplate,
+        (actionTemplate) => actionTemplate.actions,
+        { nullable: false },
+    )
     template: ActionTemplate;
 
     @Column({ type: 'json', nullable: true })
