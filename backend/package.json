@@ -71,7 +71,7 @@
         "@jest/globals": "^29.7.0",
         "@nestjs/cli": "^10.4.4",
         "@nestjs/schematics": "^10.0.0",
-        "@nestjs/testing": "^10.0.0",
+        "@nestjs/testing": "^10.4.8",
         "@types/cookie-parser": "^1.4.7",
         "@types/express": "^5.0.0",
         "@types/jest": "^29.5.2",
