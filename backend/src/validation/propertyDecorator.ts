@@ -50,7 +50,7 @@ export const IsValidFileName = (
 export const IsValidName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-_]{3,20}$/, {
+    Matches(/^[\w\-_]{3,50}$/, {
         message: 'Project name is not valid!',
         ...validationOptions,
     });
