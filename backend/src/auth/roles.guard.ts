@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, ActionState, UserRole } from '@common/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -683,6 +683,7 @@ export class ReadActionGuard extends BaseGuard {
         return this.actionGuardService.canAccessAction(user, actionUUID);
     }
 }
+
 @Injectable()
 export class CreateActionGuard extends BaseGuard {
     constructor(
@@ -717,6 +718,7 @@ export class CreateActionGuard extends BaseGuard {
         );
     }
 }
+
 @Injectable()
 export class DeleteActionGuard extends BaseGuard {
     constructor(
@@ -735,14 +737,27 @@ export class DeleteActionGuard extends BaseGuard {
             where: { uuid: actionUUID },
             relations: ['mission', 'createdBy'],
         });
+
         if (apiKey) {
             throw new BadRequestException(
                 'apiKey in DeleteActionGuard is not supported',
             );
         }
+        if (
+            !(
+                action.state === ActionState.DONE ||
+                action.state === ActionState.FAILED ||
+                action.state === ActionState.UNPROCESSABLE
+            )
+        ) {
+            throw new BadRequestException(
+                "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
+            );
+        }
         if (action.createdBy.uuid === user.uuid) {
             return true;
         }
+
         const missionUUID = action.mission.uuid;
         return this.missionGuardService.canAccessMission(
             user,
