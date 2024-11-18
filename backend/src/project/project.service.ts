@@ -53,7 +53,6 @@ export class ProjectService {
             .leftJoinAndSelect('project.missions', 'missions');
 
         // if not admin, only show projects that the user has access to
-        logger.debug(' auth.user.uuid', user.uuid);
         if (user.role !== UserRole.ADMIN) {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
