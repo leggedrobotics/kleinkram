@@ -49,4 +49,10 @@ const { data: user } = useQuery({
         grid-template-rows: repeat(2, 350px);
     }
 }
+
+/* used in the child components */
+.dashboard-card {
+    border-radius: 3px;
+    border: solid 1.5px #e0e0e0;
+}
 </style>

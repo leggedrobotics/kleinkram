@@ -47,7 +47,19 @@ watch(
 onMounted(async () => {
     try {
         if (!swaggerSpec.value) {
-            const response = await fetch('http://localhost:3000/swagger/json');
+            let endpoint = 'http://localhost:3000/swagger/json';
+
+            const mode = import.meta.env.VITE_MODE;
+            if (mode === 'production') {
+                endpoint =
+                    'https://api.datasets.leggedrobotics.com/swagger/json';
+            } else if (mode === 'staging') {
+                endpoint =
+                    'https://api.datasets.dev.leggedrobotics.com/swagger/json';
+            }
+            console.log('Fetching swagger spec from:', endpoint);
+
+            const response = await fetch(endpoint);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

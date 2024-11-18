@@ -194,8 +194,23 @@ export const createNewUser = async (
     user.account = await accountRepository.save(account);
     const savedUser = await userRepository.save(user);
 
+    /////////////////////////////////////////////////////////
+    // Create Personal Access Group
+    /////////////////////////////////////////////////////////
+
+    let personalGroupName = `Personal: ${savedUser.name}`;
+
+    const exists = await accessGroupRepository.exists({
+        where: { name: personalGroupName },
+    });
+
+    if (exists) {
+        const randomSuffix = Math.random().toString(36).substring(7);
+        personalGroupName = `Personal: ${savedUser.name} ${randomSuffix}`;
+    }
+
     const personalGroup = accessGroupRepository.create({
-        name: `Personal: ${savedUser.name}`,
+        name: personalGroupName,
         users: [savedUser],
         personal: true,
     });
@@ -209,6 +224,10 @@ export const createNewUser = async (
     await accessGroupUserRepository.save(personalAccessGroupUser);
 
     user.accessGroupUsers = [personalAccessGroupUser];
+
+    /////////////////////////////////////////////////////////
+    // Link User to Institutional Access Groups
+    /////////////////////////////////////////////////////////
 
     config.emails?.forEach((_config) => {
         if (user.email.endsWith(_config.email)) {

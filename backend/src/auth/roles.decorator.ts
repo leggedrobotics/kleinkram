@@ -36,6 +36,7 @@ import {
     WriteFileGuard,
     WriteMissionByBodyGuard,
     WriteProjectGuard,
+    DeleteActionGuard,
 } from './roles.guard';
 import { ApiResponse } from '@nestjs/swagger';
 
@@ -236,6 +237,12 @@ export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionsGuard),
+    );
+}
+export function CanDeleteAction() {
+    return applyDecorators(
+        SetMetadata('CanDeleteAction', true),
+        UseGuards(DeleteActionGuard),
     );
 }
 

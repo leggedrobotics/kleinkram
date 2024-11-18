@@ -13,6 +13,7 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import logger from '../logger';
 
 @Injectable()
 export class ProjectService {
@@ -21,8 +22,7 @@ export class ProjectService {
     constructor(
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
-        @InjectRepository(User) private userRepository: Repository<User>,
-        private userservice: UserService,
+        private userService: UserService,
         @InjectRepository(ProjectAccess)
         private projectAccessRepository: Repository<ProjectAccess>,
         @InjectRepository(TagType)
@@ -36,7 +36,7 @@ export class ProjectService {
     }
 
     async findAll(
-        auth: AuthRes,
+        user: User,
         skip: number,
         take: number,
         sortBy: string,
@@ -47,17 +47,14 @@ export class ProjectService {
         take = Number(take);
         skip = Number(skip);
 
-        const dbUser = await this.userRepository.findOne({
-            where: { uuid: auth.user.uuid },
-        });
-
         let baseQuery = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator')
             .leftJoinAndSelect('project.missions', 'missions');
 
         // if not admin, only show projects that the user has access to
-        if (dbUser.role !== UserRole.ADMIN) {
+        logger.debug(' auth.user.uuid', user.uuid);
+        if (user.role !== UserRole.ADMIN) {
             baseQuery = baseQuery
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
@@ -66,7 +63,7 @@ export class ProjectService {
                 .where('projectAccesses.rights >= :rights', {
                     rights: AccessGroupRights.READ,
                 })
-                .andWhere('user.uuid = :uuid', { uuid: auth.user.uuid });
+                .andWhere('user.uuid = :uuid', { uuid: user.uuid });
         }
 
         // add sorting
@@ -267,7 +264,7 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const accessGroupUsersDefault = creator.accessGroupUsers.filter(
             (accessGroupUser) =>
                 accessGroupUser.accessGroup.personal ||
@@ -415,8 +412,12 @@ export class ProjectService {
         manager: EntityManager,
         accessGroups: AccessGroup[],
         project: Project,
-        removedDefaultGroups: string[],
+        removedDefaultGroups?: string[],
     ) {
+        if (!removedDefaultGroups) {
+            removedDefaultGroups = [];
+        }
+
         return await Promise.all(
             accessGroups.map(async (accessGroup) => {
                 let rights = AccessGroupRights.WRITE;
@@ -488,7 +489,7 @@ export class ProjectService {
     }
 
     async getDefaultRights(auth: AuthRes) {
-        const creator = await this.userservice.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const rights = creator.accessGroupUsers
             .map((agu) => agu.accessGroup)
             .filter(
@@ -503,7 +504,7 @@ export class ProjectService {
                     _rights = this.config.access_groups.find(
                         (group) => group.uuid === right.uuid,
                     ).rights;
-                    memberCount = await this.userservice.getMemberCount(
+                    memberCount = await this.userService.getMemberCount(
                         right.uuid,
                     );
                 } else if (right.personal) {

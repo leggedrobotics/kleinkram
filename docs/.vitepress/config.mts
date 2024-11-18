@@ -1,4 +1,4 @@
-import {withMermaid} from 'vitepress-plugin-mermaid';
+import { withMermaid } from 'vitepress-plugin-mermaid';
 
 export default withMermaid({
     lang: 'en-US',
@@ -85,7 +85,7 @@ export default withMermaid({
                         {
                             text: 'Example',
                             link: '/usage/access-control/example',
-                        }
+                        },
                     ],
 
                 },
@@ -107,8 +107,8 @@ export default withMermaid({
                             text: 'Getting Started',
                             link: '/usage/files/files',
                         },
-                    ]
-                }
+                    ],
+                },
 
             ],
             '/development/': [
@@ -229,10 +229,10 @@ export default withMermaid({
                             items: [
                                 {
                                     text: 'Access Filtering',
-                                    link: '/development/access-control/addAccessConstraints'
+                                    link: '/development/access-control/addAccessConstraints',
                                 },
-                            ]
-                        }
+                            ],
+                        },
                     ],
                     collapsed: true,
                 },
@@ -243,11 +243,11 @@ export default withMermaid({
                             text: 'Introduction',
                             link: '/development/API/Introduction',
                         },
-                         {
+                        {
                             text: 'Develop the CLI',
                             link: '/development/CLI/getting-started.md',
-                        }
-                    ]
+                        },
+                    ],
                 },
                 {
                     text: 'Migrations',
@@ -265,13 +265,13 @@ export default withMermaid({
                         {
                             text: 'Run Testsuite',
                             link: '/development/testing/getting-started.md',
-                        }
-                    ]
+                        },
+                    ],
                 },
                 {
                     text: 'Cronjobs',
                     link: '/development/Cron/CronJobs',
-                }
+                },
 
             ],
         },
@@ -295,7 +295,7 @@ export default withMermaid({
 
         footer: {
             message: 'Released under the ??? License.',
-            copyright: 'Copyright © 2024-present Robotics Systems Lab',
+            copyright: 'Copyright © 2024-present Robotic Systems Lab',
         },
     },
 });

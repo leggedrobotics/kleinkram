@@ -47,7 +47,7 @@ export class ProjectController {
     })
     async allProjects(
         @addUser()
-        user: AuthRes,
+        authRes: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy?: string,
@@ -56,7 +56,7 @@ export class ProjectController {
         searchParams?: Map<string, string>,
     ) {
         return this.projectService.findAll(
-            user,
+            authRes.user,
             skip,
             take,
             sortBy,
@@ -143,6 +143,11 @@ export class ProjectController {
 
     @Get('getDefaultRights')
     @LoggedIn()
+    @ApiOperation({
+        summary: 'Get default rights',
+        description: `Get the default rights for a project, the default rights 
+        are the rights that should be assigned to a new project upon creation`,
+    })
     async getDefaultRights(
         @addUser() user: AuthRes,
     ): Promise<{ name: string; uuid: string; rights: AccessGroupRights }[]> {

@@ -19,6 +19,7 @@ import Queue from '@common/entities/queue/queue.entity';
 import { ActionGuardService } from './actionGuard.service';
 import { AuthGuardService } from './authGuard.service';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
+import Action from '@common/entities/action/action.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -716,6 +717,41 @@ export class CreateActionGuard extends BaseGuard {
         );
     }
 }
+@Injectable()
+export class DeleteActionGuard extends BaseGuard {
+    constructor(
+        private reflector: Reflector,
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(Action)
+        private actionRepository: Repository<Action>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+        const actionUUID = request.body.actionUUID;
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUUID },
+            relations: ['mission', 'createdBy'],
+        });
+        if (apiKey) {
+            throw new BadRequestException(
+                'apiKey in DeleteActionGuard is not supported',
+            );
+        }
+        if (action.createdBy.uuid === user.uuid) {
+            return true;
+        }
+        const missionUUID = action.mission.uuid;
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            AccessGroupRights.DELETE,
+        );
+    }
+}
+
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(

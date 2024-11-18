@@ -7,7 +7,7 @@
             >
                 <div class="flex" style="gap: 8px">
                     <span>
-                        © {{ year }} ETH Zürich - Robotics Systems Lab (RSL)
+                        © {{ year }} ETH Zürich - Robotic Systems Lab (RSL)
                     </span>
                     <span> • </span>
                     <q-icon

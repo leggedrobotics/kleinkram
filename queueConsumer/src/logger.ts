@@ -5,7 +5,7 @@ import { Injectable, LoggerService } from '@nestjs/common';
 export const ACTION_CONTAINER_LABEL = 'action_container';
 export const QUEUE_CONSUMER_LABEL = 'queue-consumer';
 
-const ignoreContainerLogs = winston.format((info) => {
+const ignoreContainerLogs = winston.format((info: any) => {
     if (info.labels?.job === ACTION_CONTAINER_LABEL) return false;
     return info;
 });

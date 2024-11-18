@@ -1,6 +1,6 @@
 <template>
     <div
-        class="projects-container"
+        class="projects-container dashboard-card"
         style="grid-column: span 2; background-color: white; display: grid"
     >
         <!-- Static Row with Title and Arrows -->

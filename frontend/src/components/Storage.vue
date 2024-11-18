@@ -1,5 +1,5 @@
 <template>
-    <q-card style="background-color: white" class="flex" flat>
+    <q-card style="background-color: white" class="flex dashboard-card" flat>
         <q-card-section style="width: 100%">
             <v-chart
                 :option="option"
