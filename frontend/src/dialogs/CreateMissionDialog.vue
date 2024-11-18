@@ -86,7 +86,7 @@
                                 'Name must be at least 3 characters',
                             (val) =>
                                 val.length <= 50 ||
-                                'Name must be at most 40 characters',
+                                'Name must be at most 50 characters',
                             (val) =>
                                 /^[\w\-_]+$/g.test(val) ||
                                 'Name must be alphanumeric and contain only - and _',

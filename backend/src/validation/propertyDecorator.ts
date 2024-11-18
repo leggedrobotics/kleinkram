@@ -1,5 +1,6 @@
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { Matches } from 'class-validator';
+import { missionNameRegex } from './validationLogic';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsNoValidUUID = (
@@ -72,7 +73,7 @@ export const IsValidName = (
 export const IsValidMissionName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(/^[\w\-_]{3,50}$/, {
+    Matches(missionNameRegex, {
         message: 'Mission name is not valid!',
         ...validationOptions,
     });
