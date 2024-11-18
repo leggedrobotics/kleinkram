@@ -1,18 +1,11 @@
-import {
-    Column,
-    Entity,
-    JoinTable,
-    ManyToOne,
-    OneToMany,
-    Unique,
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
 import ProjectAccess from './project_access.entity';
 import MissionAccess from './mission_access.entity';
 import AccessGroupUser from './accessgroup_user.entity';
 
-@Unique('unique_access_group_name', ['name'])
+// @Unique('unique_access_group_name', ['name'])
 @Entity()
 export default class AccessGroup extends BaseEntity {
     @Column()
