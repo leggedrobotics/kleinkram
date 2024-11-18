@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
+import time
 from collections import OrderedDict
 from enum import Enum
+from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import List
@@ -28,6 +31,15 @@ from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import get_supported_api_version
 from rich.console import Console
 from typer.core import TyperGroup
+
+LOG_DIR = Path() / "data" / "logs"
+LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"
+
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE.touch()
+
+logging.basicConfig(level=logging.ERROR, filename=LOG_FILE)
+logger = logging.getLogger(__name__)
 
 
 CLI_HELP = """\
