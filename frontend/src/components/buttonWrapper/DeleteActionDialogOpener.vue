@@ -8,7 +8,10 @@
         }"
     >
         <slot />
-        <q-tooltip v-if="!canDelete">
+        <q-tooltip v-if="!canDelete && !actionInDeletableState">
+            You can only delete actions if they're DONE, FAILED or UNPROCESSABLE
+        </q-tooltip>
+        <q-tooltip v-else-if="!canDelete">
             You do not have permission to delete this action
         </q-tooltip>
     </div>
