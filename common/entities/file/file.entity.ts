@@ -19,7 +19,7 @@ import CategoryEntity from '../category/category.entity';
 @Entity()
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
 export default class FileEntity extends BaseEntity {
-    @ManyToOne(() => Mission, (mission) => mission.files)
+    @ManyToOne(() => Mission, (mission) => mission.files, { nullable: false })
     mission: Mission;
 
     @Column()
@@ -43,7 +43,7 @@ export default class FileEntity extends BaseEntity {
     /**
      * The user who uploaded the file.
      */
-    @ManyToOne(() => User, (user) => user.files)
+    @ManyToOne(() => User, (user) => user.files, { nullable: false })
     creator: User;
 
     @Column()

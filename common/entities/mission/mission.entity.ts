@@ -15,7 +15,9 @@ export default class Mission extends BaseEntity {
     @Column()
     name: string;
 
-    @ManyToOne(() => Project, (project) => project.missions)
+    @ManyToOne(() => Project, (project) => project.missions, {
+        nullable: false,
+    })
     project: Project;
 
     @OneToMany(() => FileEntity, (file) => file.mission)
@@ -27,7 +29,7 @@ export default class Mission extends BaseEntity {
     @OneToMany(() => QueueEntity, (queue) => queue.mission)
     queues: QueueEntity[];
 
-    @ManyToOne(() => User, (user) => user.missions)
+    @ManyToOne(() => User, (user) => user.missions, { nullable: false })
     creator: User;
 
     @OneToMany(() => Apikey, (apiKey) => apiKey.mission)

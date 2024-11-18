@@ -27,11 +27,12 @@ export default class Project extends BaseEntity {
     @Column({ nullable: true })
     description: string;
 
-    @ManyToOne(() => User, (user) => user.projects)
+    @ManyToOne(() => User, (user) => user.projects, { nullable: false })
     creator: User;
 
     @ManyToMany(() => TagType, (tag) => tag.project, {
         onDelete: 'CASCADE',
+        nullable: false,
     })
     requiredTags: TagType[];
 

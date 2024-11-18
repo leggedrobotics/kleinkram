@@ -10,12 +10,15 @@ export default class ProjectAccess extends BaseEntity {
     @Column()
     rights: AccessGroupRights;
 
-    @ManyToOne(() => AccessGroup, (group) => group.project_accesses)
+    @ManyToOne(() => AccessGroup, (group) => group.project_accesses, {
+        nullable: false,
+    })
     accessGroup: AccessGroup;
 
     @ManyToOne(() => Project, (project) => project.project_accesses, {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
+        nullable: false,
     })
     project: Project;
 }
