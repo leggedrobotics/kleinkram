@@ -4,14 +4,14 @@ import {
     FILE_NAME_REGEX,
     MISSION_NAME_REGEX,
     PROJECT_NAME_REGEX,
-    UUID_REGEX,
+    NON_UUID_REGEX,
 } from './validationLogic';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const IsNoValidUUID = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
-    Matches(UUID_REGEX, {
+    Matches(NON_UUID_REGEX, {
         message: 'File name is not valid, are you trying to use a UUID?',
         ...validationOptions,
     });
