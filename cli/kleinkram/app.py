@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import time
 from collections import OrderedDict
 from enum import Enum
@@ -36,6 +37,7 @@ from typer.core import TyperGroup
 
 LOG_DIR = Path() / "logs"
 LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"
+LOG_FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 
 # setup default logging
 logger = logging.getLogger(__name__)
@@ -49,6 +51,14 @@ For a list of available commands, run `klein --help` or visit \
 https://docs.datasets.leggedrobotics.com/usage/cli/cli-getting-started.html \
 for more information.
 """
+
+
+class LogLevel(str, Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 class CommandTypes(str, Enum):
@@ -108,12 +118,9 @@ app = ErrorHandledTyper(
 @app.error_handler(Exception)
 def base_handler(exc: Exception) -> int:
     if not get_shared_state().debug:
-        console = Console()
-        console.print(f"{type(exc).__name__}: {exc}", style="red")
+        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
         logger.error(format_traceback(exc))
-
         return 1
-
     raise exc
 
 
@@ -147,7 +154,7 @@ def claim():
     print("admin rights claimed successfully.")
 
 
-def _version_cb(value: bool) -> None:
+def _version_callback(value: bool) -> None:
     if value:
         typer.echo(__version__)
         raise typer.Exit()
@@ -164,11 +171,9 @@ def check_version_compatiblity() -> None:
         )
 
     if cli_version[1] != api_version[1]:
-        console = Console()
-        console.print(
-            f"CLI version {__version__} might not be compatible with API version {api_vers_str}",
-            style="red",
-        )
+        msg = f"CLI version {__version__} might not be compatible with API version {api_vers_str}"
+        Console(file=sys.stderr).print(msg, style="red")
+        logger.warning(msg)
 
 
 @app.callback()
@@ -176,8 +181,9 @@ def cli(
     verbose: bool = typer.Option(True, help="Enable verbose mode."),
     debug: bool = typer.Option(False, help="Enable debug mode."),
     version: Optional[bool] = typer.Option(
-        None, "--version", "-v", callback=_version_cb
+        None, "--version", "-v", callback=_version_callback
     ),
+    log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
 ):
     _ = version  # suppress unused variable warning
     shared_state = get_shared_state()
@@ -185,18 +191,21 @@ def cli(
     shared_state.debug = debug
 
     if shared_state.debug:
+        log_level = LogLevel.DEBUG
+
+    if log_level is not None:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
+        level = logging.getLevelName(log_level)
+        logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
 
-    logger.debug(f"CLI version: {__version__}")
-    logger.warning("debug mode enabled")
-
-    print("here")
+    logger.info(f"CLI version: {__version__}")
 
     try:
         check_version_compatiblity()
-    except InvalidCLIVersion:
+    except InvalidCLIVersion as e:
+        logger.error(format_traceback(e))
         raise
     except Exception:
-        console = Console()
-        console.print("failed to check version compatibility", style="yellow")
+        err = "failed to check version compatibility"
+        Console(file=sys.stderr).print(err, style="yellow")
+        logger.error(err)

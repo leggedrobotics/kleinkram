@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -25,8 +26,13 @@ from kleinkram.errors import UploadCredentialsFailed
 from kleinkram.errors import UploadFailed
 from kleinkram.utils import b64_md5
 from kleinkram.utils import format_error
+from kleinkram.utils import format_traceback
 from kleinkram.utils import styled_string
+from rich.console import Console
 from tqdm import tqdm
+
+
+logger = logging.getLogger(__name__)
 
 UPLOAD_CREDS = "/file/temporaryAccess"
 UPLOAD_CONFIRM = "/queue/confirmUpload"
@@ -179,8 +185,8 @@ def _s3_upload(
             Callback=pbar.update,
         )
     except Exception as e:
-        msg = format_error(f"error uploading file {local_path}", e)
-        pbar.write(msg)
+        logger.error(format_traceback(e))
+        pbar.write(format_error(f"error uploading file {local_path}", e))
         return False
     return True
 
@@ -213,6 +219,7 @@ def _upload_file(
         # upload file
         creds = access[job.name]
     except Exception as e:
+        logger.error(format_traceback(e))
         pbar.write(f"unable to get upload credentials for file {job.path.name}: {e}")
         pbar.close()
         if global_pbar is not None:
@@ -227,8 +234,8 @@ def _upload_file(
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            msg = format_error(f"error cancelling upload {job.path}", e)
-            pbar.write(msg)
+            logger.error(format_traceback(e))
+            pbar.write(format_error(f"error cancelling upload {job.path}", e))
     else:
         # tell backend that upload is complete
         try:
@@ -236,7 +243,9 @@ def _upload_file(
             _confirm_file_upload(client, creds.file_id, local_hash)
 
             if global_pbar is not None:
-                global_pbar.write(styled_string(f"uploaded {job.path}", style="green"))
+                msg = f"uploaded {job.path}"
+                logger.info(msg)
+                global_pbar.write(styled_string(msg, style="green"))
                 global_pbar.update()
 
         except Exception as e:
@@ -290,14 +299,16 @@ def upload_files(
 
             total_size += size
         except Exception as e:
+            logger.error(format_traceback(e))
             errors.append(e)
 
     pbar.close()
 
     time = monotonic() - start
-    print(f"upload took {time:.2f} seconds", file=sys.stderr)
-    print(f"total size: {int(total_size)} MB", file=sys.stderr)
-    print(f"average speed: {total_size / time:.2f} MB/s", file=sys.stderr)
+    c = Console(file=sys.stderr)
+    c.print(f"upload took {time:.2f} seconds")
+    c.print(f"total size: {int(total_size)} MB")
+    c.print(f"average speed: {total_size / time:.2f} MB/s")
 
     if errors:
         raise UploadFailed(f"got unhandled errors: {errors} when uploading files")
