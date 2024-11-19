@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-import glob
+import fnmatch
 import hashlib
 import os
 import string
@@ -42,6 +42,14 @@ def check_file_paths(files: Sequence[Path]) -> None:
             raise FileTypeNotSupported(
                 f"only `.bag` or `.mcap` files are supported: {file}"
             )
+
+
+def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
+    filtered = []
+    for name in names:
+        if any(fnmatch.fnmatch(name, p) for p in patterns):
+            filtered.append(name)
+    return filtered
 
 
 def raw_rich(*objects: Any, **kwargs: Any) -> str:
