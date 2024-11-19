@@ -25,11 +25,11 @@ from kleinkram.models import MissionById
 from kleinkram.models import MissionByName
 from kleinkram.models import Project
 from kleinkram.models import TagType
+from kleinkram.utils import filtered_by_patterns
 from kleinkram.utils import is_valid_uuid4
 
 
-# TODO: change to 10000
-MAX_PAGINATION = 1_000
+MAX_PAGINATION = 10_000
 
 TEMP_CREDS = "/file/temporaryAccess"
 CLAIM_ADMIN = "/user/claimAdmin"
@@ -384,10 +384,16 @@ def get_files_by_file_spec(
         raise ValueError("mission not found")
 
     if spec.files:
+        file_ids = [id for id_ in spec.files if isinstance(id_, UUID)]
+        file_names = filtered_by_patterns(
+            [file.name for file in parsed_mission.files],
+            [name for name in spec.files if isinstance(name, str)],
+        )
+
         filtered = [
-            f
-            for f in parsed_mission.files
-            if f.id in spec.files or f.name in spec.files
+            file
+            for file in parsed_mission.files
+            if file.id in file_ids or file.name in file_names
         ]
         return filtered
 

@@ -5,15 +5,18 @@ from typing import Optional
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_files
+from kleinkram.api.routes import get_files_by_file_spec
 from kleinkram.api.routes import get_missions
 from kleinkram.api.routes import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.models import files_to_table
 from kleinkram.models import missions_to_table
 from kleinkram.models import projects_to_table
+from kleinkram.utils import get_valid_file_spec
+from kleinkram.utils import to_name_or_uuid
 from rich.console import Console
 from typer import BadParameter
+
 
 HELP = """\
 List projects, missions, or files.
@@ -37,26 +40,32 @@ def _parse_metadata(raw: List[str]) -> dict:
 
 @list_typer.command()
 def files(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="project name"),
-    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="mission name"),
-    topics: List[str] = typer.Option(None, "--topics", "-t", help="topics"),
-    metadata: Optional[List[str]] = typer.Argument(None, help="tag=value pairs"),
+    files: Optional[List[str]] = typer.Argument(
+        None, help="file names, ids or patterns"
+    ),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="project name or id"
+    ),
+    mission: Optional[str] = typer.Option(
+        None, "--mission", "-m", help="mission name or id"
+    ),
 ) -> None:
     client = AuthenticatedClient()
 
-    _topics = topics if topics else None
-    _metadata = _parse_metadata(metadata or [])
+    _files = [to_name_or_uuid(f) for f in files or []]
+    _project = to_name_or_uuid(project) if project else None
+    _mission = to_name_or_uuid(mission) if mission else None
 
-    files = get_files(
-        client, project=project, mission=mission, tags=_metadata, topics=_topics
-    )
+    client = AuthenticatedClient()
+    file_spec = get_valid_file_spec(_files, mission=_mission, project=_project)
+    parsed_files = get_files_by_file_spec(client, file_spec)
 
     if get_shared_state().verbose:
-        table = files_to_table(files)
+        table = files_to_table(parsed_files)
         console = Console()
         console.print(table)
     else:
-        for file in files:
+        for file in parsed_files:
             print(file.id)
 
 
