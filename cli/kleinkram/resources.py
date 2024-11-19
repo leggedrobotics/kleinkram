@@ -5,6 +5,10 @@ from dataclasses import field
 from typing import List
 from uuid import UUID
 
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.routes import get_files_by_mission
+from kleinkram.api.routes import get_missions_by_project
+from kleinkram.api.routes import get_projects
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -89,12 +93,17 @@ def mission_spec_is_unique(spec: MissionSpec) -> bool:
     return False
 
 
-def get_projects_by_spec(spec: ProjectSpec) -> List[Project]:
-    projects = []  # TODO: get projects
+def get_projects_by_spec(
+    client: AuthenticatedClient, spec: ProjectSpec
+) -> List[Project]:
+    projects = get_projects(client)
 
     matched_names = filtered_by_patterns(
         [project.name for project in projects], spec.project_filters
     )
+
+    if not spec.project_filters and not spec.project_ids:
+        return projects
 
     return [
         project
@@ -103,45 +112,52 @@ def get_projects_by_spec(spec: ProjectSpec) -> List[Project]:
     ]
 
 
-def get_missions_by_spec(spec: MissionSpec) -> List[Mission]:
-    projects = get_projects_by_spec(spec.project_spec)
+def get_missions_by_spec(
+    client: AuthenticatedClient, spec: MissionSpec
+) -> List[Mission]:
+    projects = get_projects_by_spec(client, spec.project_spec)
 
     ret = []
     for project in projects:
-        missions = []  # TODO: get missions from project
+        missions = get_missions_by_project(client, project)
 
         matched_names = filtered_by_patterns(
             [mission.name for mission in missions], spec.mission_filters
         )
 
-        ret.extend(
-            [
+        if not spec.mission_filters and not spec.mission_ids:
+            filtered = missions
+        else:
+            filtered = [
                 mission
                 for mission in missions
                 if mission.name in matched_names or mission.id in spec.mission_ids
             ]
-        )
+        ret.extend(filtered)
 
-    return []
+    return ret
 
 
-def get_files_by_spec(spec: FileSpec) -> List[File]:
-    missions = get_missions_by_spec(spec.mission_spec)
+def get_files_by_spec(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
+    missions = get_missions_by_spec(client, spec.mission_spec)
 
     ret = []
     for mission in missions:
-        files = []  # TODO: get files from mission
+        files = get_files_by_mission(client, mission)
 
         matched_names = filtered_by_patterns(
             [file.name for file in files], spec.file_filters
         )
 
-        ret.extend(
-            [
+        if not spec.file_filters and not spec.file_ids:
+            filtered = files
+        else:
+            filtered = [
                 file
                 for file in files
                 if file.name in matched_names or file.id in spec.file_ids
             ]
-        )
+
+        ret.extend(filtered)
 
     return ret

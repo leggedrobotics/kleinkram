@@ -48,6 +48,9 @@ MISSION_CREATE = "/mission/create"
 MISSION_BY_PROJECT_NAME = "/mission/filteredByProjectName"
 MISSION_UPDATE_METADATA = "/mission/tags"
 
+MISSIONS_BY_PROJECT = "/mission/filtered"
+MISSIONS_ALL = "/mission/all"
+
 ALL_USERS = "/user/all"
 USER_INFO = "/user/me"
 PROMOTE_USER = "/user/promote"
@@ -63,13 +66,101 @@ TAG_TYPE_BY_NAME = "/tag/filtered"
 GET_STATUS = "/user/me"
 
 
-def claim_admin(client: AuthenticatedClient) -> None:
-    """\
-    the first user on the system could call this
-    """
-    response = client.post(CLAIM_ADMIN)
-    response.raise_for_status()
-    return
+def _parse_project(project: Dict[str, Any]) -> Project:
+    project_id = UUID(project["uuid"], version=4)
+    project_name = project["name"]
+    project_description = project["description"]
+
+    parsed = Project(id=project_id, name=project_name, description=project_description)
+    return parsed
+
+
+def _parse_mission(mission: Dict[str, Any], project: Project) -> Mission:
+    mission_id = UUID(mission["uuid"], version=4)
+    mission_name = mission["name"]
+
+    parsed = Mission(
+        id=mission_id,
+        name=mission_name,
+        project_id=project.id,
+        project_name=project.name,
+    )
+    return parsed
+
+
+def _parse_file(file: Dict[str, Any], mission: Mission) -> File:
+    filename = file["filename"]
+    file_id = UUID(file["uuid"], version=4)
+    file_size = file["size"]
+    file_hash = file["hash"]
+
+    parsed = File(
+        id=file_id,
+        name=filename,
+        size=file_size,
+        hash=file_hash,
+        project_id=mission.project_id,
+        project_name=mission.project_name,
+        mission_id=mission.id,
+        mission_name=mission.name,
+        state=FileState(file["state"]),
+    )
+    return parsed
+
+
+def get_projects(client: AuthenticatedClient) -> list[Project]:
+    resp = client.get(PROJECT_ALL)
+
+    if resp.status_code in (403, 404):
+        return []
+
+    resp.raise_for_status()
+
+    ret = []
+    for pr in resp.json()[0]:
+        ret.append(_parse_project(pr))
+
+    return ret
+
+
+def get_missions_by_project(
+    client: AuthenticatedClient, project: Project
+) -> List[Mission]:
+    params = {"uuid": str(project.id), "take": MAX_PAGINATION}
+
+    resp = client.get(MISSIONS_BY_PROJECT, params=params)
+
+    if resp.status_code in (403, 404):
+        return []
+
+    resp.raise_for_status()
+
+    data = resp.json()
+    missions = []
+
+    for mission in data[0]:
+        missions.append(_parse_mission(mission, project))
+
+    return missions
+
+
+def get_files_by_mission(client: AuthenticatedClient, mission: Mission) -> List[File]:
+    params = {"uuid": str(mission.id), "take": MAX_PAGINATION}
+
+    resp = client.get(FILE_OF_MISSION, params=params)
+
+    if resp.status_code in (403, 404):
+        return []
+
+    resp.raise_for_status()
+
+    data = resp.json()
+
+    files = []
+    for file in data[0]:
+        files.append(_parse_file(file, mission))
+
+    return files
 
 
 def get_project(
@@ -252,32 +343,6 @@ def get_project_permission_level(client: AuthenticatedClient, project_id: UUID) 
     return cast(int, max(map(lambda x: x.get("access", 0), filtered_by_id)))
 
 
-def _parse_file(file: Dict[str, Any]) -> File:
-    project_id = UUID(file["mission"]["project"]["uuid"], version=4)
-    project_name = file["mission"]["project"]["name"]
-
-    mission_id = UUID(file["mission"]["uuid"], version=4)
-    mission_name = file["mission"]["name"]
-
-    filename = file["filename"]
-    file_id = UUID(file["uuid"], version=4)
-    file_size = file["size"]
-    file_hash = file["hash"]
-
-    parsed = File(
-        id=file_id,
-        name=filename,
-        size=file_size,
-        hash=file_hash,
-        project_id=project_id,
-        project_name=project_name,
-        mission_id=mission_id,
-        mission_name=mission_name,
-        state=FileState(file["state"]),
-    )
-    return parsed
-
-
 def get_file(client: AuthenticatedClient, id: UUID) -> File:
     resp = client.get(FILE_ONE, params={"uuid": str(id)})
     resp.raise_for_status()
@@ -340,20 +405,6 @@ def get_missions(
         )
 
     return list(ret.values())
-
-
-def get_projects(client: AuthenticatedClient) -> list[Project]:
-    resp = client.get(PROJECT_ALL)
-    resp.raise_for_status()
-
-    ret = []
-    for pr in resp.json()[0]:
-        id = UUID(pr["uuid"], version=4)
-        name = pr["name"]
-        description = pr["description"]
-        ret.append(Project(id=id, name=name, description=description))
-
-    return ret
 
 
 def get_mission_by_spec(
@@ -467,3 +518,12 @@ def get_api_version() -> Tuple[int, int, int]:
     vers = resp.headers["kleinkram-version"].split(".")
 
     return tuple(map(int, vers))  # type: ignore
+
+
+def claim_admin(client: AuthenticatedClient) -> None:
+    """\
+    the first user on the system could call this
+    """
+    response = client.post(CLAIM_ADMIN)
+    response.raise_for_status()
+    return
