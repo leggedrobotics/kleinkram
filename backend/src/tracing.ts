@@ -17,7 +17,7 @@ import logger from './logger';
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
     concurrencyLimit: 10, // an optional limit on pending requests
-    timeoutMillis: 10_00,
+    timeoutMillis: 10_000,
 });
 
 const sdk = new NodeSDK({
