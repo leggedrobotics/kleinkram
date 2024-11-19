@@ -384,7 +384,7 @@ def get_files_by_file_spec(
         raise ValueError("mission not found")
 
     if spec.files:
-        file_ids = [id for id_ in spec.files if isinstance(id_, UUID)]
+        file_ids = [id_ for id_ in spec.files if isinstance(id_, UUID)]
         file_names = filtered_by_patterns(
             [file.name for file in parsed_mission.files],
             [name for name in spec.files if isinstance(name, str)],
