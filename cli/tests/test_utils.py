@@ -14,6 +14,7 @@ from kleinkram.models import MissionById
 from kleinkram.models import MissionByName
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
+from kleinkram.utils import filtered_by_patterns
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_file_spec
@@ -45,6 +46,25 @@ def test_check_file_paths():
             check_file_paths([is_dir])
 
         assert check_file_paths([exists_bag, exits_mcap]) is None
+
+
+@pytest.mark.parametrize(
+    "names, patterns, expected",
+    [
+        pytest.param(["a.bag", "b.mcap"], ["*.bag"], ["a.bag"], id="one pattern"),
+        pytest.param(["a", "b", "c"], ["*"], ["a", "b", "c"], id="match all"),
+        pytest.param(["a", "b", "c"], ["*.bag"], [], id="no match"),
+        pytest.param(
+            ["a.bag", "b.mcap"],
+            ["*.bag", "*.mcap"],
+            ["a.bag", "b.mcap"],
+            id="all match",
+        ),
+        pytest.param(["a", "b", "c"], ["a", "b"], ["a", "b"], id="full name match"),
+    ],
+)
+def test_filtered_by_patterns(names, patterns, expected):
+    assert filtered_by_patterns(names, patterns) == expected
 
 
 def test_is_valid_uuid4():

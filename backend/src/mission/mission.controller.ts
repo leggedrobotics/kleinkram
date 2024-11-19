@@ -24,6 +24,7 @@ import {
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
+import { MISSION_NAME_REGEX } from '../validation/validationLogic';
 
 @Controller('mission')
 export class MissionController {
@@ -45,7 +46,7 @@ export class MissionController {
         @Body('name') name: string,
     ) {
         // validate name
-        if (/^[\w\-_]{3,50}$/i.test(name) === false) {
+        if (MISSION_NAME_REGEX.test(name) === false) {
             throw new Error('Invalid name');
         }
 

@@ -79,18 +79,7 @@
                         placeholder="Name...."
                         style="padding-bottom: 30px"
                         :error="!isValidMissionName"
-                        :rules="[
-                            (val) => !!val || 'Field is required',
-                            (val) =>
-                                val.length >= 3 ||
-                                'Name must be at least 3 characters',
-                            (val) =>
-                                val.length <= 50 ||
-                                'Name must be at most 40 characters',
-                            (val) =>
-                                /^[\w\-_]+$/g.test(val) ||
-                                'Name must be alphanumeric and contain only - and _',
-                        ]"
+                        :rules="MISSION_NAME_INPUT_VALIDATION"
                         :error-message="errorMessage"
                         @change="
                             () => {
@@ -134,7 +123,10 @@
                 v-if="tab_selection === 'meta_data'"
                 flat
                 label="Next"
-                :disable="missionName.length < 3"
+                :disable="
+                    missionName.length < MIN_MISSION_NAME_LENGTH ||
+                    missionName.length > MAX_MISSION_NAME_LENGTH
+                "
                 @click="tab_selection = 'tags'"
                 class="bg-button-primary"
             />
@@ -182,6 +174,21 @@ import {
     canCreateMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
+
+const MIN_MISSION_NAME_LENGTH = 3;
+const MAX_MISSION_NAME_LENGTH = 50;
+const MISSION_NAME_INPUT_VALIDATION: ((val: string) => boolean | string)[] = [
+    (val) => !!val || 'Field is required',
+    (val) =>
+        val.length >= MIN_MISSION_NAME_LENGTH ||
+        `Name must be at least ${MIN_MISSION_NAME_LENGTH} characters`,
+    (val) =>
+        val.length <= MAX_MISSION_NAME_LENGTH ||
+        `Name must be at most ${MAX_MISSION_NAME_LENGTH} characters`,
+    (val) =>
+        /^[\w\-_]+$/g.test(val) ||
+        'Name must be alphanumeric and contain only - and _',
+];
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');

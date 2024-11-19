@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import fnmatch
 import hashlib
 import string
 import traceback
@@ -8,6 +9,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -53,6 +55,14 @@ def format_traceback(exc: Exception) -> str:
     return "".join(
         traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
     )
+
+
+def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
+    filtered = []
+    for name in names:
+        if any(fnmatch.fnmatch(name, p) for p in patterns):
+            filtered.append(name)
+    return filtered
 
 
 def styled_string(*objects: Any, **kwargs: Any) -> str:
