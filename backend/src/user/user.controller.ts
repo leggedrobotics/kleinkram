@@ -7,6 +7,8 @@ import {
     QueryString,
     QueryTake,
 } from '../validation/queryDecorators';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { CurrentAPIUserDto, UserDto } from '@common/api/types/User.dto';
 
 @Controller('user')
 export class UserController {
@@ -29,6 +31,13 @@ export class UserController {
 
     @Get('me')
     @LoggedIn()
+    @ApiOperation({
+        summary: 'Get the currently logged in user',
+    })
+    @ApiOkResponse({
+        description: 'The currently logged in user',
+        type: CurrentAPIUserDto,
+    })
     async me(@addUser() user?: AuthRes) {
         return this.userService.me(user);
     }

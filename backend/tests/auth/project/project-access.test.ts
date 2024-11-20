@@ -6,7 +6,7 @@ import {
     getUserFromDb,
     mockDbUser,
 } from '../../utils/database_utils';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import { createProjectUsingPost } from '../../utils/api_calls';
 
 /**

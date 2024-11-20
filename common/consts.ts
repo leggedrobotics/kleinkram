@@ -1,4 +1,4 @@
-import { UserRole } from './enum';
+import { UserRole } from './frontend_shared/enum';
 
 export const redis = { host: 'redis', port: 6379 };
 

@@ -43,8 +43,8 @@
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { DataType } from 'src/enums/TAG_TYPES';
 import { createTagType } from 'src/services/mutations/tag';
+import { DataType } from '@common/enum';
 
 const tagName = ref('');
 const selectedDataType = ref(DataType.STRING);

@@ -141,9 +141,9 @@ import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { updateFile } from 'src/services/mutations/file';
 import { Mission } from 'src/types/Mission';
-import { FileState } from 'src/enums/FILE_ENUM';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
+import { FileState } from '@common/enum';
 
 const props = defineProps<{
     file_uuid: string;

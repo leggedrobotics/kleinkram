@@ -1,6 +1,7 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { AccessGroupRights } from '@common/enum';
 import { IsNoValidUUID, IsValidName } from '../../validation/propertyDecorator';
+
+import { AccessGroupRights } from '@common/frontend_shared/enum';
 
 export class CreateProject {
     @IsString()

@@ -1,9 +1,6 @@
-import { DataType } from 'src/enums/TAG_TYPES';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { ActionState, QueueState } from 'src/enums/QUEUE_ENUM';
 import { FileEntity } from 'src/types/FileEntity';
 import { downloadFile } from 'src/services/queries/file';
-import { FileState } from 'src/enums/FILE_ENUM';
+import { AccessGroupRights, FileState } from '@common/enum';
 
 export const icon = (type: DataType) => {
     switch (type) {

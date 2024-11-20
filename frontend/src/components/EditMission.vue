@@ -23,13 +23,13 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { DataType } from 'src/enums/TAG_TYPES';
 import { Notify, useQuasar } from 'quasar';
 import AddTagDialog from 'src/dialogs/AddTagDialog.vue';
 import { Mission } from 'src/types/Mission';
 import { Tag } from 'src/types/Tag';
 import { getMission } from 'src/services/queries/mission';
 import { removeTag } from 'src/services/mutations/tag';
+import { DataType } from '@common/enum';
 const queryClient = useQueryClient();
 const $q = useQuasar();
 

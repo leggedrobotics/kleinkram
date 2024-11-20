@@ -1,7 +1,7 @@
 import { Project } from 'src/types/Project';
 import { BaseEntity } from 'src/types/BaseEntity';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { AccessGroup } from 'src/types/AccessGroup';
+import { AccessGroupRights } from '@common/enum';
 
 export class ProjectAccess extends BaseEntity {
     rights: AccessGroupRights;

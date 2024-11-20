@@ -3,7 +3,7 @@ import User from '../../entities/user/user.entity';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { extendedFaker } from '../../faker_extended';
 import { faker } from '@faker-js/faker';
-import { AccessGroupType } from '../../enum';
+import { AccessGroupType } from '../../frontend_shared/enum';
 
 export type AccessGroupFactoryContext = {
     user: User;

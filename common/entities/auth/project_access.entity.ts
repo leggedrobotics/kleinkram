@@ -1,8 +1,9 @@
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { AccessGroupRights } from '../../enum';
 import AccessGroup from './accessgroup.entity';
 import Project from '../project/project.entity';
+
+import { AccessGroupRights } from '../../frontend_shared/enum';
 
 @Unique('no_duplicated_access_groups_per_project', ['accessGroup', 'project'])
 @Entity()

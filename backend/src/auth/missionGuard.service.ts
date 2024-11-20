@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
 import Tag from '@common/entities/tag/tag.entity';

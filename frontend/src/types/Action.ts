@@ -1,10 +1,9 @@
-import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { ActionTemplate } from 'src/types/ActionTemplate';
-import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 import { Worker } from 'src/types/Worker';
+import { ActionState, ArtifactState } from '@common/enum';
 
 type ContainerLog = {
     timestamp: string;

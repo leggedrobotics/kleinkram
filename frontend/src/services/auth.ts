@@ -2,12 +2,13 @@ import axios from 'src/api/axios';
 import ENV from 'src/env';
 import { getMe } from 'src/services/queries/user';
 import { User } from 'src/types/User';
+import { CurrentAPIUserDto } from '@api/types/User.dto';
 
 let userCache: User | null = null;
 let isFetchingUser = false;
 let userFetchPromise: Promise<User | null> | null = null;
 
-export const getUser = () => {
+export const getUser = (): Promise<CurrentAPIUserDto | null> => {
     if (userCache !== null) {
         return Promise.resolve(userCache);
     }

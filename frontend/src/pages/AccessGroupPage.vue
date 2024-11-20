@@ -281,7 +281,6 @@ import {
     removeUserFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import ROUTES from 'src/router/routes';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
@@ -289,6 +288,7 @@ import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vu
 import { GroupMembership } from 'src/types/AccessGroupUser';
 import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
+import { AccessGroupRights } from '@common/enum';
 
 const $q = useQuasar();
 const router = useRouter();

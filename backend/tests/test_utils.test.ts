@@ -5,7 +5,7 @@ import {
     mockDbUser,
 } from './utils/database_utils';
 import User from '@common/entities/user/user.entity';
-import { UserRole } from '@common/enum';
+import { UserRole } from '@common/frontend_shared/enum';
 
 describe('Test Suite Utils', () => {
     beforeAll(async () => {

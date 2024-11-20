@@ -7,12 +7,13 @@
     },
     "dependencies": {
         "@faker-js/faker": "^9.2.0",
+        "@nestjs/swagger": "^8.0.7",
         "bull": "^4.16.4",
+        "minio": "8.0.2",
         "pg": "^8.13.1",
         "ts-node": "^10.9.2",
         "typeorm": "^0.4.0-alpha.1",
-        "typeorm-seeding": "^1.6.1",
-        "minio": "8.0.2"
+        "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
         "@types/node": "22.9.0",

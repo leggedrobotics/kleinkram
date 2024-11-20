@@ -5,13 +5,17 @@ ARG QUASAR_ENDPOINT
 ENV VITE_QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
 RUN echo "QUASAR_ENDPOINT is set to ${QUASAR_ENDPOINT}"
 
+WORKDIR /app/common
+COPY ./common/package.json ./
+COPY ./common/yarn.lock ./
+RUN yarn --immutable
 
-WORKDIR /app
-
+WORKDIR /app/frontend
 COPY ./frontend/package.json ./
 COPY ./frontend/yarn.lock ./
 COPY ./.git/HEAD /app/.git/HEAD
 COPY ./.git/refs/heads/ /app/.git/refs/heads/
+COPY ./common/frontend_shared ./frontend/common/frontend_shared
 
 RUN yarn install --ignore-engines --immutable
 
@@ -27,7 +31,7 @@ FROM nginx:alpine AS production-stage
 # copy the nginx configuration file to the container
 COPY ./frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=build-stage /app/dist/spa /usr/share/nginx/html
+COPY --from=build-stage /app/frontend/dist/spa /usr/share/nginx/html
 
 EXPOSE 80
 

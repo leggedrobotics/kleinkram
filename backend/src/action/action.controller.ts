@@ -29,6 +29,8 @@ import {
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
 import { ParamUUID } from '../validation/paramDecorators';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
 
 @Controller('action')
 export class ActionController {
@@ -78,6 +80,13 @@ export class ActionController {
 
     @Get('listActions')
     @LoggedIn()
+    @ApiOperation({
+        summary: 'List all actions',
+    })
+    @ApiOkResponse({
+        description: 'List of actions',
+        type: ListOfActionDto,
+    })
     async list(
         @Query() dto: ActionQuery,
         @addUser() auth: AuthRes,

@@ -3,17 +3,22 @@ import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { Mission } from 'src/types/Mission';
 import { getMission } from 'src/services/queries/mission';
 import { Project } from 'src/types/Project';
-import { filteredProjects, getProject } from 'src/services/queries/project';
+import {
+    filteredProjects,
+    getProject,
+    getProjectDefaultAccess,
+} from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/QueryHandler';
 import { getIsUploading } from 'src/services/queries/file';
 import { AxiosError } from 'axios';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { getPermissions } from 'src/services/queries/user';
 import { getUser } from 'src/services/auth';
-import { User } from 'src/types/User';
+import { CurrentAPIUserDto } from '@api/types/User.dto';
+import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
+import { AccessGroupRights } from '@common/enum';
 
 type Permissions = {
     role: string;
@@ -44,8 +49,11 @@ export const usePermissionsQuery = (): UseQueryReturnType<
 /**
  * Fetches the user data
  */
-export const useUser = () => {
-    return useQuery<User | null>({
+export const useUser = (): UseQueryReturnType<
+    CurrentAPIUserDto | null,
+    Error
+> => {
+    return useQuery<CurrentAPIUserDto | null>({
         queryKey: ['user'],
         queryFn: () => getUser(),
     });
@@ -279,4 +287,18 @@ export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
     });
 
     return isUploading;
+};
+
+/**
+ * Fetches the default rights for creating a new project.
+ *
+ */
+export const useProjectDefaultAccess = (): UseQueryReturnType<
+    DefaultRightsDto | undefined,
+    Error
+> => {
+    return useQuery<DefaultRightsDto>({
+        queryKey: ['defaultRights'],
+        queryFn: getProjectDefaultAccess,
+    });
 };

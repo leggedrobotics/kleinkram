@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SubmitAction, SubmitActionMulti } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
-import { ActionState, UserRole } from '@common/enum';
+import { ActionState, UserRole } from '@common/frontend_shared/enum';
 import { addAccessConstraints } from '../auth/authHelper';
 import { AuthRes } from '../auth/paramDecorator';
 import ActionTemplate from '@common/entities/action/actionTemplate.entity';
@@ -15,6 +15,7 @@ import {
 } from './entities/createTemplate.dto';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
+import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
 
 @Injectable()
 export class ActionService {
@@ -185,7 +186,7 @@ export class ActionService {
         sortBy: string,
         sortDirection: 'ASC' | 'DESC',
         search: string,
-    ): Promise<[Action[], number]> {
+    ): Promise<ListOfActionDto> {
         const user = await this.userRepository.findOne({
             where: { uuid: userUUID },
         });
@@ -218,7 +219,9 @@ export class ActionService {
             if (missionUuid) {
                 query.andWhere('mission.uuid = :missionUuid', { missionUuid });
             }
-            return query.getManyAndCount();
+
+            const [actions, count] = await query.getManyAndCount();
+            return { count, actions };
         }
 
         const baseQuery = this.actionRepository
@@ -256,7 +259,12 @@ export class ActionService {
                 }),
             );
         }
-        return addAccessConstraints(baseQuery, userUUID).getManyAndCount();
+
+        const [actions, count] = await addAccessConstraints(
+            baseQuery,
+            userUUID,
+        ).getManyAndCount();
+        return { count, actions };
     }
 
     async details(actionUuid: string) {
@@ -308,12 +316,12 @@ export class ActionService {
         },
     ) {
         await this.apikeyRepository.manager.transaction(async (manager) => {
-            const key = await manager.findOneOrFail(Apikey, {
+            const key: Apikey = await manager.findOneOrFail(Apikey, {
                 where: { apikey: apiKey },
                 relations: ['action'],
             });
 
-            const action = key.action;
+            const action: Action | undefined = key.action;
             if (!action) {
                 return;
             }

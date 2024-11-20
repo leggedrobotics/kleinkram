@@ -1,7 +1,7 @@
 import axios from 'src/api/axios';
 import { ActionTemplate } from 'src/types/ActionTemplate';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { Action } from 'src/types/Action';
+import { AccessGroupRights } from '@common/enum';
 
 export const createAnalysis = async (action: {
     missionUUID: string;

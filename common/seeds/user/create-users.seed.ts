@@ -1,7 +1,7 @@
 import { Factory, Seeder } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
 import { UserContext } from '../../factories/user/user.factory';
-import { FileType, UserRole } from '../../enum';
+import { FileType, UserRole } from '../../frontend_shared/enum';
 import { Connection, Not } from 'typeorm';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { AccessGroupFactoryContext } from '../../factories/auth/accessgroup.factory';

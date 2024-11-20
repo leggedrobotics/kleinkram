@@ -103,7 +103,13 @@ services:
             watch:
                 - action: sync
                   path: ./frontend
-                  target: /app
+                  target: /app/frontend
+                - action: sync
+                  path: ./common
+                  target: /app/common
+                - action: sync
+                  path: ./common/frontend_shared
+                  target: /app/frontend/frontend_shared
 
         depends_on:
             - api-server

@@ -1,6 +1,6 @@
 import { User } from 'src/types/User';
 import { BaseEntity } from 'src/types/BaseEntity';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AccessGroupRights } from '@common/enum';
 
 export class ActionTemplate extends BaseEntity {
     imageName: string;

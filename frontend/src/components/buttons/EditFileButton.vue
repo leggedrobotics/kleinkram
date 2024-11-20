@@ -23,7 +23,7 @@ import {
 import { computed } from 'vue';
 import { FileEntity } from 'src/types/FileEntity';
 import NewEditFile from 'components/NewEditFile.vue';
-import { FileState } from 'src/enums/FILE_ENUM';
+import { FileState } from '@common/enum';
 
 const $q = useQuasar();
 const props = defineProps<{

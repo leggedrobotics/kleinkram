@@ -6,7 +6,11 @@ import {
 } from './dockerDaemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
-import { ActionState, ArtifactState, KeyTypes } from '@common/enum';
+import {
+    ActionState,
+    ArtifactState,
+    KeyTypes,
+} from '@common/frontend_shared/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';

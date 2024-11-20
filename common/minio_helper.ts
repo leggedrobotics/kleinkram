@@ -1,5 +1,5 @@
 import env from './env';
-import { FileType } from './enum';
+import { FileType } from './frontend_shared/enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import { BucketItem, Client } from 'minio';
 import Credentials from 'minio/dist/main/Credentials';

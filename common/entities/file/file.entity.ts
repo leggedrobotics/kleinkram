@@ -13,7 +13,7 @@ import BaseEntity from '../base-entity.entity';
 import Topic from '../topic/topic.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import { FileOrigin, FileState, FileType } from '../../enum';
+import { FileOrigin, FileState, FileType } from '../../frontend_shared/enum';
 import CategoryEntity from '../category/category.entity';
 
 @Entity()

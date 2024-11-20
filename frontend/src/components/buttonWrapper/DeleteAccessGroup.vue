@@ -32,7 +32,7 @@ import { deleteAccessGroup } from 'src/services/mutations/access';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { getUser } from 'src/services/auth';
 import { User } from 'src/types/User';
-import ROLE from 'src/enums/USER_ROLES';
+import { UserRole } from '@common/enum';
 
 const $q = useQuasar();
 const props = defineProps<{
@@ -46,7 +46,7 @@ getUser()?.then((user) => {
 
 const canModify = computed(() => {
     if (!me.value) return false;
-    if (me.value.role === ROLE.ADMIN) {
+    if (me.value.role === UserRole.ADMIN) {
         return true;
     }
     return props.accessGroup.creator?.uuid === me.value.uuid;

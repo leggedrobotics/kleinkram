@@ -35,7 +35,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import DeleteActionDialog from 'src/dialogs/DeleteActionDialog.vue';
 import { Action } from 'src/types/Action';
 import { getMe } from 'src/services/queries/user';
-import { ActionState } from 'src/enums/QUEUE_ENUM';
+import { ActionState } from '@common/enum';
 
 const $q = useQuasar();
 
@@ -64,7 +64,7 @@ const isCreator = ref<boolean>(false);
 
 watchEffect(async () => {
     const me = await getMe();
-    const actionCreator = props.action?.createdBy;
+    const actionCreator = props.action?.creator;
     isCreator.value = me.uuid === actionCreator?.uuid;
 });
 

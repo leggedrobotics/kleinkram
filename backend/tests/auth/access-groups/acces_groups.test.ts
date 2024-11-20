@@ -8,7 +8,7 @@ import {
     verifyIfGroupWithUUIDExists,
 } from '../utils';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
-import { AccessGroupType } from '@common/enum';
+import { AccessGroupType } from '@common/frontend_shared/enum';
 
 /**
  * This test suite tests the access control of the application.

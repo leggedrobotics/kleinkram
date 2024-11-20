@@ -2,7 +2,7 @@ import { RuntimeDescription } from './types';
 import Action from './entities/action/action.entity';
 import Worker from './entities/worker/worker.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
-import { ActionState } from './enum';
+import { ActionState } from './frontend_shared/enum';
 
 export async function findWorkerForAction(
     runtimeRequirements: RuntimeDescription,

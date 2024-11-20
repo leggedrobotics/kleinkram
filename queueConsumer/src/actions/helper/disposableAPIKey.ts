@@ -1,4 +1,4 @@
-import { KeyTypes } from '@common/enum';
+import { KeyTypes } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { Repository } from 'typeorm';

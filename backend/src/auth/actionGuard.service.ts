@@ -5,7 +5,7 @@ import { ProjectGuardService } from './projectGuard.service';
 import { MissionGuardService } from './missionGuard.service';
 import User from '@common/entities/user/user.entity';
 import Action from '@common/entities/action/action.entity';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import logger from '../logger';
 import Apikey from '@common/entities/auth/apikey.entity';
 

@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { CookieNames } from '@common/enum';
+import { CookieNames } from '@common/frontend_shared/enum';
 import env from '@common/env';
 import { UserService } from '../user/user.service';
 

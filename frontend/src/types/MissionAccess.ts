@@ -1,7 +1,7 @@
 import { Mission } from 'src/types/Mission';
 import { AccessGroup } from 'src/types/AccessGroup';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { BaseEntity } from 'src/types/BaseEntity';
+import { AccessGroupRights } from '@common/enum';
 
 export class MissionAccess extends BaseEntity {
     rights: AccessGroupRights;

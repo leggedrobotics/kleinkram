@@ -6,7 +6,7 @@ import { MissionGuardService } from './missionGuard.service';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import User from '@common/entities/user/user.entity';
 import FileEntity from '@common/entities/file/file.entity';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import logger from '../logger';
 import Apikey from '@common/entities/auth/apikey.entity';
 

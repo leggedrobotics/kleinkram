@@ -7,7 +7,7 @@ import Project from '@common/entities/project/project.entity';
 import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
-import { UserRole } from '@common/enum';
+import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from '../tag/tag.service';
 import { addAccessConstraints } from '../auth/authHelper';
 import TagType from '@common/entities/tagType/tagType.entity';

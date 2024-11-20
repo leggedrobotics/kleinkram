@@ -373,11 +373,11 @@ import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
 import { computed, ComputedRef, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';
-import { ArtifactState } from 'src/enums/ARTIFACT_STATE';
 import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
+import { ArtifactState } from '@common/enum';
 
 const tab = ref('info');
 

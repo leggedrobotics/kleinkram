@@ -11,7 +11,7 @@ import {
 import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ActionState, ArtifactState } from '@common/enum';
+import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
 import { ActionManagerService } from './services/actionManager.service';
 import { HardwareDependencyError } from './helper/hardwareDependencyError';

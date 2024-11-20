@@ -5,7 +5,7 @@ import { UserOnly } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
-import { CookieNames } from '@common/enum';
+import { CookieNames } from '@common/frontend_shared/enum';
 import env from '@common/env';
 import { InvalidJwtTokenException } from './jwt.strategy';
 

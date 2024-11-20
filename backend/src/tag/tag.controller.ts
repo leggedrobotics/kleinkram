@@ -1,6 +1,6 @@
 import { Controller, Delete, Get, Post } from '@nestjs/common';
 import { TagService } from './tag.service';
-import { DataType } from '@common/enum';
+import { DataType } from '@common/frontend_shared/enum';
 import {
     CanAddTag,
     CanCreate,

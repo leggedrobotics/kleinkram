@@ -30,9 +30,9 @@ import {
 import { addUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
-import { AccessGroupRights } from '@common/enum';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -148,9 +148,13 @@ export class ProjectController {
         description: `Get the default rights for a project, the default rights 
         are the rights that should be assigned to a new project upon creation`,
     })
+    @ApiOkResponse({
+        description: 'Returns the default rights for a project',
+        type: DefaultRightsDto,
+    })
     async getDefaultRights(
         @addUser() user: AuthRes,
-    ): Promise<{ name: string; uuid: string; rights: AccessGroupRights }[]> {
+    ): Promise<DefaultRightsDto> {
         return this.projectService.getDefaultRights(user);
     }
 }

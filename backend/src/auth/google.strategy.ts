@@ -6,7 +6,7 @@ import e from 'express';
 import logger from '../logger';
 import { AuthFlowException } from './authFlowException';
 import env from '@common/env';
-import { Providers } from '@common/enum';
+import { Providers } from '@common/frontend_shared/enum';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {

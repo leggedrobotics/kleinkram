@@ -8,7 +8,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { AccessGroupRights, ActionState, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    ActionState,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -863,7 +867,7 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
 }
 
 @Injectable()
-export class CanEditGroup extends BaseGuard {
+export class CanEditGroupByGroupUuid extends BaseGuard {
     constructor(
         private reflector: Reflector,
         private authGuardService: AuthGuardService,

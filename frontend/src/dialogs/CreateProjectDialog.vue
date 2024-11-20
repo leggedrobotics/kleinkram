@@ -85,7 +85,7 @@
 
                 <q-tab-panel name="manage_access">
                     <ConfigureAccess
-                        v-model="accessGroups"
+                        v-model="accessGroups.defaultRights"
                         :min-access-rights="minAccessRights"
                     />
                 </q-tab-panel>
@@ -117,15 +117,13 @@ import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { computed, Ref, ref, watch } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { TagType } from 'src/types/TagType';
-import ConfigureMetadata from 'components/ConfigureMetadata.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureAccess from 'components/ConfigureAccess.vue';
-import {
-    AccessRight,
-    getDefaultAccessGroups,
-} from 'src/services/queries/project';
+import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
+import { AccessGroupType } from '@common/enum';
+import ConfigureMetadata from '../components/ConfigureMetadata.vue';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);
@@ -146,14 +144,13 @@ const tab = ref('meta_data');
 const selected: Ref<TagType[]> = ref([]);
 const $q = useQuasar();
 
-const { data: defaultRights } = useQuery({
-    queryKey: ['defaultRights'],
-    queryFn: getDefaultAccessGroups,
-});
+const { data: defaultRights } = useProjectDefaultAccess();
 
 const minAccessRights = computed(() =>
     defaultRights.value
-        ? defaultRights.value.filter((r) => r.name.startsWith('Personal: '))
+        ? defaultRights.value.defaultRights.filter(
+              (r) => r.type === AccessGroupType.PRIMARY,
+          )
         : [],
 );
 
@@ -204,12 +201,17 @@ const submitNewProject = async () => {
         newProjectName.value,
         newProjectDescription.value,
         selected.value.map((tag) => tag.uuid),
-        accessGroups.value?.map((r) => ({
+        accessGroups.value?.defaultRights.map((r) => ({
             accessGroupUUID: r.uuid,
             rights: r.rights,
         })) || [],
-        defaultRights.value
-            ?.filter((r) => !accessGroups.value?.find((a) => a.uuid === r.uuid))
+        defaultRights.value.defaultRights
+            ?.filter(
+                (r) =>
+                    !accessGroups.value?.defaultRights.find(
+                        (a) => a.uuid === r.uuid,
+                    ),
+            )
             .map((r) => r.uuid),
     )
         .then(() => {

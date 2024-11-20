@@ -30,7 +30,7 @@ import {
     FileState,
     FileType,
     QueueState,
-} from '@common/enum';
+} from '@common/frontend_shared/enum';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
 import { calculateFileHash } from './helper/hashHelper';

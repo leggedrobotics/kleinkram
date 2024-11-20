@@ -23,11 +23,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureAccess from 'components/ConfigureAccess.vue';
-import {
-    AccessRight,
-    getDefaultAccessGroups,
-    getProject,
-} from 'src/services/queries/project';
+import { getProject } from 'src/services/queries/project';
 import { computed, ref, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
@@ -35,7 +31,9 @@ import {
     removeAccessGroupFromProject,
     updateProjectAccess,
 } from 'src/services/mutations/access';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
+import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import { DefaultRightDto } from '@api/types/DefaultRights.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -49,12 +47,9 @@ const { data: project } = useQuery<Project>({
     enabled: !!props.project_uuid,
 });
 
-const { data: defaultRights } = useQuery({
-    queryKey: ['defaultRights'],
-    queryFn: getDefaultAccessGroups,
-});
+const { data: defaultRights } = useProjectDefaultAccess();
 
-const accessGroups = ref<AccessRight[]>(
+const accessGroups = ref<DefaultRightDto[]>(
     project.value?.projectAccesses?.map((access) => ({
         name: access.accessGroup?.name,
         uuid: access.accessGroup?.uuid,
@@ -79,7 +74,9 @@ watch(
 
 const minAccessRights = computed(() =>
     defaultRights.value
-        ? defaultRights.value.filter((r) => r.name.startsWith('Personal: '))
+        ? defaultRights.value.defaultRights.filter(
+              (r) => r.type === AccessGroupType.PRIMARY,
+          )
         : [],
 );
 

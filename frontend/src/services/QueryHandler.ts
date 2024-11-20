@@ -1,6 +1,6 @@
 import { RouteLocationNormalizedLoaded, Router } from 'vue-router';
-import { FileType } from 'src/enums/FILE_ENUM';
 import { watch } from 'vue';
+import { FileType } from '@common/enum';
 
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
 const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 20 };

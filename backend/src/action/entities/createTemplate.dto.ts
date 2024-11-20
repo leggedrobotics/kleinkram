@@ -7,7 +7,8 @@ import {
     IsString,
     IsUUID,
 } from 'class-validator';
-import { AccessGroupRights } from '@common/enum';
+
+import { AccessGroupRights } from '@common/frontend_shared/enum';
 
 export class CreateTemplateDto {
     @IsString()

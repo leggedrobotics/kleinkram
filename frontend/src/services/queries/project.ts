@@ -5,7 +5,8 @@ import { Mission } from 'src/types/Mission';
 import { TagType } from 'src/types/TagType';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AxiosResponse } from 'axios';
+import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
 
 export const filteredProjects = async (
     take: number,
@@ -157,25 +158,10 @@ export const getProject = async (uuid: string): Promise<Project> => {
     );
 };
 
-export type AccessRight = {
-    /**
-     * UUID of the access group
-     */
-    uuid: string;
-    /**
-     * Name of the access group
-     */
-    name: string;
-    /**
-     * Rights of the access group
-     */
-    rights: AccessGroupRights | null;
-
-    memberCount: number;
-};
-
-export const getDefaultAccessGroups = async (): Promise<AccessRight[]> => {
-    const response = await axios.get('/project/getDefaultRights');
+export const getProjectDefaultAccess = async (): Promise<DefaultRightsDto> => {
+    const response: AxiosResponse<DefaultRightsDto> = await axios.get(
+        '/project/getDefaultRights',
+    );
     return response.data;
 };
 

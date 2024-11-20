@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Topic from '@common/entities/topic/topic.entity';
 import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
-import { UserRole } from '@common/enum';
+import { UserRole } from '@common/frontend_shared/enum';
 import { addAccessConstraints } from '../auth/authHelper';
 
 @Injectable()

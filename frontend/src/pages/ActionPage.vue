@@ -104,7 +104,7 @@
         </template>
     </div>
 
-    <BullQueue v-if="permissions?.role === ROLE.ADMIN" />
+    <BullQueue v-if="permissions?.role === UserRole.ADMIN" />
 </template>
 
 <script setup lang="ts">
@@ -126,7 +126,7 @@ import TitleSection from 'components/TitleSection.vue';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
-import ROLE from 'src/enums/USER_ROLES';
+import { UserRole } from '@common/enum';
 
 const createAction = ref(false);
 

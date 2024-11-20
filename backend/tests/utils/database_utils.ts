@@ -4,7 +4,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { createAccessGroups, createNewUser } from '../../src/auth/auth.service';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
-import { Providers, UserRole } from '@common/enum';
+import { Providers, UserRole } from '@common/frontend_shared/enum';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
 
 export const db = new DataSource({

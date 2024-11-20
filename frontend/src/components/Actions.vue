@@ -90,7 +90,6 @@
 import { QTable } from 'quasar';
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
-import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { formatDate } from 'src/services/dateFormating';
 import { Action } from 'src/types/Action';
 import { getActions } from 'src/services/queries/action';
@@ -100,6 +99,7 @@ import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
 import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
+import { ActionState } from '@common/enum';
 
 const router = useRouter();
 

@@ -33,7 +33,6 @@ import {
 import { AccessGroup } from 'src/types/AccessGroup';
 import { getUser } from 'src/services/auth';
 import { User } from 'src/types/User';
-import ROLE from 'src/enums/USER_ROLES';
 import {
     canDeleteProject,
     usePermissionsQuery,

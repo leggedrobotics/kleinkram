@@ -3,7 +3,8 @@ import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { faker } from '@faker-js/faker';
 import Project from '../../entities/project/project.entity';
 import ProjectAccess from '../../entities/auth/project_access.entity';
-import { AccessGroupRights } from '../../enum';
+
+import { AccessGroupRights } from '../../frontend_shared/enum';
 
 export type ProjectAccessFactoryContext = {
     projects: Project[];

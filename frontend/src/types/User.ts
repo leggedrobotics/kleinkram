@@ -1,13 +1,13 @@
-import ROLE from 'src/enums/USER_ROLES';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Project } from 'src/types/Project';
 import { GroupMembership } from 'src/types/AccessGroupUser';
+import { UserRole } from '@common/enum';
 
 export class User extends BaseEntity {
     name: string;
     email: string;
     avatarUrl: string;
-    role: ROLE;
+    role: UserRole;
     projects: Project[];
     memberships: GroupMembership[];
 
@@ -15,7 +15,7 @@ export class User extends BaseEntity {
         uuid: string,
         name: string,
         email: string,
-        role: ROLE,
+        role: UserRole,
         avatarUrl: string,
         projects: Project[],
         memberships: GroupMembership[],

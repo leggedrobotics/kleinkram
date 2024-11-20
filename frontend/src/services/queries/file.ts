@@ -3,8 +3,8 @@ import { Project } from 'src/types/Project';
 import { User } from 'src/types/User';
 import axios from 'src/api/axios';
 import { FileEntity } from 'src/types/FileEntity';
-import { FileType } from 'src/enums/FILE_ENUM';
 import { StorageResponse } from 'src/types/storage';
+import { FileType } from '@common/enum';
 
 export const fetchOverview = async (
     filename: string,

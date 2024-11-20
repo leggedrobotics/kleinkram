@@ -19,7 +19,7 @@ import {
     DeleteFileGuard,
     DeleteProjectGuard,
     DeleteTagGuard,
-    CanEditGroup,
+    CanEditGroupByGroupUuid,
     IsAccessGroupCreatorByProjectAccessGuard,
     LoggedInUserGuard,
     MoveFilesGuard,
@@ -56,6 +56,11 @@ export function LoggedIn() {
     return applyDecorators(
         SetMetadata('isLoggedIn', true),
         UseGuards(LoggedInUserGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description: 'This endpoint requires a logged-in user.',
+        }),
     );
 }
 
@@ -283,7 +288,7 @@ export function IsAccessGroupCreatorByProjectAccess() {
 export function CanEditGroup() {
     return applyDecorators(
         SetMetadata('CanEditGroup', true),
-        UseGuards(CanEditGroup),
+        UseGuards(CanEditGroupByGroupUuid),
     );
 }
 

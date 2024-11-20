@@ -93,7 +93,7 @@ import { computed, Ref, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { TagType } from 'src/types/TagType';
 import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
-import { DataType } from 'src/enums/TAG_TYPES';
+import { DataType } from '@common/enum';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 

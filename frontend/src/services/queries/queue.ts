@@ -1,7 +1,7 @@
 import axios from 'src/api/axios';
 import { User } from 'src/types/User';
 import { Queue } from 'src/types/Queue';
-import { QueueState } from 'src/enums/QUEUE_ENUM';
+import { QueueState } from '@common/enum';
 
 export const currentQueue = async (
     startDate: Date,

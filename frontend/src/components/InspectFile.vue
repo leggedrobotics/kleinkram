@@ -252,7 +252,6 @@ import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable, useQuasar } from 'quasar';
-import { FileState, FileType } from 'src/enums/FILE_ENUM';
 import ROUTES from 'src/router/routes';
 import { FileEntity } from 'src/types/FileEntity';
 import {
@@ -281,6 +280,7 @@ import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
 import EditFileButton from 'components/buttons/EditFileButton.vue';
 import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
+import { FileState, FileType } from '@common/enum';
 
 const $router = useRouter();
 const $q = useQuasar();

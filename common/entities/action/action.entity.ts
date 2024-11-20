@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
-import { ActionState, ArtifactState } from '../../enum';
+import { ActionState, ArtifactState } from '../../frontend_shared/enum';
 import User from '../user/user.entity';
 import ActionTemplate from './actionTemplate.entity';
 import Worker from '../worker/worker.entity';
@@ -63,7 +63,7 @@ export default class Action extends BaseEntity {
     logs: ContainerLog[];
 
     @Column({ type: 'json', nullable: true, default: [] })
-    auditLogs: any;
+    auditLogs: any[];
 
     @Column({ nullable: true })
     // eslint-disable-next-line @typescript-eslint/naming-convention

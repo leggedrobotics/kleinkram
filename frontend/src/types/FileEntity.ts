@@ -1,9 +1,9 @@
-import { FileState, FileType } from 'src/enums/FILE_ENUM';
 import { BaseEntity } from 'src/types/BaseEntity';
 import { Mission } from 'src/types/Mission';
 import { User } from 'src/types/User';
 import { Topic } from 'src/types/Topic';
 import { Category } from 'src/types/Category';
+import { FileState, FileType } from '@common/enum';
 
 export class FileEntity extends BaseEntity {
     filename: string;

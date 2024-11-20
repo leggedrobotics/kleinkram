@@ -3,9 +3,7 @@
         <q-btn
             round
             flat
-            :style="
-                user.role === USER_ROLES.ADMIN ? 'border: 3px solid red' : ''
-            "
+            :style="user.role === UserRole.ADMIN ? 'border: 3px solid red' : ''"
         >
             <q-avatar
                 size="32px"
@@ -77,8 +75,8 @@
 import { useRouter } from 'vue-router';
 import { logout } from 'src/services/auth';
 import ROUTES from 'src/router/routes';
-import USER_ROLES from 'src/enums/USER_ROLES';
 import { useUser } from 'src/hooks/customQueryHooks';
+import { UserRole } from '@common/enum';
 
 const $router = useRouter();
 

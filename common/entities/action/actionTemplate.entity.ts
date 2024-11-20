@@ -2,7 +2,8 @@ import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Action from './action.entity';
 import User from '../user/user.entity';
-import { AccessGroupRights } from '../../enum';
+
+import { AccessGroupRights } from '../../frontend_shared/enum';
 
 @Entity()
 @Unique('unique_versioned_action_name', ['name', 'version'])

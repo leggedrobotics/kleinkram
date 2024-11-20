@@ -5,7 +5,11 @@ import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
-import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import logger from '../logger';
 

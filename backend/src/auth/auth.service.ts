@@ -13,7 +13,7 @@ import {
     CookieNames,
     Providers,
     UserRole,
-} from '@common/enum';
+} from '@common/frontend_shared/enum';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import GroupMembership from '@common/entities/auth/group_membership.entity';

@@ -97,13 +97,13 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
-import { DataType } from 'src/enums/TAG_TYPES';
 import { Notify } from 'quasar';
 import { Mission } from 'src/types/Mission';
 import { TagType } from 'src/types/TagType';
 import { getMission } from 'src/services/queries/mission';
 import { getTagTypes } from 'src/services/queries/tag';
 import { addTags } from 'src/services/mutations/tag';
+import { DataType } from '@common/enum';
 const queryClient = useQueryClient();
 
 const props = defineProps<{

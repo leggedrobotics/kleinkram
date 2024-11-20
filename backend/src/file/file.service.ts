@@ -29,7 +29,7 @@ import {
     FileType,
     QueueState,
     UserRole,
-} from '@common/enum';
+} from '@common/frontend_shared/enum';
 import User from '@common/entities/user/user.entity';
 import { addAccessConstraints } from '../auth/authHelper';
 import logger from '../logger';

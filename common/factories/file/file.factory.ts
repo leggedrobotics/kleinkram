@@ -3,7 +3,7 @@ import FileEntity from '../../entities/file/file.entity';
 import Mission from '../../entities/mission/mission.entity';
 import User from '../../entities/user/user.entity';
 import { extendedFaker } from '../../faker_extended';
-import { FileState } from '../../enum';
+import { FileState } from '../../frontend_shared/enum';
 
 export type FileContext = {
     mission: Mission;

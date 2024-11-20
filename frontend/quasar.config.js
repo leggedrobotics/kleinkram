@@ -9,6 +9,7 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 const { configure } = require('quasar/wrappers');
+const path = require('path');
 
 module.exports = configure(function (/* ctx */) {
     return {
@@ -38,6 +39,12 @@ module.exports = configure(function (/* ctx */) {
 
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
         build: {
+            // remember to also add the paths to the tsconfig.json file
+            // and to the Dockerfiles
+            alias: {
+                '@common': path.resolve(__dirname, 'common/frontend_shared'),
+            },
+
             target: {
                 browser: [
                     'es2019',

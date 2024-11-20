@@ -77,11 +77,11 @@
 <script setup lang="ts">
 import { getRunningActions } from 'src/services/queries/action';
 import { useQuery } from '@tanstack/vue-query';
-import { ActionState } from 'src/enums/QUEUE_ENUM';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
 import { Action } from 'src/types/Action';
 import { useRouter } from 'vue-router';
+import { ActionState } from '@common/enum';
 
 const router = useRouter();
 

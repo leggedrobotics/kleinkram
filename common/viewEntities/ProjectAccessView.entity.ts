@@ -1,6 +1,7 @@
 import { DataSource, ViewColumn, ViewEntity } from 'typeorm';
-import { AccessGroupRights } from '../enum';
 import Project from '../entities/project/project.entity';
+
+import { AccessGroupRights } from '../frontend_shared/enum';
 
 @ViewEntity({
     expression: (datasource: DataSource) =>

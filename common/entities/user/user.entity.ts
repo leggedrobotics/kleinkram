@@ -4,7 +4,7 @@ import Account from '../auth/account.entity';
 import Project from '../project/project.entity';
 import Mission from '../mission/mission.entity';
 import QueueEntity from '../queue/queue.entity';
-import { UserRole } from '../../enum';
+import { UserRole } from '../../frontend_shared/enum';
 import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
 import Action from '../action/action.entity';

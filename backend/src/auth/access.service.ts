@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
 import { EntityManager, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';

@@ -103,17 +103,11 @@ export enum CookieNames {
 export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',
+    ALL = 'ALL',
 }
 
 export enum Providers {
     GOOGLE = 'google',
-}
-
-export enum AccessGroupRights {
-    READ = 0,
-    CREATE = 10,
-    WRITE = 20,
-    DELETE = 30,
 }
 
 export enum DataType {
@@ -140,4 +134,11 @@ export enum FileState {
     CONVERSION_ERROR = 'CONVERSION_ERROR',
     LOST = 'LOST',
     FOUND = 'FOUND',
+}
+
+export enum AccessGroupRights {
+    READ = 0,
+    CREATE = 10,
+    WRITE = 20,
+    DELETE = 30,
 }

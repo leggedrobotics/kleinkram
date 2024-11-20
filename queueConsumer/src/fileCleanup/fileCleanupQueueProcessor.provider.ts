@@ -19,7 +19,7 @@ import {
     FileType,
     QueueState,
     UserRole,
-} from '@common/enum';
+} from '@common/frontend_shared/enum';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import User from '@common/entities/user/user.entity';
 import Mission from '@common/entities/mission/mission.entity';

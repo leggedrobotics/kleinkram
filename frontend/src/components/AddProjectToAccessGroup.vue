@@ -62,7 +62,7 @@ import { User } from 'src/types/User';
 import { Notify } from 'quasar';
 import { canAddAccessGroup } from 'src/services/queries/access';
 import { filteredProjects } from 'src/services/queries/project';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AccessGroupRights } from '@common/enum';
 const props = defineProps<{
     access_group_uuid: string;
 }>();

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { DataType, FileType } from './enum';
+import { DataType, FileType } from './frontend_shared/enum';
 
 /**
  * A modified faker implementation that provides

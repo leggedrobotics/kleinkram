@@ -1,5 +1,6 @@
 import { User } from 'src/types/User';
 import axios from 'src/api/axios';
+import { CurrentAPIUserDto } from '@api/types/User.dto';
 
 export const searchUsers = async (search: string): Promise<User[]> => {
     if (!search) {
@@ -9,9 +10,11 @@ export const searchUsers = async (search: string): Promise<User[]> => {
     return response.data.map((user: any) => User.fromAPIResponse(user));
 };
 
-export const getMe = async (): Promise<User> => {
-    const response = await axios.get('/user/me');
-    return User.fromAPIResponse(await response.data);
+export const getMe = async (): Promise<CurrentAPIUserDto> => {
+    const response = await axios.get<CurrentAPIUserDto>('/user/me');
+    const user = response.data;
+    if (!user) throw new Error('User not found');
+    return user;
 };
 
 export const getPermissions = async () => {

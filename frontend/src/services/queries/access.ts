@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { AccessGroup, AccessGroupType } from 'src/types/AccessGroup';
+import { AccessGroup } from 'src/types/AccessGroup';
 import { ProjectAccess } from 'src/types/ProjectAccess';
 
 export const canAddAccessGroup = async (

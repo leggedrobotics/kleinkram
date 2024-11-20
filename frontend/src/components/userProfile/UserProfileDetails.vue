@@ -1,96 +1,119 @@
 <template>
-    <title-section title="">
-        <template #subtitle>
-            <div class="row">
-                <q-img
-                    :src="data?.avatarUrl"
-                    style="width: 100px; height: 100px; border-radius: 50%"
-                />
-                <div class="q-ml-md">
-                    <h2
-                        class="text-h3"
-                        style="margin-bottom: 5px; margin-top: 10px"
-                    >
-                        {{ data?.name }}
-                    </h2>
-                    <p class="text-subtitle2" style="color: #58585c">
-                        {{ data?.email }}
-                    </p>
+    <template v-if="user">
+        <title-section title="">
+            <template #subtitle>
+                <div class="row">
+                    <q-img
+                        :src="user.avatarUrl"
+                        style="width: 100px; height: 100px; border-radius: 50%"
+                    />
+                    <div class="q-ml-md">
+                        <h2
+                            class="text-h3"
+                            style="margin-bottom: 5px; margin-top: 10px"
+                        >
+                            {{ user.name }}
+                        </h2>
+                        <p class="text-subtitle2" style="color: #58585c">
+                            {{ user.email }}
+                        </p>
+                    </div>
                 </div>
-            </div>
-        </template>
-        <template #tabs>
-            <q-tabs
-                v-model="tab"
-                dense
-                class="text-grey"
-                align="left"
-                active-color="primary"
-            >
-                <q-tab name="Details" label="Details" style="color: #222" />
-                <q-tab name="Projects" label="Projects" style="color: #222" />
-                <q-tab
-                    name="Settings"
-                    label="Settings"
-                    :disable="true"
-                    style="color: #222"
-                />
-                <q-tab
-                    name="Admin"
-                    label="Admin"
-                    :disable="data?.role === ROLE.USER"
-                    style="color: #222"
-                />
-            </q-tabs>
-        </template>
-    </title-section>
-    <h4>{{ tab }}</h4>
-    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
-        <q-tab-panel name="Details">
-            <div class="q-table-container">
-                <table class="q-table__table">
-                    <tbody>
-                        <tr>
-                            <td class="q-table__cell first-column">Name:</td>
-                            <td class="q-table__cell">{{ data?.name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell first-column">Email:</td>
-                            <td class="q-table__cell">{{ data?.email }}</td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell first-column">Role:</td>
-                            <td class="q-table__cell">
-                                <q-chip>{{ data?.role }}</q-chip>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell first-column">UUID:</td>
-                            <td class="q-table__cell">
-                                <q-chip>
-                                    {{ data?.uuid }}
-                                </q-chip>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell first-column">
-                                Default Group:
-                            </td>
-                            <td class="q-table__cell">
-                                {{ defaultGroup?.name || 'None' }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </q-tab-panel>
-        <q-tab-panel name="Projects">
-            <explorer-page-project-table :url_handler="handler" />
-        </q-tab-panel>
-        <q-tab-panel name="Admin">
-            <admin-settings />
-        </q-tab-panel>
-    </q-tab-panels>
+            </template>
+            <template #tabs>
+                <q-tabs
+                    v-model="tab"
+                    dense
+                    class="text-grey"
+                    align="left"
+                    active-color="primary"
+                >
+                    <q-tab name="Details" label="Details" style="color: #222" />
+                    <q-tab
+                        name="Projects"
+                        label="Projects"
+                        style="color: #222"
+                    />
+                    <q-tab
+                        name="Settings"
+                        label="Settings"
+                        :disable="true"
+                        style="color: #222"
+                    />
+                    <q-tab
+                        name="Admin"
+                        label="Admin"
+                        :disable="user.role === UserRole.USER"
+                        style="color: #222"
+                    />
+                </q-tabs>
+            </template>
+        </title-section>
+        <h4>{{ tab }}</h4>
+        <q-tab-panels
+            v-model="tab"
+            class="q-mt-lg"
+            style="background: transparent"
+        >
+            <q-tab-panel name="Details">
+                <div class="q-table-container">
+                    <table class="q-table__table">
+                        <tbody>
+                            <tr>
+                                <td class="q-table__cell first-column">
+                                    Name:
+                                </td>
+                                <td class="q-table__cell">{{ user.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="q-table__cell first-column">
+                                    Email:
+                                </td>
+                                <td class="q-table__cell">{{ user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td class="q-table__cell first-column">
+                                    Role:
+                                </td>
+                                <td class="q-table__cell">
+                                    <q-chip>{{ user.role }}</q-chip>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="q-table__cell first-column">
+                                    UUID:
+                                </td>
+                                <td class="q-table__cell">
+                                    <q-chip>
+                                        {{ user.uuid }}
+                                    </q-chip>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="q-table__cell first-column">
+                                    Affiliation Group:
+                                </td>
+                                <td class="q-table__cell">
+                                    {{ affiliationGroup?.name || 'None' }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </q-tab-panel>
+            <q-tab-panel name="Projects">
+                <explorer-page-project-table :url_handler="handler" />
+            </q-tab-panel>
+            <q-tab-panel name="Admin">
+                <admin-settings />
+            </q-tab-panel>
+        </q-tab-panels>
+    </template>
+    <template v-else>
+        <div class="row flex-center">
+            <q-spinner-gears size="100px" />
+        </div>
+    </template>
 </template>
 
 <script setup lang="ts">
@@ -98,23 +121,24 @@ import 'vue-json-pretty/lib/styles.css';
 import TitleSection from 'components/TitleSection.vue';
 import { computed, ref } from 'vue';
 import ExplorerPageProjectTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
-import ROLE from 'src/enums/USER_ROLES';
 import { useHandler, useUser } from 'src/hooks/customQueryHooks';
 import AdminSettings from 'components/userProfile/AdminSettings.vue';
-import { AccessGroup } from 'src/types/AccessGroup';
+import { AccessGroupDto, GroupMembershipDto } from '@api/types/User.dto';
+import { AccessGroupType, UserRole } from '@common/enum';
 
-const { data } = useUser();
+const { data: user } = useUser();
 const tab = ref('Details');
 
-const defaultGroup = computed<AccessGroup | undefined>(() => {
-    return data.value?.memberships.find(
-        (group) => group.accessGroup?.inheriting,
-    )?.accessGroup as AccessGroup | undefined;
+const affiliationGroup = computed<AccessGroupDto>(() => {
+    return user.value?.memberships.find(
+        (group: GroupMembershipDto) =>
+            group.accessGroup?.type === AccessGroupType.AFFILIATION,
+    )?.accessGroup;
 });
 
 // we need to set the creator.uuid search param in order to fetch the correct projects
 const handler = useHandler();
-handler.value.searchParams = { 'creator.uuid': data.value?.uuid || '' };
+handler.value.searchParams = { 'creator.uuid': user.value?.uuid || '' };
 </script>
 <style>
 .q-table-container {

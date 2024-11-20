@@ -177,7 +177,6 @@ import { Notify, QTable, useQuasar } from 'quasar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { FileLocation, QueueState } from 'src/enums/QUEUE_ENUM';
 import { Queue } from 'src/types/Queue';
 import { Project } from 'src/types/Project';
 import { currentQueue } from 'src/services/queries/queue';
@@ -193,6 +192,7 @@ import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import ConfirmDeleteFile from 'src/dialogs/ConfirmDeleteFileDialog.vue';
+import { FileLocation, QueueState } from '@common/enum';
 
 const $router = useRouter();
 const queryClient = useQueryClient();

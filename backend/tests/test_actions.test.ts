@@ -10,7 +10,7 @@ import {
     createProjectUsingPost,
     uploadFile,
 } from './utils/api_calls';
-import { AccessGroupRights, ActionState } from '@common/enum';
+import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
 import { SubmitAction } from '../src/action/entities/submit_action.dto';
 
 describe('Verify Action', () => {

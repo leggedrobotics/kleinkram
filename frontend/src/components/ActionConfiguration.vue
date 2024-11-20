@@ -290,8 +290,8 @@ import { listActionTemplates } from 'src/services/queries/action';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { accessGroupRightsMap } from 'src/services/generic';
+import { AccessGroupRights } from '@common/enum';
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');

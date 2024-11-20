@@ -11,7 +11,7 @@ import User from '../user/user.entity';
 import ProjectAccess from './project_access.entity';
 import MissionAccess from './mission_access.entity';
 import GroupMembership from './group_membership.entity';
-import { AccessGroupType } from '../../enum';
+import { AccessGroupType } from '../../frontend_shared/enum';
 
 @Unique('unique_access_group_name', ['name'])
 @Entity()

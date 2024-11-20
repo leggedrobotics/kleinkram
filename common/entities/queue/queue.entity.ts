@@ -1,5 +1,5 @@
 import BaseEntity from '../base-entity.entity';
-import { FileLocation, QueueState } from '../../enum';
+import { FileLocation, QueueState } from '../../frontend_shared/enum';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';

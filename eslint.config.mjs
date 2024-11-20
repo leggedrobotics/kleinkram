@@ -28,16 +28,17 @@ export default tseslint.config(
             '@typescript-eslint/prefer-promise-reject-errors': 'warn',
             'no-useless-escape': 'warn',
 
+            '@typescript-eslint/no-unsafe-member-access': 'error',
+            '@typescript-eslint/no-unsafe-return': 'error',
+            '@typescript-eslint/no-unsafe-call': 'error',
+
             // currently we have to disable most rules
             // TODO: enforce these rules
             '@typescript-eslint/no-unsafe-assignment': 'off',
             '@typescript-eslint/no-misused-promises': 'off',
             '@typescript-eslint/no-unsafe-argument': 'off',
-            '@typescript-eslint/no-unsafe-member-access': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unsafe-return': 'off',
             '@typescript-eslint/no-floating-promises': 'off',
-            '@typescript-eslint/no-unsafe-call': 'off',
             '@typescript-eslint/restrict-template-expressions': 'off',
             '@typescript-eslint/require-await': 'off',
             '@typescript-eslint/no-require-imports': 'off',

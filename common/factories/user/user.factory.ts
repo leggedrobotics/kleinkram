@@ -1,6 +1,6 @@
 import { define } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
-import { UserRole } from '../../enum';
+import { UserRole } from '../../frontend_shared/enum';
 import { extendedFaker } from '../../faker_extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 

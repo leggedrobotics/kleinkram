@@ -79,13 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { useQuery } from '@tanstack/vue-query';
 import { searchUsers } from 'src/services/queries/user';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { QTable } from 'quasar';
+import { AccessGroupRights } from '@common/enum';
 
 const props = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;

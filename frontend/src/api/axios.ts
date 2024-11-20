@@ -1,6 +1,28 @@
 import axios, { RawAxiosResponseHeaders } from 'axios';
 import ENV from 'src/env';
 import { ref } from 'vue';
+import { parseISO } from 'date-fns';
+
+const isoDateRegex =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;
+
+const isIsoDateString = (value: unknown): value is string => {
+    return typeof value === 'string' && isoDateRegex.test(value);
+};
+
+const handleDates = (data: unknown) => {
+    if (isIsoDateString(data)) return parseISO(data);
+    if (data === null || data === undefined || typeof data !== 'object')
+        return data;
+
+    for (const [key, val] of Object.entries(data)) {
+        // @ts-expect-error this is a hack to make the type checker happy
+        if (isIsoDateString(val)) data[key] = parseISO(val);
+        else if (typeof val === 'object') handleDates(val);
+    }
+
+    return data;
+};
 
 const axiosInstance = axios.create({
     baseURL: ENV.ENDPOINT,
@@ -16,6 +38,7 @@ axiosInstance.interceptors.response.use(
     (response) => {
         const headers = response.headers;
         setVersion(headers);
+        handleDates(response.data);
         return response;
     },
     async (error) => {

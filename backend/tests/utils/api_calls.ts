@@ -3,7 +3,7 @@ import { getJwtToken } from './database_utils';
 import User from '@common/entities/user/user.entity';
 import { CreateMission } from '../../src/mission/entities/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { QueueState } from '@common/enum';
+import { QueueState } from '@common/frontend_shared/enum';
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';

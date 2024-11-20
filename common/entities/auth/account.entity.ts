@@ -1,6 +1,6 @@
 import { Column, Entity, OneToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { Providers } from '../../enum';
+import { Providers } from '../../frontend_shared/enum';
 import User from '../user/user.entity';
 
 /**

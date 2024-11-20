@@ -27,9 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { DataType } from 'src/enums/TAG_TYPES';
 import { ref, watch, PropType } from 'vue';
 import { icon } from 'src/services/generic';
+import { DataType } from '@common/enum';
 
 // Define the props and emits for the component
 const props = defineProps({

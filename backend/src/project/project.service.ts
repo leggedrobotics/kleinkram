@@ -7,12 +7,20 @@ import { AuthRes } from '../auth/paramDecorator';
 import User from '@common/entities/user/user.entity';
 import { UserService } from '../user/user.service';
 
-import { AccessGroupRights, AccessGroupType, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import TagType from '@common/entities/tagType/tagType.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import {
+    DefaultRightDto,
+    DefaultRightsDto,
+} from '@common/api/types/DefaultRights.dto';
 
 @Injectable()
 export class ProjectService {
@@ -495,14 +503,14 @@ export class ProjectService {
         );
     }
 
-    async getDefaultRights(auth: AuthRes) {
+    async getDefaultRights(auth: AuthRes): Promise<DefaultRightsDto> {
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},
             { memberships: { accessGroup: true } },
         );
 
-        return Promise.all(
+        const defaultRights: DefaultRightDto[] = await Promise.all(
             creator.memberships
                 .map((membership) => membership.accessGroup)
                 .map(async (right) => {
@@ -531,8 +539,14 @@ export class ProjectService {
                         uuid: right.uuid,
                         memberCount,
                         rights: _rights,
-                    };
+                        type: right.type,
+                    } as DefaultRightDto;
                 }),
         );
+
+        return {
+            defaultRights,
+            count: defaultRights.length,
+        };
     }
 }

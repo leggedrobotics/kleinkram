@@ -2,11 +2,12 @@ import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
-import { AccessGroupType, UserRole } from '@common/enum';
+import { AccessGroupType, UserRole } from '@common/frontend_shared/enum';
 import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
+import { CurrentAPIUserDto } from '@common/api/types/User.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -64,12 +65,12 @@ export class UserService implements OnModuleInit {
         return user;
     }
 
-    async me(auth: AuthRes) {
-        return await this.userRepository.findOneOrFail({
+    async me(auth: AuthRes): Promise<CurrentAPIUserDto> {
+        return (await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
             relations: ['memberships', 'memberships.accessGroup'],
-        });
+        })) as CurrentAPIUserDto;
     }
 
     async findAll(skip: number, take: number) {

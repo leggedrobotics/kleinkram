@@ -148,7 +148,7 @@
     <q-table
         class="table-white"
         :columns="accessRightsColumns"
-        :rows="accessRights?.sort((a, b) => b.name.localeCompare(a.name)) || []"
+        :rows="sortedAccessRights"
         hide-pagination
         flat
         separator="horizontal"
@@ -252,19 +252,25 @@
 <script setup lang="ts">
 import { getAccessRightDescription } from 'src/services/generic';
 import { QSelect, QTable } from 'quasar';
-import { computed, ref } from 'vue';
-import { AccessRight } from 'src/services/queries/project';
-import {
-    AccessGroupRights,
-    accessGroupRightsList,
-} from 'src/enums/ACCESS_RIGHTS';
+import { computed, Ref, ref } from 'vue';
+
 import { useQuery } from '@tanstack/vue-query';
 import { searchAccessGroups } from 'src/services/queries/access';
+import { DefaultRightDto } from '@api/types/DefaultRights.dto';
+import { AccessGroupRights } from '@common/enum';
+import { accessGroupRightsList } from '../enums/accessGroupRightsList';
 
 const { minAccessRights } = defineProps<{
-    minAccessRights: AccessRight[];
+    minAccessRights: DefaultRightDto[];
 }>();
-const accessRights = defineModel<AccessRight[]>();
+const accessRights: Ref<DefaultRightDto[]> = defineModel<DefaultRightDto[]>();
+
+const sortedAccessRights = computed(() => {
+    console.log(accessRights.value);
+    return (
+        accessRights.value?.sort((a, b) => b.name.localeCompare(a.name)) || []
+    );
+});
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
