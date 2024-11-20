@@ -44,7 +44,7 @@ class InvalidMissionSpec(Exception): ...
 class InvalidProjectSpec(Exception): ...
 
 
-def check_mission_spec_is_createable(spec: MissionSpec) -> None:
+def check_mission_spec_is_creatable(spec: MissionSpec) -> None:
     if not mission_spec_is_unique(spec):
         raise InvalidMissionSpec(f"Mission spec is not unique: {spec}")
     # cant create a missing by id
