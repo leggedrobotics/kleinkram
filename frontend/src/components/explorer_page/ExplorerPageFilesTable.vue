@@ -143,6 +143,7 @@ import { Category } from 'src/types/Category';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import { FileEntity } from 'src/types/FileEntity';
 import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
+import { fileColumns } from './explorer_page_table_columns';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
