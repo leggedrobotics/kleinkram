@@ -99,6 +99,5 @@ class AuthenticatedClient(httpx.Client):
             resp = super().request(method, full_url, *args, **kwargs)
             logger.info(f"got response {resp}")
             return resp
-
         else:
             return response
