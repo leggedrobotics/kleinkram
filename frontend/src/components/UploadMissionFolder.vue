@@ -17,7 +17,6 @@ import { FileUpload } from 'src/types/FileUpload';
 import { computed, inject, Ref } from 'vue';
 import {
     canCreateMission,
-    canCreateProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import NewMissionByFolderDialog from 'src/dialogs/NewMissionByFolderDialog.vue';

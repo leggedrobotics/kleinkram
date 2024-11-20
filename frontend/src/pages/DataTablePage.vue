@@ -347,7 +347,6 @@ import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpe
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
-import NewEditFile from 'components/NewEditFile.vue';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 
 const $router = useRouter();

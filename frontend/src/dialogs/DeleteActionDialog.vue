@@ -32,8 +32,6 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
-import DeleteFile from 'components/DeleteFile.vue';
-import { FileEntity } from 'src/types/FileEntity';
 import DeleteAction from 'components/DeleteAction.vue';
 import { Action } from 'src/types/Action';
 

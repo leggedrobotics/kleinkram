@@ -30,6 +30,7 @@ import { Tag } from 'src/types/Tag';
 import { getMission } from 'src/services/queries/mission';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
+
 const queryClient = useQueryClient();
 const $q = useQuasar();
 

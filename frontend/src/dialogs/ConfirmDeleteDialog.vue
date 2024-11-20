@@ -3,8 +3,8 @@
         <template #title>
             Are you sure you want to delete the following
             {{ filenames.length }}
-            {{ filenames.length === 1 ? 'file' : 'files' }}?</template
-        >
+            {{ filenames.length === 1 ? 'file' : 'files' }}?
+        </template>
 
         <template #content>
             <div>
@@ -41,7 +41,6 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
-import AddTag from 'components/AddTag.vue';
 
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 

@@ -364,7 +364,7 @@ import { FileEntity } from 'src/types/FileEntity';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
-import { _downloadFiles, hashUUIDtoColor } from 'src/services/generic';
+import { _downloadFiles } from 'src/services/generic';
 import { Tag } from 'src/types/Tag';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';

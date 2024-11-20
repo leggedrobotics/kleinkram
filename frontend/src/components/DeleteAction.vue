@@ -14,12 +14,9 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import { FileEntity } from 'src/types/FileEntity';
-import { deleteFile } from 'src/services/mutations/file';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
-import ROUTES from 'src/router/routes';
 import { Action } from 'src/types/Action';
 import { deleteAction } from 'src/services/mutations/action';
 

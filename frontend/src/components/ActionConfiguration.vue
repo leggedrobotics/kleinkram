@@ -65,14 +65,12 @@
                             <template v-slot:option="scope">
                                 <q-item v-bind="scope.itemProps">
                                     <q-item-section>
-                                        <q-item-label>{{
-                                            scope.opt.name
-                                        }}</q-item-label>
+                                        <q-item-label
+                                            >{{ scope.opt.name }}
+                                        </q-item-label>
                                         <q-item-label caption
-                                            >v{{
-                                                scope.opt.version
-                                            }}</q-item-label
-                                        >
+                                            >v{{ scope.opt.version }}
+                                        </q-item-label>
                                     </q-item-section>
                                 </q-item>
                             </template>

@@ -35,8 +35,6 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
-import DeleteFile from 'components/DeleteFile.vue';
-import { FileEntity } from 'src/types/FileEntity';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const file_name_check = ref('');

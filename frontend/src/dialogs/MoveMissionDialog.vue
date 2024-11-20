@@ -25,9 +25,9 @@
                                 "
                             >
                                 <q-item-section>
-                                    <q-item-label>{{
-                                        project.name
-                                    }}</q-item-label>
+                                    <q-item-label
+                                        >{{ project.name }}
+                                    </q-item-label>
                                 </q-item-section>
                             </q-item>
                         </q-list>

@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, Ref, computed } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { TagType } from 'src/types/TagType';
 import { Project } from 'src/types/Project';
 import { useQuery } from '@tanstack/vue-query';
@@ -121,6 +121,7 @@ import { getTagTypes } from 'src/services/queries/tag';
 import { getProject } from 'src/services/queries/project';
 import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
+
 const props = defineProps<{
     tagValues: Record<string, string>;
     projectUUID: string;
@@ -200,9 +201,11 @@ const DataType_InputType = {
 function addTag(tagtype: TagType) {
     additionalTags.value.push(tagtype);
 }
+
 const requiredTagTypeUUIDs = computed(() =>
     project.value?.requiredTags.map((tag) => tag.uuid),
 );
+
 function removeTagType(tagtypeUUID: string) {
     const index = additionalTags.value.findIndex(
         (tagtype) => tagtype.uuid === tagtypeUUID,

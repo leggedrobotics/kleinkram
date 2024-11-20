@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ActionsTable from 'components/Actions.vue';
@@ -123,7 +123,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import TitleSection from 'components/TitleSection.vue';
-import { ActionTemplate } from 'src/types/ActionTemplate';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
 import { UserRole } from '@common/enum';

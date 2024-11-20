@@ -38,14 +38,12 @@
                 class="bg-button-primary"
                 @click="addCategories"
                 :disable="selected.length === 0"
-        /></template>
+            />
+        </template>
     </base-dialog>
 </template>
 <script setup lang="ts">
 import { Notify, useDialogPluginComponent } from 'quasar';
-
-const { dialogRef, onDialogOK } = useDialogPluginComponent();
-
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Ref, ref } from 'vue';
 import { FileEntity } from 'src/types/FileEntity';
@@ -54,6 +52,8 @@ import CategorySelector from 'components/CategorySelector.vue';
 import CategoryCreator from 'components/CategoryCreator.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
+
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
     mission_uuid: string;
@@ -64,6 +64,7 @@ const queryClient = useQueryClient();
 const selected: Ref<Category[]> = ref<Category[]>([]);
 
 const tab = ref('add');
+
 function updateSelected(value: Category[]) {
     selected.value = value;
 }
@@ -93,6 +94,7 @@ const { mutate } = useMutation({
         });
     },
 });
+
 function addCategories() {
     mutate();
 }

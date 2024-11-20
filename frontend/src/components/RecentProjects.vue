@@ -66,7 +66,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { Project } from 'src/types/Project';
-import { filteredProjects, recentProjects } from 'src/services/queries/project';
+import { recentProjects } from 'src/services/queries/project';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'vue-router';
 

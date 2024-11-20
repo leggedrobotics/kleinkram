@@ -66,7 +66,7 @@ import { searchUsers } from 'src/services/queries/user';
 import { addUserToAccessGroup } from 'src/services/mutations/access';
 import { User } from 'src/types/User';
 import { Notify } from 'quasar';
-import { canAddAccessGroup } from 'src/services/queries/access';
+
 const props = defineProps<{
     access_group_uuid: string;
 }>();

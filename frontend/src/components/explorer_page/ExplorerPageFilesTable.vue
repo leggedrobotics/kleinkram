@@ -100,8 +100,8 @@
                                     <MoveFileDialogOpener
                                         :files="[props.row]"
                                         :mission="props.row.mission"
-                                        >Move</MoveFileDialogOpener
-                                    >
+                                        >Move
+                                    </MoveFileDialogOpener>
                                 </q-item-section>
                             </q-item>
                             <q-item clickable v-ripple>
@@ -230,6 +230,7 @@ const onRowClick = async (_: Event, row: any) => {
 function chipClicked(cat: Category) {
     props.url_handler?.addCategory(cat.uuid);
 }
+
 watch(
     () => selected.value,
     (newVal) => {

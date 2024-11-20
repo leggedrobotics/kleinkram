@@ -52,6 +52,7 @@ const { mutate } = useMutation({
             location: 'bottom',
         }),
 });
+
 function addCategory() {
     if (newCategory.value && newCategory.value.length >= 2) {
         mutate(newCategory.value.trim());

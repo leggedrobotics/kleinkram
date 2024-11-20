@@ -53,16 +53,12 @@
 import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap, icon } from 'src/services/generic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { searchUsers } from 'src/services/queries/user';
-import {
-    addAccessGroupToProject,
-    addUserToAccessGroup,
-} from 'src/services/mutations/access';
+import { addAccessGroupToProject } from 'src/services/mutations/access';
 import { User } from 'src/types/User';
 import { Notify } from 'quasar';
-import { canAddAccessGroup } from 'src/services/queries/access';
 import { filteredProjects } from 'src/services/queries/project';
 import { AccessGroupRights } from '@common/enum';
+
 const props = defineProps<{
     access_group_uuid: string;
 }>();

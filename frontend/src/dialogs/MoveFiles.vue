@@ -3,8 +3,8 @@
         <template #title>
             Move File{{
                 props.files.length === 1 ? ' ' + props.files[0].filename : 's'
-            }}</template
-        >
+            }}
+        </template>
 
         <template #content>
             <div class="q-mt-md">
@@ -97,18 +97,15 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { formatDate, parseDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 import { FileEntity } from 'src/types/FileEntity';
-import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
-import { moveFiles, updateFile } from 'src/services/mutations/file';
+import { moveFiles } from 'src/services/mutations/file';
 import { Mission } from 'src/types/Mission';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
-import ConfigureCategories from 'components/ConfigureCategories.vue';
 
 const props = defineProps<{
     mission: Mission;

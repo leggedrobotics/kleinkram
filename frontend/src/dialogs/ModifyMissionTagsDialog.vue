@@ -27,6 +27,7 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
+
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{

@@ -3,12 +3,7 @@ import { ProjectAccess } from 'src/types/ProjectAccess';
 import { User } from 'src/types/User';
 import { MissionAccess } from 'src/types/MissionAccess';
 import { GroupMembership } from 'src/types/AccessGroupUser';
-
-export enum AccessGroupType {
-    PRIMARY = 'PRIMARY',
-    AFFILIATION = 'AFFILIATION',
-    CUSTOM = 'CUSTOM',
-}
+import { AccessGroupType } from '@common/enum';
 
 export class AccessGroup extends BaseEntity {
     name: string;

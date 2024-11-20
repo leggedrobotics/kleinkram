@@ -12,15 +12,15 @@
 
 <script setup lang="ts">
 import VChart from 'vue-echarts';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 
 import { use } from 'echarts/core';
 import { BarChart, PieChart } from 'echarts/charts';
 import {
-    TitleComponent,
-    LegendComponent,
-    TooltipComponent,
     GraphicComponent,
+    LegendComponent,
+    TitleComponent,
+    TooltipComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useQuery } from '@tanstack/vue-query';

@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -123,7 +123,7 @@ import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { usePermissionsQuery } from 'src/hooks/customQueryHooks';
-import { createFileAction, getOnMount } from 'src/services/fileService';
+import { createFileAction } from 'src/services/fileService';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
