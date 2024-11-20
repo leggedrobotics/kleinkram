@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-docs",
-    "version": "0.37.0",
+    "version": "0.38.1",
     "target": "es2022",
     "scripts": {
         "docs:dev": "VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
@@ -16,6 +16,6 @@
     "devDependencies": {
         "mermaid": "^11.4.0",
         "vitepress-plugin-mermaid": "2.0.17",
-        "vue": "^3.5.12"
+        "vue": "^3.5.13"
     }
 }
