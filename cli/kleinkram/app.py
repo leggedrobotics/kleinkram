@@ -198,7 +198,7 @@ def cli(
         level = logging.getLevelName(log_level)
         logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
     else:
-        logging.basicConfig(filename=os.devnull)
+        logging.disable(logging.CRITICAL)
 
     logger.info(f"CLI version: {__version__}")
 

@@ -6,6 +6,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import monotonic
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import NamedTuple
@@ -24,11 +25,15 @@ from kleinkram.errors import CorruptedFile
 from kleinkram.errors import NotValidUUID
 from kleinkram.errors import UploadCredentialsFailed
 from kleinkram.errors import UploadFailed
+from kleinkram.models import File
+from kleinkram.models import FILE_STATE_COLOR
+from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
 from kleinkram.utils import format_error
 from kleinkram.utils import format_traceback
 from kleinkram.utils import styled_string
 from rich.console import Console
+from rich.text import Text
 from tqdm import tqdm
 
 
@@ -314,14 +319,18 @@ def upload_files(
         raise UploadFailed(f"got unhandled errors: {errors} when uploading files")
 
 
-def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:
+def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False) -> None:
     if path.exists() and not overwrite:
         raise FileExistsError(f"file already exists: {path}")
 
     with httpx.stream("GET", url) as response:
         with open(path, "wb") as f:
             with tqdm(
-                total=size, desc=f"downloading {path.name}", unit="B", unit_scale=True
+                total=size,
+                desc=f"downloading {path.name}",
+                unit="B",
+                unit_scale=True,
+                leave=False,
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     f.write(chunk)
@@ -330,17 +339,70 @@ def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> N
 
 def download_file(
     client: AuthenticatedClient,
-    file_id: UUID,
-    name: str,
-    dest: Path,
-    hash: str,
-    size: int,
+    *,
+    file: File,
+    path: Path,
+    overwrite: bool = False,
+    verbose: bool = False,
 ) -> None:
-    download_url = _get_file_download(client, file_id)
+    # skip files that are not ok on remote
+    if file.state != FileState.OK:
+        msg = (
+            f"Skipping file {file.name} with state",
+            Text(file.state.value, style=FILE_STATE_COLOR[file.state]),
+        )
+        if verbose:
+            tqdm.write(styled_string(*msg))
+        else:
+            print(*msg)
+        return
 
-    file_path = dest / name
-    _url_download(download_url, file_path, size)
-    observed_hash = b64_md5(file_path)
+    # skip existing files depending on flags set
+    if path.exists():
+        base_msg = f"{file.name} already exists in dest"
 
+        if b64_md5(path) == file.hash:
+            print(f"{base_msg}, skipping...")
+            return
+
+        elif not overwrite:
+            print(f"{base_msg}, missmatching hash!")
+            return
+
+        print(f"{base_msg}, missmatching hash overwriting...")
+
+    # request a download url
+    download_url = _get_file_download(client, file.id)
+
+    # create parent directories
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # download the file and check the hash
+    _url_download(download_url, path=path, size=file.size, overwrite=overwrite)
+    observed_hash = b64_md5(path)
     if observed_hash != hash:
-        raise CorruptedFile(f"file hash does not match: {dest}")
+        raise CorruptedFile(f"file hash does not match: {path}")
+
+
+def download_files(
+    client: AuthenticatedClient,
+    files: Dict[Path, File],
+    *,
+    verbose: bool = False,
+    overwrite: bool = False,
+) -> None:
+    normalized_files = {p.absolute(): f for p, f in files.items()}
+    if len(normalized_files) != len(files):
+        raise ValueError(f"duplicate file paths detected in {files}")
+
+    # TODO parallelize this, create pbar wrapper of the above function
+    for path, file in tqdm(normalized_files.items(), disable=not verbose):
+        try:
+            download_file(
+                client, file=file, path=path, overwrite=overwrite, verbose=verbose
+            )
+        except Exception as e:
+            logger.error(format_traceback(e))
+            print(
+                format_error(f"error downloading file {file.name}", e, verbose=verbose)
+            )
