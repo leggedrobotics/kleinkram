@@ -35,7 +35,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
 
         if (exception instanceof BadRequestException) {
             const resp = exception.getResponse();
-             
+
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
                     statusCode: 400,

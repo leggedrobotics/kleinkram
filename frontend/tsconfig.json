@@ -1,30 +1,25 @@
 {
-  "extends": "@quasar/app-vite/tsconfig-preset",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      // we cannot use all paths in the frontend due to library dependencies
-      // thus we list allowed paths explicitly
+    "extends": "@quasar/app-vite/tsconfig-preset",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            // we cannot use all paths in the frontend due to library dependencies
+            // thus we list allowed paths explicitly
 
-      ////////////////////////////////////
-      // compile time paths
-      ////////////////////////////////////
-      "@api/types/*": [
-        "../common/api/types/*"
-      ],
-      ////////////////////////////////////
-      // runtime paths
-      //
-      // remember to add the paths also to the quasar.config.js and Dockerfiles
-      // this, however, is only necessary for code that is referenced at runtime
-      // types are only used at compile time, thus no need to add them to the quasar.config.js
-      //
-      ////////////////////////////////////
+            ////////////////////////////////////
+            // compile time paths
+            ////////////////////////////////////
+            "@api/types/*": ["../common/api/types/*"],
+            ////////////////////////////////////
+            // runtime paths
+            //
+            // remember to add the paths also to the quasar.config.js and Dockerfiles
+            // this, however, is only necessary for code that is referenced at runtime
+            // types are only used at compile time, thus no need to add them to the quasar.config.js
+            //
+            ////////////////////////////////////
 
-      "@common/*": [
-        "../common/frontend_shared/*"
-      ],
-
+            "@common/*": ["../common/frontend_shared/*"]
+        }
     }
-  }
 }
