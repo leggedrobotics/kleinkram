@@ -319,7 +319,9 @@ def upload_files(
         raise UploadFailed(f"got unhandled errors: {errors} when uploading files")
 
 
-def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False) -> None:
+def _url_download(
+    url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False
+) -> None:
     if path.exists() and not overwrite:
         raise FileExistsError(f"file already exists: {path}")
 
@@ -331,6 +333,7 @@ def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False) -
                 unit="B",
                 unit_scale=True,
                 leave=False,
+                disable=not verbose,
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     f.write(chunk)
@@ -378,9 +381,11 @@ def download_file(
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # download the file and check the hash
-    _url_download(download_url, path=path, size=file.size, overwrite=overwrite)
+    _url_download(
+        download_url, path=path, size=file.size, overwrite=overwrite, verbose=verbose
+    )
     observed_hash = b64_md5(path)
-    if observed_hash != hash:
+    if observed_hash != file.hash:
         raise CorruptedFile(f"file hash does not match: {path}")
 
 

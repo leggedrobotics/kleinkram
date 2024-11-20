@@ -5,12 +5,14 @@ from typing import Optional
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.api.routes import update_mission_metadata
 from kleinkram.errors import MissionDoesNotExist
-from kleinkram.utils import get_valid_mission_spec
+from kleinkram.resources import get_missions_by_spec
+from kleinkram.resources import mission_spec_is_unique
+from kleinkram.resources import MissionSpec
+from kleinkram.resources import ProjectSpec
 from kleinkram.utils import load_metadata
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.utils import split_args
 
 mission_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -32,19 +34,29 @@ def update(
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     metadata: str = typer.Option(help="path to metadata file (json or yaml)"),
 ) -> None:
-    _project = to_name_or_uuid(project) if project else None
-    _mission = to_name_or_uuid(mission) if mission else None
+    mission_ids, mission_filters = split_args([mission])
+    project_ids, project_filters = split_args([project] if project else [])
+
+    project_spec = ProjectSpec(project_ids=project_ids, project_filters=project_filters)
+    mission_spec = MissionSpec(
+        mission_ids=mission_ids,
+        mission_filters=mission_filters,
+        project_spec=project_spec,
+    )
+
+    if not mission_spec_is_unique(mission_spec):
+        raise ValueError(f"mission spec is not unique: {mission_spec}")
 
     client = AuthenticatedClient()
+    missions = get_missions_by_spec(client, mission_spec)
 
-    mission_spec = get_valid_mission_spec(_mission, _project)
-    mission_parsed = get_mission_by_spec(client, mission_spec)
-
-    if mission_parsed is None:
+    if not missions:
         raise MissionDoesNotExist(f"Mission {mission} does not exist")
+    elif len(missions) > 1:
+        raise RuntimeError(f"Multiple missions found: {missions}")  # unreachable
 
     metadata_dct = load_metadata(Path(metadata))
-    update_mission_metadata(client, mission_parsed.id, metadata_dct)
+    update_mission_metadata(client, missions[0].id, metadata_dct)
 
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)

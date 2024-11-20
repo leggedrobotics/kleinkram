@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from typing import List
-from typing import Optional
-from typing import Tuple
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
@@ -62,7 +60,7 @@ def check_project_spec_is_creatable(spec: ProjectSpec) -> None:
         raise InvalidProjectSpec(f"cant create project by id: {spec}")
 
 
-def pattern_is_unique(pattern: str) -> bool:
+def _pattern_is_unique(pattern: str) -> bool:
     for char in SPECIAL_PATTERN_CHARS:
         if char in pattern:
             return False
@@ -75,7 +73,7 @@ def project_spec_is_unique(spec: ProjectSpec) -> bool:
         return True
 
     # a single project name is specified
-    if len(spec.project_filters) == 1 and pattern_is_unique(spec.project_filters[0]):
+    if len(spec.project_filters) == 1 and _pattern_is_unique(spec.project_filters[0]):
         return True
     return False
 
@@ -89,7 +87,7 @@ def mission_spec_is_unique(spec: MissionSpec) -> bool:
     if (
         project_spec_is_unique(spec.project_spec)
         and len(spec.mission_filters) == 1
-        and pattern_is_unique(spec.mission_filters[0])
+        and _pattern_is_unique(spec.mission_filters[0])
     ):
         return True
     return False

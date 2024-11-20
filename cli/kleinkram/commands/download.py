@@ -45,6 +45,9 @@ def download(
     nested: bool = typer.Option(
         False, help="save files in nested directories, project-name/mission-name"
     ),
+    overwrite: bool = typer.Option(
+        False, help="overwrite files if they already exist and don't match the filehash"
+    ),
 ) -> None:
     # create destionation directory
     dest_dir = Path(dest)
@@ -97,4 +100,6 @@ def download(
 
     # download files
     logger.info(f"downloading {paths_to_files} files to {dest_dir}")
-    download_files(client, paths_to_files)
+    download_files(
+        client, paths_to_files, verbose=get_shared_state().verbose, overwrite=overwrite
+    )
