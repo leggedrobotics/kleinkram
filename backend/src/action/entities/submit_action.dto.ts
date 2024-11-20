@@ -1,13 +1,5 @@
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 
-export class SubmitAction {
-    @IsUUID()
-    missionUUID: string;
-
-    @IsUUID()
-    templateUUID: string;
-}
-
 export class SubmitActionMulti {
     @IsString({ each: true })
     missionUUIDs: string[];

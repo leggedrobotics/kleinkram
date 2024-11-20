@@ -1,5 +1,6 @@
 import {
     applyDecorators,
+    ForbiddenException,
     SetMetadata,
     UnauthorizedException,
     UseGuards,
@@ -9,6 +10,7 @@ import {
     AddUserToAccessGroupGuard,
     AdminOnlyGuard,
     CanDeleteMissionGuard,
+    CanEditGroupByGroupUuid,
     CanReadManyMissionsGuard,
     CreateActionGuard,
     CreateActionsGuard,
@@ -16,15 +18,13 @@ import {
     CreateInMissionByBodyGuard,
     CreateInProjectByBodyGuard,
     CreateQueueByBodyGuard,
+    DeleteActionGuard,
     DeleteFileGuard,
     DeleteProjectGuard,
     DeleteTagGuard,
-    CanEditGroupByGroupUuid,
-    IsAccessGroupCreatorByProjectAccessGuard,
     LoggedInUserGuard,
     MoveFilesGuard,
     MoveMissionToProjectGuard,
-    PublicGuard,
     ReadActionGuard,
     ReadFileByNameGuard,
     ReadFileGuard,
@@ -36,20 +36,11 @@ import {
     WriteFileGuard,
     WriteMissionByBodyGuard,
     WriteProjectGuard,
-    DeleteActionGuard,
 } from './roles.guard';
 import { ApiResponse } from '@nestjs/swagger';
 
 // disable naming-convention rule for enum.ts
 /* eslint @typescript-eslint/naming-convention: 0 */
-
-// Public route decorator
-export function Public() {
-    return applyDecorators(
-        SetMetadata('isPublic', true),
-        UseGuards(PublicGuard),
-    );
-}
 
 // Logged-in user route decorator
 export function LoggedIn() {
@@ -83,6 +74,11 @@ export function AdminOnly() {
     return applyDecorators(
         SetMetadata('isAdmin', true),
         UseGuards(AdminOnlyGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description: 'This endpoint requires an admin user. ',
+        }),
     );
 }
 
@@ -90,6 +86,12 @@ export function CanReadProject() {
     return applyDecorators(
         SetMetadata('CanReadProject', true),
         UseGuards(ReadProjectGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -97,6 +99,12 @@ export function CanReadProjectByName() {
     return applyDecorators(
         SetMetadata('CanReadProjectByName', true),
         UseGuards(ReadProjectByNameGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -104,6 +112,12 @@ export function CanCreateInProjectByBody() {
     return applyDecorators(
         SetMetadata('CanCreateInProjectByBody', true),
         UseGuards(CreateInProjectByBodyGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Create permissions on the specified project. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -124,6 +138,12 @@ export function CanDeleteProject() {
     return applyDecorators(
         SetMetadata('CanDeleteProject', true),
         UseGuards(DeleteProjectGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Delete permissions on the specified project. API keys are not valid on this endpoint.',
+        }),
     );
 }
 
@@ -144,6 +164,12 @@ export function CanReadMission() {
     return applyDecorators(
         SetMetadata('CanReadMission', true),
         UseGuards(ReadMissionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -151,6 +177,12 @@ export function CanReadMissionByName() {
     return applyDecorators(
         SetMetadata('CanReadMission', true),
         UseGuards(ReadMissionByNameGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -158,6 +190,12 @@ export function CanMoveMission() {
     return applyDecorators(
         SetMetadata('CanMoveMission', true),
         UseGuards(MoveMissionToProjectGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -165,6 +203,12 @@ export function CanReadFile() {
     return applyDecorators(
         SetMetadata('CanReadFile', true),
         UseGuards(ReadFileGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -172,6 +216,12 @@ export function CanReadFileByName() {
     return applyDecorators(
         SetMetadata('CanReadFileByName', true),
         UseGuards(ReadFileByNameGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -179,6 +229,12 @@ export function CanWriteFile() {
     return applyDecorators(
         SetMetadata('CanWriteFile', true),
         UseGuards(WriteFileGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Write permissions on the specified project.',
+        }),
     );
 }
 
@@ -186,6 +242,12 @@ export function CanMoveFiles() {
     return applyDecorators(
         SetMetadata('CanWriteFile', true),
         UseGuards(MoveFilesGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Write permissions on the specified project.',
+        }),
     );
 }
 
@@ -193,6 +255,12 @@ export function CanCreateInMissionByBody() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
         UseGuards(CreateInMissionByBodyGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Create permissions on the specified project.',
+        }),
     );
 }
 
@@ -200,6 +268,12 @@ export function CanWriteMissionByBody() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
         UseGuards(WriteMissionByBodyGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Write permissions on the specified project.',
+        }),
     );
 }
 
@@ -207,6 +281,12 @@ export function CanDeleteMission() {
     return applyDecorators(
         SetMetadata('CanReadMissionByBody', true),
         UseGuards(CanDeleteMissionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Delete permissions on the specified project.',
+        }),
     );
 }
 
@@ -214,6 +294,12 @@ export function CanDeleteFile() {
     return applyDecorators(
         SetMetadata('CanDeleteFile', true),
         UseGuards(DeleteFileGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Delete permissions on the specified project.',
+        }),
     );
 }
 
@@ -221,6 +307,12 @@ export function CanCreateQueueByBody() {
     return applyDecorators(
         SetMetadata('CanCreateQueueByBody', true),
         UseGuards(CreateQueueByBodyGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Create permissions on the specified project.',
+        }),
     );
 }
 
@@ -228,6 +320,12 @@ export function CanReadAction() {
     return applyDecorators(
         SetMetadata('CanReadAction', true),
         UseGuards(ReadActionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }
 
@@ -235,6 +333,12 @@ export function CanCreateAction() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Create permissions on the specified project.',
+        }),
     );
 }
 
@@ -242,12 +346,25 @@ export function CanCreateActions() {
     return applyDecorators(
         SetMetadata('CanCreateActions', true),
         UseGuards(CreateActionsGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Create permissions on the specified project.',
+        }),
     );
 }
+
 export function CanDeleteAction() {
     return applyDecorators(
         SetMetadata('CanDeleteAction', true),
         UseGuards(DeleteActionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Delete permissions on the specified project.',
+        }),
     );
 }
 
@@ -255,6 +372,12 @@ export function CanAddTag() {
     return applyDecorators(
         SetMetadata('CanAddTag', true),
         UseGuards(AddTagGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have AddTag permissions on the specified project.',
+        }),
     );
 }
 
@@ -262,6 +385,12 @@ export function CanDeleteTag() {
     return applyDecorators(
         SetMetadata('CanDeleteTag', true),
         UseGuards(DeleteTagGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have DeleteTag permissions on the specified project.',
+        }),
     );
 }
 
@@ -278,17 +407,16 @@ export function IsAccessGroupCreator() {
     );
 }
 
-export function IsAccessGroupCreatorByProjectAccess() {
-    return applyDecorators(
-        SetMetadata('IsAccessGroupCreatorByProjectAccess', true),
-        UseGuards(IsAccessGroupCreatorByProjectAccessGuard),
-    );
-}
-
 export function CanEditGroup() {
     return applyDecorators(
         SetMetadata('CanEditGroup', true),
         UseGuards(CanEditGroupByGroupUuid),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Edit permissions on the specified group.',
+        }),
     );
 }
 
@@ -296,5 +424,11 @@ export function CanReadManyMissions() {
     return applyDecorators(
         SetMetadata('CanReadManyMissions', true),
         UseGuards(CanReadManyMissionsGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedException,
+            description:
+                'User does not have Read permissions on the specified project.',
+        }),
     );
 }

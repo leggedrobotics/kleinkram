@@ -31,7 +31,7 @@ const queryClient = useQueryClient();
 const $q = useQuasar();
 const { mutate: _createAccessGroup } = useMutation({
     mutationFn: (name: string) => createAccessGroup(name),
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'accessGroups';

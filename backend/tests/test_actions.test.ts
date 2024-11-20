@@ -11,7 +11,8 @@ import {
     uploadFile,
 } from './utils/api_calls';
 import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
-import { SubmitAction } from '../src/action/entities/submit_action.dto';
+
+import { SubmitActionDto } from '@common/api/types/SubmitAction.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {
@@ -94,7 +95,7 @@ describe('Verify Action', () => {
                 body: JSON.stringify({
                     missionUUID: missionUuid,
                     templateUUID: uuid,
-                } as SubmitAction),
+                } as SubmitActionDto),
             },
         );
 

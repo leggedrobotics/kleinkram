@@ -35,6 +35,7 @@ import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import env from '@common/env';
+import { ApiOkResponse } from '@nestjs/swagger';
 
 @Controller('file')
 export class FileController {
@@ -286,22 +287,34 @@ export class FileController {
 
     @Get('exists')
     @CanReadFile()
+    @ApiOkResponse({
+        description: 'File exists',
+        type: Boolean,
+    })
     async exists(@QueryUUID('uuid', 'FileUUID searched') uuid: string) {
         return this.fileService.exists(uuid);
     }
 
     @Post('resetMinioTags')
     @AdminOnly()
+    @ApiOkResponse({
+        description: 'Resetting Minio tags completed',
+    })
     async resetMinioTags() {
         logger.debug('Resetting Minio tags');
         await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
         await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
+        logger.debug('Resetting Minio tags done');
     }
 
     @Post('recomputeFileSizes')
     @AdminOnly()
+    @ApiOkResponse({
+        description: 'Recomputing file sizes completed',
+    })
     async recomputeFileSizes() {
         logger.debug('Recomputing file sizes');
         await this.fileService.recomputeFileSizes();
+        logger.debug('Recomputing file sizes done');
     }
 }

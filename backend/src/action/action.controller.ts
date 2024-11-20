@@ -1,10 +1,6 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ActionService } from './action.service';
-import {
-    ActionQuery,
-    SubmitAction,
-    SubmitActionMulti,
-} from './entities/submit_action.dto';
+import { ActionQuery, SubmitActionMulti } from './entities/submit_action.dto';
 import {
     CanCreate,
     CanCreateAction,
@@ -23,14 +19,17 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import Action from '@common/entities/action/action.entity';
 import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
 import { ParamUUID } from '../validation/paramDecorators';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
+import {
+    ActionSubmitResponseDto,
+    SubmitActionDto,
+} from '@common/api/types/SubmitAction.dto';
 
 @Controller('action')
 export class ActionController {
@@ -38,10 +37,22 @@ export class ActionController {
 
     @Post('submit')
     @CanCreateAction()
+    @ApiOperation({
+        summary: 'Submit an action',
+        description:
+            'Submit an action to the system. This the action is ' +
+            'scheduled to run immediately, as soon as resources are available.',
+    })
+    @ApiBody({
+        type: SubmitActionDto,
+    })
+    @ApiOkResponse({
+        type: ActionSubmitResponseDto,
+    })
     async createActionRun(
-        @Body() dto: SubmitAction,
+        @Body() dto: SubmitActionDto,
         @addUser() user: AuthRes,
-    ): Promise<Action> {
+    ): Promise<ActionSubmitResponseDto> {
         return this.actionService.submit(dto, user);
     }
 

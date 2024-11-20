@@ -2,12 +2,16 @@ import axios from 'src/api/axios';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 import { Action } from 'src/types/Action';
 import { AccessGroupRights } from '@common/enum';
+import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
     templateUUID: string;
-}) => {
-    const response = await axios.post('/action/submit', action);
+}): Promise<ActionSubmitResponseDto> => {
+    const response = await axios.post<ActionSubmitResponseDto>(
+        '/action/submit',
+        action,
+    );
     return response.data;
 };
 

@@ -8,7 +8,7 @@
             <button-group>
                 <q-btn-dropdown
                     v-model="dropdownNewFileProject"
-                    :label="selected_project?.name || 'Select a Project'"
+                    :label="selectedProject?.name || 'Select a Project'"
                     flat
                     class="q-uploader--bordered"
                     clearable
@@ -31,7 +31,7 @@
                 </q-btn-dropdown>
                 <q-btn-dropdown
                     v-model="dropdownNewFileMission"
-                    :label="selected_mission?.name || 'Select a Mission'"
+                    :label="selectedMission?.name || 'Select a Mission'"
                     class="q-uploader--bordered"
                     flat
                     required
@@ -96,7 +96,7 @@
     </div>
 
     <div>
-        <template v-if="selected_project">
+        <template v-if="selectedProject">
             <ActionsTable :handler="handler" />
         </template>
         <template v-else>
@@ -111,7 +111,7 @@
 import { computed, ref } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import ActionsTable from 'components/Actions.vue';
+import ActionsTable from 'components/ActionsTable.vue';
 import { Project } from 'src/types/Project';
 import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
@@ -137,13 +137,13 @@ const dropdownNewFileMission = ref(false);
 const handler = useHandler();
 
 const { data: permissions } = usePermissionsQuery();
-const selected_project = computed(() =>
+const selectedProject = computed(() =>
     projects.value.find(
         (project: Project) => project.uuid === handler.value.projectUuid,
     ),
 );
 
-const selected_mission = computed(() =>
+const selectedMission = computed(() =>
     missions.value.find(
         (mission: Mission) => mission.uuid === handler.value.missionUuid,
     ),
@@ -154,8 +154,8 @@ const search = computed({
 });
 
 const canCreate = computed(() =>
-    selected_mission.value
-        ? canLaunchInMission(selected_mission.value, permissions.value)
+    selectedMission.value
+        ? canLaunchInMission(selectedMission.value, permissions.value)
         : true,
 );
 

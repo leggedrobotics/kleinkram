@@ -3,8 +3,8 @@
 
     <div class="q-mt-lg q-mb-lg dashboard-grid">
         <RecentProjects />
-        <Storage />
-        <Worker />
+        <StorageIndicator />
+        <WorkerList />
         <RunningActions />
     </div>
 </template>
@@ -13,17 +13,15 @@
 import TitleSection from 'components/TitleSection.vue';
 import { useQuery } from '@tanstack/vue-query';
 import { getUser, isAuthenticated } from 'src/services/auth';
-import Storage from 'components/Storage.vue';
+import StorageIndicator from 'components/StorageIndicator.vue';
 import RecentProjects from 'components/RecentProjects.vue';
 import RunningActions from 'components/RunningActions.vue';
-import Worker from 'components/Worker.vue';
-
-const is_authenticated = await isAuthenticated();
+import WorkerList from 'components/WorkerList.vue';
 
 const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => getUser(),
-    enabled: is_authenticated,
+    enabled: await isAuthenticated(),
 });
 </script>
 

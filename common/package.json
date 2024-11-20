@@ -9,6 +9,7 @@
         "@faker-js/faker": "^9.2.0",
         "@nestjs/swagger": "^8.0.7",
         "bull": "^4.16.4",
+        "class-validator": "^0.14.1",
         "minio": "8.0.2",
         "pg": "^8.13.1",
         "ts-node": "^10.9.2",

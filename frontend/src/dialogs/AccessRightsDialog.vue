@@ -121,9 +121,7 @@ const saveChanges = async () => {
         );
 
     await Promise.all(
-        filtered.map(
-            (query) => await queryClient.invalidateQueries(query.queryKey),
-        ),
+        filtered.map((query) => queryClient.invalidateQueries(query.queryKey)),
     );
 };
 </script>

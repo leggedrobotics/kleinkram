@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Brackets, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SubmitAction, SubmitActionMulti } from './entities/submit_action.dto';
+import { SubmitActionMulti } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
 import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/frontend_shared/enum';
@@ -16,6 +16,10 @@ import {
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
 import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
+import {
+    ActionSubmitResponseDto,
+    SubmitActionDto,
+} from '@common/api/types/SubmitAction.dto';
 
 @Injectable()
 export class ActionService {
@@ -31,7 +35,10 @@ export class ActionService {
         private readonly queueService: QueueService,
     ) {}
 
-    async submit(data: SubmitAction, auth: AuthRes): Promise<Action> {
+    async submit(
+        data: SubmitActionDto,
+        auth: AuthRes,
+    ): Promise<ActionSubmitResponseDto> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.templateUUID },
         });
@@ -62,7 +69,9 @@ export class ActionService {
                 'No worker available with the required hardware capabilities',
             );
         }
-        return action;
+        return {
+            actionUUID: action.uuid,
+        };
     }
 
     async delete(actionUUID: string) {

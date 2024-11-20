@@ -290,6 +290,7 @@ import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
+import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
@@ -532,7 +533,7 @@ async function submitAnalysis() {
     editingTemplate.value = res;
     select.value = res.clone();
 
-    let createPromise: undefined | Promise<void>;
+    let createPromise: Promise<ActionSubmitResponseDto>;
     if (hasMissionUUIDs.value) {
         createPromise = createMultipleAnalysis({
             missionUUIDs: allMissionUUIDs.value,

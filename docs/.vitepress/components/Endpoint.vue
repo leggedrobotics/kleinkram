@@ -46,21 +46,37 @@
                             }}
                         </td>
                     </tr>
-                    <tr v-for="bodyParam in bodyParams">
-                        <td>{{ bodyParam.name }}</td>
-                        <td>
-                            <Paramtype paramtype="body" />
-                        </td>
-                        <td>
-                            <Paramdatatype
-                                :datatype="bodyParam.format || bodyParam.type"
-                                :required="bodyParam.required"
-                            />
-                        </td>
-                        <td>{{ bodyParam.description }}</td>
-                    </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div v-if="methodSpec.requestBody">
+            <h4 style="margin-bottom: 12px; margin-top: 16px">RequestBody</h4>
+
+            <div
+                class="collapsible-container"
+                :class="{ collapsed }"
+                @click="toggleCollapse"
+            >
+                <pre
+                    data-v-09e7fdb2=""
+                    style="
+                        background-color: white;
+                        padding: 12px;
+                        border: 1px solid #ddd;
+                        margin-top: 2px;
+                        font-size: 10px;
+                        line-height: 12px;
+                    "
+                    >{{
+                        JSON.stringify(
+                            resolveSchemaRefs(methodSpec.requestBody),
+                            null,
+                            2,
+                        )
+                    }}</pre
+                >
+            </div>
         </div>
 
         <div v-if="methodSpec.responses">
@@ -94,7 +110,13 @@
                 Types
             </h4>
 
-            <div v-for="response in responses" :key="response.code">
+            <div
+                class="collapsible-container"
+                :class="{ collapsed }"
+                @click="toggleCollapse"
+                v-for="response in responses"
+                :key="response.code"
+            >
                 <span>{{ response.type }}</span>
                 <pre
                     v-if="schema[response.type]"
@@ -103,6 +125,8 @@
                         padding: 12px;
                         border: 1px solid #ddd;
                         margin-top: 2px;
+                        font-size: 10px;
+                        line-height: 12px;
                     "
                     >{{
                         JSON.stringify(
@@ -118,9 +142,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Paramtype from './Paramtype.vue';
 import Paramdatatype from './Paramdatatype.vue';
+
+// Reactive state to control collapse/expand behavior
+const collapsed = ref(true);
+
+// Method to toggle the collapsed state
+const toggleCollapse = () => {
+    collapsed.value = !collapsed.value;
+};
 
 const props = defineProps<{
     endpoint: string;
@@ -137,9 +169,9 @@ function resolveSchemaRefs(schema: Record<string, any>): any {
         if (props.schema[ref]) {
             // Recursively resolve the reference
             return resolveSchemaRefs(props.schema[ref]);
-        } else {
-            throw new Error(`Reference ${ref} not found in schema.`);
         }
+
+        return 'No schema found';
     }
 
     if (Array.isArray(schema)) {
@@ -254,16 +286,14 @@ const responses = computed(() => {
     return [];
 });
 
-const hasParams = computed(
-    () => params.value.length > 0 || bodyParams.value.length > 0,
-);
+const hasParams = computed(() => params.value.length > 0);
 </script>
 
 <style scoped>
 .endpoint {
     border: 1px solid #ddd;
     padding: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     background-color: #f9f9f9;
     border-radius: 8px;
 }
@@ -320,5 +350,20 @@ h4 {
 
 .res-col-3 {
     width: 70%;
+}
+
+.collapsible-container {
+    cursor: pointer; /* Indicate interactivity */
+    overflow: hidden; /* Prevent content overflow when collapsed */
+    transition: max-height 0.3s ease; /* Smooth transition */
+}
+
+.collapsible-container.collapsed {
+    max-height: 68px; /* Limit to 3 lines (~24px per line, adjust as needed) */
+}
+
+.collapsible-container pre {
+    white-space: pre-wrap; /* Allow line wrapping */
+    margin: 0;
 }
 </style>
