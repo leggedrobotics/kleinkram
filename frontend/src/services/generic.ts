@@ -1,6 +1,12 @@
 import { FileEntity } from 'src/types/FileEntity';
 import { downloadFile } from 'src/services/queries/file';
-import { AccessGroupRights, FileState } from '@common/enum';
+import {
+    AccessGroupRights,
+    ActionState,
+    DataType,
+    FileState,
+    QueueState,
+} from '@common/enum';
 
 export const icon = (type: DataType) => {
     switch (type) {
