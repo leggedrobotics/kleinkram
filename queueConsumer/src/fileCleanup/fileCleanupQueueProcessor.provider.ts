@@ -62,7 +62,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         @InjectQueue('file-queue') private readonly fileQueue: Queue,
     ) {}
 
-    async onModuleInit() {
+    onModuleInit() {
         const redisClient = new Redis(redis);
         this.redlock = new Redlock([redisClient], {
             retryCount: 0,
@@ -97,7 +97,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 }
                 const queue = await this.queueRepository.findOne({
                     where: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         display_name: file.filename,
                         mission: { uuid: file.mission.uuid },
                     },
@@ -129,7 +128,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             : env.MINIO_MCAP_BUCKET_NAME,
                         `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
                     );
-                    await new Promise((resolve) => {
+                    await new Promise((resolve, reject) => {
                         datastream.on('error', (err) => {
                             logger.error(err);
                             resolve(void 0);
@@ -137,10 +136,12 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         datastream.on('data', (chunk) => {
                             hash.update(chunk);
                         });
-                        datastream.on('end', async () => {
+                        datastream.on('end', () => {
                             file.hash = hash.digest('base64');
-                            await this.fileRepository.save(file);
-                            resolve(void 0);
+                            this.fileRepository
+                                .save(file)
+                                .then(resolve)
+                                .catch(reject);
                         });
                     });
                 }
@@ -169,7 +170,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         await this.fileRepository.save(file);
                         const queue = await this.queueRepository.findOne({
                             where: {
-                                // eslint-disable-next-line @typescript-eslint/naming-convention
                                 display_name: file.filename,
                                 mission: { uuid: file.mission.uuid },
                             },
@@ -341,7 +341,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 }
                 const recoverQueue = this.queueRepository.create({
                     identifier: obj,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     display_name: filename,
                     state: QueueState.AWAITING_PROCESSING,
                     location: FileLocation.MINIO,
@@ -374,7 +374,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     );
                 }
                 logger.error(
-                    `Found missing object in minio: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`)} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
+                    `Found missing object in minio: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
                 );
             }),
         );

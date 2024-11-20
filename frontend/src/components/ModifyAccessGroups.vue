@@ -20,12 +20,12 @@
             flat
             bordered
         >
-            <template v-slot:body-cell-name="_props">
+            <template #body-cell-name="_props">
                 <q-td :props="_props" style="width: 150px">
                     {{ _props.row.name }}
                 </q-td>
             </template>
-            <template v-slot:body-cell-rights="_props">
+            <template #body-cell-rights="_props">
                 <q-td :props="_props" style="width: 150px">
                     <q-select
                         v-model="rights[_props.row.uuid]"
@@ -54,12 +54,12 @@
             bordered
             binary-state-sort
         >
-            <template v-slot:body-cell-name="_props">
+            <template #body-cell-name="_props">
                 <q-td :props="_props" style="width: 150px">
                     {{ _props.row.name }}
                 </q-td>
             </template>
-            <template v-slot:body-cell-rights="_props">
+            <template #body-cell-rights="_props">
                 <q-td :props="_props" style="width: 150px">
                     <q-select
                         v-model="rights[_props.row.uuid]"

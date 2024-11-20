@@ -8,7 +8,6 @@ import { plainToInstance } from 'class-transformer';
 import { StringValidate, UUIDValidate } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const ParamUUID = (paramName: string, paramDescription?: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -31,7 +30,6 @@ export const ParamUUID = (paramName: string, paramDescription?: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const ParamString = createParamDecorator(
     async (data: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest();

@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="editFile"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': !canModify,
         }"
+        @click="editFile"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -13,12 +13,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -28,7 +22,6 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import { FileEntity } from 'src/types/FileEntity';
-import EditFile from 'components/EditFile.vue';
 import NewEditFile from 'components/NewEditFile.vue';
 
 const $q = useQuasar();
@@ -56,3 +49,9 @@ function editFile() {
     });
 }
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

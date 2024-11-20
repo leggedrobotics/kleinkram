@@ -5,8 +5,8 @@
         label="Move"
         icon="sym_o_move_down"
         color="white"
-        @click="moveFiles"
         :disable="!canModify"
+        @click="moveFiles"
     >
         <q-tooltip> Move Files to another Mission</q-tooltip>
     </q-btn>
@@ -16,7 +16,6 @@
 import { useQuasar } from 'quasar';
 import {
     canDeleteMission,
-    canModifyMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';

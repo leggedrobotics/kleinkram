@@ -5,11 +5,11 @@
         color="primary"
         icon="sym_o_edit"
         label="Edit File"
-        @click="editFile"
         :disable="
             [FileState.LOST, FileState.UPLOADING].indexOf(file?.state) !== -1 ||
             !canModify
         "
+        @click="editFile"
     >
         <q-tooltip> Edit File</q-tooltip>
     </q-btn>

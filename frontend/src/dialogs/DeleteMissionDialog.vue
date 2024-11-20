@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Mission</template>
+        <template #title> Delete Mission </template>
         <template #content>
             <DeleteMission
-                :mission="mission"
-                ref="deleteMissionRef"
                 v-if="mission"
+                ref="deleteMissionRef"
+                :mission="mission"
             />
             <q-skeleton v-else height="250px" />
         </template>

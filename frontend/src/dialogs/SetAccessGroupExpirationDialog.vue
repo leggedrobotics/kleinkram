@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title>Membership Expiration</template>
+        <template #title> Membership Expiration </template>
 
         <template #content>
             <q-date

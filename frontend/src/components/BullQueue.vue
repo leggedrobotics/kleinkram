@@ -2,7 +2,7 @@
     <div>
         <h3>Bull Queue</h3>
         <q-table v-if="data" :columns="cols" :rows="data">
-            <template v-slot:body-cell-kill="props">
+            <template #body-cell-kill="props">
                 <q-td :props="props">
                     <q-btn
                         color="negative"
@@ -74,15 +74,15 @@ const cols = [
 
 const { mutate } = useMutation({
     onMutate: async (jobId: string) => stopQueue(jobId),
-    onError: (err, variables, context) => {
+    onError: () => {
         Notify.create({
             message: 'Failed to kill job',
             color: 'negative',
             position: 'bottom',
         });
     },
-    onSettled: () => {
-        queryClient.invalidateQueries({
+    onSettled: async () => {
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'bullQueue',
         });
     },

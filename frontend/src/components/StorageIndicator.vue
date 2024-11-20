@@ -147,35 +147,5 @@ const option = computed(() => {
         },
     };
 });
-
-function interpolateColor(
-    value: number,
-    minValue: number,
-    maxValue: number,
-): string {
-    const startColor = { r: 0, g: 255, b: 0 }; // Green
-    const midColor = { r: 255, g: 255, b: 0 }; // Yellow
-    const endColor = { r: 255, g: 0, b: 0 }; // Red
-
-    const midValue = (minValue + maxValue) / 2;
-
-    let r, g, b;
-
-    if (value <= midValue) {
-        // Transition from green to yellow
-        const ratio = (value - minValue) / (midValue - minValue);
-        r = Math.round(startColor.r + ratio * (midColor.r - startColor.r));
-        g = Math.round(startColor.g + ratio * (midColor.g - startColor.g));
-        b = Math.round(startColor.b + ratio * (midColor.b - startColor.b));
-    } else {
-        // Transition from yellow to red
-        const ratio = (value - midValue) / (maxValue - midValue);
-        r = Math.round(midColor.r + ratio * (endColor.r - midColor.r));
-        g = Math.round(midColor.g + ratio * (endColor.g - midColor.g));
-        b = Math.round(midColor.b + ratio * (endColor.b - midColor.b));
-    }
-
-    return `rgb(${r},${g},${b})`;
-}
 </script>
 <style scoped></style>

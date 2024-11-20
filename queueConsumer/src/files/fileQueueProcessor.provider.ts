@@ -36,11 +36,11 @@ import fs from 'node:fs';
 import { calculateFileHash } from './helper/hashHelper';
 import { addTagsToMinioObject } from '@common/minio_helper';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fsPromises = require('fs').promises;
 
 type FileProcessorJob = Job<{
     queueUuid: string;
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     tmp_files: string[];
     md5?: string;
     recovering?: boolean;
@@ -158,9 +158,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 : env.MINIO_MCAP_BUCKET_NAME,
             queue.identifier,
             {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 mission_uuid: queue.mission.uuid,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 project_uuid: queue.mission.project.uuid,
                 filename: queue.display_name,
             },
@@ -282,9 +281,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     env.MINIO_MCAP_BUCKET_NAME,
                     mcapFileEntity.uuid,
                     {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         mission_uuid: queue.mission.uuid,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         project_uuid: queue.mission.project.uuid,
                         filename: mcapFileEntity.filename,
                     },
@@ -562,9 +560,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 env.MINIO_MCAP_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     mission_uuid: queueEntity.mission.uuid,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     project_uuid: queueEntity.mission.project.uuid,
                     filename: mcapFileEntity.filename,
                 },
@@ -677,7 +674,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         const createdTopics = await Promise.all(res);
         logger.debug(
-            `Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name)}`,
+            `Job {${job.id}} created topics: ${createdTopics.map((topic) => topic.name).toString()}`,
         );
         return date;
     }
@@ -688,11 +685,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         queue: QueueEntity,
     ) {
         logger.debug(`Job {${job.id}} is a folder, processing...`);
-        const files: drive_v3.Schema$File[] | void = await listFiles(
-            queue.identifier,
-        );
+        const files: drive_v3.Schema$File[] = await listFiles(queue.identifier);
         logger.debug(
-            `Job {${job.id}} found files: ${files.map((file) => file.name)}`,
+            `Job {${job.id}} found files: ${files.map((file) => file.name).toString()}`,
         );
 
         await Promise.all(
@@ -704,7 +699,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     file.mimeType === 'application/vnd.google-apps.folder'
                 ) {
                     const newQueue = this.queueRepository.create({
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         display_name: `Google Drive File: '${file.name}'`,
                         identifier: file.id,
                         state: QueueState.AWAITING_PROCESSING,

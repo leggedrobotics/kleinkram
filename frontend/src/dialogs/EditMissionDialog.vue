@@ -4,9 +4,9 @@
 
         <template #content>
             <q-input
-                name="missionName"
                 ref="missionNameInput"
                 v-model="missionName"
+                name="missionName"
                 outlined
                 autofocus
                 style="padding-bottom: 30px"
@@ -34,7 +34,7 @@ import { ref } from 'vue';
 import { updateMissionName } from 'src/services/mutations/mission';
 import { useQueryClient } from '@tanstack/vue-query';
 
-const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const { dialogRef } = useDialogPluginComponent();
 const $q = useQuasar();
 const queryClient = useQueryClient();
 const isNameValid = ref(true);
@@ -47,7 +47,7 @@ const missionName = ref(props.mission.name);
 
 const saveMissionName = async () => {
     await updateMissionName(props.mission.uuid, missionName.value)
-        .then(() => {
+        .then(async () => {
             $q.notify({
                 message: 'Mission name updated',
                 color: 'positive',
@@ -55,13 +55,13 @@ const saveMissionName = async () => {
 
             // clear mission and missions cache
             // to force a refetch of the missions
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 queryKey: ['project', props.mission.project.uuid],
             });
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 queryKey: ['missions'],
             });
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 queryKey: ['mission', props.mission.uuid],
             });
             dialogRef.value?.hide();

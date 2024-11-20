@@ -26,8 +26,8 @@
                 <q-tab-panel name="name" style="min-height: 280px">
                     <label for="filename" class="q-my-md">Filename</label>
                     <q-input
-                        v-model="editableFile.filename"
                         v-if="editableFile"
+                        v-model="editableFile.filename"
                         name="filename"
                         outlined
                         dense
@@ -111,8 +111,8 @@
             <q-btn
                 label="Cancel"
                 flat
-                @click="onDialogCancel"
                 class="q-mr-sm button-border"
+                @click="onDialogCancel"
             />
             <q-btn
                 label="Save"
@@ -150,15 +150,14 @@ const props = defineProps<{
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-    useDialogPluginComponent();
+const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
 const selected_project = ref<Project | null | undefined>(null);
-const { isLoading, isError, data, error } = useQuery({
+const { data } = useQuery({
     queryKey: ['file', props.file_uuid],
     queryFn: () => fetchFile(props.file_uuid),
 });
@@ -211,9 +210,9 @@ const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
 watch(
     () => selected_project.value,
-    (newValue) => {
+    async (newValue) => {
         if (newValue) {
-            refetch().then(() => {
+            await refetch().then(() => {
                 if (
                     editableFile.value &&
                     missions.value?.length !== undefined &&
@@ -233,7 +232,7 @@ watch(
 
 const { mutate: updateFileMutation } = useMutation({
     mutationFn: (fileData: FileEntity) => updateFile({ file: fileData }),
-    onSuccess: function (data, variables, context) {
+    onSuccess: async () => {
         Notify.create({
             group: false,
             message: 'File updated',
@@ -253,15 +252,17 @@ const { mutate: updateFileMutation } = useMutation({
                     query.queryKey[0] === 'files',
             );
 
-        filtered.forEach((query) => {
-            queryClient.invalidateQueries({ queryKey: query.queryKey });
-        });
+        await Promise.all(
+            filtered.map((query) =>
+                queryClient.invalidateQueries({ queryKey: query.queryKey }),
+            ),
+        );
     },
-    onError(error, variables, context) {
-        console.log(error);
+    onError(e) {
+        console.log(e);
         Notify.create({
             group: false,
-            message: 'Error updating file: ' + error.response.data.message,
+            message: 'Error updating file: ' + e.response.data.message,
             color: 'negative',
             spinner: false,
             position: 'bottom',

@@ -161,7 +161,7 @@ export class UserService implements OnModuleInit {
 
         return {
             role,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             default_permission: defaultPermission,
             projects,
             missions,
@@ -170,7 +170,6 @@ export class UserService implements OnModuleInit {
 
     async findOneByApiKey(apikey: string) {
         const user = await this.userRepository.findOneOrFail({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
             select: ['uuid', 'name', 'role'],

@@ -92,37 +92,37 @@ describe('Verify Access Groups', () => {
         expect(user.email).toBe('internal-user@leggedrobotics.com');
     });
 
-    test('if external user cannot list access groups he is not part of', async () => {
+    test('if external user cannot list access groups he is not part of', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if primary group cannot be deleted', async () => {
+    test('if primary group cannot be deleted', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if admin cannot delete primary group of any user', async () => {
+    test('if admin cannot delete primary group of any user', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if member of primary group cannot delete primary group ', async () => {
+    test('if member of primary group cannot delete primary group ', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if member of default group can list all access groups', async () => {
+    test('if member of default group can list all access groups', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if a single access group can be linked to multiple users', async () => {
+    test('if a single access group can be linked to multiple users', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if a single access group can be linked to multiple projects', async () => {
+    test('if a single access group can be linked to multiple projects', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

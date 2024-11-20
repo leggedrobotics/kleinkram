@@ -8,7 +8,7 @@
 
         <template #content>
             <div>
-                <p style="font-size: 16pt"></p>
+                <p style="font-size: 16pt" />
                 <ul>
                     <li
                         v-for="filename in props.filenames.slice(0, 5)"
@@ -31,8 +31,8 @@
                     unelevated
                     label="Delete"
                     color="negative"
-                    @click="onDialogOK"
                     icon="sym_o_delete"
+                    @click="onDialogOK"
                 />
             </div>
         </template>

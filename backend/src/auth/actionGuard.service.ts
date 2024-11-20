@@ -27,7 +27,7 @@ export class ActionGuardService {
     ) {
         if (!actionUUID || !user) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `ActionGuard: actionUUID (${actionUUID}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -54,6 +54,7 @@ export class ActionGuardService {
             rights,
         );
     }
+
     async canKeyAccessAction(
         apikey: Apikey,
         actionUUID: string,

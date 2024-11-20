@@ -90,7 +90,6 @@ export class AccessService {
                 rights: rights,
             })
             .andWhere('projectAccesses.useruuid = :user_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 user_uuid: auth.user.uuid,
             })
             .getExists();

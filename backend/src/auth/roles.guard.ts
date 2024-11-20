@@ -649,7 +649,7 @@ export class MoveFilesGuard extends BaseGuard {
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot move files');
         }
-        const canDeleteFiles = this.fileGuardService.canAccessFiles(
+        const canDeleteFiles = await this.fileGuardService.canAccessFiles(
             user,
             fileUUIDs,
             AccessGroupRights.DELETE,
@@ -691,7 +691,6 @@ export class ReadActionGuard extends BaseGuard {
 @Injectable()
 export class CreateActionGuard extends BaseGuard {
     constructor(
-        private reflector: Reflector,
         private missionGuardService: MissionGuardService,
         @InjectRepository(ActionTemplate)
         private actionTemplateRepository: Repository<ActionTemplate>,

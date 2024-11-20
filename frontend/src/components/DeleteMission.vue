@@ -33,15 +33,15 @@ const router = useRouter();
 async function deleteMissionAction() {
     if (mission_name_check.value === props.mission.name) {
         await deleteMission(props.mission)
-            .then(() => {
-                client.invalidateQueries({
+            .then(async () => {
+                await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'missions' ||
                         (query.queryKey[0] === 'mission' &&
                             query.queryKey[1] === props.mission.uuid),
                 });
 
-                client.invalidateQueries({
+                await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
@@ -56,7 +56,7 @@ async function deleteMissionAction() {
                 });
 
                 if (route.name === ROUTES.FILES.routeName) {
-                    router.push({
+                    await router.push({
                         name: ROUTES.MISSIONS.routeName,
                         params: {
                             project_uuid: route.params.project_uuid,

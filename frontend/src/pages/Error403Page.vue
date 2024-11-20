@@ -5,14 +5,14 @@
                 <div class="text-grey-9 text-h2 text-weight-bold">
                     403 Error
                 </div>
-                <div class="text-grey-8 text-h5" v-if="message">
+                <div v-if="message" class="text-grey-8 text-h5">
                     {{ message }}
                 </div>
-                <div class="text-grey-8 text-h5" v-else>
+                <div v-else class="text-grey-8 text-h5">
                     You are not authorized to access this page.
                 </div>
 
-                <div class="text-grey-8 text-h6 q-mt-lg" v-if="project_uuid">
+                <div v-if="project_uuid" class="text-grey-8 text-h6 q-mt-lg">
                     Project UUID:<br />
                     {{ project_uuid }}
                 </div>

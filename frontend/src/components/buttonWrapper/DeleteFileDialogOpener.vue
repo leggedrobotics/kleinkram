@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="deleteFile"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': !canModify,
         }"
+        @click="deleteFile"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -19,7 +19,6 @@ import DeleteFileDialog from 'src/dialogs/DeleteFileDialog.vue';
 import { FileEntity } from 'src/types/FileEntity';
 import {
     canDeleteMission,
-    canModifyMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';

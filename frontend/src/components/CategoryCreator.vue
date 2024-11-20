@@ -35,8 +35,8 @@ const newCategory = ref('');
 const { mutate } = useMutation({
     mutationFn: (category: string) =>
         createCategory(category, props.project_uuid),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
+    onSuccess: async () => {
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'categories',
         });
         Notify.create({

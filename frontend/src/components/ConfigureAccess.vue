@@ -1,14 +1,15 @@
 <template>
     <q-select
+        v-model="model"
         outlined
         hide-dropdown-icon
-        v-model="model"
         use-input
         hide-selected
         fill-input
         input-debounce="300"
         placeholder="Seach"
         :options="searchResults"
+        class="q-pb-md"
         @click="
             (e) => {
                 enableSearch();
@@ -22,24 +23,23 @@
                 update();
             }
         "
-        class="q-pb-md"
     >
-        <template v-slot:no-option v-if="searchEnabled && searchResults.length">
+        <template v-if="searchEnabled && searchResults.length" #no-option>
             <q-item>
                 <q-item-section class="text-grey"> No results</q-item-section>
             </q-item>
         </template>
 
-        <template v-slot:append>
+        <template #append>
             <q-icon name="sym_o_search" />
         </template>
 
-        <template v-slot:option="props">
+        <template #option="props">
             <q-item
                 v-if="searchEnabled"
                 :key="props.opt.uuid"
-                clickable
                 v-ripple
+                clickable
                 @click="
                     () => {
                         if (!searchEnabled) return;
@@ -156,7 +156,7 @@
         style="margin-top: 6px"
         binary-state-sort
     >
-        <template v-slot:body-cell-name="props">
+        <template #body-cell-name="props">
             <q-td :props="props">
                 <q-icon
                     v-if="!props.row.name.startsWith('Personal: ')"
@@ -188,7 +188,7 @@
             </q-td>
         </template>
 
-        <template v-slot:body-cell-rights="props">
+        <template #body-cell-rights="props">
             <q-td :props="props">
                 <q-btn-dropdown
                     flat
@@ -202,8 +202,8 @@
                             v-for="option in accessGroupRightsList"
                             :key="option"
                             clickable
-                            @click="updateRights(props.row, option)"
                             :disable="isBelowMinRights(props.row, option)"
+                            @click="updateRights(props.row, option)"
                         >
                             <q-tooltip
                                 v-if="isBelowMinRights(props.row, option)"
@@ -221,7 +221,7 @@
             </q-td>
         </template>
 
-        <template v-slot:body-cell-actions="props">
+        <template #body-cell-actions="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -231,7 +231,6 @@
                     unelevated
                     color="primary"
                     class="cursor-pointer"
-                    @click="removeGroup(props.row)"
                     :disable="
                         !!minAccessRights.filter(
                             (r) => r.uuid === props.row.uuid,
@@ -244,6 +243,7 @@
                             ? 'grey'
                             : 'red'
                     "
+                    @click="removeGroup(props.row)"
                 />
             </q-td>
         </template>
@@ -268,6 +268,7 @@ const accessRights: Ref<DefaultRightDto[]> = defineModel<DefaultRightDto[]>();
 const sortedAccessRights = computed(() => {
     console.log(accessRights.value);
     return (
+        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
         accessRights.value?.sort((a, b) => b.name.localeCompare(a.name)) || []
     );
 });

@@ -14,9 +14,9 @@ describe('Test Suite Utils', () => {
     });
 
     beforeEach(clearAllData);
-    afterAll(() => {
+    afterAll(async () => {
         console.log("Destroying appDataSource 'Test Suite Utils'");
-        db.destroy();
+        await db.destroy();
     });
 
     test('test if clearAllData works', async () => {

@@ -23,9 +23,9 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
-    async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    googleAuthRedirect(@Req() req, @Res() res: Response) {
         const user = req.user;
-        const token = await this.authService.login(user);
+        const token = this.authService.login(user);
         const state = req.query.state;
         if (state == 'cli') {
             res.redirect(

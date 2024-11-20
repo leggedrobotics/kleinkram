@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="manageProjectAccess"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="manageProjectAccess"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -13,12 +13,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import AccessRightsDialog from 'src/dialogs/AccessRightsDialog.vue';
@@ -53,3 +47,9 @@ const manageProjectAccess = () => {
     });
 };
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

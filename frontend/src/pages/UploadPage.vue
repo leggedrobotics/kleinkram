@@ -1,5 +1,5 @@
 <template>
-    <title-section title="Pending Uploads"></title-section>
+    <title-section title="Pending Uploads" />
 
     <QueueItems />
 </template>

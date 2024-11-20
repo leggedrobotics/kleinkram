@@ -104,7 +104,7 @@ export class ActionService {
             cpuMemory: data.cpuMemory,
             gpuMemory: data.gpuMemory,
             maxRuntime: data.maxRuntime,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             image_name: data.image,
             command: data.command,
             searchable: data.searchable,
@@ -231,7 +231,6 @@ export class ActionService {
             .leftJoinAndSelect('action.template', 'template')
             .leftJoinAndSelect('action.createdBy', 'createdBy')
             .andWhere('project.uuid = :project_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_uuid: projectUuid,
             })
             .skip(skip)
@@ -240,7 +239,6 @@ export class ActionService {
 
         if (missionUuid) {
             baseQuery.andWhere('mission.uuid = :mission_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 mission_uuid: missionUuid,
             });
         }

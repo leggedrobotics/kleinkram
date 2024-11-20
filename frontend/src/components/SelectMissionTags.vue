@@ -1,12 +1,12 @@
 <template>
     <q-btn-dropdown
+        v-model="ddr_open2"
         label="Add Tag"
         class="q-uploader--bordered full-width q-mb-lg"
         flat
         clearable
         required
         :disabled="availableAdditionalTags.length === 0"
-        v-model="ddr_open2"
     >
         <q-tooltip v-if="availableAdditionalTags.length === 0">
             All available tags types have been added.
@@ -64,6 +64,7 @@
                 />
                 <q-field
                     v-if="tagtype.type === DataType.BOOLEAN"
+                    v-model="localTagValues[tagtype.uuid]"
                     :rules="[
                         (val) =>
                             val === true ||
@@ -74,7 +75,6 @@
                     dense
                     outlined
                     style="padding-bottom: 20px"
-                    v-model="localTagValues[tagtype.uuid]"
                 >
                     <q-toggle
                         v-model="localTagValues[tagtype.uuid]"
@@ -150,7 +150,7 @@ const { data: tagTypes } = useQuery<TagType[]>({
 
 const { data: project } = useQuery<Project>({
     queryKey: computed(() => ['project', props.projectUUID]),
-    queryFn: () => getProject(props.projectUUID as string),
+    queryFn: () => getProject(props.projectUUID),
     enabled: computed(() => !!props.projectUUID),
 });
 

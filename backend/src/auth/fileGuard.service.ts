@@ -22,6 +22,7 @@ export class FileGuardService {
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
     ) {}
+
     async canAccessFile(
         user: User,
         fileUUID: string,
@@ -29,7 +30,7 @@ export class FileGuardService {
     ) {
         if (!fileUUID || !user) {
             logger.error(
-                `FileGuard: File UUID (${fileUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUID (${fileUUID}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -71,7 +72,7 @@ export class FileGuardService {
     ) {
         if (!filename || !user) {
             logger.error(
-                `FileGuard: Filename (${filename}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `FileGuard: Filename (${filename}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -122,7 +123,7 @@ export class FileGuardService {
     ) {
         if (!fileUUIDs || !user) {
             logger.error(
-                `FileGuard: File UUIDs (${fileUUIDs}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUIDs (${fileUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }

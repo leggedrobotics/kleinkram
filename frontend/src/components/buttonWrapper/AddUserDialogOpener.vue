@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="openAddUser"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="openAddUser"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -14,17 +14,9 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
-import { Notify, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import { computed, Ref, ref } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { deleteAccessGroup } from 'src/services/mutations/access';
 import { AccessGroup } from 'src/types/AccessGroup';
 import { getUser } from 'src/services/auth';
 import { User } from 'src/types/User';
@@ -37,7 +29,7 @@ const props = defineProps<{
 }>();
 
 const me: Ref<User | undefined> = ref(undefined);
-getUser()?.then((user) => {
+await getUser()?.then((user) => {
     me.value = user;
 });
 
@@ -48,7 +40,6 @@ const canModify = computed(() => {
     }
     return props.accessGroup.creator?.uuid === me.value.uuid;
 });
-const queryClient = useQueryClient();
 
 function openAddUser() {
     if (!canModify.value) {
@@ -62,5 +53,11 @@ function openAddUser() {
     });
 }
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <style scoped></style>

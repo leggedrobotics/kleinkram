@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="removeProject"
         :class="{
             disabled: !canDelete,
             'cursor-pointer': !canDelete,
             'cursor-not-allowed': canDelete,
         }"
+        @click="removeProject"
     >
         <slot />
 
@@ -15,12 +15,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import { Notify } from 'quasar';
@@ -43,6 +37,7 @@ const canDelete = computed(() =>
     canDeleteProject(props.projectUUID, permissions.value),
 );
 const queryClient = useQueryClient();
+
 function removeProject() {
     if (!canDelete.value) return;
     _removeProject();
@@ -52,7 +47,7 @@ const { mutate: _removeProject } = useMutation({
     mutationFn: () =>
         removeAccessGroupFromProject(props.projectUUID, props.accessGroup.uuid),
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', props.accessGroup.uuid],
         });
         Notify.create({
@@ -70,5 +65,11 @@ const { mutate: _removeProject } = useMutation({
     },
 });
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <style scoped></style>

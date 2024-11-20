@@ -22,7 +22,7 @@
 import HelpMessage from 'components/HelpMessage.vue';
 
 import { QueryHandler } from 'src/services/QueryHandler';
-const props = defineProps({
+defineProps({
     url_handler: {
         type: QueryHandler,
         required: true,

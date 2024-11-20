@@ -2,7 +2,6 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { ProjectGuardService } from './projectGuard.service';
@@ -15,10 +14,6 @@ import Apikey from '@common/entities/auth/apikey.entity';
 @Injectable()
 export class MissionGuardService {
     constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
-        @InjectRepository(AccessGroup)
-        private accessGroupRepository: Repository<AccessGroup>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         private projectGuardService: ProjectGuardService,
@@ -57,7 +52,7 @@ export class MissionGuardService {
     ) {
         if (!missionName || !user) {
             logger.error(
-                `MissionGuard: missionName (${missionName}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -76,7 +71,7 @@ export class MissionGuardService {
     ) {
         if (!tagUUID || !user) {
             logger.error(
-                `MissionGuard: tagUUID (${tagUUID}) or User (${user}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
             );
             return false;
         }
@@ -119,7 +114,7 @@ export class MissionGuardService {
     ) {
         if (!missionUUIDs || !user) {
             logger.error(
-                `MissionGuard: missionUUIDs (${missionUUIDs}) or User (${user}) not provided. Requesting READ access.`,
+                `MissionGuard: missionUUIDs (${missionUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting READ access.`,
             );
             return false;
         }
@@ -167,7 +162,7 @@ export class MissionGuardService {
         });
     }
 
-    async canKeyAccessMission(
+    canKeyAccessMission(
         apikey: Apikey,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,

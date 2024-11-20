@@ -8,8 +8,8 @@
                     @click="crumb.click"
                 >
                     <q-btn
-                        flat
                         v-if="!isLastCrumb(crumb)"
+                        flat
                         style="padding: 4px 8px"
                     >
                         {{ crumb.name }}
@@ -36,9 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from 'vue';
-
-import { useToggle } from 'src/hooks/utils';
+import { computed, ref, watchEffect } from 'vue';
 import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
 import { QueryHandler } from 'src/services/QueryHandler';
 

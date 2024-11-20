@@ -1,7 +1,7 @@
 <template>
     <q-card-section>
         <h3 class="text-h6">Create new project</h3>
-        <q-form @submit="submitNewProject" style="width: 100%">
+        <q-form style="width: 100%" @submit="submitNewProject">
             <div class="row justify-between q-gutter-md">
                 <div class="col-9">
                     <div class="row justify-between">
@@ -67,7 +67,7 @@ const projectDescription = ref('');
 const queryClient = useQueryClient();
 const selectedTags = ref([]);
 
-const { isLoading, data, error } = useQuery<TagType[]>({
+const { data } = useQuery<TagType[]>({
     queryKey: ['tagTypes'],
     queryFn: getTagTypes,
 });
@@ -80,9 +80,9 @@ const submitNewProject = async () => {
             selectedTags.value,
             [],
         );
-    } catch (error) {
+    } catch (e) {
         Notify.create({
-            message: `Error creating project: ${error?.response?.data?.message || error.message}`,
+            message: `Error creating project: ${e?.response?.data?.message || e.message}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

@@ -4,8 +4,7 @@ import Worker from '@common/entities/worker/worker.entity';
 import fs from 'fs';
 import Docker from 'dockerode';
 import logger from '../../logger';
-
-const util = require('util');
+import * as util from 'node:util';
 
 export async function getDiskSpace() {
     const diskData = await si.fsSize();
@@ -96,7 +95,7 @@ const getGpuModels = async () => {
                 }
                 return null; // In case the model information is not found
             } catch (err) {
-                console.error('Error reading file:', err);
+                logger.error(`Error reading file ${filepath}: ${err}`);
                 return null;
             }
         });
@@ -105,7 +104,7 @@ const getGpuModels = async () => {
         const models = await Promise.all(modelPromises);
         return models.filter((model) => model !== null);
     } catch (err) {
-        console.error('Error reading NVIDIA GPU data:', err);
+        logger.error(`Error reading NVIDIA GPU data: ${err}`);
         return [];
     }
 };

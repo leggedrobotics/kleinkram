@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="changeRights"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="changeRights"
     >
         <slot />
 
@@ -16,23 +16,9 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
-import { Notify, useQuasar } from 'quasar';
-import { computed, Ref, ref } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import {
-    deleteAccessGroup,
-    removeAccessGroupFromProject,
-} from 'src/services/mutations/access';
-import { AccessGroup } from 'src/types/AccessGroup';
-import { getUser } from 'src/services/auth';
-import { User } from 'src/types/User';
+import { useQuasar } from 'quasar';
+import { computed } from 'vue';
 import {
     canDeleteProject,
     usePermissionsQuery,
@@ -49,7 +35,6 @@ const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canDeleteProject(props.projectUUID, permissions.value),
 );
-const queryClient = useQueryClient();
 
 function changeRights() {
     if (!canModify.value) {
@@ -64,5 +49,11 @@ function changeRights() {
     });
 }
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <style scoped></style>

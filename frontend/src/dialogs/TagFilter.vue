@@ -21,19 +21,20 @@
                         wrap-cells
                         flat
                         bordered
-                        @rowClick="tagTypeSelected"
                         :filter="tagtype"
+                        @row-click="tagTypeSelected"
                     />
                 </div>
             </div>
             <div
-                class="q-mt-md row"
                 v-for="tagTypeUUID in Object.keys(tagValues)"
+                :key="tagTypeUUID"
+                class="q-mt-md row"
             >
                 <div class="col-2">
                     {{ tagValues[tagTypeUUID].name }}
                 </div>
-                <div class="col-2" v-if="tagLookup[tagTypeUUID]">
+                <div v-if="tagLookup[tagTypeUUID]" class="col-2">
                     <q-input
                         v-if="tagLookup[tagTypeUUID].type !== DataType.BOOLEAN"
                         v-model="tagValues[tagTypeUUID].value"
@@ -42,11 +43,11 @@
                         dense
                         clearable
                         required
-                        @clear="delete tagValues[tagTypeUUID]"
                         :type="
                             DataType_InputType[tagLookup[tagTypeUUID].type] ||
                             'text'
                         "
+                        @clear="delete tagValues[tagTypeUUID]"
                     />
                     <q-toggle
                         v-if="tagLookup[tagTypeUUID].type === DataType.BOOLEAN"

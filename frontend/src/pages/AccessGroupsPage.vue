@@ -17,12 +17,12 @@
                                 :key="option.value"
                             >
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
                                     @click="() => (prefilter = option)"
                                 >
-                                    <q-item-section
-                                        >{{ option.label }}
+                                    <q-item-section>
+                                        {{ option.label }}
                                     </q-item-section>
                                 </q-item>
                                 <q-separator v-if="option.spacer_after" />
@@ -34,13 +34,13 @@
 
             <button-group>
                 <q-input
+                    v-model="filterOptions.search"
                     dense
                     outlined
-                    v-model="filterOptions.search"
                     placeholder="Search"
                     debounce="200"
                 >
-                    <template v-slot:append>
+                    <template #append>
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
@@ -60,28 +60,28 @@
         </div>
 
         <q-table
+            v-model:pagination="pagination"
+            v-model:selected="selectedAccessGroups"
             flat
             bordered
             wrap-cells
             virtual-scroll
             separator="none"
             :rows="accessGroupsTable"
-            v-model:pagination="pagination"
             :columns="accessGroupsColumns"
             style="margin-top: 24px"
             selection="multiple"
-            v-model:selected="selectedAccessGroups"
             row-key="uuid"
-            @rowClick="rowClick"
+            @row-click="rowClick"
         >
-            <template v-slot:body-selection="props">
+            <template #body-selection="props">
                 <q-checkbox
                     v-model="props.selected"
                     color="grey-8"
                     class="checkbox-with-hitbox"
                 />
             </template>
-            <template v-slot:body-cell-accessgroupaction="props">
+            <template #body-cell-accessgroupaction="props">
                 <q-td :props="props">
                     <q-btn
                         flat
@@ -96,16 +96,16 @@
                         <q-menu auto-close>
                             <q-list>
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
                                     @click="rowClick(undefined, props.row)"
                                 >
-                                    <q-item-section
-                                        >View Details
+                                    <q-item-section>
+                                        View Details
                                     </q-item-section>
                                 </q-item>
 
-                                <q-item clickable v-ripple disabled>
+                                <q-item v-ripple clickable disabled>
                                     <q-tooltip
                                         v-if="prefilter.value === 'personal'"
                                     >
@@ -113,8 +113,8 @@
                                     </q-tooltip>
                                     <q-item-section>Edit</q-item-section>
                                 </q-item>
-                                <DeleteAccessGroup :accessGroup="props.row">
-                                    <q-item clickable v-ripple>
+                                <DeleteAccessGroup :access-group="props.row">
+                                    <q-item v-ripple clickable>
                                         <q-item-section>Delete</q-item-section>
                                     </q-item>
                                 </DeleteAccessGroup>
@@ -127,25 +127,23 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 
 import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
 import { Project } from 'src/types/Project';
 
-import { AccessGroup, AccessGroupType } from 'src/types/AccessGroup';
+import { AccessGroup } from 'src/types/AccessGroup';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
-import { QTable, useQuasar } from 'quasar';
+import { QTable } from 'quasar';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteAccessGroup from 'components/buttonWrapper/DeleteAccessGroup.vue';
 import CreateAccessGroupDialogOpener from 'components/buttonWrapper/CreateAccessGroupDialogOpener.vue';
+import { AccessGroupType } from '@common/enum';
 
-const $q = useQuasar();
-
-const queryClient = useQueryClient();
 const $router = useRouter();
 const prefilterOptions = [
     { label: 'All Groups', value: 'all' },

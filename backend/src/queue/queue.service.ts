@@ -128,7 +128,7 @@ export class QueueService implements OnModuleInit {
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 display_name: `GoogleDrive Object (no id=${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
@@ -230,7 +230,6 @@ export class QueueService implements OnModuleInit {
     async forFile(filename: string, missionUUID: string) {
         return this.queueRepository.find({
             where: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 display_name: Like(`${filename}%`),
                 mission: { uuid: missionUUID },
             },

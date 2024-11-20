@@ -21,6 +21,7 @@ import {
     DefaultRightDto,
     DefaultRightsDto,
 } from '@common/api/types/DefaultRights.dto';
+import { ResentProjectDto } from '@common/api/types/RecentProjects.dto';
 
 @Injectable()
 export class ProjectService {
@@ -131,7 +132,10 @@ export class ProjectService {
         });
     }
 
-    async getRecentProjects(take: number, user: User): Promise<Project[]> {
+    async getRecentProjects(
+        take: number,
+        user: User,
+    ): Promise<ResentProjectDto[]> {
         let res;
         if (user.role === UserRole.ADMIN) {
             // Get all Projects and add the computed field latestUpdate
@@ -242,23 +246,18 @@ export class ProjectService {
             );
         }
         return res
-            .map((project) => {
+            .map((project: Project) => {
                 return {
                     name: project['project_name'] as string,
                     uuid: project['project_uuid'] as string,
                     description: project['project_description'] as string,
-                    creator: undefined,
-                    requiredTags: [],
-                    latestUpdate: project['latestUpdate'] as Date,
-                    missions: [],
-                    categories: [],
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    project_accesses: [],
+                    updatedAt: project['latestUpdate'] as Date,
                     createdAt: project['project_createdAt'] as Date,
-                };
+                } as ResentProjectDto;
             })
             .sort(
-                (a, b) => b.latestUpdate.getTime() - a.latestUpdate.getTime(),
+                (a: ResentProjectDto, b: ResentProjectDto) =>
+                    b.updatedAt.getTime() - a.updatedAt.getTime(),
             );
     }
 

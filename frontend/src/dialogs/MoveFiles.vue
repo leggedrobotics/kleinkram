@@ -77,8 +77,8 @@
             <q-btn
                 label="Cancel"
                 flat
-                @click="onDialogCancel"
                 class="q-mr-sm button-border"
+                @click="onDialogCancel"
             />
             <q-btn
                 label="Save"
@@ -113,8 +113,7 @@ const props = defineProps<{
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-    useDialogPluginComponent();
+const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
 const dd_open = ref(false);
@@ -169,7 +168,7 @@ const { mutate: moveFilesMutation } = useMutation({
             props.files.map((file) => file.uuid),
             selected.value.missionUUID,
         ),
-    onSuccess: function (data, variables, context) {
+    onSuccess: async () => {
         Notify.create({
             group: false,
             message: 'Files moved',
@@ -178,17 +177,17 @@ const { mutate: moveFilesMutation } = useMutation({
             position: 'bottom',
             timeout: 3000,
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'files' ||
                 query.queryKey[0] === 'missions',
         });
     },
-    onError(error, variables, context) {
-        console.log(error);
+    onError(e) {
+        console.log(e);
         Notify.create({
             group: false,
-            message: 'Error moving file: ' + error.response.data.message,
+            message: 'Error moving file: ' + e.response.data.message,
             color: 'negative',
             spinner: false,
             position: 'bottom',

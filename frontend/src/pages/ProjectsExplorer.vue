@@ -1,11 +1,11 @@
 <template>
-    <title-section title="Projects"></title-section>
+    <title-section title="Projects" />
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
             <button-group>
                 <q-btn-dropdown dense flat class="button-border q-px-sm">
-                    <template v-slot:label>
+                    <template #label>
                         {{ my_projects ? 'My Projects' : 'All Projects' }}
                     </template>
                     <q-list>
@@ -14,9 +14,9 @@
                                 'All Projects',
                                 'My Projects',
                             ]"
-                            clickable
                             :key="index"
                             v-close-popup
+                            clickable
                             @click="my_projects = item === 'My Projects'"
                         >
                             <q-item-section>
@@ -29,13 +29,13 @@
 
             <button-group>
                 <q-input
+                    v-model="search"
                     debounce="300"
                     placeholder="Search"
                     dense
-                    v-model="search"
                     outlined
                 >
-                    <template v-slot:append>
+                    <template #append>
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
@@ -83,7 +83,7 @@
 
         <div>
             <Suspense>
-                <projects-table :url_handler="handler" v-if="handler" />
+                <projects-table v-if="handler" :url_handler="handler" />
             </Suspense>
         </div>
     </div>
@@ -126,8 +126,8 @@ const search = computed({
     },
 });
 
-function refresh() {
-    queryClient.invalidateQueries({
+async function refresh() {
+    await queryClient.invalidateQueries({
         queryKey: ['projects'],
     });
 }

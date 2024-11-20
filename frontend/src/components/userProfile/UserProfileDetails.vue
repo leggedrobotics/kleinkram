@@ -63,13 +63,17 @@
                                 <td class="q-table__cell first-column">
                                     Name:
                                 </td>
-                                <td class="q-table__cell">{{ user.name }}</td>
+                                <td class="q-table__cell">
+                                    {{ user.name }}
+                                </td>
                             </tr>
                             <tr>
                                 <td class="q-table__cell first-column">
                                     Email:
                                 </td>
-                                <td class="q-table__cell">{{ user.email }}</td>
+                                <td class="q-table__cell">
+                                    {{ user.email }}
+                                </td>
                             </tr>
                             <tr>
                                 <td class="q-table__cell first-column">

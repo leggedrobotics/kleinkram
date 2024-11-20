@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="createNewProject"
         :class="{
             disabled: !canCreate,
             'cursor-pointer': !canCreate,
             'cursor-not-allowed': canCreate,
         }"
+        @click="createNewProject"
     >
         <slot />
         <q-tooltip v-if="!canCreate">

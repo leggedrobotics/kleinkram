@@ -40,7 +40,7 @@
             </q-tabs>
         </template>
 
-        <template v-slot:buttons>
+        <template #buttons>
             <button-group>
                 <q-btn
                     class="button-border"
@@ -75,8 +75,8 @@
                                 {{ action?.template.imageName }}
 
                                 <span
-                                    style="color: #525252; font-size: 0.8em"
                                     v-if="action?.image?.repoDigests?.[0]"
+                                    style="color: #525252; font-size: 0.8em"
                                 >
                                     <br />
                                     {{ action?.image?.repoDigests?.[0] }}
@@ -99,7 +99,7 @@
                         <tr>
                             <td class="q-table__cell">State</td>
                             <td class="q-table__cell">
-                                <ActionBadge :action="action" v-if="action" />
+                                <ActionBadge v-if="action" :action="action" />
                             </td>
                         </tr>
                         <tr>
@@ -114,8 +114,8 @@
                                 {{ action?.template.command }}
 
                                 <span
-                                    style="color: #525252; font-size: 0.8em"
                                     v-if="!action?.template.command"
+                                    style="color: #525252; font-size: 0.8em"
                                 >
                                     No command specified
                                 </span>
@@ -127,8 +127,8 @@
                                 {{ action?.template.entrypoint }}
 
                                 <span
-                                    style="color: #525252; font-size: 0.8em"
                                     v-if="!action?.template.entrypoint"
+                                    style="color: #525252; font-size: 0.8em"
                                 >
                                     No entrypoint specified
                                 </span>
@@ -197,7 +197,9 @@
                                     >
                                         {{ action?.template.gpuMemory }} GB
                                     </template>
-                                    <template v-else>no GPU requested</template>
+                                    <template v-else>
+                                        no GPU requested
+                                    </template>
                                     <br />
                                 </div>
                                 <div v-else>N/A</div>
@@ -406,6 +408,7 @@ const artifactState = computed(() => {
     } else if (action.value?.artifacts === ArtifactState.AWAITING_ACTION) {
         return 'Waiting action completion...';
     }
+    return 'N/A';
 });
 </script>
 

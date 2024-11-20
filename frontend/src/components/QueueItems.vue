@@ -1,8 +1,8 @@
 <template>
     <div class="row">
         <div class="col-6 q-py-md q-pr-md">
-            <q-input filled v-model="startDate" hint="File Processing since: ">
-                <template v-slot:prepend>
+            <q-input v-model="startDate" filled hint="File Processing since: ">
+                <template #prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
                         <q-popup-proxy
                             cover
@@ -23,7 +23,7 @@
                     </q-icon>
                 </template>
 
-                <template v-slot:append>
+                <template #append>
                     <q-icon name="sym_o_access_time" class="cursor-pointer">
                         <q-popup-proxy
                             cover
@@ -57,25 +57,25 @@
                 :options="FileStateOptions"
                 label="Select filter"
             >
-                <template v-slot:selected-item="scope">
+                <template #selected-item="scope">
                     <q-chip
                         removable
-                        @remove="removeItem(scope.opt)"
                         :tabindex="scope.tabindex"
                         dense
                         :color="getColor(QueueState[scope.opt] as QueueState)"
+                        @remove="removeItem(scope.opt)"
                     >
                         {{ scope.opt }}
                     </q-chip>
                 </template>
-                <template v-slot:no-option>
+                <template #no-option>
                     <q-item>
                         <q-item-section class="text-grey">
                             No results
                         </q-item-section>
                     </q-item>
                 </template>
-                <template v-slot:append>
+                <template #append>
                     <q-icon
                         class="cursor-pointer"
                         @click.stop="clearSelection"
@@ -88,6 +88,7 @@
     <q-table
         ref="tableRef"
         v-model:pagination="pagination"
+        v-model:selected="selected"
         :rows="queueEntries || []"
         :columns="columns"
         row-key="uuid"
@@ -95,18 +96,17 @@
         bordered
         :loading="isLoading"
         binary-state-sort
-        @rowClick="rowClick"
-        v-model:selected="selected"
         selection="multiple"
+        @row-click="rowClick"
     >
-        <template v-slot:body-selection="props">
+        <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
         </template>
-        <template v-slot:body-cell-Status="props">
+        <template #body-cell-Status="props">
             <q-td :props="props">
                 <q-badge :color="getColor(props.row.state)">
                     <q-tooltip>
@@ -116,7 +116,7 @@
                 </q-badge>
             </q-td>
         </template>
-        <template v-slot:body-cell-action="props">
+        <template #body-cell-action="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -134,34 +134,34 @@
                     >
                         <q-list>
                             <q-item
-                                clickable
                                 v-ripple
-                                @click="() => downloadFile(props.row)"
+                                clickable
                                 :disable="
                                     props.row.state !== QueueState.COMPLETED
                                 "
+                                @click="() => downloadFile(props.row)"
                             >
                                 <q-item-section>Download File</q-item-section>
                             </q-item>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 :disable="!canDelete(props.row)"
                                 @click="() => openDeleteFileDialog(props.row)"
                             >
                                 <q-item-section>Delete File</q-item-section>
                             </q-item>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 :disable="
                                     props.row.state !==
                                     QueueState.AWAITING_PROCESSING
                                 "
                                 @click="() => _cancelProcessing(props.row)"
                             >
-                                <q-item-section
-                                    >Cancel Processing
+                                <q-item-section>
+                                    Cancel Processing
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -254,14 +254,14 @@ const { data: queueEntries, isLoading } = useQuery<Project[]>({
 const { mutate: removeFile } = useMutation({
     mutationFn: (queueEntry: Queue) =>
         deleteFile(queueEntry.mission.uuid, queueEntry.uuid),
-    onSuccess: () => {
+    onSuccess: async () => {
         Notify.create({
             message: 'File deleted',
             color: 'positive',
             timeout: 2000,
             position: 'bottom',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
@@ -278,8 +278,8 @@ const { mutate: removeFile } = useMutation({
 const { mutate: _cancelProcessing } = useMutation({
     mutationFn: (queueEntry: Queue) =>
         cancelProcessing(queueEntry.uuid, queueEntry.mission.uuid),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
+    onSuccess: async () => {
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
@@ -304,14 +304,14 @@ function openDeleteFileDialog(queueEntry: Queue) {
     });
 }
 
-function rowClick(event: any, row: Queue) {
+async function rowClick(event: any, row: Queue) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
-        findOneByNameAndMission(row.filename, row.mission.uuid).then(
-            (file: FileEntity) => {
-                $router.push({
+        await findOneByNameAndMission(row.filename, row.mission.uuid).then(
+            async (file: FileEntity) => {
+                await $router.push({
                     name: ROUTES.FILE.routeName,
                     params: {
                         file_uuid: file?.uuid,
@@ -337,9 +337,9 @@ function canDelete(row: Queue) {
 }
 
 function downloadFile(row: Queue) {
-    findOneByNameAndMission(row.filename, row.mission.uuid).then(
+    await findOneByNameAndMission(row.filename, row.mission.uuid).then(
         (file: FileEntity) => {
-            _downloadFile(file.uuid, file.filename);
+            await _downloadFile(file.uuid, file.filename);
         },
     );
 }
@@ -375,6 +375,7 @@ const columns = [
         field: (row: Queue) => {
             if (
                 row.filename == row.identifier &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
                 row.location == FileLocation.DRIVE
             )
                 return 'Not available';

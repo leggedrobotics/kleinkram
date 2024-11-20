@@ -5,18 +5,18 @@
             <span style="font-size: larger">Recently used projects</span>
             <div class="arrow-buttons">
                 <q-btn
-                    @click="scrollLeft"
                     :disable="!canScrollLeft"
                     flat
                     icon="sym_o_arrow_back"
                     class="scroll-button"
+                    @click="scrollLeft"
                 />
                 <q-btn
-                    @click="scrollRight"
                     :disable="!canScrollRight"
                     flat
                     icon="sym_o_arrow_forward"
                     class="scroll-button"
+                    @click="scrollRight"
                 />
             </div>
         </q-card>
@@ -63,21 +63,26 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, ComputedRef, nextTick, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
 import { recentProjects } from 'src/services/queries/project';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'vue-router';
+import {
+    ResentProjectDto,
+    ResentProjectsDto,
+} from '@api/types/RecentProjects.dto';
 
 const router = useRouter();
 
-const { data } = useQuery<Project[]>({
+const { data } = useQuery<ResentProjectsDto | undefined>({
     queryKey: ['projects', 5],
     queryFn: () => recentProjects(5),
 });
 
-const projects = computed(() => (data.value ? data.value : []));
+const projects: ComputedRef<ResentProjectDto[]> = computed(() =>
+    data.value ? data.value.projects : [],
+);
 
 const cardWrapper = ref<HTMLElement | null>(null);
 
@@ -114,21 +119,16 @@ function checkScroll() {
 
 checkScroll();
 
-function goToProject(uuid: string) {
-    router.push(`/project/${uuid}/missions`);
+async function goToProject(uuid: string) {
+    await router.push(`/project/${uuid}/missions`);
 }
 
-const timeAgo = (project: Project) => {
-    const missionUpdated = project.missions.map((mission) => mission.updatedAt);
-    const allDates = [project.updatedAt, ...missionUpdated];
-    const mostRecentDate = new Date(
-        Math.max(...allDates.map((date) => date.getTime())),
-    );
-    return formatDistanceToNow(mostRecentDate, { addSuffix: true });
+const timeAgo = (project: ResentProjectDto) => {
+    return formatDistanceToNow(project.updatedAt, { addSuffix: true });
 };
 
 // Use nextTick to ensure that the DOM is fully rendered and the ref is set
-nextTick(() => {
+await nextTick(() => {
     if (cardWrapper.value) {
         cardWrapper.value.style.scrollBehavior = 'smooth';
     }

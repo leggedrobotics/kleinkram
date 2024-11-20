@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="deleteMission"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="deleteMission"
     >
         <slot />
         <q-tooltip v-if="!canModify && props.mission.files.length === 0">
@@ -17,19 +17,13 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import {
     canModifyMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { Mission } from 'src/types/Mission';
 import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 
@@ -60,5 +54,11 @@ const deleteMission = () => {
     });
 };
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <style scoped></style>

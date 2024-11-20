@@ -1,19 +1,19 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title>Modify Tags</template>
+        <template #title> Modify Tags </template>
         <template #content>
             <SelectMissionTags
-                :projectUUID="mission?.project?.uuid"
+                :project-u-u-i-d="mission?.project?.uuid"
                 :tag-values="tagValues"
-                @update:tagValues="(update) => (tagValues = update)"
+                @update:tag-values="(update) => (tagValues = update)"
             />
         </template>
         <template #actions>
             <q-btn
                 class="bg-button-primary"
                 label="Save"
-                @click="modifyTags"
                 :disable="tagValues === {}"
+                @click="modifyTags"
             />
         </template>
     </base-dialog>
@@ -57,16 +57,16 @@ const { mutate: _updateMissionTags } = useMutation({
     mutationFn: () => {
         return updateMissionTags(props.mission.uuid, tagValues.value);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
         Notify.create({
             message: 'Tags updated',
             color: 'positive',
             position: 'bottom',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: ['mission', props.mission.uuid],
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: ['missions'],
         });
         onDialogOK();

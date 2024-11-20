@@ -287,7 +287,6 @@ describe('Verify Project Level Access', () => {
             {
                 method: 'PUT',
                 headers: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                     cookie: `authtoken=${token}`,
                 },
@@ -338,7 +337,7 @@ describe('Verify Project Level Access', () => {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -459,22 +458,22 @@ describe('Verify Project Level Access', () => {
         expect(project.name).toBe('test_project');
     });
 
-    test('if viewer of a project cannot add any tag types', async () => {
+    test('if viewer of a project cannot add any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if editor of a project can add any tag types', async () => {
+    test('if editor of a project can add any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if viewer of a project cannot delete any tag types', async () => {
+    test('if viewer of a project cannot delete any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if editor of a project can delete any tag types', async () => {
+    test('if editor of a project can delete any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

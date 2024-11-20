@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Tag</template>
+        <template #title> Add Tag </template>
 
         <template #content>
             <AddTag :mission_uuid="props.mission_uuid" />

@@ -16,7 +16,6 @@ export const createProjectUsingPost = async (
     const res = await fetch(`http://localhost:3000/project/create`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
         },
@@ -36,7 +35,6 @@ export const createMissionUsingPost = async (
     const res = await fetch(`http://localhost:3000/mission/create`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
         },
@@ -74,7 +72,6 @@ export async function uploadFile(
     const res = await fetch(`http://localhost:3000/file/temporaryAccess`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
         },
@@ -130,7 +127,6 @@ export async function uploadFile(
         {
             method: 'POST',
             headers: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Content-Type': 'application/json',
                 cookie: `authtoken=${await getJwtToken(user)}`,
             },

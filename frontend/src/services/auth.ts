@@ -45,7 +45,7 @@ export function logout() {
                 // reload the page to clear the cache
                 window.location.reload();
             })
-            .catch(() => reject(false));
+            .catch(() => reject(new Error('Failed to logout')));
     });
 }
 

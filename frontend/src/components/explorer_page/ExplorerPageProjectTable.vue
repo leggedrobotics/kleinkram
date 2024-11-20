@@ -1,10 +1,10 @@
 <template>
     <q-table
         v-if="!isLoading"
-        flat
-        bordered
         v-model:pagination="pagination"
         v-model:selected="selected"
+        flat
+        bordered
         :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
         :columns="explorerPageTableColumns as any"
@@ -17,18 +17,18 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
-        <template v-slot:body-selection="props">
+        <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
         </template>
-        <template v-slot:loading>
+        <template #loading>
             <q-inner-loading showing color="primary" />
         </template>
 
-        <template v-slot:body-cell-projectaction="props">
+        <template #body-cell-projectaction="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -43,8 +43,8 @@
                     <q-menu auto-close>
                         <q-list>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="(e) => onRowClick(e, props.row)"
                             >
                                 <q-item-section>View Missions</q-item-section>
@@ -52,7 +52,7 @@
                             <EditProjectDialogOpener
                                 :project_uuid="props.row.uuid"
                             >
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Project
                                     </q-item-section>
@@ -61,19 +61,19 @@
                             <ConfigureTagsDialogOpener
                                 :project_uuid="props.row.uuid"
                             >
-                                <q-item clickable v-ripple>
-                                    <q-item-section
-                                        >Configure Tags</q-item-section
-                                    >
+                                <q-item v-ripple clickable>
+                                    <q-item-section>
+                                        Configure Tags
+                                    </q-item-section>
                                 </q-item>
                             </ConfigureTagsDialogOpener>
 
                             <manage-project-dialog-opener
                                 :project_uuid="props.row.uuid"
                             >
-                                <q-item clickable v-ripple>
-                                    <q-item-section
-                                        >Manage Access
+                                <q-item v-ripple clickable>
+                                    <q-item-section>
+                                        Manage Access
                                     </q-item-section>
                                 </q-item>
                             </manage-project-dialog-opener>
@@ -81,7 +81,7 @@
                                 :project_uuid="props.row.uuid"
                                 :has_missions="props.row.missions.length > 0"
                             >
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
                             </DeleteProjectDialogOpener>
@@ -94,21 +94,18 @@
 </template>
 
 <script setup lang="ts">
-import { QTable, useQuasar } from 'quasar';
+import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
-import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
-import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
-
-const $q = useQuasar();
+import { explorerPageTableColumns } from './explorer_page_table_columns';
 
 const props = defineProps({
     url_handler: {
@@ -156,6 +153,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
+            // eslint-disable-next-line vue/no-mutating-props
             props.url_handler.rowsNumber = total.value;
         }
     },
@@ -165,20 +163,11 @@ watch(
 const $router = useRouter();
 
 const onRowClick = async (_: Event, row: any) => {
-    $router?.push({
+    await $router?.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
             project_uuid: row.uuid,
         },
     });
 };
-
-function openConfigureTags(projectUUID: string) {
-    $q.dialog({
-        component: ModifyProjectTagsDialog,
-        componentProps: {
-            projectUUID: projectUUID,
-        },
-    });
-}
 </script>

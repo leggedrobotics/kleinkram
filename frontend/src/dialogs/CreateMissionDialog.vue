@@ -1,5 +1,5 @@
 <template>
-    <base-dialog title="New Mission" ref="dialogRef">
+    <base-dialog ref="dialogRef" title="New Mission">
         <template #title> New Mission</template>
 
         <template #tabs>
@@ -69,9 +69,9 @@
 
                     <label for="missionName">Mission Name *</label>
                     <q-input
-                        name="missionName"
                         ref="missionNameInput"
                         v-model="missionName"
+                        name="missionName"
                         outlined
                         required
                         autofocus
@@ -88,14 +88,14 @@
                             }
                         "
                     >
-                        <template v-slot:error>
+                        <template #error>
                             {{ errorMessage }}
                         </template>
-                        <template v-if="missionName" v-slot:append>
+                        <template v-if="missionName" #append>
                             <q-icon
                                 name="sym_o_cancel"
-                                @click.stop.prevent="missionName = ''"
                                 class="cursor-pointer"
+                                @click.stop.prevent="missionName = ''"
                             />
                         </template>
                     </q-input>
@@ -103,16 +103,16 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :projectUUID="project.uuid"
-                        @update:tagValues="(update) => (tagValues = update)"
+                        :project-u-u-i-d="project.uuid"
+                        @update:tag-values="(update) => (tagValues = update)"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="upload" style="min-width: 280px">
                     <CreateFile
                         v-if="newMission"
+                        ref="createFileRef"
                         :mission="newMission"
                         :uploads="uploads"
-                        ref="createFileRef"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -127,8 +127,8 @@
                     missionName.length < MIN_MISSION_NAME_LENGTH ||
                     missionName.length > MAX_MISSION_NAME_LENGTH
                 "
-                @click="tab_selection = 'tags'"
                 class="bg-button-primary"
+                @click="tab_selection = 'tags'"
             />
             <q-btn
                 v-if="tab_selection === 'tags'"
@@ -203,7 +203,7 @@ const project_uuid = ref(props.project_uuid);
 const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project, refetch }: { data: Ref<Project>; refetch: Function } =
+const { data: project, refetch }: { data: Ref<Project>; refetch } =
     useQuery<Project>({
         queryKey: computed(() => ['project', project_uuid]),
         queryFn: () => getProject(project_uuid.value as string),
@@ -225,8 +225,8 @@ const { data: all_projects } = useQuery<[Project[], number]>({
 const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects?.value) return [];
-    return all_projects?.value[0].filter((project: Project) =>
-        canCreateMission(project.uuid, permissions),
+    return all_projects?.value[0].filter((_project: Project) =>
+        canCreateMission(_project.uuid, permissions),
     );
 });
 
@@ -270,10 +270,12 @@ const submitNewMission = async () => {
                 query.queryKey[0] === 'missions' &&
                 query.queryKey[1] === project.value?.uuid,
         );
-    filtered.forEach((query) => {
-        console.log('Invalidating query', query.queryKey);
-        queryClient.invalidateQueries(query.queryKey);
-    });
+    await Promise.all(
+        filtered.map((query) => {
+            console.log('Invalidating query', query.queryKey);
+            return queryClient.invalidateQueries(query.queryKey);
+        }),
+    );
     Notify.create({
         message: `Mission ${missionName.value} created`,
         color: 'positive',

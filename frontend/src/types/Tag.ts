@@ -3,7 +3,6 @@ import { BaseEntity } from 'src/types/BaseEntity';
 import { TagType } from 'src/types/TagType';
 import { DataType } from '@common/enum';
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export class Tag extends BaseEntity {
     STRING?: string;
     NUMBER?: number;

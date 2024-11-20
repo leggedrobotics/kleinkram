@@ -5,9 +5,9 @@
                 v-for="tag in data?.tags.toSorted((a, b) =>
                     a.type.name.localeCompare(b.type.name),
                 )"
+                :key="tag.uuid"
                 :icon-right="icons[tag.type.type]"
                 class="rotating-element"
-                :key="tag.uuid"
                 removable
                 @remove="() => removeTagCallback(tag)"
             >
@@ -52,7 +52,7 @@ const { data } = useQuery<Mission>({
     enabled: !!props.mission_uuid,
 });
 
-new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
+await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     document.querySelectorAll('.rotating-element').forEach((el) => {
         const randomDuration = Math.random() * 10000 + 200; // Random duration between 1s and 5s
         el.style['-webkit-animation-duration'] = `${randomDuration}s`;
@@ -63,7 +63,7 @@ new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
 });
 const { mutate: removeTagCallback } = useMutation({
     mutationFn: (tag: Tag) => removeTag(tag.uuid),
-    onSuccess(data, variables, context) {
+    onSuccess() {
         Notify.create({
             message: 'Tag removed',
             color: 'positive',
@@ -78,11 +78,11 @@ const { mutate: removeTagCallback } = useMutation({
                     query.queryKey[1] === props.mission_uuid,
             );
         filtered.forEach((query) => {
-            queryClient.invalidateQueries(query.queryKey);
+            await queryClient.invalidateQueries(query.queryKey);
         });
     },
-    onError(error, variables, context) {
-        console.log(error);
+    onError(e) {
+        console.log(e);
     },
 });
 

@@ -1,9 +1,9 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Configure Project Tags</template>
+        <template #title> Configure Project Tags </template>
 
         <template #content>
-            <ConfigureTags v-model:selected="selected" v-if="project" />
+            <ConfigureTags v-if="project" v-model:selected="selected" />
         </template>
 
         <template #actions>
@@ -75,19 +75,19 @@ const { mutate } = useMutation({
             selected.value.map((tag) => tag.uuid),
         );
     },
-    onSuccess(data, variables, context) {
+    async onSuccess() {
         Notify.create({
             message: 'Tagtypes updated',
             color: 'positive',
             position: 'bottom',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'project' &&
                 query.queryKey[1] === props.projectUUID,
         });
     },
-    onError(error, variables, context) {
+    onError(error) {
         Notify.create({
             message: 'Error adding TagTypes: ' + error.message,
             color: 'negative',

@@ -2,9 +2,9 @@
     <div>
         <label for="projectName">Project Name *</label>
         <q-input
-            name="projectName"
             ref="projectNameInput"
             v-model="projectName"
+            name="projectName"
             outlined
             autofocus
             style="padding-bottom: 30px"
@@ -38,9 +38,9 @@
 
         <label for="projectDescription">Project Description *</label>
         <q-input
+            v-model="projectDescription"
             autofocus
             name="projectDescription"
-            v-model="projectDescription"
             type="textarea"
             outlined
             placeholder="Description..."
@@ -97,20 +97,20 @@ async function save_changes(): Promise<void> {
 
     // validate input
     if (!project.value?.uuid) {
-        return Promise.reject('Project is not valid');
+        return Promise.reject(new Error('Project UUID is not valid'));
     }
     if (!project.value?.name) {
-        return Promise.reject('Project name is not valid');
+        return Promise.reject(new Error('Project name is not valid'));
     }
     if (!project.value?.description) {
-        return Promise.reject('Project description is not valid');
+        return Promise.reject(new Error('Project description is not valid'));
     }
 
     await updateProject(
         project.value?.uuid,
         projectName.value.trim(),
         projectDescription.value,
-    ).catch((error) => {
+    ).catch((error: Error) => {
         if (error.response.data.message.includes('Project')) {
             Notify.create({
                 message:
@@ -140,9 +140,11 @@ async function save_changes(): Promise<void> {
                 query.queryKey[0] === 'projects' ||
                 query.queryKey[0] === 'project',
         );
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries({ queryKey: query.queryKey });
-    });
+    await Promise.all(
+        filtered.map((query) =>
+            queryClient.invalidateQueries({ queryKey: query.queryKey }),
+        ),
+    );
 
     Notify.create({
         message: 'Project updated successfully',

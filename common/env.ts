@@ -46,7 +46,6 @@ function asBoolean(value: string | undefined): boolean {
     return strVar === 'true';
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export default {
     /**
      * @returns database name

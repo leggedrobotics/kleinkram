@@ -4,7 +4,7 @@
             Please confirm by entering the Filename: <b>{{ file.filename }}</b>
         </p>
         <q-input
-            v-model="file_name_check"
+            v-model="fileNameCheck"
             outlined
             placeholder="Confirm File Name"
             autofocus
@@ -20,17 +20,17 @@ import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 
-const file_name_check = ref('');
+const fileNameCheck = ref('');
 const client = useQueryClient();
 
 const route = useRoute();
 const router = useRouter();
 
 async function deleteFileAction() {
-    if (file_name_check.value === props.file.filename) {
+    if (fileNameCheck.value === props.file.filename) {
         await deleteFile(props.file)
-            .then(() => {
-                client.invalidateQueries({
+            .then(async () => {
+                await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'files' ||
                         (query.queryKey[0] === 'file' &&
@@ -46,7 +46,7 @@ async function deleteFileAction() {
 
                 // Redirect to missions page if we are on the file page
                 if (route.name === ROUTES.FILE.routeName) {
-                    router.push({
+                    await router.push({
                         name: ROUTES.FILES.routeName,
                         params: {
                             project_uuid: route.params.project_uuid,
@@ -71,7 +71,7 @@ const props = defineProps<{
 
 defineExpose({
     deleteFileAction,
-    file_name_check,
+    file_name_check: fileNameCheck,
 });
 </script>
 <style scoped></style>

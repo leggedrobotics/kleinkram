@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="openDeleteActionDialog"
         :class="{
             disabled: !canDelete,
             'cursor-pointer': !canDelete,
             'cursor-not-allowed': canDelete,
         }"
+        @click="openDeleteActionDialog"
     >
         <slot />
         <q-tooltip v-if="!canDelete && !actionInDeletableState">
@@ -17,12 +17,6 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import {
@@ -31,7 +25,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed, ref, watchEffect } from 'vue';
-import { useQueryClient } from '@tanstack/vue-query';
 import DeleteActionDialog from 'src/dialogs/DeleteActionDialog.vue';
 import { Action } from 'src/types/Action';
 import { getMe } from 'src/services/queries/user';
@@ -62,10 +55,13 @@ const actionInDeletableState = computed(() => {
 
 const isCreator = ref<boolean>(false);
 
-watchEffect(async () => {
-    const me = await getMe();
-    const actionCreator = props.action?.creator;
-    isCreator.value = me.uuid === actionCreator?.uuid;
+watchEffect(() => {
+    getMe()
+        .then((me) => {
+            const actionCreator = props.action?.creator;
+            isCreator.value = me.uuid === actionCreator?.uuid;
+        })
+        .catch(console.error);
 });
 
 const deletePermissions = computed(() => {
@@ -78,8 +74,7 @@ const deletePermissions = computed(() => {
         permissions.value,
     );
 
-    const deletePermissions = Math.max(projectPermissions, missionPermissions);
-    return deletePermissions;
+    return Math.max(projectPermissions, missionPermissions);
 });
 
 const openDeleteActionDialog = () => {
@@ -94,6 +89,10 @@ const openDeleteActionDialog = () => {
         },
     });
 };
-
-const queryClient = useQueryClient();
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

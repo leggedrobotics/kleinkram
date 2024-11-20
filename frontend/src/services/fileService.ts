@@ -214,11 +214,11 @@ async function _createFileAction(
                     );
 
                     return confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (e) {
+                } catch (e: Error) {
                     console.error('err', e);
                     newFileUploadRef.value.canceled = true;
                     Notify.create({
-                        message: `Upload of File ${file.name} failed: ${e}`,
+                        message: `Upload of File ${file.name} failed: ${e.toString()}`,
                         color: 'negative',
                         spinner: false,
                         timeout: 0,
@@ -296,14 +296,11 @@ async function uploadFileMultipart(
     minioClient: S3Client,
     newFileUpload: Ref<FileUpload>,
 ) {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     let UploadId: string | undefined;
     try {
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
-            /* eslint-disable @typescript-eslint/naming-convention */
             Bucket: bucket,
             Key: key,
-            /* eslint-enable @typescript-eslint/naming-convention */
         });
         const { UploadId: _uploadID } = await minioClient.send(
             createMultipartUploadCommand,
@@ -331,22 +328,19 @@ async function uploadFileMultipart(
             spark.append(partBuffer);
 
             const uploadPartCommand = new UploadPartCommand({
-                /* eslint-disable @typescript-eslint/naming-convention */
                 Bucket: bucket,
                 Key: key,
                 PartNumber: partNumber,
                 UploadId,
                 Body: partBlob,
-                /* eslint-enable @typescript-eslint/naming-convention */
             });
             const maxRetries = 60;
             let retries = 0;
             while (retries < maxRetries) {
                 try {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     const { ETag } = await minioClient.send(uploadPartCommand);
                     newFileUpload.value.uploaded += partBlob.size;
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     parts.push({ PartNumber: partNumber, ETag });
                     break;
                 } catch (error) {
@@ -363,12 +357,10 @@ async function uploadFileMultipart(
         // Step 3: Complete Multipart Upload
         const completeMultipartUploadCommand =
             new CompleteMultipartUploadCommand({
-                /* eslint-disable @typescript-eslint/naming-convention */
                 Bucket: bucket,
                 Key: key,
                 UploadId,
                 MultipartUpload: { Parts: parts },
-                /* eslint-enable @typescript-eslint/naming-convention */
             });
         const finalMD5 = btoa(spark.end(true));
         console.log('Final MD5:', finalMD5);
@@ -382,11 +374,9 @@ async function uploadFileMultipart(
         if (UploadId) {
             const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
                 {
-                    /* eslint-disable @typescript-eslint/naming-convention */
                     Bucket: bucket,
                     Key: key,
                     UploadId,
-                    /* eslint-enable @typescript-eslint/naming-convention */
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);

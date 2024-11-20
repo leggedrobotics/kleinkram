@@ -44,7 +44,7 @@ import GroupMembership from '@common/entities/auth/group_membership.entity';
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
-            useFactory: async () => ({
+            useFactory: () => ({
                 secret: env.JWT_SECRET,
                 signOptions: { expiresIn: '60m' },
             }),

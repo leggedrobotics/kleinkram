@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="createNewMission"
         :class="{
             disabled: !canCreate,
             'cursor-pointer': !canCreate,
             'cursor-not-allowed': canCreate,
         }"
+        @click="createNewMission"
     >
         <slot />
     </div>
@@ -18,7 +18,6 @@ import { FileUpload } from 'src/types/FileUpload';
 import { computed, inject, Ref } from 'vue';
 import {
     canCreateMission,
-    canCreateProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 

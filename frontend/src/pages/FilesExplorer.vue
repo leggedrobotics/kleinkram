@@ -1,6 +1,6 @@
 <template>
     <title-section :title="mission?.name">
-        <template v-slot:subtitle>
+        <template #subtitle>
             <div>
                 <div class="flex justify-between items-center">
                     <div>
@@ -12,7 +12,7 @@
                             >
                                 <q-chip
                                     square
-                                    v-bind:style="[
+                                    :style="[
                                         tag.type.type == 'LINK'
                                             ? { cursor: 'pointer' }
                                             : {},
@@ -30,7 +30,7 @@
             </div>
         </template>
 
-        <template v-slot:buttons>
+        <template #buttons>
             <button-group>
                 <q-btn
                     class="button-border"
@@ -51,7 +51,7 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
 
-                <MissionMetadataOpener :mission="mission" v-if="mission">
+                <MissionMetadataOpener v-if="mission" :mission="mission">
                     <q-btn
                         class="button-border"
                         flat
@@ -74,7 +74,7 @@
                                 v-if="mission"
                                 :mission="mission"
                             >
-                                <q-item clickable v-close-popup>
+                                <q-item v-close-popup clickable>
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_move_down" />
                                     </q-item-section>
@@ -84,7 +84,7 @@
                                 </q-item>
                             </MoveMissionDialogOpener>
 
-                            <q-item clickable v-close-popup disable>
+                            <q-item v-close-popup clickable disable>
                                 <q-item-section avatar>
                                     <q-icon name="sym_o_lock" />
                                 </q-item-section>
@@ -100,7 +100,7 @@
                             </q-item>
 
                             <EditMissionDialogOpener :mission="mission">
-                                <q-item clickable v-close-popup>
+                                <q-item v-close-popup clickable>
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_edit" />
                                     </q-item-section>
@@ -114,8 +114,8 @@
 
                             <delete-mission-dialog-opener :mission="mission">
                                 <q-item
-                                    clickable
                                     v-close-popup
+                                    clickable
                                     style="color: red"
                                 >
                                     <q-item-section avatar>
@@ -137,11 +137,11 @@
 
     <div>
         <div
-            class="q-my-lg flex justify-between items-center"
             v-if="selectedFiles.length === 0"
+            class="q-my-lg flex justify-between items-center"
         >
             <Suspense>
-                <TableHeader :url_handler="handler" v-if="handler" />
+                <TableHeader v-if="handler" :url_handler="handler" />
 
                 <template #fallback>
                     <div style="width: 550px; height: 67px">
@@ -162,11 +162,11 @@
                     dense
                     clearable
                     :options="fileHealthOptions"
-                    @clear="selectedFileHealth = undefined"
                     style="min-width: 120px"
                     label="File Health"
+                    @clear="selectedFileHealth = undefined"
                 >
-                    <template v-slot:selected-item="props">
+                    <template #selected-item="props">
                         <q-chip
                             v-if="props.opt"
                             :color="fileHealthColor(props.opt)"
@@ -175,13 +175,13 @@
                             {{ props.opt }}
                         </q-chip>
                     </template>
-                    <template v-slot:option="props">
+                    <template #option="props">
                         <q-item
-                            clickable
                             v-ripple
+                            clickable
                             v-bind="props.itemProps"
-                            @click="props.toggleOption(props.opt)"
                             dense
+                            @click="props.toggleOption(props.opt)"
                         >
                             <q-item-section>
                                 <div>
@@ -219,21 +219,21 @@
                             <q-item-section class="items-baseline">
                                 <q-toggle
                                     :model-value="fileTypeFilter[index].value"
-                                    @click="onFileTypeClicked(index)"
                                     :label="option.name"
+                                    @click="onFileTypeClicked(index)"
                                 />
                             </q-item-section>
                         </q-item>
                     </q-list>
                 </q-btn-dropdown>
                 <q-input
+                    v-model="search"
                     debounce="300"
                     placeholder="Search"
                     dense
-                    v-model="search"
                     outlined
                 >
-                    <template v-slot:append>
+                    <template #append>
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
@@ -261,16 +261,16 @@
                 </create-file-dialog-opener>
             </ButtonGroup>
         </div>
-        <div class="q-py-lg" v-else style="background: #0f62fe">
+        <div v-else class="q-py-lg" style="background: #0f62fe">
             <ButtonGroupOverlay>
-                <template v-slot:start>
+                <template #start>
                     <div style="margin: 0; font-size: 14pt; color: white">
                         {{ selectedFiles.length }}
                         {{ selectedFiles.length === 1 ? 'file' : 'files' }}
                         selected
                     </div>
                 </template>
-                <template v-slot:end>
+                <template #end>
                     <klein-download-files
                         :files="selectedFiles"
                         style="max-width: 300px"
@@ -301,7 +301,8 @@
                         icon="sym_o_delete"
                         color="white"
                         @click="() => deleteFilesCallback()"
-                        >Delete
+                    >
+                        Delete
                     </q-btn>
                     <q-btn
                         flat
@@ -317,9 +318,9 @@
         <div>
             <Suspense>
                 <explorer-page-files-table
-                    :url_handler="handler"
-                    v-model:selected="selectedFiles"
                     v-if="handler"
+                    v-model:selected="selectedFiles"
+                    :url_handler="handler"
                 />
 
                 <template #fallback>
@@ -414,7 +415,6 @@ const selectedFileHealth = computed({
         handler.value.setSearch({ health: value, name: search.value });
     },
 });
-const filter: Ref<string> = ref('');
 
 const selectedFiles: Ref<FileEntity[]> = ref([]);
 watch(
@@ -446,9 +446,9 @@ const {
     error,
 } = useMissionQuery(
     mission_uuid,
-    (error, query) => {
+    (e) => {
         Notify.create({
-            message: `Error fetching Mission: ${error.response.data.message}`,
+            message: `Error fetching Mission: ${e.response.data.message}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -492,22 +492,22 @@ const selectedCategories: Ref<Category[]> = computed({
 const { mutate: _deleteFiles } = useMutation({
     mutationFn: (update: { fileUUIDs; missionUUID }) =>
         deleteFiles(update.fileUUIDs, update.missionUUID),
-    onSuccess: () => {
+    onSuccess: async () => {
         Notify.create({
             message: 'Files deleted successfully',
             color: 'positive',
             timeout: 2000,
             position: 'bottom',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'files' &&
                 query.queryKey[1] === mission_uuid.value,
         });
     },
-    onError: (error) => {
+    onError: (e) => {
         Notify.create({
-            message: `Error deleting files: ${error.response.data.message}`,
+            message: `Error deleting files: ${e.response.data.message}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -515,8 +515,8 @@ const { mutate: _deleteFiles } = useMutation({
     },
 });
 
-function refresh() {
-    queryClient.invalidateQueries({
+async function refresh() {
+    await queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',
     });
 }
@@ -565,9 +565,9 @@ async function downloadCallback() {
             timeout: 2000,
             position: 'bottom',
         });
-    } catch (error) {
+    } catch (e) {
         Notify.create({
-            message: `Error downloading files: ${error}`,
+            message: `Error downloading files: ${e.toString()}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',

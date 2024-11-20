@@ -270,7 +270,10 @@ export class FileService implements OnModuleInit {
 
         if (startDate && endDate) {
             logger.debug(
-                'Filtering files by date range: ' + startDate + ' - ' + endDate,
+                'Filtering files by date range: ' +
+                    startDate.toString() +
+                    ' - ' +
+                    endDate.toString(),
             );
             query.andWhere('file.date BETWEEN :startDate AND :endDate', {
                 startDate: startDate,
@@ -472,9 +475,8 @@ export class FileService implements OnModuleInit {
             getBucketFromFileType(dbFile.type),
             dbFile.uuid,
             {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_uuid: dbFile.mission.project.uuid,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 mission_uuid: dbFile.mission.uuid,
                 filename: dbFile.filename,
             },
@@ -519,7 +521,7 @@ export class FileService implements OnModuleInit {
             expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
             {
                 // set filename in response headers
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
@@ -618,9 +620,9 @@ export class FileService implements OnModuleInit {
                     const bucket = getBucketFromFileType(file.type);
                     await addTagsToMinioObject(bucket, file.uuid, {
                         filename: file.filename,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         mission_uuid: missionUUID,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         project_uuid: newFile.mission.project.uuid,
                     });
                 } catch (e) {
@@ -681,7 +683,6 @@ export class FileService implements OnModuleInit {
         });
 
         const headers = {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             Authorization: `Bearer ${token}`,
         };
 
@@ -806,7 +807,7 @@ export class FileService implements OnModuleInit {
                 const queueEntity = await this.queueRepository.save(
                     this.queueRepository.create({
                         identifier: file.uuid,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         display_name: filename,
                         state: QueueState.AWAITING_UPLOAD,
                         location: FileLocation.MINIO,
@@ -923,9 +924,8 @@ export class FileService implements OnModuleInit {
                     {} as TaggingOpts,
                 );
                 await addTagsToMinioObject(bucked, file.name, {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     project_uuid: fileEntity.mission.project.uuid,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     mission_uuid: fileEntity.mission.uuid,
                     filename: fileEntity.filename,
                 });

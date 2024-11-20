@@ -42,7 +42,7 @@ import fs from 'node:fs';
 export class AuditLoggerMiddleware implements NestMiddleware {
     constructor(private actionService: ActionService) {}
 
-    use(req: Request, _: Response, next: NextFunction) {
+    async use(req: Request, _: Response, next: NextFunction) {
         if (!req || !req.cookies) {
             next();
             return;
@@ -63,7 +63,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
             `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
         );
 
-        this.actionService.writeAuditLog(key, auditLog).then(() => {});
+        await this.actionService.writeAuditLog(key, auditLog).then(() => {});
         next();
     }
 }
@@ -136,8 +136,7 @@ export class AppModule {
 }
 
 export type AccessGroupConfig = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     emails: [{ email: string; access_groups: string[] }];
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     access_groups: [{ name: string; uuid: string; rights: number }];
 };

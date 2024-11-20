@@ -2,5 +2,6 @@ import { DataSource } from 'typeorm';
 import { getConfig } from './prod_datasource.config';
 
 const datasource = new DataSource(getConfig());
-datasource.initialize();
+// eslint-disable-next-line no-console
+datasource.initialize().then(console.log).catch(console.error);
 export default datasource;

@@ -5,7 +5,7 @@
             <b>{{ props.action.template.name }}</b>
         </p>
         <q-input
-            v-model="action_name_check"
+            v-model="actionNameCheck"
             outlined
             placeholder="Confirm Action Name"
             autofocus
@@ -16,21 +16,17 @@
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { useRoute, useRouter } from 'vue-router';
 import { Action } from 'src/types/Action';
 import { deleteAction } from 'src/services/mutations/action';
 
-const action_name_check = ref('');
+const actionNameCheck = ref('');
 const client = useQueryClient();
 
-const route = useRoute();
-const router = useRouter();
-
 async function deleteActionAction() {
-    if (action_name_check.value === props.action.template.name) {
+    if (actionNameCheck.value === props.action.template.name) {
         await deleteAction(props.action)
-            .then(() => {
-                client.invalidateQueries({
+            .then(async () => {
+                await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'action_mission',
                 });
@@ -57,7 +53,7 @@ const props = defineProps<{
 
 defineExpose({
     deleteActionAction,
-    action_name_check,
+    action_name_check: actionNameCheck,
 });
 </script>
 <style scoped></style>

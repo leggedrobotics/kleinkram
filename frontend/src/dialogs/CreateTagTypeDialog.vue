@@ -23,7 +23,6 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import CreateTagType from 'components/CreateTagType.vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
 

@@ -60,7 +60,7 @@ describe('Verify Action', () => {
                 method: 'POST',
                 headers: {
                     cookie: `authtoken=${await getJwtToken(user)}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -88,7 +88,7 @@ describe('Verify Action', () => {
                 method: 'POST',
                 headers: {
                     cookie: `authtoken=${await getJwtToken(user)}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -146,7 +146,7 @@ describe('Verify Action', () => {
         // submit a new action
     }, 30_000);
 
-    test('if you can upload a file within an action', async () => {
+    test('if you can upload a file within an action', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

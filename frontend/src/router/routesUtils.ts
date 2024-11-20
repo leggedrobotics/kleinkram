@@ -21,12 +21,8 @@ export const routeWithLayout = (component: {
     name: string;
     path: string;
     breadcrumbs?: PageBreadCrumb[];
-    component: () =>
-        | Promise<typeof import('*.vue')>
-        | DefineComponent<{}, {}, any>;
-    layout: () =>
-        | Promise<typeof import('*.vue')>
-        | DefineComponent<{}, {}, any>;
+    component: () => Promise<typeof import('*.vue')> | DefineComponent;
+    layout: () => Promise<typeof import('*.vue')> | DefineComponent;
 }) => {
     return {
         name: component.name + 'Layout',

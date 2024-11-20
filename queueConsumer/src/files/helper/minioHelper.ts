@@ -32,7 +32,6 @@ export async function uploadLocalFile(
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
         await minio.fPutObject(bucketName, identifier, tmpFilePath, {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/octet-stream',
         });
         logger.debug('File uploaded to Minio in parts');

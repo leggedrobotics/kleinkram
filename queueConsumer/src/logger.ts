@@ -10,9 +10,11 @@ const ignoreContainerLogs = winston.format((info: any) => {
     return info;
 });
 
-const messageOnly = winston.format.printf(({ level, message }) => {
-    return `[${level.toUpperCase()}]: ${message}`;
-});
+const messageOnly = winston.format.printf(
+    ({ level, message }: { level: string; message: string }) => {
+        return `[${level.toUpperCase()}]: ${message}`;
+    },
+);
 
 const logger = winston.createLogger({
     level: 'debug',
@@ -26,7 +28,6 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: QUEUE_CONSUMER_LABEL,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 container_id: process.env.HOSTNAME,
             },
             json: true,

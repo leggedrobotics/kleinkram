@@ -4,9 +4,9 @@
             <q-btn
                 label="Reset Minio Tagging"
                 class="button-border bg-button-primary full-width"
-                @click="resetMinioTagging"
                 icon="sym_o_sell"
                 flat
+                @click="resetMinioTagging"
             />
             <div class="help-text q-pt-sm">
                 This will delete the Minio tags for all files in the system and
@@ -18,9 +18,9 @@
             <q-btn
                 label="Recompute File Sizes"
                 class="button-border bg-button-primary full-width"
-                @click="resetFileSizes"
                 icon="sym_o_expand"
                 flat
+                @click="resetFileSizes"
             />
             <div class="help-text q-pt-sm">
                 This will recompute the file sizes in the database by asking

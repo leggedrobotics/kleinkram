@@ -1,7 +1,14 @@
 <template>
     <div style="margin: 10px" class="row flex items-center justify-between">
         <q-select
+            ref="userSelect"
             v-model="selected"
+            use-input
+            multiple
+            input-debounce="100"
+            :options="foundUsers"
+            option-label="name"
+            class="full-width"
             @input-value="
                 (val) => {
                     search = val;
@@ -10,32 +17,25 @@
                     }
                 }
             "
-            use-input
-            multiple
-            input-debounce="100"
-            :options="foundUsers"
-            option-label="name"
-            ref="userSelect"
-            class="full-width"
         >
-            <template v-slot:no-option>
+            <template #no-option>
                 <q-item>
                     <q-item-section class="text-grey">
                         No results
                     </q-item-section>
                 </q-item>
             </template>
-            <template v-slot:selected-item="scope">
+            <template #selected-item="scope">
                 <q-chip
                     removable
-                    @remove="scope.removeAtIndex(scope.index)"
                     :tabindex="scope.tabindex"
                     :icon="icon(scope.opt.type)"
+                    @remove="scope.removeAtIndex(scope.index)"
                 >
                     {{ scope.opt.name }}
                 </q-chip>
             </template>
-            <template v-slot:option="{ itemProps, opt }">
+            <template #option="{ itemProps, opt }">
                 <q-item v-bind="itemProps">
                     <q-item-section>
                         <q-item-label>
@@ -93,7 +93,7 @@ const { mutate } = useMutation({
             color: 'positive',
             position: 'bottom',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', props.access_group_uuid],
         });
     },

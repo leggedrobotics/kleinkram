@@ -105,7 +105,6 @@ export default class User extends BaseEntity {
     tags: Tag[];
 
     @OneToMany(() => Apikey, (apikey) => apikey.user)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     api_keys: Apikey[];
 
     @OneToMany(() => Category, (category) => category.creator)

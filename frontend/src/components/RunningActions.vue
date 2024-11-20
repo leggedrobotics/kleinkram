@@ -20,9 +20,9 @@
 
         <!-- Scrollable Card Section -->
         <div
+            v-if="actions && actions.length > 0"
             ref="cardWrapper"
             class="card-wrapper"
-            v-if="actions && actions.length > 0"
         >
             <q-table
                 :rows="actions"
@@ -30,7 +30,7 @@
                 hide-pagination
                 class="q-pa-md"
             >
-                <template v-slot:body-cell-state="props">
+                <template #body-cell-state="props">
                     <q-td :props="props">
                         <template
                             v-if="

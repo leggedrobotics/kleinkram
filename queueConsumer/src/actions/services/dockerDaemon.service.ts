@@ -19,7 +19,6 @@ import {
 } from '../helper/ContainerConfigs';
 
 export type ContainerLimits = {
-    /* eslint-disable @typescript-eslint/naming-convention */
     /**
      * The maximum runtime of the container in milliseconds.
      */
@@ -36,16 +35,13 @@ export type ContainerLimits = {
      * The maximum disk space the container can use in bytes.
      */
     disk_quota: number;
-    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 const defaultContainerLimitations: ContainerLimits = {
-    /* eslint-disable @typescript-eslint/naming-convention */
     max_runtime: 60 * 60 * 1_000, // 1 hour
     memory_limit: 1024 * 1024 * 1024, // 1GB
     n_cpu: 2, // CPU limit in nano CPUs
     disk_quota: 40737418240,
-    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export type ContainerEnv = {
@@ -53,7 +49,6 @@ export type ContainerEnv = {
 };
 
 export type ContainerStartOptions = {
-    /* eslint-disable @typescript-eslint/naming-convention */
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
@@ -61,7 +56,6 @@ export type ContainerStartOptions = {
     environment?: ContainerEnv;
     command?: string;
     entrypoint?: string;
-    /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export const dockerDaemonErrorHandler = (error: Error) => {
@@ -82,7 +76,6 @@ const artifactUploaderImage =
 export class DockerDaemon {
     readonly docker: Docker;
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     static readonly CONTAINER_PREFIX = 'kleinkram-user-action-';
 
     constructor() {
@@ -139,7 +132,6 @@ export class DockerDaemon {
         const sha = '';
         const needsGpu = containerOptions.needs_gpu || false;
         const addGpuCapabilities = {
-            /* eslint-disable @typescript-eslint/naming-convention */
             DeviceRequests: [
                 {
                     Driver: 'nvidia',
@@ -147,7 +139,6 @@ export class DockerDaemon {
                     Capabilities: [['gpu']],
                 },
             ],
-            /* eslint-enable @typescript-eslint/naming-convention */
         };
 
         logger.info(
@@ -156,7 +147,6 @@ export class DockerDaemon {
                 : 'Creating container without GPU support',
         );
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
-            /* eslint-disable @typescript-eslint/naming-convention */
             Image: containerOptions.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
             Env: Object.entries(containerOptions.environment).map(
@@ -188,7 +178,6 @@ export class DockerDaemon {
             Volumes: {
                 '/tmp_disk': {},
             },
-            /* eslint-enable @typescript-eslint/naming-convention */
         };
         if (containerOptions.entrypoint) {
             containerCreateOptions.Entrypoint = containerOptions.entrypoint;
@@ -213,7 +202,7 @@ export class DockerDaemon {
         logger.info(`Container started wit id: ${container.id}`);
 
         // stop the container after max_runtime seconds
-        this.killContainerAfterMaxRuntime(
+        await this.killContainerAfterMaxRuntime(
             container,
             containerOptions.limits.max_runtime,
         );
@@ -233,30 +222,36 @@ export class DockerDaemon {
      * @param clearVolume - if true, the volume is removed after the container is stopped
      * @private
      */
-    private killContainerAfterMaxRuntime(
+    private async killContainerAfterMaxRuntime(
         container: Dockerode.Container,
         maxRuntimeMs: number,
         clearVolume = false,
     ) {
-        const cancelTimeout = setTimeout(async () => {
+        const cancelTimeout = setTimeout(() => {
             logger.info(
                 `Stopping container ${container.id} after ${maxRuntimeMs}ms`,
             );
 
             // initialize a kill timeout
-            const killTimout = setTimeout(async () => {
+            const killTimout = setTimeout(() => {
                 logger.info(
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
-                await this.killAndRemoveContainer(container.id, clearVolume);
+                this.killAndRemoveContainer(container.id, clearVolume).catch(
+                    logger.error,
+                );
             }, 10_000);
 
-            await this.stopContainer(container.id);
-            clearTimeout(killTimout); // clear the kill timeout
-            await this.removeContainer(container.id, clearVolume);
+            this.stopContainer(container.id)
+                .then(() => {
+                    clearTimeout(killTimout);
+                    // clear the kill timeout
+                    this.removeContainer(container.id, clearVolume);
+                })
+                .catch(logger.error);
         }, maxRuntimeMs);
 
-        container.wait().finally(() => {
+        await container.wait().finally(() => {
             clearTimeout(cancelTimeout); // clear the cancel timeout
         });
     }
@@ -319,7 +314,7 @@ export class DockerDaemon {
 
     async killAndRemoveContainer(containerId: string, clearVolume = false) {
         await this.killContainer(containerId);
-        await this.removeContainer(containerId, clearVolume);
+        this.removeContainer(containerId, clearVolume);
     }
 
     async killContainer(containerId: string) {
@@ -329,7 +324,7 @@ export class DockerDaemon {
             .catch(dockerDaemonErrorHandler);
     }
 
-    async removeContainer(containerId: string, clearVolume = false) {
+    removeContainer(containerId: string, clearVolume = false) {
         const container = this.docker.getContainer(containerId);
         if (container) {
             container
@@ -468,7 +463,10 @@ export class DockerDaemon {
                 },
             );
 
-            logger.info(`Image pulled: ${pullRes}. Starting container...`);
+            logger.info(
+                // eslint-disable-next-line @typescript-eslint/no-base-to-string,@typescript-eslint/restrict-template-expressions
+                `Image pulled: ${pullRes}. Starting container...`,
+            );
             image = this.docker.getImage(artifactUploaderImage);
         }
 
@@ -496,7 +494,6 @@ export class DockerDaemon {
 
         logger.info('Creating artifact uploader container...');
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
-            /* eslint-disable @typescript-eslint/naming-convention */
             Image: artifactUploaderImage,
             name: 'kleinkram-artifact-uploader-' + containerId,
             Env: [
@@ -521,7 +518,6 @@ export class DockerDaemon {
                     },
                 ],
             },
-            /* eslint-enable @typescript-eslint/naming-convention */
         };
 
         const container = await this.docker
@@ -548,7 +544,7 @@ export class DockerDaemon {
         logger.info(`Container started wit id: ${container.id}`);
 
         // stop the container after max_runtime seconds
-        this.killContainerAfterMaxRuntime(
+        await this.killContainerAfterMaxRuntime(
             container,
             containerOptions.limits.max_runtime,
             true,

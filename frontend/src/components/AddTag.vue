@@ -57,6 +57,7 @@
                 />
                 <q-field
                     v-if="tagtype.type === DataType.BOOLEAN"
+                    v-model="tagValues[tagtype.uuid]"
                     :rules="[
                         (val) =>
                             val === true ||
@@ -67,7 +68,6 @@
                     color="black"
                     dense
                     outlined
-                    v-model="tagValues[tagtype.uuid]"
                 >
                     <q-toggle
                         v-model="tagValues[tagtype.uuid]"
@@ -151,7 +151,7 @@ function addTag(tagtype: TagType) {
 
 const { mutate: save } = useMutation({
     mutationFn: () => addTags(props.mission_uuid, tagValues.value),
-    onSuccess(data, variables, context) {
+    onSuccess() {
         Notify.create({
             message: 'Tags saved',
             color: 'positive',
@@ -165,11 +165,13 @@ const { mutate: save } = useMutation({
                     query.queryKey[0] === 'mission' &&
                     query.queryKey[1] === props.mission_uuid,
             );
-        filtered.forEach((query) => {
-            queryClient.invalidateQueries(query.queryKey);
-        });
+        await Promise.all(
+            filtered.map((query) =>
+                queryClient.invalidateQueries(query.queryKey),
+            ),
+        );
     },
-    onError(error, variables, context) {
+    onError(error) {
         console.log(error);
     },
 });

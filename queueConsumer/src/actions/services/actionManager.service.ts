@@ -24,7 +24,7 @@ import si from 'systeminformation';
 @Injectable()
 export class ActionManagerService {
     // we will write logs to the database every 100 millisecond
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     private static LOG_WRITE_BATCH_TIME = 100;
 
     constructor(
@@ -48,7 +48,7 @@ export class ActionManagerService {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             rights: action.template.accessRights,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             key_type: KeyTypes.CONTAINER,
             action: action,
             user: action.createdBy,
@@ -76,13 +76,11 @@ export class ActionManagerService {
         const apikey = await this.createAPIkey(action);
         try {
             const envVariables: ContainerEnv = {
-                /* eslint-disable @typescript-eslint/naming-convention */
                 APIKEY: apikey.apikey,
                 PROJECT_UUID: action.mission.project.uuid,
                 MISSION_UUID: action.mission.uuid,
                 ACTION_UUID: action.uuid,
                 ENDPOINT: env.ENDPOINT,
-                /* eslint-enable @typescript-eslint/naming-convention */
             };
             const needsGpu = action.template.gpuMemory > 0;
             const { container, repoDigests, sha } =
@@ -92,7 +90,6 @@ export class ActionManagerService {
                         await this.actionRepository.save(action);
                     },
                     {
-                        /* eslint-disable @typescript-eslint/naming-convention */
                         docker_image: action.template.image_name,
                         name: action.uuid,
                         limits: {
@@ -109,7 +106,6 @@ export class ActionManagerService {
                         environment: envVariables,
                         command: action.template.command,
                         entrypoint: action.template.entrypoint,
-                        /* eslint-enable @typescript-eslint/naming-convention */
                     },
                 );
 
@@ -153,7 +149,7 @@ export class ActionManagerService {
             action.state = ActionState.STOPPING;
             await this.actionRepository.save(action);
 
-            await this.containerDaemon.removeContainer(container.id, true);
+            this.containerDaemon.removeContainer(container.id, true);
             await this.setActionState(container, action);
             action.executionEndedAt = new Date();
             action.artifacts = ArtifactState.UPLOADING;
@@ -166,9 +162,7 @@ export class ActionManagerService {
                 );
             await artifactUploadContainer.wait();
             action.artifacts = ArtifactState.UPLOADED;
-            await this.containerDaemon.removeContainer(
-                artifactUploadContainer.id,
-            );
+            this.containerDaemon.removeContainer(artifactUploadContainer.id);
             await this.containerDaemon.removeVolume(action.uuid);
             action.artifact_url = `https://drive.google.com/drive/folders/${parentFolder}`;
             await this.actionRepository.save(action);
@@ -223,9 +217,8 @@ export class ActionManagerService {
     ) {
         const containerLogger = logger.child({
             labels: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 container_id: containerId,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 action_uuid: actionUuid || 'unknown',
             },
         });

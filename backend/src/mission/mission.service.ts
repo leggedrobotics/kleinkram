@@ -299,9 +299,9 @@ export class MissionService {
                     file.uuid,
                     {
                         filename: file.filename,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         mission_uuid: missionUUID,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         project_uuid: projectUUID,
                     },
                 ),
@@ -387,7 +387,7 @@ export class MissionService {
                     4 * 60 * 60,
                     {
                         // set filename in response headers
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+
                         'response-content-disposition': `attachment; filename ="${f.filename}"`,
                     },
                 ),

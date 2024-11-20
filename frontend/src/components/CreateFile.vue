@@ -62,8 +62,8 @@
 
         <label>Upload File from Device</label>
         <q-file
-            outlined
             v-model="files"
+            outlined
             multiple
             accept=".bag, .mcap"
             style="min-width: 300px"
@@ -91,12 +91,6 @@
         />
     </q-card-section>
 </template>
-<style lang="scss">
-.q-field__prepend {
-    pointer-events: none;
-}
-</style>
-
 <script setup lang="ts">
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 
@@ -117,7 +111,7 @@ const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
 const selected_mission: Ref<Mission | null> = ref(null);
-const { data: _data, error } = useQuery<[Project[], number]>({
+const { data: _data } = useQuery<[Project[], number]>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
@@ -170,7 +164,7 @@ const missions = computed(() => {
 
 watchEffect(() => {
     if (selected_project.value?.uuid) {
-        refetch();
+        refetch().catch(console.error);
     }
 });
 
@@ -192,4 +186,10 @@ defineExpose({
     createFileAction: createFile,
 });
 </script>
+
+<style lang="scss">
+.q-field__prepend {
+    pointer-events: none;
+}
+</style>
 <style scoped></style>

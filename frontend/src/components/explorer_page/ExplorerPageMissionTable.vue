@@ -1,11 +1,11 @@
 <template>
     <q-table
-        flat
-        bordered
         ref="tableRef"
         v-model:pagination="pagination"
-        :rows-per-page-options="[10, 20, 50, 100]"
         v-model:selected="selected"
+        flat
+        bordered
+        :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
         :columns="missionColumns as any"
         row-key="uuid"
@@ -18,21 +18,21 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
-        <template v-slot:body-selection="props">
+        <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
         </template>
-        <template v-slot:loading>
+        <template #loading>
             <q-inner-loading showing color="primary" />
         </template>
-        <template v-slot:body-cell-tagverification="props">
+        <template #body-cell-tagverification="props">
             <q-td :props="props" style="width: 150px">
                 <div
-                    class="flex items-center"
                     v-if="missingTags(props.row).length === 0"
+                    class="flex items-center"
                 >
                     <q-icon
                         name="sym_o_check"
@@ -47,7 +47,7 @@
                     />
                     Complete
                 </div>
-                <div class="flex items-center" v-else style="color: red">
+                <div v-else class="flex items-center" style="color: red">
                     <q-icon
                         name="sym_o_error"
                         color="red"
@@ -59,6 +59,7 @@
                     <q-tooltip>
                         <div
                             v-for="tagType in missingTags(props.row)"
+                            :key="tagType.uuid"
                             style="font-size: 14px"
                         >
                             {{ tagType.name }}
@@ -67,7 +68,7 @@
                 </div>
             </q-td>
         </template>
-        <template v-slot:body-cell-missionaction="props">
+        <template #body-cell-missionaction="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -82,33 +83,33 @@
                     <q-menu auto-close>
                         <q-list>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="(e) => onRowClick(e, props.row)"
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
                             <EditMissionDialogOpener :mission="props.row">
-                                <q-item clickable v-ripple>
-                                    <q-item-section
-                                        >Edit Mission
+                                <q-item v-ripple clickable>
+                                    <q-item-section>
+                                        Edit Mission
                                     </q-item-section>
                                 </q-item>
                             </EditMissionDialogOpener>
                             <MissionMetadataOpener :mission="props.row">
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Metadata
                                     </q-item-section>
                                 </q-item>
                             </MissionMetadataOpener>
                             <MoveMissionDialogOpener :mission="props.row">
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>Move</q-item-section>
                                 </q-item>
                             </MoveMissionDialogOpener>
                             <DeleteMissionDialogOpener :mission="props.row">
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
                             </DeleteMissionDialogOpener>
@@ -193,6 +194,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
+            // eslint-disable-next-line vue/no-mutating-props
             props.url_handler.rowsNumber = total.value;
         }
     },
@@ -201,7 +203,7 @@ watch(
 const $router = useRouter();
 
 const onRowClick = async (_: Event, row: any) => {
-    $router?.push({
+    await $router?.push({
         name: ROUTES.FILES.routeName,
         params: {
             project_uuid: project_uuid.value,

@@ -8,7 +8,7 @@ import {
     QueryTake,
 } from '../validation/queryDecorators';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { CurrentAPIUserDto, UserDto } from '@common/api/types/User.dto';
+import { CurrentAPIUserDto } from '@common/api/types/User.dto';
 
 @Controller('user')
 export class UserController {

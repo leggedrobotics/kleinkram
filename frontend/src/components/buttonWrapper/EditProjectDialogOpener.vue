@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="editProjectDialog"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="editProjectDialog"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -14,21 +14,14 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import EditProjectDialog from 'src/dialogs/EditProjectDialog.vue';
 import {
     canModifyProject,
-    getPermissionForProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 
 const $q = useQuasar();
 const { project_uuid } = defineProps({
@@ -38,10 +31,6 @@ const { project_uuid } = defineProps({
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyProject(project_uuid, permissions.value),
-);
-
-const permissionValue = computed(() =>
-    getPermissionForProject(project_uuid, permissions.value),
 );
 
 const editProjectDialog = () => {
@@ -57,3 +46,9 @@ const editProjectDialog = () => {
     });
 };
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

@@ -1,13 +1,13 @@
 <template>
-    <div style="margin: auto 0" v-if="!!user">
+    <div v-if="!!user" style="margin: auto 0">
         <q-btn
             round
             flat
             :style="user.role === UserRole.ADMIN ? 'border: 3px solid red' : ''"
         >
             <q-avatar
-                size="32px"
                 v-if="!!user['avatarUrl'] && user['avatarUrl'] !== ''"
+                size="32px"
             >
                 <img
                     :src="user['avatarUrl']"
@@ -16,15 +16,15 @@
                 />
             </q-avatar>
 
-            <q-avatar size="36px" v-else>
+            <q-avatar v-else size="36px">
                 <q-icon name="sym_o_account_circle" />
             </q-avatar>
 
             <q-menu auto-close style="width: 280px; padding: 8px">
                 <q-list style="gap: 4px; display: flex; flex-direction: column">
                     <q-item
-                        clickable
                         v-close-popup
+                        clickable
                         @click="navigateTo(ROUTES.USER_PROFILE.path)"
                     >
                         <q-item-section avatar>
@@ -55,7 +55,7 @@
                         </q-item-section>
                     </q-item>
 
-                    <q-item clickable @click="logout" class="text-error">
+                    <q-item clickable class="text-error" @click="logout">
                         <q-item-section avatar>
                             <q-icon
                                 name="sym_o_logout"
@@ -80,8 +80,8 @@ import { UserRole } from '@common/enum';
 
 const $router = useRouter();
 
-const navigateTo = (path: string) => {
-    $router.push(path);
+const navigateTo = async (path: string) => {
+    await $router.push(path);
 };
 
 const { data: user } = useUser();

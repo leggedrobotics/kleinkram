@@ -4,8 +4,8 @@
         class="bg-button-secondary text-on-color"
         label="Create Access Group"
         icon="sym_o_add"
-        @click="() => createAccessGroupDialog()"
         :disable="!canCreate"
+        @click="() => createAccessGroupDialog()"
     >
         <q-tooltip v-if="!canCreate">
             You do not have permission to create a new Access Group
@@ -32,7 +32,7 @@ const $q = useQuasar();
 const { mutate: _createAccessGroup } = useMutation({
     mutationFn: (name: string) => createAccessGroup(name),
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'accessGroups';
             },
@@ -44,7 +44,7 @@ const { mutate: _createAccessGroup } = useMutation({
             timeout: 2000,
         });
     },
-    onError: (error) => {
+    onError: () => {
         Notify.create({
             message: 'Error creating Access Group',
             color: 'negative',
@@ -54,7 +54,7 @@ const { mutate: _createAccessGroup } = useMutation({
     },
 });
 
-async function createAccessGroupDialog() {
+function createAccessGroupDialog() {
     $q.dialog({
         component: CreateAccessGroupDialog,
     }).onOk((name: string) => {

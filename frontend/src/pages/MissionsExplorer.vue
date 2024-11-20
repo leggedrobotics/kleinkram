@@ -1,16 +1,16 @@
 <template>
     <title-section :title="project?.name">
-        <template v-slot:subtitle>
+        <template #subtitle>
             <span>
                 {{ project?.description }}
             </span>
         </template>
 
-        <template v-slot:buttons>
+        <template #buttons>
             <button-group>
                 <ConfigureTagsDialogOpener
-                    :project_uuid="project_uuid"
                     v-if="project_uuid"
+                    :project_uuid="project_uuid"
                 >
                     <q-btn
                         class="button-border"
@@ -19,8 +19,7 @@
                         icon="sym_o_sell"
                         label="Metadata"
                         :disable="!project_uuid"
-                    >
-                    </q-btn>
+                    />
                 </ConfigureTagsDialogOpener>
 
                 <q-btn
@@ -36,7 +35,7 @@
                             <manage-project-dialog-opener
                                 :project_uuid="project_uuid"
                             >
-                                <q-item clickable v-close-popup>
+                                <q-item v-close-popup clickable>
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_lock" />
                                     </q-item-section>
@@ -51,7 +50,7 @@
                             <edit-project-dialog-opener
                                 :project_uuid="project_uuid"
                             >
-                                <q-item clickable v-close-popup>
+                                <q-item v-close-popup clickable>
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_edit" />
                                     </q-item-section>
@@ -67,10 +66,10 @@
                                 :has_missions="project?.missions.length > 0"
                             >
                                 <q-item
-                                    clickable
                                     v-ripple
-                                    style="color: red"
                                     v-close-popup
+                                    clickable
+                                    style="color: red"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_delete" />
@@ -88,25 +87,25 @@
     </title-section>
     <ActionConfiguration
         :open="createAction"
-        @close="createAction = false"
         :mission_uuids="selected_mission_uuids"
+        @close="createAction = false"
     />
     <div>
         <div
-            class="q-my-lg flex justify-between items-center"
             v-if="selectedMissions.length === 0"
+            class="q-my-lg flex justify-between items-center"
         >
             <h2 class="text-h4 q-mb-xs">All Missions of {{ project?.name }}</h2>
 
             <button-group>
                 <q-input
+                    v-model="search"
                     debounce="300"
                     placeholder="Search"
                     dense
-                    v-model="search"
                     outlined
                 >
-                    <template v-slot:append>
+                    <template #append>
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
@@ -142,9 +141,9 @@
                 </create-mission-dialog-opener>
             </button-group>
         </div>
-        <div class="q-py-lg" v-else style="background: #0f62fe">
+        <div v-else class="q-py-lg" style="background: #0f62fe">
             <ButtonGroupOverlay>
-                <template v-slot:start>
+                <template #start>
                     <div style="margin: 0; font-size: 14pt; color: white">
                         {{ selectedMissions.length }}
                         {{
@@ -155,7 +154,7 @@
                         selected
                     </div>
                 </template>
-                <template v-slot:end>
+                <template #end>
                     <KleinDownloadMissions
                         :missions="selectedMissions"
                         style="max-width: 400px"
@@ -179,7 +178,8 @@
                         color="white"
                         :disable="selectedMissions.length !== 1"
                         @click="deleteMission"
-                        >Delete
+                    >
+                        Delete
 
                         <q-tooltip v-if="selectedMissions.length !== 1">
                             You can only delete one mission at a time
@@ -216,9 +216,9 @@
         <div>
             <Suspense>
                 <explorer-page-mission-table
-                    :url_handler="handler"
                     v-if="handler"
                     v-model:selected="selectedMissions"
+                    :url_handler="handler"
                 />
             </Suspense>
         </div>
@@ -263,7 +263,7 @@ registerNoPermissionErrorHandler(
     error,
 );
 
-const deleteMission = async () => {
+const deleteMission = () => {
     const mission = selectedMissions.value[0];
 
     $q.dialog({
@@ -290,8 +290,8 @@ const selected_mission_uuids = computed(() => {
     return selectedMissions.value.map((mission) => mission.uuid);
 });
 
-function refresh() {
-    queryClient.invalidateQueries({
+async function refresh() {
+    await queryClient.invalidateQueries({
         queryKey: ['missions'],
     });
 }

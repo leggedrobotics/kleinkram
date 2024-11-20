@@ -3,8 +3,8 @@
         <q-toolbar class="q-pa-none height-xxl">
             <q-toolbar-title
                 shrink
-                @click="$router.push('/')"
                 class="q-pa-none"
+                @click="$router.push('/')"
             >
                 <kleinkram-logo class="q-pr-lg" />
             </q-toolbar-title>

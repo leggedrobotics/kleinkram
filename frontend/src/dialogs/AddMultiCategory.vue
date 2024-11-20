@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title>Add Categories</template>
+        <template #title> Add Categories </template>
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -36,8 +36,8 @@
             <q-btn
                 label="Save"
                 class="bg-button-primary"
-                @click="addCategories"
                 :disable="selected.length === 0"
+                @click="addCategories"
             />
         </template>
     </base-dialog>
@@ -70,8 +70,8 @@ function updateSelected(value: Category[]) {
 }
 
 const { mutate } = useMutation({
-    mutationFn: () => {
-        addManyCategories(
+    mutationFn: async () => {
+        await addManyCategories(
             props.mission_uuid,
             props.files.map((f) => f.uuid),
             selected.value.map((c) => c.uuid),

@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="createNewTageType"
         :class="{
             disabled: !canCreate,
             'cursor-pointer': !canCreate,
             'cursor-not-allowed': canCreate,
         }"
+        @click="createNewTageType"
     >
         <slot />
     </div>

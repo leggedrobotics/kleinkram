@@ -9,7 +9,6 @@ import { AccessGroupRights } from '../../frontend_shared/enum';
 @Unique('unique_versioned_action_name', ['name', 'version'])
 export default class ActionTemplate extends BaseEntity {
     @Column()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     image_name: string;
 
     @Column()

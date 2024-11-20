@@ -4,8 +4,8 @@
         color="white"
         icon="sym_o_category"
         label="Add Categories"
-        @click="addCategories"
         :disable="!canModify"
+        @click="addCategories"
     >
         <q-tooltip> Add Categories</q-tooltip>
     </q-btn>

@@ -22,7 +22,7 @@ import { AccessGroupRights } from '@common/enum';
 
 type Permissions = {
     role: string;
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     default_permission: number;
     projects: {
         uuid: string;
@@ -96,6 +96,7 @@ export const canCreateProject = (
 ): boolean => {
     if (!permissions) return false;
     if (permissions.role === 'ADMIN') return true;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     return permissions.default_permission >= AccessGroupRights.CREATE;
 };
 

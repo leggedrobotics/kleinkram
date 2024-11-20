@@ -67,7 +67,6 @@ function asOneOf<T extends string | number>(value: T, valueList: T[]): T {
     return value;
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export default {
     /**
      * @returns Url of graphql backend endpoint

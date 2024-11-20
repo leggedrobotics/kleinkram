@@ -10,6 +10,6 @@ import { useRouter } from 'vue-router';
 const $router = useRouter();
 
 // The router should catch any routing to this page and redirect to the original targer. See frontend/src/boot/router.ts
-$router.push({ name: ROUTES.DASHBOARD.routeName });
+await $router.push({ name: ROUTES.DASHBOARD.routeName });
 </script>
 <style scoped></style>

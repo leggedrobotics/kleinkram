@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Project</template>
+        <template #title> Delete Project </template>
         <template #content>
             <DeleteProject
-                :project="project"
-                ref="deleteProjectRef"
                 v-if="project"
+                ref="deleteProjectRef"
+                :project="project"
             />
             <q-skeleton v-else height="250px" />
         </template>

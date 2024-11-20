@@ -1,18 +1,18 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title>Change Access Rights</template>
+        <template #title> Change Access Rights </template>
 
         <template #content>
-            <q-form @submit="onDialogOK" class="row flex">
-                <b style="align-content: center" v-if="projectAccess">{{
+            <q-form class="row flex" @submit="onDialogOK">
+                <b v-if="projectAccess" style="align-content: center">{{
                     projectAccess.project?.name
                 }}</b>
                 <q-select
+                    v-if="projectAccess"
                     v-model="rights"
                     :options="options"
                     label="Select Access Rights"
                     style="width: 50%; margin-left: 20%"
-                    v-if="projectAccess"
                 />
             </q-form>
         </template>
@@ -63,10 +63,10 @@ const { mutate: changeAccessRights } = useMutation({
         );
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'projectAccess',
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'AccessGroup',
         });
     },
@@ -96,6 +96,7 @@ const options = Object.keys(accessGroupRightsMap)
         label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
         value: parseInt(key, 10),
     }))
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     .filter((option) => option.value !== AccessGroupRights.READ);
 
 function confirmAction() {

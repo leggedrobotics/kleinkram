@@ -1,5 +1,5 @@
 <template>
-    <base-dialog title="New Mission" ref="dialogRef">
+    <base-dialog ref="dialogRef" title="New Mission">
         <template #title> Upload Folder</template>
 
         <template #tabs>
@@ -40,9 +40,9 @@
 
                     <label for="missionName">Mission Name *</label>
                     <q-input
-                        name="missionName"
                         ref="missionNameInput"
                         v-model="missionName"
+                        name="missionName"
                         outlined
                         required
                         clearable
@@ -52,19 +52,19 @@
                         style="padding-bottom: 30px"
                         :error="isInErrorState"
                         :error-message="errorMessage"
-                        v-on:update:model-value="isInErrorState = false"
+                        @update:model-value="isInErrorState = false"
                     />
                     <input
+                        ref="HTMLinput"
                         type="file"
                         webkitdirectory
                         style="display: none"
-                        ref="HTMLinput"
                         @change="handle"
                     />
                     <q-file
+                        v-model="files"
                         outlined
                         style="min-width: 300px"
-                        v-model="files"
                         @click="transferClick"
                     >
                         <template #prepend>
@@ -79,8 +79,8 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :projectUUID="project.uuid"
-                        @update:tagValues="(update) => (tagValues = update)"
+                        :project-u-u-i-d="project.uuid"
+                        @update:tag-values="(update) => (tagValues = update)"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -92,8 +92,8 @@
                 flat
                 label="Next"
                 :disable="missionName.length < 3"
-                @click="tab_selection = 'tags'"
                 class="bg-button-primary"
+                @click="tab_selection = 'tags'"
             />
             <q-btn
                 v-if="tab_selection === 'tags'"
@@ -122,7 +122,6 @@ import { createMission } from 'src/services/mutations/mission';
 import { Mission } from 'src/types/Mission';
 import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
-import { usePermissionsQuery } from 'src/hooks/customQueryHooks';
 import { createFileAction } from 'src/services/fileService';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -139,7 +138,7 @@ const newMission: Ref<Mission | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 const files = ref<File[]>([]);
 
-const { data: project, refetch }: { data: Ref<Project>; refetch: Function } =
+const { data: project, refetch }: { data: Ref<Project>; refetch } =
     useQuery<Project>({
         queryKey: computed(() => ['project', project_uuid]),
         queryFn: () => getProject(project_uuid.value as string),
@@ -154,15 +153,11 @@ const isInErrorState = ref(false);
 const errorMessage = ref('');
 const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
 
-const permissions = usePermissionsQuery();
-
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
     return project?.value?.requiredTags.every(
-        (tag) =>
-            tagValues.value[tag.uuid] !== undefined &&
-            tagValues.value[tag.uuid] !== '',
+        (tag) => tagValues.value[tag.uuid] !== '',
     );
 });
 
@@ -208,10 +203,12 @@ const submitNewMission = async () => {
                 query.queryKey[0] === 'missions' &&
                 query.queryKey[1] === project.value?.uuid,
         );
-    filtered.forEach((query) => {
-        console.log('Invalidating query', query.queryKey);
-        queryClient.invalidateQueries(query.queryKey);
-    });
+    await Promise.all(
+        filtered.map((query) => {
+            console.log('Invalidating query', query.queryKey);
+            return queryClient.invalidateQueries(query.queryKey);
+        }),
+    );
     Notify.create({
         message: `Mission ${missionName.value} created`,
         color: 'positive',

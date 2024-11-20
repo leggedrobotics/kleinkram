@@ -35,7 +35,7 @@
                         placeholder="Search"
                         class="q-mr-sm full-height"
                     >
-                        <template v-slot:append>
+                        <template #append>
                             <q-icon name="sym_o_search" />
                         </template>
                     </q-input>
@@ -61,26 +61,26 @@
             </div>
 
             <q-table
+                ref="tableRef"
+                v-model:pagination="pagination"
+                v-model:selected="selectedProjects"
                 flat
                 bordered
                 separator="none"
-                ref="tableRef"
-                v-model:pagination="pagination"
                 :rows="project_rows"
                 :columns="project_cols"
                 selection="multiple"
-                v-model:selected="selectedProjects"
                 row-key="uuid"
                 :filter="search"
             >
-                <template v-slot:body-selection="props">
+                <template #body-selection="props">
                     <q-checkbox
                         v-model="props.selected"
                         color="grey-8"
                         class="checkbox-with-hitbox"
                     />
                 </template>
-                <template v-slot:body-cell-projectaction="props">
+                <template #body-cell-projectaction="props">
                     <q-td :props="props">
                         <q-btn
                             flat
@@ -95,23 +95,23 @@
                             <q-menu auto-close>
                                 <q-list>
                                     <q-item
+                                        v-ripple
                                         style="width: 180px"
                                         clickable
-                                        v-ripple
                                         @click="() => _rowClick(props.row.uuid)"
                                     >
-                                        <q-item-section
-                                            >View Project Details
+                                        <q-item-section>
+                                            View Project Details
                                         </q-item-section>
                                     </q-item>
 
                                     <ChangeProjectRightsDialogOpener
-                                        :projectUUID="props.row.uuid"
-                                        :projectAccessUUID="
+                                        :project-u-u-i-d="props.row.uuid"
+                                        :project-access-u-u-i-d="
                                             props.row.project_access_uuid
                                         "
                                     >
-                                        <q-item clickable v-ripple>
+                                        <q-item v-ripple clickable>
                                             <q-item-section>
                                                 Change rights
                                             </q-item-section>
@@ -119,9 +119,9 @@
                                     </ChangeProjectRightsDialogOpener>
                                     <RemoveProjectDialogOpener
                                         :access-group="accessGroup"
-                                        :projectUUID="props.row.uuid"
+                                        :project-u-u-i-d="props.row.uuid"
                                     >
-                                        <q-item clickable v-ripple>
+                                        <q-item v-ripple clickable>
                                             <q-item-section>
                                                 Remove
                                             </q-item-section>
@@ -145,7 +145,7 @@
                         placeholder="Search"
                         class="q-mr-sm full-height"
                     >
-                        <template v-slot:append>
+                        <template #append>
                             <q-icon name="sym_o_search" />
                         </template>
                     </q-input>
@@ -163,7 +163,7 @@
 
                     <AddUserDialogOpener
                         v-if="accessGroup"
-                        :accessGroup="accessGroup"
+                        :access-group="accessGroup"
                     >
                         <q-btn
                             flat
@@ -175,23 +175,23 @@
                 </button-group>
             </div>
             <q-table
-                :rows="accessGroup?.memberships || []"
                 v-model:pagination="pagination2"
+                v-model:selected="selectedUsers"
+                :rows="accessGroup?.memberships || []"
                 :columns="user_cols"
                 style="margin-top: 8px"
                 selection="multiple"
-                v-model:selected="selectedUsers"
                 row-key="uuid"
                 :filter="search"
             >
-                <template v-slot:body-selection="props">
+                <template #body-selection="props">
                     <q-checkbox
                         v-model="props.selected"
                         color="grey-8"
                         class="checkbox-with-hitbox"
                     />
                 </template>
-                <template v-slot:body-cell-expiration="props">
+                <template #body-cell-expiration="props">
                     <td>
                         <q-btn
                             flat
@@ -208,11 +208,10 @@
                                     : 'primary'
                             "
                             @click="openSetExpirationDialog(props.row)"
-                        >
-                        </q-btn>
+                        />
                     </td>
                 </template>
-                <template v-slot:body-cell-actions="props">
+                <template #body-cell-actions="props">
                     <q-td :props="props">
                         <q-btn
                             flat
@@ -227,29 +226,28 @@
                             <q-menu auto-close>
                                 <q-list>
                                     <q-item
+                                        v-ripple
                                         style="width: 180px"
                                         clickable
-                                        v-ripple
-                                        @click=""
                                         disable
                                     >
-                                        <q-item-section
-                                            >View Details
+                                        <q-item-section>
+                                            View Details
                                         </q-item-section>
                                         <q-tooltip>
                                             You can't view details of a user!
                                         </q-tooltip>
                                     </q-item>
 
-                                    <q-item clickable v-ripple disabled>
+                                    <q-item v-ripple clickable disabled>
                                         <q-item-section>Edit</q-item-section>
                                         <q-tooltip>
                                             You can't edit a user!
                                         </q-tooltip>
                                     </q-item>
                                     <q-item
-                                        clickable
                                         v-ripple
+                                        clickable
                                         @click="
                                             () =>
                                                 _removeUser(props.row.user.uuid)
@@ -320,7 +318,7 @@ const queryClient = useQueryClient();
 const { data: accessGroup, refetch } = useQuery({
     queryKey: ['AccessGroup', uuid],
     queryFn: async () => {
-        return getAccessGroup(uuid.value as string);
+        return getAccessGroup(uuid.value);
     },
 });
 
@@ -335,7 +333,7 @@ const { mutate: _removeUser } = useMutation({
     mutationFn: (userUUID: string) =>
         removeUserFromAccessGroup(userUUID, uuid.value),
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', uuid],
         });
         Notify.create({
@@ -399,7 +397,7 @@ const { mutate: setAccessGroup } = useMutation({
         return setAccessGroupExpiry(data.aguUUID, data.expirationDate);
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => {
                 return (
                     query.queryKey[0] === 'AccessGroup' &&
@@ -488,11 +486,11 @@ const user_cols = [
     },
 ];
 
-const _rowClick = (uuid: string) => {
-    router?.push({
+const _rowClick = (_uuid: string) => {
+    await router?.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
-            project_uuid: uuid,
+            project_uuid: _uuid,
         },
     });
 };

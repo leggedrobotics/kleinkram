@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="_deleteAccessGroup"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="_deleteAccessGroup"
     >
         <slot />
         <q-tooltip v-if="props.accessGroup.personal">
@@ -18,14 +18,8 @@
     </div>
 </template>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
 <script setup lang="ts">
-import { Notify, useQuasar } from 'quasar';
+import { Notify } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { deleteAccessGroup } from 'src/services/mutations/access';
@@ -34,13 +28,12 @@ import { getUser } from 'src/services/auth';
 import { User } from 'src/types/User';
 import { UserRole } from '@common/enum';
 
-const $q = useQuasar();
 const props = defineProps<{
     accessGroup: AccessGroup;
 }>();
 
 const me: Ref<User | undefined> = ref(undefined);
-getUser()?.then((user) => {
+await getUser()?.then((user) => {
     me.value = user;
 });
 
@@ -56,7 +49,7 @@ const queryClient = useQueryClient();
 const { mutate: _deleteAccessGroup } = useMutation({
     mutationFn: () => deleteAccessGroup(props.accessGroup.uuid),
     onSuccess: () => {
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'accessGroups';
             },
@@ -68,7 +61,7 @@ const { mutate: _deleteAccessGroup } = useMutation({
             timeout: 2000,
         });
     },
-    onError: (error) => {
+    onError: () => {
         Notify.create({
             message: 'Error deleting Access Group',
             color: 'negative',
@@ -78,5 +71,11 @@ const { mutate: _deleteAccessGroup } = useMutation({
     },
 });
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>
 
 <style scoped></style>

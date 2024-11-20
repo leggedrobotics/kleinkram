@@ -1,13 +1,13 @@
 <template>
     <q-badge
         :color="
-            is_artifact_uploading ? 'transparent' : getActionColor(action.state)
+            isArtifactUploading ? 'transparent' : getActionColor(action.state)
         "
-        :style="is_artifact_uploading ? 'color: #000;' : ''"
+        :style="isArtifactUploading ? 'color: #000;' : ''"
         class="q-pa-sm button-border"
     >
         <q-tooltip
-            v-if="is_artifact_uploading"
+            v-if="isArtifactUploading"
             anchor="top middle"
             self="bottom middle"
         >
@@ -20,13 +20,16 @@
 import { Action } from 'src/types/Action';
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
+import { ArtifactState } from '@common/enum';
 
 const props = defineProps<{
     action: Action;
 }>();
 
-const is_artifact_uploading = computed(
-    () => 10 < props.action.artifacts && props.action.artifacts < 30,
+const isArtifactUploading = computed(
+    () =>
+        ArtifactState.AWAITING_ACTION < props.action.artifacts &&
+        props.action.artifacts < ArtifactState.UPLOADED,
 );
 </script>
 <style scoped></style>

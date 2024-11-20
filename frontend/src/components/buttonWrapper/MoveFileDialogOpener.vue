@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="moveFiles"
         :class="{
             disabled: !canModify,
             'cursor-pointer': canModify,
             'cursor-not-allowed': !canModify,
         }"
+        @click="moveFiles"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -13,12 +13,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -57,3 +51,9 @@ function moveFiles() {
     });
 }
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

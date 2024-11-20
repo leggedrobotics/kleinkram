@@ -33,11 +33,9 @@ export default class Mission extends BaseEntity {
     creator: User;
 
     @OneToMany(() => Apikey, (apiKey) => apiKey.mission)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     api_keys: Apikey[];
 
     @OneToMany(() => MissionAccess, (missionAccess) => missionAccess.mission)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses: MissionAccess[];
 
     @OneToMany(() => Tag, (tag) => tag.mission)

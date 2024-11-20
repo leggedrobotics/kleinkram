@@ -47,6 +47,7 @@ export const mockDbUser = async (
     role: UserRole = undefined,
 ): Promise<string> => {
     // read config from access_config.json
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = db.getRepository(AccessGroup);
@@ -57,6 +58,7 @@ export const mockDbUser = async (
     const accountRepository = db.getRepository(Account);
 
     // hash the email to create a unique oauthID
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(email);
@@ -86,7 +88,8 @@ export const mockDbUser = async (
     return (await userRepository.findOne({ where: { email: email } })).uuid;
 };
 
-export const getJwtToken = async (user: User) => {
+export const getJwtToken = (user: User) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jwt = require('jsonwebtoken');
     return jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET);
 };

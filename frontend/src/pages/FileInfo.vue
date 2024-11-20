@@ -1,5 +1,5 @@
 <template>
-    <InspectFile :uuid="file_uuid" v-if="!!file_uuid" />
+    <InspectFile v-if="!!file_uuid" :uuid="file_uuid" />
 </template>
 
 <script setup lang="ts">

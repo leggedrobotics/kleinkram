@@ -21,7 +21,6 @@ export default class Project extends BaseEntity {
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,
     })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses: ProjectAccess[];
 
     @Column({ nullable: true })

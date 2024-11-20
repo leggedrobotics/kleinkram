@@ -2,9 +2,11 @@ import winston, { format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
 import { Injectable, LoggerService } from '@nestjs/common';
 
-const messageOnly = winston.format.printf(({ level, message }) => {
-    return `[${level.toUpperCase()}]: ${message}`;
-});
+const messageOnly = winston.format.printf(
+    ({ level, message }: { level: string; message: string }) => {
+        return `[${level.toUpperCase()}]: ${message}`;
+    },
+);
 
 const logger = winston.createLogger({
     level: 'debug',

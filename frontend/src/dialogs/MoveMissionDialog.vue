@@ -25,8 +25,8 @@
                                 "
                             >
                                 <q-item-section>
-                                    <q-item-label
-                                        >{{ project.name }}
+                                    <q-item-label>
+                                        {{ project.name }}
                                     </q-item-label>
                                 </q-item-section>
                             </q-item>
@@ -38,8 +38,8 @@
                         label="OK"
                         color="primary"
                         unelevated
-                        @click="onOk"
                         style="margin-right: 5px"
+                        @click="onOk"
                     />
                 </div>
                 <div class="col-1">
@@ -110,17 +110,20 @@ async function onOk() {
                     query.queryKey[0] === 'missions' ||
                     query.queryKey[0] === 'projects',
             );
-        filtered.forEach((query) => {
-            queryClient.invalidateQueries(query.queryKey);
-        });
+        await Promise.all(
+            filtered.map((query) =>
+                queryClient.invalidateQueries(query.queryKey),
+            ),
+        );
         onDialogOK(selected_project.value.uuid);
-    } catch (e) {
+    } catch (e: Error) {
         creating({
             message: `Error moving mission ${props.mission.name} to project ${selected_project.value.name}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,
         });
+        logger.error(e);
         onDialogHide();
     }
 }

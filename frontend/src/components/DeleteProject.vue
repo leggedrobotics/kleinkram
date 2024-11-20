@@ -34,8 +34,8 @@ const handler = useHandler();
 async function deleteProjectAction() {
     if (project_name_check.value === project.name) {
         await deleteProject(project.uuid)
-            .then(() => {
-                client.invalidateQueries({
+            .then(async () => {
+                await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&

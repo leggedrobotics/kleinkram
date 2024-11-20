@@ -7,6 +7,9 @@
         :rows-per-page-options="[10, 20, 50, 100]"
         row-key="uuid"
         :loading="loading"
+        flat
+        bordered
+        binary-state-sort
         @row-click="
             (_, row) =>
                 router.push({
@@ -14,12 +17,9 @@
                     params: { id: row.uuid },
                 })
         "
-        flat
-        bordered
-        binary-state-sort
         @request="setPagination"
     >
-        <template v-slot:body-cell-state="props">
+        <template #body-cell-state="props">
             <q-td :props="props" class="truncate-cell">
                 <template
                     v-if="
@@ -46,7 +46,7 @@
             </q-td>
         </template>
 
-        <template v-slot:body-cell-Details="props">
+        <template #body-cell-Details="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -61,18 +61,18 @@
                     <q-menu auto-close>
                         <q-list>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="router.push('action/' + props.row.uuid)"
                             >
                                 <q-item-section>View Details</q-item-section>
                             </q-item>
 
-                            <q-item clickable v-ripple disabled>
+                            <q-item v-ripple clickable disabled>
                                 <q-item-section>Cancel Action</q-item-section>
                             </q-item>
                             <DeleteActionDialogOpener :action="props.row">
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>
                                         Delete Action
                                     </q-item-section>
@@ -157,6 +157,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
+            // eslint-disable-next-line vue/no-mutating-props
             props.handler.rowsNumber = total.value;
         }
     },

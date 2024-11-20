@@ -1,11 +1,11 @@
 <template>
     <q-table
-        flat
-        bordered
         ref="tableRef"
         v-model:pagination="pagination"
-        :rows-per-page-options="[5, 10, 20, 50, 100]"
         v-model:selected="selected"
+        flat
+        bordered
+        :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
         :columns="fileColumns as any"
         row-key="uuid"
@@ -18,17 +18,17 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
-        <template v-slot:body-selection="props">
+        <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
         </template>
-        <template v-slot:loading>
+        <template #loading>
             <q-inner-loading showing color="primary" />
         </template>
-        <template v-slot:body-cell-state="props">
+        <template #body-cell-state="props">
             <q-td :props="props">
                 <q-icon
                     :name="getIcon(props.row.state)"
@@ -39,7 +39,7 @@
                 </q-icon>
             </q-td>
         </template>
-        <template v-slot:body-cell-cats="props">
+        <template #body-cell-cats="props">
             <q-td :props="props">
                 <q-chip
                     v-for="cat in sortedCats(props.row)"
@@ -54,7 +54,7 @@
                 />
             </q-td>
         </template>
-        <template v-slot:body-cell-fileaction="props">
+        <template #body-cell-fileaction="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -69,13 +69,13 @@
                     <q-menu auto-close>
                         <q-list>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="(e) => onRowClick(e, props.row)"
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple>
+                            <q-item v-ripple clickable>
                                 <q-item-section>
                                     <edit-file-dialog-opener :file="props.row">
                                         Edit
@@ -83,8 +83,8 @@
                                 </q-item-section>
                             </q-item>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="
                                     () =>
                                         _downloadFile(
@@ -95,20 +95,21 @@
                             >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple>
+                            <q-item v-ripple clickable>
                                 <q-item-section>
                                     <MoveFileDialogOpener
                                         :files="[props.row]"
                                         :mission="props.row.mission"
-                                        >Move
+                                    >
+                                        Move
                                     </MoveFileDialogOpener>
                                 </q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple>
+                            <q-item v-ripple clickable>
                                 <q-item-section>
                                     <DeleteFileDialogOpener
-                                        :file="props.row"
                                         v-if="props.row"
+                                        :file="props.row"
                                     >
                                         Delete File
                                     </DeleteFileDialogOpener>
@@ -210,6 +211,7 @@ watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
+            // eslint-disable-next-line vue/no-mutating-props
             props.url_handler.rowsNumber = total.value;
         }
     },
@@ -217,7 +219,7 @@ watch(
 );
 
 const onRowClick = async (_: Event, row: any) => {
-    $router?.push({
+    await $router?.push({
         name: ROUTES.FILE.routeName,
         params: {
             project_uuid: project_uuid.value,

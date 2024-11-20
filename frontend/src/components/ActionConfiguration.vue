@@ -1,7 +1,7 @@
 <template>
     <q-drawer
-        side="right"
         v-model="_open"
+        side="right"
         :width="496"
         style="bottom: 0 !important"
         bordered
@@ -29,9 +29,9 @@
 
             <!-- Select a project and mission, on which the anylsis will be performed -->
             <q-form
-                @submit.prevent="submitAnalysis"
                 class="flex column"
                 style="margin-top: 24px"
+                @submit.prevent="submitAnalysis"
             >
                 <span class="text-h5">Basic Information</span>
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
@@ -51,7 +51,7 @@
                             @input-value="filter = $event"
                             @update:model-value="selectTemplate($event)"
                         >
-                            <template v-slot:selected>
+                            <template #selected>
                                 <div
                                     v-if="
                                         editingTemplate && editingTemplate.name
@@ -62,14 +62,14 @@
                                     }}
                                 </div>
                             </template>
-                            <template v-slot:option="scope">
+                            <template #option="scope">
                                 <q-item v-bind="scope.itemProps">
                                     <q-item-section>
-                                        <q-item-label
-                                            >{{ scope.opt.name }}
+                                        <q-item-label>
+                                            {{ scope.opt.name }}
                                         </q-item-label>
-                                        <q-item-label caption
-                                            >v{{ scope.opt.version }}
+                                        <q-item-label caption>
+                                            v{{ scope.opt.version }}
                                         </q-item-label>
                                     </q-item-section>
                                 </q-item>
@@ -128,8 +128,8 @@
                     <div>
                         <label for="dockerImage">Define the Action</label>
                         <q-input
-                            name="dockerImage"
                             v-model="editingTemplate.imageName"
+                            name="dockerImage"
                             outlined
                             dense
                             class="q-mb-sm"
@@ -156,27 +156,27 @@
                     <div>
                         <label for="action_command">Command</label>
                         <q-input
-                            name="action_command"
+                            v-if="editingTemplate"
                             v-model="editingTemplate.command"
+                            name="action_command"
                             outlined
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Command"
-                            v-if="editingTemplate"
                         />
                     </div>
                     <div>
                         <label for="action_entrypoint">Entrypoint</label>
                         <q-input
-                            name="action_entrypoint"
+                            v-if="editingTemplate"
                             v-model="editingTemplate.entrypoint"
+                            name="action_entrypoint"
                             outlined
                             dense
                             class="q-mb-sm"
                             clearable
                             placeholder="Entrypoint"
-                            v-if="editingTemplate"
                         />
                     </div>
                     <div>
@@ -197,8 +197,8 @@
                     <div class="col-6">
                         <label for="memory">Memory Allocation (GB)</label>
                         <q-input
-                            name="memory"
                             v-model="editingTemplate.cpuMemory"
+                            name="memory"
                             type="number"
                             placholder="Memory Allocation (GB)"
                             class="q-ma-sm"
@@ -210,8 +210,8 @@
                     <div class="col-6">
                         <label for="cpu">CPU Core Allocation</label>
                         <q-input
-                            name="cpu"
                             v-model="editingTemplate.cpuCores"
+                            name="cpu"
                             type="number"
                             style="margin: 1px"
                             outlined
@@ -221,27 +221,27 @@
                     <div class="col-6">
                         <label for="gpu">GPU Memory (-1 for no GPU)</label>
                         <q-input
-                            name="gpu"
+                            v-if="editingTemplate"
                             v-model="editingTemplate.gpuMemory"
+                            name="gpu"
                             type="number"
                             emit-value
                             style="margin: 1px"
                             outlined
                             dense
-                            v-if="editingTemplate"
                         />
                     </div>
                     <div class="col-6">
                         <label for="gpu">Max Runtime (h)</label>
                         <q-input
-                            name="gpu"
+                            v-if="editingTemplate"
                             v-model="editingTemplate.maxRuntime"
+                            name="gpu"
                             type="number"
                             style="margin: 1px"
                             emit-value
                             outlined
                             dense
-                            v-if="editingTemplate"
                         />
                     </div>
                 </div>
@@ -251,16 +251,16 @@
                 <div class="flex row justify-end q-mt-lg">
                     <q-btn
                         flat
-                        @click="() => saveAsTemplate()"
                         class="bg-button-secondary text-on-color q-mx-sm"
                         label="Save as Template"
                         :disable="!isModified"
+                        @click="() => saveAsTemplate()"
                     />
                     <q-btn
                         flat
-                        @click="submitAnalysis"
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
+                        @click="submitAnalysis"
                     />
                 </div>
             </q-form>
@@ -365,8 +365,8 @@ const selected_project = computed(() =>
 
 watch(
     () => selectedAccessRights.value,
-    (newValue) => {
-        editingTemplate.value.accessRights = newValue.value;
+    (_newValue) => {
+        editingTemplate.value.accessRights = _newValue.value;
     },
 );
 
@@ -423,8 +423,8 @@ const { mutateAsync: createTemplate } = useMutation({
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
         }),
-    onSuccess: () => {
-        queryClient.invalidateQueries({
+    onSuccess: async () => {
+        await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'actionTemplates';
             },
@@ -464,8 +464,8 @@ const { mutateAsync: updateTemplate } = useMutation({
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
         }),
-    onSuccess: (newVal) => {
-        queryClient.invalidateQueries({
+    onSuccess: async (newVal) => {
+        await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'actionTemplates';
             },
@@ -555,7 +555,7 @@ async function submitAnalysis() {
     }
     // send the action request to the backend and show a notification
     createPromise
-        .then((res) => {
+        .then(async () => {
             Notify.create({
                 group: false,
                 message: 'Analysis submitted',
@@ -565,7 +565,7 @@ async function submitAnalysis() {
             });
 
             // flush actions cache
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
                 predicate: (query) => {
                     return query.queryKey[0] === 'action_mission';
                 },
@@ -618,7 +618,7 @@ const isModified = computed(() => {
     );
 });
 
-function newValue(val: string, done: Function) {
+function newValue(val: string, done) {
     const existingTemplate = actionTemplatesRes.value.find(
         (template: ActionTemplate) => template.name === val,
     );
@@ -686,8 +686,8 @@ watch(
 );
 watch(
     () => _open.value,
-    (newValue) => {
-        if (!newValue) {
+    (_newValue) => {
+        if (!_newValue) {
             emits('close');
         }
     },

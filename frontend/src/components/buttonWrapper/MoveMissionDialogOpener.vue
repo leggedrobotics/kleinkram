@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="moveMission"
         :class="{
             disabled: !canModify,
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        @click="moveMission"
     >
         <slot />
         <q-tooltip v-if="!canModify">
@@ -13,12 +13,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -29,7 +23,6 @@ import {
 import { computed } from 'vue';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
 import { Mission } from 'src/types/Mission';
-import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useMissionUUID } from 'src/hooks/utils';
 
@@ -58,12 +51,20 @@ function moveMission() {
         componentProps: { mission: props.mission },
     }).onOk((newProjectUUID: string) => {
         if (urlMissionUUID.value) {
-            $router?.push({
-                params: {
-                    project_uuid: newProjectUUID,
-                },
-            });
+            $router
+                ?.push({
+                    params: {
+                        project_uuid: newProjectUUID,
+                    },
+                })
+                .catch(console.error);
         }
     });
 }
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

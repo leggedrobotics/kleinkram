@@ -40,9 +40,9 @@ const params = computed(() => {
     return props.missions.map((mission) => `${mission.uuid}`).join(' ');
 });
 
-function clicked() {
+async function clicked() {
     const text = `echo ${params.value} | xargs -n 1 klein download --dest=. -m`;
-    navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(text);
 }
 </script>
 <style scoped></style>

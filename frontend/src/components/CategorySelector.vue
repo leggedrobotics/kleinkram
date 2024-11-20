@@ -1,7 +1,7 @@
 <template>
     <q-select
-        v-model="selected"
         v-if="selected"
+        v-model="selected"
         multiple
         clearable
         dense
@@ -10,28 +10,28 @@
         :options="categories"
         placeholder="Select Categories"
         use-input
-        @clear="selected = []"
         input-debounce="300"
+        @clear="selected = []"
         @input-value="filter = $event"
     >
-        <template v-slot:selected-item="props">
+        <template #selected-item="props">
             <q-chip
                 v-if="props.opt"
                 removable
-                @remove="props.removeAtIndex(props.index)"
                 :color="hashUUIDtoColor(props.opt.uuid)"
                 style="color: white; font-size: smaller"
+                @remove="props.removeAtIndex(props.index)"
             >
                 {{ props.opt.name }}
             </q-chip>
         </template>
-        <template v-slot:option="props">
+        <template #option="props">
             <q-item
-                clickable
                 v-ripple
+                clickable
                 v-bind="props.itemProps"
-                @click="props.toggleOption(props.opt)"
                 dense
+                @click="props.toggleOption(props.opt)"
             >
                 <q-item-section>
                     <div>

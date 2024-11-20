@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="deleteProject"
         :class="{
             disabled: !canDelete,
             'cursor-pointer': !canDelete,
             'cursor-not-allowed': canDelete,
         }"
+        @click="deleteProject"
     >
         <slot />
 
@@ -17,12 +17,6 @@
         </q-tooltip>
     </div>
 </template>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
@@ -60,3 +54,9 @@ const deleteProject = () => {
     });
 };
 </script>
+
+<style scoped>
+.disabled {
+    opacity: 0.5;
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
     <BaseDialog ref="dialogRef">
-        <template #title>New Project</template>
+        <template #title> New Project</template>
 
         <template #tabs>
             <q-tabs
@@ -35,9 +35,9 @@
                 <q-tab-panel name="meta_data" style="min-height: 280px">
                     <label for="projectName">Project Name *</label>
                     <q-input
-                        name="projectName"
                         ref="projectNameInput"
                         v-model="newProjectName"
+                        name="projectName"
                         outlined
                         autofocus
                         dense
@@ -64,8 +64,8 @@
                         >Project Description *</label
                     >
                     <q-input
-                        name="projectDescription"
                         v-model="newProjectDescription"
+                        name="projectDescription"
                         type="textarea"
                         outlined
                         dense
@@ -74,8 +74,8 @@
                         style="padding-bottom: 10px"
                         :error-message="errorMessagesProjectDescr"
                         :error="isInErrorStateProjectDescr"
-                        @update:model-value="verify_input"
                         autofocus
+                        @update:model-value="verify_input"
                     />
                 </q-tab-panel>
 
@@ -91,16 +91,16 @@
                 </q-tab-panel>
             </q-tab-panels>
         </template>
-        <template #actions v-if="tab === 'manage_access'">
+        <template v-if="tab === 'manage_access'" #actions>
             <q-btn
                 flat
                 label="Create Project"
                 class="bg-button-primary"
-                @click="submitNewProject"
                 :disable="!formIsValid"
+                @click="submitNewProject"
             />
         </template>
-        <template #actions v-else>
+        <template v-else #actions>
             <q-btn
                 flat
                 label="Next"
@@ -164,8 +164,8 @@ const verify_input = () => {
         !!newProjectName.value &&
         !!newProjectDescription.value &&
         !invalidProjectNames.value.includes(newProjectName.value) &&
-        !!newProjectName &&
-        !!newProjectDescription;
+        !!newProjectName.value &&
+        !!newProjectDescription.value;
 
     // client side verification
     if (
@@ -214,9 +214,9 @@ const submitNewProject = async () => {
             )
             .map((r) => r.uuid),
     )
-        .then(() => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            queryClient.invalidateQueries({ queryKey: ['permissions'] });
+        .then(async () => {
+            await queryClient.invalidateQueries({ queryKey: ['projects'] });
+            await queryClient.invalidateQueries({ queryKey: ['permissions'] });
 
             $q.notify({
                 message: 'Project created successfully',

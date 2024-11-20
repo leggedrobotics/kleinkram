@@ -70,7 +70,7 @@ export class AuthService implements OnModuleInit {
         );
     }
 
-    async login(user: User) {
+    login(user: User) {
         const payload: JwtPayload = {
             uuid: user.uuid,
         };
@@ -194,26 +194,33 @@ async function createPrimaryGroup(
  * @param accessGroupRepository
  * @param groupMembershipRepository
  */
-function addToAffiliationGroups(
+async function addToAffiliationGroups(
     config: AccessGroupConfig,
     user: User,
     accessGroupRepository: Repository<AccessGroup>,
     groupMembershipRepository: Repository<GroupMembership>,
 ) {
-    config.emails?.forEach((_config) => {
-        if (user.email.endsWith(_config.email)) {
-            _config.access_groups?.forEach(async (uuid) => {
-                const group = await accessGroupRepository.findOneOrFail({
-                    where: { uuid },
-                });
-                const affiliationGroup = groupMembershipRepository.create({
-                    user: { uuid: user.uuid },
-                    accessGroup: { uuid: group.uuid },
-                });
-                await groupMembershipRepository.save(affiliationGroup);
-            });
-        }
-    });
+    await Promise.all(
+        config.emails?.map((_config) => {
+            if (user.email.endsWith(_config.email)) {
+                return Promise.all(
+                    _config.access_groups?.map(async (uuid) => {
+                        const group = await accessGroupRepository.findOneOrFail(
+                            {
+                                where: { uuid },
+                            },
+                        );
+                        const affiliationGroup =
+                            groupMembershipRepository.create({
+                                user: { uuid: user.uuid },
+                                accessGroup: { uuid: group.uuid },
+                            });
+                        return groupMembershipRepository.save(affiliationGroup);
+                    }),
+                );
+            }
+        }),
+    );
 }
 
 export const createNewUser = async (
@@ -250,7 +257,7 @@ export const createNewUser = async (
     // if the user exists but has no linked account
     if (!!existingUser && !existingUser.account) {
         logger.info(
-            `Linking account ${account} to existing user ${existingUser.uuid}`,
+            `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
         return accountRepository.save(account).then(() => existingUser);
@@ -283,7 +290,7 @@ export const createNewUser = async (
 
     await createPrimaryGroup(user, accessGroupRepository);
 
-    addToAffiliationGroups(
+    await addToAffiliationGroups(
         config,
         user,
         accessGroupRepository,

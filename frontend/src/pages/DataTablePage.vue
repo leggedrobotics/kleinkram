@@ -1,11 +1,11 @@
 <template>
-    <title-section title="Datatable"></title-section>
+    <title-section title="Datatable" />
 
     <div class="row">
         <div class="col-4 flex">
             <q-input
-                filled
                 v-model="startDates"
+                filled
                 dense
                 outlined
                 clearable
@@ -14,7 +14,7 @@
                 style="width: 50%"
                 @clear="resetStartDate"
             >
-                <template v-slot:prepend>
+                <template #prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
                         <q-popup-proxy
                             cover
@@ -37,8 +37,8 @@
             </q-input>
             <p class="flex flex-center" style="margin-bottom: 0; width: 0">-</p>
             <q-input
-                filled
                 v-model="endDates"
+                filled
                 dense
                 clearable
                 placeholder="Select start date"
@@ -46,7 +46,7 @@
                 style="width: 50%"
                 @clear="resetEndDate"
             >
-                <template v-slot:prepend>
+                <template #prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
                         <q-popup-proxy
                             cover
@@ -142,8 +142,8 @@
                         <q-item-section class="items-center">
                             <q-toggle
                                 :model-value="fileTypeFilter[index].value"
-                                @click="onFileTypeClicked(index)"
                                 :label="option.name"
+                                @click="onFileTypeClicked(index)"
                             />
                         </q-item-section>
                     </q-item>
@@ -167,7 +167,6 @@
                 v-model="selectedTopics"
                 label="Select Topics"
                 use-input
-                @filter="filterFn"
                 input-debounce="20"
                 outlined
                 dense
@@ -184,22 +183,22 @@
                     overflow: scroll;
                     scrollbar-width: none;
                 "
-            >
-            </q-select>
+                @filter="filterFn"
+            />
             <q-btn-dropdown
                 dense
                 flat
                 class="full-height button-border"
                 style="min-width: 60px"
             >
-                <template v-slot:label>
+                <template #label>
                     {{ and_or ? 'And' : 'Or' }}
                 </template>
                 <q-list>
                     <q-item
                         v-for="(item, index) in ['And', 'Or']"
-                        clickable
                         :key="index"
+                        clickable
                         @click="and_or = item === 'And'"
                     >
                         <q-item-section>
@@ -212,6 +211,7 @@
 
         <div class="col-3 q-pa-sm">
             <q-btn
+                v-if="tagFilter"
                 flat
                 text-color="black"
                 color="primary"
@@ -221,8 +221,8 @@
                 @click="openTagFilterDialog"
             >
                 <q-chip
-                    v-if="tagFilter"
                     v-for="value in Object.values(tagFilter)"
+                    :key="value.name"
                     dense
                 >
                     {{ value.name }}: {{ value.value }}
@@ -242,12 +242,12 @@
     </div>
 
     <q-table
-        flat
-        bordered
-        separator="none"
         ref="tableRef"
         v-model:pagination="pagination"
         v-model:selected="selected"
+        flat
+        bordered
+        separator="none"
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
         :columns="columns"
@@ -257,14 +257,14 @@
         @row-click="onRowClick"
         @request="setPagination"
     >
-        <template v-slot:body-selection="props">
+        <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
         </template>
-        <template v-slot:body-cell-state="props">
+        <template #body-cell-state="props">
             <q-td :props="props">
                 <q-icon
                     :name="getIcon(props.row.state)"
@@ -283,7 +283,7 @@
                 />
             </q-td>
         </template>
-        <template v-slot:body-cell-action="props">
+        <template #body-cell-action="props">
             <q-td :props="props">
                 <q-btn
                     flat
@@ -298,22 +298,22 @@
                     <q-menu auto-close>
                         <q-list>
                             <edit-file-dialog-opener :file="props.row">
-                                <q-item clickable v-ripple>
+                                <q-item v-ripple clickable>
                                     <q-item-section>Edit File</q-item-section>
                                 </q-item>
                             </edit-file-dialog-opener>
                             <q-item
-                                clickable
                                 v-ripple
+                                clickable
                                 @click="() => onRowClick(null, props.row)"
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
-                            <q-item clickable v-ripple>
+                            <q-item v-ripple clickable>
                                 <q-item-section>
                                     <DeleteFileDialogOpener
-                                        :file="props.row"
                                         v-if="props.row"
+                                        :file="props.row"
                                     >
                                         Delete File
                                     </DeleteFileDialogOpener>
@@ -401,7 +401,7 @@ const queryKeyMissions = computed(() => [
     'missions',
     handler.value.projectUuid,
 ]);
-const { data: _missions, refetch } = useQuery<[Mission[], number]>({
+const { data: _missions } = useQuery<[Mission[], number]>({
     queryKey: queryKeyMissions,
     queryFn: () =>
         missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
@@ -420,10 +420,6 @@ const and_or = ref(false);
 const tagFilter = ref({});
 
 end.setHours(23, 59, 59, 999);
-const dateTime: Ref<{ from: string; to: string }> = ref({
-    from: formatDate(start),
-    to: formatDate(end),
-});
 
 const startDate = computed(() => parseDate(startDates.value));
 const endDate = computed(() => parseDate(endDates.value));
@@ -636,7 +632,7 @@ function filterFn(val: string, update) {
 }
 
 const onRowClick = (_: Event, row: any) => {
-    $router.push({
+    await $router.push({
         name: ROUTES.FILE.routeName,
         params: {
             file_uuid: row.uuid,

@@ -98,9 +98,9 @@ const { data: me, error } = useQuery({
 
 watch(
     [me, error],
-    ([me, error]) => {
-        if (!!me?.uuid && !error) {
-            $router.push('/');
+    async ([_me, _error]) => {
+        if (!!_me?.uuid && !_error) {
+            await $router.push('/');
         }
     },
     { immediate: true },

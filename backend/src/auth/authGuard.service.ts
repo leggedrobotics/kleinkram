@@ -16,7 +16,7 @@ export class AuthGuardService {
     async canAddUserToAccessGroup(user: User, accessGroupUUID: string) {
         if (!user || !accessGroupUUID) {
             logger.error(
-                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User (${user}) not provided.`,
+                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User (${user.uuid}) not provided.`,
             );
             return false;
         }
@@ -39,7 +39,7 @@ export class AuthGuardService {
     ) {
         if (!user || !projectAccessUUID) {
             logger.error(
-                `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user}) not provided.`,
+                `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user.uuid}) not provided.`,
             );
             return false;
         }
@@ -48,7 +48,6 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
                 creator: { uuid: user.uuid },
             },
@@ -58,7 +57,7 @@ export class AuthGuardService {
     async canEditAccessGroupByGroupUuid(user: User, aguUUID: string) {
         if (!user || !aguUUID) {
             logger.error(
-                `AuthGuard: aguUUID (${aguUUID}) or User (${user}) not provided.`,
+                `AuthGuard: aguUUID (${aguUUID}) or User (${user.uuid}) not provided.`,
             );
             return false;
         }

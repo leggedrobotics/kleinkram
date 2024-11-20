@@ -1,5 +1,5 @@
 <template>
-    <title-section title="Mission Analysis"></title-section>
+    <title-section title="Mission Analysis" />
 
     <ActionConfiguration :open="createAction" @close="createAction = false" />
 
@@ -55,14 +55,14 @@
 
             <button-group>
                 <q-input
+                    v-model="search"
                     debounce="300"
                     placeholder="Search"
                     dense
-                    v-model="search"
                     disabled
                     outlined
                 >
-                    <template v-slot:append>
+                    <template #append>
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
@@ -83,9 +83,9 @@
                     flat
                     class="bg-button-secondary text-on-color"
                     label="Create Action"
-                    @click="() => (createAction = true)"
                     :disable="!canCreate"
                     icon="sym_o_add"
+                    @click="() => (createAction = true)"
                 >
                     <q-tooltip v-if="!canCreate">
                         Creating Actions requires Create rights on the mission.
@@ -97,7 +97,7 @@
 
     <div>
         <template v-if="selected_project">
-            <ActionsTable :handler="handler"></ActionsTable>
+            <ActionsTable :handler="handler" />
         </template>
         <template v-else>
             <div class="text">Please select a project and a mission to...</div>

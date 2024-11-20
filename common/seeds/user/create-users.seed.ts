@@ -16,14 +16,13 @@ import TagType from '../../entities/tagType/tagType.entity';
 
 export default class CreateUsers implements Seeder {
     // Settings for the Seeder
-    /* eslint-disable @typescript-eslint/naming-convention */
+
     private USER_COUNT = 30;
     private ACCESS_GROUP_COUNT = 20;
     private PROJECT_COUNT = 40;
     private GROUP_ACCESS_COUNT = 200;
     private SEED_ADMINS = false;
     private TAG_TYPE_COUNT = 15;
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     public async run(factory: Factory, conn: Connection): Promise<void> {
         // //////////////////////////////////////////

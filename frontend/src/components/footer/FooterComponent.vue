@@ -18,8 +18,8 @@
                         name="sym_o_warning"
                         color="red"
                     >
-                        <q-tooltip
-                            >The API is running
+                        <q-tooltip>
+                            The API is running
                             {{ kleinkramVersion }}
                         </q-tooltip>
                     </q-icon>

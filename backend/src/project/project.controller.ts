@@ -33,6 +33,7 @@ import Project from '@common/entities/project/project.entity';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
+import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -67,11 +68,25 @@ export class ProjectController {
 
     @Get('recent')
     @UserOnly()
+    @ApiOperation({
+        summary: 'Get recent projects',
+        description:
+            'Get the most recent projects the current user has access to',
+    })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: [ResentProjectsDto],
+    })
     async getRecentProjects(
         @QueryTake('take') take: number,
         @addUser() user: AuthRes,
-    ): Promise<Project[]> {
-        return this.projectService.getRecentProjects(take, user.user);
+    ): Promise<ResentProjectsDto> {
+        return {
+            projects: await this.projectService.getRecentProjects(
+                take,
+                user.user,
+            ),
+        };
     }
 
     @Get('one')

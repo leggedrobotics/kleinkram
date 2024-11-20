@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> New Access Rights</template>
+        <template #title> New Access Rights </template>
 
         <template #content>
             <label for="name">Group Name</label>
@@ -18,8 +18,8 @@
                 flat
                 label="Create Access Group"
                 class="bg-button-primary"
-                @click="() => onDialogOK(name)"
                 :disable="isInErrorStateProjectName"
+                @click="() => onDialogOK(name)"
             />
         </template>
     </base-dialog>

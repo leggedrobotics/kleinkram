@@ -9,35 +9,35 @@
         <div class="col-9">
             <q-select
                 v-model="_selected"
-                @input-value="
-                    (val) => {
-                        tagSearch = val;
-                    }
-                "
                 use-input
                 multiple
                 input-debounce="100"
                 :options="tags"
                 option-label="name"
+                @input-value="
+                    (val) => {
+                        tagSearch = val;
+                    }
+                "
             >
-                <template v-slot:no-option>
+                <template #no-option>
                     <q-item>
                         <q-item-section class="text-grey">
                             No results
                         </q-item-section>
                     </q-item>
                 </template>
-                <template v-slot:selected-item="scope">
+                <template #selected-item="scope">
                     <q-chip
                         removable
-                        @remove="scope.removeAtIndex(scope.index)"
                         :tabindex="scope.tabindex"
                         :icon="icon(scope.opt.type)"
+                        @remove="scope.removeAtIndex(scope.index)"
                     >
                         {{ scope.opt.name }}
                     </q-chip>
                 </template>
-                <template v-slot:option="{ itemProps, opt }">
+                <template #option="{ itemProps, opt }">
                     <q-item v-bind="itemProps">
                         <q-item-section>
                             <q-item-label v-html="opt.name" />

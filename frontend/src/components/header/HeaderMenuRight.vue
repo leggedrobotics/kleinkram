@@ -1,10 +1,10 @@
 <template>
     <q-tabs>
-        <q-route-tab :to="ROUTES.LOGIN.path" v-if="!user">
+        <q-route-tab v-if="!user" :to="ROUTES.LOGIN.path">
             Sign in
         </q-route-tab>
 
-        <div class="flex row justify-end" v-else style="height: 56px">
+        <div v-else class="flex row justify-end" style="height: 56px">
             <header-create-new-menu />
 
             <div
@@ -48,8 +48,8 @@
                                     <q-item-section>
                                         <div class="row items-center">
                                             <q-spinner
-                                                size="20px"
                                                 v-if="progress !== 100"
+                                                size="20px"
                                             />
                                             <span class="q-ml-sm"
                                                 >{{ Math.round(progress) }}% ({{
@@ -72,6 +72,7 @@
                                         0,
                                         5,
                                     )"
+                                    :key="upload.value.uuid"
                                 >
                                     <div class="row items-center">
                                         <q-icon

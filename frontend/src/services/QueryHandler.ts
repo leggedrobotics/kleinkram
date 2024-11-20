@@ -218,53 +218,53 @@ export class QueryURLHandler extends QueryHandler {
      */
     setPage(page: number) {
         super.setPage(page);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setTake(take: number) {
         super.setTake(take);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setSort(sortBy: string) {
         super.setSort(sortBy);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setDescending(descending: boolean) {
         super.setDescending(descending);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setProjectUUID(projectUuid: string | undefined) {
         super.setProjectUUID(projectUuid);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setMissionUUID(missionUuid: string | undefined) {
         super.setMissionUUID(missionUuid);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setSearch(searchParams: Record<string, string>) {
         super.setSearch(searchParams);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setFileType(fileType: FileType) {
         super.setFileType(fileType);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     setCategories(categories: string[]) {
         super.setCategories(categories);
-        this.writeURL();
+        this.writeURL().catch(console.error);
     }
 
     addCategory(category: string) {
         if (!this.categories.includes(category)) {
             super.addCategory(category);
-            this.writeURL();
+            this.writeURL().catch(console.error);
         }
     }
 
@@ -313,7 +313,7 @@ export class QueryURLHandler extends QueryHandler {
     /**
      * Write the current state of the query to the URL
      */
-    writeURL() {
+    async writeURL() {
         if (!this.router) return;
         this.internalUpdate = true;
 
@@ -333,12 +333,12 @@ export class QueryURLHandler extends QueryHandler {
                 this.descending !== DEFAULT_SORT.descending
                     ? this.descending.toString()
                     : undefined,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             project_uuid: this.projectUuid || undefined,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             mission_uuid: this.missionUuid || undefined,
             ...this.searchParams,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             file_type:
                 !!this.fileType && this.fileType !== FileType.ALL
                     ? this.fileType || undefined
@@ -351,9 +351,9 @@ export class QueryURLHandler extends QueryHandler {
         const queries = this.router.currentRoute.value.query;
         const hasQueries = Object.keys(queries).length > 0;
         if (!hasQueries) {
-            this.router.replace({ query: newQuery });
+            await this.router.replace({ query: newQuery });
         } else {
-            this.router.push({ query: newQuery });
+            await this.router.push({ query: newQuery });
         }
 
         this.internalUpdate = false;

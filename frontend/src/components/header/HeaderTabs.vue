@@ -2,9 +2,9 @@
     <q-tabs inline-label class="height-xxl">
         <q-route-tab
             v-show="$q.screen.lt.lg"
+            key="menu"
             no-caps
             class="q-py-none q-px-sm q-mx-sm text-secondary"
-            key="menu"
             label="Menu"
             icon="sym_o_menu"
         >
@@ -31,12 +31,12 @@
         </q-route-tab>
 
         <q-route-tab
+            v-for="item in main_menu"
             v-show="$q.screen.gt.md"
+            :key="item.title"
             no-caps
             class="q-py-none q-px-sm q-mx-sm text-secondary"
             :class="{ 'q-tab--active': path === item.to }"
-            v-for="item in main_menu"
-            :key="item.title"
             :label="item.title"
             :to="item.to"
             :icon="item.icon"

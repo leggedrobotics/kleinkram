@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Project to Access Group</template>
+        <template #title> Add Project to Access Group </template>
 
         <template #content>
             <AddProjectToAccessGroupDialog
-                :access_group_uuid="props.access_group_uuid"
                 ref="addProjectRef"
+                :access_group_uuid="props.access_group_uuid"
             />
         </template>
 

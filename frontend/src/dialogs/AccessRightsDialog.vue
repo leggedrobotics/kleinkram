@@ -32,7 +32,7 @@ import {
     updateProjectAccess,
 } from 'src/services/mutations/access';
 import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import { AccessGroupType } from '@common/enum';
 import { DefaultRightDto } from '@api/types/DefaultRights.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -89,7 +89,7 @@ const saveChanges = async () => {
         return updateProjectAccess(
             props.project_uuid,
             access.uuid,
-            access.rights as AccessGroupRights,
+            access.rights,
         );
     });
 
@@ -120,9 +120,11 @@ const saveChanges = async () => {
                 query.queryKey[1] === props.project_uuid,
         );
 
-    filtered.forEach((query) => {
-        queryClient.invalidateQueries(query.queryKey);
-    });
+    await Promise.all(
+        filtered.map(
+            (query) => await queryClient.invalidateQueries(query.queryKey),
+        ),
+    );
 };
 </script>
 

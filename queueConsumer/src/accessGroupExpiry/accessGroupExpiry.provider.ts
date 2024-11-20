@@ -16,7 +16,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
         private groupMembershipRepository: Repository<GroupMembership>,
     ) {}
 
-    async onModuleInit() {
+    onModuleInit() {
         const redisClient = new Redis(redis);
         this.redlock = new Redlock([redisClient], {
             retryCount: 0,

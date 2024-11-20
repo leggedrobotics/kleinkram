@@ -12,6 +12,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
@@ -48,8 +49,8 @@ const sdk = new NodeSDK({
 // gracefully shut down the SDK on process exit
 process.on('SIGTERM', () => {
     sdk.shutdown()
-        .then(() => console.log('Tracing terminated'))
-        .catch((error) => console.log('Error terminating tracing', error))
+        .then(() => logger.debug('Tracing terminated'))
+        .catch((error) => logger.debug('Error terminating tracing', error))
         .finally(() => process.exit(0));
 });
 

@@ -15,9 +15,8 @@ export const getActions = async (
     search: string,
 ): Promise<[Action[], number]> => {
     const params: Record<string, string | number | boolean> = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         project_uuid: projectUUID,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+
         mission_uuid: missionUUID,
         take,
         skip,

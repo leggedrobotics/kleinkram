@@ -28,7 +28,6 @@ export default class AccessGroup extends BaseEntity {
         () => ProjectAccess,
         (projectAccess) => projectAccess.accessGroup,
     )
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses: ProjectAccess[];
 
     @OneToMany(
@@ -36,7 +35,6 @@ export default class AccessGroup extends BaseEntity {
         (missionAccess) => missionAccess.accessGroup,
     )
     @JoinTable()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses: MissionAccess[];
 
     @Column({

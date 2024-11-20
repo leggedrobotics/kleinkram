@@ -1,11 +1,11 @@
 <template>
     <div
-        @click="createNewMission"
         :class="{
             disabled: !canCreate,
             'cursor-pointer': !canCreate,
             'cursor-not-allowed': canCreate,
         }"
+        @click="createNewMission"
     >
         <slot />
     </div>

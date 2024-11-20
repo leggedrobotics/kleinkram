@@ -1,9 +1,9 @@
 <template>
     <q-banner
+        v-if="is_dev_instance"
         inline-actions
         class="text-white bg-red"
         style="margin: 10px 0"
-        v-if="is_dev_instance"
     >
         <template #avatar>
             <q-icon

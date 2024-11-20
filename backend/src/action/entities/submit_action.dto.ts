@@ -19,17 +19,14 @@ export class SubmitActionMulti {
 export class ActionQuery {
     @IsUUID()
     @IsOptional()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_uuid: string;
 
     @IsOptional()
     @IsUUID()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_uuid: string;
 }
 
 export class ActionDetailsQuery {
     @IsUUID()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     action_uuid: string;
 }

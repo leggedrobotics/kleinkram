@@ -45,9 +45,9 @@ const props = defineProps<{
     file: FileEntity;
 }>();
 
-function clicked() {
+async function clicked() {
     const text = `klein download --dest=. ${props.file.uuid}`;
-    navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(text);
 }
 </script>
 <style scoped></style>

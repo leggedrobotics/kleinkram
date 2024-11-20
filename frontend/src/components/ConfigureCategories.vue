@@ -21,7 +21,6 @@ const props = defineProps<{
 }>();
 
 const selected = ref<Category[]>(props.file.categories || []);
-const filter = ref('');
 
 watch(
     () => selected.value,

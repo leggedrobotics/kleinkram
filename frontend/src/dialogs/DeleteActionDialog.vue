@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Action</template>
+        <template #title> Delete Action </template>
         <template #content>
             <delete-action
-                :action="action"
-                ref="deleteActionRef"
                 v-if="action"
+                ref="deleteActionRef"
+                :action="action"
             />
             <q-skeleton v-else height="250px" />
         </template>

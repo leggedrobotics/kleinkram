@@ -15,7 +15,6 @@ import {
 } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryUUID = (paramName: string, paramDescription: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -40,7 +39,6 @@ export const QueryUUID = (paramName: string, paramDescription: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalUUID = (
     paramName: string,
     paramDescription: string,
@@ -66,7 +64,6 @@ export const QueryOptionalUUID = (
         metadataApplier(paramName, paramDescription, 'query', 'uuid', false),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryString = (paramName: string, paramDescription: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -85,7 +82,6 @@ export const QueryString = (paramName: string, paramDescription: string) =>
         metadataApplier(paramName, paramDescription, 'query', 'string', true),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalString = (
     paramName: string,
     paramDescription: string,
@@ -111,7 +107,6 @@ export const QueryOptionalString = (
         metadataApplier(paramName, paramDescription, 'query', 'string', false),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryStringArray = (paramName: string, paramDescription: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -129,7 +124,6 @@ export const QueryStringArray = (paramName: string, paramDescription: string) =>
         metadataApplier(paramName, paramDescription, 'query', 'string[]', true),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalStringArray = (
     paramName: string,
     paramDescription: string,
@@ -159,7 +153,6 @@ export const QueryOptionalStringArray = (
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryBoolean = (paramName: string, paramDescription: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -186,7 +179,6 @@ export const QueryBoolean = (paramName: string, paramDescription: string) =>
         metadataApplier(paramName, paramDescription, 'query', 'boolean', true),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalBoolean = (
     paramName: string,
     paramDescription: string,
@@ -219,7 +211,6 @@ export const QueryOptionalBoolean = (
         metadataApplier(paramName, paramDescription, 'query', 'boolean', false),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryDate = (paramName: string, paramDescription: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -248,7 +239,6 @@ export const QueryDate = (paramName: string, paramDescription: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QuerySortBy = (paramName: string, paramDescription?: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -301,7 +291,6 @@ export const QuerySortBy = (paramName: string, paramDescription?: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QuerySortDirection = (
     paramName: string,
     paramDescription?: string,
@@ -340,13 +329,12 @@ export const QuerySortDirection = (
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryProjectSearchParam = (
     paramName: string,
     paramDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
+        (data: string, ctx: ExecutionContext) => {
             const request = ctx.switchToHttp().getRequest();
             const value = request.query[data];
 
@@ -388,7 +376,6 @@ export const QueryProjectSearchParam = (
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalDate = (
     paramName: string,
     paramDescription: string,
@@ -419,7 +406,6 @@ export const QueryOptionalDate = (
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalNumber = (
     paramName: string,
     paramDescription: string,
@@ -445,7 +431,6 @@ export const QueryOptionalNumber = (
         metadataApplier(paramName, paramDescription, 'query', 'number', false),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QuerySkip = (paramName: string, paramDescription?: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -478,7 +463,6 @@ export const QuerySkip = (paramName: string, paramDescription?: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryTake = (paramName: string, paramDescription?: string) =>
     createParamDecorator(
         async (data: string, ctx: ExecutionContext) => {
@@ -513,10 +497,9 @@ export const QueryTake = (paramName: string, paramDescription?: string) =>
         ),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptional = (paramName: string, paramDescription: string) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
+        (data: string, ctx: ExecutionContext) => {
             const request = ctx.switchToHttp().getRequest();
             const value = request.query[data];
 
@@ -529,13 +512,12 @@ export const QueryOptional = (paramName: string, paramDescription: string) =>
         metadataApplier(paramName, paramDescription, 'query', 'any', false),
     )(paramName);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const QueryOptionalRecord = (
     paramName: string,
     paramDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
+        (data: string, ctx: ExecutionContext) => {
             const request = ctx.switchToHttp().getRequest();
             const value = request.query[data];
 
