@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from typing import List
+from typing import Tuple
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient

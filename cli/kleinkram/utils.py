@@ -31,6 +31,17 @@ from rich.console import Console
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
 
+def split_args(args: List[str]) -> Tuple[List[UUID], List[str]]:
+    uuids = []
+    names = []
+    for arg in args:
+        if is_valid_uuid4(arg):
+            uuids.append(UUID(arg, version=4))
+        else:
+            names.append(arg)
+    return uuids, names
+
+
 def check_file_paths(files: Sequence[Path]) -> None:
     for file in files:
         if file.is_dir():

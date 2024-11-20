@@ -20,7 +20,20 @@ from kleinkram.utils import get_filename_map
 from kleinkram.utils import get_valid_file_spec
 from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import split_args
 from kleinkram.utils import to_name_or_uuid
+
+
+def test_split_args():
+    uuid = uuid4()
+    assert split_args([str(uuid)]) == ([uuid], [])
+    assert split_args(["name"]) == ([], ["name"])
+    assert split_args([str(uuid), "name"]) == ([uuid], ["name"])
+    assert split_args(["name", str(uuid)]) == ([uuid], ["name"])
+    assert split_args(["name", "name"]) == ([], ["name", "name"])
+    assert split_args([str(uuid), str(uuid)]) == ([uuid, uuid], [])
+    assert split_args([]) == ([], [])
+    assert split_args(["*", str(uuid)]) == ([uuid], ["*"])
 
 
 def test_check_file_paths():

@@ -197,6 +197,8 @@ def cli(
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         level = logging.getLevelName(log_level)
         logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
+    else:
+        logging.basicConfig(filename=os.devnull)
 
     logger.info(f"CLI version: {__version__}")
 

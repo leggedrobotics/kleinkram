@@ -5,17 +5,18 @@ from typing import Optional
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_files_by_file_spec
-from kleinkram.api.routes import get_missions
-from kleinkram.api.routes import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.models import files_to_table
 from kleinkram.models import missions_to_table
 from kleinkram.models import projects_to_table
-from kleinkram.utils import get_valid_file_spec
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.resources import FileSpec
+from kleinkram.resources import get_files_by_spec
+from kleinkram.resources import get_missions_by_spec
+from kleinkram.resources import get_projects_by_spec
+from kleinkram.resources import MissionSpec
+from kleinkram.resources import ProjectSpec
+from kleinkram.utils import split_args
 from rich.console import Console
-from typer import BadParameter
 
 
 HELP = """\
@@ -28,75 +29,86 @@ list_typer = typer.Typer(
 )
 
 
-def _parse_metadata(raw: List[str]) -> dict:
-    ret = {}
-    for tag in raw:
-        if "=" not in tag:
-            raise BadParameter("tag must be formatted as `key=value`")
-        k, v = tag.split("=")
-        ret[k] = v
-    return ret
-
-
 @list_typer.command()
 def files(
     files: Optional[List[str]] = typer.Argument(
-        None, help="file names, ids or patterns"
+        None,
+        help="file names, ids or patterns",
     ),
-    project: Optional[str] = typer.Option(
+    projects: Optional[List[str]] = typer.Option(
         None, "--project", "-p", help="project name or id"
     ),
-    mission: Optional[str] = typer.Option(
+    missions: Optional[List[str]] = typer.Option(
         None, "--mission", "-m", help="mission name or id"
     ),
 ) -> None:
-    client = AuthenticatedClient()
+    file_ids, file_patterns = split_args(files or [])
+    mission_ids, mission_patterns = split_args(missions or [])
+    project_ids, project_patterns = split_args(projects or [])
 
-    _files = [to_name_or_uuid(f) for f in files or []]
-    _project = to_name_or_uuid(project) if project else None
-    _mission = to_name_or_uuid(mission) if mission else None
+    project_spec = ProjectSpec(
+        project_filters=project_patterns, project_ids=project_ids
+    )
+    mission_spec = MissionSpec(
+        project_spec=project_spec,
+        mission_filters=mission_patterns,
+        mission_ids=mission_ids,
+    )
+    file_spec = FileSpec(
+        mission_spec=mission_spec, file_filters=file_patterns, file_ids=file_ids
+    )
 
     client = AuthenticatedClient()
-    file_spec = get_valid_file_spec(_files, mission=_mission, project=_project)
-    parsed_files = get_files_by_file_spec(client, file_spec)
+    parsed_files = get_files_by_spec(client, file_spec)
 
     if get_shared_state().verbose:
-        table = files_to_table(parsed_files)
-        console = Console()
-        console.print(table)
+        Console().print(files_to_table(parsed_files))
     else:
         for file in parsed_files:
             print(file.id)
 
 
 @list_typer.command()
-def projects() -> None:
+def missions(
+    projects: Optional[List[str]] = typer.Option(
+        None, "--project", "-p", help="project name or id"
+    ),
+    missions: Optional[List[str]] = typer.Argument(None, help="mission names"),
+) -> None:
+    mission_ids, mission_patterns = split_args(missions or [])
+    project_ids, project_patterns = split_args(projects or [])
+
+    project_spec = ProjectSpec(
+        project_filters=project_patterns, project_ids=project_ids
+    )
+    mission_spec = MissionSpec(
+        project_spec=project_spec,
+        mission_filters=mission_patterns,
+        mission_ids=mission_ids,
+    )
+
     client = AuthenticatedClient()
-    projects = get_projects(client)
+    parsed_missions = get_missions_by_spec(client, mission_spec)
 
     if get_shared_state().verbose:
-        table = projects_to_table(projects)
-        console = Console()
-        console.print(table)
-    else:
-        for project in projects:
-            print(project.id)
+        Console().print(missions_to_table(parsed_missions))
 
 
 @list_typer.command()
-def missions(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="project name"),
-    metadata: Optional[List[str]] = typer.Argument(None, help="tag=value pairs"),
+def projects(
+    projects: Optional[List[str]] = typer.Argument(None, help="project names"),
 ) -> None:
-    client = AuthenticatedClient()
+    project_ids, project_patterns = split_args(projects or [])
 
-    _metadata = _parse_metadata(metadata or [])
-    missions = get_missions(client, project=project, tags=_metadata)
+    project_spec = ProjectSpec(
+        project_filters=project_patterns, project_ids=project_ids
+    )
+
+    client = AuthenticatedClient()
+    parsed_projects = get_projects_by_spec(client, project_spec)
 
     if get_shared_state().verbose:
-        table = missions_to_table(missions)
-        console = Console()
-        console.print(table)
+        Console().print(projects_to_table(parsed_projects))
     else:
-        for mission in missions:
-            print(mission.id)
+        for project in parsed_projects:
+            print(project.id)
