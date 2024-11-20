@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
+from itertools import chain
 from typing import List
 from uuid import UUID
 
@@ -13,6 +15,8 @@ from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.utils import filtered_by_patterns
+
+MAX_PARALLEL_REQUESTS = 32
 
 
 @dataclass
@@ -117,47 +121,45 @@ def get_missions_by_spec(
 ) -> List[Mission]:
     projects = get_projects_by_spec(client, spec.project_spec)
 
-    ret = []
-    for project in projects:
-        missions = get_missions_by_project(client, project)
-
-        matched_names = filtered_by_patterns(
-            [mission.name for mission in missions], spec.mission_filters
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
+        missions = chain.from_iterable(
+            executor.map(
+                lambda project: get_missions_by_project(client, project), projects
+            )
         )
 
-        if not spec.mission_filters and not spec.mission_ids:
-            filtered = missions
-        else:
-            filtered = [
-                mission
-                for mission in missions
-                if mission.name in matched_names or mission.id in spec.mission_ids
-            ]
-        ret.extend(filtered)
+    if not spec.mission_filters and not spec.mission_ids:
+        return list(missions)
 
-    return ret
+    matched_names = filtered_by_patterns(
+        [mission.name for mission in missions], spec.mission_filters
+    )
+
+    return [
+        mission
+        for mission in missions
+        if mission.name in matched_names or mission.id in spec.mission_ids
+    ]
 
 
 def get_files_by_spec(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
     missions = get_missions_by_spec(client, spec.mission_spec)
 
-    ret = []
-    for mission in missions:
-        files = get_files_by_mission(client, mission)
-
-        matched_names = filtered_by_patterns(
-            [file.name for file in files], spec.file_filters
+    # collect files
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
+        files = chain.from_iterable(
+            executor.map(
+                lambda mission: get_files_by_mission(client, mission), missions
+            )
         )
 
-        if not spec.file_filters and not spec.file_ids:
-            filtered = files
-        else:
-            filtered = [
-                file
-                for file in files
-                if file.name in matched_names or file.id in spec.file_ids
-            ]
+    if not spec.file_filters and not spec.file_ids:
+        return list(files)
 
-        ret.extend(filtered)
+    matched_names = filtered_by_patterns(
+        [file.name for file in files], spec.file_filters
+    )
 
-    return ret
+    return [
+        file for file in files if file.name in matched_names or file.id in spec.file_ids
+    ]
