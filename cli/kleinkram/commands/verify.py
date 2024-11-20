@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 from enum import Enum
 from pathlib import Path
@@ -21,6 +22,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class FileVerificationStatus(str, Enum):
@@ -107,8 +110,7 @@ def verify(
         for path, status in status_dct.items():
             table.add_row(str(path), Text(status, style=FILE_STATUS_STYLES[status]))
 
-        console = Console()
-        console.print(table)
+        Console().print(table)
     else:
         for path, status in status_dct.items():
             stream = (

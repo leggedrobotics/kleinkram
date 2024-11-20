@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -20,11 +21,18 @@ from kleinkram.config import Config
 from kleinkram.config import LOCAL_S3
 from kleinkram.errors import AccessDeniedException
 from kleinkram.errors import CorruptedFile
+from kleinkram.errors import NotValidUUID
+from kleinkram.errors import UploadCredentialsFailed
 from kleinkram.errors import UploadFailed
 from kleinkram.utils import b64_md5
-from kleinkram.utils import raw_rich
-from rich.text import Text
+from kleinkram.utils import format_error
+from kleinkram.utils import format_traceback
+from kleinkram.utils import styled_string
+from rich.console import Console
 from tqdm import tqdm
+
+
+logger = logging.getLogger(__name__)
 
 UPLOAD_CREDS = "/file/temporaryAccess"
 UPLOAD_CONFIRM = "/queue/confirmUpload"
@@ -71,7 +79,7 @@ def _confirm_file_upload(
     resp = client.post(UPLOAD_CONFIRM, json=data)
 
     if 400 <= resp.status_code < 500:
-        raise CorruptedFile()
+        raise CorruptedFile("failed to confirm upload")
     resp.raise_for_status()
 
 
@@ -96,7 +104,7 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     if 400 <= resp.status_code < 500:
         raise AccessDeniedException(
             f"Failed to download file: {resp.json()['message']}",
-            "Status Code: " + str(resp.status_code),
+            f"Status Code: {resp.status_code}",
         )
 
     resp.raise_for_status()
@@ -108,7 +116,7 @@ def _get_upload_creditials(
     client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
 ) -> Dict[str, UploadCredentials]:
     if mission_id.version != 4:
-        raise ValueError("Mission ID must be a UUIDv4")
+        raise NotValidUUID("Mission ID must be a UUIDv4")
     dct = {
         "filenames": internal_filenames,
         "missionUUID": str(mission_id),
@@ -116,9 +124,8 @@ def _get_upload_creditials(
     resp = client.post(UPLOAD_CREDS, json=dct)
 
     if resp.status_code >= 400:
-        raise ValueError(
-            "Failed to get temporary credentials. Status Code: "
-            f"{resp.status_code}\n{resp.json()['message'][0]}"
+        raise UploadCredentialsFailed(
+            f"Failed to get temporary credentials {internal_filenames}"
         )
 
     data = resp.json()
@@ -178,8 +185,8 @@ def _s3_upload(
             Callback=pbar.update,
         )
     except Exception as e:
-        err = f"error uploading file: {local_path}: {type(e).__name__}"
-        pbar.write(raw_rich(Text(err, style="red")))
+        logger.error(format_traceback(e))
+        pbar.write(format_error(f"error uploading file {local_path}", e))
         return False
     return True
 
@@ -212,6 +219,7 @@ def _upload_file(
         # upload file
         creds = access[job.name]
     except Exception as e:
+        logger.error(format_traceback(e))
         pbar.write(f"unable to get upload credentials for file {job.path.name}: {e}")
         pbar.close()
         if global_pbar is not None:
@@ -226,8 +234,8 @@ def _upload_file(
         try:
             _cancel_file_upload(client, creds.file_id, job.mission_id)
         except Exception as e:
-            msg = Text(f"failed to cancel upload: {type(e).__name__}", style="red")
-            pbar.write(raw_rich(msg))
+            logger.error(format_traceback(e))
+            pbar.write(format_error(f"error cancelling upload {job.path}", e))
     else:
         # tell backend that upload is complete
         try:
@@ -235,15 +243,14 @@ def _upload_file(
             _confirm_file_upload(client, creds.file_id, local_hash)
 
             if global_pbar is not None:
-                msg = Text(f"uploaded {job.path}", style="green")
-                global_pbar.write(raw_rich(msg))
+                msg = f"uploaded {job.path}"
+                logger.info(msg)
+                global_pbar.write(styled_string(msg, style="green"))
                 global_pbar.update()
 
         except Exception as e:
-            msg = Text(
-                f"error confirming upload {job.path}: {type(e).__name__}", style="red"
-            )
-            pbar.write(raw_rich(msg))
+            msg = format_error(f"error confirming upload {job.path}", e)
+            pbar.write(msg)
 
     pbar.close()
     return (job.path.stat().st_size, job.path)
@@ -292,14 +299,16 @@ def upload_files(
 
             total_size += size
         except Exception as e:
+            logger.error(format_traceback(e))
             errors.append(e)
 
     pbar.close()
 
     time = monotonic() - start
-    print(f"upload took {time:.2f} seconds", file=sys.stderr)
-    print(f"total size: {int(total_size)} MB", file=sys.stderr)
-    print(f"average speed: {total_size / time:.2f} MB/s", file=sys.stderr)
+    c = Console(file=sys.stderr)
+    c.print(f"upload took {time:.2f} seconds")
+    c.print(f"total size: {int(total_size)} MB")
+    c.print(f"average speed: {total_size / time:.2f} MB/s")
 
     if errors:
         raise UploadFailed(f"got unhandled errors: {errors} when uploading files")
@@ -307,12 +316,12 @@ def upload_files(
 
 def _url_download(url: str, path: Path, size: int, overwrite: bool = False) -> None:
     if path.exists() and not overwrite:
-        raise FileExistsError(f"File already exists: {path}")
+        raise FileExistsError(f"file already exists: {path}")
 
     with httpx.stream("GET", url) as response:
         with open(path, "wb") as f:
             with tqdm(
-                total=size, desc=f"Downloading {path.name}", unit="B", unit_scale=True
+                total=size, desc=f"downloading {path.name}", unit="B", unit_scale=True
             ) as pbar:
                 for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     f.write(chunk)
@@ -334,4 +343,4 @@ def download_file(
     observed_hash = b64_md5(file_path)
 
     if observed_hash != hash:
-        raise CorruptedFile("file hash does not match")
+        raise CorruptedFile(f"file hash does not match: {dest}")

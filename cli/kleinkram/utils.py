@@ -3,14 +3,13 @@ from __future__ import annotations
 import base64
 import fnmatch
 import hashlib
-import os
 import string
+import traceback
 from hashlib import md5
 from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -44,6 +43,20 @@ def check_file_paths(files: Sequence[Path]) -> None:
             )
 
 
+def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
+    if not verbose:
+        ret = f"{msg}: {type(exc).__name__}"
+    else:
+        ret = f"{msg}: {exc}"
+    return styled_string(ret, style="red")
+
+
+def format_traceback(exc: Exception) -> str:
+    return "".join(
+        traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+    )
+
+
 def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
     filtered = []
     for name in names:
@@ -52,17 +65,14 @@ def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]
     return filtered
 
 
-def raw_rich(*objects: Any, **kwargs: Any) -> str:
+def styled_string(*objects: Any, **kwargs: Any) -> str:
     """\
     accepts any object that Console.print can print
     returns the raw string output
     """
-
     console = Console()
-
     with console.capture() as capture:
         console.print(*objects, **kwargs, end="")
-
     return capture.get()
 
 

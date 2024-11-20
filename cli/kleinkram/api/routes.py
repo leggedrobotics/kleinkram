@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -27,6 +28,8 @@ from kleinkram.models import Project
 from kleinkram.models import TagType
 from kleinkram.utils import filtered_by_patterns
 from kleinkram.utils import is_valid_uuid4
+
+logger = logging.getLogger(__name__)
 
 
 MAX_PAGINATION = 10_000
