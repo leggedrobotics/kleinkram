@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,14 +8,15 @@ from uuid import UUID
 
 import httpx
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.parsing import _parse_file
+from kleinkram.api.parsing import _parse_mission
+from kleinkram.api.parsing import _parse_project
 from kleinkram.config import Config
-from kleinkram.errors import MissionDoesNotExist
+from kleinkram.errors import AccessDenied
 from kleinkram.errors import MissionExists
-from kleinkram.errors import NoPermission
-from kleinkram.errors import ParseError
+from kleinkram.errors import MissionNotFound
 from kleinkram.models import DataType
 from kleinkram.models import File
-from kleinkram.models import FileState
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import TagType
@@ -33,8 +32,6 @@ __all__ = [
     "_claim_admin",
 ]
 
-logger = logging.getLogger(__name__)
-
 
 MAX_PAGINATION = 10_000
 
@@ -47,75 +44,6 @@ MISSION_UPDATE_METADATA = "/mission/tags"
 FILE_OF_MISSION = "/file/ofMission"
 TAG_TYPE_BY_NAME = "/tag/filtered"
 GET_STATUS = "/user/me"
-
-
-def _parse_project(project: Dict[str, Any]) -> Project:
-    try:
-        project_id = UUID(project["uuid"], version=4)
-        project_name = project["name"]
-        project_description = project["description"]
-
-        parsed = Project(
-            id=project_id, name=project_name, description=project_description
-        )
-    except Exception:
-        raise ParseError(f"error parsing project: {project}")
-    return parsed
-
-
-def _parse_mission(
-    mission: Dict[str, Any], project: Optional[Project] = None
-) -> Mission:
-    try:
-        mission_id = UUID(mission["uuid"], version=4)
-        mission_name = mission["name"]
-
-        project_id = (
-            project.id if project else UUID(mission["project"]["uuid"], version=4)
-        )
-        project_name = project.name if project else mission["project"]["name"]
-
-        parsed = Mission(
-            id=mission_id,
-            name=mission_name,
-            project_id=project_id,
-            project_name=project_name,
-        )
-    except Exception:
-        raise ParseError(f"error parsing mission: {mission}")
-    return parsed
-
-
-def _parse_file(file: Dict[str, Any], mission: Optional[Mission] = None) -> File:
-    try:
-        filename = file["filename"]
-        file_id = UUID(file["uuid"], version=4)
-        file_size = file["size"]
-        file_hash = file["hash"]
-
-        project_id = (
-            mission.project_id if mission else UUID(file["project"]["uuid"], version=4)
-        )
-        project_name = mission.project_name if mission else file["project"]["name"]
-
-        mission_id = mission.id if mission else UUID(file["mission"]["uuid"], version=4)
-        mission_name = mission.name if mission else file["mission"]["name"]
-
-        parsed = File(
-            id=file_id,
-            name=filename,
-            size=file_size,
-            hash=file_hash,
-            project_id=project_id,
-            project_name=project_name,
-            mission_id=mission_id,
-            mission_name=mission_name,
-            state=FileState(file["state"]),
-        )
-    except Exception:
-        raise ParseError(f"error parsing file: {file}")
-
-    return parsed
 
 
 def _get_projects(client: AuthenticatedClient) -> list[Project]:
@@ -280,10 +208,10 @@ def _update_mission_metadata(
     resp = client.post(MISSION_UPDATE_METADATA, json=payload)
 
     if resp.status_code == 404:
-        raise MissionDoesNotExist
+        raise MissionNotFound
 
     if resp.status_code == 403:
-        raise NoPermission
+        raise AccessDenied(f"cannot update mission: {mission_id}")
 
     resp.raise_for_status()
 

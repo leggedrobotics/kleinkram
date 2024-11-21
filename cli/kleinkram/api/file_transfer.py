@@ -19,9 +19,8 @@ import httpx
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import Config
 from kleinkram.config import LOCAL_S3
-from kleinkram.errors import AccessDeniedException
+from kleinkram.errors import AccessDenied
 from kleinkram.errors import CorruptedFile
-from kleinkram.errors import NotValidUUID
 from kleinkram.errors import UploadCredentialsFailed
 from kleinkram.errors import UploadFailed
 from kleinkram.models import File
@@ -106,8 +105,8 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True})
 
     if 400 <= resp.status_code < 500:
-        raise AccessDeniedException(
-            f"Failed to download file: {resp.json()['message']}",
+        raise AccessDenied(
+            f"Failed to download file: {resp.json()['message']}"
             f"Status Code: {resp.status_code}",
         )
 
@@ -119,8 +118,6 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
 def _get_upload_creditials(
     client: AuthenticatedClient, internal_filenames: List[str], mission_id: UUID
 ) -> Dict[str, UploadCredentials]:
-    if mission_id.version != 4:
-        raise NotValidUUID("Mission ID must be a UUIDv4")
     dct = {
         "filenames": internal_filenames,
         "missionUUID": str(mission_id),

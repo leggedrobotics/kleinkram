@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _update_mission_metadata
-from kleinkram.errors import MissionDoesNotExist
+from kleinkram.errors import MissionNotFound
 from kleinkram.resources import get_missions_by_spec
 from kleinkram.resources import mission_spec_is_unique
 from kleinkram.resources import MissionSpec
@@ -51,7 +51,7 @@ def update(
     missions = get_missions_by_spec(client, mission_spec)
 
     if not missions:
-        raise MissionDoesNotExist(f"Mission {mission} does not exist")
+        raise MissionNotFound(f"Mission {mission} does not exist")
     elif len(missions) > 1:
         raise RuntimeError(f"Multiple missions found: {missions}")  # unreachable
 

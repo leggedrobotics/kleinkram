@@ -7,8 +7,7 @@ from typing import Any
 import httpx
 from kleinkram.auth import Config
 from kleinkram.config import Credentials
-from kleinkram.errors import LOGIN_MESSAGE
-from kleinkram.errors import NotAuthenticatedException
+from kleinkram.errors import NotAuthenticated
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ class AuthenticatedClient(httpx.Client):
             self.cookies.set(COOKIE_AUTH_TOKEN, self._config.auth_token)
         else:
             logger.info("not authenticated...")
-            raise NotAuthenticatedException(self._config.endpoint)
+            raise NotAuthenticated
 
     def _refresh_token(self) -> None:
         if self._config.has_cli_key:
@@ -86,7 +85,7 @@ class AuthenticatedClient(httpx.Client):
         # if the requesting a refresh token fails, we are not logged in
         if (url == "/auth/refresh-token") and response.status_code == 401:
             logger.info("got 401, not logged in...")
-            raise NotLoggedInException(LOGIN_MESSAGE)
+            raise NotAuthenticated
 
         # otherwise we try to refresh the token
         if response.status_code == 401:
@@ -94,7 +93,7 @@ class AuthenticatedClient(httpx.Client):
             try:
                 self._refresh_token()
             except Exception:
-                raise NotLoggedInException(LOGIN_MESSAGE)
+                raise NotAuthenticated
 
             logger.info(f"retrying request {method} {full_url}")
             resp = super().request(method, full_url, *args, **kwargs)

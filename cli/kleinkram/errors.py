@@ -8,9 +8,10 @@ from typing import Type
 import typer
 
 LOGIN_MESSAGE = "Please login using `klein login`."
+INVALID_CONFIG_MESSAGE = "Invalid config file."
 
 
-class ParseError(Exception): ...
+class ParsingError(Exception): ...
 
 
 class InvalidMissionSpec(Exception): ...
@@ -22,42 +23,27 @@ class InvalidProjectSpec(Exception): ...
 class MissionExists(Exception): ...
 
 
-class MissionDoesNotExist(Exception): ...
-
-
 class MissionNotFound(Exception): ...
 
 
 class ProjectNotFound(Exception): ...
 
 
-class NoPermission(Exception): ...
-
-
 class UploadCredentialsFailed(Exception): ...
 
 
-class AccessDeniedException(Exception):
-    def __init__(self, message: str, api_error: str):
-        self.message = message
-        self.api_error = api_error
+class AccessDenied(Exception): ...
 
 
-class NotAuthenticatedException(Exception):
-    def __init__(self, endpoint: str):
-        message = (
-            f"You are not authenticated on endpoint '{endpoint}'.\n{LOGIN_MESSAGE}"
-        )
-        super().__init__(message)
+class NotAuthenticated(Exception):
+    def __init__(self) -> None:
+        super().__init__(LOGIN_MESSAGE)
 
 
 class CorruptedFile(Exception): ...
 
 
 class NameIsValidUUID(Exception): ...
-
-
-class NotValidUUID(Exception): ...
 
 
 class UploadFailed(Exception): ...
@@ -71,14 +57,7 @@ class FileTypeNotSupported(Exception): ...
 
 class InvalidConfigFile(Exception):
     def __init__(self) -> None:
-        super().__init__("Invalid config file.")
-
-
-class CorruptedConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__(
-            "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
-        )
+        super().__init__(INVALID_CONFIG_MESSAGE)
 
 
 ExceptionHandler = Callable[[Exception], int]
