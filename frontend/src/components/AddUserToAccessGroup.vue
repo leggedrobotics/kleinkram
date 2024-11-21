@@ -87,7 +87,7 @@ const { mutate } = useMutation({
             }),
         );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
         Notify.create({
             message: 'Users added to access group',
             color: 'positive',

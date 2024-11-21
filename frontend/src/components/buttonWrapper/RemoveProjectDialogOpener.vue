@@ -46,7 +46,7 @@ function removeProject() {
 const { mutate: _removeProject } = useMutation({
     mutationFn: () =>
         removeAccessGroupFromProject(props.projectUUID, props.accessGroup.uuid),
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', props.accessGroup.uuid],
         });

@@ -332,7 +332,7 @@ function isExpired(date: Date | null) {
 const { mutate: _removeUser } = useMutation({
     mutationFn: (userUUID: string) =>
         removeUserFromAccessGroup(userUUID, uuid.value),
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', uuid],
         });
@@ -396,7 +396,7 @@ const { mutate: setAccessGroup } = useMutation({
     mutationFn: (data: { aguUUID: string; expirationDate: Date | null }) => {
         return setAccessGroupExpiry(data.aguUUID, data.expirationDate);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return (
@@ -486,7 +486,7 @@ const user_cols = [
     },
 ];
 
-const _rowClick = (_uuid: string) => {
+const _rowClick = async (_uuid: string) => {
     await router?.push({
         name: ROUTES.MISSIONS.routeName,
         params: {

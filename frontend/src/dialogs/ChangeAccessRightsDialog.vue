@@ -62,7 +62,7 @@ const { mutate: changeAccessRights } = useMutation({
             rights.value.value,
         );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'projectAccess',
         });

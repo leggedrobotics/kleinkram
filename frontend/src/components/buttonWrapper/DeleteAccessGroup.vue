@@ -48,7 +48,7 @@ const queryClient = useQueryClient();
 
 const { mutate: _deleteAccessGroup } = useMutation({
     mutationFn: () => deleteAccessGroup(props.accessGroup.uuid),
-    onSuccess: () => {
+    onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'accessGroups';
