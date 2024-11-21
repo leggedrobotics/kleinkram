@@ -6,7 +6,6 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import monotonic
-from typing import Any
 from typing import Dict
 from typing import List
 from typing import NamedTuple
@@ -351,7 +350,7 @@ def download_file(
     # skip files that are not ok on remote
     if file.state != FileState.OK:
         msg = (
-            f"Skipping file {file.name} with state",
+            f"skipping file {file.name} with state",
             Text(file.state.value, style=FILE_STATE_COLOR[file.state]),
         )
         if verbose:
@@ -365,14 +364,22 @@ def download_file(
         base_msg = f"{file.name} already exists in dest"
 
         if b64_md5(path) == file.hash:
-            print(f"{base_msg}, skipping...")
-            return
-
+            detail = Text("skipping...", style="green")
+            overwrite = False  # don't overwrite if hashes match
         elif not overwrite:
-            print(f"{base_msg}, missmatching hash!")
-            return
+            # hash does not match and overwrite is False
+            detail = Text("missmatching hash, skipping...", style="yellow")
+        else:
+            detail = Text("missmatching hash, overwriting...", style="green")
 
-        print(f"{base_msg}, missmatching hash overwriting...")
+        if verbose:
+            tqdm.write(styled_string(base_msg, detail, sep=", "))
+        else:
+            print(base_msg, detail, sep=", ")
+
+        # if overwrite is still False we skip the file
+        if not overwrite:
+            return
 
     # request a download url
     download_url = _get_file_download(client, file.id)

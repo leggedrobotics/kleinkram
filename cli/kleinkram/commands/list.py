@@ -46,16 +46,14 @@ def files(
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(
-        project_filters=project_patterns, project_ids=project_ids
-    )
+    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
     mission_spec = MissionSpec(
         project_spec=project_spec,
-        mission_filters=mission_patterns,
-        mission_ids=mission_ids,
+        ids=mission_ids,
+        patterns=mission_patterns,
     )
     file_spec = FileSpec(
-        mission_spec=mission_spec, file_filters=file_patterns, file_ids=file_ids
+        mission_spec=mission_spec, patterns=file_patterns, ids=file_ids
     )
 
     client = AuthenticatedClient()
@@ -78,13 +76,11 @@ def missions(
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(
-        project_filters=project_patterns, project_ids=project_ids
-    )
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
     mission_spec = MissionSpec(
+        ids=mission_ids,
+        patterns=mission_patterns,
         project_spec=project_spec,
-        mission_filters=mission_patterns,
-        mission_ids=mission_ids,
     )
 
     client = AuthenticatedClient()
@@ -99,10 +95,7 @@ def projects(
     projects: Optional[List[str]] = typer.Argument(None, help="project names"),
 ) -> None:
     project_ids, project_patterns = split_args(projects or [])
-
-    project_spec = ProjectSpec(
-        project_filters=project_patterns, project_ids=project_ids
-    )
+    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
 
     client = AuthenticatedClient()
     parsed_projects = get_projects_by_spec(client, project_spec)

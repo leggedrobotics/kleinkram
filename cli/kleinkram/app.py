@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 import time
 from collections import OrderedDict
@@ -17,8 +16,8 @@ import typer
 from click import Context
 from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import claim_admin
-from kleinkram.api.routes import get_api_version
+from kleinkram.api.routes import _claim_admin
+from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
 from kleinkram.commands.download import download_typer
 from kleinkram.commands.endpoint import endpoint_typer
@@ -33,6 +32,7 @@ from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
 from rich.console import Console
+from rich.text import Text
 from typer.core import TyperGroup
 
 LOG_DIR = Path() / "logs"
@@ -150,7 +150,7 @@ def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> No
 @app.command(hidden=True)
 def claim():
     client = AuthenticatedClient()
-    claim_admin(client)
+    _claim_admin(client)
     print("admin rights claimed successfully.")
 
 
@@ -162,7 +162,7 @@ def _version_callback(value: bool) -> None:
 
 def check_version_compatiblity() -> None:
     cli_version = get_supported_api_version()
-    api_version = get_api_version()
+    api_version = _get_api_version()
     api_vers_str = ".".join(map(str, api_version))
 
     if cli_version[0] != api_version[0]:
@@ -208,6 +208,8 @@ def cli(
         logger.error(format_traceback(e))
         raise
     except Exception:
-        err = "failed to check version compatibility"
-        Console(file=sys.stderr).print(err, style="yellow")
+        err = ("failed to check version compatibility",)
+        Console(file=sys.stderr).print(
+            err, style="yellow" if shared_state.verbose else None
+        )
         logger.error(err)

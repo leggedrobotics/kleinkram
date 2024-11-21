@@ -3,16 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from typing import Optional
-from uuid import UUID
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import upload_files
-from kleinkram.api.routes import create_mission
-from kleinkram.api.routes import get_project_id_by_name
-from kleinkram.api.routes import get_tags_map
+from kleinkram.api.routes import _create_mission as _create_mission_api
 from kleinkram.config import get_shared_state
-from kleinkram.errors import MissionDoesNotExist
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import ProjectNotFound
 from kleinkram.models import Mission
@@ -42,6 +38,7 @@ upload_typer = typer.Typer(
 )
 
 
+# TODO: move this to core
 def _create_mission(
     client: AuthenticatedClient,
     mission_spec: MissionSpec,
@@ -49,13 +46,12 @@ def _create_mission(
     ignore_missing_tags: bool,
 ) -> Mission:
     check_mission_spec_is_creatable(mission_spec)
-    mission_name = mission_spec.mission_filters[0]
+    mission_name = mission_spec.patterns[0]
 
     # get the metadata
-    tags_dct = {}
+    metadata_dct = {}
     if metadata_path is not None:
         metadata_dct = load_metadata(metadata_path)
-        tags_dct = get_tags_map(client, metadata_dct)
 
     # get project
     projects = get_projects_by_spec(client, mission_spec.project_spec)
@@ -67,17 +63,17 @@ def _create_mission(
 
     parsed_project = projects[0]
 
-    create_mission(
+    _create_mission_api(
         client,
         parsed_project.id,
         mission_name,
-        tags=tags_dct,
+        metadata=metadata_dct,
         ignore_missing_tags=ignore_missing_tags,
     )
 
     missions = get_missions_by_spec(client, mission_spec)
-    if len(missions) != 1:
-        raise AssertionError("unreachable")
+    assert len(missions) is not None, "unreachable, the ghost is back"
+
     return missions[0]
 
 
@@ -101,10 +97,7 @@ def upload(
 
     file_paths = [Path(file) for file in files]
     check_file_paths(file_paths)
-
-    files_map = get_filename_map(
-        [Path(file) for file in files],
-    )
+    files_map = get_filename_map(file_paths)
 
     if not fix_filenames:
         for name, path in files_map.items():
@@ -113,13 +106,13 @@ def upload(
                     f"invalid filename format {path.name}, use `--fix-filenames`"
                 )
 
-    mission_ids, mission_filters = split_args([mission])
-    project_ids, project_filters = split_args([project] if project else [])
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
 
-    project_spec = ProjectSpec(project_ids=project_ids, project_filters=project_filters)
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
     mission_spec = MissionSpec(
-        mission_ids=mission_ids,
-        mission_filters=mission_filters,
+        ids=mission_ids,
+        patterns=mission_patterns,
         project_spec=project_spec,
     )
 

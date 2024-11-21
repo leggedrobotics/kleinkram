@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -19,12 +18,6 @@ from uuid import UUID
 import yaml
 from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
-from kleinkram.errors import InvalidFileSpec
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.models import FilesById
-from kleinkram.models import FilesByMission
-from kleinkram.models import MissionById
-from kleinkram.models import MissionByName
 from rich.console import Console
 
 
@@ -146,45 +139,6 @@ def b64_md5(file: Path) -> str:
             hash_md5.update(chunk)
     binary_digest = hash_md5.digest()
     return base64.b64encode(binary_digest).decode("utf-8")
-
-
-def get_valid_mission_spec(
-    mission: Union[str, UUID],
-    project: Optional[Union[str, UUID]] = None,
-) -> Union[MissionById, MissionByName]:
-    """\
-    checks if:
-    - atleast one is speicifed
-    - if project is not specified then mission must be a valid uuid4
-    """
-
-    if isinstance(mission, UUID):
-        return MissionById(id=mission)
-    if isinstance(mission, str) and project is not None:
-        return MissionByName(name=mission, project=project)
-    raise InvalidMissionSpec("must specify mission id or project name / id")
-
-
-def get_valid_file_spec(
-    files: Sequence[Union[str, UUID]],
-    mission: Optional[Union[str, UUID]] = None,
-    project: Optional[Union[str, UUID]] = None,
-) -> Union[FilesById, FilesByMission]:
-    """\
-    """
-    if not any([project, mission, files]):
-        raise InvalidFileSpec("must specify `project`, `mission` or `files`")
-
-    # if only files are specified they must be valid uuid4
-    if project is None and mission is None:
-        if all(map(lambda file: isinstance(file, UUID), files)):
-            return FilesById(ids=files)  # type: ignore
-        raise InvalidFileSpec("if no mission is specified files must be valid uuid4")
-
-    if mission is None:
-        raise InvalidMissionSpec("mission must be specified")
-    mission_spec = get_valid_mission_spec(mission, project)
-    return FilesByMission(mission=mission_spec, files=list(files))
 
 
 def to_name_or_uuid(s: str) -> Union[UUID, str]:

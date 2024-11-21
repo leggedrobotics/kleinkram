@@ -80,6 +80,7 @@ class AuthenticatedClient(httpx.Client):
         full_url = f"{self._config.endpoint}{url}"
         logger.info(f"requesting {method} {full_url}")
         response = super().request(method, full_url, *args, **kwargs)
+
         logger.info(f"got response {response}")
 
         # if the requesting a refresh token fails, we are not logged in

@@ -60,16 +60,14 @@ def download(
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(
-        project_filters=project_patterns, project_ids=project_ids
-    )
+    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
     mission_spec = MissionSpec(
+        patterns=mission_patterns,
+        ids=mission_ids,
         project_spec=project_spec,
-        mission_filters=mission_patterns,
-        mission_ids=mission_ids,
     )
     file_spec = FileSpec(
-        mission_spec=mission_spec, file_filters=file_patterns, file_ids=file_ids
+        patterns=file_patterns, ids=file_ids, mission_spec=mission_spec
     )
 
     client = AuthenticatedClient()

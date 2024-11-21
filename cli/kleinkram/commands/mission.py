@@ -5,7 +5,7 @@ from typing import Optional
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import update_mission_metadata
+from kleinkram.api.routes import _update_mission_metadata
 from kleinkram.errors import MissionDoesNotExist
 from kleinkram.resources import get_missions_by_spec
 from kleinkram.resources import mission_spec_is_unique
@@ -34,13 +34,13 @@ def update(
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     metadata: str = typer.Option(help="path to metadata file (json or yaml)"),
 ) -> None:
-    mission_ids, mission_filters = split_args([mission])
-    project_ids, project_filters = split_args([project] if project else [])
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
 
-    project_spec = ProjectSpec(project_ids=project_ids, project_filters=project_filters)
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
     mission_spec = MissionSpec(
-        mission_ids=mission_ids,
-        mission_filters=mission_filters,
+        ids=mission_ids,
+        patterns=mission_patterns,
         project_spec=project_spec,
     )
 
@@ -56,7 +56,7 @@ def update(
         raise RuntimeError(f"Multiple missions found: {missions}")  # unreachable
 
     metadata_dct = load_metadata(Path(metadata))
-    update_mission_metadata(client, missions[0].id, metadata_dct)
+    _update_mission_metadata(client, missions[0].id, metadata=metadata_dct)
 
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)
