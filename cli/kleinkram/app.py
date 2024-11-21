@@ -3,14 +3,10 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
-from typing import Any
-from typing import Callable
 from typing import List
 from typing import Optional
-from typing import Type
 
 import typer
 from click import Context
@@ -28,11 +24,11 @@ from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
+from kleinkram.errors import ErrorHandledTyper
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
 from rich.console import Console
-from rich.text import Text
 from typer.core import TyperGroup
 
 LOG_DIR = Path() / "logs"
@@ -73,56 +69,12 @@ class OrderCommands(TyperGroup):
         return list(self.commands)
 
 
-ExceptionHandler = Callable[[Exception], int]
-
-
-class ErrorHandledTyper(typer.Typer):
-    """\
-    error handlers that are last added will be used first
-    """
-
-    _error_handlers: OrderedDict[Type[Exception], ExceptionHandler]
-
-    def error_handler(
-        self, exc: type[Exception]
-    ) -> Callable[[ExceptionHandler], ExceptionHandler]:
-        def dec(func: ExceptionHandler) -> ExceptionHandler:
-            self._error_handlers[exc] = func
-            return func
-
-        return dec
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._error_handlers = OrderedDict()
-
-    def __call__(self, *args: Any, **kwargs: Any) -> int:
-        try:
-            return super().__call__(*args, **kwargs)
-        except Exception as e:
-            for tp, handler in reversed(self._error_handlers.items()):
-                if isinstance(e, tp):
-                    exit_code = handler(e)
-                    raise SystemExit(exit_code)
-            raise
-
-
 app = ErrorHandledTyper(
     cls=OrderCommands,
     help=CLI_HELP,
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
 )
-
-
-@app.error_handler(Exception)
-def base_handler(exc: Exception) -> int:
-    if not get_shared_state().debug:
-        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
-        logger.error(format_traceback(exc))
-        return 1
-    raise exc
-
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
@@ -131,6 +83,16 @@ app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
 app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
+
+
+# attach error handler to app
+@app.error_handler(Exception)
+def base_handler(exc: Exception) -> int:
+    if not get_shared_state().debug:
+        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
+        logger.error(format_traceback(exc))
+        return 1
+    raise exc
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
