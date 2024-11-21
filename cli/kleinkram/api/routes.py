@@ -40,7 +40,7 @@ MAX_PAGINATION = 10_000
 
 CLAIM_ADMIN = "/user/claimAdmin"
 PROJECT_ALL = "/project/filtered"
-MISSIONS_BY_PROJECT = "/mission/filter"
+MISSIONS_BY_PROJECT = "/mission/filtered"
 MISSION_BY_NAME = "/mission/byName"
 MISSION_CREATE = "/mission/create"
 MISSION_UPDATE_METADATA = "/mission/tags"
