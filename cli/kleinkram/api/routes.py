@@ -38,35 +38,14 @@ logger = logging.getLogger(__name__)
 
 MAX_PAGINATION = 10_000
 
-TEMP_CREDS = "/file/temporaryAccess"
 CLAIM_ADMIN = "/user/claimAdmin"
-
-PROJECT_BY_NAME = "/project/byName"
-PROJECT_BY_ID = "/project/one"
-PROJECT_CREATE = "/project/create"
 PROJECT_ALL = "/project/filtered"
-
+MISSIONS_BY_PROJECT = "/mission/filter"
 MISSION_BY_NAME = "/mission/byName"
-MISSION_BY_ID = "/mission/one"
 MISSION_CREATE = "/mission/create"
-MISSION_BY_PROJECT_NAME = "/mission/filteredByProjectName"
 MISSION_UPDATE_METADATA = "/mission/tags"
-
-MISSIONS_BY_PROJECT = "/mission/filtered"
-MISSIONS_ALL = "/mission/all"
-
-ALL_USERS = "/user/all"
-USER_INFO = "/user/me"
-PROMOTE_USER = "/user/promote"
-DEMOTE_USER = "/user/demote"
-
-FILE_DOWNLOAD = "/file/download"
-FILE_QUERY = "/file/filteredByNames"
-FILE_ONE = "/file/one"
 FILE_OF_MISSION = "/file/ofMission"
-
 TAG_TYPE_BY_NAME = "/tag/filtered"
-
 GET_STATUS = "/user/me"
 
 
