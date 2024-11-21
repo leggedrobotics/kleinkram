@@ -35,6 +35,7 @@ export class MissionService {
         createMission: CreateMission,
         auth: AuthRes,
     ): Promise<Mission> {
+        // @ts-ignore
         const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
@@ -52,8 +53,9 @@ export class MissionService {
                     .map((tagType: TagType) => tagType.name)
                     .join(', ');
                 throw new ConflictException(
-                    'All required tags must be provided for the mission. Missing tags: ' +
-                        missingTagNames,
+                    `All required tags must be provided for the mission. Missing tags: ${
+                        missingTagNames
+                    }`,
                 );
             } else {
                 logger.info('All required tags are provided');
@@ -111,13 +113,13 @@ export class MissionService {
     }
 
     async findMissionByProjectMinimal(
+        userUUID: string,
         projectUUID: string,
         skip: number,
         take: number,
         search?: string,
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
-        userUUID?: string,
     ): Promise<[Mission[], number]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -146,13 +148,13 @@ export class MissionService {
     }
 
     async findMissionByProject(
+        user: User,
         projectUUID: string,
         skip: number,
         take: number,
         search?: string,
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
-        user?: User,
     ): Promise<[AggregatedMissionDto[], number]> {
         const query = this.missionRepository
             .createQueryBuilder('mission')
@@ -314,7 +316,7 @@ export class MissionService {
     async findOneByName(
         name: string,
         projectUuid: string,
-    ): Promise<Mission | undefined> {
+    ): Promise<Mission | null> {
         return this.missionRepository.findOne({
             where: {
                 name,

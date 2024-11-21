@@ -33,7 +33,6 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { getProjectAccess } from 'src/services/queries/access';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { ProjectAccess } from 'src/types/ProjectAccess';
 import { ref, watch } from 'vue';
 import { updateProjectAccess } from 'src/services/mutations/access';
 import { AccessGroupRights } from '@common/enum';

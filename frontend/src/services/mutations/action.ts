@@ -1,6 +1,4 @@
 import axios from 'src/api/axios';
-import { ActionTemplate } from 'src/types/ActionTemplate';
-import { Action } from 'src/types/Action';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
 
@@ -47,23 +45,7 @@ export const createActionTemplate = async (template: {
         entrypoint: template.entrypoint,
         accessRights: template.accessRights,
     });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-    );
+    return response.data;
 };
 
 export const createNewActionTemplateVersion = async (template: {
@@ -92,25 +74,9 @@ export const createNewActionTemplateVersion = async (template: {
         entrypoint: template.entrypoint,
         accessRights: template.accessRights,
     });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-    );
+    return response.data;
 };
 
 export async function deleteAction(action: Action) {
-    return await axios.delete('/action/' + action.uuid);
+    return await axios.delete(`/action/${action.uuid}`);
 }

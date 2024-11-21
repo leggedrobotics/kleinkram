@@ -3,39 +3,39 @@ import { AccessGroupType } from '../../frontend_shared/enum';
 
 export class AccessGroupDto {
     @ApiProperty()
-    uuid: string;
+    uuid!: string;
 
     @ApiProperty()
-    name: string;
+    name!: string;
 
     @ApiProperty()
-    createdAt: Date;
+    createdAt!: Date;
 
     @ApiProperty()
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @ApiProperty()
-    type: AccessGroupType;
+    type!: AccessGroupType;
 
     @ApiProperty()
-    hidden: boolean;
+    hidden!: boolean;
 }
 
 export class GroupMembershipDto {
     @ApiProperty()
-    uuid: string;
+    uuid!: string;
 
     @ApiProperty()
-    createdAt: Date;
+    createdAt!: Date;
 
     @ApiProperty()
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @ApiProperty()
-    expirationDate: Date | null;
+    expirationDate?: Date;
 
     @ApiProperty()
-    canEditGroup: boolean;
+    canEditGroup!: boolean;
 
     @ApiProperty({
         type: AccessGroupDto || undefined,
@@ -46,19 +46,13 @@ export class GroupMembershipDto {
 
 export class UserDto {
     @ApiProperty()
-    uuid: string;
+    uuid!: string;
 
     @ApiProperty()
-    name: string;
+    name!: string;
 
     @ApiProperty()
-    email: string;
-
-    @ApiProperty()
-    role: string;
-
-    @ApiProperty()
-    avatarUrl: string;
+    avatarUrl!: string;
 }
 
 export class CurrentAPIUserDto extends UserDto {
@@ -66,5 +60,22 @@ export class CurrentAPIUserDto extends UserDto {
         type: [GroupMembershipDto],
         description: 'List of group memberships',
     })
-    memberships: GroupMembershipDto[];
+    memberships!: GroupMembershipDto[];
+
+    @ApiProperty()
+    email!: string;
+
+    @ApiProperty()
+    role!: string;
+}
+
+export class UsersDto {
+    @ApiProperty({
+        type: [UserDto],
+        description: 'List of users',
+    })
+    users!: UserDto[];
+
+    @ApiProperty()
+    count!: number;
 }

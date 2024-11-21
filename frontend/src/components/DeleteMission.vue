@@ -16,7 +16,6 @@
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { Mission } from 'src/types/Mission';
 import { deleteMission } from 'src/services/mutations/mission';
 import ROUTES from 'src/router/routes';
 import { useRoute, useRouter } from 'vue-router';

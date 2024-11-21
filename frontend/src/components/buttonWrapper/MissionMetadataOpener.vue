@@ -22,7 +22,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-import { Mission } from 'src/types/Mission';
 import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
 
 const $q = useQuasar();

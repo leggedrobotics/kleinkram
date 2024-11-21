@@ -52,7 +52,7 @@ function moveMission() {
     }).onOk((newProjectUUID: string) => {
         if (urlMissionUUID.value) {
             $router
-                ?.push({
+                .push({
                     params: {
                         project_uuid: newProjectUUID,
                     },

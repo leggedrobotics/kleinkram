@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
@@ -16,10 +15,6 @@ import logger from '../logger';
 @Injectable()
 export class ProjectGuardService {
     constructor(
-        private userService: UserService,
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
-        @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,
@@ -48,7 +43,7 @@ export class ProjectGuardService {
         });
         if (!res) {
             logger.debug(
-                `User ${user.name} (${user.uuid}) does not have access to project ${projectUUID} with rights ${rights}`,
+                `User ${user.name} (${user.uuid}) does not have access to project ${projectUUID} with rights ${rights.toString()}`,
             );
         }
         return res;

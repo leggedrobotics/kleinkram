@@ -26,17 +26,17 @@ import { AccessGroupRights } from '../frontend_shared/enum';
 })
 export class ProjectAccessViewEntity {
     @ViewColumn({ name: 'projectuuid' })
-    projectUUID: string;
+    projectUUID!: string;
 
     @ViewColumn({ name: 'useruuid' })
-    userUUID: string;
+    userUUID!: string;
 
     @ViewColumn()
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 
     @ViewColumn({ name: 'accessgroupuuid' })
-    accessGroupUUID: string;
+    accessGroupUUID!: string;
 
     @ViewColumn({ name: 'protectaccessuuid' })
-    protectAccessUUID: string;
+    protectAccessUUID!: string;
 }

@@ -1,10 +1,12 @@
 <template>
     <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
-        }"
+        :class="
+            {
+                disabled: !canModify,
+                'cursor-pointer': !canModify,
+                'cursor-not-allowed': canModify,
+            } as any
+        "
         @click="_deleteAccessGroup"
     >
         <slot />
@@ -23,9 +25,7 @@ import { Notify } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { deleteAccessGroup } from 'src/services/mutations/access';
-import { AccessGroup } from 'src/types/AccessGroup';
 import { getUser } from 'src/services/auth';
-import { User } from 'src/types/User';
 import { UserRole } from '@common/enum';
 
 const props = defineProps<{

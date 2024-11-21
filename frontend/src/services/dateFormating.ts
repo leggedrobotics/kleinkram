@@ -13,8 +13,8 @@ export function formatDate(date: Date, accurate = false) {
 }
 
 export function parseDate(date: string) {
-    const [daymonthyear, time] = date.split(' ');
-    const [day, month, year] = daymonthyear.split('.');
+    const [dayMonthYear, time] = date.split(' ');
+    const [day, month, year] = dayMonthYear.split('.');
     const [hours, minutes] = time.split(':');
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
 }

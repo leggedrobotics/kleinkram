@@ -11,13 +11,13 @@ import User from '../user/user.entity';
 @Unique('provider_oauthID', ['provider', 'oauthID'])
 export default class Account extends BaseEntity {
     @Column()
-    provider: Providers;
+    provider!: Providers;
 
     @OneToOne(() => User, (user) => user.account, {
         onDelete: 'CASCADE',
     })
-    user: User;
+    user?: User;
 
     @Column()
-    oauthID: string;
+    oauthID!: string;
 }

@@ -202,7 +202,7 @@
                 bordered
                 separator="none"
                 :rows="data?.topics"
-                :columns="columns"
+                :columns="columns as any"
                 row-key="uuid"
                 :loading="isLoading"
                 :filter="filterKey"
@@ -251,7 +251,6 @@ import { formatDate } from 'src/services/dateFormating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
-import { FileEntity } from 'src/types/FileEntity';
 import {
     downloadFile,
     fetchFile,
@@ -260,7 +259,6 @@ import {
 import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getQueueForFile } from 'src/services/queries/queue';
-import { Queue } from 'src/types/Queue';
 import {
     _downloadFile,
     getColor,

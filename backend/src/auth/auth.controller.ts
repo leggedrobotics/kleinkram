@@ -112,6 +112,7 @@ export class AuthController {
         try {
             const payload = this.jwtService.verify(refreshToken);
 
+            // @ts-ignore
             const user = await this.userService.findOneByUUID(payload.uuid, {
                 uuid: true,
                 email: true,

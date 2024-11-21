@@ -20,16 +20,16 @@ import CategoryEntity from '../category/category.entity';
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
 export default class FileEntity extends BaseEntity {
     @ManyToOne(() => Mission, (mission) => mission.files, { nullable: false })
-    mission: Mission;
+    mission?: Mission;
 
     @Column()
-    date: Date;
+    date!: Date;
 
     @OneToMany(() => Topic, (topic) => topic.file)
-    topics: Topic[];
+    topics?: Topic[];
 
     @Column()
-    filename: string;
+    filename!: string;
 
     @Column({
         type: 'bigint',
@@ -38,26 +38,26 @@ export default class FileEntity extends BaseEntity {
             from: (value: string) => parseInt(value, 10),
         },
     })
-    size: number;
+    size?: number;
 
     /**
      * The user who uploaded the file.
      */
     @ManyToOne(() => User, (user) => user.files, { nullable: false })
-    creator: User;
+    creator?: User;
 
     @Column()
-    type: FileType;
+    type!: FileType;
 
     @Column({ default: FileState.OK })
-    state: FileState;
+    state!: FileState;
 
     @Column({ nullable: true })
-    hash: string;
+    hash?: string;
 
     @ManyToMany(() => CategoryEntity, (category) => category.files)
     @JoinTable()
-    categories: CategoryEntity[];
+    categories?: CategoryEntity[];
 
     /**
      * Saves the reference to the bag or mcap file the current file was converted
@@ -69,8 +69,8 @@ export default class FileEntity extends BaseEntity {
         onDelete: 'SET NULL',
     })
     @JoinColumn({ name: 'related_file_uuid' })
-    relatedFile: FileEntity;
+    relatedFile?: FileEntity;
 
     @Column({ nullable: true })
-    origin: FileOrigin;
+    origin?: FileOrigin;
 }

@@ -58,8 +58,6 @@
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { Mission } from 'src/types/Mission';
-import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
 import { moveMission } from 'src/services/mutations/mission';
 
@@ -123,7 +121,7 @@ async function onOk() {
             spinner: false,
             timeout: 4000,
         });
-        logger.error(e);
+        console.error(e);
         onDialogHide();
     }
 }

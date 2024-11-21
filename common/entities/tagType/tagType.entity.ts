@@ -7,18 +7,18 @@ import Tag from '../tag/tag.entity';
 @Entity()
 export default class TagType extends BaseEntity {
     @Column()
-    name: string;
+    name!: string;
 
     @Column({ nullable: true })
-    description: string;
+    description!: string;
 
     @Column()
-    datatype: DataType;
+    datatype!: DataType;
 
     @ManyToMany(() => Project, (project) => project.requiredTags)
     @JoinTable()
-    project: Project;
+    project?: Project;
 
     @OneToMany(() => Tag, (tag) => tag.tagType)
-    tags: Tag[];
+    tags?: Tag[];
 }

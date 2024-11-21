@@ -26,7 +26,6 @@ import ConfigureAccess from 'components/ConfigureAccess.vue';
 import { getProject } from 'src/services/queries/project';
 import { computed, ref, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
 import {
     removeAccessGroupFromProject,
     updateProjectAccess,

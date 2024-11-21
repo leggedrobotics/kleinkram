@@ -7,28 +7,28 @@ import User from '../user/user.entity';
 @Entity()
 export default class Tag extends BaseEntity {
     @Column({ nullable: true })
-    STRING: string;
+    STRING?: string;
 
     @Column({ nullable: true, type: 'double precision' })
-    NUMBER: number;
+    NUMBER?: number;
 
     @Column({ nullable: true })
-    BOOLEAN: boolean;
+    BOOLEAN?: boolean;
 
     @Column({ nullable: true })
-    DATE: Date;
+    DATE?: Date;
 
     @Column({ nullable: true })
-    LOCATION: string;
+    LOCATION?: string;
 
     @ManyToOne(() => Mission, (mission) => mission.tags, {
         onDelete: 'CASCADE',
     })
-    mission: Mission;
+    mission?: Mission;
 
     @ManyToOne(() => TagType, (tagType) => tagType.tags, { eager: true })
-    tagType: TagType;
+    tagType?: TagType;
 
     @ManyToOne(() => User, (user) => user.tags)
-    creator: User;
+    creator?: User;
 }

@@ -39,14 +39,14 @@ function extractFileIdFromUrl(url: string): string | null {
     const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
 
     // Test the URL against the file pattern
-    let match = url.match(filePattern);
-    if (match && match[1]) {
+    let match = filePattern.exec(url);
+    if (match?.[1]) {
         return match[1];
     }
 
     // Test the URL against the folder pattern
-    match = url.match(folderPattern);
-    if (match && match[1]) {
+    match = folderPattern.exec(url);
+    if (match?.[1]) {
         return match[1];
     }
 
@@ -72,15 +72,15 @@ export class QueueService implements OnModuleInit {
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
         @InjectMetric('backend_online_workers')
-        private onlineWorkers: Gauge<string>,
+        private onlineWorkers: Gauge,
         @InjectMetric('backend_pending_jobs')
-        private pendingJobs: Gauge<string>,
+        private pendingJobs: Gauge,
         @InjectMetric('backend_active_jobs')
-        private activeJobs: Gauge<string>,
+        private activeJobs: Gauge,
         @InjectMetric('backend_completed_jobs')
-        private completedJobs: Gauge<string>,
+        private completedJobs: Gauge,
         @InjectMetric('backend_failed_jobs')
-        private failedJobs: Gauge<string>,
+        private failedJobs: Gauge,
     ) {}
 
     async onModuleInit() {
@@ -119,6 +119,7 @@ export class QueueService implements OnModuleInit {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
+        // @ts-ignore
         const creator = await this.userService.findOneByUUID(user.uuid);
 
         // get GoogleDrive file id
@@ -183,6 +184,7 @@ export class QueueService implements OnModuleInit {
         skip: number,
         take: number,
     ) {
+        // @ts-ignore
         const user = await this.userService.findOneByUUID(userUUID);
         const where = {
             updatedAt: MoreThan(startDate),
@@ -193,7 +195,7 @@ export class QueueService implements OnModuleInit {
                 const filter = stateFilter
                     .split(',')
                     .map((state) => parseInt(state));
-                where['state'] = In(filter);
+                where.state = In(filter);
             }
             return await this.queueRepository.find({
                 where,
@@ -286,7 +288,7 @@ export class QueueService implements OnModuleInit {
                         getBucketFromFileType(mcap.type),
                         mcap.uuid,
                     );
-                } catch (err) {
+                } catch (err: any) {
                     logger.log(err);
                 }
                 await this.fileRepository.remove(mcap);
@@ -326,7 +328,7 @@ export class QueueService implements OnModuleInit {
         action: Action,
         runtimeRequirements: RuntimeDescription,
     ) {
-        logger.debug(`Adding action to queue: ${action.template.name}`);
+        logger.debug(`Adding action to queue: ${action.template?.name}`);
 
         return await addActionQueue(
             action,
@@ -364,11 +366,11 @@ export class QueueService implements OnModuleInit {
                     relations: ['template'],
                 });
                 const jobInfo = {};
-                jobInfo['state'] = await job.getState();
-                jobInfo['progress'] = await job.progress();
-                jobInfo['timestamp'] = job.timestamp;
-                jobInfo['name'] = job.name;
-                jobInfo['id'] = job.id;
+                jobInfo.state = await job.getState();
+                jobInfo.progress = await job.progress();
+                jobInfo.timestamp = job.timestamp;
+                jobInfo.name = job.name;
+                jobInfo.id = job.id;
                 return { job: jobInfo, action };
             }),
         );

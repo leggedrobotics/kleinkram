@@ -29,7 +29,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { FileEntity } from 'src/types/FileEntity';
 import { computed } from 'vue';
 
 const props = defineProps<{

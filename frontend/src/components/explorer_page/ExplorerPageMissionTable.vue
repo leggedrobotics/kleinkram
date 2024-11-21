@@ -132,7 +132,6 @@ import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDia
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useProjectUUID } from 'src/hooks/utils';
-import { Mission } from 'src/types/Mission';
 import { useProjectQuery } from 'src/hooks/customQueryHooks';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
@@ -148,18 +147,18 @@ const props = defineProps({
 });
 
 function setPagination(update: TableRequest) {
-    props.url_handler?.setPage(update.pagination.page);
-    props.url_handler?.setTake(update.pagination.rowsPerPage);
-    props.url_handler?.setSort(update.pagination.sortBy);
-    props.url_handler?.setDescending(update.pagination.descending);
+    props.url_handler.setPage(update.pagination.page);
+    props.url_handler.setTake(update.pagination.rowsPerPage);
+    props.url_handler.setSort(update.pagination.sortBy);
+    props.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
         page: props.url_handler.page,
         rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler?.rowsNumber,
-        sortBy: props.url_handler?.sortBy,
+        rowsNumber: props.url_handler.rowsNumber,
+        sortBy: props.url_handler.sortBy,
         descending: false,
     };
 });
@@ -171,7 +170,7 @@ const selected = ref([]);
 const queryKey = computed(() => [
     'missions',
     project_uuid,
-    props.url_handler?.queryKey,
+    props.url_handler.queryKey,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -179,11 +178,11 @@ const { data: rawData, isLoading } = useQuery({
     queryFn: () =>
         missionsOfProject(
             project_uuid.value,
-            props.url_handler?.take,
-            props.url_handler?.skip,
-            props.url_handler?.sortBy,
-            props.url_handler?.descending,
-            props.url_handler?.searchParams,
+            props.url_handler.take,
+            props.url_handler.skip,
+            props.url_handler.sortBy,
+            props.url_handler.descending,
+            props.url_handler.searchParams,
         ),
 });
 
@@ -203,7 +202,7 @@ watch(
 const $router = useRouter();
 
 const onRowClick = async (_: Event, row: any) => {
-    await $router?.push({
+    await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
             project_uuid: project_uuid.value,

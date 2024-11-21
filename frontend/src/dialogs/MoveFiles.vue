@@ -99,12 +99,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { Project } from 'src/types/Project';
-import { FileEntity } from 'src/types/FileEntity';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { moveFiles } from 'src/services/mutations/file';
-import { Mission } from 'src/types/Mission';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 
 const props = defineProps<{
@@ -187,7 +184,7 @@ const { mutate: moveFilesMutation } = useMutation({
         console.log(e);
         Notify.create({
             group: false,
-            message: 'Error moving file: ' + e.response.data.message,
+            message: `Error moving file: ${e.response.data.message}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',

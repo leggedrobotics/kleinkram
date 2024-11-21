@@ -47,8 +47,8 @@ const props = defineProps({
     },
 });
 
-const project_uuid = computed(() => props.url_handler.project_uuid);
-const mission_uuid = computed(() => props.url_handler.mission_uuid);
+const project_uuid = computed(() => props.url_handler.projectUuid);
+const mission_uuid = computed(() => props.url_handler.missionUuid);
 
 const { data: project, isLoading: projectLoading } =
     useProjectQuery(project_uuid);
@@ -63,8 +63,8 @@ watchEffect(() => {
             name: 'All Projects',
             uuid: 'projects',
             click: () => {
-                props.url_handler?.setProjectUUID(undefined);
-                props.url_handler?.setMissionUUID(undefined);
+                props.url_handler.setProjectUUID(undefined);
+                props.url_handler.setMissionUUID(undefined);
             },
         },
         ...(project.value && !!project_uuid.value

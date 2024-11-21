@@ -23,13 +23,11 @@ import {
     TooltipComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { useQuery } from '@tanstack/vue-query';
-import { getStorage } from 'src/services/queries/file';
 import {
     formatGenericNumber,
     formatSize,
 } from 'src/services/generalFormatting';
-import { StorageResponse } from 'src/types/storage';
+import { useStorageOverview } from '../hooks/customQueryHooks';
 
 use([
     TitleComponent,
@@ -41,10 +39,8 @@ use([
     LegendComponent,
 ]);
 
-const { data: storage } = useQuery<StorageResponse>({
-    queryFn: () => getStorage(),
-    queryKey: ['storage'],
-});
+const { data: storage } = useStorageOverview();
+
 const usedBytes = computed(() => storage.value?.usedBytes || 0);
 const totalBytes = computed(() => storage.value?.totalBytes || 0);
 const freeBytes = computed(() => totalBytes.value - usedBytes.value);

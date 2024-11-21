@@ -14,7 +14,6 @@
 <script setup lang="ts">
 import CreateMissionDialog from 'src/dialogs/CreateMissionDialog.vue';
 import { useQuasar } from 'quasar';
-import { FileUpload } from 'src/types/FileUpload';
 import { computed, inject, Ref } from 'vue';
 import {
     canCreateMission,
@@ -25,7 +24,7 @@ const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
 
 const $q = useQuasar();
 
-const uploads = inject('uploads') as Ref<FileUpload[]>;
+const uploads = inject('uploads')!;
 
 const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => {

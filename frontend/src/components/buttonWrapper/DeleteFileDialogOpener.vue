@@ -16,7 +16,6 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import DeleteFileDialog from 'src/dialogs/DeleteFileDialog.vue';
-import { FileEntity } from 'src/types/FileEntity';
 import {
     canDeleteMission,
     usePermissionsQuery,

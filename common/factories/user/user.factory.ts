@@ -4,13 +4,13 @@ import { UserRole } from '../../frontend_shared/enum';
 import { extendedFaker } from '../../faker_extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 
-export type UserContext = {
+export interface UserContext {
     firstName: string;
     lastName: string;
     mail: string;
     role: UserRole;
     defaultGroupIds: string[];
-};
+}
 
 define(User, (_, context: Partial<UserContext> = {}) => {
     const role =

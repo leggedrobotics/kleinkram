@@ -52,7 +52,6 @@
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
 
 const props = defineProps<{
@@ -65,7 +64,9 @@ const emit = defineEmits(['update:selected']);
 const filter = ref('');
 const selected = computed({
     get: () => props.selected,
-    set: (value: Category[]) => emit('update:selected', value),
+    set: (value: Category[]) => {
+        emit('update:selected', value);
+    },
 });
 
 const queryKey = computed(() => [

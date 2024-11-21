@@ -11,6 +11,7 @@ const ignoreContainerLogs = winston.format((info: any) => {
 });
 
 const messageOnly = winston.format.printf(
+    // @ts-ignore
     ({ level, message }: { level: string; message: string }) => {
         return `[${level.toUpperCase()}]: ${message}`;
     },
@@ -28,7 +29,7 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: QUEUE_CONSUMER_LABEL,
-                container_id: process.env.HOSTNAME,
+                container_id: process.env['HOSTNAME'],
             },
             json: true,
             format: winston.format.json(),

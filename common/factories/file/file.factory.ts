@@ -5,10 +5,10 @@ import User from '../../entities/user/user.entity';
 import { extendedFaker } from '../../faker_extended';
 import { FileState } from '../../frontend_shared/enum';
 
-export type FileContext = {
+export interface FileContext {
     mission: Mission;
     user: User;
-};
+}
 
 define(FileEntity, (_, context: Partial<FileContext> = {}) => {
     const file = new FileEntity();

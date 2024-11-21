@@ -69,7 +69,7 @@ function setVersion(headers: RawAxiosResponseHeaders) {
         validVersion.test(kleinkramVersion.value) &&
         kleinkramVersion.value !== headers['kleinkram-version']
     ) {
-        kleinkramVersion.value = `${headers['kleinkram-version'] as string}`;
+        kleinkramVersion.value = headers['kleinkram-version'] as string;
     }
 }
 

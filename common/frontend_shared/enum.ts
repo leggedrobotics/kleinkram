@@ -1,6 +1,3 @@
-// disable naming-convention rule for enum.ts
-/* eslint @typescript-eslint/naming-convention: 0 */
-
 export enum QueueState {
     'AWAITING_UPLOAD' = 0,
     'AWAITING_PROCESSING' = 10,
@@ -141,4 +138,5 @@ export enum AccessGroupRights {
     CREATE = 10,
     WRITE = 20,
     DELETE = 30,
+    _ADMIN = 100,
 }

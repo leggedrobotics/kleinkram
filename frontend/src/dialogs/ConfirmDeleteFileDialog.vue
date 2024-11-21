@@ -38,4 +38,8 @@ import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const file_name_check = ref('');
+
+const props = defineProps<{
+    filename: string;
+}>();
 </script>

@@ -68,7 +68,7 @@ describe('Test Suite Utils', () => {
         const res2 = await fetch(`http://localhost:3000/user/me`, {
             method: 'GET',
             headers: {
-                cookie: `authtoken=${await getJwtToken(users[0])}`,
+                cookie: `authtoken=${getJwtToken(users[0])}`,
             },
             credentials: 'include',
         });

@@ -58,7 +58,6 @@
 import { icon } from 'src/services/generic';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
 import { computed, ref, watch } from 'vue';
-import { TagType } from 'src/types/TagType';
 import { DataType } from '@common/enum';
 import { useQuery } from '@tanstack/vue-query';
 import { getFilteredTagTypes } from 'src/services/queries/tag';

@@ -4,11 +4,11 @@ export class ActionDto {}
 
 export class ListOfActionDto {
     @ApiProperty()
-    count: number;
+    count!: number;
 
     @ApiProperty({
         type: [ActionDto],
         description: 'List of actions',
     })
-    actions: ActionDto[];
+    actions!: ActionDto[];
 }

@@ -28,7 +28,7 @@ export async function uploadFileMultipart(
 
         // Step 2: Upload Parts
         const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
-        const parts = [];
+        const parts: any[] = [];
         for (
             let partNumber = 1, start = 0;
             start < file.length;

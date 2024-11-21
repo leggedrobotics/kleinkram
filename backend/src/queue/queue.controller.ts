@@ -9,7 +9,7 @@ import {
     CanReadMission,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { BodyString, BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryDate,
@@ -29,7 +29,7 @@ export class QueueController {
     @CanCreateInMissionByBody()
     async importFromDrive(
         @Body() body: DriveCreate,
-        @addUser() authRes: AuthRes,
+        @AddUser() authRes: AuthRes,
     ) {
         return this.queueService.importFromDrive(body, authRes.user);
     }
@@ -54,7 +54,7 @@ export class QueueController {
         stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         const date = new Date(startDate);
 

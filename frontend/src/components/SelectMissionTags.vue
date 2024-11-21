@@ -114,8 +114,6 @@
 
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
-import { TagType } from 'src/types/TagType';
-import { Project } from 'src/types/Project';
 import { useQuery } from '@tanstack/vue-query';
 import { getTagTypes } from 'src/services/queries/tag';
 import { getProject } from 'src/services/queries/project';
@@ -184,7 +182,7 @@ const availableAdditionalTags: Ref<TagType[]> = computed(() => {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
     const addedTagUUIDs = additionalTags.value.map((tag) => tag.uuid);
-    return tagTypes.value?.filter(
+    return tagTypes.value.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
             !addedTagUUIDs.includes(tagtype.uuid),

@@ -134,13 +134,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
-import { Project } from 'src/types/Project';
-import { FileEntity } from 'src/types/FileEntity';
 import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { updateFile } from 'src/services/mutations/file';
-import { Mission } from 'src/types/Mission';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
 import { FileState } from '@common/enum';
@@ -215,8 +212,8 @@ watch(
             await refetch().then(() => {
                 if (
                     editableFile.value &&
-                    missions.value?.length !== undefined &&
-                    missions.value?.length > 0 &&
+                    missions.value.length !== undefined &&
+                    missions.value.length > 0 &&
                     editableFile.value?.mission?.project?.uuid !==
                         selected_project.value?.uuid
                 ) {
@@ -262,7 +259,7 @@ const { mutate: updateFileMutation } = useMutation({
         console.log(e);
         Notify.create({
             group: false,
-            message: 'Error updating file: ' + e.response.data.message,
+            message: `Error updating file: ${e.response.data.message}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',

@@ -1,8 +1,6 @@
 import { ref, Ref, watch } from 'vue';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
-import { Mission } from 'src/types/Mission';
 import { getMission } from 'src/services/queries/mission';
-import { Project } from 'src/types/Project';
 import {
     filteredProjects,
     getProject,
@@ -10,17 +8,20 @@ import {
 } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/QueryHandler';
-import { getIsUploading } from 'src/services/queries/file';
+import { getIsUploading, getStorage } from 'src/services/queries/file';
 import { AxiosError } from 'axios';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
-import { getPermissions } from 'src/services/queries/user';
+import { getPermissions, searchUsers } from 'src/services/queries/user';
 import { getUser } from 'src/services/auth';
-import { CurrentAPIUserDto } from '@api/types/User.dto';
+import { CurrentAPIUserDto, UsersDto } from '@api/types/User.dto';
 import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
 import { AccessGroupRights } from '@common/enum';
+import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
+import { allWorkers } from '../services/queries/worker';
+import { WorkersDto } from '@api/types/Workers.dto';
 
-type Permissions = {
+interface Permissions {
     role: string;
 
     default_permission: number;
@@ -32,7 +33,7 @@ type Permissions = {
         uuid: string;
         access: number;
     }[];
-};
+}
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     Permissions | null,
@@ -60,11 +61,11 @@ export const useUser = (): UseQueryReturnType<
 };
 
 export const getPermissionForProject = (
-    projectUuid: string,
+    projectUuid: string | undefined,
     permissions: Permissions,
 ): AccessGroupRights => {
     if (!permissions) return 0;
-    if (permissions.role === 'ADMIN') return 100;
+    if (permissions.role === 'ADMIN') return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
     const project = permissions.projects.find(
@@ -76,11 +77,11 @@ export const getPermissionForProject = (
 };
 
 export const getPermissionForMission = (
-    missionUuid: string,
+    missionUuid: string | undefined,
     permissions: Permissions,
 ): AccessGroupRights => {
     if (!permissions) return 0;
-    if (permissions.role === 'ADMIN') return 100;
+    if (permissions.role === 'ADMIN') return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
     const mission = permissions.missions.find(
@@ -123,7 +124,7 @@ export const canModifyMission = (
     missionUuid: string | undefined,
     projectUuid: string | undefined,
     permissions: Permissions | null | undefined,
-): boolean => {
+): boolean | undefined => {
     if (!permissions) return false;
     if (!missionUuid && !projectUuid) return false;
 
@@ -182,7 +183,7 @@ export const canDeleteProject = (
 export const useMissionQuery = (
     missionUuid: Ref<string | undefined>,
     throwOnError: ((error: any, query: any) => boolean) | undefined = undefined,
-    retryDelay: number = 1000,
+    retryDelay = 1000,
 ): UseQueryReturnType<Mission | null, Error> => {
     return useQuery<Mission | null>({
         queryKey: ['mission', missionUuid.value ? missionUuid : ''],
@@ -212,12 +213,12 @@ export const useAllProjectsQuery = (
     take: number,
     skip: number,
     sortBy: string,
-    descending: boolean = false,
+    descending = false,
     searchParams?: {
         name: string;
     },
 ) => {
-    return useQuery<Project[], Error>({
+    return useQuery<Project[]>({
         queryKey: [
             'projects',
             { take, skip, sortBy, descending, searchParams },
@@ -301,5 +302,42 @@ export const useProjectDefaultAccess = (): UseQueryReturnType<
     return useQuery<DefaultRightsDto>({
         queryKey: ['defaultRights'],
         queryFn: getProjectDefaultAccess,
+    });
+};
+
+export const useStorageOverview = (): UseQueryReturnType<
+    StorageOverviewDto | undefined,
+    Error
+> => {
+    return useQuery<StorageOverviewDto>({
+        queryFn: () => getStorage(),
+        queryKey: ['storage'],
+    });
+};
+
+export const useWorkers = (): UseQueryReturnType<
+    WorkersDto | undefined,
+    Error
+> => {
+    return useQuery<WorkersDto>({
+        queryKey: ['worker'],
+        queryFn: () => allWorkers(),
+        refetchInterval: 10000,
+    });
+};
+
+export const useUserSearch = (
+    search: Ref<string>,
+): UseQueryReturnType<UsersDto | undefined, Error> => {
+    return useQuery<UsersDto>({
+        queryKey: ['userSearch', search.value],
+        queryFn: () => {
+            if (!search.value)
+                return {
+                    users: [],
+                    count: 0,
+                };
+            return searchUsers(search.value);
+        },
     });
 };

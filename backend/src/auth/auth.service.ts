@@ -34,10 +34,12 @@ export class AuthService implements OnModuleInit {
         private groupMembershipRepository: Repository<GroupMembership>,
         private configService: ConfigService,
     ) {
-        this.config = this.configService.get('accessConfig');
+        const config = this.configService.get('accessConfig');
+        if (config === undefined) throw new Error('Access config not found');
+        this.config = config;
     }
 
-    async onModuleInit() {
+    async onModuleInit(): Promise<void> {
         await createAccessGroups(this.accessGroupRepository, this.config);
     }
 
@@ -50,14 +52,14 @@ export class AuthService implements OnModuleInit {
             relations: ['user'],
         });
 
-        if (account && !account.user) {
+        if (account !== null && account.user === undefined) {
             logger.error('Account exists but has no linked user!');
             throw new AuthFlowException(
                 'Account exists but has no linked user!',
             );
         }
 
-        if (account) {
+        if (account?.user !== undefined) {
             return account.user;
         }
 
@@ -141,7 +143,7 @@ export const createAccessGroups = async (
                     name: group.name,
                     uuid: group.uuid,
                     type: AccessGroupType.AFFILIATION,
-                    creator: null,
+                    creator: {},
                 });
                 return accessGroupRepository.save(newGroup);
             }
@@ -161,7 +163,7 @@ async function createPrimaryGroup(
 ) {
     logger.debug(`Add user ${user.uuid} to primary access group`);
 
-    let primaryGroupName = `${user.name}`;
+    let primaryGroupName = user.name;
 
     const exists = await accessGroupRepository.exists({
         where: { name: primaryGroupName },
@@ -201,10 +203,10 @@ async function addToAffiliationGroups(
     groupMembershipRepository: Repository<GroupMembership>,
 ) {
     await Promise.all(
-        config.emails?.map((_config) => {
-            if (user.email.endsWith(_config.email)) {
+        config.emails.map((_config) => {
+            if (user.email?.endsWith(_config.email)) {
                 return Promise.all(
-                    _config.access_groups?.map(async (uuid) => {
+                    _config.access_groups.map(async (uuid) => {
                         const group = await accessGroupRepository.findOneOrFail(
                             {
                                 where: { uuid },

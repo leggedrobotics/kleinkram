@@ -54,7 +54,6 @@ import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap, icon } from 'src/services/generic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { addAccessGroupToProject } from 'src/services/mutations/access';
-import { User } from 'src/types/User';
 import { Notify } from 'quasar';
 import { filteredProjects } from 'src/services/queries/project';
 import { AccessGroupRights } from '@common/enum';

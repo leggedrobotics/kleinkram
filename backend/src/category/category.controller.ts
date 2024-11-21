@@ -6,7 +6,7 @@ import {
     CanReadProject,
     CanWriteMissionByBody,
 } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import {
     BodyString,
     BodyUUID,
@@ -21,7 +21,7 @@ export class CategoryController {
     @CanReadProject()
     async getAll(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
         @QueryOptionalString('filter', 'Filter by Category name')
         filter?: string,
     ) {
@@ -32,7 +32,7 @@ export class CategoryController {
     @CanCreateInProjectByBody()
     async createCategory(
         @BodyString('name', 'Category Name') name: string,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
         @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
     ) {
         return this.categoryService.create(name, projectUUID, user);

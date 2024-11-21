@@ -1,11 +1,7 @@
-import { Project } from 'src/types/Project';
 import { formatDate } from 'src/services/dateFormating';
-import { Mission } from 'src/types/Mission';
-import { FileEntity } from 'src/types/FileEntity';
 import { formatSize } from 'src/services/generalFormatting';
-import { AggregatedMission } from 'src/types/subtypes/AggregatedMission';
 
-export type ProjectColumnType = {
+export interface ProjectColumnType {
     name: string;
     required?: boolean;
     label: string;
@@ -19,16 +15,16 @@ export type ProjectColumnType = {
     sortable?: boolean;
     style?: string;
     sort?: (_a: string, _b: string, a: FileEntity, b: FileEntity) => number;
-};
+}
 
-export const explorerPageTableColumns: Array<ProjectColumnType> = [
+export const explorerPageTableColumns: ProjectColumnType[] = [
     {
         name: 'name',
         required: true,
         label: 'Project Name',
         align: 'left',
         field: (row: Project) => row.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: true,
         style: 'width: 140px',
     },
@@ -38,7 +34,7 @@ export const explorerPageTableColumns: Array<ProjectColumnType> = [
         label: 'Description',
         align: 'left',
         field: (row: Project) => row.description || '',
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: true,
     },
 
@@ -78,14 +74,14 @@ export const explorerPageTableColumns: Array<ProjectColumnType> = [
     },
 ];
 
-export const missionColumns: Array<ProjectColumnType> = [
+export const missionColumns: ProjectColumnType[] = [
     {
         name: 'name',
         required: true,
         label: 'Mission',
         align: 'left',
         field: (row: Mission) => row.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
     },
     {
         name: 'NrOfFiles',
@@ -135,7 +131,7 @@ export const missionColumns: Array<ProjectColumnType> = [
     },
 ];
 
-export const fileColumns: Array<ProjectColumnType> = [
+export const fileColumns: ProjectColumnType[] = [
     {
         name: 'state',
         required: true,
@@ -150,7 +146,7 @@ export const fileColumns: Array<ProjectColumnType> = [
         label: 'File',
         align: 'left',
         field: (row: FileEntity) => row.filename,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: true,
     },
     {

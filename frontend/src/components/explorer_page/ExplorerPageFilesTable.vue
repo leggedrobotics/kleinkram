@@ -140,9 +140,7 @@ import {
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
-import { Category } from 'src/types/Category';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
-import { FileEntity } from 'src/types/FileEntity';
 import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
 import { fileColumns } from './explorer_page_table_columns';
 
@@ -159,7 +157,7 @@ const props = defineProps({
     },
 });
 
-if (props.url_handler?.sortBy === 'name') {
+if (props.url_handler.sortBy === 'name') {
     props.url_handler.setSort('filename');
 }
 
@@ -186,7 +184,7 @@ const queryKey = computed(() => [
     mission_uuid.value,
     props.url_handler.queryKey,
     props.url_handler.fileType,
-    props.url_handler?.categories,
+    props.url_handler.categories,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
@@ -198,7 +196,7 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler.skip,
             props.url_handler.fileType,
             props.url_handler.searchParams.name,
-            props.url_handler?.categories,
+            props.url_handler.categories,
             props.url_handler.sortBy,
             props.url_handler.descending,
             props.url_handler.searchParams.health,
@@ -219,7 +217,7 @@ watch(
 );
 
 const onRowClick = async (_: Event, row: any) => {
-    await $router?.push({
+    await $router.push({
         name: ROUTES.FILE.routeName,
         params: {
             project_uuid: project_uuid.value,
@@ -230,7 +228,7 @@ const onRowClick = async (_: Event, row: any) => {
 };
 
 function chipClicked(cat: Category) {
-    props.url_handler?.addCategory(cat.uuid);
+    props.url_handler.addCategory(cat.uuid);
 }
 
 watch(

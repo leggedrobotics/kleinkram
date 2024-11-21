@@ -45,7 +45,7 @@ export class DBDumper {
             );
             await unlinkAsync(dumpFile);
             return dumpFile;
-        } catch (error) {
+        } catch (error: any) {
             await unlinkAsync(dumpFile);
             throw new Error(`Failed to create database dump: ${error.message}`);
         }

@@ -43,7 +43,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
     constructor(private actionService: ActionService) {}
 
     async use(req: Request, _: Response, next: NextFunction) {
-        if (!req || !req.cookies) {
+        if (!req.cookies) {
             next();
             return;
         }
@@ -135,8 +135,8 @@ export class AppModule {
     }
 }
 
-export type AccessGroupConfig = {
+export interface AccessGroupConfig {
     emails: [{ email: string; access_groups: string[] }];
 
     access_groups: [{ name: string; uuid: string; rights: number }];
-};
+}

@@ -344,7 +344,7 @@ export const QueryProjectSearchParam = (
 
             // check if it is a valid key
             const validKeys = ['name', 'creator.uuid'];
-            const key = Object.keys(value)[0];
+            const key = Object.keys(value)[0] ?? '';
             if (!validKeys.includes(key)) {
                 throw new BadRequestException('Parameter is not a valid key');
             }
@@ -352,6 +352,7 @@ export const QueryProjectSearchParam = (
             // remove empty values
             Object.keys(value).forEach((_key) => {
                 if (value[_key] === '') {
+                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                     delete value[_key];
                 }
             });

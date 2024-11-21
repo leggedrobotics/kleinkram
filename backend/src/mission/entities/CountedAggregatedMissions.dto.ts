@@ -1,6 +1,10 @@
 import { AggregatedMissionDto } from './AggregatedMission.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CountedAggregatedMissionsDto {
-    entities: AggregatedMissionDto[];
-    count: number;
+    @ApiProperty()
+    entities!: AggregatedMissionDto[];
+
+    @ApiProperty()
+    count!: number;
 }

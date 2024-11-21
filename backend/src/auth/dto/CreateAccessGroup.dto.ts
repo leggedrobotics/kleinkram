@@ -7,5 +7,5 @@ export class CreateAccessGroupDto {
     @IsNotEmpty()
     @IsValidName()
     @ApiProperty({ description: 'Name of the access group' })
-    name: string;
+    name!: string;
 }

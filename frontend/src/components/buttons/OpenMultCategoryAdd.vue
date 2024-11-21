@@ -17,7 +17,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-import { FileEntity } from 'src/types/FileEntity';
 import AddMultiCategory from 'src/dialogs/AddMultiCategory.vue';
 
 const $q = useQuasar();

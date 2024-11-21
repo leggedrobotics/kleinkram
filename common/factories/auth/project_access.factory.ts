@@ -6,11 +6,12 @@ import ProjectAccess from '../../entities/auth/project_access.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
 
-export type ProjectAccessFactoryContext = {
+export interface ProjectAccessFactoryContext {
     projects: Project[];
     accessGroups: AccessGroup[];
-};
+}
 
+// @ts-ignore
 define(ProjectAccess, (_, context: ProjectAccessFactoryContext) => {
     const projectAccess = new ProjectAccess();
 

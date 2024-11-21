@@ -17,9 +17,7 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { computed, Ref, ref } from 'vue';
-import { AccessGroup } from 'src/types/AccessGroup';
 import { getUser } from 'src/services/auth';
-import { User } from 'src/types/User';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import { UserRole } from '@common/enum';
 

@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
-import { EntityManager, ILike, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, ILike, Repository } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import {
     AccessGroupRights,
@@ -52,6 +52,7 @@ export class AccessService {
             where: { uuid: auth.user.uuid },
         });
 
+        // @ts-ignore
         const newGroup = this.accessGroupRepository.create({
             name,
             type: AccessGroupType.CUSTOM,
@@ -110,10 +111,17 @@ export class AccessService {
             relations: ['memberships', 'memberships.accessGroup'],
         });
 
+        if (dbuser.memberships === undefined)
+            throw new Error('User has no memberships');
+
         const personalAccessGroup = dbuser.memberships.find(
             (accessGroup) =>
-                accessGroup.accessGroup.type === AccessGroupType.PRIMARY,
+                accessGroup.accessGroup?.type === AccessGroupType.PRIMARY,
         );
+
+        if (personalAccessGroup === undefined)
+            throw new Error('User has no personal access group');
+
         const canUpdate = await this.hasProjectRights(
             projectUUID,
             auth,
@@ -186,6 +194,8 @@ export class AccessService {
                         where: { uuid: userUUID },
                     },
                 );
+
+                // @ts-ignore
                 const agu = transactionalEntityManager.create(GroupMembership, {
                     expirationDate: undefined,
                 });
@@ -235,19 +245,21 @@ export class AccessService {
         skip: number,
         take: number,
     ) {
-        const where = { type: AccessGroupType.CUSTOM };
-        if (search) {
-            where['name'] = ILike(`%${search}%`);
+        const where: FindOptionsWhere<AccessGroup> = {
+            type: AccessGroupType.CUSTOM,
+        };
+        if (search !== '') {
+            where.name = ILike(`%${search}%`);
         }
         if (personal) {
-            where['type'] = AccessGroupType.PRIMARY;
+            where.type = AccessGroupType.PRIMARY;
         }
         if (creator) {
-            where['creator'] = { uuid: auth.user.uuid };
+            where.creator = { uuid: auth.user.uuid };
         }
         if (member) {
             // user in users of access group
-            where['memberships'] = { user: { uuid: auth.user.uuid } };
+            where.memberships = { user: { uuid: auth.user.uuid } };
         }
         const [found, count] = await this.accessGroupRepository.findAndCount({
             where,

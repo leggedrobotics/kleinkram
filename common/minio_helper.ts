@@ -29,7 +29,7 @@ export async function getInfoFromMinio(fileType: FileType, location: string) {
     const bucketName = getBucketFromFileType(fileType);
     try {
         return await internalMinio.statObject(bucketName, location);
-    } catch (e) {
+    } catch (e: any) {
         if (e.code === 'NotFound') {
             return null;
         }
@@ -42,7 +42,7 @@ export async function addTagsToMinioObject(
     objectName: string,
     tags: Tags,
 ) {
-    return await internalMinio.setObjectTagging(bucketName, objectName, tags, {
+    await internalMinio.setObjectTagging(bucketName, objectName, tags, {
         versionId: 'null',
     });
 }
@@ -54,7 +54,7 @@ export async function addTagsToMinioObject(
  *
  */
 export function getBucketFromFileType(fileType: FileType): string {
-    if (Object.values(FileType).indexOf(fileType) === -1) {
+    if (!Object.values(FileType).includes(fileType)) {
         throw new Error('Invalid file type');
     }
 

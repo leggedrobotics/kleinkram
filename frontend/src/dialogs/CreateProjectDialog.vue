@@ -85,7 +85,7 @@
 
                 <q-tab-panel name="manage_access">
                     <ConfigureAccess
-                        v-model="accessGroups.defaultRights"
+                        v-model="accessGroups"
                         :min-access-rights="minAccessRights"
                     />
                 </q-tab-panel>
@@ -118,12 +118,12 @@ import { computed, Ref, ref, watch } from 'vue';
 import { createProject } from 'src/services/mutations/project';
 import { AxiosError } from 'axios';
 import { useQueryClient } from '@tanstack/vue-query';
-import { TagType } from 'src/types/TagType';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureAccess from 'components/ConfigureAccess.vue';
-import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
 import { AccessGroupType } from '@common/enum';
 import ConfigureMetadata from '../components/ConfigureMetadata.vue';
+import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
+import { DefaultRightDto } from '@api/types/DefaultRights.dto';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);
@@ -154,9 +154,11 @@ const minAccessRights = computed(() =>
         : [],
 );
 
-const accessGroups = ref<AccessRight[]>(defaultRights.value || []);
+const accessGroups = ref<DefaultRightDto[]>(
+    defaultRights.value?.defaultRights || [],
+);
 watch(defaultRights, () => {
-    accessGroups.value = defaultRights.value || [];
+    accessGroups.value = defaultRights.value?.defaultRights || [];
 });
 
 const verify_input = () => {
@@ -201,17 +203,12 @@ const submitNewProject = async () => {
         newProjectName.value,
         newProjectDescription.value,
         selected.value.map((tag) => tag.uuid),
-        accessGroups.value?.defaultRights.map((r) => ({
+        accessGroups.value.map((r) => ({
             accessGroupUUID: r.uuid,
             rights: r.rights,
         })) || [],
-        defaultRights.value.defaultRights
-            ?.filter(
-                (r) =>
-                    !accessGroups.value?.defaultRights.find(
-                        (a) => a.uuid === r.uuid,
-                    ),
-            )
+        defaultRights.value?.defaultRights
+            .filter((r) => !accessGroups.value.find((a) => a.uuid === r.uuid))
             .map((r) => r.uuid),
     )
         .then(async () => {

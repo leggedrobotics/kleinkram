@@ -17,7 +17,7 @@ import {
     CanEditGroup,
     UserOnly,
 } from './roles.decorator';
-import { addUser, AuthRes } from './paramDecorator';
+import { AddUser, AuthRes } from './paramDecorator';
 import {
     QueryOptionalBoolean,
     QueryOptionalString,
@@ -83,7 +83,7 @@ export class AccessController {
     })
     async createAccessGroup(
         @Body() body: CreateAccessGroupDto,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.accessService.createAccessGroup(body.name, user);
     }
@@ -102,7 +102,7 @@ export class AccessController {
     @UserOnly()
     async canAddAccessGroup(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @addUser() user?: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.accessService.hasProjectRights(uuid, user);
     }
@@ -125,7 +125,7 @@ export class AccessController {
     @CanWriteProject()
     async addUserToProject(
         @Body() body: AddUserToProjectDto,
-        @addUser() requestUser?: AuthRes,
+        @AddUser() requestUser: AuthRes,
     ) {
         return this.accessService.addUserToProject(
             body.uuid,
@@ -205,7 +205,7 @@ export class AccessController {
             'Only Access Groups the user is member of',
         )
         member: boolean,
-        @addUser() user?: AuthRes,
+        @AddUser() user: AuthRes,
     ): Promise<CountedAccessGroups> {
         return this.accessService.searchAccessGroup(
             search,
@@ -226,7 +226,7 @@ export class AccessController {
     @CanWriteProject()
     async addAccessGroupToProject(
         @Body() body: AddAccessGroupToProjectDto,
-        @addUser() user?: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.accessService.addAccessGroupToProject(
             body.uuid,
@@ -240,7 +240,7 @@ export class AccessController {
     @CanDeleteProject()
     async removeAccessGroupFromProject(
         @Body() body: RemoveAccessGroupFromProjectDto,
-        @addUser() user?: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.accessService.removeAccessGroupFromProject(
             body.uuid,
@@ -271,7 +271,7 @@ export class AccessController {
     @CanWriteProject()
     async updateProjectAccess(
         @Body() body: AddAccessGroupToProjectDto,
-        @addUser() user?: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.accessService.updateProjectAccess(
             body.uuid,

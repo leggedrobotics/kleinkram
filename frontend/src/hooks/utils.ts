@@ -11,8 +11,8 @@ import { useRoute } from 'vue-router';
  *
  */
 export const useToggle = (
-    setRefs: Ref<any>[],
-    resetsRefs: Ref<any>[],
+    setRefs: Ref[],
+    resetsRefs: Ref[],
     initialState = false,
 ): Ref<boolean> => {
     const state = ref(initialState);

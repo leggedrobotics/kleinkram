@@ -68,7 +68,7 @@
             virtual-scroll
             separator="none"
             :rows="accessGroupsTable"
-            :columns="accessGroupsColumns"
+            :columns="accessGroupsColumns as any"
             style="margin-top: 24px"
             selection="multiple"
             row-key="uuid"
@@ -131,9 +131,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
-import { Project } from 'src/types/Project';
 
-import { AccessGroup } from 'src/types/AccessGroup';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
@@ -156,12 +154,12 @@ const prefilter = ref(prefilterOptions[0]);
 const selectedAccessGroups: Ref<Project[]> = ref([]);
 
 const filterOptions: Ref<{
-    personal: boolean;
+    type: AccessGroupType;
     search: string;
     creator: boolean;
     member: boolean;
 }> = ref({
-    type: AccessGroupType,
+    type: AccessGroupType.CUSTOM,
     search: '',
     creator: false,
     member: false,
@@ -234,7 +232,7 @@ const accessGroupsColumns = [
         label: 'Access Group',
         align: 'left',
         field: (row: AccessGroup) => row.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: true,
         style: 'width:  20%; max-width: 60%; min-width: 10%;',
     },
@@ -244,7 +242,7 @@ const accessGroupsColumns = [
         label: 'Group Creator',
         align: 'center',
         field: (row: AccessGroup) => row.creator?.name || '-',
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: false,
     },
 

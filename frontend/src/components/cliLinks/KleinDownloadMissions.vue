@@ -29,7 +29,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Mission } from 'src/types/Mission';
 import { computed } from 'vue';
 
 const props = defineProps<{

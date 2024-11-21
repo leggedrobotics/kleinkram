@@ -503,6 +503,9 @@ export class CreateQueueByBodyGuard extends BaseGuard {
             throw new BadRequestException('Queue not found');
         }
 
+        if (queue.mission === undefined)
+            throw new BadRequestException('Queue does not have a mission');
+
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
                 apiKey,
@@ -740,6 +743,11 @@ export class DeleteActionGuard extends BaseGuard {
             where: { uuid: actionUUID },
             relations: ['mission', 'createdBy'],
         });
+
+        if (action.mission === undefined)
+            throw new BadRequestException('Action does not have a mission');
+        if (action.createdBy === undefined)
+            throw new BadRequestException('Action does not have a creator');
 
         if (apiKey) {
             throw new BadRequestException(

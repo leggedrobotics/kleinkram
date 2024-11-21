@@ -29,7 +29,6 @@
 <script setup lang="ts">
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
-import { Mission } from 'src/types/Mission';
 import { ref } from 'vue';
 import { updateMissionName } from 'src/services/mutations/mission';
 import { useQueryClient } from '@tanstack/vue-query';

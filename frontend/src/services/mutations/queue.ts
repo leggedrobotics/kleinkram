@@ -1,5 +1,4 @@
 import axios from 'src/api/axios';
-import { FileEntity } from 'src/types/FileEntity';
 
 export const confirmUpload = async (uuid: string, md5: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid, md5 });

@@ -13,7 +13,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import { FileEntity } from 'src/types/FileEntity';
 import { deleteFile } from 'src/services/mutations/file';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';

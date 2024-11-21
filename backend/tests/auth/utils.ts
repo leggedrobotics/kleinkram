@@ -48,7 +48,7 @@ export const getAccessGroupForEmail = (
 ): AccessGroup => {
     const group: AccessGroup[] =
         accessGroups.filter((_group: AccessGroup) =>
-            _group.memberships?.some(
+            _group.memberships.some(
                 (accessGroupUser) =>
                     accessGroupUser.user.email === email && _group.personal,
             ),

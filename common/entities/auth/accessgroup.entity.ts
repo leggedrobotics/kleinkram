@@ -17,35 +17,35 @@ import { AccessGroupType } from '../../frontend_shared/enum';
 @Entity()
 export default class AccessGroup extends BaseEntity {
     @Column()
-    name: string;
+    name!: string;
 
     @OneToMany(() => GroupMembership, (membership) => membership.accessGroup, {
         cascade: true,
     })
-    memberships: GroupMembership[];
+    memberships?: GroupMembership[];
 
     @OneToMany(
         () => ProjectAccess,
         (projectAccess) => projectAccess.accessGroup,
     )
-    project_accesses: ProjectAccess[];
+    project_accesses?: ProjectAccess[];
 
     @OneToMany(
         () => MissionAccess,
         (missionAccess) => missionAccess.accessGroup,
     )
     @JoinTable()
-    mission_accesses: MissionAccess[];
+    mission_accesses?: MissionAccess[];
 
     @Column({
         type: 'enum',
         enum: AccessGroupType,
         default: AccessGroupType.CUSTOM,
     })
-    type: AccessGroupType;
+    type?: AccessGroupType;
 
     @ManyToOne(() => User, (user) => user.files, { nullable: true })
-    creator: User;
+    creator?: User;
 
     /**
      * A hidden access group is not returned in any search queries.
@@ -54,5 +54,5 @@ export default class AccessGroup extends BaseEntity {
      *
      */
     @Column({ default: false })
-    hidden: boolean;
+    hidden!: boolean;
 }

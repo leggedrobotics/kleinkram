@@ -361,17 +361,14 @@ import TitleSection from 'components/TitleSection.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { FileEntity } from 'src/types/FileEntity';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
 import { _downloadFiles } from 'src/services/generic';
-import { Tag } from 'src/types/Tag';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import KleinDownloadMission from 'components/cliLinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/cliLinks/KleinDownloadFiles.vue';
-import { Category } from 'src/types/Category';
 import { getCategories } from 'src/services/queries/categories';
 import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
@@ -476,8 +473,8 @@ const allCategories: Ref<Category[]> = computed(() =>
 const selectedCategories: Ref<Category[]> = computed({
     get: () => {
         if (!handler.value.categories) return [];
-        return handler.value.categories?.map((catUUID) =>
-            allCategories.value?.find((cat) => cat.uuid === catUUID),
+        return handler.value.categories.map((catUUID) =>
+            allCategories.value.find((cat) => cat.uuid === catUUID),
         );
     },
     set: (value: Category[]) => {

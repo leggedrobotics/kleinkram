@@ -95,12 +95,9 @@
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
-import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
-import { FileUpload } from 'src/types/FileUpload';
 import { createFileAction, driveUpload } from 'src/services/fileService';
 
 const emit = defineEmits(['update:ready']);
@@ -116,7 +113,7 @@ const { data: _data } = useQuery<[Project[], number]>({
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const data = computed(() => {
-    if (_data && _data.value) {
+    if (_data.value) {
         return _data.value[0];
     }
     return [];
@@ -124,7 +121,7 @@ const data = computed(() => {
 const queryClient = useQueryClient();
 
 const drive_url = ref('');
-const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
+const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const ready = computed(() => {
     const hasProject = !!selected_project.value;
@@ -145,7 +142,7 @@ const props = defineProps<{
     uploads: Ref<FileUpload[]>;
 }>();
 
-if (props.mission && props.mission.project) {
+if (props.mission?.project) {
     selected_project.value = props.mission.project;
     selected_mission.value = props.mission;
 }
@@ -156,7 +153,7 @@ const { data: _missions, refetch } = useQuery<[Mission[], number]>({
     enabled: !!selected_project.value?.uuid,
 });
 const missions = computed(() => {
-    if (_missions && _missions.value) {
+    if (_missions.value) {
         return _missions.value[0];
     }
     return [];
@@ -170,9 +167,10 @@ watchEffect(() => {
 
 const createFile = async () => {
     if (drive_url.value) {
-        return await driveUpload(selected_mission.value, drive_url);
+        await driveUpload(selected_mission.value, drive_url);
+        return;
     }
-    return await createFileAction(
+    await createFileAction(
         selected_mission.value,
         selected_project.value,
         files.value,

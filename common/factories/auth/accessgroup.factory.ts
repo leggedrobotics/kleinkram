@@ -5,11 +5,11 @@ import { extendedFaker } from '../../faker_extended';
 import { faker } from '@faker-js/faker';
 import { AccessGroupType } from '../../frontend_shared/enum';
 
-export type AccessGroupFactoryContext = {
+export interface AccessGroupFactoryContext {
     user: User;
     allUsers: User[];
     isPersonal: boolean;
-};
+}
 
 define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
     const accessGroup = new AccessGroup();
@@ -27,7 +27,7 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
             context.allUsers.length > 0,
             'No users provided for access group',
         );
-        accessGroup.name = 'Group: ' + extendedFaker.company.name();
+        accessGroup.name = `Group: ${extendedFaker.company.name()}`;
         accessGroup.type = AccessGroupType.CUSTOM;
         accessGroup.creator = faker.helpers.arrayElement(context.allUsers);
     }

@@ -13,12 +13,9 @@ import {
 } from '@aws-sdk/client-s3';
 import pLimit from 'p-limit';
 import { ref, Ref } from 'vue';
-import { FileUpload } from 'src/types/FileUpload';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
-import { Mission } from 'src/types/Mission';
 import { QueryClient } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
 import SparkMD5 from 'spark-md5';
 
 export const createFileAction = async (
@@ -43,7 +40,9 @@ export const createFileAction = async (
         queryClient,
         uploadingFiles,
         injectedFiles,
-    ).finally(() => window.removeEventListener('beforeunload', confirmDialog));
+    ).finally(() => {
+        window.removeEventListener('beforeunload', confirmDialog);
+    });
 };
 
 async function _createFileAction(
@@ -214,7 +213,7 @@ async function _createFileAction(
                     );
 
                     return confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (e: Error) {
+                } catch (e) {
                     console.error('err', e);
                     newFileUploadRef.value.canceled = true;
                     Notify.create({

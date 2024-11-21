@@ -6,13 +6,13 @@ import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { faker } from '@faker-js/faker';
 import TagType from '../../entities/tagType/tagType.entity';
 
-export type ProjectContext = {
+export interface ProjectContext {
     name: string;
     creator: User;
     allUsers: User[];
     allAccessGroups: AccessGroup[];
     tagTypes: TagType[];
-};
+}
 
 define(Project, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
@@ -21,7 +21,7 @@ define(Project, (_, context: Partial<ProjectContext> = {}) => {
 
     const project = new Project();
     project.uuid = extendedFaker.string.uuid();
-    project.name = context.name || `${extendedFaker.project.name()}`;
+    project.name = context.name || extendedFaker.project.name();
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
 

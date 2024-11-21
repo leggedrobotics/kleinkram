@@ -246,7 +246,6 @@ import ActionConfiguration from 'components/ActionConfiguration.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 import KleinDownloadMissions from 'components/cliLinks/KleinDownloadMissions.vue';
-import { Mission } from 'src/types/Mission';
 import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 
 const queryClient = useQueryClient();

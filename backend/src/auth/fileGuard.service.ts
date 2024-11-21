@@ -30,7 +30,7 @@ export class FileGuardService {
     ) {
         if (!fileUUID || !user) {
             logger.error(
-                `FileGuard: File UUID (${fileUUID}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUID (${fileUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
@@ -42,11 +42,16 @@ export class FileGuardService {
             where: { uuid: fileUUID },
             relations: ['mission', 'mission.project', 'creator'],
         });
-        if (!file) {
-            logger.debug('File not found');
-            return false;
-        }
-        if (file.creator.uuid === user.uuid) {
+
+        if (!file) return false;
+
+        if (file.mission === undefined) throw new Error('File has no mission');
+        if (file.mission.project === undefined)
+            throw new Error('File has no mission');
+        if (file.mission.project.creator === undefined)
+            throw new Error('File has no mission');
+
+        if (file.creator?.uuid === user.uuid) {
             return true;
         }
         const canAccessProject =
@@ -72,11 +77,11 @@ export class FileGuardService {
     ) {
         if (!filename || !user) {
             logger.error(
-                `FileGuard: Filename (${filename}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
+                `FileGuard: Filename (${filename}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
-        const file = await this.fileRepository.findOne({
+        const file = await this.fileRepository.findOneOrFail({
             where: { filename: filename },
         });
         return this.canAccessFile(user, file.uuid, rights);
@@ -87,13 +92,13 @@ export class FileGuardService {
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (!filename) {
+        if (filename === '') {
             logger.error(
-                `FileGuard: Filename (${filename}) not provided. Requesting ${rights} access.`,
+                `FileGuard: Filename (${filename}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
-        const file = await this.fileRepository.findOne({
+        const file = await this.fileRepository.findOneOrFail({
             where: { filename: filename },
         });
         return this.canKeyAccessFile(apikey, file.uuid, rights);
@@ -108,9 +113,9 @@ export class FileGuardService {
             where: { uuid: fileUUID },
             relations: ['mission'],
         });
-        if (!file) {
-            return false;
-        }
+        if (!file) return false;
+        if (file.mission === undefined) throw new Error('File has no mission');
+
         return (
             apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
         );
@@ -123,7 +128,7 @@ export class FileGuardService {
     ) {
         if (!fileUUIDs || !user) {
             logger.error(
-                `FileGuard: File UUIDs (${fileUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
+                `FileGuard: File UUIDs (${fileUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }

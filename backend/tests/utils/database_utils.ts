@@ -7,14 +7,16 @@ import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/frontend_shared/enum';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
 
+const dbPort = process.env['DB_PORT'];
+
 export const db = new DataSource({
     type: 'postgres',
     host: 'localhost',
-    port: parseInt(process.env.DB_PORT, 10),
-    ssl: process.env.DB_SSL === 'true',
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+    port: parseInt(dbPort ?? '5432', 10),
+    ssl: process.env['DB_SSL'] === 'true',
+    username: process.env['DB_USER'] ?? '',
+    password: process.env['DB_PASSWORD'] ?? '',
+    database: process.env['DB_DATABASE'] ?? '',
     synchronize: false,
     entities: [
         '../common/entities/**/*.entity{.ts,.js}',
@@ -43,8 +45,8 @@ export const clearAllData = async () => {
 
 export const mockDbUser = async (
     email: string,
-    username: string = 'Test User',
-    role: UserRole = undefined,
+    username = 'Test User',
+    role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -91,7 +93,7 @@ export const mockDbUser = async (
 export const getJwtToken = (user: User) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jwt = require('jsonwebtoken');
-    return jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET);
+    return jwt.sign({ uuid: user.uuid }, process.env['JWT_SECRET']);
 };
 
 export const getUserFromDb = async (uuid: string) => {

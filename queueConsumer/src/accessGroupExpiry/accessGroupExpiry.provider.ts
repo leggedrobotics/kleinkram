@@ -9,7 +9,7 @@ import { LessThan, Repository } from 'typeorm';
 
 @Injectable()
 export class AccessGroupExpiryProvider implements OnModuleInit {
-    private redlock: Redlock;
+    private redlock?: Redlock;
 
     constructor(
         @InjectRepository(GroupMembership)
@@ -26,6 +26,8 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_4_HOURS)
     async removeExpiredAccessGroups() {
+        if (!this.redlock) throw new Error('RedLock not initialized');
+
         await this.redlock.using([`accessGroupExpiry`], 10000, async () => {
             await this.groupMembershipRepository.softDelete({
                 expirationDate: LessThan(new Date()),

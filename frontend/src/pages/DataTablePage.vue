@@ -250,7 +250,7 @@
         separator="none"
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
-        :columns="columns"
+        :columns="columns as any"
         row-key="uuid"
         :loading="loading"
         selection="multiple"
@@ -334,9 +334,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import { formatSize } from 'src/services/generalFormatting';
-import { Project } from 'src/types/Project';
-import { Mission } from 'src/types/Mission';
-import { FileEntity } from 'src/types/FileEntity';
+
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
@@ -434,7 +432,7 @@ const pagination = computed(() => {
     return {
         page: handler.value.page,
         rowsPerPage: handler.value.take,
-        rowsNumber: handler.value?.rowsNumber,
+        rowsNumber: handler.value.rowsNumber,
         sortBy: handler.value.sortBy,
         descending: handler.value.descending,
     };
@@ -531,7 +529,7 @@ const columns = [
         label: 'Project',
         align: 'left',
         field: (row: FileEntity) => row.mission?.project?.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
@@ -541,7 +539,7 @@ const columns = [
         label: 'Mission',
         align: 'left',
         field: (row: FileEntity) => row.mission?.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -551,7 +549,7 @@ const columns = [
         label: 'File',
         align: 'left',
         field: (row: FileEntity) => row.filename,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: true,
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
     },
@@ -579,7 +577,7 @@ const columns = [
         label: 'Creator',
         align: 'left',
         field: (row: FileEntity) => row.creator.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -623,15 +621,15 @@ function filterFn(val: string, update) {
     update(() => {
         if (!allTopics.value) return;
         const needle = val.toLowerCase();
-        const filtered = allTopics.value.filter(
-            (v) => v.toLowerCase().indexOf(needle) > -1,
+        const filtered = allTopics.value.filter((v) =>
+            v.toLowerCase().includes(needle),
         );
         console.log(filtered);
         displayedTopics.value = filtered;
     });
 }
 
-const onRowClick = (_: Event, row: any) => {
+const onRowClick = async (_: *, row: any) => {
     await $router.push({
         name: ROUTES.FILE.routeName,
         params: {

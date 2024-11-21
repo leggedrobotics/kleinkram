@@ -272,7 +272,6 @@ import { computed, Ref, ref, watch } from 'vue';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { Mission } from 'src/types/Mission';
 import {
     getMissions,
     missionsOfProjectMinimal,
@@ -285,8 +284,6 @@ import {
 } from 'src/services/mutations/action';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import { listActionTemplates } from 'src/services/queries/action';
-import { ActionTemplate } from 'src/types/ActionTemplate';
-import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
@@ -315,24 +312,17 @@ const addedMissions = ref<string[]>([]);
 const allMissionUUIDs = computed(() => {
     return [...(props.mission_uuids || []), ...addedMissions.value];
 });
-const editingTemplate: Ref<ActionTemplate> = ref(
-    new ActionTemplate(
-        '',
-        null,
-        null,
-        'rslethz/action:simple-latest',
-        null,
-        '',
-        1,
-        '',
-        2,
-        2,
-        -1,
-        2,
-        '',
-        AccessGroupRights.READ,
-    ),
-);
+const editingTemplate: Ref = ref({
+    imageName: '',
+    command: '',
+    cpuCores: 1,
+    cpuMemory: 2,
+    gpuMemory: 2,
+    maxRuntime: -1,
+    version: 1,
+    entrypoint: '',
+    accessRights: AccessGroupRights.READ,
+});
 // QUERYING ####################################################################
 // Fetch missions based on props ----------------------------------------------
 
@@ -442,7 +432,7 @@ const { mutateAsync: createTemplate } = useMutation({
         console.error(error);
         Notify.create({
             group: false,
-            message: `Error: ${error?.response?.data.message}`,
+            message: `Error: ${error.response?.data.message}`,
             color: 'negative',
             position: 'bottom',
             timeout: 2000,

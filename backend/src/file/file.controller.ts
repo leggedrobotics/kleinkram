@@ -15,7 +15,7 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryBoolean,
     QueryOptionalDate,
@@ -36,6 +36,7 @@ import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import env from '@common/env';
 import { ApiOkResponse } from '@nestjs/swagger';
+import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 
 @Controller('file')
 export class FileController {
@@ -44,7 +45,7 @@ export class FileController {
     @Get('all')
     @UserOnly()
     async allFiles(
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -70,7 +71,7 @@ export class FileController {
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
@@ -120,7 +121,7 @@ export class FileController {
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
     ) {
         let _missionUUID = missionUUID;
         if (auth.apikey) {
@@ -154,7 +155,7 @@ export class FileController {
         )
         expires: boolean,
     ) {
-        logger.debug('download ' + uuid + ': expires=' + expires);
+        logger.debug(`download ${uuid}: expires=${expires.toString()}`);
         return this.fileService.generateDownload(uuid, expires);
     }
 
@@ -232,21 +233,29 @@ export class FileController {
     }
 
     @Get('storage')
+    @ApiOkResponse({
+        description: 'Storage information',
+        type: StorageOverviewDto,
+    })
     @LoggedIn()
-    async getStorage() {
+    async getStorage(): Promise<StorageOverviewDto> {
         return this.fileService.getStorage();
     }
 
     @Get('isUploading')
     @LoggedIn()
-    async isUploading(@addUser() auth: AuthRes) {
+    @ApiOkResponse({
+        description: 'Is uploading',
+        type: Boolean,
+    })
+    async isUploading(@AddUser() auth: AuthRes) {
         return this.fileService.isUploading(auth.user.uuid);
     }
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
     async getTemporaryAccess(
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
         @Body() body: CreatePreSignedURLSDto,
     ) {
         return await this.fileService.getTemporaryAccess(
@@ -265,9 +274,9 @@ export class FileController {
         )
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
     ) {
-        logger.debug('cancelUpload ' + uuids.toString());
+        logger.debug(`cancelUpload ${uuids.toString()}`);
         return this.fileService.cancelUpload(
             uuids,
             missionUUID,

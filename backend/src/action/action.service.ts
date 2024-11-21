@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { Brackets, ILike, Repository } from 'typeorm';
+import { Brackets, FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubmitActionMulti } from './entities/submit_action.dto';
 import Action from '@common/entities/action/action.entity';
@@ -15,7 +15,7 @@ import {
 } from './entities/createTemplate.dto';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
-import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
+import { ListOfActionDto } from '@common/api/types/ListOfAction.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -52,7 +52,7 @@ export class ActionService {
         await this.actionRepository.save(action);
 
         // return the created action mission
-        action = await this.actionRepository.findOne({
+        action = await this.actionRepository.findOneOrFail({
             where: { uuid: action.uuid },
             relations: ['mission', 'mission.project', 'template'],
         });
@@ -106,6 +106,7 @@ export class ActionService {
                 'Template with this name already exists',
             );
         }
+
         const template = this.actionTemplateRepository.create({
             createdBy: { uuid: auth.user.uuid },
             name: data.name,
@@ -113,11 +114,10 @@ export class ActionService {
             cpuMemory: data.cpuMemory,
             gpuMemory: data.gpuMemory,
             maxRuntime: data.maxRuntime,
-
             image_name: data.image,
-            command: data.command,
+            command: data.command ?? '',
             searchable: data.searchable,
-            entrypoint: data.entrypoint,
+            entrypoint: data.entrypoint ?? '',
             accessRights: data.accessRights,
         });
         return this.actionTemplateRepository.save(template);
@@ -152,31 +152,31 @@ export class ActionService {
         });
         const direction = data.searchable ? 'DESC' : 'ASC';
         const change = data.searchable ? 1 : -1;
-        const previousVersions = await this.actionTemplateRepository.find({
-            where: { name: data.name },
-            order: { version: direction },
-            take: 1,
-        });
+        const previousVersions =
+            await this.actionTemplateRepository.findOneOrFail({
+                where: { name: data.name },
+                order: { version: direction },
+            });
         template.name = data.name;
         template.cpuCores = data.cpuCores;
         template.cpuMemory = data.cpuMemory;
         template.gpuMemory = data.gpuMemory;
         template.image_name = data.image;
         template.createdBy = dbuser;
-        template.command = data.command;
-        template.version = previousVersions[0].version + change;
-        template.uuid = undefined;
+        template.command = data.command ?? '';
+        template.version = previousVersions[0].version ?? 0 + change;
+        template.uuid = '';
         template.searchable = data.searchable;
         template.maxRuntime = data.maxRuntime;
-        template.entrypoint = data.entrypoint;
+        template.entrypoint = data.entrypoint ?? '';
         template.accessRights = data.accessRights;
         return this.actionTemplateRepository.save(template);
     }
 
     async listTemplates(skip: number, take: number, search: string) {
-        const where = { searchable: true };
-        if (search) {
-            where['name'] = ILike(`%${search}%`);
+        const where: FindOptionsWhere<ActionTemplate> = { searchable: true };
+        if (search !== '') {
+            where.name = ILike(`%${search}%`);
         }
         return this.actionTemplateRepository.findAndCount({
             where,
@@ -187,8 +187,8 @@ export class ActionService {
     }
 
     async listActions(
-        projectUuid: string,
-        missionUuid: string,
+        projectUuid: string | undefined,
+        missionUuid: string | undefined,
         userUUID: string,
         skip: number,
         take: number,
@@ -196,7 +196,7 @@ export class ActionService {
         sortDirection: 'ASC' | 'DESC',
         search: string,
     ): Promise<ListOfActionDto> {
-        const user = await this.userRepository.findOne({
+        const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
@@ -244,7 +244,7 @@ export class ActionService {
             })
             .skip(skip)
             .take(take)
-            .orderBy('action.' + sortBy, sortDirection);
+            .orderBy(`action.${sortBy}`, sortDirection);
 
         if (missionUuid) {
             baseQuery.andWhere('mission.uuid = :mission_uuid', {

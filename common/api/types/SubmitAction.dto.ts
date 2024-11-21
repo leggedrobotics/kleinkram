@@ -4,14 +4,14 @@ import { ApiProperty } from '@nestjs/swagger';
 export class SubmitActionDto {
     @IsUUID()
     @ApiProperty()
-    missionUUID: string;
+    missionUUID!: string;
 
     @IsUUID()
     @ApiProperty()
-    templateUUID: string;
+    templateUUID!: string;
 }
 
 export class ActionSubmitResponseDto {
     @ApiProperty()
-    actionUUID: string;
+    actionUUID!: string;
 }

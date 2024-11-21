@@ -19,7 +19,7 @@ export class QueryHandler {
     missionUuid?: string;
     projectUuid?: string;
     searchParams: Record<string, string>;
-    fileType?: FileType;
+    fileType?: boolean | FileType.ALL;
     rowsNumber: number;
     categories: string[];
 
@@ -32,7 +32,7 @@ export class QueryHandler {
         missionUuid?: string,
         searchParams?: Record<string, string>,
         fileType?: FileType,
-        categories: string[],
+        categories?: string[],
     ) {
         this.page = page;
         this.take = take;
@@ -41,7 +41,7 @@ export class QueryHandler {
         this.projectUuid = projectUuid;
         this.missionUuid = missionUuid;
         this.searchParams = searchParams || DEFAULT_SEARCH;
-        this.fileType = fileType || FileType.ALL;
+        this.fileType = fileType != null || FileType.ALL;
         this.categories = categories || [];
         this.rowsNumber = 0;
     }
@@ -164,7 +164,7 @@ export class QueryHandler {
  */
 export class QueryURLHandler extends QueryHandler {
     router: Router | undefined;
-    internalUpdate: boolean = false;
+    internalUpdate = false;
 
     constructor(
         router?: Router,
@@ -293,9 +293,9 @@ export class QueryURLHandler extends QueryHandler {
         else this.missionUuid = undefined;
 
         const searchParams = {} as Record<string, string>;
-        if (route.query.name) searchParams['name'] = route.query.name as string;
+        if (route.query.name) searchParams.name = route.query.name as string;
         if (route.query.health)
-            searchParams['health'] = route.query.health as string;
+            searchParams.health = route.query.health as string;
         if (searchParams) this.searchParams = searchParams;
         else this.searchParams = DEFAULT_SEARCH;
         if (route.query.file_type)
@@ -340,7 +340,7 @@ export class QueryURLHandler extends QueryHandler {
             ...this.searchParams,
 
             file_type:
-                !!this.fileType && this.fileType !== FileType.ALL
+                !(this.fileType == null) && this.fileType !== FileType.ALL
                     ? this.fileType || undefined
                     : undefined,
             categories:
@@ -360,7 +360,7 @@ export class QueryURLHandler extends QueryHandler {
     }
 }
 
-export type TableRequest = {
+export interface TableRequest {
     filter?: any;
     pagination: {
         page: number;
@@ -369,4 +369,4 @@ export type TableRequest = {
         descending: boolean;
     };
     getCellValue: any;
-};
+}

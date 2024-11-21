@@ -56,7 +56,7 @@ export class TagService {
         const isString = typeof value === 'string';
         switch (tagType.datatype) {
             case DataType.NUMBER:
-                if (typeof value == 'number' || isString) {
+                if (typeof value === 'number' || isString) {
                     if (isString) {
                         value = parseInt(value as string);
                     }
@@ -97,7 +97,7 @@ export class TagService {
                 });
                 break;
             case DataType.BOOLEAN:
-                if (typeof value == 'boolean' || isString) {
+                if (typeof value === 'boolean' || isString) {
                     if (isString) {
                         value = value === 'true';
                     }
@@ -155,7 +155,7 @@ export class TagService {
         const isString = typeof value === 'string';
         switch (tagType.datatype) {
             case DataType.NUMBER:
-                if (typeof value == 'number' || isString) {
+                if (typeof value === 'number' || isString) {
                     if (isString) {
                         value = parseInt(value as string);
                     }
@@ -186,7 +186,7 @@ export class TagService {
                 break;
 
             case DataType.BOOLEAN:
-                if (typeof value == 'boolean' || isString) {
+                if (typeof value === 'boolean' || isString) {
                     if (isString) {
                         value = value === 'true';
                     }
@@ -241,7 +241,7 @@ export class TagService {
         if (name) {
             where['name'] = ILike(`%${name}%`);
         }
-        if (type) {
+        if (type != null) {
             where['datatype'] = type;
         }
         return this.tagTypeRepository.find({

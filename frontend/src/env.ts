@@ -12,7 +12,7 @@ function asString(value: string | undefined): string {
         throw new Error(message);
     }
 
-    return `${value}`;
+    return value;
 }
 
 /**

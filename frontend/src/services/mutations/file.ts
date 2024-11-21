@@ -1,4 +1,3 @@
-import { FileEntity } from 'src/types/FileEntity';
 import axios from 'src/api/axios';
 
 // define type for generateTemporaryCredentials 'files' return
@@ -19,7 +18,9 @@ export const updateFile = async ({ file }: { file: FileEntity }) => {
 
         mission_uuid: file.mission?.uuid,
         date: file.date,
-        categories: file.categories.map((category) => category.uuid),
+        categories: file.categories.map(
+            (category: { uuid: any }) => category.uuid,
+        ),
     });
     return response.data;
 };

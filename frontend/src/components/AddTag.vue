@@ -98,8 +98,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { Notify } from 'quasar';
-import { Mission } from 'src/types/Mission';
-import { TagType } from 'src/types/TagType';
 import { getMission } from 'src/services/queries/mission';
 import { getTagTypes } from 'src/services/queries/tag';
 import { addTags } from 'src/services/mutations/tag';
@@ -135,10 +133,10 @@ const additonalTags: Ref<TagType[]> = ref<TagType[]>([]);
 const availableAdditionalTags: Ref<TagType[]> = computed(() => {
     if (!tagTypes.value) return [];
     const usedTagUUIDs = data.value
-        ? data?.value.tags.map((tag) => tag.type.uuid)
+        ? data.value.tags.map((tag) => tag.type.uuid)
         : [];
     const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
-    return tagTypes.value?.filter(
+    return tagTypes.value.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
             !addedTagUUIDs.includes(tagtype.uuid),
@@ -151,7 +149,7 @@ function addTag(tagtype: TagType) {
 
 const { mutate: save } = useMutation({
     mutationFn: () => addTags(props.mission_uuid, tagValues.value),
-    onSuccess() {
+    async onSuccess() {
         Notify.create({
             message: 'Tags saved',
             color: 'positive',

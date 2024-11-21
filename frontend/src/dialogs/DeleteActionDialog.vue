@@ -33,7 +33,6 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
 import DeleteAction from 'components/DeleteAction.vue';
-import { Action } from 'src/types/Action';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteActionRef = ref<InstanceType<typeof DeleteAction> | null>(null);

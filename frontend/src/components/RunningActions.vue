@@ -26,7 +26,7 @@
         >
             <q-table
                 :rows="actions"
-                :columns="columns"
+                :columns="columns as any"
                 hide-pagination
                 class="q-pa-md"
             >
@@ -79,7 +79,6 @@ import { getRunningActions } from 'src/services/queries/action';
 import { useQuery } from '@tanstack/vue-query';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
-import { Action } from 'src/types/Action';
 import { useRouter } from 'vue-router';
 import { ActionState } from '@common/enum';
 
@@ -124,7 +123,7 @@ const columns = [
         sortable: false,
         field: (row: Action) =>
             row.template?.name
-                ? row.template.name + ' v' + row.template.version
+                ? `${row.template.name} v${row.template.version}`
                 : 'N/A',
     },
 

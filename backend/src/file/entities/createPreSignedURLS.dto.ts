@@ -13,12 +13,12 @@ export class CreatePreSignedURLSDto {
     @ApiProperty({
         description: 'Filenames for which to generate temporary access',
     })
-    filenames: string[];
+    filenames!: string[];
 
     @IsUUID()
     @ApiProperty({
         description:
             'UUID of the mission for which to generate temporary access',
     })
-    missionUUID: string;
+    missionUUID!: string;
 }

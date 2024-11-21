@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import {
     QuerySkip,
     QueryString,
     QueryTake,
 } from '../validation/queryDecorators';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { CurrentAPIUserDto } from '@common/api/types/User.dto';
+import { CurrentAPIUserDto, UsersDto } from '@common/api/types/User.dto';
 
 @Controller('user')
 export class UserController {
@@ -16,7 +16,7 @@ export class UserController {
 
     @Post('claimAdmin')
     @UserOnly()
-    async claimAdmin(@addUser() user?: AuthRes) {
+    async claimAdmin(@AddUser() user?: AuthRes) {
         return this.userService.claimAdmin(user);
     }
 
@@ -38,7 +38,7 @@ export class UserController {
         description: 'The currently logged in user',
         type: CurrentAPIUserDto,
     })
-    async me(@addUser() user?: AuthRes) {
+    async me(@AddUser() user?: AuthRes) {
         return this.userService.me(user);
     }
 
@@ -56,11 +56,15 @@ export class UserController {
 
     @Get('search')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'Search results',
+        type: UsersDto,
+    })
     async search(
         @QueryString('search', 'Searchkey on name or email') search: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<UsersDto> {
         return this.userService.search(search, skip, take);
     }
 
@@ -99,7 +103,7 @@ export class UserController {
      */
     @Get('permissions')
     @LoggedIn()
-    async permissions(@addUser() user?: AuthRes) {
+    async permissions(@AddUser() user?: AuthRes) {
         return this.userService.permissions(user);
     }
 }

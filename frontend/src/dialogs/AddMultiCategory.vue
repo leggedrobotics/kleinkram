@@ -46,8 +46,6 @@
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Ref, ref } from 'vue';
-import { FileEntity } from 'src/types/FileEntity';
-import { Category } from 'src/types/Category';
 import CategorySelector from 'components/CategorySelector.vue';
 import CategoryCreator from 'components/CategoryCreator.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';

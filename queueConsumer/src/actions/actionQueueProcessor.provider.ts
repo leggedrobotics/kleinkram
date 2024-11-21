@@ -73,7 +73,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             logger.error('Failed to connect to Redis:', error);
             throw error;
         });
-        logger.debug('Status: ' + this.analysisQueue.client.status);
+        logger.debug(`Status: ${this.analysisQueue.client.status}`);
     }
 
     @Process({ concurrency: 1, name: `action` })
@@ -159,7 +159,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             where: { uuid: job.id as string },
         });
         action.state = ActionState.PENDING;
-        action.state_cause = 'Pending... ' + error.message;
+        action.state_cause = `Pending... ${error.message}`;
         await this.actionRepository.save(action);
     }
 
@@ -194,7 +194,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
-        } catch (e) {
+        } catch (e: any) {
             logger.error(
                 `Failed to update action state in database: ${e.message}`,
             );

@@ -21,7 +21,6 @@ import { Notify } from 'quasar';
 import { computed } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { removeAccessGroupFromProject } from 'src/services/mutations/access';
-import { AccessGroup } from 'src/types/AccessGroup';
 import {
     canDeleteProject,
     usePermissionsQuery,

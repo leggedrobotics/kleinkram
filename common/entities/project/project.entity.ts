@@ -13,28 +13,28 @@ export default class Project extends BaseEntity {
      * The name must be globally unique.
      */
     @Column({ unique: true })
-    name: string;
+    name!: string;
 
     @OneToMany(() => Mission, (mission) => mission.project)
-    missions: Mission[];
+    missions?: Mission[];
 
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,
     })
-    project_accesses: ProjectAccess[];
+    project_accesses?: ProjectAccess[];
 
     @Column({ nullable: true })
-    description: string;
+    description?: string;
 
     @ManyToOne(() => User, (user) => user.projects, { nullable: false })
-    creator: User;
+    creator?: User;
 
     @ManyToMany(() => TagType, (tag) => tag.project, {
         onDelete: 'CASCADE',
         nullable: false,
     })
-    requiredTags: TagType[];
+    requiredTags?: TagType[];
 
     @OneToMany(() => CategoryEntity, (category) => category.project)
-    categories: CategoryEntity[];
+    categories?: CategoryEntity[];
 }

@@ -1,6 +1,4 @@
 import axios from 'src/api/axios';
-import { AccessGroup } from 'src/types/AccessGroup';
-import { ProjectAccess } from 'src/types/ProjectAccess';
 
 export const canAddAccessGroup = async (
     projectUuid: string,
@@ -28,33 +26,26 @@ export const searchAccessGroups = async (
         take,
     };
     if (search) {
-        params['search'] = search;
+        params.search = search;
     }
     if (personal) {
-        params['personal'] = true;
+        params.personal = true;
     }
     if (creator) {
-        params['creator'] = true;
+        params.creator = true;
     }
     if (member) {
-        params['member'] = true;
+        params.member = true;
     }
     const response = await axios.get('/access/filtered', {
         params,
     });
-    if (!response.data) {
-        return [[], 0];
-    }
-    const data = response.data.entities;
-    const total = response.data.total;
-    const res = data.map((group: any) => AccessGroup.fromAPIResponse(group));
-    return [res, total];
+    return response.data;
 };
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
     const response = await axios.get(`/access/one`, { params: { uuid } });
-    const group = response.data;
-    return AccessGroup.fromAPIResponse(group);
+    return response.data;
 };
 
 export const getProjectAccess = async (
@@ -64,9 +55,5 @@ export const getProjectAccess = async (
     const response = await axios.get(`/access/projectAccess`, {
         params: { uuid: projectUUID, projectAccessUUID },
     });
-    const access = response.data;
-    console.log(`access: ${JSON.stringify(access)}`);
-    const res = ProjectAccess.fromAPIResponse(access);
-    console.log(`res: ${JSON.stringify(res)}`);
-    return res;
+    return response.data;
 };

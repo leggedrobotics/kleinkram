@@ -21,7 +21,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-import { FileEntity } from 'src/types/FileEntity';
 import NewEditFile from 'components/NewEditFile.vue';
 import { FileState } from '@common/enum';
 

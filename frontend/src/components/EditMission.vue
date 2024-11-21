@@ -25,8 +25,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';
 import AddTagDialog from 'src/dialogs/AddTagDialog.vue';
-import { Mission } from 'src/types/Mission';
-import { Tag } from 'src/types/Tag';
 import { getMission } from 'src/services/queries/mission';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
@@ -63,7 +61,7 @@ await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
 });
 const { mutate: removeTagCallback } = useMutation({
     mutationFn: (tag: Tag) => removeTag(tag.uuid),
-    onSuccess() {
+    async onSuccess() {
         Notify.create({
             message: 'Tag removed',
             color: 'positive',
@@ -77,9 +75,9 @@ const { mutate: removeTagCallback } = useMutation({
                     query.queryKey[0] === 'mission' &&
                     query.queryKey[1] === props.mission_uuid,
             );
-        filtered.forEach((query) => {
+        for (const query of filtered) {
             await queryClient.invalidateQueries(query.queryKey);
-        });
+        }
     },
     onError(e) {
         console.log(e);

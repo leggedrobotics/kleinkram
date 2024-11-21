@@ -7,7 +7,7 @@ import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
-import { CurrentAPIUserDto } from '@common/api/types/User.dto';
+import { CurrentAPIUserDto, UsersDto } from '@common/api/types/User.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -39,8 +39,8 @@ export class UserService implements OnModuleInit {
      */
     async findOneByUUID(
         uuid: string,
-        select?: FindOptionsSelect<User>,
-        relations?: FindOptionsRelations<User>,
+        select: FindOptionsSelect<User>,
+        relations: FindOptionsRelations<User>,
     ) {
         return this.userRepository.findOneOrFail({
             where: { uuid },
@@ -99,14 +99,21 @@ export class UserService implements OnModuleInit {
         return user;
     }
 
-    async search(search: string, skip: number, take: number) {
+    async search(
+        search: string,
+        skip: number,
+        take: number,
+    ): Promise<{ count: number; users: User[] }> {
         // Ensure the search string is not empty or null
         if (!search) {
-            return [];
+            return {
+                users: [],
+                count: 0,
+            };
         }
 
         // Use query builder to perform a search on both 'name' and 'email' fields
-        return this.userRepository
+        const [users, count] = await this.userRepository
             .createQueryBuilder('user')
             .where('(user.name ILIKE :name OR user.email ILIKE :email)', {
                 name: `%${search}%`,
@@ -115,7 +122,12 @@ export class UserService implements OnModuleInit {
             .andWhere('user.hidden = :hidden', { hidden: false })
             .skip(skip)
             .take(take)
-            .getMany();
+            .getManyAndCount();
+
+        return {
+            users,
+            count,
+        };
     }
 
     async permissions(auth: AuthRes) {

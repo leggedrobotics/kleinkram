@@ -5,11 +5,11 @@ import {
 } from '../../validation/propertyDecorator';
 
 export class UpdateFile {
-    @IsUUID() uuid: string;
+    @IsUUID() uuid!: string;
 
-    @IsNoValidUUID() @IsValidFileName() @IsString() filename: string;
+    @IsNoValidUUID() @IsValidFileName() @IsString() filename!: string;
 
     @IsOptional() @IsUUID() mission_uuid?: string;
-    @IsDate() date: Date;
-    @IsOptional() @IsUUID('all', { each: true }) categories: string[];
+    @IsDate() date!: Date;
+    @IsOptional() @IsUUID('all', { each: true }) categories!: string[];
 }

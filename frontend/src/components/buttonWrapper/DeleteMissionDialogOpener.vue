@@ -24,7 +24,6 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-import { Mission } from 'src/types/Mission';
 import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
 
 const $q = useQuasar();

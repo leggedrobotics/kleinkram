@@ -10,7 +10,7 @@ function asString(value: string | undefined): string {
         throw new Error(message);
     }
 
-    return `${value}`;
+    return value;
 }
 
 /**
@@ -51,38 +51,38 @@ export default {
      * @returns database name
      */
     get DB_DATABASE(): string {
-        return asString(process.env.DB_DATABASE);
+        return asString(process.env['DB_DATABASE']);
     },
     /**
      * @returns database admin user
      */
     get DB_USER(): string {
-        return asString(process.env.DB_USER);
+        return asString(process.env['DB_USER']);
     },
     /**
      * @returns database admin password
      */
     get DB_PASSWORD(): string {
-        return asString(process.env.DB_PASSWORD);
+        return asString(process.env['DB_PASSWORD']);
     },
     /**
      * @returns database port
      */
     get DB_PORT(): number {
-        return asNumber(process.env.DB_PORT);
+        return asNumber(process.env['DB_PORT']);
     },
     /**
      * @returns database host name
      * @example database
      */
     get DB_HOST(): string {
-        return asString(process.env.DB_HOST);
+        return asString(process.env['DB_HOST']);
     },
     /**
      * @returns whether application runs in development mode
      */
     get DEV(): boolean {
-        return asBoolean(process.env.DEV);
+        return asBoolean(process.env['DEV']);
     },
 
     /**
@@ -90,92 +90,92 @@ export default {
      * @example dist/entities/*.entities.js
      */
     get ENTITIES(): string {
-        return asString(process.env.ENTITIES);
+        return asString(process.env['ENTITIES']);
     },
     /**
      * @returns backend port for lambda functions
      */
     get SERVER_PORT(): number {
-        return asNumber(process.env.SERVER_PORT);
+        return asNumber(process.env['SERVER_PORT']);
     },
     /**
      * @returns base url of frontend
      */
     get BASE_URL(): string {
-        return asString(process.env.BASE_URL);
+        return asString(process.env['BASE_URL']);
     },
 
     /**
      * @returns name of project
      */
     get PROJECT_NAME(): string {
-        return asString(process.env.PROJECT_NAME);
+        return asString(process.env['PROJECT_NAME']);
     },
 
     get MINIO_ACCESS_KEY(): string {
-        return asString(process.env.MINIO_ACCESS_KEY);
+        return asString(process.env['MINIO_ACCESS_KEY']);
     },
 
     get MINIO_SECRET_KEY(): string {
-        return asString(process.env.MINIO_SECRET_KEY);
+        return asString(process.env['MINIO_SECRET_KEY']);
     },
 
     get MINIO_MCAP_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_MCAP_BUCKET_NAME);
+        return asString(process.env['MINIO_MCAP_BUCKET_NAME']);
     },
     get MINIO_BAG_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_BAG_BUCKET_NAME);
+        return asString(process.env['MINIO_BAG_BUCKET_NAME']);
     },
     get MINIO_DB_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_DB_BUCKET_NAME);
+        return asString(process.env['MINIO_DB_BUCKET_NAME']);
     },
     get MINIO_ENDPOINT(): string {
-        return asString(process.env.MINIO_ENDPOINT);
+        return asString(process.env['MINIO_ENDPOINT']);
     },
 
     get MINIO_USER(): string {
-        return asString(process.env.MINIO_USER);
+        return asString(process.env['MINIO_USER']);
     },
 
     get MINIO_PASSWORD(): string {
-        return asString(process.env.MINIO_PASSWORD);
+        return asString(process.env['MINIO_PASSWORD']);
     },
 
     get GOOGLE_CLIENT_ID(): string {
-        return asString(process.env.GOOGLE_CLIENT_ID);
+        return asString(process.env['GOOGLE_CLIENT_ID']);
     },
     get GOOGLE_CLIENT_SECRET(): string {
-        return asString(process.env.GOOGLE_CLIENT_SECRET);
+        return asString(process.env['GOOGLE_CLIENT_SECRET']);
     },
 
     get JWT_SECRET(): string {
-        return asString(process.env.JWT_SECRET);
+        return asString(process.env['JWT_SECRET']);
     },
 
     get ENDPOINT(): string {
-        return asString(process.env.QUASAR_ENDPOINT);
+        return asString(process.env['QUASAR_ENDPOINT']);
     },
 
     get FRONTEND_URL(): string {
-        return asString(process.env.FRONTEND_URL);
+        return asString(process.env['FRONTEND_URL']);
     },
     get GOOGLE_KEY_FILE(): string {
-        return asString(process.env.GOOGLE_KEY_FILE);
+        return asString(process.env['GOOGLE_KEY_FILE']);
     },
 
     get GOOGLE_ARTIFACT_FOLDER_ID(): string {
-        return asString(process.env.GOOGLE_ARTIFACT_FOLDER_ID);
+        return asString(process.env['GOOGLE_ARTIFACT_FOLDER_ID']);
     },
 
     get GOOGLE_ARTIFACT_UPLOADER_KEY_FILE(): string {
-        return asString(process.env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE);
+        return asString(process.env['GOOGLE_ARTIFACT_UPLOADER_KEY_FILE']);
     },
 
     get ARTIFACTS_UPLOADER_IMAGE(): string {
-        return asString(process.env.ARTIFACTS_UPLOADER_IMAGE);
+        return asString(process.env['ARTIFACTS_UPLOADER_IMAGE']);
     },
 
     get DOCS_URL(): string {
-        return asString(process.env.DOCS_URL);
+        return asString(process.env['DOCS_URL']);
     },
 };

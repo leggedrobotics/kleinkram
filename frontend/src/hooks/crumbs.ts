@@ -15,12 +15,10 @@ import { PageBreadCrumb } from 'src/router/routesUtils';
 export const useCrumbs = () => {
     const route = useRoute();
     return computed(() => {
-        const nameWithPostfix = (route.name as string) + 'Layout';
+        const nameWithPostfix = `${route.name as string}Layout`;
         const routeDefinition = Object.values(ROUTES).find(
             (r) => r.name === nameWithPostfix,
         );
-        return (
-            routeDefinition ? routeDefinition.breadcrumbs : []
-        ) as PageBreadCrumb[];
+        return (routeDefinition ? routeDefinition.breadcrumbs : [])!;
     });
 };

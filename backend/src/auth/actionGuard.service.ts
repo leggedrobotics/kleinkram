@@ -39,6 +39,13 @@ export class ActionGuardService {
             where: { uuid: actionUUID },
             relations: ['mission', 'mission.project'],
         });
+
+        if (!action) return false;
+        if (action.mission === undefined)
+            throw new Error('Action has no mission');
+        if (action.mission.project === undefined)
+            throw new Error('Action has no mission');
+
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
                 user,
@@ -62,7 +69,7 @@ export class ActionGuardService {
     ) {
         if (!actionUUID) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) not provided. Requesting ${rights} access.`,
+                `ActionGuard: actionUUID (${actionUUID}) not provided. Requesting ${rights.toString()} access.`,
             );
         }
         const action = await this.actionRepository.findOne({
@@ -72,6 +79,10 @@ export class ActionGuardService {
         if (!action) {
             return false;
         }
+
+        if (action.mission === undefined)
+            throw new Error('Apikey has no mission');
+
         return (
             apikey.mission.uuid === action.mission.uuid &&
             rights <= apikey.rights

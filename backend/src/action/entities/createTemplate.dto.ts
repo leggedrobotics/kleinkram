@@ -13,40 +13,40 @@ import { AccessGroupRights } from '@common/frontend_shared/enum';
 export class CreateTemplateDto {
     @IsString()
     @IsNotEmpty()
-    name: string;
+    name!: string;
 
     @IsString()
     @IsOptional()
-    command: string;
+    command?: string;
 
     @IsString()
     @IsNotEmpty()
-    image: string;
+    image!: string;
 
     @IsNumber()
-    cpuCores: number;
+    cpuCores!: number;
 
     @IsNumber()
-    cpuMemory: number;
+    cpuMemory!: number;
 
     @IsNumber()
-    gpuMemory: number;
+    gpuMemory!: number;
 
     @IsNumber()
-    maxRuntime: number;
+    maxRuntime!: number;
 
     @IsBoolean()
-    searchable: boolean;
+    searchable!: boolean;
 
     @IsString()
     @IsOptional()
-    entrypoint: string;
+    entrypoint?: string;
 
     @IsEnum(AccessGroupRights)
-    accessRights: AccessGroupRights;
+    accessRights!: AccessGroupRights;
 }
 
 export class UpdateTemplateDto extends CreateTemplateDto {
     @IsUUID()
-    uuid: string;
+    uuid!: string;
 }

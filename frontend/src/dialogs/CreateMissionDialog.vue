@@ -163,12 +163,9 @@ import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
 import { filteredProjects, getProject } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
 import CreateFile from 'components/CreateFile.vue';
-import { Mission } from 'src/types/Mission';
-import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
 import {
     canCreateMission,
@@ -206,7 +203,7 @@ const queryClient = useQueryClient();
 const { data: project, refetch }: { data: Ref<Project>; refetch } =
     useQuery<Project>({
         queryKey: computed(() => ['project', project_uuid]),
-        queryFn: () => getProject(project_uuid.value as string),
+        queryFn: () => getProject(project_uuid.value!),
         enabled: computed(() => !!project_uuid.value),
     });
 
@@ -224,8 +221,8 @@ const { data: all_projects } = useQuery<[Project[], number]>({
 });
 const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
-    if (!all_projects?.value) return [];
-    return all_projects?.value[0].filter((_project: Project) =>
+    if (!all_projects.value) return [];
+    return all_projects.value[0].filter((_project: Project) =>
         canCreateMission(_project.uuid, permissions),
     );
 });
@@ -233,7 +230,7 @@ const projectsWithCreateWrite = computed(() => {
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    return project?.value?.requiredTags.every(
+    return project.value?.requiredTags.every(
         (tag) =>
             tagValues.value[tag.uuid] !== undefined &&
             tagValues.value[tag.uuid] !== '',

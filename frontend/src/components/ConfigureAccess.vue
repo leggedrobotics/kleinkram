@@ -147,7 +147,7 @@
 
     <q-table
         class="table-white"
-        :columns="accessRightsColumns"
+        :columns="accessRightsColumns as any"
         :rows="sortedAccessRights"
         hide-pagination
         flat
@@ -252,7 +252,7 @@
 <script setup lang="ts">
 import { getAccessRightDescription } from 'src/services/generic';
 import { QSelect, QTable } from 'quasar';
-import { computed, Ref, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useQuery } from '@tanstack/vue-query';
 import { searchAccessGroups } from 'src/services/queries/access';
@@ -263,15 +263,13 @@ import { accessGroupRightsList } from '../enums/accessGroupRightsList';
 const { minAccessRights } = defineProps<{
     minAccessRights: DefaultRightDto[];
 }>();
-const accessRights: Ref<DefaultRightDto[]> = defineModel<DefaultRightDto[]>();
+const accessRights = defineModel<DefaultRightDto[]>();
 
-const sortedAccessRights = computed(() => {
-    console.log(accessRights.value);
-    return (
-        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-        accessRights.value?.sort((a, b) => b.name.localeCompare(a.name)) || []
-    );
-});
+const sortedAccessRights = computed(() =>
+    [...(accessRights.value || [])].sort((a, b) =>
+        b.name.localeCompare(a.name),
+    ),
+);
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
@@ -316,7 +314,7 @@ const updateRights = (group: AccessRight, right: AccessGroupRights) => {
 };
 
 const removeGroup = (group: AccessRight) => {
-    if (minAccessRights.filter((r) => r.uuid === group.uuid).length) {
+    if (minAccessRights.filter((r) => r.uuid === group.uuid).length > 0) {
         console.log('Cannot remove minimum access group');
         return;
     }

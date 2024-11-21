@@ -21,7 +21,6 @@
 <script setup lang="ts">
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
-import { Mission } from 'src/types/Mission';
 import { ref, Ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';

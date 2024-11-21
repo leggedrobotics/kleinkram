@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         super({
             jwtFromRequest: (req: Request) => {
                 let token = null;
-                if (req && req.cookies) {
+                if (req?.cookies) {
                     token = req.cookies[CookieNames.AUTH_TOKEN];
                 }
                 return token;
@@ -35,7 +35,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: any) {
         if (payload.uuid) {
             try {
-                const user = await this.userService.findOneByUUID(payload.uuid);
+                const user = await this.userService.findOneByUUID(
+                    payload.uuid,
+                    {},
+                    {},
+                );
                 return { user };
             } catch {
                 throw InvalidJwtTokenException;

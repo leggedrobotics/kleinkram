@@ -9,10 +9,10 @@ import { DefineComponent } from 'vue';
  * always not clickable.
  *
  */
-export type PageBreadCrumb = {
+export interface PageBreadCrumb {
     displayName: string;
     to: string | undefined;
-};
+}
 
 /**
  * Helper function to create a route with a layout.
@@ -25,7 +25,7 @@ export const routeWithLayout = (component: {
     layout: () => Promise<typeof import('*.vue')> | DefineComponent;
 }) => {
     return {
-        name: component.name + 'Layout',
+        name: `${component.name}Layout`,
         path: component.path,
         routeName: component.name,
         breadcrumbs: component.breadcrumbs,

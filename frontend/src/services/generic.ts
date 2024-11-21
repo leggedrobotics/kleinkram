@@ -1,4 +1,3 @@
-import { FileEntity } from 'src/types/FileEntity';
 import { downloadFile } from 'src/services/queries/file';
 import {
     AccessGroupRights,
@@ -37,7 +36,7 @@ export const accessGroupRightsMap = {
 export function getAccessRightDescription(
     value: AccessGroupRights | undefined,
 ): string {
-    if (value === undefined) {
+    if (value === undefined || value === AccessGroupRights._ADMIN) {
         return 'Unknown';
     }
     return accessGroupRightsMap[value];

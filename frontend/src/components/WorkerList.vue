@@ -26,7 +26,7 @@
 
         <div class="q-mt-xs">
             <template
-                v-for="singleWorker in worker"
+                v-for="singleWorker in workers"
                 :key="singleWorker.hostname"
             >
                 <q-card class="full-width q-pa-md" flat>
@@ -157,32 +157,28 @@
 </template>
 
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query';
-import { allWorkers } from 'src/services/queries/worker';
 import { computed, ComputedRef, ref, watch } from 'vue';
-import { Worker } from 'src/types/Worker';
+import { useWorkers } from '../hooks/customQueryHooks';
+import { WorkerDto } from '@api/types/Workers.dto';
 
-const { data: _worker } = useQuery({
-    queryKey: ['worker'],
-    queryFn: () => allWorkers(),
-    refetchInterval: 10000,
+const { data: _workers } = useWorkers();
+
+const workers: ComputedRef<WorkerDto[]> = computed(() => {
+    if (!_workers.value?.workers) return [];
+    return _workers.value.workers;
 });
-const worker: ComputedRef<Worker[]> = computed(() => {
-    if (!_worker.value) return [];
-    return _worker.value[0];
-});
-const online = computed(() => worker.value.filter((w) => w.reachable));
-const offline = computed(() => worker.value.filter((w) => !w.reachable));
+const online = computed(() => workers.value.filter((w) => w.reachable));
+const offline = computed(() => workers.value.filter((w) => !w.reachable));
 const extendedWorkers = ref({} as Record<string, boolean>);
 watch(
-    () => worker.value,
+    () => workers.value,
     () => {
-        extendedWorkers.value = worker.value.reduce(
+        extendedWorkers.value = workers.value.reduce<Record<string, boolean>>(
             (acc, w) => {
                 acc[w.uuid] = !!extendedWorkers.value[w.uuid];
                 return acc;
             },
-            {} as Record<string, boolean>,
+            {},
         );
     },
     { immediate: true },

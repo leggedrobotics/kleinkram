@@ -18,7 +18,7 @@ import {
     SecurityOpt,
 } from '../helper/ContainerConfigs';
 
-export type ContainerLimits = {
+export interface ContainerLimits {
     /**
      * The maximum runtime of the container in milliseconds.
      */
@@ -35,7 +35,7 @@ export type ContainerLimits = {
      * The maximum disk space the container can use in bytes.
      */
     disk_quota: number;
-};
+}
 
 const defaultContainerLimitations: ContainerLimits = {
     max_runtime: 60 * 60 * 1_000, // 1 hour
@@ -44,11 +44,9 @@ const defaultContainerLimitations: ContainerLimits = {
     disk_quota: 40737418240,
 };
 
-export type ContainerEnv = {
-    [key: string]: string;
-};
+export type ContainerEnv = Record<string, string>;
 
-export type ContainerStartOptions = {
+export interface ContainerStartOptions {
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
@@ -56,7 +54,7 @@ export type ContainerStartOptions = {
     environment?: ContainerEnv;
     command?: string;
     entrypoint?: string;
-};
+}
 
 export const dockerDaemonErrorHandler = (error: Error) => {
     logger.error(error.message);
@@ -276,9 +274,9 @@ export class DockerDaemon {
                 username: process.env.DOCKER_HUB_USERNAME,
             },
         });
-        return new Promise((res) =>
-            this.docker.modem.followProgress(pullStream, res),
-        );
+        return new Promise((res) => {
+            this.docker.modem.followProgress(pullStream, res);
+        });
     }
 
     @tracing()
@@ -420,11 +418,17 @@ export class DockerDaemon {
                             sanitizeCallback,
                         ),
                     )
-                    .forEach((logEntry) => observer.next(logEntry));
+                    .forEach((logEntry) => {
+                        observer.next(logEntry);
+                    });
             });
 
-            dockerodeLogStream.on('end', () => observer.complete());
-            dockerodeLogStream.on('error', (error) => observer.error(error));
+            dockerodeLogStream.on('end', () => {
+                observer.complete();
+            });
+            dockerodeLogStream.on('error', (error) => {
+                observer.error(error);
+            });
         });
     }
 
@@ -464,7 +468,7 @@ export class DockerDaemon {
             );
 
             logger.info(
-                // eslint-disable-next-line @typescript-eslint/no-base-to-string,@typescript-eslint/restrict-template-expressions
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Image pulled: ${pullRes}. Starting container...`,
             );
             image = this.docker.getImage(artifactUploaderImage);
@@ -495,10 +499,10 @@ export class DockerDaemon {
         logger.info('Creating artifact uploader container...');
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
-            name: 'kleinkram-artifact-uploader-' + containerId,
+            name: `kleinkram-artifact-uploader-${containerId}`,
             Env: [
-                'DRIVE_PARENT_FOLDER_ID=' + parentFolder,
-                'GOOGLE_KEY=' + googleKey,
+                `DRIVE_PARENT_FOLDER_ID=${parentFolder}`,
+                `GOOGLE_KEY=${googleKey}`,
             ],
 
             HostConfig: {

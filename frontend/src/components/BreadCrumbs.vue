@@ -78,12 +78,12 @@ const { data: file } = useQuery({
 });
 
 const resolved_crumbs = computed(() => {
-    let _crumbs = crumbs.value?.map((crumb: PageBreadCrumb) => {
+    let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
                 ?.replace(':project_uuid', project_uuid.value)
-                ?.replace(':mission_uuid', mission_uuid.value)
-                ?.replace(':file_uuid', file_uuid.value),
+                .replace(':mission_uuid', mission_uuid.value)
+                .replace(':file_uuid', file_uuid.value),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name || '')
                 .replace(':mission_name', mission.value?.name || '')
@@ -111,7 +111,7 @@ const resolved_crumbs = computed(() => {
 });
 
 const isClickable = (crumb: PageBreadCrumb) => {
-    const idx = crumbs.value?.findIndex(
+    const idx = crumbs.value.findIndex(
         (c: PageBreadCrumb) => c.displayName === crumb.displayName,
     );
     return idx !== crumbs.value.length - 1 && !!crumb.to;

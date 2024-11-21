@@ -9,17 +9,17 @@ import { AccessGroupRights } from '../../frontend_shared/enum';
 @Entity()
 export default class ProjectAccess extends BaseEntity {
     @Column()
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 
     @ManyToOne(() => AccessGroup, (group) => group.project_accesses, {
         nullable: false,
     })
-    accessGroup: AccessGroup;
+    accessGroup?: AccessGroup;
 
     @ManyToOne(() => Project, (project) => project.project_accesses, {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         nullable: false,
     })
-    project: Project;
+    project?: Project;
 }

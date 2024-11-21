@@ -307,7 +307,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         const bucket = getBucketFromFileType(fileType);
         const minioObjects = internalMinio.listObjects(bucket, ''); // ObjectStream
 
-        const minioObjectNamesSet: Set<string> = new Set(
+        const minioObjectNamesSet = new Set<string>(
             await minioObjects.map((obj) => obj.name as string).toArray(),
         ); // Set of UUIDs
 

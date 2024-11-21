@@ -10,7 +10,7 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalString,
     QuerySkip,
@@ -25,7 +25,7 @@ import {
 } from './entities/createTemplate.dto';
 import { ParamUUID } from '../validation/paramDecorators';
 import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { ListOfActionDto } from '@common/api/types/ListOfActionDto.dto';
+import { ListOfActionDto } from '@common/api/types/ListOfAction.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -51,40 +51,47 @@ export class ActionController {
     })
     async createActionRun(
         @Body() dto: SubmitActionDto,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ): Promise<ActionSubmitResponseDto> {
         return this.actionService.submit(dto, user);
     }
 
     @Delete(':uuid')
     @CanDeleteAction()
+    @ApiOkResponse({
+        description: 'True if the action was deleted',
+        type: Boolean,
+    })
     async deleteAction(@ParamUUID('uuid') uuid: string): Promise<boolean> {
         return this.actionService.delete(uuid);
     }
 
     @Post('multiSubmit')
     @CanCreateActions()
+    // TODO: type API response
     async multiSubmit(
         @Body() dto: SubmitActionMulti,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.actionService.multiSubmit(dto, user);
     }
 
     @Post('createTemplate')
     @CanCreate()
+    // TODO: type API response
     async createTemplate(
         @Body() dto: CreateTemplateDto,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.actionService.createTemplate(dto, user);
     }
 
     @Post('createNewVersion')
     @CanCreate()
+    // TODO: type API response
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.actionService.createNewVersion(dto, user);
     }
@@ -100,7 +107,7 @@ export class ActionController {
     })
     async list(
         @Query() dto: ActionQuery,
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy: string,
@@ -110,7 +117,7 @@ export class ActionController {
             'Searchkey in name, state_cause or image_name',
         )
         search: string,
-    ) {
+    ): Promise<ListOfActionDto> {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
             missionUuid = auth.apikey.mission.uuid;
@@ -129,8 +136,9 @@ export class ActionController {
 
     @Get('running')
     @UserOnly()
+    // TODO: type API response
     async runningActions(
-        @addUser() auth: AuthRes,
+        @AddUser() auth: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
     ) {
@@ -139,8 +147,9 @@ export class ActionController {
 
     @Get('listTemplates')
     @LoggedIn()
+    // TODO: type API response
     async listTemplates(
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('search', 'Searchkey in name') search: string,
@@ -150,6 +159,7 @@ export class ActionController {
 
     @Get('details')
     @CanReadAction()
+    // TODO: type API response
     async details(@QueryUUID('uuid', 'ActionUUID') uuid: string) {
         return this.actionService.details(uuid);
     }

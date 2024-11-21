@@ -381,7 +381,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             queueEntity.display_name = `Google Drive Folder: '${originalFileName}'`;
             await this.queueRepository.save(queueEntity);
 
-            return await this.processDriveFolder(job, queueEntity);
+            await this.processDriveFolder(job, queueEntity);
+            return;
         }
         // it's a file, process it
         logger.debug(

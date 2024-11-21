@@ -40,7 +40,6 @@ import ConfigureTags from 'components/ConfigureMetadata.vue';
 import { getProject } from 'src/services/queries/project';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
-import { TagType } from 'src/types/TagType';
 import { updateTagTypes } from 'src/services/mutations/project';
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
@@ -89,7 +88,7 @@ const { mutate } = useMutation({
     },
     onError(error) {
         Notify.create({
-            message: 'Error adding TagTypes: ' + error.message,
+            message: `Error adding TagTypes: ${error.message}`,
             color: 'negative',
             position: 'bottom',
         });

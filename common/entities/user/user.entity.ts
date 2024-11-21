@@ -22,7 +22,7 @@ export default class User extends BaseEntity {
      * @example 'John Doe'
      */
     @Column()
-    name: string;
+    name!: string;
 
     /**
      * The email of the user. This is the email that will be displayed in the UI.
@@ -34,7 +34,7 @@ export default class User extends BaseEntity {
      *
      */
     @Column({ unique: true, select: false, update: false })
-    email: string;
+    email?: string;
 
     /**
      * The role of the user. The role determines what the user can do in the application.
@@ -50,7 +50,7 @@ export default class User extends BaseEntity {
         enum: UserRole,
         default: UserRole.USER,
     })
-    role: UserRole;
+    role?: UserRole;
 
     /**
      * A hidden user is not returned in any search queries.
@@ -62,7 +62,7 @@ export default class User extends BaseEntity {
         select: false,
         default: false,
     })
-    hidden: boolean;
+    hidden?: boolean;
 
     /**
      * The avatar url of the user. This is the url of the avatar that will be displayed in the UI.
@@ -71,42 +71,42 @@ export default class User extends BaseEntity {
      * @example 'https://example.com/avatar.jpg'
      */
     @Column({ nullable: true })
-    avatarUrl: string;
+    avatarUrl?: string;
 
     @OneToOne(() => Account, (account) => account.user)
     @JoinColumn({ name: 'account_uuid' })
-    account: Account;
+    account?: Account;
 
     @OneToMany(() => GroupMembership, (membership) => membership.user)
-    memberships: GroupMembership[];
+    memberships?: GroupMembership[];
 
     @OneToMany(() => Project, (project) => project.creator)
-    projects: Project[];
+    projects?: Project[];
 
     @OneToMany(() => Mission, (mission) => mission.creator)
-    missions: Mission[];
+    missions?: Mission[];
 
     @OneToMany(() => FileEntity, (file) => file.creator)
-    files: FileEntity[];
+    files?: FileEntity[];
 
     @OneToMany(() => QueueEntity, (queue) => queue.creator)
-    queues: QueueEntity[];
+    queues?: QueueEntity[];
 
     @OneToMany(() => Action, (action) => action.mission)
-    submittedActions: Action[];
+    submittedActions?: Action[];
 
     @OneToMany(
         () => ActionTemplate,
         (actionTemplate) => actionTemplate.createdBy,
     )
-    templates: ActionTemplate[];
+    templates?: ActionTemplate[];
 
     @OneToMany(() => Tag, (tag) => tag.creator)
-    tags: Tag[];
+    tags?: Tag[];
 
     @OneToMany(() => Apikey, (apikey) => apikey.user)
-    api_keys: Apikey[];
+    api_keys?: Apikey[];
 
     @OneToMany(() => Category, (category) => category.creator)
-    categories: Category[];
+    categories?: Category[];
 }

@@ -149,7 +149,6 @@ import ROUTES from 'src/router/routes';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useIsUploading, useUser } from 'src/hooks/customQueryHooks';
 import { computed, inject, Ref, ref, watch } from 'vue';
-import { FileUpload } from 'src/types/FileUpload';
 import HeaderCreateNewMenu from 'components/header/HeaderCreateNewMenu.vue';
 import HeaderProfileMenu from 'components/header/HeaderProfileMenu.vue';
 import DocumentationIcon from 'components/DocumentationIcon.vue';
@@ -165,7 +164,7 @@ watch(is_uploading, () =>
     }),
 );
 
-const uploads = inject('uploads') as Ref<Ref<FileUpload>[]>;
+const uploads = inject('uploads')!;
 
 const uploads_without_completed = computed(() =>
     uploads.value.filter((upload) => upload.value.getProgress() < 1),

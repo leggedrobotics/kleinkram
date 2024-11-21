@@ -8,8 +8,6 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Category } from 'src/types/Category';
-import { FileEntity } from 'src/types/FileEntity';
 
 import CategorySelector from 'components/CategorySelector.vue';
 

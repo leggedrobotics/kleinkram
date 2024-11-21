@@ -112,8 +112,6 @@ import { computed, ref } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ActionsTable from 'components/ActionsTable.vue';
-import { Project } from 'src/types/Project';
-import { Mission } from 'src/types/Mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import ButtonGroup from 'components/ButtonGroup.vue';
@@ -150,7 +148,9 @@ const selectedMission = computed(() =>
 );
 const search = computed({
     get: () => handler.value.searchParams.name,
-    set: (value) => handler.value.setSearch({ name: value }),
+    set: (value) => {
+        handler.value.setSearch({ name: value });
+    },
 });
 
 const canCreate = computed(() =>

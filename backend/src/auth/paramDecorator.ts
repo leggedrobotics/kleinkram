@@ -2,14 +2,23 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import User from '@common/entities/user/user.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 
-export const addUser = createParamDecorator(
-    (data: unknown, ctx: ExecutionContext) => {
-        const request = ctx.switchToHttp().getRequest();
-        return request.user || null;
-    },
-);
+/**
+ * Decorator to get the user from the request.
+ *
+ * Throws an error if the user is not authenticated.
+ *
+ */
+export const AddUser = createParamDecorator((_, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
 
-export class AuthRes {
+    if (request.user === undefined || request.user === null) {
+        throw new Error('User not authenticated');
+    }
+
+    return request.user;
+});
+
+export interface AuthRes {
     user: User;
-    apikey: Apikey;
+    apikey?: Apikey;
 }

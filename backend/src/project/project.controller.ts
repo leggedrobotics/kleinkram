@@ -27,7 +27,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
 import Project from '@common/entities/project/project.entity';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
@@ -47,14 +47,14 @@ export class ProjectController {
             'Get all projects with optional search, filter, and pagination options',
     })
     async allProjects(
-        @addUser()
+        @AddUser()
         authRes: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QuerySortBy('sortBy') sortBy?: string,
-        @QuerySortDirection('sortDirection') sortDirection?: 'ASC' | 'DESC',
+        @QuerySortBy('sortBy') sortBy: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryProjectSearchParam('searchParams', 'search name and creator')
-        searchParams?: Map<string, string>,
+        searchParams: Map<string, string>,
     ) {
         return this.projectService.findAll(
             authRes.user,
@@ -79,7 +79,7 @@ export class ProjectController {
     })
     async getRecentProjects(
         @QueryTake('take') take: number,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ): Promise<ResentProjectsDto> {
         return {
             projects: await this.projectService.getRecentProjects(
@@ -108,7 +108,7 @@ export class ProjectController {
 
     @Post('create')
     @CanCreate()
-    async createProject(@Body() dto: CreateProject, @addUser() user?: AuthRes) {
+    async createProject(@Body() dto: CreateProject, @AddUser() user: AuthRes) {
         return this.projectService.create(dto, user);
     }
 
@@ -168,7 +168,7 @@ export class ProjectController {
         type: DefaultRightsDto,
     })
     async getDefaultRights(
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ): Promise<DefaultRightsDto> {
         return this.projectService.getDefaultRights(user);
     }

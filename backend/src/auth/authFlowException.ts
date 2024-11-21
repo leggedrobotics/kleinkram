@@ -15,11 +15,24 @@ export class AuthFlowException extends UnauthorizedException {
 
 @Catch(AuthFlowException)
 export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
-    public catch(exception: AuthFlowException, host: ArgumentsHost) {
+    frontendUrl: string;
+
+    constructor() {
+        logger.debug('AuthFlowExceptionRedirectFilter created');
+
+        const frontendUrl = process.env['FRONTEND_URL'];
+        if (frontendUrl === undefined) {
+            throw new Error('FRONTEND_URL env var not set');
+        }
+
+        this.frontendUrl = frontendUrl;
+    }
+
+    public catch(exception: AuthFlowException, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         logger.debug(`Redirecting to login with error: ${exception.message}`);
-        const redirectUrl = `${process.env.FRONTEND_URL}/login?error_state=auth_flow_failed&error_msg=${exception.message}`;
-        return response.redirect(302, redirectUrl);
+        const redirectUrl = `${this.frontendUrl}/login?error_state=auth_flow_failed&error_msg=${exception.message}`;
+        response.redirect(302, redirectUrl);
     }
 }

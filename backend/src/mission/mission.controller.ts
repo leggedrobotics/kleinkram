@@ -11,7 +11,7 @@ import {
     CanWriteMissionByBody,
     UserOnly,
 } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import {
     QueryOptionalString,
     QuerySkip,
@@ -34,7 +34,7 @@ export class MissionController {
     @CanCreateInProjectByBody()
     async createMission(
         @Body() createMission: CreateMission,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.missionService.create(createMission, user);
     }
@@ -46,7 +46,7 @@ export class MissionController {
         @Body('name') name: string,
     ) {
         // validate name
-        if (MISSION_NAME_REGEX.test(name) === false) {
+        if (!MISSION_NAME_REGEX.test(name)) {
             throw new Error('Invalid name');
         }
 
@@ -62,16 +62,16 @@ export class MissionController {
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.missionService.findMissionByProjectMinimal(
+            user.user.uuid,
             uuid,
             skip,
             take,
             search,
             sortDirection,
             sortBy,
-            user.user.uuid,
         );
     }
 
@@ -84,16 +84,16 @@ export class MissionController {
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.missionService.findMissionByProject(
+            user.user,
             uuid,
             skip,
             take,
             search,
             sortDirection,
             sortBy,
-            user.user,
         );
     }
 
@@ -106,7 +106,7 @@ export class MissionController {
     @Get('all')
     @UserOnly()
     async allMissions(
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -134,7 +134,7 @@ export class MissionController {
         @QueryString('projectName', 'Project Name') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
     ) {
         return this.missionService.filteredByProjectName(
             projectName,

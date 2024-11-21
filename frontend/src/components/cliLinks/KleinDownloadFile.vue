@@ -39,8 +39,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { FileEntity } from 'src/types/FileEntity';
-
 const props = defineProps<{
     file: FileEntity;
 }>();

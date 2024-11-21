@@ -24,7 +24,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 const packageJson: Record<string, string> = JSON.parse(
     fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
 ) as Record<string, string>;
-export const appVersion: string = packageJson.version;
+export const appVersion: string = packageJson['version'] ?? '';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -39,7 +39,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
                     statusCode: 400,
-                    message: resp['message'] as string,
+                    message: resp.message as string,
                 });
                 return;
             }

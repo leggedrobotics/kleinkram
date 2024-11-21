@@ -9,41 +9,41 @@ import { AccessGroupRights } from '../../frontend_shared/enum';
 @Unique('unique_versioned_action_name', ['name', 'version'])
 export default class ActionTemplate extends BaseEntity {
     @Column()
-    image_name: string;
+    image_name!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
     @ManyToOne(() => User, (user) => user.templates)
-    createdBy: User;
+    createdBy!: User;
 
     @Column({ nullable: true })
-    command: string;
+    command?: string;
 
     @OneToMany(() => Action, (action) => action.template)
-    actions: Action[];
+    actions?: Action[];
 
     @Column({ default: 1 })
-    version: number;
+    version!: number;
 
     @Column({ default: false })
-    searchable: boolean;
+    searchable!: boolean;
 
     @Column()
-    cpuCores: number;
+    cpuCores!: number;
 
     @Column()
-    cpuMemory: number;
+    cpuMemory!: number;
 
     @Column()
-    gpuMemory: number;
+    gpuMemory!: number;
 
     @Column()
-    maxRuntime: number; // in hours
+    maxRuntime!: number; // in hours
 
     @Column({ nullable: true })
-    entrypoint: string;
+    entrypoint?: string;
 
     @Column()
-    accessRights: AccessGroupRights;
+    accessRights!: AccessGroupRights;
 }

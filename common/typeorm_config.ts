@@ -1,22 +1,22 @@
 import Env from './env';
 
-type DatabaseConfig = {
+interface DatabaseConfig {
     host: string;
     port: number;
     username: string;
     password: string;
     database: string;
-};
+}
 
-type ServerConfig = {
+interface ServerConfig {
     port: number | undefined;
-};
+}
 
-type TypeormConfig = {
+interface TypeormConfig {
     server: ServerConfig;
     entities: string;
     database: DatabaseConfig;
-};
+}
 
 export default (): TypeormConfig => ({
     server: {

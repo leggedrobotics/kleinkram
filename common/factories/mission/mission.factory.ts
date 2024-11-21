@@ -4,10 +4,10 @@ import Mission from '../../entities/mission/mission.entity';
 import User from '../../entities/user/user.entity';
 import { extendedFaker } from '../../faker_extended';
 
-export type MissionContext = {
+export interface MissionContext {
     project: Project;
     user: User;
-};
+}
 
 define(Mission, (_, context: Partial<MissionContext> = {}) => {
     const mission = new Mission();

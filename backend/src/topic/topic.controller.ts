@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { TopicService } from './topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
-import { addUser, AuthRes } from '../auth/paramDecorator';
+import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { QuerySkip, QueryTake } from '../validation/queryDecorators';
 
 @Controller('topic')
@@ -11,7 +11,7 @@ export class TopicController {
     @Get('all')
     @LoggedIn()
     async allTopics(
-        @addUser() user: AuthRes,
+        @AddUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -20,7 +20,7 @@ export class TopicController {
 
     @Get('names')
     @LoggedIn()
-    async allNames(@addUser() user: AuthRes) {
+    async allNames(@AddUser() user: AuthRes) {
         return await this.topicService.findAllNames(user.user.uuid);
     }
 }

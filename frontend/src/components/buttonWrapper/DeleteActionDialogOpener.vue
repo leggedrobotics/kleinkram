@@ -26,7 +26,6 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed, ref, watchEffect } from 'vue';
 import DeleteActionDialog from 'src/dialogs/DeleteActionDialog.vue';
-import { Action } from 'src/types/Action';
 import { getMe } from 'src/services/queries/user';
 import { ActionState } from '@common/enum';
 

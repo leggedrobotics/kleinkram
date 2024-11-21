@@ -1,5 +1,5 @@
 export function formatSize(val: number, base = 1000, precision = 2): string {
-    return formatGenericNumber(val, base, precision) + 'B';
+    return `${formatGenericNumber(val, base, precision)}B`;
 }
 
 export function formatGenericNumber(

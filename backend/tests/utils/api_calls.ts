@@ -17,7 +17,7 @@ export const createProjectUsingPost = async (
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await getJwtToken(user)}`,
+            cookie: `authtoken=${getJwtToken(user)}`,
         },
         body: JSON.stringify(project),
         credentials: 'include',
@@ -36,7 +36,7 @@ export const createMissionUsingPost = async (
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await getJwtToken(user)}`,
+            cookie: `authtoken=${getJwtToken(user)}`,
         },
         body: JSON.stringify({
             name: mission.name,
@@ -88,8 +88,8 @@ export async function uploadFile(
     const fileResponse = json[0];
 
     expect(fileResponse).toBeDefined();
-    expect(fileResponse['bucket']).toBe('bags');
-    expect(fileResponse['fileUUID']).toBeDefined();
+    expect(fileResponse.bucket).toBe('bags');
+    expect(fileResponse.fileUUID).toBeDefined();
 
     // open file from fixtures
     const file = fs.readFileSync(`./tests/fixtures/${filename}`);
@@ -114,8 +114,8 @@ export async function uploadFile(
 
     const resi = await uploadFileMultipart(
         fileFile,
-        fileResponse['bucket'],
-        fileResponse['fileUUID'],
+        fileResponse.bucket,
+        fileResponse.fileUUID,
         minioClient,
     );
     expect(resi).toBeDefined();
@@ -131,7 +131,7 @@ export async function uploadFile(
                 cookie: `authtoken=${await getJwtToken(user)}`,
             },
             body: JSON.stringify({
-                uuid: fileResponse['fileUUID'],
+                uuid: fileResponse.fileUUID,
                 md5: hash.digest('base64'),
             }),
         },
@@ -151,7 +151,7 @@ export async function uploadFile(
         if (
             active.find(
                 (x: QueueEntity) =>
-                    x.uuid === fileResponse['queueUUID'] &&
+                    x.uuid === fileResponse.queueUUID &&
                     x.state === QueueState.COMPLETED,
             )
         ) {

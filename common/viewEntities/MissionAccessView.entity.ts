@@ -22,17 +22,17 @@ import { AccessGroupRights } from '../frontend_shared/enum';
 })
 export class MissionAccessViewEntity {
     @ViewColumn({ name: 'missionuuid' })
-    missionUUID: string;
+    missionUUID!: string;
 
     @ViewColumn({ name: 'useruuid' })
-    userUUID: string;
+    userUUID!: string;
 
     @ViewColumn({ name: 'rights' })
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 
     @ViewColumn({ name: 'accessgroupuuid' })
-    accessGroupUUID: string;
+    accessGroupUUID!: string;
 
     @ViewColumn({ name: 'missionaccessuuid' })
-    missionAccessUUID: string;
+    missionAccessUUID!: string;
 }

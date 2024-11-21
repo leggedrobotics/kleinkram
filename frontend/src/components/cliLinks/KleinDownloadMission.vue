@@ -31,8 +31,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Mission } from 'src/types/Mission';
-
 const props = defineProps<{
     mission: Mission;
 }>();

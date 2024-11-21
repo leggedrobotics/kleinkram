@@ -248,11 +248,11 @@ export class ProjectService {
         return res
             .map((project: Project) => {
                 return {
-                    name: project['project_name'] as string,
-                    uuid: project['project_uuid'] as string,
-                    description: project['project_description'] as string,
-                    updatedAt: project['latestUpdate'] as Date,
-                    createdAt: project['project_createdAt'] as Date,
+                    name: project.project_name as string,
+                    uuid: project.project_uuid as string,
+                    description: project.project_description as string,
+                    updatedAt: project.latestUpdate as Date,
+                    createdAt: project.project_createdAt as Date,
                 } as ResentProjectDto;
             })
             .sort(
@@ -408,9 +408,9 @@ export class ProjectService {
         const missionCount = project.missions.length;
         if (missionCount > 0) {
             throw new ConflictException(
-                'Project has ' +
-                    missionCount +
-                    ' missions. Please delete them first.',
+                `Project has ${
+                    missionCount
+                } missions. Please delete them first.`,
             );
         }
 

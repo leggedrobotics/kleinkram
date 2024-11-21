@@ -3,7 +3,7 @@
         ref="tableRef"
         v-model:pagination="pagination"
         :rows="data"
-        :columns="columns"
+        :columns="columns as any"
         :rows-per-page-options="[10, 20, 50, 100]"
         row-key="uuid"
         :loading="loading"
@@ -119,13 +119,13 @@ const { data: rawData, isLoading } = useQuery<[Action[], number]>({
     queryKey: actionKey,
     queryFn: () =>
         getActions(
-            props.handler.projectUuid as string,
-            props.handler.missionUuid as string,
+            props.handler.projectUuid!,
+            props.handler.missionUuid!,
             props.handler.take,
             props.handler.skip,
             props.handler.sortBy,
             props.handler.descending,
-            props.handler.searchParams['name'],
+            props.handler.searchParams.name,
         ),
     staleTime: 0,
     refetchInterval: 4000,
@@ -135,19 +135,19 @@ const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 
 function setPagination(update: TableRequest) {
-    props.handler?.setPage(update.pagination.page);
-    props.handler?.setTake(update.pagination.rowsPerPage);
-    props.handler?.setSort(update.pagination.sortBy);
-    props.handler?.setDescending(update.pagination.descending);
+    props.handler.setPage(update.pagination.page);
+    props.handler.setTake(update.pagination.rowsPerPage);
+    props.handler.setSort(update.pagination.sortBy);
+    props.handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
         page: props.handler.page,
         rowsPerPage: props.handler.take,
-        rowsNumber: props.handler?.rowsNumber,
-        sortBy: props.handler?.sortBy,
-        descending: props.handler?.descending,
+        rowsNumber: props.handler.rowsNumber,
+        sortBy: props.handler.sortBy,
+        descending: props.handler.descending,
     };
 });
 
@@ -195,7 +195,7 @@ const columns = [
         sortable: false,
         field: (row: Action) =>
             row.template?.name
-                ? row.template.name + ' v' + row.template.version
+                ? `${row.template.name} v${row.template.version}`
                 : 'N/A',
     },
 

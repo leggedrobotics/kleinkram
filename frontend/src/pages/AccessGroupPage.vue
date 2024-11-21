@@ -68,7 +68,7 @@
                 bordered
                 separator="none"
                 :rows="project_rows"
-                :columns="project_cols"
+                :columns="project_cols as any"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
@@ -178,7 +178,7 @@
                 v-model:pagination="pagination2"
                 v-model:selected="selectedUsers"
                 :rows="accessGroup?.memberships || []"
-                :columns="user_cols"
+                :columns="user_cols as any"
                 style="margin-top: 8px"
                 selection="multiple"
                 row-key="uuid"
@@ -269,8 +269,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getAccessGroup } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
 import { computed, ComputedRef, ref, watch } from 'vue';
-import { explorerPageTableColumns } from 'components/explorer_page/explorer_page_table_columns';
-import { ProjectAccess } from 'src/types/ProjectAccess';
 import { Notify, QTable, useQuasar } from 'quasar';
 import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
 import TitleSection from 'components/TitleSection.vue';
@@ -283,10 +281,10 @@ import ROUTES from 'src/router/routes';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
-import { GroupMembership } from 'src/types/AccessGroupUser';
 import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
 import { AccessGroupRights } from '@common/enum';
+import { explorerPageTableColumns } from '../components/explorer_page/explorer_page_table_columns';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -460,7 +458,7 @@ const user_cols = [
         label: 'Name',
         align: 'left',
         field: (row: GroupMembership) => row.user?.name,
-        format: (val: string) => `${val}`,
+        format: (val: string) => val,
         style: 'width: 10%',
     },
     {
@@ -487,7 +485,7 @@ const user_cols = [
 ];
 
 const _rowClick = async (_uuid: string) => {
-    await router?.push({
+    await router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
             project_uuid: _uuid,

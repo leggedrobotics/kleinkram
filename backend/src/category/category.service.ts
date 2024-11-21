@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import Category from '@common/entities/category/category.entity';
 import { AuthRes } from '../auth/paramDecorator';
@@ -16,11 +16,11 @@ export class CategoryService {
     ) {}
 
     async getAll(projectUUID: string, filter?: string) {
-        const where = {
+        const where: FindOptionsWhere<Category> = {
             project: { uuid: projectUUID },
         };
         if (filter) {
-            where['name'] = ILike(`%${filter}%`);
+            where.name = ILike(`%${filter}%`);
         }
         return this.categoryRepository.findAndCount({
             where,

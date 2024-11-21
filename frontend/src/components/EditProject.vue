@@ -55,7 +55,6 @@
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
-import { Project } from 'src/types/Project';
 import { getProject } from 'src/services/queries/project';
 import { updateProject } from 'src/services/mutations/project';
 
@@ -113,16 +112,14 @@ async function save_changes(): Promise<void> {
     ).catch((error: Error) => {
         if (error.response.data.message.includes('Project')) {
             Notify.create({
-                message:
-                    'Error updating project: ' + error.response.data.message,
+                message: `Error updating project: ${error.response.data.message}`,
                 color: 'negative',
                 position: 'bottom',
                 timeout: 5000,
             });
         } else {
             Notify.create({
-                message:
-                    'Error updating project: ' + error.response.data.message,
+                message: `Error updating project: ${error.response.data.message}`,
                 color: 'negative',
                 position: 'bottom',
                 timeout: 5000,

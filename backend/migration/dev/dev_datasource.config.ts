@@ -4,15 +4,17 @@ import * as process from 'node:process';
 
 dotenv.config({ path: './migration/.env' });
 
-export function getConfig() {
+const dbPort: string | undefined = process.env['dev_port'];
+
+export function getConfig(): DataSourceOptions {
     return {
         type: 'postgres',
-        host: process.env.dev_dbhost,
-        port: parseInt(process.env.dev_port, 10),
-        ssl: process.env.dev_ssl === 'true',
-        username: process.env.dev_dbuser,
-        password: process.env.dev_dbpassword,
-        database: process.env.dev_dbname,
+        host: process.env['dev_dbhost'],
+        port: parseInt(dbPort ?? '5432', 10),
+        ssl: process.env['dev_ssl'] === 'true',
+        username: process.env['dev_dbuser'],
+        password: process.env['dev_dbpassword'],
+        database: process.env['dev_dbname'],
         synchronize: false,
         migrations: ['migration/dev/migrations/*.ts'],
         entities: [

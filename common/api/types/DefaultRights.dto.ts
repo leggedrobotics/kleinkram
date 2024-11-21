@@ -3,25 +3,25 @@ import { AccessGroupRights, AccessGroupType } from '../../frontend_shared/enum';
 
 export class DefaultRightDto {
     @ApiProperty()
-    name: string;
+    name!: string;
 
     @ApiProperty()
-    uuid: string;
+    uuid!: string;
 
     @ApiProperty()
-    type: AccessGroupType;
+    type!: AccessGroupType;
 
     @ApiProperty()
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 }
 
 export class DefaultRightsDto {
     @ApiProperty()
-    count: number;
+    count!: number;
 
     @ApiProperty({
         type: [DefaultRightDto],
         description: 'List of default rights',
     })
-    defaultRights: DefaultRightDto[];
+    defaultRights!: DefaultRightDto[];
 }

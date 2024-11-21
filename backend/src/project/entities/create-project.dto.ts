@@ -8,11 +8,11 @@ export class CreateProject {
     @IsNotEmpty()
     @IsValidName()
     @IsNoValidUUID()
-    name: string;
+    name!: string;
 
     @IsNotEmpty()
     @IsString()
-    description: string;
+    description!: string;
 
     @IsArray()
     @IsOptional()

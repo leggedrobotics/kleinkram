@@ -14,8 +14,8 @@
         </div>
         <q-table
             v-if="foundUsers && foundUsers.length > 0"
-            :rows="foundUsers || []"
-            :columns="columns"
+            :rows="(foundUsers as any) || ([] as any)"
+            :columns="columns as any"
             hide-bottom
             flat
             bordered
@@ -48,7 +48,7 @@
         <q-table
             v-if="foundAccessGroups && foundAccessGroups.length > 0"
             :rows="foundAccessGroups || []"
-            :columns="columns"
+            :columns="columns as any"
             hide-bottom
             flat
             bordered
@@ -82,10 +82,10 @@
 import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { useQuery } from '@tanstack/vue-query';
-import { searchUsers } from 'src/services/queries/user';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
+import { useUserSearch } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;
@@ -100,11 +100,7 @@ const options = Object.keys(accessGroupRightsMap).map((key) => ({
 const rights: Ref<Record<string, { label: string; value: AccessGroupRights }>> =
     ref({ ...props.existingRights });
 
-const searchUsersKey = computed(() => ['users', search.value]);
-const { data: foundUsers } = useQuery({
-    queryKey: searchUsersKey,
-    queryFn: () => searchUsers(search.value),
-});
+const { data: foundUsers } = useUserSearch(search);
 
 const searchAccessGroupsKey = computed(() => ['accessGroups', search.value]);
 const enabled = computed(() => search.value.length >= 2);

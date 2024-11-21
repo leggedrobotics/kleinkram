@@ -76,7 +76,7 @@ const getGpuModels = async () => {
         const docker = new Docker({ socketPath: '/var/run/docker.sock' });
         const info = await docker.info();
         const runtimes = info.Runtimes;
-        const hasNvidiaRuntime = runtimes && runtimes['nvidia'] !== undefined;
+        const hasNvidiaRuntime = runtimes && runtimes.nvidia !== undefined;
         if (!hasNvidiaRuntime) {
             logger.debug('No NVIDIA runtime found in Docker');
             return [];
@@ -89,8 +89,8 @@ const getGpuModels = async () => {
             try {
                 const fileContent = await readFile(filepath, 'utf8');
                 const modelRegex = /Model:\s*(.*)/;
-                const match = fileContent.match(modelRegex);
-                if (match && match[1]) {
+                const match = modelRegex.exec(fileContent);
+                if (match?.[1]) {
                     return match[1].trim();
                 }
                 return null; // In case the model information is not found

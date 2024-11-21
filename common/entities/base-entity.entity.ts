@@ -16,13 +16,13 @@ export default class BaseEntity {
      * Unique UUID for the entity
      */
     @PrimaryGeneratedColumn('uuid')
-    uuid: string;
+    uuid!: string;
 
     /**
      * Timestamp of when the entity was created
      */
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt!: Date;
 
     /**
      * Timestamp of when the entity was last updated

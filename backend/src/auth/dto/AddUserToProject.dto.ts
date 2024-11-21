@@ -6,12 +6,12 @@ import { AccessGroupRights } from '@common/frontend_shared/enum';
 
 export class AddUserToProjectDto {
     @ApiUUIDProperty('Access Group UUID')
-    uuid: string;
+    uuid!: string;
 
     @ApiUUIDProperty('User UUID')
-    userUUID: string;
+    userUUID!: string;
 
     @IsEnum(AccessGroupRights)
     @ApiProperty({ description: 'User Rights' })
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 }

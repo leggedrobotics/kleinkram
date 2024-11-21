@@ -5,10 +5,10 @@ import FileEntity from '../file/file.entity';
 @Entity()
 export default class Topic extends BaseEntity {
     @Column()
-    name: string;
+    name!: string;
 
     @Column()
-    type: string;
+    type!: string;
 
     @Column({
         type: 'bigint',
@@ -17,11 +17,11 @@ export default class Topic extends BaseEntity {
             from: (value: string) => parseInt(value, 10),
         },
     })
-    nrMessages: bigint;
+    nrMessages?: bigint;
 
     @Column('float')
-    frequency: number;
+    frequency!: number;
 
     @ManyToOne(() => FileEntity, (file) => file.topics, { onDelete: 'CASCADE' })
-    file: FileEntity;
+    file?: FileEntity;
 }

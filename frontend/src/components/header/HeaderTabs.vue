@@ -61,7 +61,7 @@ const { main_menu } = defineProps<{
 
 const route = useRoute();
 const path = computed(() => {
-    const nameWithPostfix = (route.name as string) + 'Layout';
+    const nameWithPostfix = `${route.name as string}Layout`;
     const menu_item = main_menu.find((item) =>
         item.subpage_names.includes(nameWithPostfix),
     );

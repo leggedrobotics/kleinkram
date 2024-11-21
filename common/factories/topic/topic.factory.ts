@@ -3,9 +3,9 @@ import FileEntity from '../../entities/file/file.entity';
 import Topic from '../../entities/topic/topic.entity';
 import { extendedFaker } from '../../faker_extended';
 
-export type TopicContext = {
+export interface TopicContext {
     file: FileEntity;
-};
+}
 
 define(Topic, (_, context: Partial<TopicContext> = {}) => {
     const topic = new Topic();

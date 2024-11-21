@@ -9,12 +9,12 @@ export default class GroupMembership extends BaseEntity {
     @ManyToOne(() => AccessGroup, (group) => group.project_accesses, {
         onDelete: 'CASCADE',
     })
-    accessGroup: AccessGroup;
+    accessGroup?: AccessGroup;
 
     @ManyToOne(() => User, (user) => user.memberships, {
         onDelete: 'CASCADE',
     })
-    user: User;
+    user?: User;
 
     /**
      * The expiration date of the group membership.
@@ -27,7 +27,7 @@ export default class GroupMembership extends BaseEntity {
      *
      */
     @Column({ nullable: true, default: null })
-    expirationDate: Date;
+    expirationDate!: Date | null;
 
     /**
      * If the user is a group admin, they can manage the group.
@@ -35,5 +35,5 @@ export default class GroupMembership extends BaseEntity {
      *
      */
     @Column({ default: false })
-    canEditGroup: boolean;
+    canEditGroup!: boolean;
 }

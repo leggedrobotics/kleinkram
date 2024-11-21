@@ -1,5 +1,4 @@
 import axios from 'src/api/axios';
-import { Mission } from 'src/types/Mission';
 
 export const createMission = async (
     name: string,

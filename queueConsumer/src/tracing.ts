@@ -101,12 +101,15 @@ export const traceWrapper =
                             span.recordException(e);
                             span.setAttribute('error', true);
                         })
-                        .finally(() => span.end());
+                        .finally(() => {
+                            span.end();
+                        });
             } catch (e) {
                 span.recordException(e as Exception);
                 span.setAttribute('error', true);
                 throw e;
             } finally {
+                // @ts-ignore
                 if (!(result instanceof Promise)) span.end();
             }
 
@@ -121,7 +124,7 @@ export const traceWrapper =
  *
  */
 export function tracing<A extends unknown[], C>(
-    traceName: string = undefined,
+    traceName: string = '',
 ):
     | (MethodDecorator & ClassDecorator)
     | ((
@@ -129,6 +132,7 @@ export function tracing<A extends unknown[], C>(
           propertyKey?: string | symbol,
           descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
       ) => void) {
+    // @ts-ignore
     return function (
         target: new (...args: A) => C,
         propertyKey?: string | symbol,
@@ -143,6 +147,7 @@ export function tracing<A extends unknown[], C>(
         ): ((...args: A) => C) => {
             return function (...args: A): C {
                 return traceWrapper(
+                    // @ts-ignore
                     originalMethod.bind(this),
                     traceName,
                 )(...args) as C;
@@ -166,6 +171,7 @@ export function tracing<A extends unknown[], C>(
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method
+            // @ts-ignore
             const originalMethod: (...args: A) => C = descriptor.value;
             if (typeof originalMethod === 'function') {
                 descriptor.value = applyWrap(propertyKey, originalMethod);

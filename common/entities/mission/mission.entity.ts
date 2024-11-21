@@ -13,31 +13,31 @@ import Action from '../action/action.entity';
 @Entity()
 export default class Mission extends BaseEntity {
     @Column()
-    name: string;
+    name!: string;
 
     @ManyToOne(() => Project, (project) => project.missions, {
         nullable: false,
     })
-    project: Project;
+    project?: Project;
 
     @OneToMany(() => FileEntity, (file) => file.mission)
-    files: FileEntity[];
+    files?: FileEntity[];
 
     @OneToMany(() => Action, (action) => action.mission)
-    actions: Action[];
+    actions?: Action[];
 
     @OneToMany(() => QueueEntity, (queue) => queue.mission)
-    queues: QueueEntity[];
+    queues?: QueueEntity[];
 
     @ManyToOne(() => User, (user) => user.missions, { nullable: false })
-    creator: User;
+    creator?: User;
 
     @OneToMany(() => Apikey, (apiKey) => apiKey.mission)
-    api_keys: Apikey[];
+    api_keys?: Apikey[];
 
     @OneToMany(() => MissionAccess, (missionAccess) => missionAccess.mission)
-    mission_accesses: MissionAccess[];
+    mission_accesses?: MissionAccess[];
 
     @OneToMany(() => Tag, (tag) => tag.mission)
-    tags: Tag[];
+    tags?: Tag[];
 }

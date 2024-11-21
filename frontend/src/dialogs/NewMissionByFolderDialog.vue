@@ -116,11 +116,8 @@ import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Project } from 'src/types/Project';
 import { getProject } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
-import { Mission } from 'src/types/Mission';
-import { FileUpload } from 'src/types/FileUpload';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { createFileAction } from 'src/services/fileService';
 
@@ -141,7 +138,7 @@ const files = ref<File[]>([]);
 const { data: project, refetch }: { data: Ref<Project>; refetch } =
     useQuery<Project>({
         queryKey: computed(() => ['project', project_uuid]),
-        queryFn: () => getProject(project_uuid.value as string),
+        queryFn: () => getProject(project_uuid.value!),
         enabled: computed(() => !!project_uuid.value),
     });
 
@@ -151,12 +148,12 @@ watch(project_uuid, () => refetch());
 const missionName = ref('');
 const isInErrorState = ref(false);
 const errorMessage = ref('');
-const uploadingFiles = ref<Record<string, Record<string, string>>>([]);
+const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    return project?.value?.requiredTags.every(
+    return project.value?.requiredTags.every(
         (tag) => tagValues.value[tag.uuid] !== '',
     );
 });

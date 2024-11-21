@@ -1,6 +1,10 @@
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CountedAccessGroups {
-    entities: AccessGroup[];
-    total: number;
+    @ApiProperty()
+    entities!: AccessGroup[];
+
+    @ApiProperty()
+    total!: number;
 }

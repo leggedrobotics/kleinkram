@@ -371,7 +371,6 @@ import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
-import { Action } from 'src/types/Action';
 import TitleSection from 'components/TitleSection.vue';
 import { computed, ComputedRef, ref } from 'vue';
 import ActionBadge from 'components/ActionBadge.vue';

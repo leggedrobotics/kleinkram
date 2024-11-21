@@ -4,9 +4,9 @@ import { ApiProperty } from '@nestjs/swagger';
 export class AddUserToAccessGroupDto {
     @IsUUID()
     @ApiProperty({ description: 'Access Group UUID', format: 'uuid' })
-    uuid: string;
+    uuid!: string;
 
     @IsUUID()
     @ApiProperty({ description: 'User UUID', format: 'uuid' })
-    userUUID: string;
+    userUUID!: string;
 }

@@ -115,34 +115,34 @@ const props = defineProps({
 });
 
 function setPagination(update: TableRequest) {
-    props.url_handler?.setPage(update.pagination.page);
-    props.url_handler?.setTake(update.pagination.rowsPerPage);
-    props.url_handler?.setSort(update.pagination.sortBy);
-    props.url_handler?.setDescending(update.pagination.descending);
+    props.url_handler.setPage(update.pagination.page);
+    props.url_handler.setTake(update.pagination.rowsPerPage);
+    props.url_handler.setSort(update.pagination.sortBy);
+    props.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
         page: props.url_handler.page,
         rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler?.rowsNumber,
-        sortBy: props.url_handler?.sortBy,
-        descending: props.url_handler?.descending,
+        rowsNumber: props.url_handler.rowsNumber,
+        sortBy: props.url_handler.sortBy,
+        descending: props.url_handler.descending,
     };
 });
 
-const queryKey = computed(() => ['projects', props.url_handler?.queryKey]);
+const queryKey = computed(() => ['projects', props.url_handler.queryKey]);
 const selected = ref([]);
 
 const { data: rawData, isLoading } = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         filteredProjects(
-            props.url_handler?.take,
-            props.url_handler?.skip,
-            props.url_handler?.sortBy,
-            props.url_handler?.descending,
-            props.url_handler?.searchParams,
+            props.url_handler.take,
+            props.url_handler.skip,
+            props.url_handler.sortBy,
+            props.url_handler.descending,
+            props.url_handler.searchParams,
         ),
 });
 
@@ -163,7 +163,7 @@ watch(
 const $router = useRouter();
 
 const onRowClick = async (_: Event, row: any) => {
-    await $router?.push({
+    await $router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
             project_uuid: row.uuid,

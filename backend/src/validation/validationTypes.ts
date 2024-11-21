@@ -25,7 +25,7 @@ export class NameValidate {
     @IsNotEmpty()
     @IsValidName()
     @IsNoValidUUID()
-    value: string;
+    value!: string;
 }
 
 export class StringArrayValidate {
@@ -33,23 +33,23 @@ export class StringArrayValidate {
     @ArrayNotEmpty()
     @IsString({ each: true })
     @IsNotEmpty({ each: true })
-    value: string[];
+    value!: string[];
 }
 
 export class BooleanValidate {
     @Type(() => Boolean)
-    value: boolean;
+    value!: boolean;
 }
 
 export class DateStringValidate {
     @IsNotEmpty()
     @Type(() => Date)
-    value: Date;
+    value!: Date;
 }
 
 export class NumberValidate {
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
-    value: number;
+    value!: number;
 }

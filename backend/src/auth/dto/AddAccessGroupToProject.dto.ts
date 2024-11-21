@@ -11,5 +11,5 @@ export class AddAccessGroupToProjectDto extends RemoveAccessGroupFromProjectDto 
         format: 'AccessGroupRights',
         enum: AccessGroupRights,
     })
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 }

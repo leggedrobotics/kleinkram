@@ -9,28 +9,28 @@ import User from '../user/user.entity';
 export default class Apikey extends BaseEntity {
     @Column({ unique: true })
     @Generated('uuid')
-    apikey: string;
+    apikey!: string;
 
     @Column()
-    key_type: KeyTypes;
+    key_type!: KeyTypes;
 
     @ManyToOne(() => Mission, (mission) => mission.api_keys, {
         onDelete: 'CASCADE',
         eager: true,
     })
-    mission: Mission;
+    mission!: Mission;
 
     @OneToOne(() => Action, (action) => action.key, {
         onDelete: 'CASCADE',
         nullable: true,
     })
-    action: Action | null;
+    action?: Action;
 
     @ManyToOne(() => User, (user) => user.api_keys, {
         onDelete: 'CASCADE',
     })
-    user: User;
+    user?: User;
 
     @Column()
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 }

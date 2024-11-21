@@ -1,13 +1,19 @@
-import { User } from 'src/types/User';
 import axios from 'src/api/axios';
-import { CurrentAPIUserDto } from '@api/types/User.dto';
+import { CurrentAPIUserDto, UsersDto } from '@api/types/User.dto';
+import { AxiosResponse } from 'axios';
 
-export const searchUsers = async (search: string): Promise<User[]> => {
-    if (!search) {
-        return [];
+export const searchUsers = async (search: string): Promise<UsersDto> => {
+    if (search === '') {
+        return {
+            users: [],
+            count: 0,
+        };
     }
-    const response = await axios.get('/user/search', { params: { search } });
-    return response.data.map((user: any) => User.fromAPIResponse(user));
+    const response: AxiosResponse<UsersDto> = await axios.get<UsersDto>(
+        '/user/search',
+        { params: { search } },
+    );
+    return response.data;
 };
 
 export const getMe = async (): Promise<CurrentAPIUserDto> => {

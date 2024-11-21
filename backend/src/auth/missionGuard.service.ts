@@ -28,7 +28,7 @@ export class MissionGuardService {
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
-        if (isUUID(missionUUID) === false) {
+        if (!isUUID(missionUUID)) {
             logger.error(
                 `MissionGuard: missionUUID (${missionUUID}) not provided. Requesting ${rights} access.`,
             );
@@ -52,7 +52,7 @@ export class MissionGuardService {
     ) {
         if (!missionName || !user) {
             logger.error(
-                `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
@@ -71,7 +71,7 @@ export class MissionGuardService {
     ) {
         if (!tagUUID || !user) {
             logger.error(
-                `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
@@ -83,6 +83,8 @@ export class MissionGuardService {
             where: { uuid: tagUUID },
             relations: ['mission'],
         });
+
+        if (tag?.mission === undefined) throw new Error('Tag has no mission');
 
         // All interactions with tags except READ are considered WRITE on the mission
         let accessRights = AccessGroupRights.READ;
@@ -104,6 +106,8 @@ export class MissionGuardService {
             where: { uuid: tagUUID },
             relations: ['mission'],
         });
+
+        if (tag?.mission === undefined) throw new Error('Tag has no mission');
         return this.canKeyAccessMission(apikey, tag.mission.uuid, rights);
     }
 
@@ -144,6 +148,10 @@ export class MissionGuardService {
         if (!mission) {
             return false;
         }
+
+        if (mission?.project === undefined)
+            throw new Error('Mission has no project');
+
         const canAccessProject =
             await this.projectGuardService.canAccessProject(
                 user,
@@ -182,6 +190,8 @@ export class MissionGuardService {
         const mission = await this.missionRepository.findOne({
             where: { name: missionName, project: { uuid: projectUUID } },
         });
+
+        if (!mission) return false;
         return this.canKeyAccessMission(apikey, mission.uuid, rights);
     }
 }

@@ -39,9 +39,6 @@ import {
 } from './roles.guard';
 import { ApiResponse } from '@nestjs/swagger';
 
-// disable naming-convention rule for enum.ts
-/* eslint @typescript-eslint/naming-convention: 0 */
-
 // Logged-in user route decorator
 export function LoggedIn() {
     return applyDecorators(

@@ -16,7 +16,7 @@
                 <div class="col-12">
                     <q-table
                         :rows="data || []"
-                        :columns="columns"
+                        :columns="columns as any"
                         row-key="uuid"
                         wrap-cells
                         flat
@@ -92,7 +92,6 @@
 import { QTable, useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { TagType } from 'src/types/TagType';
 import { getTagTypes } from 'src/services/queries/tag';
 import { DataType } from '@common/enum';
 

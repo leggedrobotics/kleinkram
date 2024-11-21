@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Worker from '@common/entities/worker/worker.entity';
+import { WorkersDto } from '@common/api/types/Workers.dto';
 
 @Injectable()
 export class WorkerService {
@@ -9,7 +10,7 @@ export class WorkerService {
         @InjectRepository(Worker) private workerRepository: Repository<Worker>,
     ) {}
 
-    async findAll() {
+    async findAll(): Promise<WorkersDto> {
         const workers = await this.workerRepository.find();
 
         // deduplicate workers by hostname get last seen worker
@@ -24,6 +25,9 @@ export class WorkerService {
         }, {});
 
         const count = Object.keys(workerMap).length;
-        return [Object.values(workerMap), count];
+        return {
+            count,
+            workers: Object.values(workerMap),
+        };
     }
 }

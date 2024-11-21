@@ -62,7 +62,9 @@
                         removable
                         :tabindex="scope.tabindex"
                         dense
-                        :color="getColor(QueueState[scope.opt] as QueueState)"
+                        :color="
+                            getColor(QueueState[scope.opt] as QueueState) as any
+                        "
                         @remove="removeItem(scope.opt)"
                     >
                         {{ scope.opt }}
@@ -90,7 +92,7 @@
         v-model:pagination="pagination"
         v-model:selected="selected"
         :rows="queueEntries || []"
-        :columns="columns"
+        :columns="columns as any"
         row-key="uuid"
         flat
         bordered
@@ -177,10 +179,7 @@ import { Notify, QTable, useQuasar } from 'quasar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
-import { Queue } from 'src/types/Queue';
-import { Project } from 'src/types/Project';
 import { currentQueue } from 'src/services/queries/queue';
-import { FileEntity } from 'src/types/FileEntity';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import {
@@ -267,7 +266,7 @@ const { mutate: removeFile } = useMutation({
     },
     onError: (error) => {
         Notify.create({
-            message: `Error deleting file: ${error?.response?.data?.message || error.message}`,
+            message: `Error deleting file: ${error.response?.data?.message || error.message}`,
             color: 'negative',
             timeout: 4000,
             position: 'bottom',
@@ -285,7 +284,7 @@ const { mutate: _cancelProcessing } = useMutation({
     },
     onError: (error) => {
         Notify.create({
-            message: `Error canceling processing: ${error?.response?.data?.message || error.message}`,
+            message: `Error canceling processing: ${error.response?.data?.message || error.message}`,
             color: 'negative',
             timeout: 4000,
             position: 'bottom',
@@ -336,9 +335,9 @@ function canDelete(row: Queue) {
     );
 }
 
-function downloadFile(row: Queue) {
+async function downloadFile(row: Queue) {
     await findOneByNameAndMission(row.filename, row.mission.uuid).then(
-        (file: FileEntity) => {
+        async (file: FileEntity) => {
             await _downloadFile(file.uuid, file.filename);
         },
     );
@@ -375,7 +374,6 @@ const columns = [
         field: (row: Queue) => {
             if (
                 row.filename == row.identifier &&
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
                 row.location == FileLocation.DRIVE
             )
                 return 'Not available';

@@ -6,7 +6,7 @@
             use-input
             multiple
             input-debounce="100"
-            :options="foundUsers"
+            :options="foundUsers.users"
             option-label="name"
             class="full-width"
             @input-value="
@@ -61,11 +61,11 @@
 <script setup lang="ts">
 import { Ref, ref } from 'vue';
 import { icon } from 'src/services/generic';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { searchUsers } from 'src/services/queries/user';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addUserToAccessGroup } from 'src/services/mutations/access';
-import { User } from 'src/types/User';
 import { Notify } from 'quasar';
+import { useUserSearch } from '../hooks/customQueryHooks';
+import { UserDto } from '@api/types/User.dto';
 
 const props = defineProps<{
     access_group_uuid: string;
@@ -73,11 +73,8 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 
 const search = ref('');
-const selected: Ref<User[]> = ref([]);
-const { data: foundUsers } = useQuery({
-    queryKey: ['users', search],
-    queryFn: () => searchUsers(search.value),
-});
+const selected: Ref<UserDto[]> = ref([]);
+const { data: foundUsers } = useUserSearch(search);
 
 const { mutate } = useMutation({
     mutationFn: () => {

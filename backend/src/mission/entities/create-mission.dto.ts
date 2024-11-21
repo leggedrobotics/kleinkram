@@ -15,15 +15,15 @@ export class CreateMission {
     @IsNotEmpty()
     @IsValidMissionName()
     @IsNoValidUUID()
-    name: string;
+    name!: string;
 
     @IsUUID()
-    projectUUID: string;
+    projectUUID!: string;
 
     @IsNotEmpty()
-    tags: Record<string, string>;
+    tags!: Record<string, string>;
 
     @IsBoolean()
     @IsOptional()
-    ignoreTags: boolean;
+    ignoreTags!: boolean;
 }
