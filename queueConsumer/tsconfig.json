@@ -1,6 +1,10 @@
 {
     "extends": ["tslint:recommended"],
     "compilerOptions": {
+        "strict": true,
+        "exactOptionalPropertyTypes": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
         "declaration": true,
         "esModuleInterop": true,
         "removeComments": true,

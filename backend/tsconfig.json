@@ -1,5 +1,11 @@
 {
     "compilerOptions": {
+        "strict": true,
+        "strictNullChecks": true,
+        "exactOptionalPropertyTypes": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
         "module": "commonjs",
         "declaration": true,
         "esModuleInterop": true,
@@ -13,8 +19,6 @@
         "outDir": "./dist",
         "baseUrl": "./",
         "incremental": true,
-        "skipLibCheck": true,
-        "strictNullChecks": false,
         "noImplicitAny": false,
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
