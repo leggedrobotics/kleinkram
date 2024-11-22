@@ -78,6 +78,11 @@
                     </div>
 
                     <div>
+                        <label>Select Action</label>
+                        <ActionSelector v-model="actionTemplates" />
+                    </div>
+
+                    <div>
                         <label for="project">Project</label>
                         <q-select
                             name="project"
@@ -286,12 +291,10 @@ import {
 } from '../hooks/query-hooks';
 import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
-import { AccessGroupRights } from '@common/enum';
-import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import ActionSelector from '@components/ActionSelector.vue';
 
 const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');
@@ -378,7 +381,11 @@ const selectedMission = computed(() =>
 const actionTemplateKey = computed(() => ['actionTemplates', filter.value]);
 const { data: actionTemplatesResult } = useQuery({
     queryKey: actionTemplateKey,
-    queryFn: () => listActionTemplates(filter.value),
+    queryFn: () => listActionTemplates(''),
+});
+const actionTemplates = ref<ActionTemplate[]>(actionTemplatesRes.value || []);
+watch(actionTemplatesRes, () => {
+    actionTemplates.value = actionTemplatesRes.value || [];
 });
 
 // MUTATING ###################################################################

@@ -7,7 +7,7 @@
         hide-selected
         fill-input
         input-debounce="300"
-        placeholder="Seach"
+        placeholder="Search"
         :options="searchResults"
         class="q-pb-md"
         autocomplete="false"
