@@ -156,6 +156,7 @@ def upload(
         return
 
     upload_files(
+        client,
         filtered_files_map,
         mission_parsed.id,
         n_workers=2,

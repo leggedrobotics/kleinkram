@@ -20,7 +20,6 @@ from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
 from rich.console import Console
 
-
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
 
@@ -45,6 +44,11 @@ def check_file_paths(files: Sequence[Path]) -> None:
             raise FileTypeNotSupported(
                 f"only `.bag` or `.mcap` files are supported: {file}"
             )
+
+
+def noop(*args: Any, **kwargs: Any) -> None:
+    _ = args, kwargs  # suppress unused variable warning
+    return
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
