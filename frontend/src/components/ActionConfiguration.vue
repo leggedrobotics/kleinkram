@@ -65,18 +65,21 @@
                             <template v-slot:option="scope">
                                 <q-item v-bind="scope.itemProps">
                                     <q-item-section>
-                                        <q-item-label>{{
-                                            scope.opt.name
-                                        }}</q-item-label>
+                                        <q-item-label
+                                            >{{ scope.opt.name }}
+                                        </q-item-label>
                                         <q-item-label caption
-                                            >v{{
-                                                scope.opt.version
-                                            }}</q-item-label
-                                        >
+                                            >v{{ scope.opt.version }}
+                                        </q-item-label>
                                     </q-item-section>
                                 </q-item>
                             </template>
                         </q-select>
+                    </div>
+
+                    <div>
+                        <label>Select Action</label>
+                        <ActionSelector v-model="actionTemplates" />
                     </div>
 
                     <div>
@@ -292,6 +295,7 @@ import { Project } from 'src/types/Project';
 import { filteredProjects } from 'src/services/queries/project';
 import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { accessGroupRightsMap } from 'src/services/generic';
+import ActionSelector from 'components/ActionSelector.vue';
 
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
@@ -395,7 +399,11 @@ const selected_mission = computed(() =>
 const actionTemplateKey = computed(() => ['actionTemplates', filter.value]);
 const { data: actionTemplatesRes } = useQuery({
     queryKey: actionTemplateKey,
-    queryFn: () => listActionTemplates(filter.value),
+    queryFn: () => listActionTemplates(''),
+});
+const actionTemplates = ref<ActionTemplate[]>(actionTemplatesRes.value || []);
+watch(actionTemplatesRes, () => {
+    actionTemplates.value = actionTemplatesRes.value || [];
 });
 
 // MUTATING ###################################################################

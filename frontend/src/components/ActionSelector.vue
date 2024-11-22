@@ -7,7 +7,7 @@
         hide-selected
         fill-input
         input-debounce="300"
-        placeholder="Search"
+        placeholder="Seach"
         :options="searchResults"
         @click="
             (e) => {
@@ -45,57 +45,35 @@
                         if (!searchEnabled) return;
                         searchEnabled = false;
                         model = null;
-
-                        // verify if the group is already in the list
-                        if (
-                            accessRights?.find((g) => g.uuid === props.opt.uuid)
-                        )
-                            return;
-
-                        accessRights = accessRights?.concat([
-                            {
-                                uuid: props.opt.uuid,
-                                name: props.opt.name,
-                                rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount,
-                            },
-                        ]) || [
-                            {
-                                uuid: props.opt.uuid,
-                                name: props.opt.name,
-                                rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount,
-                            },
-                        ];
                     }
+                    //
+                    //     // verify if the group is already in the list
+                    //     if (
+                    //         accessRights?.find((g) => g.uuid === props.opt.uuid)
+                    //     )
+                    //         return;
+                    //
+                    //     accessRights = accessRights?.concat([
+                    //         {
+                    //             uuid: props.opt.uuid,
+                    //             name: props.opt.name,
+                    //             rights: AccessGroupRights.READ,
+                    //             memberCount: props.opt.memberCount,
+                    //         },
+                    //     ]) || [
+                    //         {
+                    //             uuid: props.opt.uuid,
+                    //             name: props.opt.name,
+                    //             rights: AccessGroupRights.READ,
+                    //             memberCount: props.opt.memberCount,
+                    //         },
+                    //     ];
+                    // }
                 "
             >
                 <q-item-section>
-                    <q-item-label
-                        :class="{
-                            'text-grey': accessRights?.find(
-                                (g) => g.uuid === props.opt.uuid,
-                            ),
-                            'cursor-pointer': !accessRights?.find(
-                                (g) => g.uuid === props.opt.uuid,
-                            ),
-                            'cursor-not-allowed': accessRights?.find(
-                                (g) => g.uuid === props.opt.uuid,
-                            ),
-                        }"
-                    >
+                    <q-item-label>
                         <q-icon
-                            v-if="!props.opt.name.startsWith('Personal: ')"
-                            name="sym_o_group"
-                            class="q-mr-sm"
-                            style="
-                                background-color: #e8e8e8;
-                                padding: 6px;
-                                border-radius: 50%;
-                            "
-                        />
-                        <q-icon
-                            v-if="props.opt.name.startsWith('Personal: ')"
                             name="sym_o_person"
                             class="q-mr-sm"
                             style="
@@ -109,15 +87,7 @@
                         <template
                             v-if="!props.opt.name.startsWith('Personal: ')"
                         >
-                            <span
-                                :class="{
-                                    'help-text': !accessRights?.find(
-                                        (g) => g.uuid === props.opt.uuid,
-                                    ),
-                                }"
-                            >
-                                ({{ props.opt.memberCount }} members)
-                            </span>
+                            <span> ({{ props.opt.memberCount }} members) </span>
                         </template>
 
                         <template
@@ -147,7 +117,7 @@
 
     <q-table
         class="table-white"
-        :columns="accessRightsColumns"
+        :columns="selectedActionTemplateDisplayHeader"
         :rows="accessRights?.sort((a, b) => b.name.localeCompare(a.name)) || []"
         hide-pagination
         flat
@@ -203,13 +173,7 @@
                             :key="option"
                             clickable
                             @click="updateRights(props.row, option)"
-                            :disable="isBelowMinRights(props.row, option)"
                         >
-                            <q-tooltip
-                                v-if="isBelowMinRights(props.row, option)"
-                            >
-                                This option cannot be set.
-                            </q-tooltip>
                             <q-item-section>
                                 <q-item-label>
                                     {{ getAccessRightDescription(option) }}
@@ -218,33 +182,6 @@
                         </q-item>
                     </q-list>
                 </q-btn-dropdown>
-            </q-td>
-        </template>
-
-        <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
-                <q-btn
-                    flat
-                    round
-                    dense
-                    icon="sym_o_delete"
-                    unelevated
-                    color="primary"
-                    class="cursor-pointer"
-                    @click="removeGroup(props.row)"
-                    :disable="
-                        !!minAccessRights.filter(
-                            (r) => r.uuid === props.row.uuid,
-                        ).length
-                    "
-                    :text-color="
-                        !!minAccessRights.filter(
-                            (r) => r.uuid === props.row.uuid,
-                        ).length
-                            ? 'grey'
-                            : 'red'
-                    "
-                />
             </q-td>
         </template>
     </q-table>
@@ -260,17 +197,15 @@ import {
 } from 'src/enums/ACCESS_RIGHTS';
 import { useQuery } from '@tanstack/vue-query';
 import { searchAccessGroups } from 'src/services/queries/access';
+import { ActionTemplate } from 'src/types/ActionTemplate';
 
-const { minAccessRights } = defineProps<{
-    minAccessRights: AccessRight[];
-}>();
-const accessRights = defineModel<AccessRight[]>();
+const actionTemplates = defineModel<ActionTemplate[]>();
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
 const model = ref(null);
 
-const accessRightsColumns = [
+const selectedActionTemplateDisplayHeader = [
     {
         name: 'name',
         required: true,
@@ -279,26 +214,14 @@ const accessRightsColumns = [
         sortable: true,
     },
     {
-        name: 'rights',
-        required: true,
-        label: 'Rights',
-        align: 'left',
-        sortable: false,
-    },
-    {
         name: 'actions',
         required: true,
-        label: '',
+        label: 'Actions',
         align: 'center',
     },
 ];
 
 const updateRights = (group: AccessRight, right: AccessGroupRights) => {
-    if (isBelowMinRights(group, right)) {
-        console.log('Cannot set rights below minimum');
-        return;
-    }
-
     accessRights.value =
         accessRights.value?.map((g) => {
             if (g.name === group.name) {
@@ -306,17 +229,6 @@ const updateRights = (group: AccessRight, right: AccessGroupRights) => {
             }
             return g;
         }) || [];
-};
-
-const removeGroup = (group: AccessRight) => {
-    if (minAccessRights.filter((r) => r.uuid === group.uuid).length) {
-        console.log('Cannot remove minimum access group');
-        return;
-    }
-
-    accessRights.value = accessRights.value?.filter(
-        (g) => g.name !== group.name,
-    );
 };
 
 const enabled = computed(() => groupSearch.value.length >= 2);
@@ -341,11 +253,6 @@ const { data: foundUsers } = useQuery({
         searchAccessGroups(groupSearch.value, true, false, false, 0, 10),
     enabled,
 });
-
-const isBelowMinRights = (group: AccessRight, right: AccessGroupRights) => {
-    const minAccess = minAccessRights.find((r) => r.uuid === group.uuid);
-    return minAccess && minAccess.rights > right;
-};
 
 const searchResults = computed(() => {
     const results: AccessRight[] = [];
