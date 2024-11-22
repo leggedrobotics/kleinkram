@@ -341,7 +341,7 @@ def _wrapped_download(
             print(path.absolute(), file=sys.stderr)
         logger.error(format_traceback(e))
         return 0
-    except FileSkippedOK as e:
+    except FileSkippedOK:
         msg = f"{path} already downloaded, skipping..."
         if verbose:
             tqdm.write(styled_string(msg, style="yellow"))
