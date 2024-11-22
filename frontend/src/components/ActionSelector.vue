@@ -7,8 +7,15 @@
         hide-selected
         fill-input
         input-debounce="300"
-        placeholder="Seach"
-        :options="searchResults"
+        placeholder="Search"
+        :options="
+            actionTemplates ? [newActionTemplate, ...actionTemplates] : []
+        "
+        @input-value="
+            (e) => {
+                updateCreateTemplateName(e);
+            }
+        "
         @click="
             (e) => {
                 enableSearch();
@@ -45,14 +52,9 @@
                         if (!searchEnabled) return;
                         searchEnabled = false;
                         model = null;
+                        updateSelectedTemplate(props.opt);
                     }
-                    //
-                    //     // verify if the group is already in the list
-                    //     if (
-                    //         accessRights?.find((g) => g.uuid === props.opt.uuid)
-                    //     )
-                    //         return;
-                    //
+
                     //     accessRights = accessRights?.concat([
                     //         {
                     //             uuid: props.opt.uuid,
@@ -74,7 +76,7 @@
                 <q-item-section>
                     <q-item-label>
                         <q-icon
-                            name="sym_o_person"
+                            name="sym_o_terminal"
                             class="q-mr-sm"
                             style="
                                 background-color: #e8e8e8;
@@ -83,32 +85,9 @@
                             "
                         />
 
-                        {{ props.opt.name.replace('Personal: ', '') }}
-                        <template
-                            v-if="!props.opt.name.startsWith('Personal: ')"
-                        >
-                            <span> ({{ props.opt.memberCount }} members) </span>
-                        </template>
+                        {{ props.opt.name }}
 
-                        <template
-                            v-if="
-                                accessRights?.find(
-                                    (g) => g.uuid === props.opt.uuid,
-                                )
-                            "
-                        >
-                            {{
-                                accessRights?.find(
-                                    (g) => g.uuid === props.opt.uuid,
-                                )?.rights
-                                    ? ` - ${getAccessRightDescription(
-                                          accessRights?.find(
-                                              (g) => g.uuid === props.opt.uuid,
-                                          )?.rights,
-                                      )}`
-                                    : ''
-                            }}
-                        </template>
+                        <span> v{{ props.opt.version }} </span>
                     </q-item-label>
                 </q-item-section>
             </q-item>
@@ -118,7 +97,7 @@
     <q-table
         class="table-white"
         :columns="selectedActionTemplateDisplayHeader"
-        :rows="accessRights?.sort((a, b) => b.name.localeCompare(a.name)) || []"
+        :rows="selectedTemplate || []"
         hide-pagination
         flat
         separator="horizontal"
@@ -130,7 +109,7 @@
             <q-td :props="props">
                 <q-icon
                     v-if="!props.row.name.startsWith('Personal: ')"
-                    name="sym_o_group"
+                    name="sym_o_terminal"
                     class="q-mr-sm"
                     style="
                         background-color: #e8e8e8;
@@ -138,58 +117,20 @@
                         border-radius: 50%;
                     "
                 />
-                <q-icon
-                    v-if="props.row.name.startsWith('Personal: ')"
-                    name="sym_o_person"
-                    class="q-mr-sm"
-                    style="
-                        background-color: #e8e8e8;
-                        padding: 6px;
-                        border-radius: 50%;
-                    "
-                />
-                {{ props.row.name.replace('Personal: ', '') }}
-                <span
-                    v-if="!props.row.name.startsWith('Personal: ')"
-                    class="help-text"
-                >
-                    ({{ props.row.memberCount }} members)
-                </span>
+
+                {{ props.row.name }}
             </q-td>
         </template>
 
-        <template v-slot:body-cell-rights="props">
-            <q-td :props="props">
-                <q-btn-dropdown
-                    flat
-                    outlined
-                    style="background-color: #e8e8e8"
-                    :label="getAccessRightDescription(props.row.rights)"
-                    auto-close
-                >
-                    <q-list>
-                        <q-item
-                            v-for="option in accessGroupRightsList"
-                            :key="option"
-                            clickable
-                            @click="updateRights(props.row, option)"
-                        >
-                            <q-item-section>
-                                <q-item-label>
-                                    {{ getAccessRightDescription(option) }}
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
-            </q-td>
+        <template v-slot:body-cell-version="props">
+            <q-td :props="props"> v{{ props.row.version }}</q-td>
         </template>
     </q-table>
 </template>
 <script setup lang="ts">
 import { getAccessRightDescription } from 'src/services/generic';
 import { QSelect, QTable } from 'quasar';
-import { computed, ref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { AccessRight } from 'src/services/queries/project';
 import {
     AccessGroupRights,
@@ -199,11 +140,38 @@ import { useQuery } from '@tanstack/vue-query';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { ActionTemplate } from 'src/types/ActionTemplate';
 
+const DEFAULT_ACTION_TEMPLATE: ActionTemplate = new ActionTemplate(
+    '',
+    null,
+    null,
+    'rslethz/action:simple-dev',
+    null,
+    '',
+    1,
+    '',
+    2,
+    2,
+    -1,
+    2,
+    '',
+    AccessGroupRights.READ,
+);
 const actionTemplates = defineModel<ActionTemplate[]>();
+const selectedTemplate: Ref<ActionTemplate[] | []> = ref([]);
+
+console.log('PRINTING');
+actionTemplates.value?.forEach((t) => {
+    console.log(t);
+});
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
 const model = ref(null);
+const newActionTemplate = ref(DEFAULT_ACTION_TEMPLATE);
+
+function updateSelectedTemplate(selTempl: ActionTemplate) {
+    selectedTemplate.value = [selTempl];
+}
 
 const selectedActionTemplateDisplayHeader = [
     {
@@ -214,13 +182,19 @@ const selectedActionTemplateDisplayHeader = [
         sortable: true,
     },
     {
-        name: 'actions',
+        name: 'version',
         required: true,
-        label: 'Actions',
+        label: 'Version',
         align: 'center',
     },
 ];
 
+function updateCreateTemplateName(e) {
+    console.log(e);
+    newActionTemplate.value.name = e + ' (new Template)';
+}
+
+//update selection Field
 const updateRights = (group: AccessRight, right: AccessGroupRights) => {
     accessRights.value =
         accessRights.value?.map((g) => {
@@ -255,14 +229,12 @@ const { data: foundUsers } = useQuery({
 });
 
 const searchResults = computed(() => {
-    const results: AccessRight[] = [];
+    const results: ActionTemplate[] = [];
 
     foundAccessGroups.value?.[0].forEach((group) => {
         results.push({
             uuid: group.uuid,
             name: group.name,
-            rights: null,
-            memberCount: group.accessGroupUsers.length || 0,
         });
     });
 
@@ -270,8 +242,6 @@ const searchResults = computed(() => {
         results.push({
             uuid: group.uuid,
             name: group.name,
-            rights: null,
-            memberCount: 1,
         });
     });
 

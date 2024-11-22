@@ -297,6 +297,23 @@ import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
 import { accessGroupRightsMap } from 'src/services/generic';
 import ActionSelector from 'components/ActionSelector.vue';
 
+const DEFAULT_ACTION_TEMPLATE: ActionTemplate = new ActionTemplate(
+    '',
+    null,
+    null,
+    'rslethz/action:simple-dev',
+    null,
+    '',
+    1,
+    '',
+    2,
+    2,
+    -1,
+    2,
+    '',
+    AccessGroupRights.READ,
+);
+
 const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
 const image_name = ref('rslethz/action:simple-latest');
@@ -642,22 +659,7 @@ function newValue(val: string, done: Function) {
 
 function selectTemplate(template: ActionTemplate) {
     if (!template) {
-        editingTemplate.value = new ActionTemplate(
-            '',
-            null,
-            null,
-            'rslethz/action:simple-dev',
-            null,
-            '',
-            1,
-            '',
-            2,
-            2,
-            -1,
-            2,
-            '',
-            AccessGroupRights.READ,
-        );
+        editingTemplate.value = DEFAULT_ACTION_TEMPLATE;
         select.value = undefined;
         return;
     }
