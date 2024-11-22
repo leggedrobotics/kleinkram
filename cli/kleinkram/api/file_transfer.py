@@ -309,7 +309,7 @@ def download_file(
         download_url, path=path, size=file.size, overwrite=overwrite, verbose=_verbose
     )
     observed_hash = b64_md5(path)
-    if observed_hash != file.hash:
+    if file.hash is not None and observed_hash != file.hash:
         raise CorruptedFile(f"file hash does not match: {path}")
 
     return file.size
