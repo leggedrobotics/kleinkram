@@ -291,12 +291,11 @@ import {
 } from '../hooks/query-hooks';
 import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
-
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionSelector from '@components/ActionSelector.vue';
 
-const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
+const select: Ref<undefined | ActionTemplate> = ref(undefined);
 const filter = ref('');
 const selectedAccessRights = ref({
     label: 'Read',
@@ -624,21 +623,9 @@ function newValue(value: string, done: any) {
     done(editingTemplate);
 }
 
-function selectTemplate(template: ActionTemplateDto | undefined) {
-    if (template === undefined) {
-        editingTemplate.value = {
-            accessRights: AccessGroupRights.READ,
-            command: '',
-            cpuCores: 1,
-            cpuMemory: 2,
-            entrypoint: '',
-            gpuMemory: 2,
-            imageName: '',
-            maxRuntime: -1,
-            name: '',
-            version: '1',
-        } as ActionTemplateDto;
-
+function selectTemplate(template: ActionTemplate) {
+    if (!template) {
+        editingTemplate.value = undefined;
         select.value = undefined;
         return;
     }
