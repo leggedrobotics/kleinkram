@@ -296,7 +296,6 @@ watch(selectedTemplate, () => {
         } else {
             //Got Existing Template
             console.log('handling Existing Template');
-            isModified.value = false;
             selectTemplate(selectedTemplate.value);
         }
     }

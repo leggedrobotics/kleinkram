@@ -160,13 +160,13 @@ const selectedTemplate = defineModel<ActionTemplate>();
 const filteredActionTemplates: Ref<ActionTemplate[] | []> = ref([]);
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 
+//removing newTemplate Option if Name in search field exactly matches existing template
 const options = computed(() => {
     let suggestedName: string = newActionTemplate.value.name;
     let filteredNames: string[] = filteredActionTemplates.value.map(
         (x) => x.name,
     );
-    console.log(filteredNames);
-    console.log(suggestedName);
+
     if (filteredNames.includes(suggestedName)) {
         return [...filteredActionTemplates.value];
     } else {
