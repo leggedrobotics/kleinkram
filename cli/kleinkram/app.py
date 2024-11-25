@@ -1,24 +1,19 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 import time
-from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
-from typing import Any
-from typing import Callable
 from typing import List
 from typing import Optional
-from typing import Type
 
 import typer
 from click import Context
 from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import claim_admin
-from kleinkram.api.routes import get_api_version
+from kleinkram.api.routes import _claim_admin
+from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
 from kleinkram.commands.download import download_typer
 from kleinkram.commands.endpoint import endpoint_typer
@@ -29,6 +24,7 @@ from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
 from kleinkram.config import Config
 from kleinkram.config import get_shared_state
+from kleinkram.errors import ErrorHandledTyper
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
@@ -73,56 +69,12 @@ class OrderCommands(TyperGroup):
         return list(self.commands)
 
 
-ExceptionHandler = Callable[[Exception], int]
-
-
-class ErrorHandledTyper(typer.Typer):
-    """\
-    error handlers that are last added will be used first
-    """
-
-    _error_handlers: OrderedDict[Type[Exception], ExceptionHandler]
-
-    def error_handler(
-        self, exc: type[Exception]
-    ) -> Callable[[ExceptionHandler], ExceptionHandler]:
-        def dec(func: ExceptionHandler) -> ExceptionHandler:
-            self._error_handlers[exc] = func
-            return func
-
-        return dec
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._error_handlers = OrderedDict()
-
-    def __call__(self, *args: Any, **kwargs: Any) -> int:
-        try:
-            return super().__call__(*args, **kwargs)
-        except Exception as e:
-            for tp, handler in reversed(self._error_handlers.items()):
-                if isinstance(e, tp):
-                    exit_code = handler(e)
-                    raise SystemExit(exit_code)
-            raise
-
-
 app = ErrorHandledTyper(
     cls=OrderCommands,
     help=CLI_HELP,
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=True,
 )
-
-
-@app.error_handler(Exception)
-def base_handler(exc: Exception) -> int:
-    if not get_shared_state().debug:
-        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
-        logger.error(format_traceback(exc))
-        return 1
-    raise exc
-
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
@@ -131,6 +83,16 @@ app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
 app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
+
+
+# attach error handler to app
+@app.error_handler(Exception)
+def base_handler(exc: Exception) -> int:
+    if not get_shared_state().debug:
+        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
+        logger.error(format_traceback(exc))
+        return 1
+    raise exc
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
@@ -150,7 +112,7 @@ def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> No
 @app.command(hidden=True)
 def claim():
     client = AuthenticatedClient()
-    claim_admin(client)
+    _claim_admin(client)
     print("admin rights claimed successfully.")
 
 
@@ -162,7 +124,7 @@ def _version_callback(value: bool) -> None:
 
 def check_version_compatiblity() -> None:
     cli_version = get_supported_api_version()
-    api_version = get_api_version()
+    api_version = _get_api_version()
     api_vers_str = ".".join(map(str, api_version))
 
     if cli_version[0] != api_version[0]:
@@ -197,6 +159,8 @@ def cli(
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         level = logging.getLevelName(log_level)
         logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
+    else:
+        logging.disable(logging.CRITICAL)
 
     logger.info(f"CLI version: {__version__}")
 
@@ -206,6 +170,8 @@ def cli(
         logger.error(format_traceback(e))
         raise
     except Exception:
-        err = "failed to check version compatibility"
-        Console(file=sys.stderr).print(err, style="yellow")
+        err = ("failed to check version compatibility",)
+        Console(file=sys.stderr).print(
+            err, style="yellow" if shared_state.verbose else None
+        )
         logger.error(err)
