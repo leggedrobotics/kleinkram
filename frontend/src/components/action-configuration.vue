@@ -36,50 +36,12 @@
                 <span class="text-h5">Basic Information</span>
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
-                        <label for="action_name">Action Name</label>
-                        <q-select
-                            v-model="select"
-                            label="Select a Template or name a new one. (Confirm with Enter)"
-                            :options="actionTemplatesResult?.data"
-                            use-input
-                            input-debounce="20"
-                            outlined
-                            dense
-                            clearable
-                            class="full-width"
-                            @new-value="newValue"
-                            @input-value="filter = $event"
-                            @update:model-value="selectTemplate($event)"
-                        >
-                            <template #selected>
-                                <div
-                                    v-if="
-                                        editingTemplate && editingTemplate.name
-                                    "
-                                >
-                                    {{ editingTemplate.name }}&Tab;v{{
-                                        editingTemplate.version
-                                    }}
-                                </div>
-                            </template>
-                            <template #option="scope">
-                                <q-item v-bind="scope.itemProps">
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ scope.opt.name }}
-                                        </q-item-label>
-                                        <q-item-label caption>
-                                            v{{ scope.opt.version }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </template>
-                        </q-select>
-                    </div>
-
-                    <div>
                         <label>Select Action</label>
-                        <ActionSelector v-model="actionTemplates" />
+                        <ActionSelector
+                            v-model="selectedTemplate"
+                            ref="myElement"
+                            :action-templates="actionTemplates"
+                        />
                     </div>
 
                     <div>
@@ -257,8 +219,8 @@
                     <q-btn
                         flat
                         class="bg-button-secondary text-on-color q-mx-sm"
-                        label="Save as Template"
-                        :disable="!isModified"
+                        :label="saveButtonLable"
+                        :disable="!isModified || !isNameSelected"
                         @click="saveAsTemplate"
                     />
                     <q-btn
@@ -269,6 +231,14 @@
                     />
                 </div>
             </q-form>
+            <button
+                @click="
+                    console.log('selectedTemplate: ');
+                    console.log(selectedTemplate);
+                "
+            >
+                Log ActionSelector
+            </button>
         </div>
     </q-drawer>
 </template>
@@ -295,7 +265,43 @@ import { ProjectWithMissionCountDto } from '@api/types/project/project-with-miss
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionSelector from '@components/ActionSelector.vue';
 
-const select: Ref<undefined | ActionTemplate> = ref(undefined);
+const isNameSelected: Ref<boolean> = ref<boolean>(false);
+
+const saveButtonLable = computed(() => {
+    if (isNameSelected) {
+        if (selectedTemplate?.value?.uuid === '') {
+            //Creating New Template
+            return 'Save New Template';
+        } else if (isNameSelected.value) {
+            //Existing and Modified Template
+            return 'Save New Version';
+        } else {
+            //No Template Selected
+            return 'Select Action';
+        }
+    }
+});
+
+const selectedTemplate = ref<ActionTemplate | undefined>(undefined);
+
+watch(selectedTemplate, () => {
+    if (!selectedTemplate.value) {
+        throw new Error('selectedTemplate undefined in watcher');
+    } else {
+        isNameSelected.value = true;
+        if (selectedTemplate.value?.uuid === '') {
+            //Got New Template
+            console.log('Handling New template');
+            newValue(selectedTemplate.value.name, () => {});
+        } else {
+            //Got Existing Template
+            console.log('handling Existing Template');
+            isModified.value = false;
+            selectTemplate(selectedTemplate.value);
+        }
+    }
+});
+
 const filter = ref('');
 const selectedAccessRights = ref({
     label: 'Read',
@@ -399,7 +405,7 @@ async function saveAsTemplate() {
         result = await createTemplate(true);
     }
     editingTemplate.value = result;
-    select.value = structuredClone(result);
+    selectedTemplate.value = structuredClone(result);
 }
 
 const { mutateAsync: createTemplate } = useMutation({
@@ -521,6 +527,8 @@ async function submitAnalysis() {
 
         template = await createTemplate(false);
     }
+    editingTemplate.value = res;
+    selectedTemplate.value = res.clone();
 
     editingTemplate.value = template;
     select.value = structuredClone(template);
@@ -580,24 +588,29 @@ async function submitAnalysis() {
 
 // HELPER FUNCTIONS ############################################################
 const isModified = computed(() => {
-    if (!select.value) {
+    if (!selectedTemplate.value) {
+        //should never Happen?
         return true;
     }
-    const sameName = editingTemplate.value.name === select.value.name;
+    const sameName =
+        editingTemplate.value.name === selectedTemplate.value.name;
     const sameImage =
-        editingTemplate.value?.imageName === select.value.imageName;
-    const sameCommand = editingTemplate.value?.command === select.value.command;
-    const sameGPU = editingTemplate.value?.gpuMemory === select.value.gpuMemory;
+        editingTemplate.value?.imageName === selectedTemplate.value.imageName;
+    const sameCommand = editingTemplate.value?.command === selectedTemplate.value.command;
+    const sameGPU = editingTemplate.value?.gpuMemory === selectedTemplate.value.gpuMemory;
 
     const sameMemory =
-        editingTemplate.value?.cpuMemory === select.value.cpuMemory;
-    const sameCores = editingTemplate.value?.cpuCores === select.value.cpuCores;
+        editingTemplate.value?.cpuMemory === selectedTemplate.value.cpuMemory;
+    const sameCores = editingTemplate.value?.cpuCores === selectedTemplate.value.cpuCores;
     const sameRuntime =
-        editingTemplate.value?.maxRuntime === select.value.maxRuntime;
+        editingTemplate.value?.maxRuntime ===
+        selectedTemplate.value.maxRuntime;
     const sameEntrypoint =
-        editingTemplate.value?.entrypoint === select.value.entrypoint;
+        editingTemplate.value?.entrypoint ===
+        selectedTemplate.value.entrypoint;
     const sameAccessRights =
-        editingTemplate.value?.accessRights === select.value.accessRights;
+        editingTemplate.value?.accessRights ===
+        selectedTemplate.value.accessRights;
     return !(
         sameName &&
         sameImage &&
@@ -617,7 +630,7 @@ function newValue(value: string, done: any) {
     );
     if (existingTemplate) {
         editingTemplate.value = existingTemplate.clone();
-        select.value = existingTemplate;
+        selectedTemplate.value = existingTemplate;
     }
     editingTemplate.value.name = value;
     done(editingTemplate);
@@ -626,7 +639,7 @@ function newValue(value: string, done: any) {
 function selectTemplate(template: ActionTemplate) {
     if (!template) {
         editingTemplate.value = undefined;
-        select.value = undefined;
+        selectedTemplate.value = undefined;
         return;
     }
     if (template.hasOwnProperty('_rawValue')) {

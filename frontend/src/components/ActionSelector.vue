@@ -9,7 +9,7 @@
         input-debounce="300"
         placeholder="Search"
         :options="
-            actionTemplates ? [newActionTemplate, ...actionTemplates] : []
+            actionTemplateList ? [newActionTemplate, ...actionTemplateList] : []
         "
         @input-value="
             (e) => {
@@ -24,19 +24,14 @@
         "
         @filter="
             (val, update) => {
-                groupSearch = val;
+                filterActionTemplates(val);
                 enableSearch();
                 update();
             }
         "
         class="q-pb-md"
     >
-        <template v-slot:no-option v-if="searchEnabled && searchResults.length">
-            <q-item>
-                <q-item-section class="text-grey"> No results</q-item-section>
-            </q-item>
-        </template>
-
+        <!--    Search Icon at end of field-->
         <template v-slot:append>
             <q-icon name="sym_o_search" />
         </template>
@@ -52,42 +47,39 @@
                         if (!searchEnabled) return;
                         searchEnabled = false;
                         model = null;
-                        updateSelectedTemplate(props.opt);
+                        updateSelectedTemplate(props.opt.clone());
                     }
-
-                    //     accessRights = accessRights?.concat([
-                    //         {
-                    //             uuid: props.opt.uuid,
-                    //             name: props.opt.name,
-                    //             rights: AccessGroupRights.READ,
-                    //             memberCount: props.opt.memberCount,
-                    //         },
-                    //     ]) || [
-                    //         {
-                    //             uuid: props.opt.uuid,
-                    //             name: props.opt.name,
-                    //             rights: AccessGroupRights.READ,
-                    //             memberCount: props.opt.memberCount,
-                    //         },
-                    //     ];
-                    // }
                 "
             >
                 <q-item-section>
                     <q-item-label>
-                        <q-icon
-                            name="sym_o_terminal"
-                            class="q-mr-sm"
-                            style="
-                                background-color: #e8e8e8;
-                                padding: 6px;
-                                border-radius: 50%;
-                            "
-                        />
-
-                        {{ props.opt.name }}
-
-                        <span> v{{ props.opt.version }} </span>
+                        <!--                    Rendering templates icon in green if preexisting and yellow if newTemplate-->
+                        <template v-if="props.opt.createdBy === null">
+                            <q-icon
+                                name="sym_o_terminal"
+                                class="q-mr-sm"
+                                style="
+                                    background-color: orange;
+                                    padding: 6px;
+                                    border-radius: 50%;
+                                "
+                            />
+                            <span>{{ props.opt.name }}</span>
+                            <span> v{{ props.opt.version }} </span>
+                        </template>
+                        <template v-else>
+                            <q-icon
+                                name="sym_o_terminal"
+                                class="q-mr-sm"
+                                style="
+                                    background-color: lightgreen;
+                                    padding: 6px;
+                                    border-radius: 50%;
+                                "
+                            />
+                            <span>{{ props.opt.name }}</span>
+                            <span> v{{ props.opt.version }} </span>
+                        </template>
                     </q-item-label>
                 </q-item-section>
             </q-item>
@@ -96,19 +88,17 @@
 
     <q-table
         class="table-white"
-        :columns="selectedActionTemplateDisplayHeader"
-        :rows="selectedTemplate || []"
+        :columns="selectionFieldHeader"
+        :rows="selectedTemplate ? [selectedTemplate] : []"
         hide-pagination
         flat
         separator="horizontal"
         bordered
         style="margin-top: 6px"
-        binary-state-sort
     >
         <template v-slot:body-cell-name="props">
             <q-td :props="props">
                 <q-icon
-                    v-if="!props.row.name.startsWith('Personal: ')"
                     name="sym_o_terminal"
                     class="q-mr-sm"
                     style="
@@ -117,13 +107,16 @@
                         border-radius: 50%;
                     "
                 />
-
-                {{ props.row.name }}
+                <span>{{ props.row.name }}</span>
             </q-td>
         </template>
 
         <template v-slot:body-cell-version="props">
             <q-td :props="props"> v{{ props.row.version }}</q-td>
+        </template>
+        <!--    option for empty table-->
+        <template v-slot:no-data
+            >Find an Action in the Field above (or create a new one)
         </template>
     </q-table>
 </template>
@@ -156,24 +149,45 @@ const DEFAULT_ACTION_TEMPLATE: ActionTemplate = new ActionTemplate(
     '',
     AccessGroupRights.READ,
 );
-const actionTemplates = defineModel<ActionTemplate[]>();
-const selectedTemplate: Ref<ActionTemplate[] | []> = ref([]);
+//gets passed as input
+const { actionTemplates } = defineProps<{
+    actionTemplates: ActionTemplate[];
+}>();
 
-console.log('PRINTING');
-actionTemplates.value?.forEach((t) => {
-    console.log(t);
-});
+const selectedTemplate = defineModel<ActionTemplate>();
 
-const groupSearch = ref('');
+//clone templates to filter
+const actionTemplateList: Ref<ActionTemplate[] | []> = ref([]);
+actionTemplateList.value = actionTemplates ? [...actionTemplates] : [];
+
+//template that gets written
+// const selectedTemplate: Ref<ActionTemplate[] | []> = ref([]);
+
 const searchEnabled = ref(false);
 const model = ref(null);
 const newActionTemplate = ref(DEFAULT_ACTION_TEMPLATE);
 
-function updateSelectedTemplate(selTempl: ActionTemplate) {
-    selectedTemplate.value = [selTempl];
+function filterActionTemplates(val: string) {
+    if (!actionTemplates) {
+        throw new Error('actionTemplates undefined in filterActionTemplates');
+        if (!actionTemplates) {
+            throw new Error(
+                'actionTemplates.value undefined in filterActionTemplates',
+            );
+        }
+    }
+
+    actionTemplateList.value =
+        actionTemplates?.filter((temp) => {
+            return temp.name.includes(val);
+        }) || [];
 }
 
-const selectedActionTemplateDisplayHeader = [
+function updateSelectedTemplate(selTempl: ActionTemplate) {
+    selectedTemplate.value = selTempl;
+}
+
+const selectionFieldHeader = [
     {
         name: 'name',
         required: true,
@@ -189,64 +203,9 @@ const selectedActionTemplateDisplayHeader = [
     },
 ];
 
-function updateCreateTemplateName(e) {
-    console.log(e);
-    newActionTemplate.value.name = e + ' (new Template)';
+function updateCreateTemplateName(newName: string) {
+    newActionTemplate.value.name = newName + ' (new Template)';
 }
-
-//update selection Field
-const updateRights = (group: AccessRight, right: AccessGroupRights) => {
-    accessRights.value =
-        accessRights.value?.map((g) => {
-            if (g.name === group.name) {
-                return { ...g, rights: right };
-            }
-            return g;
-        }) || [];
-};
-
-const enabled = computed(() => groupSearch.value.length >= 2);
-const searchAccessGroupsKey = computed(() => [
-    'accessGroups',
-    groupSearch.value,
-]);
-const { data: foundAccessGroups } = useQuery({
-    queryKey: searchAccessGroupsKey,
-    queryFn: () =>
-        searchAccessGroups(groupSearch.value, false, false, false, 0, 10),
-    enabled,
-});
-
-const searchAccessGroupsUserKey = computed(() => [
-    'accessGroupsUser',
-    groupSearch.value,
-]);
-const { data: foundUsers } = useQuery({
-    queryKey: searchAccessGroupsUserKey,
-    queryFn: () =>
-        searchAccessGroups(groupSearch.value, true, false, false, 0, 10),
-    enabled,
-});
-
-const searchResults = computed(() => {
-    const results: ActionTemplate[] = [];
-
-    foundAccessGroups.value?.[0].forEach((group) => {
-        results.push({
-            uuid: group.uuid,
-            name: group.name,
-        });
-    });
-
-    foundUsers.value?.[0].forEach((group) => {
-        results.push({
-            uuid: group.uuid,
-            name: group.name,
-        });
-    });
-
-    return results;
-});
 
 const enableSearch = () => {
     searchEnabled.value = true;
