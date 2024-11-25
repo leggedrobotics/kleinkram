@@ -616,6 +616,8 @@ async function submitAnalysis() {
 }
 
 // HELPER FUNCTIONS ############################################################
+// const isModified =
+
 const isModified = computed(() => {
     if (!selectedTemplate.value) {
         //should never Happen?
