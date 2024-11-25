@@ -37,24 +37,6 @@ class NotAuthenticated(Exception):
         super().__init__(LOGIN_MESSAGE)
 
 
-class CorruptedFile(Exception): ...
-
-
-class UploadFailed(Exception): ...
-
-
-class UploadCredentialsFailed(UploadFailed): ...
-
-
-class CancelUploadFailed(UploadFailed): ...
-
-
-class ConfirmUploadFailed(UploadFailed): ...
-
-
-class DownloadFailed(Exception): ...
-
-
 class InvalidCLIVersion(Exception): ...
 
 
