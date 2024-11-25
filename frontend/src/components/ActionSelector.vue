@@ -8,9 +8,7 @@
         fill-input
         input-debounce="300"
         placeholder="Search"
-        :options="
-            actionTemplateList ? [newActionTemplate, ...actionTemplateList] : []
-        "
+        :options="options"
         @input-value="
             (e) => {
                 updateCreateTemplateName(e);
@@ -65,7 +63,9 @@
                                 "
                             />
                             <span>{{ props.opt.name }}</span>
-                            <span> v{{ props.opt.version }} </span>
+                            <span>
+                                v{{ props.opt.version }} (new Template)
+                            </span>
                         </template>
                         <template v-else>
                             <q-icon
@@ -153,15 +153,26 @@ const DEFAULT_ACTION_TEMPLATE: ActionTemplate = new ActionTemplate(
 const { actionTemplates } = defineProps<{
     actionTemplates: ActionTemplate[];
 }>();
-
+//template that gets written
 const selectedTemplate = defineModel<ActionTemplate>();
 
 //clone templates to filter
-const actionTemplateList: Ref<ActionTemplate[] | []> = ref([]);
-actionTemplateList.value = actionTemplates ? [...actionTemplates] : [];
+const filteredActionTemplates: Ref<ActionTemplate[] | []> = ref([]);
+filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 
-//template that gets written
-// const selectedTemplate: Ref<ActionTemplate[] | []> = ref([]);
+const options = computed(() => {
+    let suggestedName: string = newActionTemplate.value.name;
+    let filteredNames: string[] = filteredActionTemplates.value.map(
+        (x) => x.name,
+    );
+    console.log(filteredNames);
+    console.log(suggestedName);
+    if (filteredNames.includes(suggestedName)) {
+        return [...filteredActionTemplates.value];
+    } else {
+        return [newActionTemplate.value, ...filteredActionTemplates.value];
+    }
+});
 
 const searchEnabled = ref(false);
 const model = ref(null);
@@ -177,7 +188,7 @@ function filterActionTemplates(val: string) {
         }
     }
 
-    actionTemplateList.value =
+    filteredActionTemplates.value =
         actionTemplates?.filter((temp) => {
             return temp.name.includes(val);
         }) || [];
@@ -204,7 +215,7 @@ const selectionFieldHeader = [
 ];
 
 function updateCreateTemplateName(newName: string) {
-    newActionTemplate.value.name = newName + ' (new Template)';
+    newActionTemplate.value.name = newName;
 }
 
 const enableSearch = () => {
