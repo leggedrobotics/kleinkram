@@ -379,14 +379,14 @@ def _download_handler(
 
 def upload_files(
     client: AuthenticatedClient,
-    files_map: Dict[str, Path],
+    files: Dict[str, Path],
     mission_id: UUID,
     *,
     verbose: bool = False,
     n_workers: int = 2,
 ) -> None:
     with tqdm(
-        total=len(files_map),
+        total=len(files),
         unit="files",
         desc="uploading files",
         disable=not verbose,
@@ -395,7 +395,7 @@ def upload_files(
         start = monotonic()
         futures: Dict[Future[UploadState], Path] = {}
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
-            for name, path in files_map.items():
+            for name, path in files.items():
                 future = executor.submit(
                     upload_file,
                     client=client,
