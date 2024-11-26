@@ -10,9 +10,9 @@ from uuid import UUID
 import httpx
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.parsing import _parse_file
-from kleinkram.api.parsing import _parse_mission
-from kleinkram.api.parsing import _parse_project
+from kleinkram.api.deser import _parse_file
+from kleinkram.api.deser import _parse_mission
+from kleinkram.api.deser import _parse_project
 from kleinkram.config import Config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import MissionExists
