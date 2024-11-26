@@ -5,6 +5,7 @@ from threading import Lock
 from typing import Any
 
 import httpx
+
 from kleinkram.auth import Config
 from kleinkram.config import Credentials
 from kleinkram.errors import NotAuthenticated

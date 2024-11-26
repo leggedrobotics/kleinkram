@@ -10,6 +10,9 @@ from typing import Optional
 
 import typer
 from click import Context
+from rich.console import Console
+from typer.core import TyperGroup
+
 from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
@@ -28,8 +31,6 @@ from kleinkram.errors import ErrorHandledTyper
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
-from rich.console import Console
-from typer.core import TyperGroup
 
 LOG_DIR = Path() / "logs"
 LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"

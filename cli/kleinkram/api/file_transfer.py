@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import sys
-from concurrent.futures import as_completed
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from enum import Enum
 from pathlib import Path
 from time import monotonic
@@ -17,9 +17,12 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from rich.console import Console
+from tqdm import tqdm
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.config import Config
 from kleinkram.config import LOCAL_S3
+from kleinkram.config import Config
 from kleinkram.errors import AccessDenied
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -27,9 +30,6 @@ from kleinkram.utils import b64_md5
 from kleinkram.utils import format_error
 from kleinkram.utils import format_traceback
 from kleinkram.utils import styled_string
-from rich.console import Console
-from tqdm import tqdm
-
 
 logger = logging.getLogger(__name__)
 

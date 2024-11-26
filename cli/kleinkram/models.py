@@ -19,7 +19,6 @@ class Project:
     id: UUID
     name: str
     description: str
-    missions: List[Mission] = field(default_factory=list)
 
 
 @dataclass(eq=True)
@@ -28,7 +27,6 @@ class Mission:
     name: str
     project_id: UUID
     project_name: str
-    files: List[File] = field(default_factory=list)
 
 
 class FileState(str, Enum):

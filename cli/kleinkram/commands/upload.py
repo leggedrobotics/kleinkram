@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 
 import typer
+from rich.console import Console
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.routes import _create_mission as _create_mission_api
@@ -12,19 +14,17 @@ from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import ProjectNotFound
 from kleinkram.models import Mission
-from kleinkram.resources import check_mission_spec_is_creatable
-from kleinkram.resources import get_missions_by_spec
-from kleinkram.resources import get_projects_by_spec
 from kleinkram.resources import InvalidMissionSpec
-from kleinkram.resources import mission_spec_is_unique
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
+from kleinkram.resources import check_mission_spec_is_creatable
+from kleinkram.resources import get_missions
+from kleinkram.resources import get_projects
+from kleinkram.resources import mission_spec_is_unique
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
-from rich.console import Console
-
 
 HELP = """\
 Upload files to kleinkram.
@@ -54,7 +54,7 @@ def _create_mission(
         metadata_dct = load_metadata(metadata_path)
 
     # get project
-    projects = get_projects_by_spec(client, mission_spec.project_spec)
+    projects = get_projects(client, mission_spec.project_spec)
 
     if not projects:
         raise ProjectNotFound(f"project {mission_spec.project_spec} does not exist")
@@ -71,7 +71,7 @@ def _create_mission(
         ignore_missing_tags=ignore_missing_tags,
     )
 
-    missions = get_missions_by_spec(client, mission_spec)
+    missions = get_missions(client, mission_spec)
     assert len(missions) is not None, "unreachable, the ghost is back"
 
     return missions[0]
@@ -91,20 +91,8 @@ def upload(
     fix_filenames: bool = typer.Option(False, help="fix filenames"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
-    # check files and `fix` filenames
-    if files is None:
-        files = []
-
     file_paths = [Path(file) for file in files]
     check_file_paths(file_paths)
-    files_map = get_filename_map(file_paths)
-
-    if not fix_filenames:
-        for name, path in files_map.items():
-            if name != path.name:
-                raise ValueError(
-                    f"invalid filename format {path.name}, use `--fix-filenames`"
-                )
 
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
@@ -120,7 +108,7 @@ def upload(
         raise InvalidMissionSpec(f"mission spec is not unique: {mission_spec}")
 
     client = AuthenticatedClient()
-    missions = get_missions_by_spec(client, mission_spec)
+    missions = get_missions(client, mission_spec)
 
     if len(missions) > 1:
         raise AssertionError("unreachable")
@@ -140,24 +128,18 @@ def upload(
         )
     )
 
-    console = Console()
-    filtered_files_map = {}
-    remote_file_names = [file.name for file in mission_parsed.files]
-    for name, path in files_map.items():
-        if name in remote_file_names:
-            console.print(
-                f"file: {name} (path: {path}) already exists in mission", style="yellow"
-            )
-        else:
-            filtered_files_map[name] = path
+    files_map = get_filename_map(file_paths)
 
-    if not filtered_files_map:
-        console.print("\nNO FILES UPLOADED", style="yellow")
-        return
+    if not fix_filenames:
+        for name, path in files_map.items():
+            if name != path.name:
+                raise ValueError(
+                    f"invalid filename format {path.name}, use `--fix-filenames`"
+                )
 
     upload_files(
         client,
-        filtered_files_map,
+        files_map,
         mission_parsed.id,
         n_workers=2,
         verbose=get_shared_state().verbose,

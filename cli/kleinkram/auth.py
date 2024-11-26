@@ -7,8 +7,8 @@ from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from typing import Optional
 
-from kleinkram.config import Config
 from kleinkram.config import CONFIG_PATH
+from kleinkram.config import Config
 from kleinkram.config import Credentials
 
 CLI_CALLBACK_ENDPOINT = "/cli/callback"

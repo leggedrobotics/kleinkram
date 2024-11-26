@@ -6,7 +6,6 @@ from pathlib import Path
 import boto3
 import tqdm
 
-
 BUCKET_NAME = "upload-test"
 ENDPOINT_URL = "https://minio.datasets.dev.leggedrobotics.com"
 ACCESS_KEY = ""

@@ -6,17 +6,17 @@ from typing import List
 from typing import Optional
 
 import typer
+from rich.console import Console
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import download_files
 from kleinkram.config import get_shared_state
 from kleinkram.models import files_to_table
 from kleinkram.resources import FileSpec
-from kleinkram.resources import get_files_by_spec
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
+from kleinkram.resources import get_files
 from kleinkram.utils import split_args
-from rich.console import Console
-
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def download(
     )
 
     client = AuthenticatedClient()
-    parsed_files = get_files_by_spec(client, file_spec)
+    parsed_files = get_files(client, file_spec)
 
     if get_shared_state().verbose:
         table = files_to_table(parsed_files, title="downloading files...")

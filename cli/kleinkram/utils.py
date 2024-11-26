@@ -16,9 +16,10 @@ from typing import Union
 from uuid import UUID
 
 import yaml
+from rich.console import Console
+
 from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
-from rich.console import Console
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 

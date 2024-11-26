@@ -6,7 +6,6 @@ from kleinkram.resources import FileSpec
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
 
-
 __all__ = [
     "__version__",
     "download",

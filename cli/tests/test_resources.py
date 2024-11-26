@@ -3,14 +3,15 @@ from __future__ import annotations
 from uuid import uuid4
 
 import pytest
-from kleinkram.resources import check_mission_spec_is_creatable
-from kleinkram.resources import check_project_spec_is_creatable
+
 from kleinkram.resources import InvalidMissionSpec
 from kleinkram.resources import InvalidProjectSpec
-from kleinkram.resources import mission_spec_is_unique
 from kleinkram.resources import MissionSpec
-from kleinkram.resources import project_spec_is_unique
 from kleinkram.resources import ProjectSpec
+from kleinkram.resources import check_mission_spec_is_creatable
+from kleinkram.resources import check_project_spec_is_creatable
+from kleinkram.resources import mission_spec_is_unique
+from kleinkram.resources import project_spec_is_unique
 
 
 @pytest.mark.parametrize(

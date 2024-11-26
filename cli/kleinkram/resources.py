@@ -13,6 +13,8 @@ from kleinkram.api.routes import _get_missions_by_project
 from kleinkram.api.routes import _get_projects
 from kleinkram.errors import InvalidMissionSpec
 from kleinkram.errors import InvalidProjectSpec
+from kleinkram.errors import MissionNotFound
+from kleinkram.errors import ProjectNotFound
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -42,20 +44,22 @@ class FileSpec:
     mission_spec: MissionSpec = field(default=MissionSpec())
 
 
-def check_mission_spec_is_creatable(spec: MissionSpec) -> None:
+def check_mission_spec_is_creatable(spec: MissionSpec) -> str:
     if not mission_spec_is_unique(spec):
         raise InvalidMissionSpec(f"Mission spec is not unique: {spec}")
     # cant create a missing by id
     if spec.ids:
         raise InvalidMissionSpec(f"cant create mission by id: {spec}")
+    return spec.patterns[0]
 
 
-def check_project_spec_is_creatable(spec: ProjectSpec) -> None:
+def check_project_spec_is_creatable(spec: ProjectSpec) -> str:
     if not project_spec_is_unique(spec):
         raise InvalidProjectSpec(f"Project spec is not unique: {spec}")
     # cant create a missing by id
     if spec.ids:
         raise InvalidProjectSpec(f"cant create project by id: {spec}")
+    return spec.patterns[0]
 
 
 def _pattern_is_unique(pattern: str) -> bool:
@@ -91,9 +95,7 @@ def mission_spec_is_unique(spec: MissionSpec) -> bool:
     return False
 
 
-def get_projects_by_spec(
-    client: AuthenticatedClient, spec: ProjectSpec
-) -> List[Project]:
+def get_projects(client: AuthenticatedClient, spec: ProjectSpec) -> List[Project]:
     projects = _get_projects(client)
 
     matched_names = filtered_by_patterns(
@@ -110,10 +112,8 @@ def get_projects_by_spec(
     ]
 
 
-def get_missions_by_spec(
-    client: AuthenticatedClient, spec: MissionSpec
-) -> List[Mission]:
-    projects = get_projects_by_spec(client, spec.project_spec)
+def get_missions(client: AuthenticatedClient, spec: MissionSpec) -> List[Mission]:
+    projects = get_projects(client, spec.project_spec)
 
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
         missions = chain.from_iterable(
@@ -134,14 +134,14 @@ def get_missions_by_spec(
     filter = [
         mission
         for mission in missions
-        if mission.name in matched_names or mission.id in spec.patterns
+        if mission.name in matched_names or mission.id in spec.ids
     ]
 
     return filter
 
 
-def get_files_by_spec(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
-    missions = get_missions_by_spec(client, spec.mission_spec)
+def get_files(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
+    missions = get_missions(client, spec.mission_spec)
 
     # collect files
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
@@ -156,3 +156,27 @@ def get_files_by_spec(client: AuthenticatedClient, spec: FileSpec) -> List[File]
     matched_names = filtered_by_patterns([file.name for file in files], spec.patterns)
 
     return [file for file in files if file.name in matched_names or file.id in spec.ids]
+
+
+def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
+    projects = get_projects(client, spec)
+
+    if len(projects) == 1:
+        return projects[0]
+    if not projects:
+        raise ProjectNotFound(f"Project not found: {spec}")
+    raise InvalidProjectSpec(
+        f"Project spec does not uniquely determine project: {spec}"
+    )
+
+
+def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
+    missions = get_missions(client, spec)
+
+    if len(missions) == 1:
+        return missions[0]
+    if not missions:
+        raise MissionNotFound(f"Mission not found: {spec}")
+    raise InvalidMissionSpec(
+        f"Mission spec does not uniquely determine mission: {spec}"
+    )

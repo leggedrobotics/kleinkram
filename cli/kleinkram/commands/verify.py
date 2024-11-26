@@ -9,25 +9,25 @@ from typing import List
 from typing import Optional
 
 import typer
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.config import get_shared_state
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.errors import MissionNotFound
-from kleinkram.models import FileState
-from kleinkram.resources import FileSpec
-from kleinkram.resources import get_files_by_spec
-from kleinkram.resources import get_missions_by_spec
-from kleinkram.resources import mission_spec_is_unique
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.utils import b64_md5
-from kleinkram.utils import check_file_paths
-from kleinkram.utils import get_filename_map
-from kleinkram.utils import split_args
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 from tqdm import tqdm
+
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.config import get_shared_state
+from kleinkram.errors import InvalidMissionSpec
+from kleinkram.models import FileState
+from kleinkram.resources import FileSpec
+from kleinkram.resources import MissionSpec
+from kleinkram.resources import ProjectSpec
+from kleinkram.resources import get_files
+from kleinkram.resources import get_mission
+from kleinkram.resources import mission_spec_is_unique
+from kleinkram.utils import b64_md5
+from kleinkram.utils import check_file_paths
+from kleinkram.utils import get_filename_map
+from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
 
@@ -90,14 +90,10 @@ def verify(
     # check first that the mission even exists, the mission could be empty
     if not mission_spec_is_unique(mission_spec):
         raise InvalidMissionSpec(f"mission spec is not unique: {mission_spec}")
-    missions = get_missions_by_spec(client, mission_spec)
-    if len(missions) > 1:
-        raise AssertionError("unreachable")
-    if not missions:
-        raise MissionNotFound(f"mission: {mission_spec} does not exist")
+    _ = get_mission(client, mission_spec)
 
     # get all files from that mission
-    remote_files = {file.name: file for file in get_files_by_spec(client, file_spec)}
+    remote_files = {file.name: file for file in get_files(client, file_spec)}
 
     # verify files
     file_status: Dict[Path, FileVerificationStatus] = {}

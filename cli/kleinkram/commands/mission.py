@@ -4,13 +4,14 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _update_mission_metadata
 from kleinkram.errors import MissionNotFound
-from kleinkram.resources import get_missions_by_spec
-from kleinkram.resources import mission_spec_is_unique
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
+from kleinkram.resources import get_missions
+from kleinkram.resources import mission_spec_is_unique
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 
@@ -48,7 +49,7 @@ def update(
         raise ValueError(f"mission spec is not unique: {mission_spec}")
 
     client = AuthenticatedClient()
-    missions = get_missions_by_spec(client, mission_spec)
+    missions = get_missions(client, mission_spec)
 
     if not missions:
         raise MissionNotFound(f"Mission {mission} does not exist")

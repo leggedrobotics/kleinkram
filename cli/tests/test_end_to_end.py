@@ -6,9 +6,10 @@ import shutil
 from pathlib import Path
 
 import pytest
-from kleinkram.api.routes import _get_api_version
 from rich.console import Console
 from rich.text import Text
+
+from kleinkram.api.routes import _get_api_version
 
 VERBOSE = True
 

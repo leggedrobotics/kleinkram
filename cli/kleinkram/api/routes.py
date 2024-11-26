@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from uuid import UUID
 
 import httpx
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.parsing import _parse_file
 from kleinkram.api.parsing import _parse_mission
@@ -30,6 +32,9 @@ __all__ = [
     "_update_mission_metadata",
     "_get_api_version",
     "_claim_admin",
+    "_delete_files",
+    "_delete_mission",
+    "_delete_project",
 ]
 
 
@@ -233,3 +238,37 @@ def _claim_admin(client: AuthenticatedClient) -> None:
     response = client.post(CLAIM_ADMIN)
     response.raise_for_status()
     return
+
+
+FILE_DELETE_MANY = "/file/deleteMultiple"
+
+
+def _delete_files(
+    client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID
+) -> None:
+    payload = {
+        "uuids": [str(file_id) for file_id in file_ids],
+        "missionUUID": str(mission_id),
+    }
+    resp = client.post(FILE_DELETE_MANY, json=payload)
+    resp.raise_for_status()
+
+
+MISSION_DELETE_ONE = "/mission/{}"
+
+
+def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
+    resp = client.delete(MISSION_DELETE_ONE.format(mission_id))
+
+    # 409 is returned if the mission has files
+    # 403 is returned if the mission does not exist / user cant delete
+
+    resp.raise_for_status()
+
+
+PROJECT_DELETE_ONE = "/project/{}"
+
+
+def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
+    resp = client.delete(PROJECT_DELETE_ONE.format(project_id))
+    resp.raise_for_status()
