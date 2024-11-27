@@ -11,6 +11,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from typing import overload
 from uuid import UUID
 
 from rich.console import Console
@@ -47,6 +48,10 @@ __all__ = [
 ]
 
 
+def _map_to_ids(lst: Sequence[Union[str, UUID]]) -> List[UUID]:
+    return [UUID(item, version=4) if isinstance(item, str) else item for item in lst]
+
+
 def _file_desitations(
     files: Sequence[File], *, dest: Path, allow_nested: bool = False
 ) -> Dict[Path, File]:
@@ -65,61 +70,99 @@ def _file_desitations(
 
 
 def _file_spec_from_args(
-    file_ids: Optional[List[UUID]] = None,
-    file_patterns: Optional[List[str]] = None,
-    mission_ids: Optional[List[UUID]] = None,
-    mission_patterns: Optional[List[str]] = None,
-    project_ids: Optional[List[UUID]] = None,
-    project_patterns: Optional[List[str]] = None,
+    file_ids: Optional[Sequence[Union[UUID, str]]] = None,
+    file_patterns: Optional[Sequence[str]] = None,
+    mission_ids: Optional[Sequence[Union[UUID, str]]] = None,
+    mission_patterns: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[Union[UUID, str]]] = None,
+    project_patterns: Optional[Sequence[str]] = None,
 ) -> FileSpec:
-    project_spec = ProjectSpec(ids=project_ids or [], patterns=project_patterns or [])
-    mission_spec = MissionSpec(
-        ids=mission_ids or [],
-        patterns=mission_patterns or [],
-        project_spec=project_spec,
+    mission_spec = _mission_spec_from_args(
+        mission_ids=mission_ids,
+        mission_patterns=mission_patterns,
+        project_ids=project_ids,
+        project_patterns=project_patterns,
     )
+
     file_spec = FileSpec(
-        ids=file_ids or [],
-        patterns=file_patterns or [],
+        ids=_map_to_ids(file_ids) if file_ids else [],
+        patterns=list(file_patterns) if file_patterns else [],
         mission_spec=mission_spec,
     )
     return file_spec
 
 
 def _mission_spec_from_args(
-    mission_ids: Optional[List[UUID]] = None,
-    mission_patterns: Optional[List[str]] = None,
-    project_ids: Optional[List[UUID]] = None,
-    project_patterns: Optional[List[str]] = None,
+    mission_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    mission_patterns: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    project_patterns: Optional[Sequence[str]] = None,
 ) -> MissionSpec:
-    project_spec = ProjectSpec(ids=project_ids or [], patterns=project_patterns or [])
+    project_spec = _project_spec_from_args(project_ids, project_patterns)
     mission_spec = MissionSpec(
-        ids=mission_ids or [],
-        patterns=mission_patterns or [],
+        ids=_map_to_ids(mission_ids) if mission_ids else [],
+        patterns=list(mission_patterns) if mission_patterns else [],
         project_spec=project_spec,
     )
     return mission_spec
 
 
+def _project_spec_from_args(
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    project_patterns: Optional[Sequence[str]] = None,
+) -> ProjectSpec:
+    project_spec = ProjectSpec(
+        ids=_map_to_ids(project_ids) if project_ids else [],
+        patterns=list(project_patterns) if project_patterns else [],
+    )
+    return project_spec
+
+
+@overload
 def download(
-    dest: Path,
+    *file: File,
+    dest: Optional[Path],
+    overwrite: bool = False,
+    verbose: bool = False,
+    allow_nested: bool = False,
+) -> None: ...
+
+
+@overload
+def download(
     *,
+    files: Sequence[File],
+    dest: Optional[Path] = None,
+    overwrite: bool = False,
+    verbose: bool = False,
+    allow_nested: bool = False,
+) -> None: ...
+
+
+def download(
+    *file: File,
+    files: Optional[Sequence[File]] = None,
     spec: Optional[FileSpec] = None,
-    ids: Optional[List[UUID]] = None,
-    patterns: Optional[List[str]] = None,
-    mission_ids: Optional[List[UUID]] = None,
-    mission_patterns: Optional[List[str]] = None,
-    project_ids: Optional[List[UUID]] = None,
+    ids: Optional[Sequence[Union[str, UUID]]] = None,
+    patterns: Optional[Sequence[str]] = None,
+    mission_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    mission_patterns: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
     allow_nested: bool = False,
     overwrite: bool = False,
     verbose: bool = False,
+    dest: Optional[Path] = None,
 ) -> None:
     client = AuthenticatedClient()
+
+    # TODO: check correct usage of args
 
     if spec is not None and any([ids, patterns, mission_ids, mission_patterns]):
         raise ValueError(
             "cannot specify both a file spec and file ids, patterns, mission ids or mission patterns"
         )
+    if file is not None:
+        files = [file]
 
     if spec is None:
         spec = _file_spec_from_args(
@@ -129,7 +172,9 @@ def download(
             mission_patterns=mission_patterns,
             project_ids=project_ids,
         )
-    files = get_files(client, spec)
+
+    if files is None:
+        files = get_files(client, spec)
 
     if verbose:
         Console().print(files_to_table(files, title="downloading files..."))
@@ -225,22 +270,66 @@ def upload(
     upload_files(client, files_map, mission.id, n_workers=2, verbose=verbose)
 
 
+def list_project_by_spec(spec: ProjectSpec) -> List[Project]: ...
+
+
+def list_mission_by_spec(spec: MissionSpec) -> List[Mission]: ...
+
+
+def list_file_by_spec(spec: FileSpec) -> List[File]: ...
+
+
+@overload
+def list_by_spec(spec: FileSpec) -> List[File]: ...
+
+
+@overload
+def list_by_spec(spec: MissionSpec) -> List[Mission]: ...
+
+
+@overload
+def list_by_spec(spec: ProjectSpec) -> List[Project]: ...
+
+
+def list_by_spec(
+    spec: Union[FileSpec, MissionSpec, ProjectSpec]
+) -> Union[List[File], List[Mission], List[Project]]:
+    if isinstance(spec, FileSpec):
+        return list_file_by_spec(spec)
+    elif isinstance(spec, MissionSpec):
+        return list_mission_by_spec(spec)
+    elif isinstance(spec, ProjectSpec):
+        return list_project_by_spec(spec)
+
+
 def list_files(
     *,
     spec: Optional[FileSpec] = None,
-    file_ids: Optional[List[Union[str, UUID]]] = None,
-    fild_patterns: Optional[List[str]] = None,
-    mission_ids: Optional[List[Union[str, UUID]]] = None,
-    mission_patterns: Optional[List[str]] = None,
-    project_ids: Optional[List[Union[str, UUID]]] = None,
-    project_patterns: Optional[List[str]] = None,
-) -> None: ...
+    file_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    file_names: Optional[Sequence[str]] = None,
+    mission_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    mission_name: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[File]: ...
 
 
-def list_missions() -> None: ...
+def list_missions(
+    *,
+    spec: Optional[MissionSpec] = None,
+    mission_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    mission_names: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[Mission]: ...
 
 
-def list_projects() -> None: ...
+def list_projects(
+    *,
+    spec: Optional[ProjectSpec] = None,
+    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[Project]: ...
 
 
 def delete_files(
@@ -285,3 +374,6 @@ def delete_project(project_id: UUID) -> None:
     for mission in missions:
         delete_mission(mission.id)
     _delete_project(client, project_id)
+
+
+download
