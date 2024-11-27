@@ -362,10 +362,13 @@ def delete_mission(mission_id: Union[str, UUID]) -> None:
     files = get_files(client, FileSpec(mission_spec=MissionSpec(ids=[mission_id])))
 
     delete_files([file.id for file in files], mission_id)
-    delete_mission(mission_id)
+    _delete_mission(client, mission_id)
 
 
-def delete_project(project_id: UUID) -> None:
+def delete_project(project_id: Union[str, UUID]) -> None:
+    if isinstance(project_id, str):
+        project_id = UUID(project_id, version=4)
+
     spec = MissionSpec(project_spec=ProjectSpec(ids=[project_id]))
 
     client = AuthenticatedClient()
@@ -374,6 +377,3 @@ def delete_project(project_id: UUID) -> None:
     for mission in missions:
         delete_mission(mission.id)
     _delete_project(client, project_id)
-
-
-download
