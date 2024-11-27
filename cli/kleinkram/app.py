@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import time
 from enum import Enum
@@ -32,7 +33,14 @@ from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
 
-LOG_DIR = Path() / "logs"
+# slightly cursed lambdas so that linters don't complain about unreachable code
+if (lambda: os.name)() == "posix":
+    LOG_DIR = Path().home() / ".local" / "state" / "kleinkram"
+elif (lambda: os.name)() == "nt":
+    LOG_DIR = Path().home() / "AppData" / "Local" / "kleinkram"
+else:
+    raise OSError(f"Unsupported OS {os.name}")
+
 LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"
 LOG_FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 
@@ -153,16 +161,14 @@ def cli(
     shared_state.verbose = verbose
     shared_state.debug = debug
 
-    if shared_state.debug:
+    if shared_state.debug and log_level is None:
         log_level = LogLevel.DEBUG
+    if log_level is None:
+        log_level = LogLevel.WARNING
 
-    if log_level is not None:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        level = logging.getLevelName(log_level)
-        logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
-    else:
-        logging.disable(logging.CRITICAL)
-
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    level = logging.getLevelName(log_level)
+    logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
     logger.info(f"CLI version: {__version__}")
 
     try:
