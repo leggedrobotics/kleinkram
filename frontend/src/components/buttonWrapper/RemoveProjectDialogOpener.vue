@@ -25,9 +25,10 @@ import {
     canDeleteProject,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
+import { AccessGroupDto } from '@api/types/User.dto';
 
 const props = defineProps<{
-    accessGroup: AccessGroup;
+    accessGroup: AccessGroupDto;
     projectUUID: string;
 }>();
 

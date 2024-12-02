@@ -6,14 +6,15 @@
                     <div>
                         <div class="flex">
                             <span
-                                v-for="tag in mission?.tags"
+                                v-for="tag in mission?.tags.tags ??
+                                ([] as TagDto[])"
                                 :key="tag.uuid"
                                 class="q-mr-xs"
                             >
                                 <q-chip
                                     square
                                     :style="[
-                                        tag.type.type == 'LINK'
+                                        tag.type.datatype == 'LINK'
                                             ? { cursor: 'pointer' }
                                             : {},
                                     ]"
@@ -21,7 +22,7 @@
                                     @mouseup="() => openLink(tag)"
                                 >
                                     {{ tag.type.name }}:
-                                    {{ tag.asString() }}
+                                    {{ tag.value }}
                                 </q-chip>
                             </span>
                         </div>
@@ -42,8 +43,8 @@
                         $router.push({
                             name: ROUTES.ACTION.routeName,
                             query: {
-                                project_uuid: project_uuid,
-                                mission_uuid: mission_uuid,
+                                project_uuid: projectUuid,
+                                mission_uuid: missionUuid,
                             },
                         })
                     "
@@ -181,7 +182,7 @@
                             clickable
                             v-bind="props.itemProps"
                             dense
-                            @click="props.toggleOption(props.opt)"
+                            @click="() => props.toggleOption(props.opt)"
                         >
                             <q-item-section>
                                 <div>
@@ -200,7 +201,7 @@
                 </q-select>
                 <CategorySelector
                     :selected="selectedCategories"
-                    :project_uuid="project_uuid"
+                    :project_uuid="projectUuid"
                     @update:selected="updateSelected"
                 />
                 <q-btn-dropdown
@@ -220,7 +221,7 @@
                                 <q-toggle
                                     :model-value="fileTypeFilter[index].value"
                                     :label="option.name"
-                                    @click="onFileTypeClicked(index)"
+                                    @click="() => onFileTypeClicked(index)"
                                 />
                             </q-item-section>
                         </q-item>
@@ -245,7 +246,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="() => refresh()"
+                    @click="refresh"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
@@ -290,7 +291,7 @@
                         padding="6px"
                         icon="sym_o_download"
                         color="white"
-                        @click="() => downloadCallback()"
+                        @click="downloadCallback"
                     >
                         Download
                     </q-btn>
@@ -300,7 +301,7 @@
                         padding="6px"
                         icon="sym_o_delete"
                         color="white"
-                        @click="() => deleteFilesCallback()"
+                        @click="deleteFilesCallback"
                     >
                         Delete
                     </q-btn>
@@ -347,10 +348,11 @@
 import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import {
     registerNoPermissionErrorHandler,
+    useCategories,
     useHandler,
-    useMissionQuery,
+    useMission,
 } from 'src/hooks/customQueryHooks';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
@@ -369,28 +371,30 @@ import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpene
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import KleinDownloadMission from 'components/cliLinks/KleinDownloadMission.vue';
 import KleinDownloadFiles from 'components/cliLinks/KleinDownloadFiles.vue';
-import { getCategories } from 'src/services/queries/categories';
 import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 import { DataType, FileType } from '@common/enum';
+import { TagDto } from '@api/types/TagsDto.dto';
+import { CategoryDto } from '@api/types/Category.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 const $q = useQuasar();
 const $router = useRouter();
 
-const project_uuid = useProjectUUID();
-const mission_uuid = useMissionUUID();
+const projectUuid = useProjectUUID();
+const missionUuid = useMissionUUID();
 
 const search = computed({
     get: () => handler.value.searchParams.name,
     set: (value: string) => {
         handler.value.setSearch({
             name: value,
-            health: selectedFileHealth.value,
+            health: selectedFileHealth.value ?? '',
         });
     },
 });
@@ -406,14 +410,14 @@ const selectedFileTypes = computed(() => {
 });
 const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
-const selectedFileHealth = computed({
+const selectedFileHealth = computed<string | undefined>({
     get: () => handler.value.searchParams.health,
     set: (value: string) => {
         handler.value.setSearch({ health: value, name: search.value });
     },
 });
 
-const selectedFiles: Ref<FileEntity[]> = ref([]);
+const selectedFiles: Ref<FileDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
@@ -441,9 +445,9 @@ const {
     data: mission,
     isLoadingError,
     error,
-} = useMissionQuery(
-    mission_uuid,
-    (e) => {
+} = useMission(
+    (missionUuid.value ?? '') as string,
+    (e: any) => {
         Notify.create({
             message: `Error fetching Mission: ${e.response.data.message}`,
             color: 'negative',
@@ -457,27 +461,24 @@ const {
 );
 registerNoPermissionErrorHandler(
     isLoadingError,
-    mission_uuid,
+    (missionUuid.value ?? '') as unknown as Ref<string, string>,
     'mission',
     error,
 );
 
-const { data: _all_categories } = useQuery<[Category[], number]>({
-    queryKey: ['categories', project_uuid.value, ''],
-    queryFn: () => getCategories(project_uuid.value, ''),
-});
-const allCategories: Ref<Category[]> = computed(() =>
-    _all_categories.value ? _all_categories.value[0] : [],
+const { data: _all_categories } = useCategories(projectUuid.value, '');
+const allCategories: Ref<CategoryDto[]> = computed(() =>
+    _all_categories.value ? _all_categories.value.categories : [],
 );
 
-const selectedCategories: Ref<Category[]> = computed({
+const selectedCategories = computed({
     get: () => {
         if (!handler.value.categories) return [];
         return handler.value.categories.map((catUUID) =>
             allCategories.value.find((cat) => cat.uuid === catUUID),
         );
     },
-    set: (value: Category[]) => {
+    set: (value: CategoryDto[]) => {
         if (!value) {
             handler.value.setCategories([]);
             return;
@@ -487,7 +488,7 @@ const selectedCategories: Ref<Category[]> = computed({
 });
 
 const { mutate: _deleteFiles } = useMutation({
-    mutationFn: (update: { fileUUIDs; missionUUID }) =>
+    mutationFn: (update: { fileUUIDs: string[]; missionUUID: string }) =>
         deleteFiles(update.fileUUIDs, update.missionUUID),
     onSuccess: async () => {
         Notify.create({
@@ -499,10 +500,10 @@ const { mutate: _deleteFiles } = useMutation({
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'files' &&
-                query.queryKey[1] === mission_uuid.value,
+                query.queryKey[1] === missionUuid.value,
         });
     },
-    onError: (e) => {
+    onError: (e: any) => {
         Notify.create({
             message: `Error deleting files: ${e.response.data.message}`,
             color: 'negative',
@@ -518,13 +519,13 @@ async function refresh() {
     });
 }
 
-function openLink(tag: Tag) {
-    if (tag.type.type !== DataType.LINK) return;
-    window.open(tag.asString(), '_blank');
+function openLink(tag: TagDto) {
+    if (tag.type.datatype !== DataType.LINK) return;
+    window.open(tag.valueAsString, '_blank');
 }
 
 function deleteFilesCallback() {
-    if (selectedFiles.value.length == 1) {
+    if (selectedFiles.value.length === 1) {
         $q.dialog({
             component: ConfirmDeleteFileDialog,
             componentProps: {
@@ -532,7 +533,10 @@ function deleteFilesCallback() {
             },
         }).onOk(() => {
             const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            _deleteFiles({
+                fileUUIDs,
+                missionUUID: missionUuid.value as string,
+            });
             deselect();
         });
     } else {
@@ -543,7 +547,10 @@ function deleteFilesCallback() {
             },
         }).onOk(() => {
             const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
-            _deleteFiles({ fileUUIDs, missionUUID: mission_uuid.value });
+            _deleteFiles({
+                fileUUIDs,
+                missionUUID: missionUuid.value as string,
+            });
             deselect();
         });
     }
@@ -564,7 +571,7 @@ async function downloadCallback() {
         });
     } catch (e) {
         Notify.create({
-            message: `Error downloading files: ${e.toString()}`,
+            message: `Error downloading files: ${e}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -572,7 +579,7 @@ async function downloadCallback() {
     }
 }
 
-function updateSelected(value: Category[]) {
+function updateSelected(value: CategoryDto[]) {
     selectedCategories.value = value;
 }
 

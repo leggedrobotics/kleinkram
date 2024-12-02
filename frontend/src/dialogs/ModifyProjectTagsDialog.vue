@@ -43,6 +43,7 @@ import { ref, watch } from 'vue';
 import { updateTagTypes } from 'src/services/mutations/project';
 import CreateTagTypeDialogOpener from 'components/buttonWrapper/CreateTagTypeDialogOpener.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
+import { TagDto } from '@api/types/TagsDto.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -58,19 +59,19 @@ const { data: project } = useQuery({
         return getProject(props.projectUUID);
     },
 });
-const selected = ref<TagType[]>([]);
+const selected = ref<TagDto[]>([]);
 
 watch(
     () => project.value,
     (newVal) => {
-        selected.value = newVal?.requiredTags || ([] as TagType[]);
+        selected.value = newVal?.requiredTags || ([] as TagDto[]);
     },
     { immediate: true },
 );
 const { mutate } = useMutation({
     mutationFn: () => {
         return updateTagTypes(
-            project.value?.uuid as string,
+            project.value?.uuid!,
             selected.value.map((tag) => tag.uuid),
         );
     },

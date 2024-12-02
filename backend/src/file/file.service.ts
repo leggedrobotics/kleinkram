@@ -11,7 +11,6 @@ import {
     Brackets,
     DataSource,
     FindOptionsSelect,
-    FindOptionsSelectByString,
     FindOptionsWhere,
     ILike,
     In,
@@ -763,7 +762,14 @@ export class FileService implements OnModuleInit {
 
         return await Promise.all(
             filenames.map(async (filename) => {
-                const emptyCredentials = {
+                const emptyCredentials: {
+                    bucket: string | null;
+                    fileName: string;
+                    fileUUID: string | null;
+                    accessCredentials: Credentials | null;
+                    error: string | null;
+                    queueUUID?: string;
+                } = {
                     bucket: null,
                     fileName: filename,
                     fileUUID: null,
@@ -921,7 +927,7 @@ export class FileService implements OnModuleInit {
                     where: { uuid: file.name },
                     relations: ['mission', 'mission.project'],
                 });
-                if (!fileEntity) {
+                if (fileEntity === null) {
                     logger.error(`File ${file.name} not found in database`);
                     return;
                 }
@@ -930,6 +936,12 @@ export class FileService implements OnModuleInit {
                     file.name,
                     {} as TaggingOpts,
                 );
+
+                if (fileEntity.mission === undefined)
+                    throw new Error('Mission not found!');
+                if (fileEntity.mission.project === undefined)
+                    throw new Error('Project not found!');
+
                 await addTagsToMinioObject(bucked, file.name, {
                     project_uuid: fileEntity.mission.project.uuid,
 
@@ -937,7 +949,7 @@ export class FileService implements OnModuleInit {
                     filename: fileEntity.filename,
                 });
             }),
-        ).catch((err: any) => {
+        ).catch((err: unknown) => {
             logger.error(err);
         });
     }
@@ -959,7 +971,7 @@ export class FileService implements OnModuleInit {
                 } else {
                     file.size = stats.size;
                     logger.debug(
-                        `Updated size for ${file.filename}: ${file.size}`,
+                        `Updated size for ${file.filename}: ${file.size.toString()}`,
                     );
                 }
                 await this.fileRepository.save(file);

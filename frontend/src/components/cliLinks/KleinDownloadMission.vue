@@ -31,8 +31,10 @@
     </div>
 </template>
 <script setup lang="ts">
+import { MissionDto } from '@api/types/Mission.dto';
+
 const props = defineProps<{
-    mission: Mission;
+    mission: MissionDto;
 }>();
 
 async function clicked() {

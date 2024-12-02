@@ -21,9 +21,10 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
+import { FileDto } from '@api/types/Files.dto';
 
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 
 const $q = useQuasar();
@@ -32,7 +33,7 @@ const canModify = computed(() => {
     if (!props.file) return false;
     return canDeleteMission(
         props.file.mission.uuid,
-        props.file.mission.project?.uuid,
+        props.file.mission.project.uuid,
         permissions.value,
     );
 });

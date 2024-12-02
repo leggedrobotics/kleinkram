@@ -15,7 +15,7 @@ import {
 } from './entities/createTemplate.dto';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
-import { ListOfActionDto } from '@common/api/types/ListOfAction.dto';
+import { ActionDto, ActionsDto } from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -195,7 +195,7 @@ export class ActionService {
         sortBy: string,
         sortDirection: 'ASC' | 'DESC',
         search: string,
-    ): Promise<ListOfActionDto> {
+    ): Promise<ActionsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -230,7 +230,8 @@ export class ActionService {
             }
 
             const [actions, count] = await query.getManyAndCount();
-            return { count, actions };
+            // TODO: fix
+            return { count, actions: actions as unknown as ActionDto[] };
         }
 
         const baseQuery = this.actionRepository

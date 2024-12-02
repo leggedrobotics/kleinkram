@@ -38,8 +38,8 @@ export const clearAllData = async () => {
             .join(', ');
 
         await db.query(`TRUNCATE ${tablesToClear} CASCADE;`);
-    } catch (error) {
-        throw new Error(`ERROR: Cleaning test database: ${error}`);
+    } catch (error: any) {
+        throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
     }
 };
 
@@ -82,15 +82,19 @@ export const mockDbUser = async (
     );
 
     if (role) {
-        const user = await userRepository.findOne({ where: { email: email } });
+        const user = await userRepository.findOneOrFail({
+            where: { email: email },
+        });
+
         user.role = role;
         await userRepository.save(user);
     }
 
-    return (await userRepository.findOne({ where: { email: email } })).uuid;
+    return (await userRepository.findOneOrFail({ where: { email: email } }))
+        .uuid;
 };
 
-export const getJwtToken = (user: User) => {
+export const getJwtToken = (user: User): string => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jwt = require('jsonwebtoken');
     return jwt.sign({ uuid: user.uuid }, process.env['JWT_SECRET']);

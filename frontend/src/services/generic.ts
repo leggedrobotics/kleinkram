@@ -6,6 +6,7 @@ import {
     FileState,
     QueueState,
 } from '@common/enum';
+import { FileDto } from '@api/types/Files.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -31,6 +32,7 @@ export const accessGroupRightsMap = {
     [AccessGroupRights.CREATE]: 'Create',
     [AccessGroupRights.WRITE]: 'Write',
     [AccessGroupRights.DELETE]: 'Delete',
+    [AccessGroupRights._ADMIN]: 'Admin',
 };
 
 export function getAccessRightDescription(
@@ -136,7 +138,7 @@ export async function _downloadFile(fileUUID: string, filename: string) {
     document.body.removeChild(a);
 }
 
-export async function _downloadFiles(files: FileEntity[]) {
+export async function _downloadFiles(files: FileDto[]) {
     const downloadPromises = files.map(async (file) => {
         try {
             const url = await downloadFile(file.uuid, true);
@@ -151,6 +153,7 @@ export async function _downloadFiles(files: FileEntity[]) {
 
 async function downloadFiles(files: { url: string; filename: string }[]) {
     // Ensure that the File System Access API is supported
+    // @ts-expect-error
     if (!window.showDirectoryPicker) {
         throw new Error(
             'File System Access API is not supported in this browser.',
@@ -159,6 +162,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
 
     try {
         // Open a directory picker so the user can select where to save the files
+        // @ts-expect-error
         const directoryHandle = await window.showDirectoryPicker();
 
         for (const { url, filename } of files) {
@@ -179,25 +183,22 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
             // Create a reader for the response body stream
             const reader = response.body?.getReader();
 
-            if (!reader) {
-                throw new Error('Failed to create a stream reader.');
-            }
-
             // Function to pump the stream chunks to the file
             async function streamToFileSystem() {
                 let done: boolean;
                 let value: Uint8Array;
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 while (true) {
+                    if (reader === undefined) break;
+
                     // Read the next chunk from the stream
                     const { done: streamDone, value: chunk } =
                         await reader.read();
                     done = streamDone;
+                    if (chunk === undefined) break;
                     value = chunk;
-
-                    if (done) {
-                        break;
-                    }
+                    if (done) break;
 
                     // Write the current chunk to the file
                     await writableStream.write(value);

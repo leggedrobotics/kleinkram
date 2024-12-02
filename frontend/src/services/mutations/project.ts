@@ -30,7 +30,7 @@ export const updateProject = async (
         name,
         description,
     });
-    return response.data as Project;
+    return response.data;
 };
 
 export const deleteProject = async (projectUUID: string) => {

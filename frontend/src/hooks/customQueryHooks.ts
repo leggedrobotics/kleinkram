@@ -1,6 +1,14 @@
-import { ref, Ref, watch } from 'vue';
-import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
-import { getMission } from 'src/services/queries/mission';
+import { computed, ComputedRef, ref, Ref, watch } from 'vue';
+import {
+    ThrowOnError,
+    useQuery,
+    UseQueryReturnType,
+} from '@tanstack/vue-query';
+import {
+    getMission,
+    getMissions,
+    missionsOfProjectMinimal,
+} from 'src/services/queries/mission';
 import {
     filteredProjects,
     getProject,
@@ -8,38 +16,50 @@ import {
 } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
 import { QueryURLHandler } from 'src/services/QueryHandler';
-import { getIsUploading, getStorage } from 'src/services/queries/file';
+import {
+    fetchFile,
+    filesOfMission,
+    getIsUploading,
+    getStorage,
+} from 'src/services/queries/file';
 import { AxiosError } from 'axios';
 import ROUTES from 'src/router/routes';
 import { useQuasar } from 'quasar';
 import { getPermissions, searchUsers } from 'src/services/queries/user';
 import { getUser } from 'src/services/auth';
-import { CurrentAPIUserDto, UsersDto } from '@api/types/User.dto';
+import {
+    AccessGroupDto,
+    CurrentAPIUserDto,
+    UsersDto,
+} from '@api/types/User.dto';
 import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights, DataType, FileType, UserRole } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { allWorkers } from '../services/queries/worker';
 import { WorkersDto } from '@api/types/Workers.dto';
-
-interface Permissions {
-    role: string;
-
-    default_permission: number;
-    projects: {
-        uuid: string;
-        access: number;
-    }[];
-    missions: {
-        uuid: string;
-        access: number;
-    }[];
-}
+import { TagsDto } from '@api/types/TagsDto.dto';
+import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
+import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
+import { getQueueForFile } from '../services/queries/queue';
+import {
+    ProjectAccessDto,
+    ProjectDto,
+    ProjectsDto,
+} from '@api/types/Project.dto';
+import { PermissionsDto } from '@api/types/Permissions.dto';
+import { ActionsDto } from '@api/types/Actions.dto';
+import { getActions, getRunningActions } from '../services/queries/action';
+import { CategoriesDto } from '@api/types/Category.dto';
+import { getCategories } from '../services/queries/categories';
+import { FileDto, FilesDto } from '@api/types/Files.dto';
+import { getAccessGroup } from '../services/queries/access';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
-    Permissions | null,
+    PermissionsDto | null,
     Error
 > => {
-    return useQuery<Permissions | null>({
+    return useQuery<PermissionsDto | null>({
         queryKey: ['permissions'],
         queryFn: () => {
             return getPermissions();
@@ -62,60 +82,60 @@ export const useUser = (): UseQueryReturnType<
 
 export const getPermissionForProject = (
     projectUuid: string | undefined,
-    permissions: Permissions,
+    permissions: PermissionsDto,
 ): AccessGroupRights => {
     if (!permissions) return 0;
-    if (permissions.role === 'ADMIN') return AccessGroupRights._ADMIN;
+    if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
     const project = permissions.projects.find(
-        (p: { uuid: string; access: number }) => p.uuid === projectUuid,
+        (p: ProjectAccessDto) => p.uuid === projectUuid,
     );
 
-    const projectPermission = project?.access || 0;
+    const projectPermission = project.access && 0;
     return Math.max(defaultPermission, projectPermission);
 };
 
 export const getPermissionForMission = (
     missionUuid: string | undefined,
-    permissions: Permissions,
+    permissions: PermissionsDto,
 ): AccessGroupRights => {
     if (!permissions) return 0;
-    if (permissions.role === 'ADMIN') return AccessGroupRights._ADMIN;
+    if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
     const mission = permissions.missions.find(
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
-    const missionPermission = mission?.access || 0;
+    const missionPermission = (mission?.access as number) ?? 0;
     return Math.max(defaultPermission, missionPermission);
 };
 
 export const canCreateProject = (
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (permissions.role === 'ADMIN') return true;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+    if (permissions.role === UserRole.ADMIN) return true;
+
     return permissions.default_permission >= AccessGroupRights.CREATE;
 };
 
 export const canCreateMission = (
     projectUuid: string | undefined,
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!projectUuid) return false;
+    if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
 };
 export const canModifyProject = (
     projectUuid: string | undefined,
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!projectUuid) return false;
+    if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.WRITE;
 };
@@ -123,7 +143,7 @@ export const canModifyProject = (
 export const canModifyMission = (
     missionUuid: string | undefined,
     projectUuid: string | undefined,
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean | undefined => {
     if (!permissions) return false;
     if (!missionUuid && !projectUuid) return false;
@@ -138,7 +158,7 @@ export const canModifyMission = (
 export const canDeleteMission = (
     missionUuid: string | undefined,
     projectUuid: string | undefined,
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
     if (!missionUuid && !projectUuid) return false;
@@ -151,14 +171,14 @@ export const canDeleteMission = (
 };
 
 export const canLaunchInMission = (
-    mission: Mission | null,
-    permissions: Permissions | null | undefined,
+    mission: MissionDto | null,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
     if (!mission) return false;
 
     const projectPermission = getPermissionForProject(
-        mission.project?.uuid as string,
+        mission.project.uuid,
         permissions,
     );
     if (projectPermission >= AccessGroupRights.WRITE) return true;
@@ -172,36 +192,20 @@ export const canLaunchInMission = (
 
 export const canDeleteProject = (
     projectUuid: string | undefined,
-    permissions: Permissions | null | undefined,
+    permissions: PermissionsDto | null | undefined,
 ): boolean => {
-    if (!projectUuid) return false;
+    if (projectUuid === null) return false;
     if (!permissions) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.DELETE;
 };
 
-export const useMissionQuery = (
-    missionUuid: Ref<string | undefined>,
-    throwOnError: ((error: any, query: any) => boolean) | undefined = undefined,
-    retryDelay = 1000,
-): UseQueryReturnType<Mission | null, Error> => {
-    return useQuery<Mission | null>({
-        queryKey: ['mission', missionUuid.value ? missionUuid : ''],
-        queryFn: () => {
-            if (!missionUuid.value) return null;
-            return getMission(missionUuid.value);
-        },
-        enabled: () => !!missionUuid.value,
-        retryDelay,
-        throwOnError,
-    });
-};
 export const useProjectQuery = (
     projectUuid: Ref<string | undefined>,
-): UseQueryReturnType<Project, Error> =>
-    useQuery<Project>({
+): UseQueryReturnType<ProjectDto, Error> =>
+    useQuery<ProjectDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
-        queryFn: (): Promise<Project> => {
+        queryFn: (): Promise<ProjectDto> => {
             if (!projectUuid.value)
                 return Promise.reject(new Error('Project UUID is not defined'));
             return getProject(projectUuid.value);
@@ -209,22 +213,41 @@ export const useProjectQuery = (
         enabled: () => !!projectUuid.value,
     });
 
-export const useAllProjectsQuery = (
-    take: number,
-    skip: number,
-    sortBy: string,
-    descending = false,
-    searchParams?: {
-        name: string;
-    },
-) => {
-    return useQuery<Project[]>({
-        queryKey: [
-            'projects',
-            { take, skip, sortBy, descending, searchParams },
-        ],
-        queryFn: () =>
-            filteredProjects(take, skip, sortBy, descending, searchParams),
+/**
+ * Fetches the mission for a given mission UUID
+ * @param missionUuid
+ * @param throwOnError
+ * @param retryDelay
+ */
+export const useMission = (
+    missionUuid: Ref<string | undefined> | string,
+    throwOnError:
+        | ThrowOnError<MissionDto, Error, MissionDto, readonly unknown[]>
+        | undefined = undefined,
+    retryDelay = 1000,
+): UseQueryReturnType<MissionDto | undefined, Error> => {
+    if (typeof missionUuid === 'string') {
+        missionUuid = ref(missionUuid);
+    }
+
+    return useQuery<MissionDto>({
+        queryKey: ['mission', missionUuid],
+        queryFn: () => getMission(missionUuid.value ?? ''),
+        enabled: missionUuid.value !== undefined && missionUuid.value !== '',
+        retryDelay,
+        throwOnError,
+    });
+};
+
+export const useManyMissions = (
+    missionUuid: ComputedRef<(string | any[])[]>,
+    allMissionUUIDs: ComputedRef<any[]>,
+    hasMissionUUIDs: ComputedRef<boolean>,
+): UseQueryReturnType<MissionsDto | undefined, Error> => {
+    return useQuery<MissionsDto>({
+        queryKey: missionUuid,
+        queryFn: () => getMissions(allMissionUUIDs.value),
+        enabled: hasMissionUUIDs,
     });
 };
 
@@ -239,11 +262,11 @@ export const useAllProjectsQuery = (
  * @param error
  */
 export const registerNoPermissionErrorHandler = (
-    isLoadingError: Ref<false, false> | Ref<true, true>,
+    isLoadingError: Ref<false | true>,
     uuid: Ref<string>,
     resourceName: 'project' | 'mission' | 'file',
     error: Ref<Error, Error> | Ref<null, null>,
-) => {
+): void => {
     const $router = useRouter();
     const $q = useQuasar();
 
@@ -253,7 +276,7 @@ export const registerNoPermissionErrorHandler = (
                 error.value.response?.data?.statusCode ||
                 `Could not load the ${resourceName}`;
 
-            if (statusCode == 403)
+            if (statusCode === 403)
                 await $router.push({
                     name: ROUTES.ERROR_403.routeName,
                     query: {
@@ -315,6 +338,31 @@ export const useStorageOverview = (): UseQueryReturnType<
     });
 };
 
+export const useFilteredProjects = (
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending: boolean,
+    searchParam?: Record<string, string>,
+): UseQueryReturnType<ProjectsDto | undefined, Error> => {
+    return useQuery<ProjectsDto>({
+        queryKey: ['projects'],
+        queryFn: () =>
+            filteredProjects(take, skip, sortBy, descending, searchParam),
+    });
+};
+
+export const useMissionsOfProjectMinimal = (
+    projectUuid: string,
+    take: number,
+    skip: number,
+): UseQueryReturnType<MissionsDto | undefined, Error> => {
+    return useQuery<MissionsDto>({
+        queryKey: computed(() => ['missions', projectUuid]),
+        queryFn: () => missionsOfProjectMinimal(projectUuid, take, skip),
+    });
+};
+
 export const useWorkers = (): UseQueryReturnType<
     WorkersDto | undefined,
     Error
@@ -341,3 +389,125 @@ export const useUserSearch = (
         },
     });
 };
+
+export const useAllTags = (): UseQueryReturnType<
+    TagsDto | undefined,
+    Error
+> => {
+    return useQuery<TagsDto>({
+        queryKey: ['tagTypes'],
+        queryFn: getTagTypes,
+    });
+};
+
+export const useActions = (
+    projectUuid: string,
+    missionUuid: string,
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending: boolean,
+    search: string,
+    queryKey: string,
+): UseQueryReturnType<ActionsDto | undefined, Error> => {
+    return useQuery<ActionsDto>({
+        queryKey: computed(() => [
+            'action_mission',
+            projectUuid,
+            missionUuid,
+            queryKey,
+        ]),
+        queryFn: () =>
+            getActions(
+                projectUuid,
+                missionUuid,
+                take,
+                skip,
+                sortBy,
+                descending,
+                search,
+            ),
+        staleTime: 0,
+        refetchInterval: 4000,
+    });
+};
+
+export const useQueueForFile = (
+    filename: string | undefined,
+    missionUUID: string | undefined,
+): UseQueryReturnType<FileQueueEntriesDto | undefined, Error> =>
+    useQuery<FileQueueEntriesDto>({
+        queryKey: ['queue', filename],
+        queryFn: () => getQueueForFile(filename ?? '', missionUUID ?? ''),
+        enabled: () =>
+            !(filename === undefined) && !(missionUUID === undefined),
+    });
+
+export const useFilteredTag = (
+    tagSearch: string,
+    selectedDataType: DataType | undefined,
+): UseQueryReturnType<TagsDto | undefined, Error> => {
+    return useQuery({
+        queryKey: computed(() => ['tagTypes', tagSearch, selectedDataType]),
+        queryFn: async () => {
+            return getFilteredTagTypes(tagSearch, selectedDataType);
+        },
+    });
+};
+
+export const useCategories = (
+    uuid: string,
+    filter: string,
+): UseQueryReturnType<CategoriesDto | undefined, Error> => {
+    return useQuery<CategoriesDto>({
+        queryKey: computed(() => ['categories', uuid, filter]),
+        queryFn: () => getCategories(uuid, filter),
+    });
+};
+
+export const useFile = (
+    uuid: string | undefined,
+): UseQueryReturnType<FileDto | undefined, Error> => {
+    return useQuery({
+        queryKey: ['file', uuid],
+        queryFn: async () => {
+            if (uuid === undefined) return undefined;
+            return fetchFile(uuid);
+        },
+        enabled: computed(() => uuid !== undefined),
+    });
+};
+
+export const useAccessGroup = (
+    uuid: string,
+): UseQueryReturnType<AccessGroupDto | undefined, Error> => {
+    return useQuery({
+        queryKey: ['AccessGroup', uuid],
+        queryFn: async () => {
+            return getAccessGroup(uuid);
+        },
+    });
+};
+
+export const useMcapFilesOfMission = (
+    uuid: string | undefined,
+    mcapName: string,
+): UseQueryReturnType<FilesDto | undefined, Error> =>
+    useQuery({
+        queryKey: computed(() => ['files', uuid, mcapName]),
+        queryFn: () =>
+            filesOfMission(uuid ?? '', 100, 0, FileType.MCAP, mcapName),
+        enabled() {
+            return uuid !== undefined;
+        },
+    });
+
+export const useRunningActions = (): UseQueryReturnType<
+    ActionsDto | undefined,
+    Error
+> => ({
+    queryKey: ['actions'],
+    queryFn: () => getRunningActions(),
+    staleTime: 100,
+    refetchInterval: 5000,
+});

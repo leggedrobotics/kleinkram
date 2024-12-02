@@ -39,7 +39,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 @Processor(`action-queue-${os.hostname()}`)
 @Injectable()
 export class ActionQueueProcessorProvider implements OnModuleInit {
-    private worker: Worker;
+    private worker: Worker | undefined;
 
     constructor(
         @InjectQueue(`action-queue-${os.hostname()}`)
@@ -51,7 +51,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         private workerRepository: Repository<Worker>,
     ) {}
 
-    async onModuleInit() {
+    async onModuleInit(): Promise<void> {
         logger.debug('Setting hardware capabilities...');
 
         const potentialWorker = await createWorker(this.workerRepository);
@@ -64,12 +64,12 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             worker.lastSeen = new Date();
             worker.identifier = potentialWorker.identifier;
             worker = await this.workerRepository.save(worker);
-        } else if (!worker) {
+        } else {
             worker = await this.workerRepository.save(potentialWorker);
         }
         this.worker = worker;
         logger.debug('Connecting to Redis...');
-        await this.analysisQueue.isReady().catch((error) => {
+        await this.analysisQueue.isReady().catch((error: unknown) => {
             logger.error('Failed to connect to Redis:', error);
             throw error;
         });
@@ -77,7 +77,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @Process({ concurrency: 1, name: `action` })
-    async processAction(job: Job<{ uuid: string }>) {
+    async processAction(job: Job<{ uuid: string }>): Promise<boolean> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
             relations: [
@@ -88,8 +88,10 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 'worker',
             ],
         });
-        if (!this.worker) {
+
+        if (this.worker === undefined || action.worker === undefined) {
             logger.error('Worker not found');
+            throw new Error('Worker not found');
         }
         if (this.worker.uuid !== action.worker.uuid) {
             await this.actionRepository
@@ -106,20 +108,22 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @OnQueueActive()
-    onActive(job: Job<SubmittedAction>) {
-        logger.debug(`Processing job ${job.id} of type ${job.name}.`);
+    onActive(job: Job<SubmittedAction>): void {
+        logger.debug(
+            `Processing job ${job.id.toString()} of type ${job.name}.`,
+        );
     }
 
     @OnQueueCompleted()
-    async onCompleted(job: Job<SubmittedAction>) {
-        logger.debug(`Job ${job.id} of type ${job.name} completed.`);
+    async onCompleted(job: Job<SubmittedAction>): Promise<void> {
+        logger.debug(`Job ${job.id.toString()} of type ${job.name} completed.`);
         await this.markJobAsCompleted(job);
     }
 
     @OnQueueFailed()
-    async onFailed(job: Job<SubmittedAction>, error: any) {
+    async onFailed(job: Job<SubmittedAction>, error: any): Promise<void> {
         logger.error(
-            `Error processing job ${job.id} of type ${job.name}. Error handled by ${os.hostname()}`,
+            `Error processing job ${job.id.toString()} of type ${job.name}. Error handled by ${os.hostname()}`,
         );
         if (error instanceof HardwareDependencyError) {
             await this.handleHardwareDependencyError(job, error);
@@ -142,8 +146,8 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     private async handleHardwareDependencyError(
         job: Job<SubmittedAction>,
         error: HardwareDependencyError,
-    ) {
-        const hasAttemptLeft = job.attemptsMade < job.opts.attempts;
+    ): Promise<void> {
+        const hasAttemptLeft = job.attemptsMade < (job.opts.attempts ?? 0);
         if (!hasAttemptLeft) {
             await this.handleUnexpectedError(job, error);
             return;
@@ -151,7 +155,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
         // retry the job
         logger.debug(
-            `Retrying job ${job.id} of type ${job.name} (attempt ${job.attemptsMade} of ${job.opts.attempts}).\n`,
+            `Retrying job ${job.id.toString()} of type ${job.name} (attempt ${job.attemptsMade.toString()} of ${job.opts.attempts?.toString() ?? '0'}).\n`,
         );
 
         // update the state of the action in the database
@@ -175,13 +179,13 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     private async handleUnexpectedError(
         job: Job<SubmittedAction>,
         error: Error,
-    ) {
+    ): Promise<void> {
         // unmet hardware requirements or other error
         // remove the job from the queue and don't retry
         await job.remove();
 
         logger.error(
-            `Job ${job.id} of type ${job.name} failed with error: ${error.message}.`,
+            `Job ${job.id.toString()} of type ${job.name} failed with error: ${error.message}.`,
         );
         logger.error(error.stack);
         try {
@@ -194,9 +198,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error(
-                `Failed to update action state in database: ${e.message}`,
+                `Failed to update action state in database: ${(e as { message: string }).message}`,
             );
         }
     }
@@ -207,7 +211,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
      * @param job The job that was completed
      * @private
      */
-    private async markJobAsCompleted(job: Job<SubmittedAction>) {
+    private async markJobAsCompleted(job: Job<SubmittedAction>): Promise<void> {
         // update the state of the action in the database
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.id as string },
@@ -229,9 +233,14 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @Cron(CronExpression.EVERY_MINUTE)
-    async healthCheck() {
+    async healthCheck(): Promise<void> {
         return this.workerRepository.manager.transaction(async (manager) => {
-            const worker = await manager.findOne(Worker, {
+            if (this.worker === undefined) {
+                logger.error('Worker not found');
+                throw new Error('Worker not found');
+            }
+
+            const worker = await manager.findOneOrFail(Worker, {
                 where: { uuid: this.worker.uuid },
             });
             worker.lastSeen = new Date();

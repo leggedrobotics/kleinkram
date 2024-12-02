@@ -37,7 +37,7 @@
                                 clearable
                                 multiple
                                 use-chips
-                                :options="data"
+                                :options="data ?? []"
                                 emit-value
                                 map-options
                                 class="full-width"
@@ -56,20 +56,17 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { getTagTypes } from 'src/services/queries/tag';
 import { createProject } from 'src/services/mutations/project';
+import { useAllTags } from '../hooks/customQueryHooks';
 
 const projectName = ref('');
 const projectDescription = ref('');
 const queryClient = useQueryClient();
 const selectedTags = ref([]);
 
-const { data } = useQuery<TagType[]>({
-    queryKey: ['tagTypes'],
-    queryFn: getTagTypes,
-});
+const { data } = useAllTags();
 
 const submitNewProject = async () => {
     try {
@@ -77,12 +74,14 @@ const submitNewProject = async () => {
             projectName.value,
             projectDescription.value,
             selectedTags.value,
-            {},
+            [],
             [],
         );
-    } catch (e) {
+    } catch (e: unknown) {
+        const errorMessages: string = (e as Error).message;
+
         Notify.create({
-            message: `Error creating project: ${e?.response?.data?.message || e.message}`,
+            message: `Error creating project: ${errorMessages}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

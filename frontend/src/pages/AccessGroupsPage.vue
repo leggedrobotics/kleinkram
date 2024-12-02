@@ -52,7 +52,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="() => refetchAccessGroups()"
+                    @click="refetchAccessGroups"
                 />
 
                 <CreateAccessGroupDialogOpener />
@@ -98,7 +98,9 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    @click="rowClick(undefined, props.row)"
+                                    @click="
+                                        () => rowClick(undefined, props.row)
+                                    "
                                 >
                                     <q-item-section>
                                         View Details
@@ -141,6 +143,8 @@ import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteAccessGroup from 'components/buttonWrapper/DeleteAccessGroup.vue';
 import CreateAccessGroupDialogOpener from 'components/buttonWrapper/CreateAccessGroupDialogOpener.vue';
 import { AccessGroupType } from '@common/enum';
+import { ProjectDto } from '@api/types/Project.dto';
+import { AccessGroupDto, AccessGroupsDto } from '@api/types/User.dto';
 
 const $router = useRouter();
 const prefilterOptions = [
@@ -151,7 +155,7 @@ const prefilterOptions = [
 ];
 const prefilter = ref(prefilterOptions[0]);
 
-const selectedAccessGroups: Ref<Project[]> = ref([]);
+const selectedAccessGroups: Ref<ProjectDto[]> = ref([]);
 
 const filterOptions: Ref<{
     type: AccessGroupType;
@@ -168,6 +172,8 @@ const filterOptions: Ref<{
 watch(
     () => prefilter.value,
     (newVal) => {
+        // TODO set filter
+        /*
         if (newVal.value === 'all') {
             filterOptions.value.personal = false;
             filterOptions.value.creator = false;
@@ -185,6 +191,7 @@ watch(
             filterOptions.value.creator = false;
             filterOptions.value.member = false;
         }
+         */
     },
 );
 
@@ -200,25 +207,24 @@ const accessGroupKey = computed(() => [
     pagination.value,
 ]);
 
-const { data: foundAccessGroups, refetch: refetchAccessGroups } = useQuery<
-    [AccessGroup[], number]
->({
-    queryKey: accessGroupKey,
-    queryFn: () =>
-        searchAccessGroups(
-            filterOptions.value.search,
-            filterOptions.value.personal,
-            filterOptions.value.creator,
-            filterOptions.value.member,
-            (pagination.value.page - 1) * pagination.value.rowsPerPage,
-            pagination.value.rowsPerPage,
-        ),
-});
+const { data: foundAccessGroups, refetch: refetchAccessGroups } =
+    useQuery<AccessGroupsDto>({
+        queryKey: accessGroupKey,
+        queryFn: () =>
+            searchAccessGroups(
+                filterOptions.value.search,
+                filterOptions.value.type === AccessGroupType.PRIMARY,
+                filterOptions.value.creator,
+                filterOptions.value.member,
+                (pagination.value.page - 1) * pagination.value.rowsPerPage,
+                pagination.value.rowsPerPage,
+            ),
+    });
 const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value[0] : [],
 );
 
-async function rowClick(event: any, row: AccessGroup) {
+async function rowClick(event: any, row: AccessGroupDto) {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,
         params: { uuid: row.uuid },
@@ -231,8 +237,8 @@ const accessGroupsColumns = [
         required: true,
         label: 'Access Group',
         align: 'left',
-        field: (row: AccessGroup) => row.name,
-        format: (val: string) => val,
+        field: (row: AccessGroupDto): string => row.name,
+        format: (val: string): string => val,
         sortable: true,
         style: 'width:  20%; max-width: 60%; min-width: 10%;',
     },
@@ -241,8 +247,8 @@ const accessGroupsColumns = [
         required: false,
         label: 'Group Creator',
         align: 'center',
-        field: (row: AccessGroup) => row.creator?.name || '-',
-        format: (val: string) => val,
+        field: (row: AccessGroupDto): string => row.creator.name,
+        format: (val: string): string => val,
         sortable: false,
     },
 
@@ -251,8 +257,9 @@ const accessGroupsColumns = [
         required: true,
         label: 'Creation Date',
         align: 'center',
-        field: (row: AccessGroup) => row.createdAt,
-        format: (val: string) => formatDate(new Date(val)),
+        field: (row: AccessGroupDto): string =>
+            row.createdAt.toLocaleDateString(),
+        format: (val: string): string => formatDate(new Date(val)),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
@@ -262,8 +269,9 @@ const accessGroupsColumns = [
         required: true,
         label: 'Nr of Users',
         align: 'center',
-        field: (row: AccessGroup) => row.memberships.length,
-        format: (val: number) => `${val}`,
+        field: (row: AccessGroupDto): string =>
+            row.memberships.length.toString(),
+        format: (val: number): string => val.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',
     },
@@ -272,9 +280,10 @@ const accessGroupsColumns = [
         required: true,
         label: 'Nr of Projects',
         align: 'center',
-        field: (row: AccessGroup) =>
-            row.projectAccesses.map((pa) => pa.project).flat().length,
-        format: (val: number) => `${val}`,
+        field: (row: AccessGroupDto): string =>
+            row.projectAccesses.map((pa: ProjectDto) => pa.project).flat()
+                .length,
+        format: (val: number): string => val.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',
     },

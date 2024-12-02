@@ -30,15 +30,16 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
+import { FileDto } from '@api/types/Files.dto';
 
 const props = defineProps<{
-    files: FileEntity[];
+    files: FileDto[];
 }>();
 
 const fileArguments = computed(() => {
     return props.files
         .map((file) => {
-            return `${file.uuid}`;
+            return file.uuid.toString();
         })
         .join(' ');
 });

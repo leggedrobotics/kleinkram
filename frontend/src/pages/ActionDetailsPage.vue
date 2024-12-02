@@ -72,14 +72,14 @@
                         <tr>
                             <td class="q-table__cell">Docker Image</td>
                             <td class="q-table__cell">
-                                {{ action?.template.imageName }}
+                                {{ action.template.imageName }}
 
                                 <span
-                                    v-if="action?.image?.repoDigests?.[0]"
+                                    v-if="action.image.repoDigests?.[0]"
                                     style="color: #525252; font-size: 0.8em"
                                 >
                                     <br />
-                                    {{ action?.image?.repoDigests?.[0] }}
+                                    {{ action.image.repoDigests?.[0] }}
                                 </span>
                             </td>
                         </tr>
@@ -93,7 +93,7 @@
                         <tr>
                             <td class="q-table__cell">Created By</td>
                             <td class="q-table__cell">
-                                {{ action?.createdBy?.name }}
+                                {{ action?.creator?.name }}
                             </td>
                         </tr>
                         <tr>
@@ -139,7 +139,7 @@
                             <td class="q-table__cell">
                                 {{
                                     accessGroupRightsMap[
-                                        action?.template.accessRights
+                                        action.template.accessRights
                                     ]
                                 }}
                             </td>
@@ -173,13 +173,13 @@
                         <tr>
                             <td class="q-table__cell">Runner Hostname:</td>
                             <td class="q-table__cell">
-                                {{ action?.worker?.hostname || 'N/A' }}
+                                {{ action.worker.hostname || 'N/A' }}
                             </td>
                         </tr>
-                        <tr v-if="action && action?.getRuntimeInMS() != 0">
+                        <tr v-if="action && action?.runtimeInMS != 0">
                             <td class="q-table__cell">Runtime:</td>
                             <td class="q-table__cell">
-                                {{ action?.getRuntimeInMS() / 1000 }} seconds
+                                {{ action?.runtimeInMS / 1000 }} seconds
                             </td>
                         </tr>
                         <tr>
@@ -187,15 +187,15 @@
                                 Hardware Requirements:
                             </td>
                             <td class="q-table__cell">
-                                <div v-if="action?.template">
-                                    Cores: {{ action?.template.cpuCores }}<br />
+                                <div v-if="action.template">
+                                    Cores: {{ action.template.cpuCores }}<br />
                                     RAM:
-                                    {{ action?.template.cpuMemory }} GB<br />
+                                    {{ action.template.cpuMemory }} GB<br />
                                     min vRAM:
                                     <template
                                         v-if="action?.template.gpuMemory >= 0"
                                     >
-                                        {{ action?.template.gpuMemory }} GB
+                                        {{ action.template.gpuMemory }} GB
                                     </template>
                                     <template v-else>
                                         no GPU requested
@@ -209,8 +209,8 @@
                         <tr>
                             <td class="q-table__cell">Project / Mission:</td>
                             <td class="q-table__cell">
-                                {{ action?.mission?.project?.name }} /
-                                {{ action?.mission?.name }}
+                                {{ action.mission?.project?.name }} /
+                                {{ action.mission?.name }}
                             </td>
                         </tr>
 
@@ -219,7 +219,7 @@
                             <td class="q-table__cell">
                                 <q-btn
                                     v-if="
-                                        action?.artifacts ===
+                                        action.artifacts ===
                                         ArtifactState.UPLOADED
                                     "
                                     label="Open"
@@ -231,7 +231,7 @@
                                     icon="sym_o_link"
                                     @click="
                                         () =>
-                                            openArtifactUrl(action?.artifactUrl)
+                                            openArtifactUrl(action.artifactUrl)
                                     "
                                 />
                                 <div v-else>
@@ -266,7 +266,7 @@
                 <q-card-section class="flex column q-pa-none">
                     <div
                         v-for="log in action?.logs"
-                        :key="log.timestamp"
+                        :key="log.timestamp.toISOString()"
                         class="flex justify-start q-pb-xs"
                         style="
                             font-family: monospace;
@@ -342,7 +342,7 @@
             >
                 <div
                     v-for="log in action?.auditLogs"
-                    :key="log"
+                    :key="log.url"
                     class="flex justify-start q-pb-xs"
                     style="
                         font-family: monospace;
@@ -379,32 +379,33 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
 import { ArtifactState } from '@common/enum';
+import { ActionDto } from '@api/types/Actions.dto';
 
 const tab = ref('info');
 
 const $route = useRoute();
 const $router = useRouter();
 
-const { data } = useQuery<Action>({
+const { data } = useQuery<ActionDto>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
     refetchInterval: 5_000,
 });
 
-const action: ComputedRef<Action> = computed(
+const action: ComputedRef<ActionDto> = computed(
     () => data.value,
-) as ComputedRef<Action>;
+) as ComputedRef<ActionDto>;
 
 function openArtifactUrl(url: string) {
     window.open(url, '_blank');
 }
 
 const artifactState = computed(() => {
-    if (action.value?.artifacts === ArtifactState.UPLOADING) {
+    if (action.value.artifacts === ArtifactState.UPLOADING) {
         return 'Uploading...';
-    } else if (action.value?.artifacts === ArtifactState.ERROR) {
+    } else if (action.value.artifacts === ArtifactState.ERROR) {
         return 'N/A';
-    } else if (action.value?.artifacts === ArtifactState.AWAITING_ACTION) {
+    } else if (action.value.artifacts === ArtifactState.AWAITING_ACTION) {
         return 'Waiting action completion...';
     }
     return 'N/A';

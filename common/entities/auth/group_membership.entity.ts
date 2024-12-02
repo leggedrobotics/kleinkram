@@ -27,7 +27,7 @@ export default class GroupMembership extends BaseEntity {
      *
      */
     @Column({ nullable: true, default: null })
-    expirationDate!: Date | null;
+    expirationDate?: Date;
 
     /**
      * If the user is a group admin, they can manage the group.

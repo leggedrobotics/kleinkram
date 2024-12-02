@@ -1,7 +1,14 @@
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
+import {
+    FindOptionsWhere,
+    In,
+    LessThan,
+    Like,
+    MoreThan,
+    Repository,
+} from 'typeorm';
 import { DriveCreate } from './entities/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
@@ -32,6 +39,10 @@ import { redis } from '@common/consts';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Gauge } from 'prom-client';
 import User from '@common/entities/user/user.entity';
+import {
+    FileQueueEntriesDto,
+    FileQueueEntryDto,
+} from '@common/api/types/FileQueueEntry.dto';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -56,8 +67,8 @@ function extractFileIdFromUrl(url: string): string | null {
 
 @Injectable()
 export class QueueService implements OnModuleInit {
-    private actionQueues: Record<string, Queue.Queue>;
-    private fileQueue: Queue.Queue;
+    private actionQueues!: Record<string, Queue.Queue>;
+    private fileQueue!: Queue.Queue;
 
     constructor(
         @InjectRepository(QueueEntity)
@@ -98,7 +109,8 @@ export class QueueService implements OnModuleInit {
                         `action-queue-${worker.identifier}`,
                         { redis },
                     );
-                    await this.actionQueues[worker.identifier].isReady();
+
+                    await this.actionQueues[worker.identifier]?.isReady();
                 }),
             );
         } catch (e) {
@@ -139,7 +151,7 @@ export class QueueService implements OnModuleInit {
         );
         await this.fileQueue
             .add('processDriveFile', { queueUuid: queueEntry.uuid })
-            .catch((err) => logger.error(err));
+            .catch((err: unknown) => logger.error(err));
         logger.debug('added to queue');
     }
 
@@ -164,6 +176,7 @@ export class QueueService implements OnModuleInit {
                 throw new ConflictException('File not found in Minio');
             },
         );
+        if (fileInfo === null) throw new Error('File not found in Minio');
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
@@ -186,7 +199,7 @@ export class QueueService implements OnModuleInit {
     ) {
         // @ts-ignore
         const user = await this.userService.findOneByUUID(userUUID);
-        const where = {
+        const where: FindOptionsWhere<QueueEntity> = {
             updatedAt: MoreThan(startDate),
         };
 
@@ -229,14 +242,43 @@ export class QueueService implements OnModuleInit {
         return query.getMany();
     }
 
-    async forFile(filename: string, missionUUID: string) {
-        return this.queueRepository.find({
-            where: {
-                display_name: Like(`${filename}%`),
-                mission: { uuid: missionUUID },
-            },
-            relations: ['creator'],
-        });
+    async forFile(
+        filename: string,
+        missionUUID: string,
+    ): Promise<FileQueueEntriesDto> {
+        const entries: FileQueueEntryDto[] = (
+            await this.queueRepository.find({
+                where: {
+                    display_name: Like(`${filename}%`),
+                    mission: { uuid: missionUUID },
+                },
+                relations: ['creator'],
+            })
+        )
+            .map((queue: QueueEntity): FileQueueEntryDto | null => {
+                if (queue.creator === undefined) return null;
+
+                return {
+                    uuid: queue.uuid,
+                    creator: {
+                        uuid: queue.creator.uuid,
+                        name: queue.creator.name,
+                        avatarUrl: queue.creator.avatarUrl ?? '',
+                    },
+                    createdAt: queue.createdAt,
+                    displayName: queue.display_name,
+                    identifier: queue.identifier,
+                    processingDuration: queue.processingDuration ?? 0,
+                    updatedAt: queue.updatedAt,
+                    location: queue.location,
+                } as unknown as FileQueueEntryDto;
+            })
+            .filter((entry): entry is FileQueueEntryDto => entry !== null);
+
+        return {
+            entries,
+            count: entries.length,
+        };
     }
 
     async delete(missionUUID: string, queueUUID: string) {
@@ -271,7 +313,7 @@ export class QueueService implements OnModuleInit {
         const minioBucket = getBucketFromFileType(file.type);
         try {
             await internalMinio.removeObject(minioBucket, file.uuid);
-        } catch (err) {
+        } catch (err: any) {
             logger.log(err);
         }
         await this.fileRepository.remove(file);
@@ -328,7 +370,9 @@ export class QueueService implements OnModuleInit {
         action: Action,
         runtimeRequirements: RuntimeDescription,
     ) {
-        logger.debug(`Adding action to queue: ${action.template?.name}`);
+        logger.debug(
+            `Adding action to queue: ${action.template?.name ?? 'N/A'}`,
+        );
 
         return await addActionQueue(
             action,
@@ -365,7 +409,7 @@ export class QueueService implements OnModuleInit {
                     where: { uuid: job.id as string },
                     relations: ['template'],
                 });
-                const jobInfo = {};
+                const jobInfo: any = {};
                 jobInfo.state = await job.getState();
                 jobInfo.progress = await job.progress();
                 jobInfo.timestamp = job.timestamp;
@@ -381,20 +425,22 @@ export class QueueService implements OnModuleInit {
             where: { uuid: jobId },
             relations: ['worker'],
         });
-        if (action) {
-            action.state = ActionState.FAILED;
-            await this.actionRepository.save(action);
 
-            const job =
-                await this.actionQueues[action.worker.identifier].getJob(jobId);
-            if (!job) {
-                throw new ConflictException('Job not found');
-            }
-            try {
-                await job.remove();
-            } catch (err) {
-                logger.log(err);
-            }
+        if (action?.worker === undefined)
+            throw new Error('No worker found for this action');
+
+        action.state = ActionState.FAILED;
+        await this.actionRepository.save(action);
+
+        const job =
+            await this.actionQueues[action.worker.identifier]?.getJob(jobId);
+        if (!job) {
+            throw new ConflictException('Job not found');
+        }
+        try {
+            await job.remove();
+        } catch (err: any) {
+            logger.log(err);
         }
     }
 
@@ -417,6 +463,10 @@ export class QueueService implements OnModuleInit {
 
                     await this.workerRepository.save(worker);
                     const actionQueue = this.actionQueues[worker.identifier];
+
+                    if (actionQueue === undefined)
+                        throw new Error('Action queue not found');
+
                     try {
                         logger.debug('beforeJobGetting');
                         const waitingJobs = await actionQueue.getJobs([
@@ -429,10 +479,14 @@ export class QueueService implements OnModuleInit {
                         await Promise.all(
                             waitingJobs.map(async (job) => {
                                 const action =
-                                    await this.actionRepository.findOne({
+                                    await this.actionRepository.findOneOrFail({
                                         where: { uuid: job.data.uuid },
                                         relations: ['template'],
                                     });
+
+                                if (action.template === undefined)
+                                    throw new Error('Template not found');
+
                                 try {
                                     await job.remove();
                                     const runtimeRequirements = {
@@ -456,6 +510,7 @@ export class QueueService implements OnModuleInit {
                             }),
                         );
                         if (this.actionQueues[worker.identifier]) {
+                            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                             delete this.actionQueues[worker.identifier];
                         }
                     } catch (e) {
@@ -500,19 +555,19 @@ export class QueueService implements OnModuleInit {
 
         jobCounts.forEach((count, index) => {
             this.pendingJobs.set(
-                { queue: actionQueues[index].name },
+                { queue: actionQueues[index]?.name },
                 count.waiting + count.delayed,
             );
             this.activeJobs.set(
-                { queue: actionQueues[index].name },
+                { queue: actionQueues[index]?.name },
                 count.active,
             );
             this.completedJobs.set(
-                { queue: actionQueues[index].name },
+                { queue: actionQueues[index]?.name },
                 count.completed,
             );
             this.failedJobs.set(
-                { queue: actionQueues[index].name },
+                { queue: actionQueues[index]?.name },
                 count.failed,
             );
         });

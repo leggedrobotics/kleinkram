@@ -46,7 +46,7 @@
                         color="icon-secondary"
                         class="button-border"
                         icon="sym_o_loop"
-                        @click="() => refetch()"
+                        @click="refetch"
                     >
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
@@ -156,7 +156,7 @@
                         color="icon-secondary"
                         class="button-border"
                         icon="sym_o_loop"
-                        @click="() => refetch()"
+                        @click="refetch"
                     >
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
@@ -207,7 +207,7 @@
                                     ? 'negative'
                                     : 'primary'
                             "
-                            @click="openSetExpirationDialog(props.row)"
+                            @click="() => openSetExpirationDialog(props.row)"
                         />
                     </td>
                 </template>
@@ -265,8 +265,7 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getAccessGroup } from 'src/services/queries/access';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { Notify, QTable, useQuasar } from 'quasar';
@@ -283,8 +282,10 @@ import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProj
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { explorerPageTableColumns } from '../components/explorer_page/explorer_page_table_columns';
+import { GroupMembershipDto } from '@api/types/User.dto';
+import { useAccessGroup } from '../hooks/customQueryHooks';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -313,14 +314,9 @@ const pagination2 = ref({
 
 const queryClient = useQueryClient();
 
-const { data: accessGroup, refetch } = useQuery({
-    queryKey: ['AccessGroup', uuid],
-    queryFn: async () => {
-        return getAccessGroup(uuid.value);
-    },
-});
+const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
-function isExpired(date: Date | null) {
+function isExpired(date: Date | null): boolean {
     if (!date) {
         return false;
     }
@@ -348,7 +344,9 @@ const { mutate: _removeUser } = useMutation({
         });
     },
 });
-const personal = computed(() => accessGroup.value?.personal);
+const personal = computed(
+    () => accessGroup.value?.type === AccessGroupType.PRIMARY,
+);
 
 watch(
     () => personal.value,
@@ -418,7 +416,7 @@ const { mutate: setAccessGroup } = useMutation({
     },
 });
 
-function openSetExpirationDialog(agu: GroupMembership) {
+function openSetExpirationDialog(agu: GroupMembershipDto) {
     $q.dialog({
         component: SetAccessGroupExpirationDialog,
         componentProps: {
@@ -457,7 +455,7 @@ const user_cols = [
         required: true,
         label: 'Name',
         align: 'left',
-        field: (row: GroupMembership) => row.user?.name,
+        field: (row: GroupMembershipDto) => row.user.name,
         format: (val: string) => val,
         style: 'width: 10%',
     },
@@ -466,7 +464,7 @@ const user_cols = [
         required: true,
         label: 'Email',
         align: 'left',
-        field: (row: GroupMembership) => row.user?.email,
+        field: (row: GroupMembershipDto) => row.user.email,
     },
     {
         name: 'expiration',

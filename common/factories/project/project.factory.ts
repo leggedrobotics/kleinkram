@@ -16,7 +16,7 @@ export interface ProjectContext {
 
 define(Project, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
-        context.creator || faker.helpers.arrayElement(context.allUsers);
+        context.creator || faker.helpers.arrayElement(context.allUsers ?? []);
     console.assert(creator, 'No creator provided for project');
 
     const project = new Project();
@@ -24,6 +24,9 @@ define(Project, (_, context: Partial<ProjectContext> = {}) => {
     project.name = context.name || extendedFaker.project.name();
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
+
+    if (context.tagTypes === undefined)
+        throw new Error('TagTypes are undefined');
 
     project.requiredTags = extendedFaker.helpers.arrayElements(
         context.tagTypes,

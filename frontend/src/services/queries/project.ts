@@ -2,6 +2,7 @@ import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
 import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
 import { ResentProjectsDto } from '@api/types/RecentProjects.dto';
+import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
 
 export const filteredProjects = async (
     take: number,
@@ -9,7 +10,7 @@ export const filteredProjects = async (
     sortBy: string,
     descending = false,
     searchParams?: Record<string, string>,
-): Promise<[Project[], number]> => {
+): Promise<ProjectsDto> => {
     const params: Record<string, any> = {
         take,
         skip,
@@ -19,14 +20,20 @@ export const filteredProjects = async (
     if (searchParams && Object.keys(searchParams).length > 0) {
         params.searchParams = searchParams;
     }
-    const response = await axios.get('/project/filtered', {
-        params,
-    });
+    const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
+        '/project/filtered',
+        {
+            params,
+        },
+    );
     return response.data;
 };
 
-export const getProject = async (uuid: string): Promise<Project> => {
-    const response = await axios.get('/project/one', { params: { uuid } });
+export const getProject = async (uuid: string): Promise<ProjectDto> => {
+    const response: AxiosResponse<ProjectDto> = await axios.get<ProjectDto>(
+        '/project/one',
+        { params: { uuid } },
+    );
     return response.data;
 };
 

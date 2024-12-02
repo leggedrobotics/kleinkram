@@ -12,6 +12,7 @@ import { DefineComponent } from 'vue';
 export interface PageBreadCrumb {
     displayName: string;
     to: string | undefined;
+    name?: string;
 }
 
 /**

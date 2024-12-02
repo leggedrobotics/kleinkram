@@ -20,6 +20,8 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import { ApiOkResponse } from '@nestjs/swagger';
+import { FileQueueEntriesDto } from '@common/api/types/FileQueueEntry.dto';
 
 @Controller('queue')
 export class QueueController {
@@ -69,6 +71,10 @@ export class QueueController {
 
     @Get('forFile')
     @CanReadMission()
+    @ApiOkResponse({
+        description: 'Get all queues for a specific file',
+        type: FileQueueEntriesDto,
+    })
     async forFile(
         @QueryString('filename', 'Filename') filename: string,
         @QueryUUID('uuid', 'Mission UUID') uuid: string,

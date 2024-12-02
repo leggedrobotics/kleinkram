@@ -2,7 +2,7 @@
     <div class="row flex-center flex">
         <h4>Add Tags</h4>
     </div>
-    <q-form @submit="() => save()">
+    <q-form @submit="() => saveFunction()">
         <div class="row">
             <div class="col-3">
                 <q-btn-dropdown label="Add another tag">
@@ -45,18 +45,34 @@
             </div>
             <div class="col-3">
                 <q-input
-                    v-if="tagtype.type !== DataType.BOOLEAN"
+                    v-if="tagtype.datatype !== DataType.BOOLEAN"
                     v-model="tagValues[tagtype.uuid]"
                     :label="tagtype.name"
                     outlined
                     dense
                     clearable
                     required
-                    :type="DataType_InputType[tagtype.type] || 'text'"
+                    :type="
+                        // TODO: this is ugly, can we improve this?
+                        (DataType_InputType[tagtype.datatype] ?? 'text') as
+                            | 'number'
+                            | 'textarea'
+                            | 'time'
+                            | 'text'
+                            | 'date'
+                            | 'file'
+                            | 'url'
+                            | 'search'
+                            | 'password'
+                            | 'email'
+                            | 'tel'
+                            | 'datetime-local'
+                            | undefined
+                    "
                     style="width: 100%"
                 />
                 <q-field
-                    v-if="tagtype.type === DataType.BOOLEAN"
+                    v-if="tagtype.datatype === DataType.BOOLEAN"
                     v-model="tagValues[tagtype.uuid]"
                     :rules="[
                         (val) =>
@@ -82,7 +98,7 @@
                         dense
                         required
                         flat
-                        :type="DataType_InputType[tagtype.type] || 'text'"
+                        :type="DataType_InputType[tagtype.datatype] || 'text'"
                         style="width: 100%"
                         :options="[
                             { label: 'True', value: true },
@@ -95,13 +111,13 @@
     </q-form>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { Notify } from 'quasar';
-import { getMission } from 'src/services/queries/mission';
-import { getTagTypes } from 'src/services/queries/tag';
 import { addTags } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
+import { useAllTags, useMission } from '../hooks/customQueryHooks';
+import { TagDto } from '@api/types/TagsDto.dto';
 
 const queryClient = useQueryClient();
 
@@ -109,16 +125,9 @@ const props = defineProps<{
     mission_uuid: string;
 }>();
 
-const { data } = useQuery<Mission>({
-    queryKey: ['mission', props.mission_uuid],
-    queryFn: () => getMission(props.mission_uuid),
-    enabled: !!props.mission_uuid,
-});
+const { data } = useMission(props.mission_uuid);
 
-const { data: tagTypes } = useQuery<TagType[]>({
-    queryKey: ['tagTypes'],
-    queryFn: getTagTypes,
-});
+const { data: tagTypes } = useAllTags();
 const tagValues: Ref<Record<string, string>> = ref({});
 const DataType_InputType = {
     [DataType.STRING]: 'text',
@@ -126,28 +135,30 @@ const DataType_InputType = {
     [DataType.BOOLEAN]: 'checkbox',
     [DataType.DATE]: 'date',
     [DataType.LOCATION]: 'text',
+    [DataType.ANY]: 'file',
+    [DataType.LINK]: 'url',
 };
 
-const additonalTags: Ref<TagType[]> = ref<TagType[]>([]);
+const additonalTags: Ref<TagDto[]> = ref<TagDto[]>([]);
 
-const availableAdditionalTags: Ref<TagType[]> = computed(() => {
+const availableAdditionalTags: Ref<TagDto[]> = computed(() => {
     if (!tagTypes.value) return [];
     const usedTagUUIDs = data.value
-        ? data.value.tags.map((tag) => tag.type.uuid)
+        ? data.value.tags.tags.map((tag) => tag.type.uuid)
         : [];
     const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
-    return tagTypes.value.filter(
+    return tagTypes.value.tags.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
             !addedTagUUIDs.includes(tagtype.uuid),
     );
 });
 
-function addTag(tagtype: TagType) {
+function addTag(tagtype: TagDto) {
     additonalTags.value.push(tagtype);
 }
 
-const { mutate: save } = useMutation({
+const { mutate: saveFunction } = useMutation({
     mutationFn: () => addTags(props.mission_uuid, tagValues.value),
     async onSuccess() {
         Notify.create({
@@ -165,7 +176,9 @@ const { mutate: save } = useMutation({
             );
         await Promise.all(
             filtered.map((query) =>
-                queryClient.invalidateQueries(query.queryKey),
+                queryClient.invalidateQueries({
+                    queryKey: query.queryKey,
+                }),
             ),
         );
     },

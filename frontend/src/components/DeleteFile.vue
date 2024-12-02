@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
+import { FileDto } from '@api/types/Files.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();
@@ -65,7 +66,7 @@ async function deleteFileAction() {
 }
 
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 
 defineExpose({

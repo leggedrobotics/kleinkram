@@ -87,12 +87,12 @@ export const QueryOptionalString = (
     paramDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
+        async (data: string, ctx: ExecutionContext): Promise<string> => {
             const request = ctx.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
-                return;
+                return '';
             }
 
             const object = plainToInstance(StringValidate, { value });

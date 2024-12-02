@@ -13,7 +13,7 @@
                 v-for="[datatype, value] in Object.entries(DataType)"
                 :key="datatype"
                 clickable
-                @click="select(value)"
+                @click="() => select(value)"
             >
                 <q-item-section>
                     <q-item-label v-html="datatype" />

@@ -83,8 +83,10 @@
                         :key="project.uuid"
                         clickable
                         @click="
-                            handler.setProjectUUID(project.uuid);
-                            dd_open_projects = false;
+                            () => {
+                                handler.setProjectUUID(project.uuid);
+                                dd_open_projects = false;
+                            }
                         "
                     >
                         <q-item-section>
@@ -113,8 +115,10 @@
                         :key="mission.uuid"
                         clickable
                         @click="
-                            handler.setMissionUUID(mission.uuid);
-                            dd_open_missions = false;
+                            () => {
+                                handler.setMissionUUID(mission.uuid);
+                                dd_open_missions = false;
+                            }
                         "
                     >
                         <q-item-section>
@@ -143,7 +147,7 @@
                             <q-toggle
                                 :model-value="fileTypeFilter[index].value"
                                 :label="option.name"
-                                @click="onFileTypeClicked(index)"
+                                @click="() => onFileTypeClicked(index)"
                             />
                         </q-item-section>
                     </q-item>
@@ -199,7 +203,7 @@
                         v-for="(item, index) in ['And', 'Or']"
                         :key="index"
                         clickable
-                        @click="and_or = item === 'And'"
+                        @click="() => (and_or = item === 'And')"
                     >
                         <q-item-section>
                             {{ item }}
@@ -329,23 +333,27 @@
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 
 import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
 import ROUTES from 'src/router/routes';
 import { formatSize } from 'src/services/generalFormatting';
-
-import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
 import TagFilter from 'src/dialogs/TagFilter.vue';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import {
+    useFilteredProjects,
+    useHandler,
+    useMissionsOfProjectMinimal,
+} from 'src/hooks/customQueryHooks';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
+import { FileDto, FilesDto } from '@api/types/Files.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
+import { FlatProjectDto, ProjectDto } from '@api/types/Project.dto';
 
 const $router = useRouter();
 
@@ -371,13 +379,13 @@ const fileTypeFilter = ref([
 
 const selected_project = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.projectUuid,
+        (project: FlatProjectDto) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 const selected_mission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.missionUuid,
+        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );
 
@@ -386,25 +394,20 @@ const dd_open_missions = ref(false);
 const selected = ref([]);
 
 // Fetch projects
-const projectsReturn = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name', false),
-});
+const projectsReturn = useFilteredProjects(500, 0, 'name', false);
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+    projectsReturn.data.value ? projectsReturn.data.value.projects : [],
 );
 
 // Fetch missions
-const queryKeyMissions = computed(() => [
-    'missions',
-    handler.value.projectUuid,
-]);
-const { data: _missions } = useQuery<[Mission[], number]>({
-    queryKey: queryKeyMissions,
-    queryFn: () =>
-        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
-});
-const missions = computed(() => (_missions.value ? _missions.value[0] : []));
+const { data: _missions } = useMissionsOfProjectMinimal(
+    (handler.value.projectUuid && '') as string,
+    500,
+    0,
+);
+const missions = computed(() =>
+    _missions.value ? _missions.value.missions : [],
+);
 
 // Fetch topics
 const { data: allTopics } = useQuery<string[]>({
@@ -415,7 +418,8 @@ const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
-const tagFilter = ref({});
+const tagFilter: Ref<Record<string, { name: string; value: string }> | {}> =
+    ref({});
 
 end.setHours(23, 59, 59, 999);
 
@@ -470,8 +474,8 @@ const queryKeyFiles = computed(() => [
 
 const tagFilterQuery = computed(() => {
     const query: Record<string, any> = {};
-    Object.keys(tagFilter.value).forEach((key) => {
-        query[key] = tagFilter.value[key].value;
+    Object.keys(tagFilter.value).forEach((key: string) => {
+        query[key] = tagFilter.value[key]?.value ?? '';
     });
     return query;
 });
@@ -483,27 +487,28 @@ const selectedFileTypes = computed(() => {
         .join(' & ');
 });
 
-const { data: _data, isLoading } = useQuery<[FileEntity[], number]>({
-    queryKey: queryKeyFiles,
-    queryFn: () =>
-        fetchOverview(
-            filter.value,
-            handler.value.projectUuid,
-            handler.value.missionUuid,
-            startDate.value,
-            endDate.value,
-            selectedTopics.value || [],
-            and_or.value,
-            selectedFileTypesFilter.value,
-            tagFilterQuery.value,
-            handler.value.take,
-            handler.value.skip,
-            handler.value.sortBy,
-            handler.value.descending,
-        ),
-});
-const data = computed(() => (_data.value ? _data.value[0] : []));
-const total = computed(() => (_data.value ? _data.value[1] : 0));
+const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
+    useQuery<FilesDto>({
+        queryKey: queryKeyFiles,
+        queryFn: () =>
+            fetchOverview(
+                filter.value,
+                handler.value.projectUuid,
+                handler.value.missionUuid,
+                startDate.value,
+                endDate.value,
+                selectedTopics.value || [],
+                and_or.value,
+                selectedFileTypesFilter.value as ('mcap' | 'bag')[],
+                tagFilterQuery.value,
+                handler.value.take,
+                handler.value.skip,
+                handler.value.sortBy,
+                handler.value.descending,
+            ),
+    });
+const data = computed(() => (_data.value ? _data.value.files : []));
+const total = computed(() => (_data.value ? _data.value.count : 0));
 
 watch(
     () => total.value,
@@ -528,7 +533,7 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: FileEntity) => row.mission?.project?.name,
+        field: (row: FileDto) => row.mission.project.name,
         format: (val: string) => val,
         sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
@@ -538,7 +543,7 @@ const columns = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: FileEntity) => row.mission?.name,
+        field: (row: FileDto) => row.mission.name,
         format: (val: string) => val,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
@@ -548,7 +553,7 @@ const columns = [
         required: true,
         label: 'File',
         align: 'left',
-        field: (row: FileEntity) => row.filename,
+        field: (row: FileDto) => row.filename,
         format: (val: string) => val,
         sortable: true,
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
@@ -558,7 +563,7 @@ const columns = [
         required: true,
         label: 'Recoring Date',
         align: 'left',
-        field: (row: FileEntity) => row.date,
+        field: (row: FileDto) => row.date,
         format: (val: string) => formatDate(new Date(val)),
         sortable: true,
     },
@@ -567,7 +572,7 @@ const columns = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: FileEntity) => row.createdAt,
+        field: (row: FileDto) => row.createdAt,
         format: (val: string) => formatDate(new Date(val)),
         sortable: true,
     },
@@ -576,7 +581,7 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: FileEntity) => row.creator.name,
+        field: (row: FileDto) => row.creator.name,
         format: (val: string) => val,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
@@ -586,7 +591,7 @@ const columns = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FileEntity) => row.size,
+        field: (row: FileDto) => row.size,
         format: formatSize,
         sortable: true,
     },
@@ -611,7 +616,7 @@ function openTagFilterDialog() {
     });
 }
 
-function filterFn(val: string, update) {
+function filterFn(val: string, update: any) {
     if (val === '') {
         update(() => {
             displayedTopics.value = allTopics.value;
@@ -629,7 +634,7 @@ function filterFn(val: string, update) {
     });
 }
 
-const onRowClick = async (_: *, row: any) => {
+const onRowClick = async (_: any, row: any) => {
     await $router.push({
         name: ROUTES.FILE.routeName,
         params: {

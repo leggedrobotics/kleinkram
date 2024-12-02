@@ -22,6 +22,11 @@ import {
     DefaultRightsDto,
 } from '@common/api/types/DefaultRights.dto';
 import { ResentProjectDto } from '@common/api/types/RecentProjects.dto';
+import {
+    FlatProjectDto,
+    ProjectDto,
+    ProjectsDto,
+} from '@common/api/types/Project.dto';
 
 @Injectable()
 export class ProjectService {
@@ -40,7 +45,9 @@ export class ProjectService {
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
-        this.config = this.configService.get('accessConfig');
+        const config = this.configService.get('accessConfig');
+        if (config === undefined) throw new Error('Access config not found');
+        this.config = config;
     }
 
     async findAll(
@@ -50,7 +57,7 @@ export class ProjectService {
         sortBy: string,
         sortDirection: 'ASC' | 'DESC',
         searchParams: Map<string, string>,
-    ): Promise<[Project[], number]> {
+    ): Promise<ProjectsDto> {
         // convert take and skip to numbers
         take = Number(take);
         skip = Number(skip);
@@ -92,27 +99,36 @@ export class ProjectService {
                 }
                 if (key.toLowerCase().includes('uuid')) {
                     baseQuery = baseQuery.andWhere(
-                        `project.${key} = :${index}`,
+                        `project.${key} = :${index.toString()}`,
                         {
                             [index]: searchParams[key],
                         },
                     );
                 } else {
                     baseQuery = baseQuery.andWhere(
-                        `project.${key} ILIKE :${index}`,
+                        `project.${key} ILIKE :${index.toString()}`,
                         {
-                            [index]: `%${searchParams[key]}%`,
+                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                            [index]: `%${searchParams[key].toString()}%`,
                         },
                     );
                 }
             });
         }
 
-        return baseQuery.skip(skip).take(take).getManyAndCount();
+        const [projects, count] = await baseQuery
+            .skip(skip)
+            .take(take)
+            .getManyAndCount();
+
+        return {
+            projects: projects as unknown as FlatProjectDto[],
+            count,
+        };
     }
 
-    async findOne(uuid: string): Promise<Project> {
-        return this.projectRepository
+    async findOne(uuid: string): Promise<ProjectDto> {
+        return (await this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
@@ -122,14 +138,14 @@ export class ProjectService {
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
             .leftJoinAndSelect('accessGroup.memberships', 'memberships')
             .leftJoinAndSelect('memberships.user', 'user')
-            .getOne();
+            .getOneOrFail()) as unknown as ProjectDto;
     }
 
-    async findOneByName(name: string): Promise<Project> {
-        return this.projectRepository.findOne({
+    async findOneByName(name: string): Promise<ProjectDto> {
+        return (await this.projectRepository.findOneOrFail({
             where: { name },
             relations: ['requiredTags'],
-        });
+        })) as unknown as ProjectDto;
     }
 
     async getRecentProjects(
@@ -246,7 +262,7 @@ export class ProjectService {
             );
         }
         return res
-            .map((project: Project) => {
+            .map((project: any) => {
                 return {
                     name: project.project_name as string,
                     uuid: project.project_uuid as string,
@@ -261,7 +277,7 @@ export class ProjectService {
             );
     }
 
-    async create(project: CreateProject, auth: AuthRes): Promise<Project> {
+    async create(project: CreateProject, auth: AuthRes): Promise<ProjectDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
         });
@@ -275,14 +291,18 @@ export class ProjectService {
             {},
             { memberships: { accessGroup: true } },
         );
+
+        if (creator.memberships === undefined)
+            throw new Error('User has no memberships');
+
         const defaultMemberships = creator.memberships.filter(
             (accessGroupUser) =>
-                accessGroupUser.accessGroup.type !== AccessGroupType.CUSTOM,
+                accessGroupUser.accessGroup?.type !== AccessGroupType.CUSTOM,
         );
 
-        const defaultAccessGroups = defaultMemberships.map(
-            (ag) => ag.accessGroup,
-        );
+        const defaultAccessGroups = defaultMemberships
+            .map((ag) => ag.accessGroup)
+            .filter((ag) => ag !== undefined);
 
         if (!project.requiredTags) {
             project.requiredTags = [];
@@ -302,9 +322,14 @@ export class ProjectService {
             requiredTags: tagTypes,
         });
 
-        const accessGroupsDefaultIds = defaultAccessGroups.map((ag) => ag.uuid);
+        const accessGroupsDefaultIds = defaultAccessGroups
+            .map((ag) => ag.uuid)
+            .filter((id) => id !== undefined);
 
-        let deduplicatedAccessGroups = [];
+        let deduplicatedAccessGroups: (
+            | { accessGroupUUID: string; rights: AccessGroupRights }
+            | { userUUID: string; rights: AccessGroupRights }
+        )[] = [];
         if (project.accessGroups) {
             deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
                 if ('accessGroupUUID' in ag) {
@@ -335,16 +360,15 @@ export class ProjectService {
                 return savedProject;
             },
         );
-        return this.projectRepository.findOneOrFail({
+        return (await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
-            relations: ['creator', 'project_accesses'],
-        });
+        })) as unknown as ProjectDto;
     }
 
     async update(
         uuid: string,
         project: { name: string; description: string },
-    ): Promise<Project> {
+    ): Promise<ProjectDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });
@@ -357,7 +381,9 @@ export class ProjectService {
             name: project.name,
             description: project.description,
         });
-        return this.projectRepository.findOne({ where: { uuid } });
+        return (await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        })) as unknown as ProjectDto;
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
@@ -405,12 +431,14 @@ export class ProjectService {
             where: { uuid },
             relations: ['missions'],
         });
+
+        if (project.missions === undefined)
+            throw new Error('Project has no missions');
+
         const missionCount = project.missions.length;
         if (missionCount > 0) {
             throw new ConflictException(
-                `Project has ${
-                    missionCount
-                } missions. Please delete them first.`,
+                `Project has ${missionCount.toString()} missions. Please delete them first.`,
             );
         }
 
@@ -436,6 +464,7 @@ export class ProjectService {
                         if (removedDefaultGroups.includes(accessGroup.uuid)) {
                             return;
                         }
+                        // @ts-ignore
                         rights = this.config.access_groups.find((group) => {
                             return group.uuid === accessGroup.uuid;
                         }).rights;
@@ -509,39 +538,48 @@ export class ProjectService {
             { memberships: { accessGroup: true } },
         );
 
-        const defaultRights: DefaultRightDto[] = await Promise.all(
-            creator.memberships
-                .map((membership) => membership.accessGroup)
-                .map(async (right) => {
-                    const name = right.name;
-                    let memberCount = 1;
-                    let _rights = AccessGroupRights.WRITE;
+        if (creator.memberships === undefined)
+            throw new Error('User has no memberships');
 
-                    switch (right.type) {
-                        case AccessGroupType.AFFILIATION:
-                            _rights = this.config.access_groups.find(
-                                (group) => group.uuid === right.uuid,
-                            ).rights;
-                            memberCount = await this.userService.getMemberCount(
-                                right.uuid,
-                            );
-                            break;
-                        case AccessGroupType.PRIMARY:
-                            _rights = AccessGroupRights.DELETE;
-                            break;
-                        case AccessGroupType.CUSTOM:
-                            return null;
-                    }
+        const defaultRights: DefaultRightDto[] = (
+            await Promise.all(
+                creator.memberships
+                    .map((membership) => membership.accessGroup)
+                    .map(async (right) => {
+                        if (right === undefined) return null;
 
-                    return {
-                        name,
-                        uuid: right.uuid,
-                        memberCount,
-                        rights: _rights,
-                        type: right.type,
-                    } as DefaultRightDto;
-                }),
-        );
+                        const name = right.name;
+                        let memberCount = 1;
+                        let _rights = AccessGroupRights.WRITE;
+
+                        switch (right.type) {
+                            case AccessGroupType.AFFILIATION:
+                                // @ts-ignore
+                                _rights = this.config.access_groups.find(
+                                    (group) => group.uuid === right.uuid,
+                                ).rights;
+                                memberCount =
+                                    await this.userService.getMemberCount(
+                                        right.uuid,
+                                    );
+                                break;
+                            case AccessGroupType.PRIMARY:
+                                _rights = AccessGroupRights.DELETE;
+                                break;
+                            case AccessGroupType.CUSTOM:
+                                return null;
+                        }
+
+                        return {
+                            name,
+                            uuid: right.uuid,
+                            memberCount,
+                            rights: _rights,
+                            type: right.type,
+                        } as DefaultRightDto;
+                    }),
+            )
+        ).filter((right) => right !== null);
 
         return {
             defaultRights,

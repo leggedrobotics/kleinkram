@@ -20,18 +20,20 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import MoveFiles from 'src/dialogs/MoveFiles.vue';
+import { MissionDto } from '@api/types/Mission.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: Mission;
-    files: FileEntity[];
+    mission: MissionDto;
+    files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     if (!props.mission) return false;
     return canDeleteMission(
         props.mission.uuid,
-        props.mission.project?.uuid,
+        props.mission.project.uuid,
         permissions.value,
     );
 });

@@ -1,7 +1,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { PageBreadCrumb } from 'src/router/routesUtils';
 
 /**
  * Returns the breadcrumbs for the current route.
@@ -19,6 +18,10 @@ export const useCrumbs = () => {
         const routeDefinition = Object.values(ROUTES).find(
             (r) => r.name === nameWithPostfix,
         );
-        return (routeDefinition ? routeDefinition.breadcrumbs : [])!;
+        return (
+            routeDefinition && routeDefinition.breadcrumbs !== undefined
+                ? routeDefinition.breadcrumbs
+                : []
+        )!;
     });
 };

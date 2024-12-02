@@ -1,7 +1,12 @@
 import axios from 'src/api/axios';
+import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { AxiosResponse } from 'axios';
 
-export const getMission = async (uuid: string): Promise<Mission> => {
-    const response = await axios.get('/mission/one', { params: { uuid } });
+export const getMission = async (uuid: string): Promise<MissionDto> => {
+    const response: AxiosResponse<MissionDto> = await axios.get<MissionDto>(
+        '/mission/one',
+        { params: { uuid } },
+    );
     return response.data;
 };
 
@@ -14,9 +19,12 @@ export const missionsOfProjectMinimal = async (
     searchParams?: {
         name: string;
     },
-): Promise<[Mission[], number]> => {
+): Promise<MissionsDto> => {
     if (!projectUUID) {
-        return [[], 0];
+        return {
+            missions: [],
+            count: 0,
+        };
     }
     const params: Record<string, any> = {
         uuid: projectUUID,
@@ -28,9 +36,12 @@ export const missionsOfProjectMinimal = async (
     if (searchParams?.name) {
         params.search = searchParams.name;
     }
-    const response = await axios.get(`/mission/filteredMinimal`, {
-        params,
-    });
+    const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
+        `/mission/filteredMinimal`,
+        {
+            params,
+        },
+    );
     return response.data;
 };
 
@@ -43,9 +54,12 @@ export const missionsOfProject = async (
     searchParams?: {
         name: string;
     },
-): Promise<[Mission[], number]> => {
+): Promise<MissionsDto> => {
     if (!projectUUID) {
-        return [[], 0];
+        return {
+            missions: [],
+            count: 0,
+        };
     }
     const params: Record<string, any> = {
         uuid: projectUUID,
@@ -57,13 +71,19 @@ export const missionsOfProject = async (
     if (searchParams?.name) {
         params.search = searchParams.name;
     }
-    const response = await axios.get(`/mission/filtered`, {
-        params,
-    });
+    const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
+        `/mission/filtered`,
+        {
+            params,
+        },
+    );
     return response.data;
 };
 
-export const getMissions = async (uuids: string[]): Promise<Mission[]> => {
-    const response = await axios.get('/mission/many', { params: { uuids } });
+export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
+    const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
+        '/mission/many',
+        { params: { uuids } },
+    );
     return response.data;
 };

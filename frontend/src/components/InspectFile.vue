@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="`File: ${data?.filename || 'Loading...'}`">
+    <title-section :title="`File: ${data.filename || 'Loading...'}`">
         <template #buttons>
             <div style="width: 340px">
                 <button-group>
@@ -12,10 +12,10 @@
                         label="Download"
                         :disable="
                             [FileState.LOST, FileState.UPLOADING].indexOf(
-                                data?.state,
+                                data.state,
                             ) !== -1
                         "
-                        @click="() => _downloadFile(data?.uuid, data?.filename)"
+                        @click="() => _downloadFile(data.uuid, data.filename)"
                     />
 
                     <q-btn
@@ -31,10 +31,10 @@
                                     v-ripple
                                     clickable
                                     :disable="
-                                        data?.state === FileState.LOST ||
-                                        data?.state === FileState.ERROR
+                                        data.state === FileState.LOST ||
+                                        data.state === FileState.ERROR
                                     "
-                                    @click="(e) => _copyLink()"
+                                    @click="_copyLink"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_content_copy" />
@@ -47,8 +47,8 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    :disable="!data?.hash"
-                                    @click="(e) => copyToClipboard(data?.hash)"
+                                    :disable="!data.hash"
+                                    @click="(e) => copyToClipboard(data.hash)"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_encrypted" />
@@ -58,7 +58,7 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    @click="() => copyToClipboard(data?.uuid)"
+                                    @click="() => copyToClipboard(data.uuid)"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
@@ -97,7 +97,7 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.mission.project.name }}
+                            {{ data.mission.project.name }}
                         </div>
                     </div>
                     <div class="col-2">
@@ -110,12 +110,12 @@
                                 text-overflow: ellipsis;
                             "
                         >
-                            {{ data?.mission.name }}
-                            <q-tooltip> {{ data?.mission.name }}</q-tooltip>
+                            {{ data.mission.name }}
+                            <q-tooltip> {{ data.mission.name }}</q-tooltip>
                         </div>
                     </div>
                     <div class="col-3">
-                        <div v-if="data?.date">
+                        <div v-if="data.date">
                             <div class="text-placeholder">Start Date</div>
                             <div
                                 class="text-caption text-primary"
@@ -126,7 +126,7 @@
                         </div>
                     </div>
                     <div class="col-2">
-                        <div v-if="data?.creator">
+                        <div v-if="data.creator">
                             <div class="text-placeholder">Creator</div>
                             <div
                                 class="text-caption text-primary"
@@ -140,8 +140,8 @@
                         <div class="text-placeholder">File State</div>
 
                         <q-icon
-                            :name="getIcon(data?.state)"
-                            :color="getColorFileState(data?.state)"
+                            :name="getIcon(data.state)"
+                            :color="getColorFileState(data.state)"
                             style="font-size: 24px"
                         >
                             <q-tooltip>
@@ -155,13 +155,13 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data?.size ? formatSize(data?.size) : '...' }}
+                            {{ data.size ? formatSize(data.size) : '...' }}
                         </div>
                     </div>
                 </div>
                 <div class="row items-start">
                     <q-chip
-                        v-for="cat in data?.categories"
+                        v-for="cat in data.categories.categories"
                         :key="cat.uuid"
                         :label="cat.name"
                         :color="hashUUIDtoColor(cat.uuid)"
@@ -201,7 +201,7 @@
                 flat
                 bordered
                 separator="none"
-                :rows="data?.topics"
+                :rows="data.topics"
                 :columns="columns as any"
                 row-key="uuid"
                 :loading="isLoading"
@@ -209,7 +209,7 @@
             />
 
             <div
-                v-if="!displayTopics && data?.state === FileState.OK && !!mcap"
+                v-if="!displayTopics && data.state === FileState.OK && !!mcap"
                 class="flex column"
             >
                 <span class="q-my-sm">
@@ -226,14 +226,14 @@
                     @click="redirectToMcap"
                 />
             </div>
-            <div v-if="data?.state !== FileState.OK">
+            <div v-if="data.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
                 </h5>
                 This file has not yet completed uploading or processing.
                 <q-separator style="margin-top: 6px; margin-bottom: 6px" />
-                <div v-for="queue in queues" :key="queue.uuid">
-                    {{ queue.filename }} -
+                <div v-for="queue in queues?.entries" :key="queue.uuid">
+                    {{ queue.displayName }} -
                     <q-badge :color="getColor(queue.state)">
                         <q-tooltip>
                             {{ getDetailedFileState(queue.state) }}
@@ -246,19 +246,13 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/dateFormating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
-import {
-    downloadFile,
-    fetchFile,
-    filesOfMission,
-} from 'src/services/queries/file';
+import { downloadFile } from 'src/services/queries/file';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
-import { getQueueForFile } from 'src/services/queries/queue';
 import {
     _downloadFile,
     getColor,
@@ -272,7 +266,12 @@ import {
 import { useMissionUUID } from 'src/hooks/utils';
 import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
-import { registerNoPermissionErrorHandler } from 'src/hooks/customQueryHooks';
+import {
+    registerNoPermissionErrorHandler,
+    useFile,
+    useMcapFilesOfMission,
+    useQueueForFile,
+} from 'src/hooks/customQueryHooks';
 import EditFileButton from 'components/buttons/EditFileButton.vue';
 import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
@@ -285,74 +284,33 @@ const props = defineProps<{
 }>();
 const selected = ref([]);
 
-const file_uuid = computed(() => props.uuid);
+const fileUuid = computed(() => props.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
-const {
-    isLoading,
-    data,
-    error,
-    isLoadingError,
-}: {
-    isLoading: Ref<boolean>;
-    data: Ref<FileEntity>;
-    error: any;
-    isLoadingError: any;
-} = useQuery<FileEntity>({
-    queryKey: ['file', file_uuid],
-    queryFn: () => fetchFile(file_uuid.value),
-    retryDelay: 200,
-    async throwOnError(e) {
-        console.log('errsdfor: ', e);
-        Notify.create({
-            message: `Error fetching file: ${e.response?.data.message}`,
-            color: 'negative',
-            timeout: 2000,
-            position: 'bottom',
-        });
-        await $router.push(ROUTES.DATATABLE.routeName);
-        return false;
-    },
-});
-registerNoPermissionErrorHandler(isLoadingError, file_uuid, 'file', error);
+const { isLoading, data, error, isLoadingError } = useFile(fileUuid.value);
+registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
 const missionUUID = useMissionUUID();
 
-const mcap_name = computed(() => data.value?.filename.replace('.bag', '.mcap'));
-const _queryKey = computed(() => ['files', missionUUID.value, mcap_name.value]);
+const mcapName = computed(() => data.value.filename.replace('.bag', '.mcap'));
 
-const { data: _filesReturn } = useQuery({
-    queryKey: _queryKey,
-    queryFn: () =>
-        filesOfMission(
-            missionUUID.value || '',
-            100,
-            0,
-            FileType.MCAP,
-            mcap_name.value,
-        ),
-    enabled() {
-        return !!missionUUID.value;
-    },
-});
-const queueKey = computed(() => ['queue', data.value?.filename]);
-const { data: queues } = useQuery<Queue[]>({
-    queryKey: queueKey,
-    queryFn: () =>
-        getQueueForFile(
-            data.value?.filename.replace(/\.(bag|mcap)$/, '') || '',
-            data.value?.mission?.uuid || '',
-        ),
-});
+const { data: _filesReturn } = useMcapFilesOfMission(
+    missionUUID.value,
+    mcapName,
+);
+const { data: queues } = useQueueForFile(
+    data.value.filename.replace(/\.(bag|mcap)$/, '') !== '' || '',
+    data.value.mission.uuid || '',
+);
 
 const filesReturn = computed(() =>
-    _filesReturn.value ? _filesReturn.value[0] : [],
+    _filesReturn.value ? _filesReturn.value.files : [],
 );
 
 const displayTopics = computed(() => {
     return (
-        data.value?.type === FileType.MCAP && data.value?.state === FileState.OK
+        data.value.type === FileType.MCAP && data.value.state === FileState.OK
     );
 });
 const mcap = computed(() =>
@@ -388,9 +346,9 @@ async function redirectToMcap() {
         await $router.push({
             name: ROUTES.FILE.routeName,
             params: {
-                mission_uuid: mcap.value?.mission?.uuid,
-                project_uuid: mcap.value?.mission?.project?.uuid,
-                file_uuid: mcap.value?.uuid,
+                mission_uuid: mcap.value.mission.uuid,
+                project_uuid: mcap.value.mission.project.uuid,
+                file_uuid: mcap.value.uuid,
             },
         });
     }

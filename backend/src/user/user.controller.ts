@@ -8,7 +8,12 @@ import {
     QueryTake,
 } from '../validation/queryDecorators';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { CurrentAPIUserDto, UsersDto } from '@common/api/types/User.dto';
+import {
+    CurrentAPIUserDto,
+    UserDto,
+    UsersDto,
+} from '@common/api/types/User.dto';
+import { PermissionsDto } from '@common/api/types/Permissions.dto';
 
 @Controller('user')
 export class UserController {
@@ -16,16 +21,24 @@ export class UserController {
 
     @Post('claimAdmin')
     @UserOnly()
-    async claimAdmin(@AddUser() user?: AuthRes) {
+    @ApiOkResponse({
+        description: 'Claimed admin',
+        type: CurrentAPIUserDto,
+    })
+    async claimAdmin(@AddUser() user: AuthRes): Promise<CurrentAPIUserDto> {
         return this.userService.claimAdmin(user);
     }
 
     @Get('all')
     @AdminOnly()
+    @ApiOkResponse({
+        description: 'All users',
+        type: UsersDto,
+    })
     async allUsers(
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<UsersDto> {
         return this.userService.findAll(skip, take);
     }
 
@@ -38,19 +51,31 @@ export class UserController {
         description: 'The currently logged in user',
         type: CurrentAPIUserDto,
     })
-    async me(@AddUser() user?: AuthRes) {
+    @ApiOkResponse({
+        description: 'Claimed admin',
+        type: CurrentAPIUserDto,
+    })
+    async me(@AddUser() user: AuthRes): Promise<CurrentAPIUserDto> {
         return this.userService.me(user);
     }
 
     @Post('promote')
     @AdminOnly()
-    async promoteUser(@Body() bd: { email: string }) {
+    @ApiOkResponse({
+        description: 'Claimed admin',
+        type: UserDto,
+    })
+    async promoteUser(@Body() bd: { email: string }): Promise<UserDto> {
         return this.userService.promoteUser(bd.email);
     }
 
     @Post('demote')
     @AdminOnly()
-    async demoteUser(@Body() bd: { email: string }) {
+    @ApiOkResponse({
+        description: 'Claimed admin',
+        type: UserDto,
+    })
+    async demoteUser(@Body() bd: { email: string }): Promise<UserDto> {
         return this.userService.demoteUser(bd.email);
     }
 
@@ -68,42 +93,13 @@ export class UserController {
         return this.userService.search(search, skip, take);
     }
 
-    /**
-     *
-     * Returns a JSON object describing the access rights of the
-     * currently logged in user.
-     *
-     * Examples:
-     *
-     * {
-     *     "role": "ADMIN",
-     * }
-     *
-     * {
-     *     "role": "USER",
-     *     "default_permission: "10",
-     *
-     *     // access rights to projects and missions above the default
-     *     // permission level
-     *     "projects": [
-     *        {
-     *          "uuid": "b1b4b3b4-1b3b-4b3b-1b3b-4b3b1b3b4b3b",
-     *          "access": "10"
-     *        }
-     *     ],
-     *     "missions": [
-     *        {
-     *         "uuid": "b1b4b3b4-1b3b-4b3b-1b3b-4b3b1b3b4b3b",
-     *         "access": "10"
-     *        }
-     *     ],
-     *
-     * }
-     *
-     */
     @Get('permissions')
     @LoggedIn()
-    async permissions(@AddUser() user?: AuthRes) {
+    @ApiOkResponse({
+        type: PermissionsDto,
+        description: 'The permissions of the currently logged in user',
+    })
+    async permissions(@AddUser() user: AuthRes): Promise<PermissionsDto> {
         return this.userService.permissions(user);
     }
 }

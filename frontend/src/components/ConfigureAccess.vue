@@ -20,6 +20,7 @@
             (val, update) => {
                 groupSearch = val;
                 enableSearch();
+                // @ts-ignore
                 update();
             }
         "
@@ -57,14 +58,14 @@
                                 uuid: props.opt.uuid,
                                 name: props.opt.name,
                                 rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount,
+                                memberCount: props.opt.memberCount ?? 0,
                             },
                         ]) || [
                             {
                                 uuid: props.opt.uuid,
                                 name: props.opt.name,
                                 rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount,
+                                memberCount: props.opt.memberCount ?? 0,
                             },
                         ];
                     }
@@ -203,7 +204,7 @@
                             :key="option"
                             clickable
                             :disable="isBelowMinRights(props.row, option)"
-                            @click="updateRights(props.row, option)"
+                            @click="() => updateRights(props.row, option)"
                         >
                             <q-tooltip
                                 v-if="isBelowMinRights(props.row, option)"
@@ -243,7 +244,7 @@
                             ? 'grey'
                             : 'red'
                     "
-                    @click="removeGroup(props.row)"
+                    @click="() => removeGroup(props.row)"
                 />
             </q-td>
         </template>
@@ -313,7 +314,7 @@ const updateRights = (group: AccessRight, right: AccessGroupRights) => {
         }) || [];
 };
 
-const removeGroup = (group: AccessRight) => {
+const removeGroup = (group: AccessGroupRights) => {
     if (minAccessRights.filter((r) => r.uuid === group.uuid).length > 0) {
         console.log('Cannot remove minimum access group');
         return;
@@ -360,7 +361,7 @@ const searchResults = computed(() => {
             uuid: group.uuid,
             name: group.name,
             rights: null,
-            memberCount: group.memberships.length || 0,
+            memberCount: group.memberships.length > 0 || 0,
         });
     });
 

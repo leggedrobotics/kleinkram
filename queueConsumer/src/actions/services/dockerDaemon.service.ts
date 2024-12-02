@@ -17,6 +17,7 @@ import {
     PidsLimit,
     SecurityOpt,
 } from '../helper/ContainerConfigs';
+import * as util from 'node:util';
 
 export interface ContainerLimits {
     /**
@@ -56,9 +57,8 @@ export interface ContainerStartOptions {
     entrypoint?: string;
 }
 
-export const dockerDaemonErrorHandler = (error: Error) => {
-    logger.error(error.message);
-    return null;
+export const dockerDaemonErrorHandler = (error: unknown): void => {
+    logger.error((error as { message: string }).message);
 };
 
 const artifactUploaderImage =
@@ -118,6 +118,15 @@ export class DockerDaemon {
         logger.debug(
             `Starting container with options: ${JSON.stringify(containerOptions)}`,
         );
+
+        if (containerOptions.docker_image === undefined) {
+            throw new Error('No docker image specified');
+        }
+
+        if (containerOptions.name === undefined) {
+            throw new Error('No name specified');
+        }
+
         const image = await this.getImage(containerOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
@@ -147,7 +156,7 @@ export class DockerDaemon {
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: containerOptions.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
-            Env: Object.entries(containerOptions.environment).map(
+            Env: Object.entries(containerOptions.environment ?? {}).map(
                 ([key, value]) => `${key}=${value}`,
             ),
             Cmd: containerOptions.command
@@ -155,10 +164,9 @@ export class DockerDaemon {
                 : [],
             HostConfig: {
                 ...(needsGpu ? addGpuCapabilities : {}),
-                Memory: containerOptions.limits.memory_limit, // memory limit in bytes
-                NanoCpus: containerOptions.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
-                DiskQuota: containerOptions.limits.disk_quota,
-
+                Memory: containerOptions.limits?.memory_limit, // memory limit in bytes
+                NanoCpus: (containerOptions.limits?.n_cpu ?? 0) * 1_000_000_000, // CPU limit in nano CPUs
+                DiskQuota: containerOptions.limits?.disk_quota,
                 NetworkMode,
                 LogConfig,
                 CapDrop,
@@ -183,13 +191,7 @@ export class DockerDaemon {
         await start();
         const container = await this.docker
             .createContainer(containerCreateOptions)
-            .catch((error) => {
-                // cleanup error message
-                error.message = error.message.replace(/\(.*?\)/g, '');
-                error.message = error.message.replace(/ +/g, ' ').trim();
-                logger.error(`Failed to create container: ${error.message}`);
-                throw error;
-            });
+            .catch(this.errorHandling());
 
         if (!container) {
             throw new Error('Failed to create container');
@@ -202,10 +204,22 @@ export class DockerDaemon {
         // stop the container after max_runtime seconds
         await this.killContainerAfterMaxRuntime(
             container,
-            containerOptions.limits.max_runtime,
+            containerOptions.limits?.max_runtime ?? 0,
         );
 
         return { container, repoDigests: repoDigests, sha };
+    }
+
+    private errorHandling() {
+        return (error: unknown) => {
+            let errorString = util.inspect(error);
+
+            // cleanup error message
+            errorString = errorString.replace(/\(.*?\)/g, '');
+            errorString = errorString.replace(/ +/g, ' ').trim();
+            logger.error(`Failed to create container: ${errorString}`);
+            throw error;
+        };
     }
 
     /**
@@ -227,7 +241,7 @@ export class DockerDaemon {
     ) {
         const cancelTimeout = setTimeout(() => {
             logger.info(
-                `Stopping container ${container.id} after ${maxRuntimeMs}ms`,
+                `Stopping container ${container.id} after ${maxRuntimeMs.toString()}ms`,
             );
 
             // initialize a kill timeout
@@ -236,7 +250,7 @@ export class DockerDaemon {
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
                 this.killAndRemoveContainer(container.id, clearVolume).catch(
-                    logger.error,
+                    (e: unknown) => logger.error(e),
                 );
             }, 10_000);
 
@@ -246,7 +260,7 @@ export class DockerDaemon {
                     // clear the kill timeout
                     this.removeContainer(container.id, clearVolume);
                 })
-                .catch(logger.error);
+                .catch((e: unknown) => logger.error(e));
         }, maxRuntimeMs);
 
         await container.wait().finally(() => {
@@ -256,12 +270,22 @@ export class DockerDaemon {
 
     @tracing()
     private async pullImage(dockerImage: string) {
-        if (!this.docker || !(await this.docker.ping())) {
+        if (!(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
-        if (!dockerImage || dockerImage === '') {
+        if (dockerImage === '') {
             throw new Error('No docker image specified');
+        }
+
+        const DOCKER_HUB_PASSWORD = process.env['DOCKER_HUB_PASSWORD'];
+        const DOCKER_HUB_USERNAME = process.env['DOCKER_HUB_USERNAME'];
+
+        if (
+            DOCKER_HUB_PASSWORD === undefined ||
+            DOCKER_HUB_USERNAME === undefined
+        ) {
+            throw new Error('Docker Hub credentials not set');
         }
 
         // pull the image from the docker hub
@@ -270,8 +294,8 @@ export class DockerDaemon {
             authconfig: {
                 auth: '',
                 serveraddress: 'https://index.docker.io/v1',
-                password: process.env.DOCKER_HUB_PASSWORD,
-                username: process.env.DOCKER_HUB_USERNAME,
+                username: DOCKER_HUB_USERNAME,
+                password: DOCKER_HUB_PASSWORD,
             },
         });
         return new Promise((res) => {
@@ -293,36 +317,34 @@ export class DockerDaemon {
             throw new Error('Docker socket not available or not responding');
         }
 
-        await this.pullImage(dockerImage).catch((error) => {
-            // cleanup error message
-            error.message = error.message.replace(/\(.*?\)/g, '');
-            error.message = error.message.replace(/ +/g, ' ').trim();
-            logger.warn(`Failed to pull image: ${error.message}`);
-        });
+        await this.pullImage(dockerImage).catch(this.errorHandling());
 
         return this.docker.getImage(dockerImage);
     }
 
-    async stopContainer(containerId: string) {
+    async stopContainer(containerId: string): Promise<void> {
         await this.docker
             .getContainer(containerId)
             .stop()
             .catch(dockerDaemonErrorHandler);
     }
 
-    async killAndRemoveContainer(containerId: string, clearVolume = false) {
+    async killAndRemoveContainer(
+        containerId: string,
+        clearVolume = false,
+    ): Promise<void> {
         await this.killContainer(containerId);
         this.removeContainer(containerId, clearVolume);
     }
 
-    async killContainer(containerId: string) {
+    async killContainer(containerId: string): Promise<void> {
         await this.docker
             .getContainer(containerId)
             .kill()
             .catch(dockerDaemonErrorHandler);
     }
 
-    removeContainer(containerId: string, clearVolume = false) {
+    removeContainer(containerId: string, clearVolume = false): void {
         const container = this.docker.getContainer(containerId);
         if (container) {
             container
@@ -336,8 +358,9 @@ export class DockerDaemon {
         const volume = this.docker.getVolume(volumeName);
 
         // try to remove volume, if in use wait and try again
-        await volume.remove().catch(async (error) => {
-            if (error.message.includes('volume is in use')) {
+        await volume.remove().catch(async (error: unknown) => {
+            const errorString = util.inspect(error);
+            if (errorString.includes('volume is in use')) {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
                 await volume.remove().catch(dockerDaemonErrorHandler);
             } else {
@@ -357,7 +380,7 @@ export class DockerDaemon {
         line: string,
         sanitizeCallback?: (str: string) => string,
     ): ContainerLog {
-        const logLevel = line.split('')[0].charCodeAt(0);
+        const logLevel = line.split('')[0]?.charCodeAt(0) ?? 0;
 
         // remove all non-printable characters
         line = line.replace(/[\x00-\x1F\x7F]/u, '');
@@ -370,7 +393,7 @@ export class DockerDaemon {
         const timestamp = new Date(dateStr).toISOString();
 
         let message = line.substring(dateEndIdx);
-        if (sanitizeCallback && message != '') {
+        if (sanitizeCallback && message !== '') {
             message = sanitizeCallback(message);
         }
 
@@ -458,13 +481,7 @@ export class DockerDaemon {
         if (!details) {
             logger.info('Image does not exist, pulling image...');
             const pullRes = await this.pullImage(artifactUploaderImage).catch(
-                (error) => {
-                    // cleanup error message
-                    error.message = error.message.replace(/\(.*?\)/g, '');
-                    error.message = error.message.replace(/ +/g, ' ').trim();
-
-                    logger.warn(`Failed to pull image: ${error.message}`);
-                },
+                this.errorHandling(),
             );
 
             logger.info(
@@ -524,21 +541,9 @@ export class DockerDaemon {
             },
         };
 
-        const container = await this.docker
+        const container: Docker.Container = await this.docker
             .createContainer(containerCreateOptions)
-            .catch((error) => {
-                if (env.DEV) {
-                    // cleanup error message
-                    error.message = error.message.replace(/\(.*?\)/g, '');
-                    error.message = error.message.replace(/ +/g, ' ').trim();
-                } else {
-                    error.message =
-                        'Failed to launch artifact uploader container';
-                }
-                logger.error(`Failed to create container: ${error.message}`);
-                throw error;
-            });
-
+            .catch(this.errorHandling());
         if (!container) {
             throw new Error('Failed to create container');
         }

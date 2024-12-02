@@ -2,6 +2,7 @@ import axios from 'src/api/axios';
 import { FileType } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { AxiosResponse } from 'axios';
+import { FileDto, FilesDto } from '@api/types/Files.dto';
 
 export const fetchOverview = async (
     filename: string,
@@ -17,7 +18,7 @@ export const fetchOverview = async (
     skip?: number,
     sort?: string,
     desc?: boolean,
-): Promise<[FileEntity[], number]> => {
+): Promise<FilesDto> => {
     try {
         const params: Record<string, string> = {};
         if (filename) params.fileName = filename;
@@ -34,7 +35,9 @@ export const fetchOverview = async (
         if (sort) params.sort = sort;
         if (desc !== undefined) params.sortDirection = desc ? 'DESC' : 'ASC';
         const queryParams = new URLSearchParams(params).toString();
-        const response = await axios.get(`/file/filtered?${queryParams}`);
+        const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
+            `/file/filtered?${queryParams}`,
+        );
         return response.data;
     } catch (error) {
         console.error('Error fetching overview:', error);
@@ -42,9 +45,12 @@ export const fetchOverview = async (
     }
 };
 
-export const fetchFile = async (uuid: string): Promise<FileEntity> => {
+export const fetchFile = async (uuid: string): Promise<FileDto> => {
     try {
-        const response = await axios.get('/file/one', { params: { uuid } });
+        const response: AxiosResponse<FileDto> = await axios.get<FileDto>(
+            '/file/one',
+            { params: { uuid } },
+        );
         return response.data;
     } catch (error) {
         console.error('Error fetching file:', error);
@@ -71,13 +77,13 @@ export const filesOfMission = async (
     sort?: string,
     desc?: boolean,
     health?: 'Healthy' | 'Unhealthy' | 'Uploading',
-): Promise<[FileEntity[], number]> => {
+): Promise<FilesDto> => {
     const params: Record<string, string | number | boolean | string[]> = {
         uuid: missionUUID,
         take,
         skip,
     };
-    if (fileType != null && fileType !== FileType.ALL)
+    if (fileType !== undefined && fileType !== FileType.ALL)
         params.fileType = fileType;
     if (filename) params.filename = filename;
     if (health) params.health = health;
@@ -86,22 +92,28 @@ export const filesOfMission = async (
     else params.sort = 'filename';
     if (desc !== undefined) params.desc = desc ? 'DESC' : 'ASC';
     else params.desc = 'ASC';
-    const response = await axios.get('file/ofMission', {
-        params,
-    });
+    const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
+        'file/ofMission',
+        {
+            params,
+        },
+    );
     return response.data;
 };
 
 export const findOneByNameAndMission = async (
     filename: string,
     missionUUID: string,
-): Promise<FileEntity> => {
-    const response = await axios.get('file/oneByName', {
-        params: {
-            filename,
-            uuid: missionUUID,
+): Promise<FileDto> => {
+    const response: AxiosResponse<FileDto> = await axios.get<FileDto>(
+        'file/oneByName',
+        {
+            params: {
+                filename,
+                uuid: missionUUID,
+            },
         },
-    });
+    );
     return response.data;
 };
 

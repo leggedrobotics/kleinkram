@@ -1,6 +1,6 @@
 import {
-    db,
     clearAllData,
+    db,
     getJwtToken,
     mockDbUser,
 } from './utils/database_utils';
@@ -48,7 +48,7 @@ describe('Test Suite Utils', () => {
             select: ['email', 'uuid'],
         });
         expect(users.length).toBe(1);
-        expect(users[0].email).toBe('test-01@leggedrobotics.com');
+        expect(users[0]?.email).toBe('test-01@leggedrobotics.com');
 
         const accountRepository = db.getRepository('Account');
         const accounts = await accountRepository.find();
@@ -63,6 +63,8 @@ describe('Test Suite Utils', () => {
             method: 'GET',
         });
         expect(res.status).toBe(401);
+
+        if (users[0] === undefined) throw new Error('User not found');
 
         // call endpoint /user/me with authenticated user --> expect 200
         const res2 = await fetch(`http://localhost:3000/user/me`, {

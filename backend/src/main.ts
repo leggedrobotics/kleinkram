@@ -34,7 +34,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
         response.header('Access-Control-Expose-Headers', 'kleinkram-version');
 
         if (exception instanceof BadRequestException) {
-            const resp = exception.getResponse();
+            const resp: any = exception.getResponse();
 
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
@@ -84,8 +84,8 @@ export class GlobalErrorFilter implements ExceptionFilter {
             });
             return;
         }
-        const route: Record<string, string> = host.getArgByIndex(0);
-        logger.error(`An error occurred on route ${route.url}!`);
+        const route: { url: string } = host.getArgByIndex(0);
+        logger.error(`An error occurred on route ${route.url.toString()}!`);
 
         logger.error(`exception of type ${exception.name}`);
         logger.error(exception.message);

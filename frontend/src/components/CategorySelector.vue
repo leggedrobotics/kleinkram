@@ -11,7 +11,7 @@
         placeholder="Select Categories"
         use-input
         input-debounce="300"
-        @clear="selected = []"
+        @clear="clear"
         @input-value="filter = $event"
     >
         <template #selected-item="props">
@@ -20,7 +20,7 @@
                 removable
                 :color="hashUUIDtoColor(props.opt.uuid)"
                 style="color: white; font-size: smaller"
-                @remove="props.removeAtIndex(props.index)"
+                @remove="() => props.removeAtIndex(props.index)"
             >
                 {{ props.opt.name }}
             </q-chip>
@@ -31,7 +31,7 @@
                 clickable
                 v-bind="props.itemProps"
                 dense
-                @click="props.toggleOption(props.opt)"
+                @click="() => props.toggleOption(props.opt)"
             >
                 <q-item-section>
                     <div>
@@ -51,11 +51,11 @@
 <script setup lang="ts">
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { getCategories } from 'src/services/queries/categories';
+import { CategoryDto } from '@api/types/Category.dto';
+import { useCategories } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
-    selected: Ref<Category[]>;
+    selected: Ref<CategoryDto[]>;
     project_uuid: string;
 }>();
 
@@ -64,23 +64,19 @@ const emit = defineEmits(['update:selected']);
 const filter = ref('');
 const selected = computed({
     get: () => props.selected,
-    set: (value: Category[]) => {
+    set: (value: CategoryDto[]) => {
         emit('update:selected', value);
     },
 });
 
-const queryKey = computed(() => [
-    'categories',
-    props.project_uuid,
-    filter.value,
-]);
-const { data: _categories } = useQuery<[Category[], number]>({
-    queryKey: queryKey,
-    queryFn: () => getCategories(props.project_uuid, filter.value),
-});
+const clear = () => {
+    selected.value = [];
+};
 
-const categories: Ref<Category[]> = computed(() =>
-    _categories.value ? _categories.value[0] : [],
+const { data: _categories } = useCategories(props.project_uuid, filter.value);
+
+const categories: Ref<CategoryDto[]> = computed(() =>
+    _categories.value ? _categories.value.categories || [] : [],
 );
 </script>
 

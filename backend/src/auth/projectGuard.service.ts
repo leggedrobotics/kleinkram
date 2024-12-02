@@ -15,6 +15,7 @@ import logger from '../logger';
 @Injectable()
 export class ProjectGuardService {
     constructor(
+        @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
         @InjectRepository(Project)
         private projectRepository: Repository<Project>,

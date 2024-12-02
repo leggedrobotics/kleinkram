@@ -18,6 +18,7 @@ import {
 } from '@common/minio_helper';
 import logger from '../logger';
 import { AggregatedMissionDto } from './entities/AggregatedMission.dto';
+import { FlatMissionDto } from '@common/api/types/Mission.dto';
 
 @Injectable()
 export class MissionService {
@@ -99,8 +100,8 @@ export class MissionService {
         });
     }
 
-    async findOne(uuid: string): Promise<Mission> {
-        return this.missionRepository.findOneOrFail({
+    async findOne(uuid: string): Promise<FlatMissionDto> {
+        return (await this.missionRepository.findOneOrFail({
             where: { uuid },
             relations: [
                 'project',
@@ -109,7 +110,7 @@ export class MissionService {
                 'tags.tagType',
                 'project.requiredTags',
             ],
-        });
+        })) as unknown as FlatMissionDto;
     }
 
     async findMissionByProjectMinimal(
@@ -227,7 +228,7 @@ export class MissionService {
                 where: { name: projectName },
                 relations: ['missions', 'missions.project', 'missions.creator'],
             });
-            return project.missions;
+            return project.missions ?? [];
         }
         return addAccessConstraints(
             this.missionRepository
@@ -294,6 +295,8 @@ export class MissionService {
             project: project,
         });
 
+        if (mission.files === undefined) throw new Error('Files not loaded');
+
         await Promise.all(
             mission.files.map(async (file) =>
                 addTagsToMinioObject(
@@ -332,6 +335,8 @@ export class MissionService {
             where: { uuid },
             relations: ['files'],
         });
+        if (mission.files === undefined) throw new Error('Files not loaded');
+
         if (mission.files.length > 0) {
             throw new ConflictException(
                 'Mission cannot be deleted because it contains files',
@@ -346,10 +351,13 @@ export class MissionService {
             where: { uuid: missionUUID },
             relations: ['tags', 'tags.tagType'],
         });
+
+        if (mission.tags === undefined) throw new Error('Tags not loaded');
+
         await Promise.all(
             Object.entries(tags).map(async ([tagTypeUUID, value]) => {
-                const tag = mission.tags.find(
-                    (_tag) => _tag.tagType.uuid === tagTypeUUID,
+                const tag = mission.tags?.find(
+                    (_tag) => _tag.tagType?.uuid === tagTypeUUID,
                 );
                 if (tag) {
                     return this.tagService.updateTagType(
@@ -379,6 +387,9 @@ export class MissionService {
             where: { uuid: missionUUID },
             relations: ['files', 'project'],
         });
+
+        if (mission.files === undefined) throw new Error('Files not loaded');
+
         return await Promise.all(
             mission.files.map(async (f) => ({
                 filename: f.filename,

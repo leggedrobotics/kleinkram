@@ -101,11 +101,7 @@
                 label="Create Mission"
                 class="bg-button-primary"
                 :disable="!allRequiredTagsSet"
-                @click="
-                    () => {
-                        submitNewMission();
-                    }
-                "
+                @click="submitNewMission"
             />
         </template>
     </base-dialog>
@@ -120,23 +116,26 @@ import { getProject } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { createFileAction } from 'src/services/fileService';
+import { ProjectDto } from '@api/types/Project.dto';
+import { MissionDto } from '@api/types/Mission.dto';
+import { FileUploadDto } from '@api/types/Upload.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
 
 const props = defineProps<{
     project_uuid: string | undefined;
-    uploads: Ref<FileUpload[]>;
+    uploads: Ref<FileUploadDto[]>;
 }>();
 
 const HTMLinput = ref();
 const project_uuid = ref(props.project_uuid);
-const newMission: Ref<Mission | undefined> = ref(undefined);
+const newMission: Ref<MissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 const files = ref<File[]>([]);
 
-const { data: project, refetch }: { data: Ref<Project>; refetch } =
-    useQuery<Project>({
+const { data: project, refetch }: { data: Ref<ProjectDto>; refetch: Function } =
+    useQuery<ProjectDto>({
         queryKey: computed(() => ['project', project_uuid]),
         queryFn: () => getProject(project_uuid.value!),
         enabled: computed(() => !!project_uuid.value),
@@ -153,7 +152,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    return project.value?.requiredTags.every(
+    return project.value.requiredTags.every(
         (tag) => tagValues.value[tag.uuid] !== '',
     );
 });
@@ -162,27 +161,27 @@ const missionCreated = computed(() => {
     return !!newMission.value;
 });
 
-function handle(a) {
+function handle(a: any): void {
     files.value = a.target.files;
     if (files.value.length > 0) {
         missionName.value = files.value[0].webkitRelativePath.split('/')[0];
     }
 }
 
-function transferClick(e) {
+function transferClick(e: any): void {
     e.preventDefault();
     HTMLinput.value.click();
 }
 
 const submitNewMission = async () => {
-    if (!project.value) {
+    if (project.value === undefined) {
         return;
     }
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
         tagValues.value,
-    ).catch((e) => {
+    ).catch((e: any) => {
         tab_selection.value = 'meta_data';
         isInErrorState.value = true;
         errorMessage.value = e.response.data.message;
@@ -198,12 +197,14 @@ const submitNewMission = async () => {
         .filter(
             (query) =>
                 query.queryKey[0] === 'missions' &&
-                query.queryKey[1] === project.value?.uuid,
+                query.queryKey[1] === project.value.uuid,
         );
     await Promise.all(
         filtered.map((query) => {
             console.log('Invalidating query', query.queryKey);
-            return queryClient.invalidateQueries(query.queryKey);
+            return queryClient.invalidateQueries({
+                queryKey: query.queryKey,
+            });
         }),
     );
     Notify.create({

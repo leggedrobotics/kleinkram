@@ -11,7 +11,7 @@ import crypto from 'crypto';
 
 export const createProjectUsingPost = async (
     project: CreateProject,
-    user?: User,
+    user: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/project/create`, {
         method: 'POST',
@@ -30,7 +30,7 @@ export const createProjectUsingPost = async (
 
 export const createMissionUsingPost = async (
     mission: CreateMission,
-    user?: User,
+    user: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/mission/create`, {
         method: 'POST',

@@ -10,8 +10,8 @@
         @click="_deleteAccessGroup"
     >
         <slot />
-        <q-tooltip v-if="props.accessGroup.personal">
-            You can't delete personal access groups
+        <q-tooltip v-if="props.accessGroup.type === AccessGroupType.PRIMARY">
+            You can't delete the primary access group
         </q-tooltip>
         <q-tooltip v-else-if="!canModify">
             Only the creator can delete this access group. You are not the
@@ -26,23 +26,24 @@ import { computed, Ref, ref } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { deleteAccessGroup } from 'src/services/mutations/access';
 import { getUser } from 'src/services/auth';
-import { UserRole } from '@common/enum';
+import { AccessGroupType, UserRole } from '@common/enum';
+import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/User.dto';
 
 const props = defineProps<{
-    accessGroup: AccessGroup;
+    accessGroup: AccessGroupDto;
 }>();
 
-const me: Ref<User | undefined> = ref(undefined);
-await getUser()?.then((user) => {
+const me: Ref<CurrentAPIUserDto | undefined> = ref(undefined);
+await getUser().then((user) => {
     me.value = user;
 });
 
 const canModify = computed(() => {
-    if (!me.value) return false;
+    if (me.value === undefined) return false;
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
-    return props.accessGroup.creator?.uuid === me.value.uuid;
+    return props.accessGroup.creator.uuid === me.value.uuid;
 });
 const queryClient = useQueryClient();
 

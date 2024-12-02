@@ -17,14 +17,17 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
+import { MissionDto } from '@api/types/Mission.dto';
+import { ProjectDto } from '@api/types/Project.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 export const createFileAction = async (
-    selectedMission: Mission,
-    selectedProject: Project,
+    selectedMission: MissionDto,
+    selectedProject: ProjectDto,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileUpload>[]>,
+    injectedFiles: Ref<Ref<FileDto>[]>,
 ) => {
     const confirmDialog = (e: BeforeUnloadEvent) => {
         e.preventDefault();
@@ -46,14 +49,14 @@ export const createFileAction = async (
 };
 
 async function _createFileAction(
-    selectedMission: Mission,
-    selectedProject: Project,
+    selectedMission: MissionDto,
+    selectedProject: ProjectDto,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileUpload>[]>,
+    injectedFiles: Ref<Ref<FileDto>[]>,
 ) {
-    if (files.length == 0) {
+    if (files.length === 0) {
         Notify.create({
             message: 'No file or URL provided',
             color: 'negative',
@@ -70,11 +73,11 @@ async function _createFileAction(
         timeout: 2000,
     });
 
-    const isBagOrMCAPFilter = (filename: string) =>
+    const isBagOrMCAPFilter = (filename: string): boolean =>
         filename.endsWith('.bag') || filename.endsWith('.mcap');
 
     const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
-    const isValidNameFilter = (filename: string) =>
+    const isValidNameFilter = (filename: string): boolean =>
         filenameRegex.test(filename);
 
     const validFiles = files.filter(
@@ -125,7 +128,7 @@ async function _createFileAction(
     const temporaryCredentials = await generateTemporaryCredentials(
         fileNames,
         selectedMission.uuid,
-    ).catch((e) => {
+    ).catch((e: any) => {
         let msg = `Upload of Files failed: ${e.response.message}`;
 
         // show special error for 403
@@ -153,7 +156,10 @@ async function _createFileAction(
         return;
     }
 
-    uploadingFiles.value = fileNames;
+    uploadingFiles.value = fileNames as unknown as Record<
+        string,
+        Record<string, string>
+    >;
 
     const api = ENV.ENDPOINT;
     let minioEndpoint = api.replace('api', 'minio');
@@ -194,12 +200,12 @@ async function _createFileAction(
                 },
             });
 
-            const newFileUpload = new FileUpload(
-                file.name,
-                file.size,
-                accessResp.fileUUID,
-                selectedMission.uuid,
-            );
+            const newFileUpload = {
+                name: file.name,
+                size: file.size,
+                fileUUID: accessResp.fileUUID,
+                uuid: selectedMission.uuid,
+            } as unknown as FileDto;
             const newFileUploadRef = ref(newFileUpload);
             injectedFiles.value.push(newFileUploadRef);
             return limit(async () => {
@@ -213,7 +219,7 @@ async function _createFileAction(
                     );
 
                     return confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (e) {
+                } catch (e: any) {
                     console.error('err', e);
                     newFileUploadRef.value.canceled = true;
                     Notify.create({
@@ -253,7 +259,7 @@ async function _createFileAction(
  * @param driveUrl the URL of the Google Drive folder to import
  */
 export async function driveUpload(
-    selectedMission: Mission,
+    selectedMission: MissionDto,
     driveUrl: Ref<string>,
 ) {
     // abort if no mission is selected
@@ -293,7 +299,7 @@ async function uploadFileMultipart(
     bucket: string,
     key: string,
     minioClient: S3Client,
-    newFileUpload: Ref<FileUpload>,
+    newFileUpload: Ref<FileDto>,
 ) {
     let UploadId: string | undefined;
     try {
@@ -338,7 +344,8 @@ async function uploadFileMultipart(
             while (retries < maxRetries) {
                 try {
                     const { ETag } = await minioClient.send(uploadPartCommand);
-                    newFileUpload.value.uploaded += partBlob.size;
+                    newFileUpload.value.uploaded =
+                        (newFileUpload.value.uploaded ?? 0) + partBlob.size;
 
                     parts.push({ PartNumber: partNumber, ETag });
                     break;
@@ -381,9 +388,10 @@ async function uploadFileMultipart(
             await minioClient.send(abortMultipartUploadCommand);
             console.log('Multipart upload aborted.');
         }
+
         await cancelUploads(
             [newFileUpload.value.uuid],
-            newFileUpload.value.missionUuid,
+            newFileUpload.value.missionUuid ?? '',
         );
 
         throw error;

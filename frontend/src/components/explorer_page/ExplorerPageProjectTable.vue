@@ -97,8 +97,6 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
-import { useQuery } from '@tanstack/vue-query';
-import { filteredProjects } from 'src/services/queries/project';
 import DeleteProjectDialogOpener from 'components/buttonWrapper/DeleteProjectDialogOpener.vue';
 import EditProjectDialogOpener from 'components/buttonWrapper/EditProjectDialogOpener.vue';
 import ROUTES from 'src/router/routes';
@@ -106,15 +104,13 @@ import { useRouter } from 'vue-router';
 import ManageProjectDialogOpener from 'components/buttonWrapper/ManageProjectAccessButton.vue';
 import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDialogOpener.vue';
 import { explorerPageTableColumns } from './explorer_page_table_columns';
+import { useFilteredProjects } from '../../hooks/customQueryHooks';
 
-const props = defineProps({
-    url_handler: {
-        type: QueryHandler,
-        required: true,
-    },
-});
+const props = defineProps<{
+    url_handler: QueryHandler;
+}>();
 
-function setPagination(update: TableRequest) {
+function setPagination(update: TableRequest): void {
     props.url_handler.setPage(update.pagination.page);
     props.url_handler.setTake(update.pagination.rowsPerPage);
     props.url_handler.setSort(update.pagination.sortBy);
@@ -131,23 +127,17 @@ const pagination = computed(() => {
     };
 });
 
-const queryKey = computed(() => ['projects', props.url_handler.queryKey]);
 const selected = ref([]);
 
-const { data: rawData, isLoading } = useQuery({
-    queryKey: queryKey,
-    queryFn: () =>
-        filteredProjects(
-            props.url_handler.take,
-            props.url_handler.skip,
-            props.url_handler.sortBy,
-            props.url_handler.descending,
-            props.url_handler.searchParams,
-        ),
-});
-
-const data = computed(() => (rawData.value ? rawData.value[0] : []));
-const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+const { data: rawData, isLoading } = useFilteredProjects(
+    props.url_handler.take,
+    props.url_handler.skip,
+    props.url_handler.sortBy,
+    props.url_handler.descending,
+    props.url_handler.searchParams,
+);
+const data = computed(() => (rawData.value ? rawData.value.projects : []));
+const total = computed(() => (rawData.value ? rawData.value.count : 0));
 
 watch(
     () => total.value,

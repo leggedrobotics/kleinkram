@@ -25,7 +25,7 @@ import {
 } from './entities/createTemplate.dto';
 import { ParamUUID } from '../validation/paramDecorators';
 import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { ListOfActionDto } from '@common/api/types/ListOfAction.dto';
+import { ActionsDto } from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -103,7 +103,7 @@ export class ActionController {
     })
     @ApiOkResponse({
         description: 'List of actions',
-        type: ListOfActionDto,
+        type: ActionsDto,
     })
     async list(
         @Query() dto: ActionQuery,
@@ -117,7 +117,7 @@ export class ActionController {
             'Searchkey in name, state_cause or image_name',
         )
         search: string,
-    ): Promise<ListOfActionDto> {
+    ): Promise<ActionsDto> {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
             missionUuid = auth.apikey.mission.uuid;

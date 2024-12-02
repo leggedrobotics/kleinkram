@@ -20,9 +20,10 @@
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
 import { ArtifactState } from '@common/enum';
+import { ActionDto } from '@api/types/Actions.dto';
 
 const props = defineProps<{
-    action: Action;
+    action: ActionDto;
 }>();
 
 const isArtifactUploading = computed(

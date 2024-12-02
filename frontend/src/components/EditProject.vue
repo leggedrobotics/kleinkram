@@ -52,11 +52,12 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
-import { getProject } from 'src/services/queries/project';
 import { updateProject } from 'src/services/mutations/project';
+import { ProjectDto } from '@api/types/Project.dto';
+import { useProjectQuery } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
     project_uuid: string;
@@ -69,18 +70,15 @@ const hasValidInput = ref(false);
 
 const invalidProjectNames: Ref<string[]> = ref([]);
 
-const key = computed(() => ['project', props.project_uuid]);
-const projectResponse = useQuery<Project>({
-    queryKey: key,
-    queryFn: () => getProject(props.project_uuid),
-});
+const projectResponse = useProjectQuery(props.project_uuid);
+
 const project = computed(() => projectResponse.data.value);
 watch(
     () => project.value,
-    (newVale: Project | undefined) => {
+    (newVale: ProjectDto | undefined) => {
         if (newVale) {
-            projectName.value = newVale?.name;
-            projectDescription.value = newVale?.description;
+            projectName.value = newVale.name;
+            projectDescription.value = newVale.description;
         }
     },
     { immediate: true },
@@ -90,7 +88,7 @@ async function save_changes(): Promise<void> {
     // resolve immediately if no changes
     if (
         projectName.value === project.value?.name &&
-        projectDescription.value === project.value?.description
+        projectDescription.value === project.value.description
     )
         return Promise.resolve();
 
@@ -98,36 +96,44 @@ async function save_changes(): Promise<void> {
     if (!project.value?.uuid) {
         return Promise.reject(new Error('Project UUID is not valid'));
     }
-    if (!project.value?.name) {
+    if (!project.value.name) {
         return Promise.reject(new Error('Project name is not valid'));
     }
-    if (!project.value?.description) {
+    if (!project.value.description) {
         return Promise.reject(new Error('Project description is not valid'));
     }
 
     await updateProject(
-        project.value?.uuid,
+        project.value.uuid,
         projectName.value.trim(),
         projectDescription.value,
-    ).catch((error: Error) => {
-        if (error.response.data.message.includes('Project')) {
-            Notify.create({
-                message: `Error updating project: ${error.response.data.message}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        } else {
-            Notify.create({
-                message: `Error updating project: ${error.response.data.message}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        }
+    ).catch(
+        (error: {
+            response: {
+                data: {
+                    message: string;
+                };
+            };
+        }) => {
+            if (error.response.data.message.includes('Project')) {
+                Notify.create({
+                    message: `Error updating project: ${error.response.data.message}`,
+                    color: 'negative',
+                    position: 'bottom',
+                    timeout: 5000,
+                });
+            } else {
+                Notify.create({
+                    message: `Error updating project: ${error.response.data.message}`,
+                    color: 'negative',
+                    position: 'bottom',
+                    timeout: 5000,
+                });
+            }
 
-        return Promise.reject(error);
-    });
+            return Promise.reject(error);
+        },
+    );
 
     const cache = queryClient.getQueryCache();
     const filtered = cache

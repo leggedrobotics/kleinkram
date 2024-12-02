@@ -1,5 +1,7 @@
 import axios from 'src/api/axios';
 import { QueueState } from '@common/enum';
+import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
+import { AxiosResponse } from 'axios';
 
 export const currentQueue = async (
     startDate: Date,
@@ -16,13 +18,13 @@ export const currentQueue = async (
 export const getQueueForFile = async (
     filename: string,
     missionUUID: string,
-): Promise<Queue[]> => {
-    if (!filename || !missionUUID) return [];
+): Promise<FileQueueEntriesDto> => {
     const params = {
         filename,
         uuid: missionUUID,
     };
-    const response = await axios.get('/queue/forFile', { params });
+    const response: AxiosResponse<FileQueueEntriesDto> =
+        await axios.get<FileQueueEntriesDto>('/queue/forFile', { params });
     return response.data;
 };
 

@@ -44,10 +44,10 @@ export async function mcapMetaInfo(
     await fileHandle.close();
 
     const topics: Record<string, unknown>[] = [];
-    const stats = reader.statistics;
-    const duration = stats.messageEndTime - stats.messageStartTime;
+    const stats: any = reader.statistics;
+    const duration = BigInt(stats.messageEndTime - stats.messageStartTime);
     reader.channelsById.forEach((channel) => {
-        const schema = reader.schemasById.get(channel.schemaId);
+        const schema: any = reader.schemasById.get(channel.schemaId);
         const nrMessages = stats.channelMessageCounts.get(channel.id);
         const topic = {
             name: channel.topic,

@@ -12,13 +12,15 @@ import { ref, watch } from 'vue';
 import CategorySelector from 'components/CategorySelector.vue';
 
 import CategoryCreator from 'components/CategoryCreator.vue';
+import { CategoryDto } from '@api/types/Category.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 const emit = defineEmits(['update:selected']);
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 
-const selected = ref<Category[]>(props.file.categories || []);
+const selected = ref<CategoryDto[]>(props.file.categories || []);
 
 watch(
     () => selected.value,
@@ -27,7 +29,7 @@ watch(
     },
 );
 
-function updateSelected(value: Category[]) {
+function updateSelected(value: CategoryDto[]) {
     selected.value = value;
 }
 </script>

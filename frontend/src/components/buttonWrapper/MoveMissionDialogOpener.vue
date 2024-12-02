@@ -22,20 +22,20 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import MoveMission from 'src/dialogs/MoveMissionDialog.vue';
-import { Mission } from 'src/types/Mission';
 import { useRouter } from 'vue-router';
 import { useMissionUUID } from 'src/hooks/utils';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: Mission;
+    mission: MissionDto;
 }>();
 const urlMissionUUID = useMissionUUID();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
         props.mission.uuid,
-        props.mission.project?.uuid,
+        props.mission.project.uuid,
         permissions.value,
     ),
 );
@@ -57,7 +57,9 @@ function moveMission() {
                         project_uuid: newProjectUUID,
                     },
                 })
-                .catch(console.error);
+                .catch((e: unknown) => {
+                    console.error(e);
+                });
         }
     });
 }

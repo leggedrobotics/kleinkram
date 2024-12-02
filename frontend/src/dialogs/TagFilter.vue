@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data || []"
+                        :rows="data.tags ?? []"
                         :columns="columns as any"
                         row-key="uuid"
                         wrap-cells
@@ -36,7 +36,9 @@
                 </div>
                 <div v-if="tagLookup[tagTypeUUID]" class="col-2">
                     <q-input
-                        v-if="tagLookup[tagTypeUUID].type !== DataType.BOOLEAN"
+                        v-if="
+                            tagLookup[tagTypeUUID].datatype !== DataType.BOOLEAN
+                        "
                         v-model="tagValues[tagTypeUUID].value"
                         label="Enter Filter Value"
                         outlined
@@ -44,13 +46,16 @@
                         clearable
                         required
                         :type="
-                            DataType_InputType[tagLookup[tagTypeUUID].type] ||
-                            'text'
+                            DataType_InputType[
+                                tagLookup[tagTypeUUID].datatype
+                            ] || 'text'
                         "
-                        @clear="delete tagValues[tagTypeUUID]"
+                        @clear="() => delete tagValues[tagTypeUUID]"
                     />
                     <q-toggle
-                        v-if="tagLookup[tagTypeUUID].type === DataType.BOOLEAN"
+                        v-if="
+                            tagLookup[tagTypeUUID].datatype === DataType.BOOLEAN
+                        "
                         v-model="tagValues[tagTypeUUID].value"
                         :label="
                             tagValues[tagTypeUUID] === undefined
@@ -91,9 +96,9 @@
 <script setup lang="ts">
 import { QTable, useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { getTagTypes } from 'src/services/queries/tag';
 import { DataType } from '@common/enum';
+import { TagTypeDto } from '@api/types/TagsDto.dto';
+import { useAllTags } from '../hooks/customQueryHooks';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
@@ -109,7 +114,7 @@ const convertedTagValues = computed(() => {
     Object.keys(tagValues.value).forEach((key) => {
         const tagType = tagLookup.value[key];
 
-        switch (tagType.type) {
+        switch (tagType.datatype) {
             case DataType.BOOLEAN:
                 if (tagValues.value[key].value === undefined) {
                     break;
@@ -151,14 +156,11 @@ const convertedTagValues = computed(() => {
     return converted;
 });
 
-const { data } = useQuery<TagType[]>({
-    queryKey: ['tagTypes'],
-    queryFn: getTagTypes,
-});
+const { data } = useAllTags();
 
 const tagLookup = computed(() => {
-    const lookup: Record<string, TagType> = {};
-    data.value?.forEach((tag) => {
+    const lookup: Record<string, TagTypeDto> = {};
+    data.value.tags.forEach((tag) => {
         lookup[tag.uuid] = tag;
     });
     return lookup;
@@ -172,7 +174,7 @@ const DataType_InputType = {
     [DataType.LOCATION]: 'text',
 };
 
-function tagTypeSelected(event: any, row: TagType) {
+function tagTypeSelected(event: any, row: TagTypeDto) {
     if (!tagValues.value.hasOwnProperty(row.uuid)) {
         tagValues.value[row.uuid] = { value: undefined, name: row.name };
     }

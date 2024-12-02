@@ -129,7 +129,7 @@ import { computed, ref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import {
     _downloadFile,
@@ -143,6 +143,8 @@ import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
 import { fileColumns } from './explorer_page_table_columns';
+import { FileDto, FilesDto } from '@api/types/Files.dto';
+import { CategoryDto } from '@api/types/Category.dto';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -150,12 +152,9 @@ const $router = useRouter();
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
-const props = defineProps({
-    url_handler: {
-        type: QueryHandler,
-        required: true,
-    },
-});
+const props = defineProps<{
+    url_handler: QueryHandler;
+}>();
 
 if (props.url_handler.sortBy === 'name') {
     props.url_handler.setSort('filename');
@@ -187,11 +186,14 @@ const queryKey = computed(() => [
     props.url_handler.categories,
 ]);
 
-const { data: rawData, isLoading } = useQuery({
+const {
+    data: rawData,
+    isLoading,
+}: UseQueryReturnType<FilesDto | undefined, Error> = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         filesOfMission(
-            mission_uuid.value,
+            (mission_uuid.value ?? '') as string,
             props.url_handler.take,
             props.url_handler.skip,
             props.url_handler.fileType,
@@ -202,8 +204,8 @@ const { data: rawData, isLoading } = useQuery({
             props.url_handler.searchParams.health,
         ),
 });
-const data = computed(() => (rawData.value ? rawData.value[0] : []));
-const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+const data = computed(() => (rawData.value ? rawData.value.files : []));
+const total = computed(() => (rawData.value ? rawData.value.count : 0));
 
 watch(
     () => total.value,
@@ -218,6 +220,7 @@ watch(
 
 const onRowClick = async (_: Event, row: any) => {
     await $router.push({
+        path: '',
         name: ROUTES.FILE.routeName,
         params: {
             project_uuid: project_uuid.value,
@@ -227,7 +230,7 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-function chipClicked(cat: Category) {
+function chipClicked(cat: CategoryDto) {
     props.url_handler.addCategory(cat.uuid);
 }
 
@@ -238,8 +241,8 @@ watch(
     },
 );
 
-function sortedCats(file: FileEntity) {
-    const cats = [...(file.categories || [])];
+function sortedCats(file: FileDto) {
+    const cats = [...(file.categories.categories || [])];
     return cats.sort((a, b) => a.name.localeCompare(b.name));
 }
 </script>

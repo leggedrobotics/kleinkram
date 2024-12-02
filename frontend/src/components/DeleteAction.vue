@@ -17,6 +17,7 @@ import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { deleteAction } from 'src/services/mutations/action';
+import { ActionDto } from '@api/types/Actions.dto';
 
 const actionNameCheck = ref('');
 const client = useQueryClient();
@@ -47,7 +48,7 @@ async function deleteActionAction() {
 }
 
 const props = defineProps<{
-    action: Action;
+    action: ActionDto;
 }>();
 
 defineExpose({

@@ -26,5 +26,6 @@
         "paths": {
             "@common/*": ["../common/*"]
         }
-    }
+    },
+    "exclude": ["tests/*"]
 }

@@ -13,7 +13,7 @@
             <b>Individual Users</b>
         </div>
         <q-table
-            v-if="foundUsers && foundUsers.length > 0"
+            v-if="foundUsers && foundUsers.count > 0"
             :rows="(foundUsers as any) || ([] as any)"
             :columns="columns as any"
             hide-bottom

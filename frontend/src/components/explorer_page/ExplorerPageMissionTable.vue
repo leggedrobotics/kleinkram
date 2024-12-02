@@ -125,7 +125,6 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { missionColumns } from 'components/explorer_page/explorer_page_table_columns';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery } from '@tanstack/vue-query';
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
@@ -136,15 +135,14 @@ import { useProjectQuery } from 'src/hooks/customQueryHooks';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
+import { MissionDto } from '@api/types/Mission.dto';
+import { missionColumns } from './explorer_page_table_columns';
 
 const $emit = defineEmits(['update:selected']);
 
-const props = defineProps({
-    url_handler: {
-        type: QueryHandler,
-        required: true,
-    },
-});
+const props = defineProps<{
+    url_handler: QueryHandler;
+}>();
 
 function setPagination(update: TableRequest) {
     props.url_handler.setPage(update.pagination.page);
@@ -211,9 +209,9 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-function missingTags(row: Mission) {
-    const mapped = project.value.requiredTags.map((tagType) => {
-        const setTypes = row.tags.map((tag) => tag.type);
+function missingTags(row: MissionDto) {
+    const mapped = project.value?.requiredTags.map((tagType) => {
+        const setTypes = row.tags.tags.map((tag) => tag.type);
         if (!setTypes.find((setType) => setType.uuid === tagType.uuid)) {
             return tagType;
         }
@@ -221,12 +219,12 @@ function missingTags(row: Mission) {
     return mapped.filter((val) => !!val);
 }
 
-function missingTagsText(row: Mission) {
+function missingTagsText(row: MissionDto) {
     const _missionTags = missingTags(row);
     if (_missionTags.length === 1) {
         return `1 Tag missing`;
     }
-    return `${_missionTags.length} Tags missing`;
+    return `${_missionTags.length.toString()} Tags missing`;
 }
 
 watch(

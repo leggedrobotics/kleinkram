@@ -413,7 +413,7 @@ export class AccessService {
         const agu = await this.groupMembershipRepository.findOneOrFail({
             where: { uuid },
         });
-        agu.expirationDate = expireDate;
+        delete agu.expirationDate;
         return this.groupMembershipRepository.save(agu);
     }
 }

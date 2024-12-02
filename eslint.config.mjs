@@ -43,9 +43,9 @@ export default tseslint.config(
                     'format': ['camelCase', 'PascalCase', 'UPPER_CASE'],
                 },
                 {
-                    "selector": "parameter",
-                    "format": ["camelCase"],
-                    "leadingUnderscore": "allow"
+                    'selector': 'parameter',
+                    'format': ['camelCase'],
+                    'leadingUnderscore': 'allow',
                 },
             ],
 
@@ -83,6 +83,7 @@ export default tseslint.config(
             'no-nested-ternary': 'warn',
             'no-control-regex': 'warn',
             'no-useless-escape': 'warn',
+            '@typescript-eslint/no-deprecated': 'warn',
         },
     },
     {
@@ -102,9 +103,9 @@ export default tseslint.config(
             'no-control-regex': 'warn',
             'no-useless-escape': 'warn',
             'vue/no-v-text-v-html-on-component': 'warn',
+            'vue/v-on-handler-style': 'error',
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
-            '@typescript-eslint/no-deprecated': 'warn',
         },
     },
     {

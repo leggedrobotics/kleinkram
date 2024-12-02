@@ -148,7 +148,7 @@
 import ROUTES from 'src/router/routes';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useIsUploading, useUser } from 'src/hooks/customQueryHooks';
-import { computed, inject, Ref, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import HeaderCreateNewMenu from 'components/header/HeaderCreateNewMenu.vue';
 import HeaderProfileMenu from 'components/header/HeaderProfileMenu.vue';
 import DocumentationIcon from 'components/DocumentationIcon.vue';
@@ -164,6 +164,7 @@ watch(is_uploading, () =>
     }),
 );
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const uploads = inject('uploads')!;
 
 const uploads_without_completed = computed(() =>
@@ -178,13 +179,16 @@ const uncompletedUploads = computed(() =>
 
 const totalToUpload = computed(() =>
     uploads.value.reduce(
-        (acc, upload) => acc + (upload.value.canceled ? 0 : upload.value.size),
+        (acc: any, upload: any) =>
+            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+            acc + (upload.value.canceled ? 0 : upload.value.size),
         0,
     ),
 );
 const totalUploaded = computed(() =>
     uploads.value.reduce(
-        (acc, upload) =>
+        (acc: any, upload: any) =>
+            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
             acc + (upload.value.canceled ? 0 : upload.value.uploaded),
         0,
     ),
@@ -199,7 +203,8 @@ const averageUploadSpeed = computed(() => {
     if (uncompletedUploads.value.length === 0) return 0;
     return (
         uncompletedUploads.value.reduce(
-            (acc, upload) => acc + upload.value.speed,
+            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+            (acc: any, upload: any) => acc + upload.value.speed,
             0,
         ) / uncompletedUploads.value.length
     );
@@ -210,7 +215,7 @@ const timeEstimated = computed(() => {
     if (averageUploadSpeed.value === 0) return 'Calculating...';
     const remainingTime = remainingSize / averageUploadSpeed.value;
     const ave = Math.round(remainingTime / 60);
-    return `${ave} min`;
+    return `${ave.toString()} min`;
 });
 
 const showOverlay = ref(false);

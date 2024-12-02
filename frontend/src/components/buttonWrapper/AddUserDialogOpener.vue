@@ -20,14 +20,15 @@ import { computed, Ref, ref } from 'vue';
 import { getUser } from 'src/services/auth';
 import AddUserToAccessGroupDialog from 'src/dialogs/AddUserToAccessGroupDialog.vue';
 import { UserRole } from '@common/enum';
+import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/User.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    accessGroup: AccessGroup;
+    accessGroup: AccessGroupDto;
 }>();
 
-const me: Ref<User | undefined> = ref(undefined);
-await getUser()?.then((user) => {
+const me: Ref<CurrentAPIUserDto | undefined> = ref(undefined);
+await getUser().then((user) => {
     me.value = user;
 });
 
@@ -36,10 +37,10 @@ const canModify = computed(() => {
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
-    return props.accessGroup.creator?.uuid === me.value.uuid;
+    return props.accessGroup.creator.uuid === me.value.uuid;
 });
 
-function openAddUser() {
+function openAddUser(): void {
     if (!canModify.value) {
         return;
     }

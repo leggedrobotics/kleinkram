@@ -60,8 +60,7 @@ describe('Verify Action', () => {
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-
+                    cookie: `authtoken=${getJwtToken(user)}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -88,8 +87,7 @@ describe('Verify Action', () => {
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-
+                    cookie: `authtoken=${getJwtToken(user)}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -104,9 +102,9 @@ describe('Verify Action', () => {
 
         // get action uuid
         const action = await actionSubmission.json();
-        const actionUuid = action.uuid;
+        const actionUuid: string = action.uuid;
         expect(actionUuid).toBeDefined();
-        let logs = null;
+        let logs: any[] = [];
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         while (true) {
@@ -115,7 +113,7 @@ describe('Verify Action', () => {
                 {
                     method: 'GET',
                     headers: {
-                        cookie: `authtoken=${await getJwtToken(user)}`,
+                        cookie: `authtoken=${getJwtToken(user)}`,
                     },
                 },
             );
@@ -137,7 +135,7 @@ describe('Verify Action', () => {
         console.log(fileHashStr);
 
         expect(logs).toBeDefined();
-        const messages = logs?.map((log) => log.message) ?? [];
+        const messages = logs.map((log) => log.message) ?? [];
         console.log(messages);
         const containsFile = messages.some((message) =>
             message.includes(fileHashStr),

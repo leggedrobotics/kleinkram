@@ -1,4 +1,6 @@
 import axios from 'src/api/axios';
+import { AccessGroupDto } from '@api/types/User.dto';
+import { ProjectAccessDto } from '@api/types/Project.dto';
 
 export const canAddAccessGroup = async (
     projectUuid: string,
@@ -20,7 +22,7 @@ export const searchAccessGroups = async (
     member: boolean,
     skip: number,
     take: number,
-): Promise<[AccessGroup[], 0]> => {
+): Promise<[AccessGroupDto[], 0]> => {
     const params: Record<string, string | boolean | number> = {
         skip,
         take,
@@ -43,7 +45,7 @@ export const searchAccessGroups = async (
     return response.data;
 };
 
-export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
+export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
     const response = await axios.get(`/access/one`, { params: { uuid } });
     return response.data;
 };
@@ -51,7 +53,7 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroup> => {
 export const getProjectAccess = async (
     projectUUID: string,
     projectAccessUUID: string,
-): Promise<ProjectAccess> => {
+): Promise<ProjectAccessDto> => {
     const response = await axios.get(`/access/projectAccess`, {
         params: { uuid: projectUUID, projectAccessUUID },
     });

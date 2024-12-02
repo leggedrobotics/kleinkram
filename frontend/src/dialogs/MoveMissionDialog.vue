@@ -12,7 +12,7 @@
                         dense
                         flat
                         class="full-width button-border"
-                        :label="selected_project?.name || 'Project'"
+                        :label="selectedProject?.name || 'Project'"
                     >
                         <q-list>
                             <q-item
@@ -20,8 +20,10 @@
                                 :key="project.uuid"
                                 clickable
                                 @click="
-                                    selected_project = project;
-                                    dd_open = false;
+                                    () => {
+                                        selectedProject = project;
+                                        dd_open = false;
+                                    }
                                 "
                             >
                                 <q-item-section>
@@ -55,37 +57,39 @@
     </q-dialog>
 </template>
 <script setup lang="ts">
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { filteredProjects } from 'src/services/queries/project';
 import { moveMission } from 'src/services/mutations/mission';
+import { MissionDto } from '@api/types/Mission.dto';
+import { useFilteredProjects } from '../hooks/customQueryHooks';
+import { BaseProjectDto } from '@api/types/Project.dto';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
 const props = defineProps<{
-    mission?: Mission;
+    mission?: MissionDto;
 }>();
 
 const queryClient = useQueryClient();
 
-const { data } = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
-});
-const projects = computed(() => (data.value ? data.value[0] : []));
+const { data } = useFilteredProjects(500, 0, 'name', true, {});
 
-const selected_project = ref<Project | null>(props.mission?.project || null);
+const projects = computed(() => (data.value ? data.value.projects : []));
+
+const selectedProject = ref<BaseProjectDto | null>(
+    props.mission?.project || null,
+);
 
 const dd_open = ref(false);
 
 async function onOk() {
-    if (!props.mission || !selected_project.value) {
+    if (!props.mission || !selectedProject.value) {
         return;
     }
     const creating = Notify.create({
         group: false,
-        message: `Moving mission ${props.mission.name} to project ${selected_project.value.name}`,
+        message: `Moving mission ${props.mission.name} to project ${selectedProject.value.name}`,
         color: 'grey',
         spinner: true,
         timeout: 4000,
@@ -93,9 +97,9 @@ async function onOk() {
     });
 
     try {
-        await moveMission(props.mission.uuid, selected_project.value.uuid);
+        await moveMission(props.mission.uuid, selectedProject.value.uuid);
         creating({
-            message: `Mission ${props.mission.name} moved to project ${selected_project.value.name}`,
+            message: `Mission ${props.mission.name} moved to project ${selectedProject.value.name}`,
             color: 'positive',
             spinner: false,
             timeout: 4000,
@@ -110,13 +114,15 @@ async function onOk() {
             );
         await Promise.all(
             filtered.map((query) =>
-                queryClient.invalidateQueries(query.queryKey),
+                queryClient.invalidateQueries({
+                    queryKey: query.queryKey,
+                }),
             ),
         );
-        onDialogOK(selected_project.value.uuid);
-    } catch (e: Error) {
+        onDialogOK(selectedProject.value.uuid);
+    } catch (e: any) {
         creating({
-            message: `Error moving mission ${props.mission.name} to project ${selected_project.value.name}`,
+            message: `Error moving mission ${props.mission.name} to project ${selectedProject.value.name}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

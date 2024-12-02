@@ -1,5 +1,8 @@
 import { formatDate } from 'src/services/dateFormating';
 import { formatSize } from 'src/services/generalFormatting';
+import { FileDto } from '@api/types/Files.dto';
+import { MissionDto } from '@api/types/Mission.dto';
+import { ProjectDto } from '@api/types/Project.dto';
 
 export interface ProjectColumnType {
     name: string;
@@ -7,14 +10,14 @@ export interface ProjectColumnType {
     label: string;
     align: string;
     field?:
-        | ((row: Project) => any)
-        | ((row: Mission) => any)
-        | ((row: FileEntity) => any)
+        | ((row: ProjectDto) => any)
+        | ((row: MissionDto) => any)
+        | ((row: FileDto) => any)
         | ((row: AggregatedMission) => any);
     format?: ((val: string) => string) | ((val: number) => string);
     sortable?: boolean;
     style?: string;
-    sort?: (_a: string, _b: string, a: FileEntity, b: FileEntity) => number;
+    sort?: (_a: string, _b: string, a: FileDto, b: FileDto) => number;
 }
 
 export const explorerPageTableColumns: ProjectColumnType[] = [
@@ -23,7 +26,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         required: true,
         label: 'Project Name',
         align: 'left',
-        field: (row: Project) => row.name,
+        field: (row: ProjectDto) => row.name,
         format: (val: string) => val,
         sortable: true,
         style: 'width: 140px',
@@ -33,7 +36,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         required: true,
         label: 'Description',
         align: 'left',
-        field: (row: Project) => row.description || '',
+        field: (row: ProjectDto) => row.description || '',
         format: (val: string) => val,
         sortable: true,
     },
@@ -43,8 +46,8 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Project) => (row.creator ? row.creator.name : ''),
-        format: (val: number) => `${val}`,
+        field: (row: ProjectDto) => (row.creator ? row.creator.name : ''),
+        format: (val: number) => val.toString(),
         style: 'min-width: 100px',
         sortable: true,
     },
@@ -53,7 +56,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         required: true,
         label: 'Created',
         align: 'left',
-        field: (row: Project) => row.createdAt,
+        field: (row: ProjectDto) => row.createdAt,
         format: (val: string) => formatDate(new Date(val)),
         sortable: true,
     },
@@ -63,7 +66,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         label: '# Missions',
         align: 'right',
         style: 'min-width: 100px',
-        field: (row: Project) => row.missions.length,
+        field: (row: ProjectDto) => row.missions.length,
         format: (val: number) => `${val}`,
     },
     {
@@ -80,7 +83,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: Mission) => row.name,
+        field: (row: MissionDto) => row.name,
         format: (val: string) => val,
     },
     {
@@ -96,7 +99,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Project) => (row.creator ? row.creator.name : ''),
+        field: (row: ProjectDto) => (row.creator ? row.creator.name : ''),
         format: (val: number) => `${val}`,
         style: 'min-width: 100px',
         sortable: false,
@@ -106,7 +109,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: Mission) => row.createdAt,
+        field: (row: MissionDto) => row.createdAt,
         format: (val: string) => formatDate(new Date(val)),
     },
     {
@@ -145,7 +148,7 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'File',
         align: 'left',
-        field: (row: FileEntity) => row.filename,
+        field: (row: FileDto) => row.filename,
         format: (val: string) => val,
         sortable: true,
     },
@@ -160,7 +163,7 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'Created',
         align: 'left',
-        field: (row: FileEntity) => row.date,
+        field: (row: FileDto) => row.date,
         format: (val: string) => formatDate(new Date(val)),
         sortable: true,
     },
@@ -169,9 +172,9 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FileEntity) => row.size,
+        field: (row: FileDto) => row.size,
         format: formatSize,
-        sort: (_a: string, _b: string, a: FileEntity, b: FileEntity) =>
+        sort: (_a: string, _b: string, a: FileDto, b: FileDto) =>
             a.size - b.size,
         style: 'width: 40px',
         sortable: true,

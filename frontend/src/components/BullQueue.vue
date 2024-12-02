@@ -32,38 +32,38 @@ const cols = [
         name: 'name',
         label: 'Job Name',
         align: 'left',
-        field: (row) => row.job.name,
+        field: (row: any) => row.job.name,
     },
     {
         name: 'action',
         label: 'Action Name',
         align: 'left',
-        field: (row) =>
+        field: (row: any) =>
             `${row.action.template.name} v${row.action.template.version}`,
     },
     {
         name: 'id',
         label: 'ID',
         align: 'left',
-        field: (row) => row.job.id,
+        field: (row: any) => row.job.id,
     },
     {
         name: 'progress',
         label: 'Progress',
         align: 'left',
-        field: (row) => row.job.progress,
+        field: (row: any) => row.job.progress,
     },
     {
         name: 'timestamp',
         label: 'Timestamp',
         align: 'left',
-        field: (row) => new Date(row.job.timestamp).toLocaleString(),
+        field: (row: any) => new Date(row.job.timestamp).toLocaleString(),
     },
     {
         name: 'state',
         label: 'State',
         align: 'left',
-        field: (row) => row.job.state,
+        field: (row: any) => row.job.state,
     },
     {
         name: 'kill',

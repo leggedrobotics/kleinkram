@@ -44,7 +44,7 @@ type CancelUploadJob = Job<{
 @Processor('file-cleanup')
 @Injectable()
 export class FileCleanupQueueProcessorProvider implements OnModuleInit {
-    private redlock: Redlock;
+    private redlock!: Redlock;
 
     constructor(
         @InjectRepository(FileEntity)
@@ -95,7 +95,15 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 if (file.state === FileState.OK) {
                     return;
                 }
-                const queue = await this.queueRepository.findOne({
+
+                if (file.mission === undefined) {
+                    logger.error(
+                        `Mission of file ${file.uuid} is undefined, skipping`,
+                    );
+                    return;
+                }
+
+                const queue = await this.queueRepository.findOneOrFail({
                     where: {
                         display_name: file.filename,
                         mission: { uuid: file.mission.uuid },
@@ -122,6 +130,20 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 for (const file of files) {
                     const hash = crypto.createHash('md5');
 
+                    if (file.mission === undefined) {
+                        logger.error(
+                            `Mission of file ${file.uuid} is undefined, skipping`,
+                        );
+                        continue;
+                    }
+
+                    if (file.mission.project === undefined) {
+                        logger.error(
+                            `Project of file ${file.uuid} is undefined, skipping`,
+                        );
+                        continue;
+                    }
+
                     const datastream = await internalMinio.getObject(
                         file.type === FileType.BAG
                             ? env.MINIO_BAG_BUCKET_NAME
@@ -141,7 +163,9 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             this.fileRepository
                                 .save(file)
                                 .then(resolve)
-                                .catch(reject);
+                                .catch((e: unknown) => {
+                                    reject(e as Error);
+                                });
                         });
                     });
                 }
@@ -168,6 +192,14 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     failedUploads.map(async (file) => {
                         file.state = FileState.ERROR;
                         await this.fileRepository.save(file);
+
+                        if (file.mission === undefined) {
+                            logger.error(
+                                `Mission of file ${file.uuid} is undefined, skipping`,
+                            );
+                            return;
+                        }
+
                         const queue = await this.queueRepository.findOne({
                             where: {
                                 display_name: file.filename,
@@ -213,9 +245,25 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
         const header =
             'filename,file_uuid,mission,project,project_uuid,mission_uuid';
-        const csv = files.map((file) => {
-            return `${file.filename},${file.uuid},${file.mission.name},${file.mission.project.name},${file.mission.project.uuid},${file.mission.uuid}`;
-        });
+        const csv = files
+            .map((file) => {
+                if (file.mission === undefined) {
+                    logger.error(
+                        `Mission of file ${file.uuid} is undefined, skipping`,
+                    );
+                    return undefined;
+                }
+
+                if (file.mission.project === undefined) {
+                    logger.error(
+                        `Project of file ${file.uuid} is undefined, skipping`,
+                    );
+                    return undefined;
+                }
+
+                return `${file.filename},${file.uuid},${file.mission.name},${file.mission.project.name},${file.mission.project.uuid},${file.mission.uuid}`;
+            })
+            .filter((line) => line !== undefined);
 
         const csvString = [header, ...csv].join('\n');
         await internalMinio.putObject(
@@ -269,7 +317,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     );
                 } else {
                     logger.info(
-                        `${count} files are missing in the minio storage`,
+                        `${count.toString()} files are missing in the minio storage`,
                     );
                 }
 
@@ -323,12 +371,20 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     await internalMinio.getObjectTagging(bucket, obj)
                 )[0] as unknown as Tag[];
                 const missionUUID = tags.find(
-                    (tag) => tag.Key === 'mission_uuid',
-                ).Value;
+                    (tag: Tag) => tag.Key === 'mission_uuid',
+                )?.Value;
                 const filename = tags.find(
-                    (tag) => tag.Key === 'filename',
-                ).Value;
+                    (tag: Tag) => tag.Key === 'filename',
+                )?.Value;
                 const minioObject = await internalMinio.statObject(bucket, obj);
+
+                if (missionUUID === undefined || filename === undefined) {
+                    logger.error(
+                        `Missing tags in minio object: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
+                    );
+                    return;
+                }
+
                 const mission = await this.missionRepository.findOne({
                     where: {
                         uuid: missionUUID,
@@ -399,7 +455,17 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
             where: { uuid: missionUUID },
             relations: ['project'],
         });
-        if (!mission) {
+        if (mission === undefined) {
+            logger.error(
+                `Mission ${missionUUID} is undefined, skipping cancel upload`,
+            );
+            return false;
+        }
+
+        if (mission.project === undefined) {
+            logger.error(
+                `Project of mission ${mission.uuid} is undefined, skipping`,
+            );
             return false;
         }
 
@@ -429,8 +495,10 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         try {
             await internalMinio.statObject(bucketName, objectName);
             return true;
-        } catch (err) {
-            if (err.code === 'NotFound') {
+        } catch (err: unknown) {
+            const errorCode = (err as { code: string }).code;
+
+            if (errorCode === 'NotFound') {
                 return false;
             }
             // Handle other potential errors (e.g., network issues)

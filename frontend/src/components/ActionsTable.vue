@@ -63,7 +63,10 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="router.push('action/' + props.row.uuid)"
+                                @click="
+                                    () =>
+                                        router.push('action/' + props.row.uuid)
+                                "
                             >
                                 <q-item-section>View Details</q-item-section>
                             </q-item>
@@ -88,11 +91,8 @@
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { useQuery } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
 import { formatDate } from 'src/services/dateFormating';
-import { Action } from 'src/types/Action';
-import { getActions } from 'src/services/queries/action';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
@@ -100,6 +100,8 @@ import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
 import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 import { ActionState } from '@common/enum';
+import { ActionDto } from '@api/types/Actions.dto';
+import { useActions } from '../hooks/customQueryHooks';
 
 const router = useRouter();
 
@@ -109,28 +111,17 @@ const props = defineProps<{
 }>();
 props.handler.setSort('createdAt');
 props.handler.setDescending(true);
-const actionKey = computed(() => [
-    'action_mission',
-    props.handler.projectUuid,
-    props.handler.missionUuid,
-    props.handler.queryKey,
-]);
-const { data: rawData, isLoading } = useQuery<[Action[], number]>({
-    queryKey: actionKey,
-    queryFn: () =>
-        getActions(
-            props.handler.projectUuid!,
-            props.handler.missionUuid!,
-            props.handler.take,
-            props.handler.skip,
-            props.handler.sortBy,
-            props.handler.descending,
-            props.handler.searchParams.name,
-        ),
-    staleTime: 0,
-    refetchInterval: 4000,
-});
 
+const { data: rawData, isLoading } = useActions(
+    props.handler.projectUuid ?? '',
+    props.handler.missionUuid ?? '',
+    props.handler.take,
+    props.handler.skip,
+    props.handler.sortBy,
+    props.handler.descending,
+    props.handler.searchParams.name,
+    JSON.stringify(props.handler.queryKey) ?? '',
+);
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 
@@ -151,8 +142,8 @@ const pagination = computed(() => {
     };
 });
 
-const data = computed(() => (rawData.value ? rawData.value[0] : []));
-const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+const data = computed(() => (rawData.value ? rawData.value.actions : []));
+const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,
     () => {
@@ -178,23 +169,23 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: false,
-        field: (row: Action) =>
-            row.template?.imageName ? row.template.imageName : 'N/A',
+        field: (row: ActionDto) =>
+            row.template.imageName ? row.template.imageName : 'N/A',
     },
     {
         name: 'mission',
         label: 'Mission',
         align: 'left',
         sortable: false,
-        field: (row: Action) => row.mission?.name || 'N/A',
+        field: (row: ActionDto) => row.mission.name || 'N/A',
     },
     {
         name: 'name',
         label: 'Action Name',
         align: 'left',
         sortable: false,
-        field: (row: Action) =>
-            row.template?.name
+        field: (row: ActionDto) =>
+            row.template.name
                 ? `${row.template.name} v${row.template.version}`
                 : 'N/A',
     },
@@ -210,7 +201,7 @@ const columns = [
             'whitespace:nowrap;' +
             'text-overflow: ellipsis',
 
-        field: (row: Action) => (row.stateCause ? row.stateCause : ''),
+        field: (row: ActionDto) => (row.stateCause ? row.stateCause : ''),
     },
 
     {
@@ -218,7 +209,7 @@ const columns = [
         label: 'Last Update',
         align: 'left',
         sortable: true,
-        field: (row: Action) =>
+        field: (row: ActionDto) =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
     },
     {
@@ -226,14 +217,14 @@ const columns = [
         label: 'Creation Date',
         align: 'left',
         sortable: true,
-        field: (row: Action) =>
+        field: (row: ActionDto) =>
             row.createdAt ? formatDate(row.createdAt, true) : 'N/A',
     },
     {
         name: 'user',
         label: 'Submitted By',
         align: 'left',
-        field: (row: Action) => row?.createdBy?.name || 'N/A',
+        field: (row: ActionDto) => row.creator.name || 'N/A',
         sortable: false,
     },
     {

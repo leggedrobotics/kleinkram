@@ -19,7 +19,9 @@ export async function getDiskSpace() {
     );
 }
 
-export async function createWorker(workerRepository: Repository<Worker>) {
+export async function createWorker(
+    workerRepository: Repository<Worker>,
+): Promise<Worker> {
     // Gather CPU information
     const cpuData = await si.cpu();
     const cpuCores = cpuData.cores;
@@ -32,7 +34,7 @@ export async function createWorker(workerRepository: Repository<Worker>) {
     // Gather GPU information
     const gpuModels = await getGpuModels();
     const hasGPU = gpuModels.length > 0;
-    const gpuModel = hasGPU ? gpuModels[0] : null;
+    const gpuModel = (hasGPU && gpuModels[0]) || '';
     const gpuMemory = hasGPU ? 1000 : -1; // Not available in the current implementation
 
     // Gather Disk storage information

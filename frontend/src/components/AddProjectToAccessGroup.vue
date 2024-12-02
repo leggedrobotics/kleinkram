@@ -26,7 +26,7 @@
                     removable
                     :tabindex="scope.tabindex"
                     :icon="icon(scope.opt.type)"
-                    @remove="scope.removeAtIndex(scope.index)"
+                    @remove="() => scope.removeAtIndex(scope.index)"
                 >
                     {{ scope.opt.name }}
                 </q-chip>
@@ -52,11 +52,12 @@
 <script setup lang="ts">
 import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap, icon } from 'src/services/generic';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addAccessGroupToProject } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
-import { filteredProjects } from 'src/services/queries/project';
 import { AccessGroupRights } from '@common/enum';
+import { UserDto } from '@api/types/User.dto';
+import { useFilteredProjects } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
     access_group_uuid: string;
@@ -65,14 +66,12 @@ const queryClient = useQueryClient();
 
 const search = ref('');
 const accessRight = ref({ label: 'None', value: AccessGroupRights.READ });
-const selected: Ref<User[]> = ref([]);
-const { data: foundProjects } = useQuery({
-    queryKey: ['projects', search],
-    queryFn: () =>
-        filteredProjects(100, 0, 'name', true, { name: search.value }),
+const selected: Ref<UserDto[]> = ref([]);
+const { data: foundProjects } = useFilteredProjects(100, 0, 'name', true, {
+    name: search.value,
 });
 const _foundProjects = computed(() =>
-    foundProjects.value ? foundProjects.value[0] : [],
+    foundProjects.value ? foundProjects.value.projects : [],
 );
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
     label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],

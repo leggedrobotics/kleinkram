@@ -32,6 +32,7 @@ import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { ref } from 'vue';
 import { updateMissionName } from 'src/services/mutations/mission';
 import { useQueryClient } from '@tanstack/vue-query';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const { dialogRef } = useDialogPluginComponent();
 const $q = useQuasar();
@@ -39,7 +40,7 @@ const queryClient = useQueryClient();
 const isNameValid = ref(true);
 
 const props = defineProps<{
-    mission: Mission;
+    mission: MissionDto;
 }>();
 
 const missionName = ref(props.mission.name);

@@ -33,6 +33,8 @@ import {
 import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
 import { AccessGroupType } from '@common/enum';
 import { DefaultRightDto } from '@api/types/DefaultRights.dto';
+import { ProjectDto } from '@api/types/Project.dto';
+import { AccessGroupDto } from '@api/types/User.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -40,7 +42,7 @@ const props = defineProps<{
     project_uuid: string;
 }>();
 
-const { data: project } = useQuery<Project>({
+const { data: project } = useQuery<ProjectDto>({
     queryKey: ['project', props.project_uuid],
     queryFn: () => getProject(props.project_uuid),
     enabled: !!props.project_uuid,
@@ -96,7 +98,7 @@ const saveChanges = async () => {
 
     const deletePromises = project.value?.projectAccesses
         ?.filter(
-            (group) =>
+            (group: AccessGroupDto) =>
                 !accessGroups.value.some(
                     (access) => access.uuid === group.accessGroup.uuid,
                 ),
@@ -120,7 +122,11 @@ const saveChanges = async () => {
         );
 
     await Promise.all(
-        filtered.map((query) => queryClient.invalidateQueries(query.queryKey)),
+        filtered.map((query) =>
+            queryClient.invalidateQueries({
+                queryKey: query.queryKey,
+            }),
+        ),
     );
 };
 </script>

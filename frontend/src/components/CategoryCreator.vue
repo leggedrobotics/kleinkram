@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { createCategory } from 'src/services/mutations/categories';
-import { Notify } from 'quasar';
+import { Notify, QNotifyCreateOptions } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
 const props = defineProps<{
@@ -43,14 +43,14 @@ const { mutate } = useMutation({
             message: 'Category added',
             color: 'positive',
             location: 'bottom',
-        });
+        } as QNotifyCreateOptions);
     },
     onError: (error: Error) =>
         Notify.create({
             message: error.message,
             color: 'negative',
             location: 'bottom',
-        }),
+        } as QNotifyCreateOptions),
 });
 
 function addCategory() {

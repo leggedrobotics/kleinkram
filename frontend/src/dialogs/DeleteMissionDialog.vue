@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Mission </template>
+        <template #title> Delete Mission</template>
         <template #content>
             <DeleteMission
                 v-if="mission"
@@ -32,7 +32,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { computed, ref } from 'vue';
-import { useMissionQuery } from 'src/hooks/customQueryHooks';
+import { useMission } from 'src/hooks/customQueryHooks';
 import DeleteMission from 'components/DeleteMission.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -42,5 +42,5 @@ const { mission_uuid } = defineProps({
     mission_uuid: String,
 });
 
-const { data: mission } = useMissionQuery(computed(() => mission_uuid));
+const { data: mission } = useMission(computed(() => mission_uuid));
 </script>

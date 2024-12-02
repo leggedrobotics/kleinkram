@@ -41,7 +41,7 @@ axiosInstance.interceptors.response.use(
         handleDates(response.data);
         return response;
     },
-    async (error: Error) => {
+    async (error: any) => {
         const originalRequest = error.config;
 
         if (error.response) {
@@ -59,7 +59,7 @@ axiosInstance.interceptors.response.use(
             return axios(originalRequest);
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error as Error);
     },
 );
 

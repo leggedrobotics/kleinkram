@@ -9,8 +9,8 @@
         <template #buttons>
             <button-group>
                 <ConfigureTagsDialogOpener
-                    v-if="project_uuid"
-                    :project_uuid="project_uuid"
+                    v-if="projectUuid"
+                    :project_uuid="projectUuid"
                 >
                     <q-btn
                         class="button-border"
@@ -18,7 +18,7 @@
                         color="primary"
                         icon="sym_o_sell"
                         label="Metadata"
-                        :disable="!project_uuid"
+                        :disable="!projectUuid"
                     />
                 </ConfigureTagsDialogOpener>
 
@@ -33,7 +33,7 @@
                     <q-menu auto-close style="width: 280px">
                         <q-list>
                             <manage-project-dialog-opener
-                                :project_uuid="project_uuid"
+                                :project_uuid="projectUuid"
                             >
                                 <q-item v-close-popup clickable>
                                     <q-item-section avatar>
@@ -48,7 +48,7 @@
                             </manage-project-dialog-opener>
 
                             <edit-project-dialog-opener
-                                :project_uuid="project_uuid"
+                                :project_uuid="projectUuid"
                             >
                                 <q-item v-close-popup clickable>
                                     <q-item-section avatar>
@@ -62,8 +62,10 @@
                                 </q-item>
                             </edit-project-dialog-opener>
                             <DeleteProjectDialogOpener
-                                :project_uuid="project_uuid"
-                                :has_missions="project?.missions.length > 0"
+                                :project_uuid="projectUuid"
+                                :has_missions="
+                                    project?.missions?.length ?? 0 > 0
+                                "
                             >
                                 <q-item
                                     v-ripple
@@ -87,7 +89,7 @@
     </title-section>
     <ActionConfiguration
         :open="createAction"
-        :mission_uuids="selected_mission_uuids"
+        :mission_uuids="selectedMissionUuids"
         @close="createAction = false"
     />
     <div>
@@ -117,11 +119,11 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="() => refresh()"
+                    @click="refresh"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
-                <UploadMissionFolder :project_uuid="project_uuid">
+                <UploadMissionFolder :project_uuid="projectUuid">
                     <q-btn
                         flat
                         style="height: 100%"
@@ -130,7 +132,7 @@
                         icon="sym_o_drive_folder_upload"
                     />
                 </UploadMissionFolder>
-                <create-mission-dialog-opener :project_uuid="project_uuid">
+                <create-mission-dialog-opener :project_uuid="projectUuid">
                     <q-btn
                         flat
                         style="height: 100%"
@@ -191,7 +193,7 @@
                         padding="6px"
                         icon="sym_o_close"
                         color="white"
-                        @click="() => deselect()"
+                        @click="deselect"
                     />
                 </template>
             </ButtonGroupOverlay>
@@ -247,22 +249,18 @@ import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDia
 import UploadMissionFolder from 'components/UploadMissionFolder.vue';
 import KleinDownloadMissions from 'components/cliLinks/KleinDownloadMissions.vue';
 import DeleteMissionDialog from 'src/dialogs/DeleteMissionDialog.vue';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 const $q = useQuasar();
-const project_uuid = useProjectUUID();
-const { data: project, isLoadingError, error } = useProjectQuery(project_uuid);
+const projectUuid = useProjectUUID();
+const { data: project, isLoadingError, error } = useProjectQuery(projectUuid);
 const createAction = ref(false);
 
-registerNoPermissionErrorHandler(
-    isLoadingError,
-    project_uuid,
-    'project',
-    error,
-);
+registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
 
-const deleteMission = () => {
+const deleteMission = (): void => {
     const mission = selectedMissions.value[0];
 
     $q.dialog({
@@ -276,7 +274,7 @@ const deleteMission = () => {
     deselect();
 };
 
-const selectedMissions: Ref<Mission[]> = ref([]);
+const selectedMissions: Ref<MissionDto[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.searchParams.name,
@@ -285,21 +283,21 @@ const search = computed({
     },
 });
 
-const selected_mission_uuids = computed(() => {
+const selectedMissionUuids = computed(() => {
     return selectedMissions.value.map((mission) => mission.uuid);
 });
 
-async function refresh() {
+async function refresh(): Promise<void> {
     await queryClient.invalidateQueries({
         queryKey: ['missions'],
     });
 }
 
-function deselect() {
+function deselect(): void {
     selectedMissions.value = [];
 }
 
-function openMultiActions() {
+function openMultiActions(): void {
     createAction.value = true;
 }
 </script>

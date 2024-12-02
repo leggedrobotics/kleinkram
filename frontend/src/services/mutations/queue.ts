@@ -1,4 +1,5 @@
 import axios from 'src/api/axios';
+import { FileDto } from '@api/types/Files.dto';
 
 export const confirmUpload = async (uuid: string, md5: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid, md5 });
@@ -9,7 +10,7 @@ export const createFile = async (
     name: string,
     missionUUID: string,
     file: File,
-): Promise<FileEntity> => {
+): Promise<FileDto> => {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('missionUUID', missionUUID);
@@ -36,7 +37,10 @@ export const deleteFile = async (missionUUID: string, queueUUID: string) => {
     });
     return response.data;
 };
-export const cancelProcessing = async (queueUUID: string, missionUUID) => {
+export const cancelProcessing = async (
+    queueUUID: string,
+    missionUUID: string,
+) => {
     const response = await axios.post(`/queue/cancelProcessing`, {
         queueUUID,
         missionUUID,

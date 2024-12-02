@@ -5,7 +5,7 @@
         label="Create Access Group"
         icon="sym_o_add"
         :disable="!canCreate"
-        @click="() => createAccessGroupDialog()"
+        @click="createAccessGroupDialog"
     >
         <q-tooltip v-if="!canCreate">
             You do not have permission to create a new Access Group

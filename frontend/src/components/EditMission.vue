@@ -2,7 +2,7 @@
     <div class="row">
         <div class="col-11">
             <q-chip
-                v-for="tag in data?.tags.toSorted((a, b) =>
+                v-for="tag in data?.tags.tags.toSorted((a: TagDto, b: TagDto) =>
                     a.type.name.localeCompare(b.type.name),
                 )"
                 :key="tag.uuid"
@@ -11,7 +11,7 @@
                 removable
                 @remove="() => removeTagCallback(tag)"
             >
-                <b>{{ tag.type.name }}:&nbsp;</b>{{ tag.asString() }}
+                <b>{{ tag.type.name }}:&nbsp;</b>{{ tag.name }}
             </q-chip>
         </div>
         <div class="col-1 q-pa-md">
@@ -28,6 +28,8 @@ import AddTagDialog from 'src/dialogs/AddTagDialog.vue';
 import { getMission } from 'src/services/queries/mission';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
+import { TagDto } from '@api/types/TagsDto.dto';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const queryClient = useQueryClient();
 const $q = useQuasar();
@@ -44,7 +46,7 @@ const icons = {
     [DataType.LOCATION]: 'sym_o_place',
 };
 
-const { data } = useQuery<Mission>({
+const { data } = useQuery<MissionDto>({
     queryKey: ['mission', props.mission_uuid],
     queryFn: () => getMission(props.mission_uuid),
     enabled: !!props.mission_uuid,
@@ -53,14 +55,15 @@ const { data } = useQuery<Mission>({
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     document.querySelectorAll('.rotating-element').forEach((el) => {
         const randomDuration = Math.random() * 10000 + 200; // Random duration between 1s and 5s
-        el.style['-webkit-animation-duration'] = `${randomDuration}s`;
+        el.style['-webkit-animation-duration'] =
+            `${randomDuration.toString()}s`;
         if (Math.random() > 0.5) {
             el.style['-webkit-animation-direction'] = `reverse`;
         }
     });
 });
 const { mutate: removeTagCallback } = useMutation({
-    mutationFn: (tag: Tag) => removeTag(tag.uuid),
+    mutationFn: (tag: TagDto) => removeTag(tag.uuid),
     async onSuccess() {
         Notify.create({
             message: 'Tag removed',

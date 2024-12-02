@@ -3,6 +3,7 @@ import LokiTransport from 'winston-loki';
 import { Injectable, LoggerService } from '@nestjs/common';
 
 const messageOnly = winston.format.printf(
+    // @ts-ignore
     ({ level, message }: { level: string; message: string }) => {
         return `[${level.toUpperCase()}]: ${message}`;
     },

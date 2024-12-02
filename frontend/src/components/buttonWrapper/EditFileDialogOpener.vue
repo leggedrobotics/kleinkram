@@ -22,17 +22,18 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import NewEditFile from 'components/NewEditFile.vue';
+import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     if (!props.file) return false;
     return canModifyMission(
         props.file.mission.uuid,
-        props.file.mission.project?.uuid,
+        props.file.mission.project.uuid,
         permissions.value,
     );
 });

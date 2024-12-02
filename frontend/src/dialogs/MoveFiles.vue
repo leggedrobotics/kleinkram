@@ -25,10 +25,12 @@
                             :key="project.uuid"
                             clickable
                             @click="
-                                selected.projectUUID = project.uuid;
-                                selected.projectName = project.name;
-                                dd_open = false;
-                                dd_open_2 = true;
+                                () => {
+                                    selected.projectUUID = project.uuid;
+                                    selected.projectName = project.name;
+                                    dd_open = false;
+                                    dd_open_2 = true;
+                                }
                             "
                         >
                             <q-item-section>
@@ -58,9 +60,11 @@
                             :key="mission.uuid"
                             clickable
                             @click="
-                                selected.missionUUID = mission.uuid;
-                                selected.missionName = mission.name;
-                                dd_open_2 = false;
+                                () => {
+                                    selected.missionUUID = mission.uuid;
+                                    selected.missionName = mission.name;
+                                    dd_open_2 = false;
+                                }
                             "
                         >
                             <q-item-section>
@@ -84,29 +88,28 @@
                 label="Save"
                 class="bg-button-primary"
                 :disable="!selected.missionUUID"
-                @click="
-                    () => {
-                        moveFilesMutation();
-                        onDialogOK();
-                    }
-                "
+                @click="saveAction"
             />
         </template>
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
 import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { moveFiles } from 'src/services/mutations/file';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
+import { FileDto } from '@api/types/Files.dto';
+import {
+    useFilteredProjects,
+    useMissionsOfProjectMinimal,
+} from '../hooks/customQueryHooks';
 
 const props = defineProps<{
-    mission: Mission;
-    files: FileEntity[];
+    mission: MissionDto;
+    files: FileDto[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -122,36 +125,38 @@ const selected = ref<{
     missionName: string;
     missionUUID: string;
 }>({
-    projectName: props.mission.project?.name || '',
-    projectUUID: props.mission.project?.uuid || '',
+    projectName: props.mission.project.name || '',
+    projectUUID: props.mission.project.uuid || '',
     missions: [],
     missionName: props.mission.name,
     missionUUID: props.mission.uuid,
 });
 
-const projectsReturn = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
-});
+const projectsReturn = useFilteredProjects(500, 0, 'name', true, {});
+
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+    projectsReturn.data.value ? projectsReturn.data.value.projects : [],
 );
 
-const queryKey = computed(() => ['missions', selected.value.projectUUID]);
-const { data: _missions } = useQuery<[Mission[], number]>({
-    queryKey: queryKey,
-    queryFn: () => missionsOfProjectMinimal(selected.value.projectUUID),
-});
-const missions = computed(() => (_missions.value ? _missions.value[0] : []));
+const { data: _missions } = useMissionsOfProjectMinimal(
+    selected.value.projectUUID,
+    100,
+    0,
+);
+const missions = computed(() =>
+    _missions.value ? _missions.value.missions : [],
+);
 
 watch(
     () => missions.value,
     (newValue) => {
         if (newValue) {
-            selected.value.missions = missions.value.map((mission) => ({
-                missionName: mission.name,
-                missionUUID: mission.uuid,
-            }));
+            selected.value.missions = missions.value.map(
+                (mission: FlatMissionDto) => ({
+                    missionName: mission.name,
+                    missionUUID: mission.uuid,
+                }),
+            );
         }
     },
     {
@@ -180,7 +185,7 @@ const { mutate: moveFilesMutation } = useMutation({
                 query.queryKey[0] === 'missions',
         });
     },
-    onError(e) {
+    onError(e: any) {
         console.log(e);
         Notify.create({
             group: false,
@@ -192,6 +197,11 @@ const { mutate: moveFilesMutation } = useMutation({
         });
     },
 });
+
+function saveAction() {
+    moveFilesMutation();
+    onDialogOK();
+}
 </script>
 
 <style scoped></style>

@@ -1,12 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpException,
-    Post,
-    Put,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProject } from './entities/create-project.dto';
 import {
@@ -29,11 +21,11 @@ import {
 } from '../validation/queryDecorators';
 import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID } from '../validation/paramDecorators';
-import Project from '@common/entities/project/project.entity';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
 import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
+import { ProjectDto, ProjectsDto } from '@common/api/types/Project.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -46,6 +38,10 @@ export class ProjectController {
         description:
             'Get all projects with optional search, filter, and pagination options',
     })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: ProjectsDto,
+    })
     async allProjects(
         @AddUser()
         authRes: AuthRes,
@@ -55,7 +51,7 @@ export class ProjectController {
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryProjectSearchParam('searchParams', 'search name and creator')
         searchParams: Map<string, string>,
-    ) {
+    ): Promise<ProjectsDto> {
         return this.projectService.findAll(
             authRes.user,
             skip,
@@ -91,39 +87,60 @@ export class ProjectController {
 
     @Get('one')
     @CanReadProject()
+    @ApiOkResponse({
+        description: 'Returns the project',
+        type: ProjectDto,
+    })
     async getProjectById(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-    ): Promise<Project> {
+    ): Promise<ProjectDto> {
         return this.projectService.findOne(uuid);
     }
 
     @Put(':uuid')
     @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectDto,
+    })
     async updateProject(
         @ParamUUID('uuid') uuid: string,
         @Body() dto: CreateProject,
-    ) {
+    ): Promise<ProjectDto> {
         return this.projectService.update(uuid, dto);
     }
 
     @Post('create')
     @CanCreate()
-    async createProject(@Body() dto: CreateProject, @AddUser() user: AuthRes) {
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectDto,
+    })
+    async createProject(
+        @Body() dto: CreateProject,
+        @AddUser() user: AuthRes,
+    ): Promise<ProjectDto> {
         return this.projectService.create(dto, user);
     }
 
     @Get('byName')
     @CanReadProjectByName()
-    async getProjectByName(@QueryString('name', 'Project Name') name: string) {
-        const project = await this.projectService.findOneByName(name);
-        if (!project) {
-            throw new HttpException('Project not found', 404);
-        }
-        return project;
+    @ApiOkResponse({
+        description: 'Returns the project',
+        type: ProjectDto,
+    })
+    async getProjectByName(
+        @QueryString('name', 'Project Name') name: string,
+    ): Promise<ProjectDto> {
+        return await this.projectService.findOneByName(name);
     }
 
     @Delete(':uuid')
     @CanDeleteProject()
+    @ApiResponse({
+        description: 'Project deleted',
+        status: 200,
+    })
     async deleteProject(@ParamUUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }

@@ -22,11 +22,7 @@
                 :disable="file_name_check !== filename"
                 label="Delete File"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        onDialogOK();
-                    }
-                "
+                @click="onDialogOK"
             />
         </template>
     </base-dialog>

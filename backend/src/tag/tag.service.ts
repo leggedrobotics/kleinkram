@@ -4,11 +4,12 @@ import {
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOperator, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
 
 @Injectable()
 export class TagService {
@@ -47,7 +48,11 @@ export class TagService {
             where: { uuid: missionUUID },
             relations: ['tags', 'tags.tagType'],
         });
-        const exisitingTagType = mission.tags.map((tag) => tag.tagType.uuid);
+
+        if (mission.tags === undefined)
+            throw new Error('Mission tags are undefined');
+
+        const exisitingTagType = mission.tags.map((tag) => tag.tagType?.uuid);
         if (exisitingTagType.includes(tagType.uuid)) {
             throw new ConflictException('Tag already exists');
         }
@@ -227,27 +232,58 @@ export class TagService {
         await this.tagRepository.delete({ uuid });
     }
 
-    async getAll(skip: number, take: number): Promise<TagType[]> {
-        return this.tagTypeRepository.find({ skip, take });
+    async getAll(skip: number, take: number): Promise<TagTypesDto> {
+        const [tags, _count] = await this.tagTypeRepository.findAndCount({
+            skip,
+            take,
+        });
+
+        return {
+            tagTypes: tags.map(
+                (tag: TagType): TagTypeDto => ({
+                    uuid: tag.uuid,
+                    updatedAt: tag.updatedAt,
+                    createdAt: tag.createdAt,
+                    name: tag.name,
+                    datatype: tag.datatype,
+                    description: '',
+                }),
+            ),
+            count: _count,
+        };
     }
 
     async getFiltered(
-        name: string | undefined,
+        name: string,
         type: DataType | undefined,
         skip: number,
         take: number,
-    ): Promise<TagType[]> {
-        const where: Record<string, FindOperator<string> | DataType> = {};
-        if (name) {
-            where['name'] = ILike(`%${name}%`);
+    ): Promise<TagTypesDto> {
+        const where: FindOptionsWhere<TagType> = {};
+        if (name !== '') {
+            where.name = ILike(`%${name}%`);
         }
-        if (type != null) {
-            where['datatype'] = type;
+        if (type !== undefined) {
+            where.datatype = type;
         }
-        return this.tagTypeRepository.find({
+        const [tags, _count] = await this.tagTypeRepository.findAndCount({
             where,
             skip,
             take,
         });
+
+        return {
+            tagTypes: tags.map(
+                (tag: TagType): TagTypeDto => ({
+                    uuid: tag.uuid,
+                    updatedAt: tag.updatedAt,
+                    createdAt: tag.createdAt,
+                    name: tag.name,
+                    datatype: tag.datatype,
+                    description: '',
+                }),
+            ),
+            count: _count,
+        };
     }
 }

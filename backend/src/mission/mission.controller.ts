@@ -25,6 +25,8 @@ import {
 import { ParamUUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
 import { MISSION_NAME_REGEX } from '../validation/validationLogic';
+import { ApiOkResponse } from '@nestjs/swagger';
+import { FlatMissionDto } from '@common/api/types/Mission.dto';
 
 @Controller('mission')
 export class MissionController {
@@ -99,7 +101,13 @@ export class MissionController {
 
     @Get('one')
     @CanReadMission()
-    async getMissionById(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
+    @ApiOkResponse({
+        description: 'Returns the mission',
+        type: FlatMissionDto,
+    })
+    async getMissionById(
+        @QueryUUID('uuid', 'Mission UUID') uuid: string,
+    ): Promise<FlatMissionDto> {
         return this.missionService.findOne(uuid);
     }
 

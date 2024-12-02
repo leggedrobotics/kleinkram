@@ -18,12 +18,12 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { deleteProject } from 'src/services/mutations/project';
 import { useHandler } from 'src/hooks/customQueryHooks';
-import { ProjectDto } from '@api/types/Project.dto';
+import { BaseProjectDto } from '@api/types/Project.dto';
 
 const project_name_check = ref('');
 const client = useQueryClient();
 const { project } = defineProps<{
-    project: ProjectDto;
+    project: BaseProjectDto;
 }>();
 
 const handler = useHandler();

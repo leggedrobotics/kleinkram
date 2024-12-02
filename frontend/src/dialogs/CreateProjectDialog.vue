@@ -124,6 +124,7 @@ import { AccessGroupType } from '@common/enum';
 import ConfigureMetadata from '../components/ConfigureMetadata.vue';
 import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
 import { DefaultRightDto } from '@api/types/DefaultRights.dto';
+import { TagTypeDto } from '@api/types/TagsDto.dto';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);
@@ -141,7 +142,7 @@ const invalidProjectNames = ref<string[]>([]);
 
 const tab = ref('meta_data');
 
-const selected: Ref<TagType[]> = ref([]);
+const selected: Ref<TagTypeDto[]> = ref([]);
 const $q = useQuasar();
 
 const { data: defaultRights } = useProjectDefaultAccess();
@@ -224,8 +225,8 @@ const submitNewProject = async () => {
 
             onDialogOK();
         })
-        .catch((error: AxiosError<{ message: string; statusCode: number }>) => {
-            if (error.code == 'ERR_BAD_REQUEST') {
+        .catch((error: any) => {
+            if (error.code === 'ERR_BAD_REQUEST') {
                 isInErrorStateProjectName.value = true;
                 errorMessagesProjectName.value = error.response?.data.message;
                 invalidProjectNames.value.push(newProjectName.value);

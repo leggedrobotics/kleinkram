@@ -149,7 +149,7 @@ export class MissionGuardService {
             return false;
         }
 
-        if (mission?.project === undefined)
+        if (mission.project === undefined)
             throw new Error('Mission has no project');
 
         const canAccessProject =

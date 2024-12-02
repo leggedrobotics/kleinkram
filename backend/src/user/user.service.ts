@@ -7,7 +7,12 @@ import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
-import { CurrentAPIUserDto, UsersDto } from '@common/api/types/User.dto';
+import {
+    CurrentAPIUserDto,
+    UserDto,
+    UsersDto,
+} from '@common/api/types/User.dto';
+import { PermissionsDto } from '@common/api/types/Permissions.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -49,7 +54,7 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async claimAdmin(auth: AuthRes) {
+    async claimAdmin(auth: AuthRes): Promise<CurrentAPIUserDto> {
         const nrAdmins = await this.userRepository.count({
             where: { role: UserRole.ADMIN },
         });
@@ -62,7 +67,7 @@ export class UserService implements OnModuleInit {
 
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user;
+        return user as unknown as CurrentAPIUserDto;
     }
 
     async me(auth: AuthRes): Promise<CurrentAPIUserDto> {
@@ -70,24 +75,29 @@ export class UserService implements OnModuleInit {
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
             relations: ['memberships', 'memberships.accessGroup'],
-        })) as CurrentAPIUserDto;
+        })) as unknown as CurrentAPIUserDto;
     }
 
-    async findAll(skip: number, take: number) {
-        return this.userRepository.find({
+    async findAll(skip: number, take: number): Promise<UsersDto> {
+        const [user, count] = await this.userRepository.findAndCount({
             skip,
             take,
             where: { hidden: false },
         });
+
+        return {
+            users: user as UserDto[],
+            count,
+        };
     }
 
-    async promoteUser(usermail: string) {
+    async promoteUser(usermail: string): Promise<UserDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { email: usermail },
         });
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user;
+        return user as unknown as UserDto;
     }
 
     async demoteUser(usermail: string) {
@@ -96,14 +106,14 @@ export class UserService implements OnModuleInit {
         });
         user.role = UserRole.USER;
         await this.userRepository.save(user);
-        return user;
+        return user as unknown as UserDto;
     }
 
     async search(
         search: string,
         skip: number,
         take: number,
-    ): Promise<{ count: number; users: User[] }> {
+    ): Promise<UsersDto> {
         // Ensure the search string is not empty or null
         if (!search) {
             return {
@@ -125,12 +135,12 @@ export class UserService implements OnModuleInit {
             .getManyAndCount();
 
         return {
-            users,
+            users: users as UserDto[],
             count,
         };
     }
 
-    async permissions(auth: AuthRes) {
+    async permissions(auth: AuthRes): Promise<PermissionsDto> {
         let user = await this.userRepository.findOne({
             where: {
                 uuid: auth.user.uuid,
@@ -141,6 +151,9 @@ export class UserService implements OnModuleInit {
             relations: ['memberships'],
             select: ['uuid', 'role'],
         });
+
+        if (user?.memberships === undefined)
+            throw new Error('Membership undefined');
         let defaultPermission;
         if (!user) {
             user = await this.userRepository.findOneOrFail({
@@ -173,11 +186,10 @@ export class UserService implements OnModuleInit {
 
         return {
             role,
-
             default_permission: defaultPermission,
             projects,
             missions,
-        };
+        } as unknown as PermissionsDto;
     }
 
     async findOneByApiKey(apikey: string) {

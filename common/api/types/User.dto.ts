@@ -1,5 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccessGroupType } from '../../frontend_shared/enum';
+import { AccessGroupType, UserRole } from '../../frontend_shared/enum';
+
+export class UserDto {
+    @ApiProperty()
+    uuid!: string;
+
+    @ApiProperty()
+    name!: string;
+
+    @ApiProperty()
+    avatarUrl!: string;
+}
+
+export class AccessGroupMemberDto extends UserDto {
+    @ApiProperty()
+    canEditGroup!: boolean;
+}
 
 export class AccessGroupDto {
     @ApiProperty()
@@ -19,6 +35,18 @@ export class AccessGroupDto {
 
     @ApiProperty()
     hidden!: boolean;
+
+    @ApiProperty()
+    creator!: AccessGroupMemberDto;
+
+    @ApiProperty()
+    memberships!: AccessGroupMemberDto[];
+}
+
+export class AccessGroupsDto {
+    count!: number;
+
+    accessGroups!: AccessGroupDto[];
 }
 
 export class GroupMembershipDto {
@@ -35,6 +63,9 @@ export class GroupMembershipDto {
     expirationDate?: Date;
 
     @ApiProperty()
+    user!: UserDto;
+
+    @ApiProperty()
     canEditGroup!: boolean;
 
     @ApiProperty({
@@ -42,17 +73,6 @@ export class GroupMembershipDto {
         description: 'Access Group',
     })
     accessGroup?: AccessGroupDto;
-}
-
-export class UserDto {
-    @ApiProperty()
-    uuid!: string;
-
-    @ApiProperty()
-    name!: string;
-
-    @ApiProperty()
-    avatarUrl!: string;
 }
 
 export class CurrentAPIUserDto extends UserDto {
@@ -66,7 +86,7 @@ export class CurrentAPIUserDto extends UserDto {
     email!: string;
 
     @ApiProperty()
-    role!: string;
+    role!: UserRole;
 }
 
 export class UsersDto {

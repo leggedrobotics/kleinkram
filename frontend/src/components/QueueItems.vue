@@ -65,7 +65,7 @@
                         :color="
                             getColor(QueueState[scope.opt] as QueueState) as any
                         "
-                        @remove="removeItem(scope.opt)"
+                        @remove="() => removeItem(scope.opt)"
                     >
                         {{ scope.opt }}
                     </q-chip>
@@ -192,6 +192,9 @@ import { useRouter } from 'vue-router';
 import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import ConfirmDeleteFile from 'src/dialogs/ConfirmDeleteFileDialog.vue';
 import { FileLocation, QueueState } from '@common/enum';
+import { FileQueueEntryDto } from '@api/types/FileQueueEntry.dto';
+import { ProjectDto } from '@api/types/Project.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 const $router = useRouter();
 const queryClient = useQueryClient();
@@ -212,7 +215,7 @@ const queueKey = computed(() => [
     startDate.value,
     fileStateFilterEnums.value,
 ]);
-const selected = ref<Queue[]>([]);
+const selected = ref<FileQueueEntryDto[]>([]);
 
 const fileStateFilter = ref<string[]>([]);
 
@@ -243,7 +246,7 @@ const fileStateFilterEnums = computed(() => {
     return fileStateFilter.value.map((state) => QueueState[state]);
 });
 
-const { data: queueEntries, isLoading } = useQuery<Project[]>({
+const { data: queueEntries, isLoading } = useQuery<ProjectDto[]>({
     queryKey: queueKey,
     queryFn: () =>
         currentQueue(parseDate(startDate.value), fileStateFilterEnums.value),
@@ -251,7 +254,7 @@ const { data: queueEntries, isLoading } = useQuery<Project[]>({
 });
 
 const { mutate: removeFile } = useMutation({
-    mutationFn: (queueEntry: Queue) =>
+    mutationFn: (queueEntry: FileQueueEntryDto) =>
         deleteFile(queueEntry.mission.uuid, queueEntry.uuid),
     onSuccess: async () => {
         Notify.create({
@@ -264,7 +267,7 @@ const { mutate: removeFile } = useMutation({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
-    onError: (error) => {
+    onError: (error: any) => {
         Notify.create({
             message: `Error deleting file: ${error.response?.data?.message || error.message}`,
             color: 'negative',
@@ -275,14 +278,14 @@ const { mutate: removeFile } = useMutation({
 });
 
 const { mutate: _cancelProcessing } = useMutation({
-    mutationFn: (queueEntry: Queue) =>
+    mutationFn: (queueEntry: FileQueueEntryDto) =>
         cancelProcessing(queueEntry.uuid, queueEntry.mission.uuid),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
-    onError: (error) => {
+    onError: (error: any) => {
         Notify.create({
             message: `Error canceling processing: ${error.response?.data?.message || error.message}`,
             color: 'negative',
@@ -292,7 +295,7 @@ const { mutate: _cancelProcessing } = useMutation({
     },
 });
 
-function openDeleteFileDialog(queueEntry: Queue) {
+function openDeleteFileDialog(queueEntry: FileQueueEntryDto) {
     $q.dialog({
         component: ConfirmDeleteFile,
         componentProps: {
@@ -303,19 +306,19 @@ function openDeleteFileDialog(queueEntry: Queue) {
     });
 }
 
-async function rowClick(event: any, row: Queue) {
+async function rowClick(event: any, row: FileQueueEntryDto) {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
         await findOneByNameAndMission(row.filename, row.mission.uuid).then(
-            async (file: FileEntity) => {
+            async (file: FileDto) => {
                 await $router.push({
                     name: ROUTES.FILE.routeName,
                     params: {
-                        file_uuid: file?.uuid,
-                        mission_uuid: row?.mission?.uuid,
-                        project_uuid: row?.mission?.project?.uuid,
+                        file_uuid: file.uuid,
+                        mission_uuid: row.mission.uuid,
+                        project_uuid: row.mission.project.uuid,
                     },
                 });
             },
@@ -323,7 +326,7 @@ async function rowClick(event: any, row: Queue) {
     }
 }
 
-function canDelete(row: Queue) {
+function canDelete(row: FileQueueEntryDto) {
     return (
         row.state !== QueueState.AWAITING_PROCESSING &&
         row.state !== QueueState.CANCELED &&
@@ -335,9 +338,9 @@ function canDelete(row: Queue) {
     );
 }
 
-async function downloadFile(row: Queue) {
+async function downloadFile(row: FileQueueEntryDto) {
     await findOneByNameAndMission(row.filename, row.mission.uuid).then(
-        async (file: FileEntity) => {
+        async (file: FileDto) => {
             await _downloadFile(file.uuid, file.filename);
         },
     );
@@ -349,14 +352,14 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: Queue) => row?.mission?.project?.name,
+        field: (row: FileQueueEntryDto): string => row.mission.project.name,
     },
     {
         name: 'Mission',
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: Queue) => row.mission.name,
+        field: (row: FileQueueEntryDto): string => row.mission.name,
     },
     { name: 'Status', label: 'Status', align: 'left', field: 'state' },
     {
@@ -371,10 +374,10 @@ const columns = [
         required: true,
         label: 'Filename',
         align: 'left',
-        field: (row: Queue) => {
+        field: (row: FileQueueEntryDto): string => {
             if (
-                row.filename == row.identifier &&
-                row.location == FileLocation.DRIVE
+                row.filename === row.identifier &&
+                row.location === FileLocation.DRIVE
             )
                 return 'Not available';
             return row.displayName;
@@ -385,7 +388,7 @@ const columns = [
         required: true,
         label: 'Last status update',
         align: 'left',
-        field: (row: Queue) =>
+        field: (row: FileQueueEntryDto): string =>
             row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
     },
     {
@@ -393,7 +396,7 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: Queue) => row?.creator?.name,
+        field: (row: FileQueueEntryDto): string => row.creator.name,
     },
     {
         name: 'action',

@@ -19,6 +19,8 @@ import {
     QueryTake,
 } from '../validation/queryDecorators';
 import { ParamUUID } from '../validation/paramDecorators';
+import { ApiOkResponse } from '@nestjs/swagger';
+import { TagsDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
 
 @Controller('tag')
 export class TagController {
@@ -61,22 +63,30 @@ export class TagController {
 
     @Get('all')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'Returns all TagTypes',
+        type: TagsDto,
+    })
     async getAll(
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<TagTypesDto> {
         return this.tagService.getAll(skip, take);
     }
 
     @Get('filtered')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'Returns all TagTypes',
+        type: TagTypesDto,
+    })
     async getFiltered(
         @QueryOptionalString('name', 'Filter by TagType name') name: string,
         @QueryOptionalString('type', 'Filter by TagType datatype')
         type: DataType,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<TagTypesDto> {
         return this.tagService.getFiltered(name, type, skip, take);
     }
 }

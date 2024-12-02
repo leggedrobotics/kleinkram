@@ -50,20 +50,22 @@ import CategorySelector from 'components/CategorySelector.vue';
 import CategoryCreator from 'components/CategoryCreator.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
+import { CategoryDto } from '@api/types/Category.dto';
+import { FileDto } from '@api/types/Files.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
     mission_uuid: string;
     project_uuid: string;
-    files: FileEntity[];
+    files: FileDto[];
 }>();
 const queryClient = useQueryClient();
-const selected: Ref<Category[]> = ref<Category[]>([]);
+const selected: Ref<CategoryDto[]> = ref<CategoryDto[]>([]);
 
 const tab = ref('add');
 
-function updateSelected(value: Category[]) {
+function updateSelected(value: CategoryDto[]) {
     selected.value = value;
 }
 
@@ -82,7 +84,9 @@ const { mutate } = useMutation({
             color: 'positive',
             position: 'bottom',
         });
-        await queryClient.invalidateQueries(['files']);
+        await queryClient.invalidateQueries({
+            queryKey: ['files'],
+        });
     },
     onError: (error: Error) => {
         Notify.create({

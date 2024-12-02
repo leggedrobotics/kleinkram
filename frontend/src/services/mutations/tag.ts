@@ -21,15 +21,5 @@ export const addTags = async (
 
 export const createTagType = async (name: string, type: DataType) => {
     const response = await axios.post('/tag/create', { name, type });
-    return new Tag(
-        response.data.uuid,
-        response.data.STRING,
-        response.data.NUMBER,
-        response.data.BOOLEAN,
-        response.data.DATE,
-        response.data.LOCATION,
-        response.data.type,
-        new Date(response.data.createdAt),
-        new Date(response.data.updatedAt),
-    );
+    return response.data;
 };

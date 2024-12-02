@@ -28,7 +28,7 @@ export default class BaseEntity {
      * Timestamp of when the entity was last updated
      */
     @UpdateDateColumn()
-    updatedAt?: Date;
+    updatedAt!: Date;
 
     /**
      * Timestamp of when the entity was deleted.

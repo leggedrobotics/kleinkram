@@ -1,4 +1,6 @@
 import axios from 'src/api/axios';
+import { FileDto } from '@api/types/Files.dto';
+import { CategoryDto } from '@api/types/Category.dto';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
@@ -11,15 +13,14 @@ export type GenerateTemporaryCredentialsResponse = {
     } | null;
 }[];
 
-export const updateFile = async ({ file }: { file: FileEntity }) => {
+export const updateFile = async ({ file }: { file: FileDto }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
         filename: file.filename,
-
-        mission_uuid: file.mission?.uuid,
+        mission_uuid: file.mission.uuid,
         date: file.date,
-        categories: file.categories.map(
-            (category: { uuid: any }) => category.uuid,
+        categories: file.categories.categories.map(
+            (category: CategoryDto) => category.uuid,
         ),
     });
     return response.data;
@@ -33,7 +34,7 @@ export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
     return response.data;
 };
 
-export const deleteFile = async (file: FileEntity) => {
+export const deleteFile = async (file: FileDto) => {
     const response = await axios.delete(`/file/${file.uuid}`);
     return response.data;
 };

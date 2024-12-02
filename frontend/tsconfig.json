@@ -3,6 +3,7 @@
   "strict": true,
   "compilerOptions": {
     "skipLibCheck": true,
+    "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
       // we cannot use all paths in the frontend due to library dependencies
@@ -22,12 +23,9 @@
       // types are only used at compile time, thus no need to add them to the quasar.config.js
       //
       ////////////////////////////////////
-
       "@common/*": [
         "../common/frontend_shared/*"
-      ],
-
-
+      ]
     }
   }
 }

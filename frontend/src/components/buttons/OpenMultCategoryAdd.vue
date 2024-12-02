@@ -18,18 +18,19 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import AddMultiCategory from 'src/dialogs/AddMultiCategory.vue';
+import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: FileEntity;
-    files: FileEntity[];
+    mission: FileDto;
+    files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     if (!props.mission) return false;
     return canModifyMission(
-        props.mission.uuid,
-        props.mission.project?.uuid,
+        props.mission.mission.uuid,
+        props.mission.mission.project.uuid,
         permissions.value,
     );
 });
@@ -39,7 +40,7 @@ function addCategories() {
     $q.dialog({
         component: AddMultiCategory,
         componentProps: {
-            project_uuid: props.mission.project?.uuid,
+            project_uuid: props.mission.mission.project.uuid,
             files: props.files,
             mission_uuid: props.mission.uuid,
         },

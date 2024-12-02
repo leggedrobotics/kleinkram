@@ -32,7 +32,7 @@
                         removable
                         :tabindex="scope.tabindex"
                         :icon="icon(scope.opt.type)"
-                        @remove="scope.removeAtIndex(scope.index)"
+                        @remove="() => scope.removeAtIndex(scope.index)"
                     >
                         {{ scope.opt.name }}
                     </q-chip>
@@ -57,15 +57,15 @@
 <script setup lang="ts">
 import { icon } from 'src/services/generic';
 import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { DataType } from '@common/enum';
-import { useQuery } from '@tanstack/vue-query';
-import { getFilteredTagTypes } from 'src/services/queries/tag';
+import { useFilteredTag } from '../hooks/customQueryHooks';
+import { TagDto } from '@api/types/TagsDto.dto';
 
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const props = defineProps<{
-    selected: TagType[];
+    selected: TagDto[];
 }>();
 
 const _selected = ref([...props.selected]);
@@ -80,17 +80,7 @@ watch(
     { deep: true },
 );
 
-const queryKey = computed(() => [
-    'tagTypes',
-    tagSearch.value,
-    selectedDataType.value,
-]);
-const { data: tags } = useQuery({
-    queryKey: queryKey,
-    queryFn: async () => {
-        return getFilteredTagTypes(tagSearch.value, selectedDataType.value);
-    },
-});
+const { data: tags } = useFilteredTag(tagSearch.value, selectedDataType.value);
 </script>
 
 <style scoped></style>

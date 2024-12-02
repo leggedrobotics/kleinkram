@@ -33,7 +33,7 @@ export default class Project extends BaseEntity {
         onDelete: 'CASCADE',
         nullable: false,
     })
-    requiredTags?: TagType[];
+    requiredTags!: TagType[];
 
     @OneToMany(() => CategoryEntity, (category) => category.project)
     categories?: CategoryEntity[];

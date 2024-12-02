@@ -5,7 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import logger, { NestLoggerWrapper } from './logger';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
     tracer.start();
     const app = await NestFactory.create(AppModule, {
         logger: new NestLoggerWrapper(),
@@ -14,7 +14,7 @@ async function bootstrap() {
     logger.info('Application started');
 }
 
-bootstrap().catch((err) => {
+bootstrap().catch((err: unknown) => {
     logger.error('Failed to start application');
     logger.error(err);
 });

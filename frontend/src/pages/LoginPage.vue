@@ -57,7 +57,7 @@
                         outline
                         size="md"
                         label="Login with Google"
-                        @click="login()"
+                        @click="login"
                     />
                 </div>
             </div>

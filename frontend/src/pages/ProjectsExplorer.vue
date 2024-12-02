@@ -6,7 +6,7 @@
             <button-group>
                 <q-btn-dropdown dense flat class="button-border q-px-sm">
                     <template #label>
-                        {{ my_projects ? 'My Projects' : 'All Projects' }}
+                        {{ myProjects ? 'My Projects' : 'All Projects' }}
                     </template>
                     <q-list>
                         <q-item
@@ -17,7 +17,7 @@
                             :key="index"
                             v-close-popup
                             clickable
-                            @click="my_projects = item === 'My Projects'"
+                            @click="() => (myProjects = item === 'My Projects')"
                         >
                             <q-item-section>
                                 {{ item }}
@@ -47,7 +47,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="() => refresh()"
+                    @click="refresh"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
@@ -98,23 +98,25 @@ import TitleSection from 'components/TitleSection.vue';
 import { computed, ref, watch } from 'vue';
 import { getUser } from 'src/services/auth';
 
-const my_projects = ref(false);
+const myProjects = ref(false);
 
 const queryClient = useQueryClient();
 const handler = useHandler();
 
-watch(my_projects, async () => {
+watch(myProjects, async () => {
     const user = await getUser();
 
-    if (my_projects.value) {
+    if (myProjects.value) {
         handler.value.setSearch({
             ...handler.value.searchParams,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'creator.uuid': user.uuid,
         });
     } else {
         handler.value.setSearch({
             ...handler.value.searchParams,
-            'creator.uuid': undefined,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'creator.uuid': '',
         });
     }
 });

@@ -44,11 +44,22 @@ export class ActionManagerService {
      * @param action
      */
     @tracing('create_apikey')
-    async createAPIkey(action: Action) {
+    async createAPIkey(action: Action): Promise<DisposableAPIKey> {
+        if (action.mission === undefined) {
+            throw new Error('Mission is undefined');
+        }
+
+        if (action.template === undefined) {
+            throw new Error('Template is undefined');
+        }
+
+        if (action.createdBy === undefined) {
+            throw new Error('User is undefined');
+        }
+
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             rights: action.template.accessRights,
-
             key_type: KeyTypes.CONTAINER,
             action: action,
             user: action.createdBy,
@@ -60,7 +71,7 @@ export class ActionManagerService {
     }
 
     @tracing('processing_action')
-    async processAction(action: Action) {
+    async processAction(action: Action): Promise<boolean> {
         logger.info(`\n\nProcessing Action ${action.uuid}`);
 
         logger.info('Creating container.');
@@ -72,6 +83,19 @@ export class ActionManagerService {
         action.state = ActionState.STARTING;
         action.state_cause = 'Action is currently running...';
         await this.actionRepository.save(action);
+
+        if (action.mission === undefined) {
+            throw new Error('Mission is undefined');
+        }
+        if (action.template === undefined) {
+            throw new Error('Template is undefined');
+        }
+        if (action.createdBy === undefined) {
+            throw new Error('User is undefined');
+        }
+        if (action.mission.project === undefined) {
+            throw new Error('Project is undefined');
+        }
 
         const apikey = await this.createAPIkey(action);
         try {
@@ -103,9 +127,9 @@ export class ActionManagerService {
                                 1024, // min 2 GB
                         },
                         needs_gpu: needsGpu,
-                        environment: envVariables,
-                        command: action.template.command,
-                        entrypoint: action.template.entrypoint,
+                        environment: envVariables ?? '',
+                        command: action.template.command ?? '',
+                        entrypoint: action.template.entrypoint ?? '',
                     },
                 );
 
@@ -114,14 +138,14 @@ export class ActionManagerService {
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 
-            const sanitize = (str: string) => {
+            const sanitize = (str: string): string => {
                 return str.replace(apikey.apikey, '***');
             };
 
             // get logs from container and save them to the database
             const logsObservable = await this.containerDaemon
                 .subscribeToLogs(container.id, sanitize)
-                .catch((err) => {
+                .catch((err: unknown) => {
                     logger.error('Error while subscribing to logs:', err);
                 });
 
@@ -155,10 +179,14 @@ export class ActionManagerService {
             action.artifacts = ArtifactState.UPLOADING;
             await this.actionRepository.save(action);
 
+            if (action.template === undefined) {
+                throw new Error('Template is undefined');
+            }
+
             const { container: artifactUploadContainer, parentFolder } =
                 await this.containerDaemon.launchArtifactUploadContainer(
                     action.uuid,
-                    `${action.template.name}-v${action.template.version}-${action.uuid}`,
+                    `${action.template.name}-v${action.template.version.toString()}-${action.uuid}`,
                 );
             await artifactUploadContainer.wait();
             action.artifacts = ArtifactState.UPLOADED;
@@ -184,11 +212,9 @@ export class ActionManagerService {
     private async setContainerInfo(
         action: Action,
         container: Dockerode.Container,
-    ) {
+    ): Promise<void> {
         const containerId = container.id;
-        const containerDetails = await container
-            .inspect()
-            .catch(dockerDaemonErrorHandler);
+        const containerDetails = await container.inspect();
 
         action.executionStartedAt = new Date(containerDetails.Created);
         action.container = {
@@ -214,11 +240,10 @@ export class ActionManagerService {
         logsObservable: Observable<ContainerLog>,
         actionUuid: string,
         containerId: string,
-    ) {
+    ): Promise<void> {
         const containerLogger = logger.child({
             labels: {
                 container_id: containerId,
-
                 action_uuid: actionUuid || 'unknown',
             },
         });
@@ -239,13 +264,18 @@ export class ActionManagerService {
                                     where: { uuid: actionUuid },
                                 },
                             );
+
+                            if (_action.logs === undefined) {
+                                _action.logs = [];
+                            }
+
                             _action.logs.push(...nextLogBatch);
                             await manager.save(_action);
                         },
                     );
                 }),
             ),
-        ).catch((err) => {
+        ).catch((err: unknown) => {
             logger.error('Error while processing logs:', err);
         });
     }
@@ -258,11 +288,11 @@ export class ActionManagerService {
     private async setActionState(
         container: Dockerode.Container,
         action: Action,
-    ) {
+    ): Promise<void> {
         const containerDetailsAfter = await container.inspect();
 
         logger.info(
-            `Container ${container.id} exited with code ${containerDetailsAfter.State.ExitCode}`,
+            `Container ${container.id} exited with code ${containerDetailsAfter.State.ExitCode.toString()}`,
         );
 
         const exitCode = Number(containerDetailsAfter.State.ExitCode);
@@ -296,9 +326,9 @@ export class ActionManagerService {
                 'system via SIGKILL signal. This usually happens when the ' +
                 'container exceeds the memory limit or reaches the time CPU limit.';
         } else {
-            action.state_cause = `Container exited with code ${exitCode}`;
+            action.state_cause = `Container exited with code ${exitCode.toString()}`;
             action.state =
-                exitCode == 0 ? ActionState.DONE : ActionState.FAILED;
+                exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
             action.exit_code = exitCode;
         }
         logger.warn(`Action ${action.uuid} has failed with exit code 125`);
@@ -319,7 +349,7 @@ export class ActionManagerService {
                     .listContainers({ all: true })
                     .catch(dockerDaemonErrorHandler)
             )?.filter((container: Dockerode.ContainerInfo) =>
-                container.Names[0].startsWith(
+                container.Names[0]?.startsWith(
                     `/${DockerDaemon.CONTAINER_PREFIX}`,
                 ),
             ) || [];
@@ -328,7 +358,10 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
 
         const actionIds = runningActionContainers.map((container) =>
-            container.Names[0].replace(`/${DockerDaemon.CONTAINER_PREFIX}`, ''),
+            container.Names[0]?.replace(
+                `/${DockerDaemon.CONTAINER_PREFIX}`,
+                '',
+            ),
         );
         const name = (await si.osInfo()).hostname;
         const actionsInLocalProcess = await this.actionRepository.find({
@@ -339,7 +372,7 @@ export class ActionManagerService {
             relations: ['mission', 'mission.project'],
         });
         logger.info(
-            `Checking ${actionsInLocalProcess.length} pending Actions.`,
+            `Checking ${actionsInLocalProcess.length.toString()} pending Actions.`,
         );
 
         for (const action of actionsInLocalProcess) {
@@ -358,10 +391,19 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
         for (const container of runningActionContainers) {
             // try to find corresponding action
-            const uuid = container.Names[0].replace(
+            const uuid = container.Names[0]?.replace(
                 `/${DockerDaemon.CONTAINER_PREFIX}`,
                 '',
             );
+
+            if (uuid === undefined) {
+                logger.warn(
+                    `Container ${container.Id} has no corresponding action, killing it.`,
+                );
+                await this.containerDaemon.killAndRemoveContainer(container.Id);
+                continue;
+            }
+
             const action = await this.actionRepository.findOne({
                 where: {
                     uuid,

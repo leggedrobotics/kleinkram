@@ -36,9 +36,10 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
 import { formatDate, parseDate } from 'src/services/dateFormating';
+import { GroupMembershipDto } from '@api/types/User.dto';
 
 const props = defineProps<{
-    agu: GroupMembership;
+    agu: GroupMembershipDto;
 }>();
 
 const expirationDate = ref<string | null>(

@@ -26,11 +26,12 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const props = defineProps<{
-    mission?: Mission;
+    mission?: MissionDto;
 }>();
 
 const queryClient = useQueryClient();
@@ -41,11 +42,11 @@ watch(
     (newMission) => {
         if (newMission) {
             tagValues.value = {};
-            newMission.tags.forEach((tag) => {
-                if (tag.type.type === DataType.BOOLEAN) {
-                    tagValues.value[tag.type.uuid] = tag.BOOLEAN;
+            newMission.tags.tags.forEach((tag) => {
+                if (tag.type.datatype === DataType.BOOLEAN) {
+                    tagValues.value[tag.type.datatype] = tag.BOOLEAN;
                 } else {
-                    tagValues.value[tag.type.uuid] = tag.asString();
+                    tagValues.value[tag.type.uuid] = tag.valueAsString;
                 }
             });
         }
@@ -54,7 +55,7 @@ watch(
 );
 const { mutate: _updateMissionTags } = useMutation({
     mutationFn: () => {
-        return updateMissionTags(props.mission.uuid, tagValues.value);
+        return updateMissionTags(props.mission?.uuid, tagValues.value);
     },
     onSuccess: async () => {
         Notify.create({
@@ -63,7 +64,7 @@ const { mutate: _updateMissionTags } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['mission', props.mission.uuid],
+            queryKey: ['mission', props.mission?.uuid],
         });
         await queryClient.invalidateQueries({
             queryKey: ['missions'],

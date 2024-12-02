@@ -54,8 +54,10 @@
                                 :key="_project.uuid"
                                 clickable
                                 @click="
-                                    project_uuid = _project.uuid;
-                                    ddr_open = false;
+                                    () => {
+                                        project_uuid = _project.uuid;
+                                        ddr_open = false;
+                                    }
                                 "
                             >
                                 <q-item-section>
@@ -136,11 +138,7 @@
                 label="Create Mission"
                 class="bg-button-primary"
                 :disable="!allRequiredTagsSet"
-                @click="
-                    () => {
-                        submitNewMission();
-                    }
-                "
+                @click="submitNewMission"
             />
             <q-btn
                 v-if="tab_selection === 'upload'"
@@ -171,6 +169,9 @@ import {
     canCreateMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
+import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { MissionDto } from '@api/types/Mission.dto';
+import { FileUploadDto } from '@api/types/Upload.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
@@ -178,10 +179,10 @@ const MISSION_NAME_INPUT_VALIDATION: ((val: string) => boolean | string)[] = [
     (val) => !!val || 'Field is required',
     (val) =>
         val.length >= MIN_MISSION_NAME_LENGTH ||
-        `Name must be at least ${MIN_MISSION_NAME_LENGTH} characters`,
+        `Name must be at least ${MIN_MISSION_NAME_LENGTH.toString()} characters`,
     (val) =>
         val.length <= MAX_MISSION_NAME_LENGTH ||
-        `Name must be at most ${MAX_MISSION_NAME_LENGTH} characters`,
+        `Name must be at most ${MAX_MISSION_NAME_LENGTH.toString()} characters`,
     (val) =>
         /^[\w\-_]+$/g.test(val) ||
         'Name must be alphanumeric and contain only - and _',
@@ -193,15 +194,15 @@ const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 
 const props = defineProps<{
     project_uuid: string | undefined;
-    uploads: Ref<FileUpload[]>;
+    uploads: Ref<FileUploadDto[]>;
 }>();
 
 const project_uuid = ref(props.project_uuid);
-const newMission: Ref<Mission | undefined> = ref(undefined);
+const newMission: Ref<MissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project, refetch }: { data: Ref<Project>; refetch } =
-    useQuery<Project>({
+const { data: project, refetch }: { data: Ref<ProjectDto>; refetch: Function } =
+    useQuery<ProjectDto>({
         queryKey: computed(() => ['project', project_uuid]),
         queryFn: () => getProject(project_uuid.value!),
         enabled: computed(() => !!project_uuid.value),
@@ -215,14 +216,14 @@ const isValidMissionName = ref(true);
 const errorMessage = ref('');
 const ddr_open = ref(false);
 
-const { data: all_projects } = useQuery<[Project[], number]>({
+const { data: all_projects } = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
-    return all_projects.value[0].filter((_project: Project) =>
+    return all_projects.value[0].filter((_project: ProjectDto) =>
         canCreateMission(_project.uuid, permissions),
     );
 });
@@ -230,7 +231,7 @@ const projectsWithCreateWrite = computed(() => {
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    return project.value?.requiredTags.every(
+    return project.value.requiredTags.every(
         (tag) =>
             tagValues.value[tag.uuid] !== undefined &&
             tagValues.value[tag.uuid] !== '',
@@ -265,12 +266,14 @@ const submitNewMission = async () => {
         .filter(
             (query) =>
                 query.queryKey[0] === 'missions' &&
-                query.queryKey[1] === project.value?.uuid,
+                query.queryKey[1] === project.value.uuid,
         );
     await Promise.all(
         filtered.map((query) => {
             console.log('Invalidating query', query.queryKey);
-            return queryClient.invalidateQueries(query.queryKey);
+            return queryClient.invalidateQueries({
+                queryKey: query.queryKey,
+            });
         }),
     );
     Notify.create({

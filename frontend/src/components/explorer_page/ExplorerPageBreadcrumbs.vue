@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
-import { useMissionQuery, useProjectQuery } from 'src/hooks/customQueryHooks';
+import { useMission, useProjectQuery } from 'src/hooks/customQueryHooks';
 import { QueryHandler } from 'src/services/QueryHandler';
 
 const props = defineProps({
@@ -52,8 +52,7 @@ const mission_uuid = computed(() => props.url_handler.missionUuid);
 
 const { data: project, isLoading: projectLoading } =
     useProjectQuery(project_uuid);
-const { data: mission, isLoading: missionLoading } =
-    useMissionQuery(mission_uuid);
+const { data: mission, isLoading: missionLoading } = useMission(mission_uuid);
 
 const crumbs = ref<any>([]);
 
@@ -73,7 +72,7 @@ watchEffect(() => {
                       name: project.value.name,
                       uuid: project.value.uuid,
                       click: () => {
-                          props.url_handler.setProjectUUID(project.value?.uuid);
+                          props.url_handler.setProjectUUID(project.value.uuid);
                           props.url_handler.setMissionUUID(undefined);
                       },
                   },

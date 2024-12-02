@@ -26,8 +26,10 @@
                 :key="datatype"
                 clickable
                 @click="
-                    selectedDataType = value;
-                    ddr_open = false;
+                    () => {
+                        selectedDataType = value;
+                        ddr_open = false;
+                    }
                 "
             >
                 <q-item-section>
@@ -54,8 +56,7 @@ const ddr_open = ref(false);
 const createTagTypeAction = async () => {
     try {
         await createTagType(tagName.value, selectedDataType.value);
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
         Notify.create({
             message: `Error creating Tag Type: ${error?.response?.data?.message || error.message}`,
             color: 'negative',

@@ -114,6 +114,7 @@ export enum DataType {
     DATE = 'DATE',
     LOCATION = 'LOCATION',
     LINK = 'LINK',
+    ANY = 'ANY',
 }
 
 export enum ArtifactState {

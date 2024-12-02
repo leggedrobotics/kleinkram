@@ -11,6 +11,7 @@ export interface AccessGroupFactoryContext {
     isPersonal: boolean;
 }
 
+// @ts-expect-error
 define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
     const accessGroup = new AccessGroup();
 

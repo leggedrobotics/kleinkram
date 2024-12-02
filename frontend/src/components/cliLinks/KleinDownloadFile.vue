@@ -39,8 +39,10 @@
     </div>
 </template>
 <script setup lang="ts">
+import { FileDto } from '@api/types/Files.dto';
+
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 
 async function clicked() {

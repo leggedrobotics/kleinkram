@@ -30,13 +30,14 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const props = defineProps<{
-    missions: Mission[];
+    missions: MissionDto[];
 }>();
 
 const params = computed(() => {
-    return props.missions.map((mission) => `${mission.uuid}`).join(' ');
+    return props.missions.map((mission) => mission.uuid.toString()).join(' ');
 });
 
 async function clicked() {

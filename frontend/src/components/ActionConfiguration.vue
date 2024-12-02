@@ -81,7 +81,7 @@
                         <label for="project">Project</label>
                         <q-select
                             name="project"
-                            :model-value="selected_project?.name"
+                            :model-value="selectedProject?.name"
                             :options="projects"
                             option-label="name"
                             option-value="uuid"
@@ -98,7 +98,7 @@
                     <div>
                         <label for="mission">Mission</label>
                         <q-select
-                            :model-value="selected_mission?.name"
+                            :model-value="selectedMission?.name"
                             :options="missions"
                             option-label="name"
                             placeholder="Mission"
@@ -112,7 +112,8 @@
                     </div>
                     <div v-if="hasMissionUUIDs">
                         <q-chip
-                            v-for="chip_mission in selected_missions"
+                            v-for="chip_mission in selectedMissions?.missions ??
+                            []"
                             :key="chip_mission.uuid"
                             :removable="canRemoveMission(chip_mission.uuid)"
                             @remove="() => removeMission(chip_mission.uuid)"
@@ -254,7 +255,7 @@
                         class="bg-button-secondary text-on-color q-mx-sm"
                         label="Save as Template"
                         :disable="!isModified"
-                        @click="() => saveAsTemplate()"
+                        @click="saveAsTemplate"
                     />
                     <q-btn
                         flat
@@ -273,25 +274,27 @@ import { computed, Ref, ref, watch } from 'vue';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import {
-    getMissions,
-    missionsOfProjectMinimal,
-} from 'src/services/queries/mission';
-import {
     createActionTemplate,
     createAnalysis,
     createMultipleAnalysis,
     createNewActionTemplateVersion,
 } from 'src/services/mutations/action';
-import { useHandler } from 'src/hooks/customQueryHooks';
+import {
+    useFilteredProjects,
+    useHandler,
+    useManyMissions,
+    useMissionsOfProjectMinimal,
+} from 'src/hooks/customQueryHooks';
 import { listActionTemplates } from 'src/services/queries/action';
-import { filteredProjects } from 'src/services/queries/project';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
+import { FlatProjectDto } from '@api/types/Project.dto';
+import { ActionTemplateDto } from '@api/types/Actions.dto';
 
-const select: Ref<undefined | ActionTemplate> = ref(undefined);
+const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');
-const image_name = ref('rslethz/action:simple-latest');
 const selectedAccessRights = ref({
     label: 'Read',
     value: AccessGroupRights.READ,
@@ -329,28 +332,21 @@ const editingTemplate: Ref = ref({
 const hasMissionUUIDs = computed(
     () => !!props.mission_uuids && props.mission_uuids.length > 0,
 );
-const selected_missions_key = computed(() => [
-    'missions',
-    allMissionUUIDs.value,
-]);
-const { data: selected_missions } = useQuery<Mission[]>({
-    queryKey: selected_missions_key,
-    queryFn: () => getMissions(allMissionUUIDs.value),
-    enabled: hasMissionUUIDs,
-});
-
+const selectedMissionsKey = computed(() => ['missions', allMissionUUIDs.value]);
+const { data: selectedMissions } = useManyMissions(
+    selectedMissionsKey,
+    allMissionUUIDs,
+    hasMissionUUIDs,
+);
 // Fetch projects
-const projectsReturn = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name', false),
-});
+const { data: projectsReturn } = useFilteredProjects(500, 0, 'name', false);
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+    projectsReturn.value ? projectsReturn.value.projects : [],
 );
 
-const selected_project = computed(() =>
+const selectedProject = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.projectUuid,
+        (project: FlatProjectDto) => project.uuid === handler.value.projectUuid,
     ),
 );
 
@@ -362,20 +358,19 @@ watch(
 );
 
 // Fetch mission based on selected project -------------------------------------
-const queryKeyMissions = computed(() => [
-    'missions',
-    handler.value.projectUuid,
-]);
-const { data: _missions } = useQuery<[Mission[], number]>({
-    queryKey: queryKeyMissions,
-    queryFn: () =>
-        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
-});
-const missions = computed(() => (_missions.value ? _missions.value[0] : []));
 
-const selected_mission = computed(() =>
+const { data: _missions } = useMissionsOfProjectMinimal(
+    handler.value.projectUuid || '',
+    500,
+    0,
+);
+const missions = computed(() =>
+    _missions.value ? _missions.value.missions : [],
+);
+
+const selectedMission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.missionUuid,
+        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );
 
@@ -390,13 +385,15 @@ const { data: actionTemplatesRes } = useQuery({
 // MUTATING ###################################################################
 // Save the template ----------------------------------------------------------
 async function saveAsTemplate() {
-    let res: undefined | ActionTemplate;
+    let res: undefined | ActionTemplateDto;
     if (isModified.value && editingTemplate.value.uuid) {
+        // @ts-ignore
         res = await updateTemplate(true);
     } else {
         res = await createTemplate(true);
     }
     editingTemplate.value = res;
+    // @ts-ignore
     select.value = res.clone();
 }
 
@@ -428,11 +425,11 @@ const { mutateAsync: createTemplate } = useMutation({
             timeout: 2000,
         });
     },
-    onError: (error) => {
+    onError: (error: { response?: { data: { message: string } } }) => {
         console.error(error);
         Notify.create({
             group: false,
-            message: `Error: ${error.response?.data.message}`,
+            message: `Error: ${error.response?.data.message ?? 'Unknown Error'}`,
             color: 'negative',
             position: 'bottom',
             timeout: 2000,
@@ -455,7 +452,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
         }),
-    onSuccess: async (newVal) => {
+    onSuccess: async (newVal: { name: string; version: string }) => {
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'actionTemplates';
@@ -469,7 +466,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             timeout: 2000,
         });
     },
-    onError: (error) => {
+    onError: (error: { response: { data: { message: string } } }) => {
         Notify.create({
             group: false,
             message: `Error: ${error.response.data.message}`,
@@ -481,16 +478,12 @@ const { mutateAsync: updateTemplate } = useMutation({
 });
 
 async function submitAnalysis() {
-    console.log(
-        `Submit new action: ${selected_project.value?.uuid}, ${selected_mission.value?.uuid}, ${image_name.value}`,
-    );
-
     // validate input (this will also be performed on the backend)
     // the user must select a project and a mission
     // the image name must start with 'rslethz/'
     if (
         !hasMissionUUIDs.value &&
-        (!selected_project.value || !selected_mission.value)
+        (!selectedProject.value || !selectedMission.value)
     ) {
         Notify.create({
             group: false,
@@ -529,9 +522,9 @@ async function submitAnalysis() {
             missionUUIDs: allMissionUUIDs.value,
             templateUUID: res.uuid,
         });
-    } else if (selected_mission.value) {
+    } else if (selectedMission.value) {
         createPromise = createAnalysis({
-            missionUUID: selected_mission.value.uuid,
+            missionUUID: selectedMission.value.uuid,
             templateUUID: res.uuid,
         });
     } else {
@@ -562,10 +555,13 @@ async function submitAnalysis() {
                 },
             });
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
+            const errorMessage =
+                error instanceof Error ? error.message : 'Unknown Error';
+
             Notify.create({
                 group: false,
-                message: `Error: ${error}`,
+                message: `Error: ${errorMessage}`,
                 color: 'negative',
                 position: 'bottom',
                 timeout: 2000,
@@ -578,24 +574,21 @@ const isModified = computed(() => {
     if (!select.value) {
         return true;
     }
-    const sameName = editingTemplate.value.name === select.value?.name;
+    const sameName = editingTemplate.value.name === select.value.name;
     const sameImage =
-        editingTemplate.value?.imageName === select.value?.imageName;
-    const sameCommand =
-        editingTemplate.value?.command === select.value?.command;
-    const sameGPU =
-        editingTemplate.value?.gpuMemory === select.value?.gpuMemory;
+        editingTemplate.value?.imageName === select.value.imageName;
+    const sameCommand = editingTemplate.value?.command === select.value.command;
+    const sameGPU = editingTemplate.value?.gpuMemory === select.value.gpuMemory;
 
     const sameMemory =
-        editingTemplate.value?.cpuMemory === select.value?.cpuMemory;
-    const sameCores =
-        editingTemplate.value?.cpuCores === select.value?.cpuCores;
+        editingTemplate.value?.cpuMemory === select.value.cpuMemory;
+    const sameCores = editingTemplate.value?.cpuCores === select.value.cpuCores;
     const sameRuntime =
-        editingTemplate.value?.maxRuntime === select.value?.maxRuntime;
+        editingTemplate.value?.maxRuntime === select.value.maxRuntime;
     const sameEntrypoint =
-        editingTemplate.value?.entrypoint === select.value?.entrypoint;
+        editingTemplate.value?.entrypoint === select.value.entrypoint;
     const sameAccessRights =
-        editingTemplate.value?.accessRights === select.value?.accessRights;
+        editingTemplate.value?.accessRights === select.value.accessRights;
     return !(
         sameName &&
         sameImage &&
@@ -609,9 +602,9 @@ const isModified = computed(() => {
     );
 });
 
-function newValue(val: string, done) {
+function newValue(val: string, done: any) {
     const existingTemplate = actionTemplatesRes.value.find(
-        (template: ActionTemplate) => template.name === val,
+        (template: ActionTemplateDto) => template.name === val,
     );
     if (existingTemplate) {
         editingTemplate.value = existingTemplate.clone();
@@ -621,24 +614,21 @@ function newValue(val: string, done) {
     done(editingTemplate);
 }
 
-function selectTemplate(template: ActionTemplate) {
-    if (!template) {
-        editingTemplate.value = new ActionTemplate(
-            '',
-            null,
-            null,
-            'rslethz/action:simple-dev',
-            null,
-            '',
-            1,
-            '',
-            2,
-            2,
-            -1,
-            2,
-            '',
-            AccessGroupRights.READ,
-        );
+function selectTemplate(template: ActionTemplateDto | undefined) {
+    if (template === undefined) {
+        editingTemplate.value = {
+            accessRights: AccessGroupRights.READ,
+            command: '',
+            cpuCores: 1,
+            cpuMemory: 2,
+            entrypoint: '',
+            gpuMemory: 2,
+            imageName: '',
+            maxRuntime: -1,
+            name: '',
+            version: '1',
+        } as ActionTemplateDto;
+
         select.value = undefined;
         return;
     }
@@ -646,13 +636,15 @@ function selectTemplate(template: ActionTemplate) {
         return;
     }
     selectedAccessRights.value = {
-        label: accessGroupRightsMap[template.accessRights],
+        label: accessGroupRightsMap[template.accessRights] ?? '',
         value: template.accessRights,
     };
+
+    // @ts-ignore
     editingTemplate.value = template.clone();
 }
 
-function missionSelected(mission: Mission) {
+function missionSelected(mission: MissionDto) {
     if (hasMissionUUIDs.value) {
         addedMissions.value.push(mission.uuid);
     } else {
@@ -684,11 +676,9 @@ watch(
     },
 );
 
-const options = Object.keys(accessGroupRightsMap)
-    .map((key) => ({
-        label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
-        value: parseInt(key, 10),
-    }))
-    .filter((option) => option.value !== AccessGroupRights.NONE);
+const options = Object.keys(accessGroupRightsMap).map((key) => ({
+    label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights] ?? '',
+    value: parseInt(key, 10),
+}));
 </script>
 <style scoped></style>

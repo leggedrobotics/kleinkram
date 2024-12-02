@@ -58,7 +58,7 @@ const option = computed(() => {
         },
         tooltip: {
             trigger: 'item',
-            formatter: (params) => {
+            formatter: (params: any) => {
                 return `${params.name}: ${params.data.formatted}`;
             },
         },

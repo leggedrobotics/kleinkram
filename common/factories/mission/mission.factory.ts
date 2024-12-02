@@ -10,10 +10,18 @@ export interface MissionContext {
 }
 
 define(Mission, (_, context: Partial<MissionContext> = {}) => {
+    if (!context.project) {
+        throw new Error('Project is required');
+    }
+
+    if (!context.user) {
+        throw new Error('User is required');
+    }
+
     const mission = new Mission();
     mission.name = extendedFaker.mission.name();
-    mission.creator = context.user || null;
-    mission.project = context.project || null;
+    mission.creator = context.user;
+    mission.project = context.project;
     mission.uuid = extendedFaker.string.uuid();
     return mission;
 });

@@ -28,11 +28,12 @@ import { computed, ref, watchEffect } from 'vue';
 import DeleteActionDialog from 'src/dialogs/DeleteActionDialog.vue';
 import { getMe } from 'src/services/queries/user';
 import { ActionState } from '@common/enum';
+import { ActionDto } from '@api/types/Actions.dto';
 
 const $q = useQuasar();
 
 const props = defineProps({
-    action: Action,
+    action: ActionDto,
 });
 
 const { data: permissions } = usePermissionsQuery();
@@ -60,23 +61,25 @@ watchEffect(() => {
             const actionCreator = props.action?.creator;
             isCreator.value = me.uuid === actionCreator?.uuid;
         })
-        .catch(console.error);
+        .catch((e: unknown) => {
+            console.error(e);
+        });
 });
 
 const deletePermissions = computed(() => {
     const projectPermissions = getPermissionForProject(
-        props.action.mission?.project?.uuid,
+        props.action?.mission.project.uuid,
         permissions.value,
     );
     const missionPermissions = getPermissionForMission(
-        props.action.mission?.uuid,
+        props.action?.mission.uuid,
         permissions.value,
     );
 
     return Math.max(projectPermissions, missionPermissions);
 });
 
-const openDeleteActionDialog = () => {
+const openDeleteActionDialog = (): void => {
     // abort if the user cannot modify the project
     if (!canDelete.value) return;
 

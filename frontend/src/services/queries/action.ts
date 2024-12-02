@@ -1,4 +1,6 @@
 import axios from 'src/api/axios';
+import { ActionDto, ActionsDto } from '@api/types/Actions.dto';
+import { AxiosResponse } from 'axios';
 
 export const getActions = async (
     projectUUID: string,
@@ -8,10 +10,9 @@ export const getActions = async (
     sortBy: string,
     descending: boolean,
     search: string,
-): Promise<[Action[], number]> => {
+): Promise<ActionsDto> => {
     const params: Record<string, string | number | boolean> = {
         project_uuid: projectUUID,
-
         mission_uuid: missionUUID,
         take,
         skip,
@@ -23,7 +24,10 @@ export const getActions = async (
         params.search = search;
     }
 
-    const response = await axios.get('/action/listActions', { params });
+    const response: AxiosResponse<ActionsDto> = await axios.get<ActionsDto>(
+        '/action/listActions',
+        { params },
+    );
     return response.data;
 };
 
@@ -47,9 +51,13 @@ export const listActionTemplates = async (search: string) => {
     return response.data;
 };
 
-export const getRunningActions = async () => {
-    const response = await axios.get('/action/running', {
-        params: { skip: 0, take: 10 },
-    });
+export const getRunningActions = async (): Promise<ActionDto> => {
+    const response: AxiosResponse<ActionDto> = await axios.get(
+        '/action/running',
+        {
+            params: { skip: 0, take: 10 },
+        },
+    );
+
     return response.data;
 };

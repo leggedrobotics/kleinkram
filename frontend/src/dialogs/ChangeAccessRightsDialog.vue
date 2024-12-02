@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Change Access Rights </template>
+        <template #title> Change Access Rights</template>
 
         <template #content>
             <q-form class="row flex" @submit="onDialogOK">
@@ -36,6 +36,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { updateProjectAccess } from 'src/services/mutations/access';
 import { AccessGroupRights } from '@common/enum';
+import { ProjectAccessDto } from '@api/types/Project.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -47,7 +48,7 @@ const props = defineProps<{
 const rights = ref({ label: 'None', value: AccessGroupRights.READ });
 const queryClient = useQueryClient();
 
-const { data: projectAccess } = useQuery<ProjectAccess>({
+const { data: projectAccess } = useQuery<ProjectAccessDto>({
     queryKey: ['projectAccess', props.project_access_uuid],
     queryFn: () =>
         getProjectAccess(props.project_uuid, props.project_access_uuid),
@@ -69,7 +70,7 @@ const { mutate: changeAccessRights } = useMutation({
             predicate: (query) => query.queryKey[0] === 'AccessGroup',
         });
     },
-    onError: (e) => {
+    onError: (e: any) => {
         Notify.create({
             message: `Failed to change access rights:  ${e.response?.data.message}`,
             color: 'negative',

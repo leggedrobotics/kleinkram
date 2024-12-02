@@ -12,8 +12,6 @@ import Apikey from '@common/entities/auth/apikey.entity';
 @Injectable()
 export class ActionGuardService {
     constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
         @InjectRepository(Action)
         private actionRepository: Repository<Action>,
         private projectGuardService: ProjectGuardService,

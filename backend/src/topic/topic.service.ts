@@ -70,6 +70,6 @@ export class TopicService {
         });
         await this.topicRepository.save(newTopic);
 
-        return this.topicRepository.findOne({ where: { name: name } });
+        return this.topicRepository.findOneOrFail({ where: { name: name } });
     }
 }

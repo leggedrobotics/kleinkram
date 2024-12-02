@@ -52,9 +52,11 @@
                                     :key="project.uuid"
                                     clickable
                                     @click="
-                                        selected_project = project;
-                                        dd_open = false;
-                                        dd_open_2 = true;
+                                        () => {
+                                            selected_project = project;
+                                            dd_open = false;
+                                            dd_open_2 = true;
+                                        }
                                     "
                                 >
                                     <q-item-section>
@@ -84,8 +86,10 @@
                                     :key="mission.uuid"
                                     clickable
                                     @click="
-                                        editableFile.mission = mission;
-                                        dd_open_2 = false;
+                                        () => {
+                                            editableFile.mission = mission;
+                                            dd_open_2 = false;
+                                        }
                                     "
                                 >
                                     <q-item-section>
@@ -136,11 +140,14 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
 import { FileState } from '@common/enum';
+import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { FileDto } from '@api/types/Files.dto';
+import { MissionDto } from '@api/types/Mission.dto';
+import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
     file_uuid: string;
@@ -153,25 +160,25 @@ const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected_project = ref<Project | null | undefined>(null);
+const selected_project = ref<ProjectDto | null | undefined>(null);
 const { data } = useQuery({
     queryKey: ['file', props.file_uuid],
     queryFn: () => fetchFile(props.file_uuid),
 });
 
 const dateTime = ref('');
-const editableFile: Ref<FileEntity | null> = ref(null);
+const editableFile: Ref<FileDto | null> = ref(null);
 // Watch for changes in data.value and update dateTime accordingly
 watch(
     () => data.value,
     (newValue) => {
         if (!newValue) return;
-        selected_project.value = newValue?.mission?.project;
-        if (newValue?.date && data.value) {
-            editableFile.value = new FileEntity(
+        selected_project.value = newValue.mission.project;
+        if (newValue.date && data.value) {
+            editableFile.value = new FileDto(
                 newValue.uuid,
                 newValue.filename,
-                newValue.mission?.clone() as Mission,
+                newValue.mission,
                 newValue.creator,
                 newValue.date,
                 [],
@@ -190,7 +197,7 @@ watch(
         immediate: true, // Mission the watcher immediately on component mount
     },
 );
-const projectsReturn = useQuery<[Project[], number]>({
+const projectsReturn = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
@@ -198,12 +205,14 @@ const projects = computed(() =>
     projectsReturn.data.value ? projectsReturn.data.value[0] : [],
 );
 
-const { data: _missions, refetch } = useQuery<[Mission[], number]>({
-    queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProjectMinimal(selected_project.value?.uuid || ''),
-    enabled: !!selected_project.value?.uuid,
-});
-const missions = computed(() => (_missions.value ? _missions.value[0] : []));
+const { data: _missions, refetch } = useMissionsOfProjectMinimal(
+    selected_project.value?.uuid,
+    100,
+    0,
+);
+const missions = computed(() =>
+    _missions.value ? _missions.value.missions : [],
+);
 
 watch(
     () => selected_project.value,
@@ -214,8 +223,8 @@ watch(
                     editableFile.value &&
                     missions.value.length !== undefined &&
                     missions.value.length > 0 &&
-                    editableFile.value?.mission?.project?.uuid !==
-                        selected_project.value?.uuid
+                    editableFile.value.mission.project.uuid !==
+                        selected_project.value.uuid
                 ) {
                     editableFile.value.mission = missions.value[0];
                 }
@@ -228,7 +237,7 @@ watch(
 );
 
 const { mutate: updateFileMutation } = useMutation({
-    mutationFn: (fileData: FileEntity) => updateFile({ file: fileData }),
+    mutationFn: (fileData: FileDto) => updateFile({ file: fileData }),
     onSuccess: async () => {
         Notify.create({
             group: false,
@@ -255,7 +264,7 @@ const { mutate: updateFileMutation } = useMutation({
             ),
         );
     },
-    onError(e) {
+    onError(e: any) {
         console.log(e);
         Notify.create({
             group: false,
@@ -276,8 +285,7 @@ function _updateMission() {
         !isNaN(convertedDate.getTime())
     ) {
         editableFile.value.date = convertedDate;
-        const noncircularMission =
-            editableFile.value?.mission?.clone() as Mission;
+        const noncircularMission = editableFile.value.mission;
         noncircularMission.project = undefined;
         noncircularMission.files = [];
         editableFile.value.mission = noncircularMission;

@@ -5,7 +5,7 @@
         <q-btn-dropdown
             v-model="dropdownNewFileProject"
             :disable="!!props?.mission?.project"
-            :label="selected_project?.name || 'Project'"
+            :label="selectedProject?.name || 'Project'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
             clearable
@@ -17,8 +17,10 @@
                     :key="project.uuid"
                     clickable
                     @click="
-                        selected_project = project;
-                        dropdownNewFileProject = false;
+                        () => {
+                            selectedProject = project;
+                            dropdownNewFileProject = false;
+                        }
                     "
                 >
                     <q-item-section>
@@ -35,7 +37,7 @@
         <q-btn-dropdown
             v-model="dropdownNewFileMission"
             :disable="!!props?.mission"
-            :label="selected_mission?.name || 'Mission'"
+            :label="selectedMission?.name || 'Mission'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
             clearable
@@ -43,17 +45,19 @@
         >
             <q-list>
                 <q-item
-                    v-for="mission in missions"
-                    :key="mission.uuid"
+                    v-for="m in missions"
+                    :key="m.uuid"
                     clickable
                     @click="
-                        selected_mission = mission;
-                        dropdownNewFileMission = false;
+                        () => {
+                            selectedMission = m;
+                            dropdownNewFileMission = false;
+                        }
                     "
                 >
                     <q-item-section>
                         <q-item-label>
-                            {{ mission.name }}
+                            {{ m.name }}
                         </q-item-label>
                     </q-item-section>
                 </q-item>
@@ -82,7 +86,7 @@
         <label>Import File from Google Drive</label>
 
         <q-input
-            v-model="drive_url"
+            v-model="driveUrl"
             outlined
             dense
             clearable
@@ -95,38 +99,38 @@
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { filteredProjects } from 'src/services/queries/project';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from 'src/services/fileService';
+import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { ProjectDto } from '@api/types/Project.dto';
+import { FileUploadDto } from '@api/types/Upload.dto';
+import { useFilteredProjects } from '../hooks/customQueryHooks';
 
 const emit = defineEmits(['update:ready']);
 
-const selected_project: Ref<Project | null> = ref(null);
+const selectedProject: Ref<ProjectDto | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
-const selected_mission: Ref<Mission | null> = ref(null);
-const { data: _data } = useQuery<[Project[], number]>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
-});
+const { data: selectedMission } = useFilteredProjects(500, 0, 'name', true);
+
 const data = computed(() => {
-    if (_data.value) {
-        return _data.value[0];
+    if (_data.value !== undefined) {
+        return _data.value.projects;
     }
     return [];
 });
 const queryClient = useQueryClient();
 
-const drive_url = ref('');
+const driveUrl = ref('');
 const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const ready = computed(() => {
-    const hasProject = !!selected_project.value;
-    const hasMission = !!selected_mission.value;
-    const hasFileOrDrive = files.value.length > 0 || !!drive_url.value;
+    const hasProject = !!selectedProject.value;
+    const hasMission = !!selectedMission.value;
+    const hasFileOrDrive = files.value.length > 0 || driveUrl.value !== '';
     return hasProject && hasMission && hasFileOrDrive;
 });
 
@@ -138,19 +142,19 @@ watch(
 );
 
 const props = defineProps<{
-    mission?: Mission;
-    uploads: Ref<FileUpload[]>;
+    mission?: MissionDto;
+    uploads: Ref<FileUploadDto[]>;
 }>();
 
 if (props.mission?.project) {
-    selected_project.value = props.mission.project;
-    selected_mission.value = props.mission;
+    selectedProject.value = props.mission.project;
+    selectedMission.value = props.mission;
 }
 
-const { data: _missions, refetch } = useQuery<[Mission[], number]>({
-    queryKey: ['missions', selected_project.value?.uuid],
-    queryFn: () => missionsOfProjectMinimal(selected_project.value?.uuid || ''),
-    enabled: !!selected_project.value?.uuid,
+const { data: _missions, refetch } = useQuery<MissionsDto>({
+    queryKey: ['missions', selectedProject.value?.uuid],
+    queryFn: () => missionsOfProjectMinimal(selectedProject.value?.uuid || ''),
+    enabled: !!selectedProject.value?.uuid,
 });
 const missions = computed(() => {
     if (_missions.value) {
@@ -160,19 +164,20 @@ const missions = computed(() => {
 });
 
 watchEffect(() => {
-    if (selected_project.value?.uuid) {
-        refetch().catch(console.error);
+    if (selectedProject.value?.uuid) {
+        refetch().catch(() => {});
     }
 });
 
 const createFile = async () => {
-    if (drive_url.value) {
-        await driveUpload(selected_mission.value, drive_url);
+    if (driveUrl.value) {
+        await driveUpload(selectedMission.value, driveUrl);
         return;
     }
+
     await createFileAction(
-        selected_mission.value,
-        selected_project.value,
+        selectedMission.value,
+        selectedProject.value,
         files.value,
         queryClient,
         uploadingFiles,

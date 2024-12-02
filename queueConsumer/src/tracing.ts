@@ -50,7 +50,9 @@ const sdk = new NodeSDK({
 process.on('SIGTERM', () => {
     sdk.shutdown()
         .then(() => logger.debug('Tracing terminated'))
-        .catch((error) => logger.debug('Error terminating tracing', error))
+        .catch((error: unknown) =>
+            logger.debug('Error terminating tracing', error),
+        )
         .finally(() => process.exit(0));
 });
 
@@ -97,8 +99,8 @@ export const traceWrapper =
                 // exceptions and record them before ending the span
                 if (result instanceof Promise)
                     result
-                        .catch((e) => {
-                            span.recordException(e);
+                        .catch((e: any) => {
+                            span.recordException(e as Exception);
                             span.setAttribute('error', true);
                         })
                         .finally(() => {
@@ -124,7 +126,7 @@ export const traceWrapper =
  *
  */
 export function tracing<A extends unknown[], C>(
-    traceName: string = '',
+    traceName = '',
 ):
     | (MethodDecorator & ClassDecorator)
     | ((

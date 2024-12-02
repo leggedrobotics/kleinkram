@@ -3,6 +3,7 @@ import User from '../../entities/user/user.entity';
 import { UserRole } from '../../frontend_shared/enum';
 import { extendedFaker } from '../../faker_extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
+import GroupMembership from '../../entities/auth/group_membership.entity';
 
 export interface UserContext {
     firstName: string;
@@ -14,7 +15,7 @@ export interface UserContext {
 
 define(User, (_, context: Partial<UserContext> = {}) => {
     const role =
-        context.role ||
+        context.role ??
         extendedFaker.helpers.arrayElement([UserRole.ADMIN, UserRole.USER]);
     const firstName = context.firstName || extendedFaker.person.firstName();
     const lastName = context.lastName || extendedFaker.person.lastName();
@@ -29,11 +30,12 @@ define(User, (_, context: Partial<UserContext> = {}) => {
     user.uuid = extendedFaker.string.uuid();
 
     if (context.defaultGroupIds) {
+        // TODO: fix...
         user.memberships = context.defaultGroupIds.map((id) => {
             const accessGroup = new AccessGroup();
             accessGroup.uuid = id;
             return accessGroup;
-        });
+        }) as unknown as GroupMembership[];
     }
 
     return user;

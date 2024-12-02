@@ -19,7 +19,7 @@
                             v-for="project in projects"
                             :key="project.uuid"
                             clickable
-                            @click="handler.setProjectUUID(project.uuid)"
+                            @click="() => handler.setProjectUUID(project.uuid)"
                         >
                             <q-item-section>
                                 <q-item-label>
@@ -41,7 +41,7 @@
                             v-for="mission in missions"
                             :key="mission.uuid"
                             clickable
-                            @click="handler.setMissionUUID(mission.uuid)"
+                            @click="() => handler.setMissionUUID(mission.uuid)"
                         >
                             <q-item-section>
                                 <q-item-label>
@@ -74,7 +74,11 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="queryClient.invalidateQueries('actions')"
+                    @click="
+                        queryClient.invalidateQueries({
+                            queryKey: ['missions', handler.projectUuid],
+                        })
+                    "
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
@@ -124,6 +128,8 @@ import TitleSection from 'components/TitleSection.vue';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
 import { UserRole } from '@common/enum';
+import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
 
 const createAction = ref(false);
 
@@ -137,13 +143,13 @@ const handler = useHandler();
 const { data: permissions } = usePermissionsQuery();
 const selectedProject = computed(() =>
     projects.value.find(
-        (project: Project) => project.uuid === handler.value.projectUuid,
+        (project: ProjectDto) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 const selectedMission = computed(() =>
     missions.value.find(
-        (mission: Mission) => mission.uuid === handler.value.missionUuid,
+        (mission: MissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );
 const search = computed({
@@ -160,7 +166,7 @@ const canCreate = computed(() =>
 );
 
 // Fetch projects
-const projectsReturn = useQuery<[Project[], number]>({
+const projectsReturn = useQuery<ProjectsDto>({
     queryKey: ['projects', 500, 0, 'name', false],
     queryFn: () => filteredProjects(500, 0, 'name', false),
 });
@@ -173,7 +179,7 @@ const queryKeyMissions = computed(() => [
     'missions',
     handler.value.projectUuid,
 ]);
-const { data: _missions } = useQuery<[Mission[], number]>({
+const { data: _missions } = useQuery<MissionsDto>({
     queryKey: queryKeyMissions,
     queryFn: () =>
         missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),

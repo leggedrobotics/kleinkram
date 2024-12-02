@@ -19,11 +19,12 @@ import { Notify } from 'quasar';
 import { deleteMission } from 'src/services/mutations/mission';
 import ROUTES from 'src/router/routes';
 import { useRoute, useRouter } from 'vue-router';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const mission_name_check = ref('');
 const client = useQueryClient();
 const props = defineProps<{
-    mission: Mission;
+    mission: MissionDto;
 }>();
 
 const route = useRoute();
@@ -44,7 +45,7 @@ async function deleteMissionAction() {
                     predicate: (query) =>
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
-                            query.queryKey[1] === props.mission.project?.uuid),
+                            query.queryKey[1] === props.mission.project.uuid),
                 });
 
                 Notify.create({

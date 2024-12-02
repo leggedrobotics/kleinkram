@@ -6,14 +6,15 @@
             use-input
             multiple
             input-debounce="100"
-            :options="foundUsers.users"
+            :options="foundUsers?.users ?? []"
             option-label="name"
             class="full-width"
             @input-value="
                 (val) => {
                     search = val;
                     if (val.length > 0) {
-                        $refs.userSelect.showPopup(); // Ensure dropdown opens again
+                        // @ts-ignore
+                        $refs?.userSelect?.showPopup(); // Ensure dropdown opens again
                     }
                 }
             "
@@ -30,7 +31,7 @@
                     removable
                     :tabindex="scope.tabindex"
                     :icon="icon(scope.opt.type)"
-                    @remove="scope.removeAtIndex(scope.index)"
+                    @remove="() => scope.removeAtIndex(scope.index)"
                 >
                     {{ scope.opt.name }}
                 </q-chip>

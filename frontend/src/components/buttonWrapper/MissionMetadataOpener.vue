@@ -23,16 +23,17 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: Mission;
+    mission: MissionDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
         props.mission.uuid,
-        props.mission.project?.uuid,
+        props.mission.project.uuid,
         permissions.value,
     ),
 );

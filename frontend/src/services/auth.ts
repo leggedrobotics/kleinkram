@@ -5,14 +5,17 @@ import { CurrentAPIUserDto } from '@api/types/User.dto';
 
 let userCache: CurrentAPIUserDto | null = null;
 let isFetchingUser = false;
-let userFetchPromise: Promise<CurrentAPIUserDto | null> = null;
+let userFetchPromise: Promise<CurrentAPIUserDto | null> | null = null;
 
-export const getUser = (): Promise<CurrentAPIUserDto> | null => {
+export const getUser = async (): Promise<CurrentAPIUserDto> => {
     if (userCache !== null) {
         return Promise.resolve(userCache);
     }
     if (isFetchingUser) {
-        return userFetchPromise;
+        return (
+            (await userFetchPromise) ??
+            (await Promise.reject(new Error('Failed to fetch user')))
+        );
     }
     isFetchingUser = true;
     userFetchPromise = getMe()
@@ -25,10 +28,14 @@ export const getUser = (): Promise<CurrentAPIUserDto> | null => {
             isFetchingUser = false;
             return null;
         });
-    return userFetchPromise;
+
+    return (
+        (await userFetchPromise) ??
+        (await Promise.reject(new Error('Failed to fetch user')))
+    );
 };
 
-export const isAuthenticated = async () => {
+export const isAuthenticated = async (): Promise<boolean> => {
     const user = await getUser();
     return user !== null;
 };
@@ -50,6 +57,6 @@ export function logout() {
     });
 }
 
-export const login = () => {
+export const login = (): void => {
     window.location.href = `${ENV.ENDPOINT}/auth/google`;
 };

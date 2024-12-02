@@ -53,11 +53,7 @@
         <div v-if="methodSpec.requestBody">
             <h4 style="margin-bottom: 12px; margin-top: 16px">RequestBody</h4>
 
-            <div
-                class="collapsible-container"
-                :class="{ collapsed }"
-                @click="toggleCollapse"
-            >
+            <div :class="{ collapsed }" @click="toggleCollapse">
                 <pre
                     data-v-09e7fdb2=""
                     style="
@@ -111,7 +107,6 @@
             </h4>
 
             <div
-                class="collapsible-container"
                 :class="{ collapsed }"
                 @click="toggleCollapse"
                 v-for="response in responses"
@@ -350,20 +345,5 @@ h4 {
 
 .res-col-3 {
     width: 70%;
-}
-
-.collapsible-container {
-    cursor: pointer; /* Indicate interactivity */
-    overflow: hidden; /* Prevent content overflow when collapsed */
-    transition: max-height 0.3s ease; /* Smooth transition */
-}
-
-.collapsible-container.collapsed {
-    max-height: 68px; /* Limit to 3 lines (~24px per line, adjust as needed) */
-}
-
-.collapsible-container pre {
-    white-space: pre-wrap; /* Allow line wrapping */
-    margin: 0;
 }
 </style>

@@ -4,7 +4,7 @@
 
         <div class="height-xl flex column justify-center q-px-lg">
             <q-breadcrumbs gutter="md">
-                <template v-for="crumb in resolved_crumbs" :key="crumb.name">
+                <template v-for="crumb in resolvedCrumbs" :key="crumb.name">
                     <q-breadcrumbs-el
                         v-if="isClickable(crumb)"
                         class="text-link-primary"
@@ -28,7 +28,7 @@
                 </template>
             </q-breadcrumbs>
         </div>
-        <q-separator v-if="resolved_crumbs?.length >= 1" />
+        <q-separator v-if="resolvedCrumbs?.length >= 1" />
     </div>
 </template>
 <script setup lang="ts">
@@ -36,71 +36,45 @@ import { computed } from 'vue';
 import { useCrumbs } from 'src/hooks/crumbs';
 import { PageBreadCrumb } from 'src/router/routesUtils';
 import { useFileUUID, useMissionUUID, useProjectUUID } from 'src/hooks/utils';
-import { useQuery } from '@tanstack/vue-query';
-import { getProject } from 'src/services/queries/project';
-import { getMission } from 'src/services/queries/mission';
-import { fetchFile } from 'src/services/queries/file';
+import {
+    useFile,
+    useMission,
+    useProjectQuery,
+} from '../hooks/customQueryHooks';
 
 const crumbs = useCrumbs();
 
-const project_uuid = useProjectUUID();
-const mission_uuid = useMissionUUID();
-const file_uuid = useFileUUID();
+const projectUuid = useProjectUUID();
+const missionUuid = useMissionUUID();
+const fileUuid = useFileUUID();
 
-const projectEnabled = computed(() => !!project_uuid.value);
-const { data: project } = useQuery({
-    queryKey: ['project', project_uuid],
-    queryFn: async () => {
-        if (!project_uuid.value) return;
-        return getProject(project_uuid.value);
-    },
-    enabled: projectEnabled,
-});
+const { data: project } = useProjectQuery(projectUuid);
+const { data: mission } = useMission((missionUuid ?? '') as unknown as string);
+const { data: file } = useFile(fileUuid.value);
 
-const missionEnabled = computed(() => !!mission_uuid.value);
-const { data: mission } = useQuery({
-    queryKey: ['mission', mission_uuid],
-    queryFn: async () => {
-        if (!mission_uuid.value) return;
-        return getMission(mission_uuid.value);
-    },
-    enabled: missionEnabled,
-});
-
-const fileEnabled = computed(() => !!file_uuid.value);
-const { data: file } = useQuery({
-    queryKey: ['file', file_uuid],
-    queryFn: async () => {
-        if (!file_uuid.value) return;
-        return fetchFile(file_uuid.value);
-    },
-    enabled: fileEnabled,
-});
-
-const resolved_crumbs = computed(() => {
-    let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
+const resolvedCrumbs = computed(() => {
+    let _crumbs = crumbs.value?.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
-                ?.replace(':project_uuid', project_uuid.value)
-                .replace(':mission_uuid', mission_uuid.value)
-                .replace(':file_uuid', file_uuid.value),
+                ?.replace(':project_uuid', projectUuid.value)
+                .replace(':mission_uuid', missionUuid.value)
+                .replace(':file_uuid', fileUuid.value),
             displayName: crumb.displayName
-                .replace(':project_name', project.value?.name || '')
-                .replace(':mission_name', mission.value?.name || '')
-                .replace(':file_name', file.value?.filename || ''),
+                .replace(':project_name', project.value?.name ?? '')
+                .replace(':mission_name', mission.value?.name ?? '')
+                .replace(':file_name', file.value?.filename ?? ''),
+            name: crumb.name,
         };
     });
 
-    if (!_crumbs) return [];
-
     // remove crumbs with undefined values in to
-    const idx_of_first_undefined = _crumbs.findIndex((crumb: PageBreadCrumb) =>
+    const firstUndefinedIdx = _crumbs.findIndex((crumb: PageBreadCrumb) =>
         crumb.to?.includes('undefined'),
     );
     _crumbs =
-        idx_of_first_undefined === -1
+        firstUndefinedIdx === -1
             ? _crumbs
-            : _crumbs.slice(0, idx_of_first_undefined);
+            : _crumbs.slice(0, firstUndefinedIdx);
 
     // remove link of crumb if it is the only crumb
     if (_crumbs.length === 1) {
@@ -110,10 +84,10 @@ const resolved_crumbs = computed(() => {
     return _crumbs;
 });
 
-const isClickable = (crumb: PageBreadCrumb) => {
+const isClickable = (crumb: PageBreadCrumb): boolean => {
     const idx = crumbs.value.findIndex(
         (c: PageBreadCrumb) => c.displayName === crumb.displayName,
     );
-    return idx !== crumbs.value.length - 1 && !!crumb.to;
+    return idx !== crumbs.value.length - 1;
 };
 </script>

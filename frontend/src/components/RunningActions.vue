@@ -11,7 +11,7 @@
                     flat
                     icon="sym_o_arrow_outward"
                     class="scroll-button"
-                    @click="router.push('actions')"
+                    @click="toActions"
                 />
             </div>
         </q-card>
@@ -20,7 +20,7 @@
 
         <!-- Scrollable Card Section -->
         <div
-            v-if="actions && actions.length > 0"
+            v-if="isFetched && actions && actions.length > 0"
             ref="cardWrapper"
             class="card-wrapper"
         >
@@ -75,21 +75,16 @@
     </div>
 </template>
 <script setup lang="ts">
-import { getRunningActions } from 'src/services/queries/action';
-import { useQuery } from '@tanstack/vue-query';
 import { getActionColor } from 'src/services/generic';
 import ActionBadge from 'components/ActionBadge.vue';
 import { useRouter } from 'vue-router';
 import { ActionState } from '@common/enum';
+import { ActionDto } from '@api/types/Actions.dto';
+import { useRunningActions } from '../hooks/customQueryHooks';
 
 const router = useRouter();
 
-const { data: actions } = useQuery({
-    queryKey: ['actions'],
-    queryFn: () => getRunningActions(),
-    staleTime: 100,
-    refetchInterval: 5000,
-});
+const { data: actions, isFetched } = useRunningActions();
 
 const columns = [
     {
@@ -106,23 +101,22 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: false,
-        field: (row: Action) =>
-            row.template?.imageName ? row.template.imageName : 'N/A',
+        field: (row: ActionDto): string => row.template.imageName,
     },
     {
         name: 'mission',
         label: 'Mission',
         align: 'left',
         sortable: false,
-        field: (row: Action) => row.mission?.name || 'N/A',
+        field: (row: ActionDto): string => row.mission.name,
     },
     {
         name: 'name',
         label: 'Action Name',
         align: 'left',
         sortable: false,
-        field: (row: Action) =>
-            row.template?.name
+        field: (row: ActionDto): string =>
+            row.template.name !== ''
                 ? `${row.template.name} v${row.template.version}`
                 : 'N/A',
     },
@@ -131,10 +125,14 @@ const columns = [
         name: 'user',
         label: 'Submitted By',
         align: 'left',
-        field: (row: Action) => row?.createdBy?.name || 'N/A',
+        field: (row: ActionDto): string => row.creator.name,
         sortable: false,
     },
 ];
+
+const toActions = async () => {
+    return await router.push('actions');
+};
 </script>
 
 <style scoped>
