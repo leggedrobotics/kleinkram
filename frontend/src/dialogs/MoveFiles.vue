@@ -189,7 +189,15 @@ const { mutate: moveFilesMutation } = useMutation({
         console.log(e);
         Notify.create({
             group: false,
-            message: `Error moving file: ${e.response.data.message}`,
+            message: `Error moving file: ${
+                (
+                    e as {
+                        response: {
+                            data: { message: string };
+                        };
+                    }
+                ).response.data.message
+            }`,
             color: 'negative',
             spinner: false,
             position: 'bottom',

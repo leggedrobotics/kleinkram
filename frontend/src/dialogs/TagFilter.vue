@@ -156,7 +156,7 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    data.value.tags?.forEach((tag) => {
+    data.value?.tags.forEach((tag) => {
         lookup[tag.uuid] = tag;
     });
     return lookup;

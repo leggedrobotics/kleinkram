@@ -20,6 +20,7 @@ import SparkMD5 from 'spark-md5';
 import { MissionDto } from '@api/types/Mission.dto';
 import { ProjectDto } from '@api/types/Project.dto';
 import { FileDto } from '@api/types/Files.dto';
+import { AxiosError } from 'axios';
 
 export const createFileAction = async (
     selectedMission: MissionDto,
@@ -130,14 +131,14 @@ async function _createFileAction(
         selectedMission.uuid,
     ).catch((e: unknown) => {
         let errorMsg = '';
-        if (e instanceof Error) {
+        if (e instanceof AxiosError) {
             errorMsg = e.response.message;
         }
 
         let msg = `Upload of Files failed: ${errorMsg}`;
 
         // show special error for 403
-        if (e.response && e.response.status === 403) {
+        if (e instanceof AxiosError && e.response?.status === 403) {
             msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
         }
 

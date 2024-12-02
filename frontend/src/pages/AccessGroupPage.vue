@@ -459,7 +459,7 @@ const projectCols = computed(() => {
             label: 'Group Rights',
             style: 'max-width: 100px',
             align: 'left',
-            field: (row) => AccessGroupRights[row.rights],
+            field: (row: any) => AccessGroupRights[row.rights],
         });
         return defaultCols;
     }

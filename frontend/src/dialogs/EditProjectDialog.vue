@@ -35,7 +35,7 @@ const props = defineProps<{
 
 const saveProjects = (): void => {
     editProjectRef.value
-        .save_changes()
+        ?.save_changes()
         .then(onDialogOK)
         .catch(() => {
             console.error('Error saving project');

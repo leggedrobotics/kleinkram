@@ -226,10 +226,10 @@
             >
                 <q-chip
                     v-for="value in Object.values(tagFilter)"
-                    :key="value.name"
+                    :key="value?.name"
                     dense
                 >
-                    {{ value.name }}: {{ value.value }}
+                    {{ value?.name }}: {{ value?.value }}
                 </q-chip>
             </q-btn>
         </div>
@@ -418,7 +418,8 @@ const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
-const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
+const tagFilter: Ref<Record<string, { name: string; value: string } | {}>> =
+    ref({});
 
 end.setHours(23, 59, 59, 999);
 
@@ -474,7 +475,7 @@ const queryKeyFiles = computed(() => [
 const tagFilterQuery = computed(() => {
     const query: Record<string, any> = {};
     Object.keys(tagFilter.value).forEach((key: string) => {
-        query[key] = tagFilter.value[key]?.value ?? '';
+        query[key] = tagFilter.value[key] ?? '';
     });
     return query;
 });
@@ -670,7 +671,7 @@ function resetFilter() {
         { name: 'Bag', value: false },
         { name: 'MCAP', value: true },
     ];
-    tagFilter.value = [];
+    tagFilter.value = {};
     resetStartDate();
     resetEndDate();
 }

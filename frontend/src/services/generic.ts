@@ -239,7 +239,11 @@ export function getActionColor(state: ActionState) {
     }
 }
 
-export function getTooltip(state: FileState) {
+export function getTooltip(state: FileState | undefined) {
+    if (state === undefined) {
+        return 'Unknown';
+    }
+
     switch (state) {
         case FileState.OK:
             return 'File is OK';

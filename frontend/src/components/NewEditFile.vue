@@ -87,6 +87,7 @@
                                     clickable
                                     @click="
                                         () => {
+                                            if (editableFile === null) return;
                                             editableFile.mission = mission;
                                             dd_open_2 = false;
                                         }

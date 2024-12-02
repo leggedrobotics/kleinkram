@@ -81,11 +81,9 @@
 <script setup lang="ts">
 import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap } from 'src/services/generic';
-import { useQuery } from '@tanstack/vue-query';
-import { searchAccessGroups } from 'src/services/queries/access';
 import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
-import { useUserSearch } from '../hooks/customQueryHooks';
+import { useSearchAccessGroup, useUserSearch } from '../hooks/customQueryHooks';
 
 const props = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;
@@ -104,12 +102,10 @@ const { data: foundUsers } = useUserSearch(search);
 
 const searchAccessGroupsKey = computed(() => ['accessGroups', search.value]);
 const enabled = computed(() => search.value.length >= 2);
-const { data: _foundAccessGroups } = useQuery({
-    queryKey: searchAccessGroupsKey,
-    queryFn: () =>
-        searchAccessGroups(search.value, false, false, false, 0, 100),
-    enabled,
-});
+const { data: _foundAccessGroups } = useSearchAccessGroup(
+    searchAccessGroupsKey.value,
+    enabled.value,
+);
 const foundAccessGroups = computed(() =>
     _foundAccessGroups.value ? _foundAccessGroups.value[0] : [],
 );

@@ -3,6 +3,7 @@ import { FlatMissionDto } from './Mission.dto';
 import { CategoryDto } from './Category.dto';
 import { FileState } from '../../frontend_shared/enum';
 import { UserDto } from './User.dto';
+import { TopicDto } from './Topic.dto';
 
 export class FileDto {
     @ApiProperty()
@@ -46,6 +47,9 @@ export class FileDto {
 
     @ApiProperty()
     hash!: string;
+
+    @ApiProperty()
+    topics!: TopicDto[];
 }
 
 export class FilesDto {

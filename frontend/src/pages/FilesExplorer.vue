@@ -371,6 +371,7 @@ import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/TagsDto.dto';
 import { CategoryDto } from '@api/types/Category.dto';
 import { FileDto } from '@api/types/Files.dto';
+import { AxiosError } from 'axios';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -401,8 +402,8 @@ const selectedFileTypes = computed(() => {
 });
 const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
-const selectedFileHealth = computed<string | undefined>({
-    get: () => handler.searchParams.health,
+const selectedFileHealth = computed<string, string | undefined>({
+    get: () => handler.value.searchParams.health,
     set: (value: string) => {
         handler.value.setSearch({ health: value, name: search.value });
     },
@@ -440,7 +441,7 @@ const {
     missionUuid.value ?? '',
     (e: unknown) => {
         let errorMsg = '';
-        if (e instanceof Error) {
+        if (e instanceof AxiosError) {
             errorMsg = e.response.data.message;
         }
 
@@ -457,7 +458,7 @@ const {
 );
 registerNoPermissionErrorHandler(
     isLoadingError,
-    (missionUuid.value ?? '') as unknown as Ref<string, string>,
+    missionUuid.value,
     'mission',
     error,
 );
@@ -501,7 +502,7 @@ const { mutate: _deleteFiles } = useMutation({
     },
     onError: (e: unknown) => {
         let errorMsg = '';
-        if (e instanceof Error) {
+        if (e instanceof AxiosError) {
             errorMsg = e.response.data.message;
         }
 
@@ -625,7 +626,7 @@ const onActionsClick = async (): Promise<void> => {
     });
 };
 
-const clearSelectedFileState = () => {
+const clearSelectedFileState = (): void => {
     selectedFileHealth.value = undefined;
 };
 </script>

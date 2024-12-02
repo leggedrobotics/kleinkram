@@ -124,7 +124,7 @@ async function save_changes(): Promise<void> {
             });
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error as Error);
     });
 
     const cache = queryClient.getQueryCache();

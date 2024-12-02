@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="`File: ${data.filename || 'Loading...'}`">
+    <title-section :title="`File: ${data?.filename || 'Loading...'}`">
         <template #buttons>
             <div style="width: 340px">
                 <button-group>
@@ -12,7 +12,7 @@
                         label="Download"
                         :disable="
                             [FileState.LOST, FileState.UPLOADING].indexOf(
-                                data.state,
+                                data?.state,
                             ) !== -1
                         "
                         @click="download(data)"
@@ -31,8 +31,8 @@
                                     v-ripple
                                     clickable
                                     :disable="
-                                        data.state === FileState.LOST ||
-                                        data.state === FileState.ERROR
+                                        data?.state === FileState.LOST ||
+                                        data?.state === FileState.ERROR
                                     "
                                     @click="_copyLink"
                                 >
@@ -47,7 +47,7 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    :disable="!data.hash"
+                                    :disable="!data?.hash"
                                     @click="copy(data)"
                                 >
                                     <q-item-section avatar>
@@ -58,7 +58,7 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    @click="() => copyToClipboard(data.uuid)"
+                                    @click="() => copyToClipboard(data?.uuid)"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
@@ -97,7 +97,7 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data.mission.project.name }}
+                            {{ data?.mission.project.name }}
                         </div>
                     </div>
                     <div class="col-2">
@@ -110,29 +110,29 @@
                                 text-overflow: ellipsis;
                             "
                         >
-                            {{ data.mission.name }}
-                            <q-tooltip> {{ data.mission.name }}</q-tooltip>
+                            {{ data?.mission.name }}
+                            <q-tooltip> {{ data?.mission.name }}</q-tooltip>
                         </div>
                     </div>
                     <div class="col-3">
-                        <div v-if="data.date">
+                        <div v-if="data?.date">
                             <div class="text-placeholder">Start Date</div>
                             <div
                                 class="text-caption text-primary"
                                 style="font-size: 16px"
                             >
-                                {{ formatDate(data.date, true) }}
+                                {{ formatDate(data?.date, true) }}
                             </div>
                         </div>
                     </div>
                     <div class="col-2">
-                        <div v-if="data.creator">
+                        <div v-if="data?.creator">
                             <div class="text-placeholder">Creator</div>
                             <div
                                 class="text-caption text-primary"
                                 style="font-size: 16px"
                             >
-                                {{ data.creator.name }}
+                                {{ data?.creator.name }}
                             </div>
                         </div>
                     </div>
@@ -140,8 +140,8 @@
                         <div class="text-placeholder">File State</div>
 
                         <q-icon
-                            :name="getIcon(data.state)"
-                            :color="getColorFileState(data.state)"
+                            :name="getIcon(data?.state)"
+                            :color="getColorFileState(data?.state)"
                             style="font-size: 24px"
                         >
                             <q-tooltip>
@@ -155,13 +155,13 @@
                             class="text-caption text-primary"
                             style="font-size: 16px"
                         >
-                            {{ data.size ? formatSize(data.size) : '...' }}
+                            {{ data?.size ? formatSize(data?.size) : '...' }}
                         </div>
                     </div>
                 </div>
                 <div class="row items-start">
                     <q-chip
-                        v-for="cat in data.categories.categories"
+                        v-for="cat in data?.categories"
                         :key="cat.uuid"
                         :label="cat.name"
                         :color="hashUUIDtoColor(cat.uuid)"
@@ -201,7 +201,7 @@
                 flat
                 bordered
                 separator="none"
-                :rows="data.topics"
+                :rows="data?.topics"
                 :columns="columns as any"
                 row-key="uuid"
                 :loading="isLoading"
@@ -209,7 +209,7 @@
             />
 
             <div
-                v-if="!displayTopics && data.state === FileState.OK && !!mcap"
+                v-if="!displayTopics && data?.state === FileState.OK && !!mcap"
                 class="flex column"
             >
                 <span class="q-my-sm">
@@ -226,7 +226,7 @@
                     @click="redirectToMcap"
                 />
             </div>
-            <div v-if="data.state !== FileState.OK">
+            <div v-if="data?.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
                 </h5>
@@ -276,6 +276,7 @@ import EditFileButton from 'components/buttons/EditFileButton.vue';
 import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
 import { FileState, FileType } from '@common/enum';
+import { FileDto } from '@api/types/Files.dto';
 
 const $router = useRouter();
 
@@ -297,11 +298,11 @@ const mcapName = computed(() => data.value.filename.replace('.bag', '.mcap'));
 
 const { data: _filesReturn } = useMcapFilesOfMission(
     missionUUID.value,
-    mcapName,
+    mcapName.value,
 );
 const { data: queues } = useQueueForFile(
     data.value.filename.replace(/\.(bag|mcap)$/, ''),
-    data.value.mission.uuid ?? '',
+    data.value?.mission.uuid ?? '',
 );
 
 const filesReturn = computed(() =>
@@ -310,7 +311,7 @@ const filesReturn = computed(() =>
 
 const displayTopics = computed(() => {
     return (
-        data.value.type === FileType.MCAP && data.value.state === FileState.OK
+        data.value.type === FileType.MCAP && data.value?.state === FileState.OK
     );
 });
 const mcap = computed(() =>
@@ -373,6 +374,10 @@ const pagination = ref({
     rowsPerPage: 20,
 });
 
-const copy = (data) => copyToClipboard(data.hash);
-const download = (data) => _downloadFile(data.uuid, data.filename);
+const copy = async (d: FileDto | undefined): Promise<void> => {
+    await copyToClipboard(d?.hash);
+};
+const download = async (d: FileDto | undefined): Promise<void> => {
+    await _downloadFile(d?.uuid, d?.filename);
+};
 </script>

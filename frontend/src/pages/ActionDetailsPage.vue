@@ -404,8 +404,8 @@ const openMission = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
-            project_uuid: action.mission?.project?.uuid,
-            mission_uuid: action.mission?.uuid,
+            project_uuid: action.value.mission.project?.uuid,
+            mission_uuid: action.value.mission?.uuid,
         },
     });
 };

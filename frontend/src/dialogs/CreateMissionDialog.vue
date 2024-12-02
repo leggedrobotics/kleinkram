@@ -284,7 +284,7 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
-    createFileRef?.createFileAction();
+    createFileRef.value.createFileAction();
     onDialogOK();
 };
 </script>
