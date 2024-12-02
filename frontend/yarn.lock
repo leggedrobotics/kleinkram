@@ -1328,25 +1328,25 @@
     "@smithy/types" "^3.6.0"
     tslib "^2.6.2"
 
-"@tanstack/match-sorter-utils@^8.15.1":
+"@tanstack/match-sorter-utils@^8.19.4":
   version "8.19.4"
   resolved "https://registry.yarnpkg.com/@tanstack/match-sorter-utils/-/match-sorter-utils-8.19.4.tgz#dacf772b5d94f4684f10dbeb2518cf72dccab8a5"
   integrity sha512-Wo1iKt2b9OT7d+YGhvEPD3DXvPv2etTusIMhMUoG7fbhmxcXCtIjJDEygy91Y2JFlwGyjqiBPRozme7UD8hoqg==
   dependencies:
     remove-accents "0.5.0"
 
-"@tanstack/query-core@5.59.20":
-  version "5.59.20"
-  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.59.20.tgz#356718976536727b9af0ad1163a21fd6a44ee0a9"
-  integrity sha512-e8vw0lf7KwfGe1if4uPFhvZRWULqHjFcz3K8AebtieXvnMOz5FSzlZe3mTLlPuUBcydCnBRqYs2YJ5ys68wwLg==
+"@tanstack/query-core@5.62.1":
+  version "5.62.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.62.1.tgz#0ef80db0832f7d96cf3f93b81470ce5a36e84478"
+  integrity sha512-thYv90GkMcfumgmtp6sptC18SqxWwXTCKUuk7jyeHHn7kYouh0VJrowuuBffAIBiR3Z8OnsccmPUnP1leKJBVQ==
 
-"@tanstack/vue-query@^5.59.20":
-  version "5.59.20"
-  resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.59.20.tgz#abbdf4339b3fe9078b2e23c695a8aba350fff2f8"
-  integrity sha512-kIs1GfXh7jVLycbnQDghfdrcvrZz5fxnMF7eAAp8O3ZfhHQWfP57DBXbOvww4Y+TI0EvVoh+hihX+LNFBGFKLg==
+"@tanstack/vue-query@^5.62.1":
+  version "5.62.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.62.1.tgz#ba150d54a38b732c4556d7036305e8a4417fd62e"
+  integrity sha512-C74NSnat7F1KKspiFqz1QifmYeYpDllbgIlNxTNBquYmgNKKtmxlhOvaaeWR3h8oHal4RvVLvbnIKc1vuRmH9w==
   dependencies:
-    "@tanstack/match-sorter-utils" "^8.15.1"
-    "@tanstack/query-core" "5.59.20"
+    "@tanstack/match-sorter-utils" "^8.19.4"
+    "@tanstack/query-core" "5.62.1"
     "@vue/devtools-api" "^6.6.3"
     vue-demi "^0.14.10"
 
