@@ -38,7 +38,7 @@ const canModify = computed(() =>
     ),
 );
 
-function openTagsDialog() {
+const openTagsDialog = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         component: ModifyMissionTagsDialog,
@@ -46,7 +46,7 @@ function openTagsDialog() {
             mission: props.mission,
         },
     });
-}
+};
 </script>
 
 <style scoped>

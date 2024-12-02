@@ -11,15 +11,15 @@ import { AccessService } from './access.service';
 import {
     CanCreate,
     CanDeleteProject,
+    CanEditGroup,
     CanReadProject,
     CanWriteProject,
     IsAccessGroupCreator,
-    CanEditGroup,
     UserOnly,
 } from './roles.decorator';
 import { AddUser, AuthRes } from './paramDecorator';
 import {
-    QueryOptionalBoolean,
+    QueryOptionalAccessGroupType,
     QueryOptionalString,
     QuerySkip,
     QueryUUID,
@@ -32,10 +32,15 @@ import { AddAccessGroupToProjectDto } from './dto/AddAccessGroupToProject.dto';
 import { RemoveAccessGroupFromProjectDto } from './dto/RemoveAccessGroupFromProject.dto';
 import { SetAccessGroupUserExpirationDto } from './dto/SetAccessGroupUserExpiration.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
-import { CountedAccessGroups } from './dto/CountedAccessGroups.dto';
+import {
+    AccessGroupsDto,
+    GroupMembershipDto,
+} from '@common/api/types/User.dto';
+import { AccessGroupType } from '@common/frontend_shared/enum';
+import { ProjectDto } from '@common/api/types/Project.dto';
 
 @Controller('access')
 export class AccessController {
@@ -61,12 +66,14 @@ export class AccessController {
     async getAccessGroup(
         @QueryUUID('uuid', 'AccessGroup UUID') uuid: string,
     ): Promise<AccessGroup> {
-        return await this.accessService.getAccessGroup(uuid).catch((e) => {
-            if (e instanceof EntityNotFoundError) {
-                throw new NotFoundException('AccessGroup not found');
-            }
-            throw e;
-        });
+        return await this.accessService
+            .getAccessGroup(uuid)
+            .catch((e: unknown) => {
+                if (e instanceof EntityNotFoundError) {
+                    throw new NotFoundException('AccessGroup not found');
+                }
+                throw e;
+            });
     }
 
     @Post('create')
@@ -153,7 +160,7 @@ export class AccessController {
     async addUserToAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return await this.accessService
             .addUserToAccessGroup(body.uuid, body.userUUID)
-            .catch((e) => {
+            .catch((e: unknown) => {
                 if (e instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');
                 }
@@ -178,15 +185,14 @@ export class AccessController {
         );
     }
 
-    @ApiResponse({
-        status: 200,
-        type: CountedAccessGroups,
-        description: 'Returns the AccessGroups',
-    })
     @ApiOperation({
         summary: 'Get filtered AccessGroups',
         description:
             'Joins: memberships, memberships.user, project_access, project_access.project, creator',
+    })
+    @ApiOkResponse({
+        description: 'Returns the AccessGroups',
+        type: AccessGroupsDto,
     })
     @Get('filtered')
     @CanCreate()
@@ -196,22 +202,13 @@ export class AccessController {
         search: string,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
-        @QueryOptionalBoolean('personal', 'Only Personal Access Groups')
-        personal: boolean,
-        @QueryOptionalBoolean('creator', 'Only Access Groups created by user')
-        creator: boolean,
-        @QueryOptionalBoolean(
-            'member',
-            'Only Access Groups the user is member of',
-        )
-        member: boolean,
         @AddUser() user: AuthRes,
-    ): Promise<CountedAccessGroups> {
+        @QueryOptionalAccessGroupType('type', 'Type of AccessGroup')
+        type?: AccessGroupType,
+    ): Promise<AccessGroupsDto> {
         return this.accessService.searchAccessGroup(
             search,
-            personal,
-            creator,
-            member,
+            type,
             user,
             skip,
             take,
@@ -222,12 +219,16 @@ export class AccessController {
         summary: 'Add Access Group to Project',
         description: 'Adds an Access Group to a Project with the given rights.',
     })
+    @ApiOkResponse({
+        description: 'Returns the Project',
+        type: ProjectDto,
+    })
     @Post('addAccessGroupToProject')
     @CanWriteProject()
     async addAccessGroupToProject(
         @Body() body: AddAccessGroupToProjectDto,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<ProjectDto> {
         return this.accessService.addAccessGroupToProject(
             body.uuid,
             body.accessGroupUUID,
@@ -241,7 +242,7 @@ export class AccessController {
     async removeAccessGroupFromProject(
         @Body() body: RemoveAccessGroupFromProjectDto,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<void> {
         return this.accessService.removeAccessGroupFromProject(
             body.uuid,
             body.accessGroupUUID,
@@ -283,7 +284,9 @@ export class AccessController {
 
     @Post('setExpireDate')
     @CanEditGroup()
-    async setExpireDate(@Body() body: SetAccessGroupUserExpirationDto) {
+    async setExpireDate(
+        @Body() body: SetAccessGroupUserExpirationDto,
+    ): Promise<GroupMembershipDto> {
         return this.accessService.setExpireDate(body.aguUUID, body.expireDate);
     }
 }

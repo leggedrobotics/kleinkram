@@ -101,7 +101,7 @@ export class MissionService {
     }
 
     async findOne(uuid: string): Promise<FlatMissionDto> {
-        return (await this.missionRepository.findOneOrFail({
+        const mission = (await this.missionRepository.findOneOrFail({
             where: { uuid },
             relations: [
                 'project',
@@ -111,6 +111,8 @@ export class MissionService {
                 'project.requiredTags',
             ],
         })) as unknown as FlatMissionDto;
+        logger.debug(JSON.stringify(mission, null, 2));
+        return mission;
     }
 
     async findMissionByProjectMinimal(

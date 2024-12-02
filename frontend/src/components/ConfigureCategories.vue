@@ -20,7 +20,7 @@ const props = defineProps<{
     file: FileDto;
 }>();
 
-const selected = ref<CategoryDto[]>(props.file.categories || []);
+const selected = ref<CategoryDto[]>(props.file.categories);
 
 watch(
     () => selected.value,
@@ -29,9 +29,9 @@ watch(
     },
 );
 
-function updateSelected(value: CategoryDto[]) {
+const updateSelected = (value: CategoryDto[]): void => {
     selected.value = value;
-}
+};
 </script>
 
 <style scoped></style>

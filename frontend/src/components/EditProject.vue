@@ -107,33 +107,25 @@ async function save_changes(): Promise<void> {
         project.value.uuid,
         projectName.value.trim(),
         projectDescription.value,
-    ).catch(
-        (error: {
-            response: {
-                data: {
-                    message: string;
-                };
-            };
-        }) => {
-            if (error.response.data.message.includes('Project')) {
-                Notify.create({
-                    message: `Error updating project: ${error.response.data.message}`,
-                    color: 'negative',
-                    position: 'bottom',
-                    timeout: 5000,
-                });
-            } else {
-                Notify.create({
-                    message: `Error updating project: ${error.response.data.message}`,
-                    color: 'negative',
-                    position: 'bottom',
-                    timeout: 5000,
-                });
-            }
+    ).catch((error: unknown) => {
+        if (error.response.data.message.includes('Project')) {
+            Notify.create({
+                message: `Error updating project: ${error.response.data.message}`,
+                color: 'negative',
+                position: 'bottom',
+                timeout: 5000,
+            });
+        } else {
+            Notify.create({
+                message: `Error updating project: ${error.response.data.message}`,
+                color: 'negative',
+                position: 'bottom',
+                timeout: 5000,
+            });
+        }
 
-            return Promise.reject(error);
-        },
-    );
+        return Promise.reject(error);
+    });
 
     const cache = queryClient.getQueryCache();
     const filtered = cache

@@ -10,6 +10,7 @@
         placeholder="Seach"
         :options="searchResults"
         class="q-pb-md"
+        autocomplete="false"
         @click="
             (e) => {
                 enableSearch();
@@ -55,17 +56,13 @@
 
                         accessRights = accessRights?.concat([
                             {
-                                uuid: props.opt.uuid,
-                                name: props.opt.name,
+                                ...props.opt,
                                 rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount ?? 0,
                             },
                         ]) || [
                             {
-                                uuid: props.opt.uuid,
-                                name: props.opt.name,
+                                ...props.opt,
                                 rights: AccessGroupRights.READ,
-                                memberCount: props.opt.memberCount ?? 0,
                             },
                         ];
                     }
@@ -86,7 +83,7 @@
                         }"
                     >
                         <q-icon
-                            v-if="!props.opt.name.startsWith('Personal: ')"
+                            v-if="props.opt.type !== AccessGroupType.PRIMARY"
                             name="sym_o_group"
                             class="q-mr-sm"
                             style="
@@ -96,7 +93,7 @@
                             "
                         />
                         <q-icon
-                            v-if="props.opt.name.startsWith('Personal: ')"
+                            v-if="props.opt.type === AccessGroupType.PRIMARY"
                             name="sym_o_person"
                             class="q-mr-sm"
                             style="
@@ -106,9 +103,9 @@
                             "
                         />
 
-                        {{ props.opt.name.replace('Personal: ', '') }}
+                        {{ props.opt.name }}
                         <template
-                            v-if="!props.opt.name.startsWith('Personal: ')"
+                            v-if="props.opt.type !== AccessGroupType.PRIMARY"
                         >
                             <span
                                 :class="{
@@ -117,7 +114,12 @@
                                     ),
                                 }"
                             >
-                                ({{ props.opt.memberCount }} members)
+                                ({{ props.opt.memberships.length }}
+                                {{
+                                    props.opt.memberships.length === 1
+                                        ? 'member'
+                                        : 'members'
+                                }})
                             </span>
                         </template>
 
@@ -160,7 +162,7 @@
         <template #body-cell-name="props">
             <q-td :props="props">
                 <q-icon
-                    v-if="!props.row.name.startsWith('Personal: ')"
+                    v-if="props.row.type !== AccessGroupType.PRIMARY"
                     name="sym_o_group"
                     class="q-mr-sm"
                     style="
@@ -170,7 +172,7 @@
                     "
                 />
                 <q-icon
-                    v-if="props.row.name.startsWith('Personal: ')"
+                    v-if="props.row.type === AccessGroupType.PRIMARY"
                     name="sym_o_person"
                     class="q-mr-sm"
                     style="
@@ -179,12 +181,17 @@
                         border-radius: 50%;
                     "
                 />
-                {{ props.row.name.replace('Personal: ', '') }}
+                {{ props.row.name }}
                 <span
-                    v-if="!props.row.name.startsWith('Personal: ')"
+                    v-if="props.row.type !== AccessGroupType.PRIMARY"
                     class="help-text"
                 >
-                    ({{ props.row.memberCount }} members)
+                    ({{ props.row.memberships.length }}
+                    {{
+                        props.row.memberships.length === 1
+                            ? 'member'
+                            : 'members'
+                    }})
                 </span>
             </q-td>
         </template>
@@ -254,12 +261,11 @@
 import { getAccessRightDescription } from 'src/services/generic';
 import { QSelect, QTable } from 'quasar';
 import { computed, ref } from 'vue';
-
-import { useQuery } from '@tanstack/vue-query';
-import { searchAccessGroups } from 'src/services/queries/access';
 import { DefaultRightDto } from '@api/types/DefaultRights.dto';
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { accessGroupRightsList } from '../enums/accessGroupRightsList';
+import { useSearchAccessGroup } from '../hooks/customQueryHooks';
+import { AccessGroupDto } from '@api/types/User.dto';
 
 const { minAccessRights } = defineProps<{
     minAccessRights: DefaultRightDto[];
@@ -267,7 +273,7 @@ const { minAccessRights } = defineProps<{
 const accessRights = defineModel<DefaultRightDto[]>();
 
 const sortedAccessRights = computed(() =>
-    [...(accessRights.value || [])].sort((a, b) =>
+    [...(accessRights.value ?? [])].sort((a, b) =>
         b.name.localeCompare(a.name),
     ),
 );
@@ -299,7 +305,10 @@ const accessRightsColumns = [
     },
 ];
 
-const updateRights = (group: AccessRight, right: AccessGroupRights) => {
+const updateRights = (
+    group: AccessGroupDto,
+    right: AccessGroupRights,
+): void => {
     if (isBelowMinRights(group, right)) {
         console.log('Cannot set rights below minimum');
         return;
@@ -311,10 +320,10 @@ const updateRights = (group: AccessRight, right: AccessGroupRights) => {
                 return { ...g, rights: right };
             }
             return g;
-        }) || [];
+        }) && [];
 };
 
-const removeGroup = (group: AccessGroupRights) => {
+const removeGroup = (group: AccessGroupDto): void => {
     if (minAccessRights.filter((r) => r.uuid === group.uuid).length > 0) {
         console.log('Cannot remove minimum access group');
         return;
@@ -325,59 +334,29 @@ const removeGroup = (group: AccessGroupRights) => {
     );
 };
 
-const enabled = computed(() => groupSearch.value.length >= 2);
-const searchAccessGroupsKey = computed(() => [
-    'accessGroups',
-    groupSearch.value,
-]);
-const { data: foundAccessGroups } = useQuery({
-    queryKey: searchAccessGroupsKey,
-    queryFn: () =>
-        searchAccessGroups(groupSearch.value, false, false, false, 0, 10),
-    enabled,
-});
+const { data: foundAccessGroups } = useSearchAccessGroup(
+    groupSearch,
+    undefined,
+);
 
-const searchAccessGroupsUserKey = computed(() => [
-    'accessGroupsUser',
-    groupSearch.value,
-]);
-const { data: foundUsers } = useQuery({
-    queryKey: searchAccessGroupsUserKey,
-    queryFn: () =>
-        searchAccessGroups(groupSearch.value, true, false, false, 0, 10),
-    enabled,
-});
-
-const isBelowMinRights = (group: AccessRight, right: AccessGroupRights) => {
+const isBelowMinRights = (
+    group: AccessGroupDto,
+    right: AccessGroupRights,
+): boolean => {
     const minAccess = minAccessRights.find((r) => r.uuid === group.uuid);
-    return minAccess && minAccess.rights > right;
+    if (minAccess === undefined) return false;
+    return minAccess.rights > right;
 };
 
-const searchResults = computed(() => {
-    const results: AccessRight[] = [];
+const searchResults = computed<AccessGroupDto[]>(() => {
+    if (foundAccessGroups.value !== undefined) {
+        return foundAccessGroups.value.accessGroups;
+    }
 
-    foundAccessGroups.value?.[0].forEach((group) => {
-        results.push({
-            uuid: group.uuid,
-            name: group.name,
-            rights: null,
-            memberCount: group.memberships.length > 0 || 0,
-        });
-    });
-
-    foundUsers.value?.[0].forEach((group) => {
-        results.push({
-            uuid: group.uuid,
-            name: group.name,
-            rights: null,
-            memberCount: 1,
-        });
-    });
-
-    return results;
+    return [] as AccessGroupDto[];
 });
 
-const enableSearch = () => {
+const enableSearch = (): void => {
     searchEnabled.value = true;
 };
 </script>

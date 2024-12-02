@@ -38,7 +38,7 @@ const canModify = computed(() => {
     );
 });
 
-function editMission() {
+const editMission = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         component: EditMissionDialog,
@@ -47,7 +47,7 @@ function editMission() {
         },
         persistent: true,
     });
-}
+};
 </script>
 
 <style scoped>

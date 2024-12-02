@@ -27,7 +27,6 @@ const props = defineProps<{
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.mission) return false;
     return canModifyMission(
         props.mission.mission.uuid,
         props.mission.mission.project.uuid,
@@ -35,8 +34,7 @@ const canModify = computed(() => {
     );
 });
 
-function addCategories() {
-    if (!canModify.value) return;
+const addCategories = (): void => {
     $q.dialog({
         component: AddMultiCategory,
         componentProps: {
@@ -46,7 +44,7 @@ function addCategories() {
         },
         persistent: true,
     });
-}
+};
 </script>
 
 <style scoped></style>

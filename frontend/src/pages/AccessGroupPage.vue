@@ -46,7 +46,7 @@
                         color="icon-secondary"
                         class="button-border"
                         icon="sym_o_loop"
-                        @click="refetch"
+                        @click="refetchOnClick"
                     >
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
@@ -67,11 +67,12 @@
                 flat
                 bordered
                 separator="none"
-                :rows="project_rows"
-                :columns="project_cols as any"
+                :rows="projectRows"
+                :columns="projectCols as any"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
+                binary-state-sort
             >
                 <template #body-selection="props">
                     <q-checkbox
@@ -98,7 +99,7 @@
                                         v-ripple
                                         style="width: 180px"
                                         clickable
-                                        @click="() => _rowClick(props.row.uuid)"
+                                        @click="() => rowClick(props.row.uuid)"
                                     >
                                         <q-item-section>
                                             View Project Details
@@ -156,7 +157,7 @@
                         color="icon-secondary"
                         class="button-border"
                         icon="sym_o_loop"
-                        @click="refetch"
+                        @click="refetchOnClick"
                     >
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
@@ -178,11 +179,12 @@
                 v-model:pagination="pagination2"
                 v-model:selected="selectedUsers"
                 :rows="accessGroup?.memberships || []"
-                :columns="user_cols as any"
+                :columns="userCols as any"
                 style="margin-top: 8px"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
+                binary-state-sort
             >
                 <template #body-selection="props">
                     <q-checkbox
@@ -250,7 +252,7 @@
                                         clickable
                                         @click="
                                             () =>
-                                                _removeUser(props.row.user.uuid)
+                                                removeUser(props.row.user.uuid)
                                         "
                                     >
                                         <q-item-section>Remove</q-item-section>
@@ -314,6 +316,15 @@ const pagination2 = ref({
 
 const queryClient = useQueryClient();
 
+const refetchOnClick: (
+    evt: Event,
+    go?: (opts?: {
+        to?: any;
+        replace?: boolean | undefined;
+        returnRouterError?: boolean | undefined;
+    }) => Promise<any>,
+) => void = () => refetch;
+
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
 function isExpired(date: Date | null): boolean {
@@ -323,7 +334,7 @@ function isExpired(date: Date | null): boolean {
     return date < new Date();
 }
 
-const { mutate: _removeUser } = useMutation({
+const { mutate: removeUser } = useMutation({
     mutationFn: (userUUID: string) =>
         removeUserFromAccessGroup(userUUID, uuid.value),
     onSuccess: async () => {
@@ -358,7 +369,7 @@ watch(
     { immediate: true },
 );
 
-const project_rows = computed(() => {
+const projectRows = computed(() => {
     console.log(accessGroup.value);
     return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
         return {
@@ -369,22 +380,26 @@ const project_rows = computed(() => {
     });
 });
 
-function openAddProject() {
+const openAddProject = (): void => {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
         componentProps: {
             access_group_uuid: uuid.value,
         },
     });
-}
+};
 
-const rename_columns = (cols: any[], old_label: string, new_label: string) => {
-    cols.filter((col) => col.label === old_label).forEach((col) => {
-        col.label = new_label;
+const renameColumns = (
+    cols: any[],
+    oldLabel: string,
+    newLabel: string,
+): void => {
+    cols.filter((col) => col.label === oldLabel).forEach((col) => {
+        col.label = newLabel;
     });
 };
 
-const drop_columns = (cols: any[], label: string) => {
+const dropColumns = (cols: any[], label: string) => {
     return cols.filter((col) => col.label !== label);
 };
 
@@ -416,7 +431,7 @@ const { mutate: setAccessGroup } = useMutation({
     },
 });
 
-function openSetExpirationDialog(agu: GroupMembershipDto) {
+const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
     $q.dialog({
         component: SetAccessGroupExpirationDialog,
         componentProps: {
@@ -428,14 +443,14 @@ function openSetExpirationDialog(agu: GroupMembershipDto) {
             expirationDate,
         });
     });
-}
+};
 
-const project_cols = computed(() => {
+const projectCols = computed(() => {
     {
         let defaultCols = [...explorerPageTableColumns];
-        rename_columns(defaultCols, 'Creator', 'Project Creator');
-        rename_columns(defaultCols, 'Description', 'Project Description');
-        defaultCols = drop_columns(defaultCols, 'Created');
+        renameColumns(defaultCols, 'Creator', 'Project Creator');
+        renameColumns(defaultCols, 'Description', 'Project Description');
+        defaultCols = dropColumns(defaultCols, 'Created');
 
         // add as the second to last column
         defaultCols.splice(defaultCols.length - 2, 1, {
@@ -444,27 +459,21 @@ const project_cols = computed(() => {
             label: 'Group Rights',
             style: 'max-width: 100px',
             align: 'left',
-            field: (row: any) => AccessGroupRights[row.rights],
+            field: (row) => AccessGroupRights[row.rights],
         });
         return defaultCols;
     }
 });
-const user_cols = [
+
+const userCols = [
     {
         name: 'name',
         required: true,
         label: 'Name',
         align: 'left',
-        field: (row: GroupMembershipDto) => row.user.name,
-        format: (val: string) => val,
+        field: (row: GroupMembershipDto): string => row.user.name,
+        format: (val: string): string => val,
         style: 'width: 10%',
-    },
-    {
-        name: 'email',
-        required: true,
-        label: 'Email',
-        align: 'left',
-        field: (row: GroupMembershipDto) => row.user.email,
     },
     {
         name: 'expiration',
@@ -482,7 +491,7 @@ const user_cols = [
     },
 ];
 
-const _rowClick = async (_uuid: string) => {
+const rowClick = async (_uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {

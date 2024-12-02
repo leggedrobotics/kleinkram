@@ -229,21 +229,21 @@ const removeItem = (value: string) => {
     );
 };
 
-function clearSelection() {
+const clearSelection = () => {
     fileStateFilter.value = fileStateFilter.value.slice(0, 0);
-}
+};
 
 watch(fileStateFilter, () => {
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
-            QueueState[a] > QueueState[b] ? 1 : -1,
+            (((QueueState[a] as number) > QueueState[b]) as number) ? 1 : -1,
         );
     }
 });
 
 const fileStateFilterEnums = computed(() => {
     if (!fileStateFilter.value) return [];
-    return fileStateFilter.value.map((state) => QueueState[state]);
+    return fileStateFilter.value.map((state) => QueueState[state] as number);
 });
 
 const { data: queueEntries, isLoading } = useQuery<ProjectDto[]>({
@@ -267,7 +267,7 @@ const { mutate: removeFile } = useMutation({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
         Notify.create({
             message: `Error deleting file: ${error.response?.data?.message || error.message}`,
             color: 'negative',
@@ -285,7 +285,7 @@ const { mutate: _cancelProcessing } = useMutation({
             predicate: (query) => query.queryKey[0] === 'queue',
         });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
         Notify.create({
             message: `Error canceling processing: ${error.response?.data?.message || error.message}`,
             color: 'negative',
@@ -295,7 +295,7 @@ const { mutate: _cancelProcessing } = useMutation({
     },
 });
 
-function openDeleteFileDialog(queueEntry: FileQueueEntryDto) {
+const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     $q.dialog({
         component: ConfirmDeleteFile,
         componentProps: {
@@ -304,7 +304,7 @@ function openDeleteFileDialog(queueEntry: FileQueueEntryDto) {
     }).onOk(() => {
         removeFile(queueEntry);
     });
-}
+};
 
 async function rowClick(event: any, row: FileQueueEntryDto) {
     const isFile =

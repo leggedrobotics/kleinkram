@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, PropType } from 'vue';
+import { PropType, ref, watch } from 'vue';
 import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
 
@@ -54,11 +54,11 @@ watch(
     { immediate: true },
 );
 
-function select(type: DataType) {
+const select = (type: DataType): void => {
     selectedLabel.value = type;
     isOpen.value = false;
     emits('update:modelValue', type);
-}
+};
 </script>
 
 <style scoped></style>

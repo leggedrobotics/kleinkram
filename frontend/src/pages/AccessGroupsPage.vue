@@ -52,7 +52,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="refetchAccessGroups"
+                    @click="refetchAccessGroup"
                 />
 
                 <CreateAccessGroupDialogOpener />
@@ -207,21 +207,30 @@ const accessGroupKey = computed(() => [
     pagination.value,
 ]);
 
-const { data: foundAccessGroups, refetch: refetchAccessGroups } =
-    useQuery<AccessGroupsDto>({
-        queryKey: accessGroupKey,
-        queryFn: () =>
-            searchAccessGroups(
-                filterOptions.value.search,
-                filterOptions.value.type === AccessGroupType.PRIMARY,
-                filterOptions.value.creator,
-                filterOptions.value.member,
-                (pagination.value.page - 1) * pagination.value.rowsPerPage,
-                pagination.value.rowsPerPage,
-            ),
-    });
+const { data: foundAccessGroups, refetch } = useQuery<AccessGroupsDto>({
+    queryKey: accessGroupKey,
+    queryFn: () =>
+        searchAccessGroups(
+            filterOptions.value.search,
+            filterOptions.value.type,
+            (pagination.value.page - 1) * pagination.value.rowsPerPage,
+            pagination.value.rowsPerPage,
+        ),
+});
+
+const refetchAccessGroup: (
+    evt: Event,
+    go?: (opts?: {
+        to?: any;
+        replace?: boolean | undefined;
+        returnRouterError?: boolean | undefined;
+    }) => Promise<any>,
+) => void = async () => {
+    await refetch();
+};
+
 const accessGroupsTable = computed(() =>
-    foundAccessGroups.value ? foundAccessGroups.value[0] : [],
+    foundAccessGroups.value ? foundAccessGroups.value.accessGroups : [],
 );
 
 async function rowClick(event: any, row: AccessGroupDto) {
@@ -247,7 +256,7 @@ const accessGroupsColumns = [
         required: false,
         label: 'Group Creator',
         align: 'center',
-        field: (row: AccessGroupDto): string => row.creator.name,
+        field: (row: AccessGroupDto): string => row.creator?.name ?? 'N/A',
         format: (val: string): string => val,
         sortable: false,
     },
@@ -281,8 +290,7 @@ const accessGroupsColumns = [
         label: 'Nr of Projects',
         align: 'center',
         field: (row: AccessGroupDto): string =>
-            row.projectAccesses.map((pa: ProjectDto) => pa.project).flat()
-                .length,
+            row.projectAccesses.flat().length,
         format: (val: number): string => val.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',

@@ -61,7 +61,7 @@ function asOneOf<T extends string | number>(value: T, valueList: T[]): T {
     if (!valueList.includes(value)) {
         const message = `The environment variable must be one of the following: ${valueList.join(
             ',',
-        )} - not ${value}`;
+        )} - not ${value.toString()}`;
         throw new Error(message);
     }
     return value;

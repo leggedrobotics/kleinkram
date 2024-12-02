@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add User to Access Group </template>
+        <template #title> Add User to Access Group</template>
 
         <template #content>
             <AddUserToAccessGroup
@@ -32,10 +32,10 @@ const props = defineProps<{
     access_group_uuid: string;
 }>();
 
-function addUserToAccessGroupAction() {
+const addUserToAccessGroupAction = (): void => {
     addUserRef.value?.mutate();
     onDialogOK();
-}
+};
 </script>
 
 <style scoped></style>

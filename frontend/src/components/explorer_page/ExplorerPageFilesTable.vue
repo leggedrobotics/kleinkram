@@ -193,7 +193,7 @@ const {
     queryKey: queryKey,
     queryFn: () =>
         filesOfMission(
-            (mission_uuid.value ?? '') as string,
+            mission_uuid.value ?? '',
             props.url_handler.take,
             props.url_handler.skip,
             props.url_handler.fileType,

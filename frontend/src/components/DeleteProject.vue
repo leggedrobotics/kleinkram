@@ -5,7 +5,7 @@
             <b>{{ project.name }}</b>
         </p>
         <q-input
-            v-model="project_name_check"
+            v-model="projectNameCheck"
             outlined
             placeholder="Confirm Project Name"
             autofocus
@@ -20,7 +20,7 @@ import { deleteProject } from 'src/services/mutations/project';
 import { useHandler } from 'src/hooks/customQueryHooks';
 import { BaseProjectDto } from '@api/types/Project.dto';
 
-const project_name_check = ref('');
+const projectNameCheck = ref('');
 const client = useQueryClient();
 const { project } = defineProps<{
     project: BaseProjectDto;
@@ -29,7 +29,7 @@ const { project } = defineProps<{
 const handler = useHandler();
 
 async function deleteProjectAction() {
-    if (project_name_check.value === project.name) {
+    if (projectNameCheck.value === project.name) {
         await deleteProject(project.uuid)
             .then(async () => {
                 await client.invalidateQueries({
@@ -47,7 +47,7 @@ async function deleteProjectAction() {
 
                 handler.value.setProjectUUID('');
             })
-            .catch((e) => {
+            .catch((e: unknown) => {
                 Notify.create({
                     message: `Error deleting project: ${e.response.data.message}`,
                     color: 'negative',
@@ -59,6 +59,6 @@ async function deleteProjectAction() {
 
 defineExpose({
     deleteProjectAction,
-    project_name_check,
+    project_name_check: projectNameCheck,
 });
 </script>

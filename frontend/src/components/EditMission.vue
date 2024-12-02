@@ -2,11 +2,11 @@
     <div class="row">
         <div class="col-11">
             <q-chip
-                v-for="tag in data?.tags.tags.toSorted((a: TagDto, b: TagDto) =>
+                v-for="tag in data?.tags.toSorted((a: TagDto, b: TagDto) =>
                     a.type.name.localeCompare(b.type.name),
                 )"
                 :key="tag.uuid"
-                :icon-right="icons[tag.type.type]"
+                :icon-right="icons[tag.datatype.type]"
                 class="rotating-element"
                 removable
                 @remove="() => removeTagCallback(tag)"
@@ -22,14 +22,13 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';
 import AddTagDialog from 'src/dialogs/AddTagDialog.vue';
-import { getMission } from 'src/services/queries/mission';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { TagDto } from '@api/types/TagsDto.dto';
-import { MissionDto } from '@api/types/Mission.dto';
+import { useMission } from '../hooks/customQueryHooks';
 
 const queryClient = useQueryClient();
 const $q = useQuasar();
@@ -46,11 +45,7 @@ const icons = {
     [DataType.LOCATION]: 'sym_o_place',
 };
 
-const { data } = useQuery<MissionDto>({
-    queryKey: ['mission', props.mission_uuid],
-    queryFn: () => getMission(props.mission_uuid),
-    enabled: !!props.mission_uuid,
-});
+const { data } = useMission(props.mission_uuid);
 
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     document.querySelectorAll('.rotating-element').forEach((el) => {
@@ -79,7 +74,9 @@ const { mutate: removeTagCallback } = useMutation({
                     query.queryKey[1] === props.mission_uuid,
             );
         for (const query of filtered) {
-            await queryClient.invalidateQueries(query.queryKey);
+            await queryClient.invalidateQueries({
+                queryKey: query.queryKey,
+            });
         }
     },
     onError(e) {

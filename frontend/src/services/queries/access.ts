@@ -1,11 +1,13 @@
 import axios from 'src/api/axios';
-import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupDto, AccessGroupsDto } from '@api/types/User.dto';
 import { ProjectAccessDto } from '@api/types/Project.dto';
+import { AxiosResponse } from 'axios';
+import { AccessGroupType } from '@common/enum';
 
 export const canAddAccessGroup = async (
     projectUuid: string,
 ): Promise<boolean> => {
-    if (!projectUuid) {
+    if (projectUuid === '') {
         return false;
     }
     const response = await axios.get('/access/canAddAccessGroupToProject', {
@@ -17,31 +19,29 @@ export const canAddAccessGroup = async (
 
 export const searchAccessGroups = async (
     search: string,
-    personal: boolean,
-    creator: boolean,
-    member: boolean,
+    type: AccessGroupType | undefined,
     skip: number,
     take: number,
-): Promise<[AccessGroupDto[], 0]> => {
-    const params: Record<string, string | boolean | number> = {
+): Promise<AccessGroupsDto> => {
+    const params: {
+        take: number;
+        search: string;
+        skip: number;
+        type: AccessGroupType | undefined;
+    } = {
+        search,
         skip,
+        type,
         take,
     };
-    if (search) {
-        params.search = search;
-    }
-    if (personal) {
-        params.personal = true;
-    }
-    if (creator) {
-        params.creator = true;
-    }
-    if (member) {
-        params.member = true;
-    }
-    const response = await axios.get('/access/filtered', {
-        params,
-    });
+
+    const response: AxiosResponse<AccessGroupsDto> = await axios.get(
+        '/access/filtered',
+        {
+            params,
+        },
+    );
+
     return response.data;
 };
 

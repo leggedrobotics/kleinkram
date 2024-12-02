@@ -44,7 +44,4 @@ export class ProjectsDto {
     count!: number;
 }
 
-export class ProjectAccessDto {
-    @ApiProperty()
-    project!: FlatProjectDto;
-}
+export class ProjectAccessDto extends FlatProjectDto {}

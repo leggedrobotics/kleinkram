@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import CreateMissionDialog from 'src/dialogs/CreateMissionDialog.vue';
 import { useQuasar } from 'quasar';
-import { computed, inject, Ref } from 'vue';
+import { computed, inject } from 'vue';
 import {
     canCreateMission,
     usePermissionsQuery,
@@ -32,7 +32,7 @@ const canCreate = computed(() => {
     return canCreateMission(project_uuid, permissions.value);
 });
 
-const createNewMission = () => {
+const createNewMission = (): void => {
     if (!canCreate.value) return;
     $q.dialog({
         title: 'Create new mission',

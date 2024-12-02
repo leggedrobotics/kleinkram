@@ -38,10 +38,10 @@ const canDelete = computed(() =>
 );
 const queryClient = useQueryClient();
 
-function removeProject() {
+const removeProject = (): void => {
     if (!canDelete.value) return;
     _removeProject();
-}
+};
 
 const { mutate: _removeProject } = useMutation({
     mutationFn: () =>

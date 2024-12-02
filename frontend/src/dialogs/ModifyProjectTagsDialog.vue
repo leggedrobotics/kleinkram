@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Configure Project Tags </template>
+        <template #title> Configure Project Tags</template>
 
         <template #content>
             <ConfigureTags v-if="project" v-model:selected="selected" />
@@ -22,12 +22,7 @@
                     flat
                     label="Save"
                     class="bg-button-primary"
-                    @click="
-                        () => {
-                            mutate();
-                            onDialogOK();
-                        }
-                    "
+                    @click="saveAction"
                 />
             </ButtonGroup>
         </template>
@@ -71,7 +66,7 @@ watch(
 const { mutate } = useMutation({
     mutationFn: () => {
         return updateTagTypes(
-            project.value?.uuid!,
+            project.value?.uuid,
             selected.value.map((tag) => tag.uuid),
         );
     },
@@ -95,5 +90,10 @@ const { mutate } = useMutation({
         });
     },
 });
+
+const saveAction = (): void => {
+    mutate();
+    onDialogOK();
+};
 </script>
 <style scoped></style>

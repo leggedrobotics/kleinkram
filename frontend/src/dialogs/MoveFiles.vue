@@ -185,7 +185,7 @@ const { mutate: moveFilesMutation } = useMutation({
                 query.queryKey[0] === 'missions',
         });
     },
-    onError(e: any) {
+    onError(e: unknown) {
         console.log(e);
         Notify.create({
             group: false,
@@ -198,10 +198,10 @@ const { mutate: moveFilesMutation } = useMutation({
     },
 });
 
-function saveAction() {
+const saveAction = (): void => {
     moveFilesMutation();
     onDialogOK();
-}
+};
 </script>
 
 <style scoped></style>

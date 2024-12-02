@@ -48,18 +48,9 @@
     </q-dialog>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 
-export default {
-    emits: [...useDialogPluginComponent.emits],
-
-    setup() {
-        const { dialogRef, onDialogCancel } = useDialogPluginComponent();
-        return {
-            dialogRef,
-            onDialogCancel,
-        };
-    },
-};
+defineEmits([...useDialogPluginComponent.emits]);
+const { dialogRef, onDialogCancel } = useDialogPluginComponent();
 </script>

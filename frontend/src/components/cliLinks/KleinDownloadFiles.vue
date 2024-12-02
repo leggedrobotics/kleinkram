@@ -44,9 +44,9 @@ const fileArguments = computed(() => {
         .join(' ');
 });
 
-async function clicked() {
+const clicked = async (): Promise<void> => {
     const text = `klein download --dest=. ${fileArguments.value}`;
     await navigator.clipboard.writeText(text);
-}
+};
 </script>
 <style scoped></style>

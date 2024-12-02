@@ -37,9 +37,9 @@ const props = defineProps<{
     mission: MissionDto;
 }>();
 
-async function clicked() {
+const clicked = async (): Promise<void> => {
     const text = `klein download --dest=. -m ${props.mission.uuid}`;
     await navigator.clipboard.writeText(text);
-}
+};
 </script>
 <style scoped></style>

@@ -38,7 +38,7 @@ const canModify = computed(() => {
     );
 });
 
-function deleteFile() {
+const deleteFile = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         title: 'Delete File',
@@ -47,7 +47,7 @@ function deleteFile() {
             file: props.file,
         },
     });
-}
+};
 </script>
 
 <style scoped></style>

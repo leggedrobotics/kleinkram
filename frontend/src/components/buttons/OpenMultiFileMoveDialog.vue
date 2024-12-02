@@ -30,7 +30,6 @@ const props = defineProps<{
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.mission) return false;
     return canDeleteMission(
         props.mission.uuid,
         props.mission.project.uuid,
@@ -38,7 +37,7 @@ const canModify = computed(() => {
     );
 });
 
-function moveFiles() {
+const moveFiles = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         component: MoveFiles,
@@ -48,7 +47,7 @@ function moveFiles() {
         },
         persistent: true,
     });
-}
+};
 </script>
 
 <style scoped></style>

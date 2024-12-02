@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Categories </template>
+        <template #title> Add Categories</template>
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -65,9 +65,9 @@ const selected: Ref<CategoryDto[]> = ref<CategoryDto[]>([]);
 
 const tab = ref('add');
 
-function updateSelected(value: CategoryDto[]) {
+const updateSelected = (value: CategoryDto[]): void => {
     selected.value = value;
-}
+};
 
 const { mutate } = useMutation({
     mutationFn: async () => {
@@ -97,8 +97,8 @@ const { mutate } = useMutation({
     },
 });
 
-function addCategories() {
+const addCategories = (): void => {
     mutate();
-}
+};
 </script>
 <style scoped></style>

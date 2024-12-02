@@ -128,8 +128,13 @@ async function _createFileAction(
     const temporaryCredentials = await generateTemporaryCredentials(
         fileNames,
         selectedMission.uuid,
-    ).catch((e: any) => {
-        let msg = `Upload of Files failed: ${e.response.message}`;
+    ).catch((e: unknown) => {
+        let errorMsg = '';
+        if (e instanceof Error) {
+            errorMsg = e.response.message;
+        }
+
+        let msg = `Upload of Files failed: ${errorMsg}`;
 
         // show special error for 403
         if (e.response && e.response.status === 403) {
@@ -218,12 +223,17 @@ async function _createFileAction(
                         newFileUploadRef,
                     );
 
-                    return confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (e: any) {
+                    return await confirmUpload(accessResp.fileUUID, md5Hash);
+                } catch (e: unknown) {
+                    let errorMsg = '';
+                    if (e instanceof Error) {
+                        errorMsg = e.message;
+                    }
+
                     console.error('err', e);
                     newFileUploadRef.value.canceled = true;
                     Notify.create({
-                        message: `Upload of File ${file.name} failed: ${e.toString()}`,
+                        message: `Upload of File ${file.name} failed: ${errorMsg}`,
                         color: 'negative',
                         spinner: false,
                         timeout: 0,
@@ -283,9 +293,14 @@ export async function driveUpload(
                 timeout: 5000,
             });
         })
-        .catch((e) => {
+        .catch((e: unknown) => {
+            let errorMsg = '';
+            if (e instanceof Error) {
+                errorMsg = e.message;
+            }
+
             noti({
-                message: `Upload of Files for Mission ${selectedMission.name} failed: ${e}`,
+                message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMsg}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,

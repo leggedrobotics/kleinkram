@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data.tags ?? []"
+                        :rows="data?.tags ?? []"
                         :columns="columns as any"
                         row-key="uuid"
                         wrap-cells
@@ -82,11 +82,7 @@
                     <q-btn label="Close" color="orange" @click="onDialogHide" />
                 </div>
                 <div class="col-1">
-                    <q-btn
-                        label="Apply"
-                        color="primary"
-                        @click="() => onDialogOK(convertedTagValues)"
-                    />
+                    <q-btn label="Apply" color="primary" @click="applyAction" />
                 </div>
             </div>
         </q-card>
@@ -160,7 +156,7 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    data.value.tags.forEach((tag) => {
+    data.value.tags?.forEach((tag) => {
         lookup[tag.uuid] = tag;
     });
     return lookup;
@@ -196,6 +192,10 @@ const columns = [
         field: 'type',
     },
 ];
+
+const applyAction = (): void => {
+    onDialogOK(convertedTagValues);
+};
 </script>
 
 <style scoped></style>

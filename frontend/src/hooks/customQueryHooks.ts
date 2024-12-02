@@ -29,17 +29,28 @@ import { getPermissions, searchUsers } from 'src/services/queries/user';
 import { getUser } from 'src/services/auth';
 import {
     AccessGroupDto,
+    AccessGroupsDto,
     CurrentAPIUserDto,
     UsersDto,
 } from '@api/types/User.dto';
 import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
-import { AccessGroupRights, DataType, FileType, UserRole } from '@common/enum';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    DataType,
+    FileType,
+    UserRole,
+} from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { allWorkers } from '../services/queries/worker';
 import { WorkersDto } from '@api/types/Workers.dto';
 import { TagsDto } from '@api/types/TagsDto.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
-import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import {
+    FlatMissionDto,
+    MissionDto,
+    MissionsDto,
+} from '@api/types/Mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import {
@@ -53,7 +64,7 @@ import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
 import { getCategories } from '../services/queries/categories';
 import { FileDto, FilesDto } from '@api/types/Files.dto';
-import { getAccessGroup } from '../services/queries/access';
+import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -92,7 +103,7 @@ export const getPermissionForProject = (
         (p: ProjectAccessDto) => p.uuid === projectUuid,
     );
 
-    const projectPermission = project.access && 0;
+    const projectPermission = project?.access && 0;
     return Math.max(defaultPermission, projectPermission);
 };
 
@@ -171,7 +182,7 @@ export const canDeleteMission = (
 };
 
 export const canLaunchInMission = (
-    mission: MissionDto | null,
+    mission: FlatMissionDto | null,
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
@@ -201,7 +212,7 @@ export const canDeleteProject = (
 };
 
 export const useProjectQuery = (
-    projectUuid: Ref<string | undefined>,
+    projectUuid: Ref<string | undefined> | string,
 ): UseQueryReturnType<ProjectDto, Error> =>
     useQuery<ProjectDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
@@ -263,7 +274,7 @@ export const useManyMissions = (
  */
 export const registerNoPermissionErrorHandler = (
     isLoadingError: Ref<false | true>,
-    uuid: Ref<string>,
+    uuid: ComputedRef<undefined | string>,
     resourceName: 'project' | 'mission' | 'file',
     error: Ref<Error, Error> | Ref<null, null>,
 ): void => {
@@ -273,10 +284,10 @@ export const registerNoPermissionErrorHandler = (
     watch([isLoadingError], async () => {
         if (error.value instanceof AxiosError) {
             const statusCode =
-                error.value.response?.data?.statusCode ||
+                Boolean(error.value.response?.data?.statusCode) ||
                 `Could not load the ${resourceName}`;
 
-            if (statusCode === 403)
+            if (statusCode === '403')
                 await $router.push({
                     name: ROUTES.ERROR_403.routeName,
                     query: {
@@ -295,7 +306,7 @@ export const registerNoPermissionErrorHandler = (
     });
 };
 
-export const useHandler = () => {
+export const useHandler = (): Ref<QueryURLHandler, QueryURLHandler> => {
     const handler: Ref<QueryURLHandler> = ref(
         new QueryURLHandler(),
     ) as unknown as Ref<QueryURLHandler>;
@@ -380,7 +391,7 @@ export const useUserSearch = (
     return useQuery<UsersDto>({
         queryKey: ['userSearch', search.value],
         queryFn: () => {
-            if (!search.value)
+            if (search.value === '')
                 return {
                     users: [],
                     count: 0,
@@ -505,9 +516,26 @@ export const useMcapFilesOfMission = (
 export const useRunningActions = (): UseQueryReturnType<
     ActionsDto | undefined,
     Error
-> => ({
-    queryKey: ['actions'],
-    queryFn: () => getRunningActions(),
-    staleTime: 100,
-    refetchInterval: 5000,
-});
+> =>
+    useQuery({
+        queryKey: ['actions'],
+        queryFn: () => getRunningActions(),
+        staleTime: 100,
+        refetchInterval: 5000,
+    });
+
+export const useSearchAccessGroup = (
+    search: Ref<string> | string,
+    type: AccessGroupType | undefined,
+): UseQueryReturnType<AccessGroupsDto | undefined, Error> => {
+    return useQuery({
+        queryKey: ['searchAccessGroup', search],
+        queryFn: () =>
+            searchAccessGroups(
+                typeof search === 'string' ? search : search.value,
+                type,
+                0,
+                10,
+            ),
+    });
+};

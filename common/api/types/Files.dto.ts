@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FlatMissionDto } from './Mission.dto';
-import { CategoriesDto } from './Category.dto';
+import { CategoryDto } from './Category.dto';
 import { FileState } from '../../frontend_shared/enum';
 import { UserDto } from './User.dto';
 
@@ -24,7 +24,7 @@ export class FileDto {
     mission!: FlatMissionDto;
 
     @ApiProperty()
-    categories!: CategoriesDto;
+    categories!: CategoryDto[];
 
     @ApiProperty()
     size!: number;

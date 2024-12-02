@@ -39,7 +39,7 @@ const canModify = computed(() => {
     );
 });
 
-function moveFiles() {
+const moveFiles = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         component: MoveFiles,
@@ -49,7 +49,7 @@ function moveFiles() {
         },
         persistent: true,
     });
-}
+};
 </script>
 
 <style scoped>

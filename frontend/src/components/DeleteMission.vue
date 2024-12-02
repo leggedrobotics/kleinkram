@@ -5,7 +5,7 @@
             <b>{{ mission.name }}</b>
         </p>
         <q-input
-            v-model="mission_name_check"
+            v-model="missionNameCheck"
             outlined
             placeholder="Confirm Mission Name"
             autofocus
@@ -21,7 +21,7 @@ import ROUTES from 'src/router/routes';
 import { useRoute, useRouter } from 'vue-router';
 import { MissionDto } from '@api/types/Mission.dto';
 
-const mission_name_check = ref('');
+const missionNameCheck = ref('');
 const client = useQueryClient();
 const props = defineProps<{
     mission: MissionDto;
@@ -30,8 +30,8 @@ const props = defineProps<{
 const route = useRoute();
 const router = useRouter();
 
-async function deleteMissionAction() {
-    if (mission_name_check.value === props.mission.name) {
+const deleteMissionAction = async (): Promise<void> => {
+    if (missionNameCheck.value === props.mission.name) {
         await deleteMission(props.mission)
             .then(async () => {
                 await client.invalidateQueries({
@@ -64,7 +64,7 @@ async function deleteMissionAction() {
                     });
                 }
             })
-            .catch((e) => {
+            .catch((e: unknown) => {
                 Notify.create({
                     message: `Error deleting mission: ${e.response.data.message}`,
                     color: 'negative',
@@ -72,11 +72,11 @@ async function deleteMissionAction() {
                 });
             });
     }
-}
+};
 
 defineExpose({
     deleteMissionAction,
-    mission_name_check,
+    mission_name_check: missionNameCheck,
 });
 </script>
 <style scoped></style>

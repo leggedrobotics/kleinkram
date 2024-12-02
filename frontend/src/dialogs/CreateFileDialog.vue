@@ -17,12 +17,7 @@
                 label="Create File"
                 class="bg-button-primary"
                 :disable="!ready"
-                @click="
-                    () => {
-                        createFileRef?.createFileAction();
-                        onDialogOK();
-                    }
-                "
+                @click="createFile"
             />
         </template>
     </base-dialog>
@@ -41,8 +36,13 @@ const ready = ref(false);
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+defineProps<{
     mission?: MissionDto;
     uploads: Ref<FileUploadDto[]>;
 }>();
+
+const createFile = (): void => {
+    createFileRef.value.createFileAction();
+    onDialogOK();
+};
 </script>

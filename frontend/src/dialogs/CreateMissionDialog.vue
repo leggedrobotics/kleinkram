@@ -106,7 +106,7 @@
                     <SelectMissionTags
                         :tag-values="tagValues"
                         :project-u-u-i-d="project.uuid"
-                        @update:tag-values="(update) => (tagValues = update)"
+                        @update:tag-values="updateTagValue"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="upload" style="min-width: 280px">
@@ -145,12 +145,7 @@
                 flat
                 label="Upload & Exit"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        createFileRef?.createFileAction();
-                        onDialogOK();
-                    }
-                "
+                @click="uploadEventHandler"
             />
         </template>
     </base-dialog>
@@ -161,17 +156,18 @@ import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { filteredProjects, getProject } from 'src/services/queries/project';
+import { filteredProjects } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
 import CreateFile from 'components/CreateFile.vue';
-import SelectMissionTags from 'components/SelectMissionTags.vue';
 import {
     canCreateMission,
     usePermissionsQuery,
+    useProjectQuery,
 } from 'src/hooks/customQueryHooks';
 import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
 import { MissionDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
+import SelectMissionTags from '../components/SelectMissionTags.vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
@@ -201,12 +197,7 @@ const project_uuid = ref(props.project_uuid);
 const newMission: Ref<MissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project, refetch }: { data: Ref<ProjectDto>; refetch: Function } =
-    useQuery<ProjectDto>({
-        queryKey: computed(() => ['project', project_uuid]),
-        queryFn: () => getProject(project_uuid.value!),
-        enabled: computed(() => !!project_uuid.value),
-    });
+const { data: project, refetch } = useProjectQuery(project_uuid);
 
 // we load the new project if the project_uuid changes
 watch(project_uuid, () => refetch());
@@ -223,7 +214,7 @@ const { data: all_projects } = useQuery<ProjectsDto>({
 const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
-    return all_projects.value[0].filter((_project: ProjectDto) =>
+    return all_projects.value.projects.filter((_project: ProjectDto) =>
         canCreateMission(_project.uuid, permissions),
     );
 });
@@ -250,7 +241,7 @@ const submitNewMission = async () => {
         missionName.value,
         project.value.uuid,
         tagValues.value,
-    ).catch((e) => {
+    ).catch((e: unknown) => {
         tab_selection.value = 'meta_data';
         isValidMissionName.value = false;
         errorMessage.value = e.response.data.message[0];
@@ -286,5 +277,14 @@ const submitNewMission = async () => {
     missionName.value = '';
     tagValues.value = {};
     tab_selection.value = 'upload';
+};
+
+const updateTagValue = (update: Record<string, string>): void => {
+    tagValues.value = update;
+};
+
+const uploadEventHandler = (): void => {
+    createFileRef?.createFileAction();
+    onDialogOK();
 };
 </script>

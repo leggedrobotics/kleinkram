@@ -43,7 +43,7 @@ const canModify = computed(() => {
     );
 });
 
-const deleteMission = () => {
+const deleteMission = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         title: 'Delete Mission',

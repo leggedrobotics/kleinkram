@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Action </template>
+        <template #title> Delete Action</template>
         <template #content>
             <delete-action
                 v-if="action"
@@ -18,12 +18,7 @@
                 "
                 label="Delete Action"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        deleteActionRef?.deleteActionAction();
-                        onDialogOK();
-                    }
-                "
+                @click="deleteAction"
             />
         </template>
     </base-dialog>
@@ -41,4 +36,9 @@ const deleteActionRef = ref<InstanceType<typeof DeleteAction> | null>(null);
 const { action } = defineProps({
     action: ActionDto,
 });
+
+const deleteAction = (): void => {
+    deleteActionRef.value.deleteActionAction();
+    onDialogOK();
+};
 </script>

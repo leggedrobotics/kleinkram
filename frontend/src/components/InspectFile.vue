@@ -15,7 +15,7 @@
                                 data.state,
                             ) !== -1
                         "
-                        @click="() => _downloadFile(data.uuid, data.filename)"
+                        @click="download(data)"
                     />
 
                     <q-btn
@@ -25,7 +25,7 @@
                         class="cursor-pointer button-border"
                         @click.stop
                     >
-                        <q-menu auto-close>
+                        <q-menu v-if="data !== undefined" auto-close>
                             <q-list>
                                 <q-item
                                     v-ripple
@@ -48,7 +48,7 @@
                                     v-ripple
                                     clickable
                                     :disable="!data.hash"
-                                    @click="(e) => copyToClipboard(data.hash)"
+                                    @click="copy(data)"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_encrypted" />
@@ -300,8 +300,8 @@ const { data: _filesReturn } = useMcapFilesOfMission(
     mcapName,
 );
 const { data: queues } = useQueueForFile(
-    data.value.filename.replace(/\.(bag|mcap)$/, '') !== '' || '',
-    data.value.mission.uuid || '',
+    data.value.filename.replace(/\.(bag|mcap)$/, ''),
+    data.value.mission.uuid ?? '',
 );
 
 const filesReturn = computed(() =>
@@ -372,4 +372,7 @@ const pagination = ref({
     page: 1,
     rowsPerPage: 20,
 });
+
+const copy = (data) => copyToClipboard(data.hash);
+const download = (data) => _downloadFile(data.uuid, data.filename);
 </script>

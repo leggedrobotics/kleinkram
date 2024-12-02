@@ -18,10 +18,8 @@ export const useCrumbs = () => {
         const routeDefinition = Object.values(ROUTES).find(
             (r) => r.name === nameWithPostfix,
         );
-        return (
-            routeDefinition && routeDefinition.breadcrumbs !== undefined
-                ? routeDefinition.breadcrumbs
-                : []
-        )!;
+        return routeDefinition?.breadcrumbs !== undefined
+            ? routeDefinition.breadcrumbs
+            : [];
     });
 };

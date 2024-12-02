@@ -78,7 +78,8 @@ const getGpuModels = async () => {
         const docker = new Docker({ socketPath: '/var/run/docker.sock' });
         const info = await docker.info();
         const runtimes = info.Runtimes;
-        const hasNvidiaRuntime = runtimes && runtimes.nvidia !== undefined;
+        const hasNvidiaRuntime =
+            Boolean(runtimes) && runtimes.nvidia !== undefined;
         if (!hasNvidiaRuntime) {
             logger.debug('No NVIDIA runtime found in Docker');
             return [];
@@ -96,8 +97,14 @@ const getGpuModels = async () => {
                     return match[1].trim();
                 }
                 return null; // In case the model information is not found
-            } catch (err) {
-                logger.error(`Error reading file ${filepath}: ${err}`);
+            } catch (err: unknown) {
+                let errorMsg = '';
+
+                if (err instanceof Error) {
+                    errorMsg = err.message;
+                }
+
+                logger.error(`Error reading file ${filepath}: ${errorMsg}`);
                 return null;
             }
         });
@@ -105,8 +112,14 @@ const getGpuModels = async () => {
         // Wait for all promises to resolve and filter out null values
         const models = await Promise.all(modelPromises);
         return models.filter((model) => model !== null);
-    } catch (err) {
-        logger.error(`Error reading NVIDIA GPU data: ${err}`);
+    } catch (err: unknown) {
+        let errorMsg = '';
+
+        if (err instanceof Error) {
+            errorMsg = err.message;
+        }
+
+        logger.error(`Error reading NVIDIA GPU data: ${errorMsg}`);
         return [];
     }
 };

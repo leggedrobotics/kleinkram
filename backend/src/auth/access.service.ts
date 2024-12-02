@@ -1,7 +1,13 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import User from '@common/entities/user/user.entity';
-import { EntityManager, FindOptionsWhere, ILike, Repository } from 'typeorm';
+import {
+    EntityManager,
+    FindOptionsWhere,
+    ILike,
+    InsertResult,
+    Repository,
+} from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import {
     AccessGroupRights,
@@ -12,7 +18,12 @@ import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
-import { CountedAccessGroups } from './dto/CountedAccessGroups.dto';
+import {
+    AccessGroupsDto,
+    GroupMembershipDto,
+} from '@common/api/types/User.dto';
+import logger from '../logger';
+import { ProjectDto } from '@common/api/types/Project.dto';
 
 @Injectable()
 export class AccessService {
@@ -238,29 +249,21 @@ export class AccessService {
 
     async searchAccessGroup(
         search: string,
-        personal: boolean,
-        creator: boolean,
-        member: boolean,
+        type: AccessGroupType | undefined,
         auth: AuthRes,
         skip: number,
         take: number,
-    ) {
-        const where: FindOptionsWhere<AccessGroup> = {
-            type: AccessGroupType.CUSTOM,
-        };
+    ): Promise<AccessGroupsDto> {
+        const where: FindOptionsWhere<AccessGroup> = {};
+
+        if (type !== undefined) {
+            where.type = type;
+        }
+
         if (search !== '') {
             where.name = ILike(`%${search}%`);
         }
-        if (personal) {
-            where.type = AccessGroupType.PRIMARY;
-        }
-        if (creator) {
-            where.creator = { uuid: auth.user.uuid };
-        }
-        if (member) {
-            // user in users of access group
-            where.memberships = { user: { uuid: auth.user.uuid } };
-        }
+
         const [found, count] = await this.accessGroupRepository.findAndCount({
             where,
             skip,
@@ -273,7 +276,14 @@ export class AccessService {
                 'creator',
             ],
         });
-        return { entities: found, total: count } as CountedAccessGroups;
+
+        logger.debug(`Search access group with name containing '${search}'`);
+        logger.debug(`Found ${count.toString()} access groups`);
+
+        return {
+            accessGroups: found,
+            count: count,
+        } as unknown as AccessGroupsDto;
     }
 
     async addAccessGroupToProject(
@@ -281,7 +291,7 @@ export class AccessService {
         accessGroupUUID: string,
         rights: AccessGroupRights,
         auth: AuthRes,
-    ): Promise<Project> {
+    ): Promise<ProjectDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
@@ -317,14 +327,14 @@ export class AccessService {
             .getOne();
         if (existingAccess) {
             if (existingAccess.rights >= rights) {
-                return project;
+                return project as unknown as ProjectDto;
             }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
             return this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
                 relations: ['project_accesses', 'project_accesses.accessGroup'],
-            });
+            }) as unknown as ProjectDto;
         }
 
         const projectAccess = this.projectAccessRepository.create({
@@ -336,7 +346,7 @@ export class AccessService {
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
-        });
+        }) as unknown as ProjectDto;
     }
 
     async removeAccessGroupFromProject(
@@ -364,7 +374,7 @@ export class AccessService {
         await this.projectAccessRepository.remove(projectAccess);
     }
 
-    async deleteAccessGroup(uuid: string) {
+    async deleteAccessGroup(uuid: string): Promise<void> {
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid },
         });
@@ -373,7 +383,10 @@ export class AccessService {
         return;
     }
 
-    async getProjectAccess(projectUUID: string, projectAccessUUID: string) {
+    async getProjectAccess(
+        projectUUID: string,
+        projectAccessUUID: string,
+    ): Promise<ProjectAccess> {
         return this.projectAccessRepository.findOneOrFail({
             where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
             relations: ['project', 'accessGroup'],
@@ -385,7 +398,7 @@ export class AccessService {
         groupUuid: string,
         rights: AccessGroupRights,
         auth: AuthRes,
-    ) {
+    ): Promise<InsertResult> {
         if (rights === AccessGroupRights.DELETE) {
             const canDelete = await this.hasProjectRights(
                 projectUUID,
@@ -409,11 +422,20 @@ export class AccessService {
         );
     }
 
-    async setExpireDate(uuid: string, expireDate: Date | null) {
+    async setExpireDate(
+        uuid: string,
+        expireDate: Date | null,
+    ): Promise<GroupMembershipDto> {
         const agu = await this.groupMembershipRepository.findOneOrFail({
             where: { uuid },
         });
-        delete agu.expirationDate;
-        return this.groupMembershipRepository.save(agu);
+        if (expireDate !== null) {
+            agu.expirationDate = expireDate;
+        } else {
+            delete agu.expirationDate;
+        }
+        return (await this.groupMembershipRepository.save(
+            agu,
+        )) as unknown as GroupMembershipDto;
     }
 }

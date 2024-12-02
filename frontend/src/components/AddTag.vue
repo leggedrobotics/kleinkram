@@ -2,7 +2,7 @@
     <div class="row flex-center flex">
         <h4>Add Tags</h4>
     </div>
-    <q-form @submit="() => saveFunction()">
+    <q-form @submit="saveEvent">
         <div class="row">
             <div class="col-3">
                 <q-btn-dropdown label="Add another tag">
@@ -144,7 +144,7 @@ const additonalTags: Ref<TagDto[]> = ref<TagDto[]>([]);
 const availableAdditionalTags: Ref<TagDto[]> = computed(() => {
     if (!tagTypes.value) return [];
     const usedTagUUIDs = data.value
-        ? data.value.tags.tags.map((tag) => tag.type.uuid)
+        ? data.value.tags.map((tag) => tag.type.uuid)
         : [];
     const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
     return tagTypes.value.tags.filter(
@@ -186,6 +186,8 @@ const { mutate: saveFunction } = useMutation({
         console.log(error);
     },
 });
+
+const saveEvent = (): void => saveFunction();
 </script>
 
 <style scoped></style>

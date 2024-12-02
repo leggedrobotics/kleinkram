@@ -37,7 +37,7 @@
         <q-btn-dropdown
             v-model="dropdownNewFileMission"
             :disable="!!props?.mission"
-            :label="selectedMission?.name || 'Mission'"
+            :label="selectedProject?.name ?? 'Mission'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
             clearable
@@ -50,7 +50,7 @@
                     clickable
                     @click="
                         () => {
-                            selectedMission = m;
+                            filteredProjects = m;
                             dropdownNewFileMission = false;
                         }
                     "
@@ -77,7 +77,7 @@
             </template>
 
             <template #append>
-                <q-icon name="sym_o_cancel" @click="files = []" />
+                <q-icon name="sym_o_cancel" @click="resetFiles" />
             </template>
         </q-file>
 
@@ -103,22 +103,22 @@ import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from 'src/services/fileService';
 import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
-import { ProjectDto } from '@api/types/Project.dto';
+import { BaseProjectDto } from '@api/types/Project.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
 
 const emit = defineEmits(['update:ready']);
 
-const selectedProject: Ref<ProjectDto | null> = ref(null);
+const selectedProject: Ref<BaseProjectDto | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
-const { data: selectedMission } = useFilteredProjects(500, 0, 'name', true);
+const { data: filteredProjects } = useFilteredProjects(500, 0, 'name', true);
 
 const data = computed(() => {
-    if (_data.value !== undefined) {
-        return _data.value.projects;
+    if (filteredProjects.value !== undefined) {
+        return filteredProjects.value.projects;
     }
     return [];
 });
@@ -129,7 +129,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const ready = computed(() => {
     const hasProject = !!selectedProject.value;
-    const hasMission = !!selectedMission.value;
+    const hasMission = !!filteredProjects.value;
     const hasFileOrDrive = files.value.length > 0 || driveUrl.value !== '';
     return hasProject && hasMission && hasFileOrDrive;
 });
@@ -148,7 +148,7 @@ const props = defineProps<{
 
 if (props.mission?.project) {
     selectedProject.value = props.mission.project;
-    selectedMission.value = props.mission;
+    filteredProjects.value = props.mission;
 }
 
 const { data: _missions, refetch } = useQuery<MissionsDto>({
@@ -158,7 +158,7 @@ const { data: _missions, refetch } = useQuery<MissionsDto>({
 });
 const missions = computed(() => {
     if (_missions.value) {
-        return _missions.value[0];
+        return _missions.value.missions;
     }
     return [];
 });
@@ -171,12 +171,12 @@ watchEffect(() => {
 
 const createFile = async () => {
     if (driveUrl.value) {
-        await driveUpload(selectedMission.value, driveUrl);
+        await driveUpload(filteredProjects.value, driveUrl);
         return;
     }
 
     await createFileAction(
-        selectedMission.value,
+        filteredProjects.value,
         selectedProject.value,
         files.value,
         queryClient,
@@ -188,6 +188,10 @@ const createFile = async () => {
 defineExpose({
     createFileAction: createFile,
 });
+
+const resetFiles = (): void => {
+    files.value = [];
+};
 </script>
 
 <style lang="scss">

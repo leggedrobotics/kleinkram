@@ -17,8 +17,8 @@ import { computed, ref } from 'vue';
 
 interface Props {
     title: string;
-    todos?: Todo[];
-    meta: Meta;
+    todos?: any[];
+    meta: any;
     active: boolean;
 }
 

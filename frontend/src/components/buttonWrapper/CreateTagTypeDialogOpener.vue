@@ -24,7 +24,7 @@ const $q = useQuasar();
 const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => canCreateProject(permissions.value));
 
-const createNewTageType = () => {
+const createNewTageType = (): void => {
     if (!canCreate.value) return;
     $q.dialog({
         title: 'Create new mission',

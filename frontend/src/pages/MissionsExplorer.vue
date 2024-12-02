@@ -90,7 +90,7 @@
     <ActionConfiguration
         :open="createAction"
         :mission_uuids="selectedMissionUuids"
-        @close="createAction = false"
+        @close="onClose"
     />
     <div>
         <div
@@ -259,6 +259,10 @@ const { data: project, isLoadingError, error } = useProjectQuery(projectUuid);
 const createAction = ref(false);
 
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
+
+const onClose = (): void => {
+    createAction.value = false;
+};
 
 const deleteMission = (): void => {
     const mission = selectedMissions.value[0];

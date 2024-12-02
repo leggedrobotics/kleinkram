@@ -33,7 +33,7 @@ const canModify = computed(() =>
     canModifyProject(props.project_uuid, permissions.value),
 );
 
-const clicked = () => {
+const clicked = (): void => {
     // abort if the user cannot modify the project
     if (!canModify.value) return;
     console.log(props.project_uuid);

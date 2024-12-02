@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> New Access Rights </template>
+        <template #title> New Access Rights</template>
 
         <template #content>
             <label for="name">Group Name</label>
@@ -19,7 +19,7 @@
                 label="Create Access Group"
                 class="bg-button-primary"
                 :disable="isInErrorStateProjectName"
-                @click="() => onDialogOK(name)"
+                @click="createAccessGroup"
             />
         </template>
     </base-dialog>
@@ -44,6 +44,10 @@ watch(name, () => {
             'Name must be between 3 and 20 characters and only contain letters, numbers, -, and _';
     }
 });
+
+const createAccessGroup = (): void => {
+    onDialogOK(name);
+};
 </script>
 
 <style scoped></style>

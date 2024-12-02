@@ -11,12 +11,7 @@
                 flat
                 label="Create Tag Type"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        createTagType?.createTagTypeAction();
-                        onDialogOK();
-                    }
-                "
+                @click="createTagType"
             />
         </template>
     </base-dialog>
@@ -29,4 +24,9 @@ import { ref } from 'vue';
 const createTagType = ref();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+const createTagType = (): void => {
+    createTagType.value.createTagTypeAction();
+    onDialogOK();
+};
 </script>

@@ -48,15 +48,7 @@
                     color="primary"
                     icon="sym_o_link"
                     label="Mission"
-                    @click="
-                        $router.push({
-                            name: ROUTES.FILES.routeName,
-                            params: {
-                                project_uuid: action?.mission?.project?.uuid,
-                                mission_uuid: action?.mission?.uuid,
-                            },
-                        })
-                    "
+                    @click="openMission"
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
@@ -229,10 +221,7 @@
                                     color="icon-secondary"
                                     class="button-border"
                                     icon="sym_o_link"
-                                    @click="
-                                        () =>
-                                            openArtifactUrl(action.artifactUrl)
-                                    "
+                                    @click="openArtifact"
                                 />
                                 <div v-else>
                                     {{ artifactState }}
@@ -377,9 +366,9 @@ import ActionBadge from 'components/ActionBadge.vue';
 import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import ButtonGroup from 'components/ButtonGroup.vue';
-import ROUTES from 'src/router/routes';
 import { ArtifactState } from '@common/enum';
 import { ActionDto } from '@api/types/Actions.dto';
+import ROUTES from '../router/routes';
 
 const tab = ref('info');
 
@@ -396,10 +385,6 @@ const action: ComputedRef<ActionDto> = computed(
     () => data.value,
 ) as ComputedRef<ActionDto>;
 
-function openArtifactUrl(url: string) {
-    window.open(url, '_blank');
-}
-
 const artifactState = computed(() => {
     if (action.value.artifacts === ArtifactState.UPLOADING) {
         return 'Uploading...';
@@ -410,6 +395,20 @@ const artifactState = computed(() => {
     }
     return 'N/A';
 });
+
+const openArtifact = (): void => {
+    window.open(action.value.artifactUrl, '_blank');
+};
+
+const openMission = async (): Promise<void> => {
+    await $router.push({
+        name: ROUTES.FILES.routeName,
+        params: {
+            project_uuid: action.mission?.project?.uuid,
+            mission_uuid: action.mission?.uuid,
+        },
+    });
+};
 </script>
 
 <style>

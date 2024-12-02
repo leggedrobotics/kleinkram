@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit Project </template>
+        <template #title> Edit Project</template>
 
         <template #content>
             <edit-project
@@ -14,14 +14,7 @@
                 flat
                 label="Save Project"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        editProjectRef
-                            ?.save_changes()
-                            .then(onDialogOK)
-                            .catch(() => {});
-                    }
-                "
+                @click="saveProjects"
             />
         </template>
     </base-dialog>
@@ -39,5 +32,14 @@ const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const props = defineProps<{
     project_uuid: string;
 }>();
+
+const saveProjects = (): void => {
+    editProjectRef.value
+        .save_changes()
+        .then(onDialogOK)
+        .catch(() => {
+            console.error('Error saving project');
+        });
+};
 </script>
 <style scoped></style>

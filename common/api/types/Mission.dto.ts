@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseProjectDto } from './Project.dto';
 import { UserDto } from './User.dto';
-import { TagsDto } from './TagsDto.dto';
+import { TagDto } from './TagsDto.dto';
 import { FilesDto } from './Files.dto';
 
 export class FlatMissionDto {
@@ -24,7 +24,7 @@ export class FlatMissionDto {
     creator!: UserDto;
 
     @ApiProperty()
-    tags!: TagsDto;
+    tags!: TagDto[];
 }
 
 export class MissionDto extends FlatMissionDto {

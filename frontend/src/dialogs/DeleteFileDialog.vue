@@ -12,12 +12,7 @@
                 :disable="deleteFileRef?.file_name_check !== file?.filename"
                 label="Delete File"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        deleteFileRef?.deleteFileAction();
-                        onDialogOK();
-                    }
-                "
+                @click="deleteFile"
             />
         </template>
     </base-dialog>
@@ -35,4 +30,9 @@ const deleteFileRef = ref<InstanceType<typeof DeleteFile> | null>(null);
 const { file } = defineProps<{
     file: FileDto;
 }>();
+
+const deleteFile = () => {
+    deleteFileRef.value.deleteFileAction();
+    onDialogOK();
+};
 </script>

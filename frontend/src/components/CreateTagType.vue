@@ -56,7 +56,7 @@ const ddr_open = ref(false);
 const createTagTypeAction = async () => {
     try {
         await createTagType(tagName.value, selectedDataType.value);
-    } catch (error: any) {
+    } catch (error: unknown) {
         Notify.create({
             message: `Error creating Tag Type: ${error?.response?.data?.message || error.message}`,
             color: 'negative',

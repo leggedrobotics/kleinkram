@@ -57,7 +57,7 @@
                                 /^[\w\-_]+$/g.test(val) ||
                                 'Name must be alphanumeric and contain only - and _',
                         ]"
-                        @update:model-value="verify_input"
+                        @update:model-value="verifyInput"
                     />
 
                     <label for="projectDescription"
@@ -75,7 +75,7 @@
                         :error-message="errorMessagesProjectDescr"
                         :error="isInErrorStateProjectDescr"
                         autofocus
-                        @update:model-value="verify_input"
+                        @update:model-value="verifyInput"
                     />
                 </q-tab-panel>
 
@@ -116,7 +116,6 @@
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { computed, Ref, ref, watch } from 'vue';
 import { createProject } from 'src/services/mutations/project';
-import { AxiosError } from 'axios';
 import { useQueryClient } from '@tanstack/vue-query';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureAccess from 'components/ConfigureAccess.vue';
@@ -156,13 +155,13 @@ const minAccessRights = computed(() =>
 );
 
 const accessGroups = ref<DefaultRightDto[]>(
-    defaultRights.value?.defaultRights || [],
+    defaultRights.value?.defaultRights ?? [],
 );
 watch(defaultRights, () => {
-    accessGroups.value = defaultRights.value?.defaultRights || [];
+    accessGroups.value = defaultRights.value?.defaultRights ?? [];
 });
 
-const verify_input = () => {
+const verifyInput = () => {
     formIsValid.value =
         !!newProjectName.value &&
         !!newProjectDescription.value &&
@@ -225,7 +224,7 @@ const submitNewProject = async () => {
 
             onDialogOK();
         })
-        .catch((error: any) => {
+        .catch((error: unknown) => {
             if (error.code === 'ERR_BAD_REQUEST') {
                 isInErrorStateProjectName.value = true;
                 errorMessagesProjectName.value = error.response?.data.message;

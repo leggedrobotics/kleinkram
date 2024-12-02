@@ -52,7 +52,7 @@
                         style="padding-bottom: 30px"
                         :error="isInErrorState"
                         :error-message="errorMessage"
-                        @update:model-value="isInErrorState = false"
+                        @update:model-value="onModelValueUpdate"
                     />
                     <input
                         ref="HTMLinput"
@@ -72,7 +72,7 @@
                         </template>
 
                         <template #append>
-                            <q-icon name="sym_o_cancel" @click="files = []" />
+                            <q-icon name="sym_o_cancel" @click="onCancel" />
                         </template>
                     </q-file>
                 </q-tab-panel>
@@ -80,7 +80,7 @@
                     <SelectMissionTags
                         :tag-values="tagValues"
                         :project-u-u-i-d="project.uuid"
-                        @update:tag-values="(update) => (tagValues = update)"
+                        @update:tag-values="onTagValueUpdate"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -93,7 +93,7 @@
                 label="Next"
                 :disable="missionName.length < 3"
                 class="bg-button-primary"
-                @click="tab_selection = 'tags'"
+                @click="goToTagTab"
             />
             <q-btn
                 v-if="tab_selection === 'tags'"
@@ -111,14 +111,13 @@
 import { computed, ref, Ref, watch } from 'vue';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getProject } from 'src/services/queries/project';
+import { useQueryClient } from '@tanstack/vue-query';
 import { createMission } from 'src/services/mutations/mission';
 import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { createFileAction } from 'src/services/fileService';
-import { ProjectDto } from '@api/types/Project.dto';
 import { MissionDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
+import { useProjectQuery } from '../hooks/customQueryHooks';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
@@ -134,12 +133,7 @@ const newMission: Ref<MissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 const files = ref<File[]>([]);
 
-const { data: project, refetch }: { data: Ref<ProjectDto>; refetch: Function } =
-    useQuery<ProjectDto>({
-        queryKey: computed(() => ['project', project_uuid]),
-        queryFn: () => getProject(project_uuid.value!),
-        enabled: computed(() => !!project_uuid.value),
-    });
+const { data: project, refetch } = useProjectQuery(project_uuid);
 
 // we load the new project if the project_uuid changes
 watch(project_uuid, () => refetch());
@@ -161,12 +155,12 @@ const missionCreated = computed(() => {
     return !!newMission.value;
 });
 
-function handle(a: any): void {
+const handle = (a: any): void => {
     files.value = a.target.files;
     if (files.value.length > 0) {
         missionName.value = files.value[0].webkitRelativePath.split('/')[0];
     }
-}
+};
 
 function transferClick(e: any): void {
     e.preventDefault();
@@ -181,10 +175,12 @@ const submitNewMission = async () => {
         missionName.value,
         project.value.uuid,
         tagValues.value,
-    ).catch((e: any) => {
+    ).catch((e: unknown) => {
         tab_selection.value = 'meta_data';
         isInErrorState.value = true;
-        errorMessage.value = e.response.data.message;
+        if (e instanceof Error) {
+            errorMessage.value = e.response.data.message;
+        }
     });
 
     // exit if the request failed
@@ -229,5 +225,21 @@ const submitNewMission = async () => {
     await created;
     missionName.value = '';
     tagValues.value = {};
+};
+
+const goToTagTab = (): void => {
+    tab_selection.value = 'tags';
+};
+
+const onModelValueUpdate = (): void => {
+    isInErrorState.value = false;
+};
+
+const onCancel = (): void => {
+    files.value = [];
+};
+
+const onTagValueUpdate = (update: Record<string, string>): void => {
+    tagValues.value = update;
 };
 </script>

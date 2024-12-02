@@ -70,9 +70,14 @@ const { mutate: changeAccessRights } = useMutation({
             predicate: (query) => query.queryKey[0] === 'AccessGroup',
         });
     },
-    onError: (e: any) => {
+    onError: (e: unknown) => {
+        let errorMsg = '';
+        if (e instanceof Error) {
+            errorMsg = e.response?.data.message;
+        }
+
         Notify.create({
-            message: `Failed to change access rights:  ${e.response?.data.message}`,
+            message: `Failed to change access rights:  ${errorMsg}`,
             color: 'negative',
             position: 'bottom',
         });

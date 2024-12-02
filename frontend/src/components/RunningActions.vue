@@ -20,12 +20,12 @@
 
         <!-- Scrollable Card Section -->
         <div
-            v-if="isFetched && actions && actions.length > 0"
+            v-if="isFetched && actions && actions?.actions?.length > 0"
             ref="cardWrapper"
             class="card-wrapper"
         >
             <q-table
-                :rows="actions"
+                :rows="actions?.actions"
                 :columns="columns as any"
                 hide-pagination
                 class="q-pa-md"
@@ -130,7 +130,7 @@ const columns = [
     },
 ];
 
-const toActions = async () => {
+const toActions = async (): Promise<void> => {
     return await router.push('actions');
 };
 </script>

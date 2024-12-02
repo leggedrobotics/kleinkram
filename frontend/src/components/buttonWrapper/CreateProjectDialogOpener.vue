@@ -27,7 +27,7 @@ const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => canCreateProject(permissions.value));
 
 const $q = useQuasar();
-const createNewProject = () => {
+const createNewProject = (): void => {
     // abort if the user cannot modify the project
     if (!canCreate.value) return;
 

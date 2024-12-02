@@ -171,12 +171,13 @@ watch(
 );
 
 const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
-    if (!tagTypes.value) return [];
+    if (tagTypes.value === undefined) return [];
     let usedTagUUIDs: string[] = [];
     if (project.value) {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
     const addedTagUUIDs = additionalTags.value.map((tag) => tag.uuid);
+    if (tagTypes.value.tags === undefined) return [];
     return tagTypes.value.tags.filter(
         (tagtype: TagTypeDto) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&

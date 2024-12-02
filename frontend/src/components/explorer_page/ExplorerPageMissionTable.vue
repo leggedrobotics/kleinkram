@@ -137,6 +137,7 @@ import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpene
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 import { MissionDto } from '@api/types/Mission.dto';
 import { missionColumns } from './explorer_page_table_columns';
+import { TagDto } from '@api/types/TagsDto.dto';
 
 const $emit = defineEmits(['update:selected']);
 
@@ -209,23 +210,23 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-function missingTags(row: MissionDto) {
+const missingTags = (row: MissionDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
-        const setTypes = row.tags.tags.map((tag) => tag.type);
+        const setTypes = row.tags.map((tag) => tag.type);
         if (!setTypes.find((setType) => setType.uuid === tagType.uuid)) {
             return tagType;
         }
     });
     return mapped.filter((val) => !!val);
-}
+};
 
-function missingTagsText(row: MissionDto) {
+const missingTagsText = (row: MissionDto): string => {
     const _missionTags = missingTags(row);
     if (_missionTags.length === 1) {
         return `1 Tag missing`;
     }
     return `${_missionTags.length.toString()} Tags missing`;
-}
+};
 
 watch(
     () => selected.value,

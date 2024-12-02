@@ -55,7 +55,7 @@ async function deleteFileAction() {
                     });
                 }
             })
-            .catch((e) => {
+            .catch((e: unknown) => {
                 Notify.create({
                     message: `Error deleting file: ${e.response.data.message}`,
                     color: 'negative',

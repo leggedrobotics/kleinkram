@@ -8,11 +8,11 @@
 
         <div class="col-9">
             <q-select
-                v-model="_selected"
+                v-model="selected"
                 use-input
                 multiple
                 input-debounce="100"
-                :options="tags"
+                :options="tags?.tags"
                 option-label="name"
                 @input-value="
                     (val) => {
@@ -60,20 +60,20 @@ import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vu
 import { ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/customQueryHooks';
-import { TagDto } from '@api/types/TagsDto.dto';
+import { TagTypeDto } from '@api/types/TagsDto.dto';
 
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const props = defineProps<{
-    selected: TagDto[];
+    selected: TagTypeDto[];
 }>();
 
-const _selected = ref([...props.selected]);
+const selected = ref([...props.selected]);
 
 const emits = defineEmits(['update:selected']);
 
 watch(
-    _selected,
+    selected,
     (newValue: any) => {
         emits('update:selected', newValue);
     },

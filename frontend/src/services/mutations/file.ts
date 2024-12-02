@@ -19,7 +19,7 @@ export const updateFile = async ({ file }: { file: FileDto }) => {
         filename: file.filename,
         mission_uuid: file.mission.uuid,
         date: file.date,
-        categories: file.categories.categories.map(
+        categories: file.categories.map(
             (category: CategoryDto) => category.uuid,
         ),
     });

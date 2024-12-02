@@ -41,7 +41,7 @@ const canModify = computed(() =>
 );
 const $router = useRouter();
 
-function moveMission() {
+const moveMission = (): void => {
     if (!canModify.value) return;
     $q.dialog({
         title: 'Move mission',
@@ -62,7 +62,7 @@ function moveMission() {
                 });
         }
     });
-}
+};
 </script>
 
 <style scoped>

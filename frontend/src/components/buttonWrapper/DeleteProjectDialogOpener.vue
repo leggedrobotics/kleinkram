@@ -26,6 +26,7 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
+
 const props = defineProps<{
     project_uuid: string;
     has_missions: boolean;
@@ -40,7 +41,7 @@ const canDelete = computed(
 
 const $q = useQuasar();
 
-const deleteProject = () => {
+const deleteProject = (): void => {
     // abort if the user cannot modify the project
     if (!canDelete.value) return;
 

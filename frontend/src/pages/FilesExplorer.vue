@@ -6,8 +6,7 @@
                     <div>
                         <div class="flex">
                             <span
-                                v-for="tag in mission?.tags.tags ??
-                                ([] as TagDto[])"
+                                v-for="tag in mission?.tags ?? ([] as TagDto[])"
                                 :key="tag.uuid"
                                 class="q-mr-xs"
                             >
@@ -39,15 +38,7 @@
                     color="primary"
                     icon="sym_o_analytics"
                     label="Actions"
-                    @click="
-                        $router.push({
-                            name: ROUTES.ACTION.routeName,
-                            query: {
-                                project_uuid: projectUuid,
-                                mission_uuid: missionUuid,
-                            },
-                        })
-                    "
+                    @click="onActionsClick"
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
@@ -165,7 +156,7 @@
                     :options="fileHealthOptions"
                     style="min-width: 120px"
                     label="File Health"
-                    @clear="selectedFileHealth = undefined"
+                    @clear="clearSelectedFileState"
                 >
                     <template #selected-item="props">
                         <q-chip
@@ -411,7 +402,7 @@ const selectedFileTypes = computed(() => {
 const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
 const selectedFileHealth = computed<string | undefined>({
-    get: () => handler.value.searchParams.health,
+    get: () => handler.searchParams.health,
     set: (value: string) => {
         handler.value.setSearch({ health: value, name: search.value });
     },
@@ -432,24 +423,29 @@ watch(
     { deep: true },
 );
 
-function onFileTypeClicked(index: number) {
+const onFileTypeClicked = (index: number): void => {
     const updatedFileTypeFilter = [...fileTypeFilter.value]; // Only trigger a single mutation
     updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index].value;
     if (!updatedFileTypeFilter[0].value && !updatedFileTypeFilter[1].value) {
         updatedFileTypeFilter[1 - index].value = true;
     }
     fileTypeFilter.value = updatedFileTypeFilter;
-}
+};
 
 const {
     data: mission,
     isLoadingError,
     error,
 } = useMission(
-    (missionUuid.value ?? '') as string,
-    (e: any) => {
+    missionUuid.value ?? '',
+    (e: unknown) => {
+        let errorMsg = '';
+        if (e instanceof Error) {
+            errorMsg = e.response.data.message;
+        }
+
         Notify.create({
-            message: `Error fetching Mission: ${e.response.data.message}`,
+            message: `Error fetching Mission: ${errorMsg}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -466,7 +462,7 @@ registerNoPermissionErrorHandler(
     error,
 );
 
-const { data: _all_categories } = useCategories(projectUuid.value, '');
+const { data: _all_categories } = useCategories(projectUuid.value ?? '', '');
 const allCategories: Ref<CategoryDto[]> = computed(() =>
     _all_categories.value ? _all_categories.value.categories : [],
 );
@@ -503,9 +499,14 @@ const { mutate: _deleteFiles } = useMutation({
                 query.queryKey[1] === missionUuid.value,
         });
     },
-    onError: (e: any) => {
+    onError: (e: unknown) => {
+        let errorMsg = '';
+        if (e instanceof Error) {
+            errorMsg = e.response.data.message;
+        }
+
         Notify.create({
-            message: `Error deleting files: ${e.response.data.message}`,
+            message: `Error deleting files: ${errorMsg}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -519,12 +520,12 @@ async function refresh() {
     });
 }
 
-function openLink(tag: TagDto) {
+const openLink = (tag: TagDto): void => {
     if (tag.type.datatype !== DataType.LINK) return;
     window.open(tag.valueAsString, '_blank');
-}
+};
 
-function deleteFilesCallback() {
+const deleteFilesCallback = (): void => {
     if (selectedFiles.value.length === 1) {
         $q.dialog({
             component: ConfirmDeleteFileDialog,
@@ -535,7 +536,7 @@ function deleteFilesCallback() {
             const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
             _deleteFiles({
                 fileUUIDs,
-                missionUUID: missionUuid.value as string,
+                missionUUID: missionUuid.value ?? '',
             });
             deselect();
         });
@@ -549,18 +550,18 @@ function deleteFilesCallback() {
             const fileUUIDs = selectedFiles.value.map((file) => file.uuid);
             _deleteFiles({
                 fileUUIDs,
-                missionUUID: missionUuid.value as string,
+                missionUUID: missionUuid.value ?? '',
             });
             deselect();
         });
     }
-}
+};
 
-function deselect() {
+const deselect = (): void => {
     selectedFiles.value = [];
-}
+};
 
-async function downloadCallback() {
+const downloadCallback = async (): Promise<void> => {
     try {
         await _downloadFiles(selectedFiles.value);
         Notify.create({
@@ -569,21 +570,26 @@ async function downloadCallback() {
             timeout: 2000,
             position: 'bottom',
         });
-    } catch (e) {
+    } catch (e: unknown) {
+        let errorMsg = '';
+        if (e instanceof Error) {
+            errorMsg = e.message;
+        }
+
         Notify.create({
-            message: `Error downloading files: ${e}`,
+            message: `Error downloading files: ${errorMsg}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
         });
     }
-}
+};
 
-function updateSelected(value: CategoryDto[]) {
+const updateSelected = (value: CategoryDto[]): void => {
     selectedCategories.value = value;
-}
+};
 
-function fileHealthColor(health: string) {
+const fileHealthColor = (health: string): string => {
     switch (health) {
         case 'Healthy':
             return 'positive';
@@ -594,9 +600,9 @@ function fileHealthColor(health: string) {
         default:
             return 'grey';
     }
-}
+};
 
-function fileHealthTextColor(health: string) {
+const fileHealthTextColor = (health: string): string => {
     switch (health) {
         case 'Healthy':
             return 'white';
@@ -607,5 +613,19 @@ function fileHealthTextColor(health: string) {
         default:
             return 'black';
     }
-}
+};
+
+const onActionsClick = async (): Promise<void> => {
+    await $router.push({
+        name: ROUTES.ACTION.routeName,
+        query: {
+            project_uuid: projectUuid.value ?? '',
+            mission_uuid: missionUuid.value ?? '',
+        },
+    });
+};
+
+const clearSelectedFileState = () => {
+    selectedFileHealth.value = undefined;
+};
 </script>

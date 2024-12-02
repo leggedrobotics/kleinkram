@@ -99,7 +99,7 @@ export const traceWrapper =
                 // exceptions and record them before ending the span
                 if (result instanceof Promise)
                     result
-                        .catch((e: any) => {
+                        .catch((e: unknown) => {
                             span.recordException(e as Exception);
                             span.setAttribute('error', true);
                         })
@@ -125,6 +125,7 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function tracing<A extends unknown[], C>(
     traceName = '',
 ):
@@ -139,8 +140,8 @@ export function tracing<A extends unknown[], C>(
         target: new (...args: A) => C,
         propertyKey?: string | symbol,
         descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
-    ):
-        | void
+    ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    | void
         | (new (...args: A) => C)
         | TypedPropertyDescriptor<(...args: A) => C> {
         const applyWrap = (

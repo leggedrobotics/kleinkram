@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Project to Access Group </template>
+        <template #title> Add Project to Access Group</template>
 
         <template #content>
             <AddProjectToAccessGroupDialog
@@ -36,10 +36,10 @@ const props = defineProps<{
     access_group_uuid: string;
 }>();
 
-function addProjectToAccessGroupAction() {
+const addProjectToAccessGroupAction = (): void => {
     addProjectRef.value?.mutate();
     onDialogOK();
-}
+};
 </script>
 
 <style scoped></style>

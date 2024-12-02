@@ -7,10 +7,7 @@
         <div v-else class="flex row justify-end" style="height: 56px">
             <header-create-new-menu />
 
-            <div
-                style="margin: auto 10px auto 30px"
-                @click="showOverlay = true"
-            >
+            <div style="margin: auto 10px auto 30px" @click="showOverlay">
                 <q-btn round flat color="grey-8" icon="sym_o_export_notes">
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
@@ -21,7 +18,7 @@
                         style="position: absolute; top: 35px; width: 30px"
                     />
                     <q-menu
-                        v-model="showOverlay"
+                        v-model="isOverlayVisible"
                         :offset="[110, 20]"
                         style="width: 400px; overflow: hidden"
                     >
@@ -129,7 +126,7 @@
                                     color="grey-8"
                                     label="Open Pending Uploads"
                                     :to="ROUTES.UPLOAD.path"
-                                    @click="showOverlay = false"
+                                    @click="hideOverlay"
                                 />
                             </div>
                         </div>
@@ -218,5 +215,13 @@ const timeEstimated = computed(() => {
     return `${ave.toString()} min`;
 });
 
-const showOverlay = ref(false);
+const isOverlayVisible = ref(false);
+
+const hideOverlay = (): void => {
+    isOverlayVisible.value = false;
+};
+
+const showOverlay = (): void => {
+    isOverlayVisible.value = true;
+};
 </script>

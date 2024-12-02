@@ -49,16 +49,16 @@ const missionUuid = useMissionUUID();
 const fileUuid = useFileUUID();
 
 const { data: project } = useProjectQuery(projectUuid);
-const { data: mission } = useMission((missionUuid ?? '') as unknown as string);
+const { data: mission } = useMission(missionUuid);
 const { data: file } = useFile(fileUuid.value);
 
 const resolvedCrumbs = computed(() => {
-    let _crumbs = crumbs.value?.map((crumb: PageBreadCrumb) => {
+    let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
-                ?.replace(':project_uuid', projectUuid.value)
-                .replace(':mission_uuid', missionUuid.value)
-                .replace(':file_uuid', fileUuid.value),
+                ?.replace(':project_uuid', projectUuid.value ?? '')
+                .replace(':mission_uuid', missionUuid.value ?? '')
+                .replace(':file_uuid', fileUuid.value ?? ''),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
                 .replace(':mission_name', mission.value?.name ?? '')

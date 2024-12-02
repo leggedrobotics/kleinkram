@@ -45,9 +45,9 @@ const props = defineProps<{
     file: FileDto;
 }>();
 
-async function clicked() {
+const clicked = async (): Promise<void> => {
     const text = `klein download --dest=. ${props.file.uuid}`;
     await navigator.clipboard.writeText(text);
-}
+};
 </script>
 <style scoped></style>

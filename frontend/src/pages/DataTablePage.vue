@@ -352,8 +352,8 @@ import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import { FileDto, FilesDto } from '@api/types/Files.dto';
-import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
-import { FlatProjectDto, ProjectDto } from '@api/types/Project.dto';
+import { FlatMissionDto } from '@api/types/Mission.dto';
+import { FlatProjectDto } from '@api/types/Project.dto';
 
 const $router = useRouter();
 
@@ -418,8 +418,7 @@ const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
-const tagFilter: Ref<Record<string, { name: string; value: string }> | {}> =
-    ref({});
+const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
 
 end.setHours(23, 59, 59, 999);
 

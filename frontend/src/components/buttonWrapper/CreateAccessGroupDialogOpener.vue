@@ -54,11 +54,11 @@ const { mutate: _createAccessGroup } = useMutation({
     },
 });
 
-function createAccessGroupDialog() {
+const createAccessGroupDialog = (): void => {
     $q.dialog({
         component: CreateAccessGroupDialog,
     }).onOk((name: string) => {
         _createAccessGroup(name);
     });
-}
+};
 </script>

@@ -18,12 +18,7 @@
                 "
                 label="Delete Mission"
                 class="bg-button-primary"
-                @click="
-                    () => {
-                        deleteMissionRef?.deleteMissionAction();
-                        onDialogOK();
-                    }
-                "
+                @click="deleteMission"
             />
         </template>
     </base-dialog>
@@ -43,4 +38,9 @@ const { mission_uuid } = defineProps({
 });
 
 const { data: mission } = useMission(computed(() => mission_uuid));
+
+const deleteMission = (): void => {
+    deleteMissionRef.value.deleteMissionAction();
+    onDialogOK();
+};
 </script>

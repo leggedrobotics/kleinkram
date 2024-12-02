@@ -1,54 +1,29 @@
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
 
-/**
- * This function returns a boolean ref that gets set to true if any of the set_refs
- * change and set to false on any of the resetsRefs change.
- *
- * @param setRefs changes on these refs will set the state to true
- * @param resetsRefs changes on these refs will set the state to false
- * @param initialState initial value of the state ref
- *
- */
-export const useToggle = (
-    setRefs: Ref[],
-    resetsRefs: Ref[],
-    initialState = false,
-): Ref<boolean> => {
-    const state = ref(initialState);
-
-    watch(setRefs, () => {
-        state.value = true;
-    });
-    watch(resetsRefs, () => {
-        state.value = false;
-    });
-
-    return state;
-};
-
-export const useProjectUUID = () => {
+export const useProjectUUID = (): ComputedRef<undefined | string> => {
     const route = useRoute();
     return computed(() => {
-        return (
-            (route.params.project_uuid as string) ||
-            (route.query.project_uuid as string)
-        );
+        return route.params.project_uuid !== null
+            ? route.query.project_uuid
+            : undefined;
     });
 };
 
-export const useMissionUUID = () => {
+export const useMissionUUID = (): ComputedRef<undefined | string> => {
     const route = useRoute();
     return computed(() => {
-        return (
-            (route.params.mission_uuid as string) || route.query.mission_uuid
-        );
+        return route.params.mission_uuid !== null
+            ? route.query.mission_uuid
+            : undefined;
     });
 };
 
-export const useFileUUID = () => {
+export const useFileUUID = (): ComputedRef<undefined | string> => {
     const route = useRoute();
     return computed(() => {
-        return route.params.file_uuid as string;
+        return route.params.file_uuid !== null
+            ? route.query.file_uuid
+            : undefined;
     });
 };

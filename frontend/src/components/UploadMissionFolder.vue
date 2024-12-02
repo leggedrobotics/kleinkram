@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { computed, inject, Ref } from 'vue';
+import { computed, inject } from 'vue';
 import {
     canCreateMission,
     usePermissionsQuery,

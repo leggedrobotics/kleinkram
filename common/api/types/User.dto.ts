@@ -37,15 +37,20 @@ export class AccessGroupDto {
     hidden!: boolean;
 
     @ApiProperty()
-    creator!: AccessGroupMemberDto;
+    creator!: AccessGroupMemberDto | null;
 
     @ApiProperty()
     memberships!: AccessGroupMemberDto[];
 }
 
 export class AccessGroupsDto {
+    @ApiProperty()
     count!: number;
 
+    @ApiProperty({
+        type: [AccessGroupDto],
+        description: 'List of access groups',
+    })
     accessGroups!: AccessGroupDto[];
 }
 
@@ -69,7 +74,7 @@ export class GroupMembershipDto {
     canEditGroup!: boolean;
 
     @ApiProperty({
-        type: AccessGroupDto || undefined,
+        type: [AccessGroupDto, undefined],
         description: 'Access Group',
     })
     accessGroup?: AccessGroupDto;

@@ -8,7 +8,7 @@
                     <b>{{ filename }}</b>
                 </p>
                 <q-input
-                    v-model="file_name_check"
+                    v-model="fileNameCheck"
                     outlined
                     placeholder="Confirm File Name"
                     autofocus
@@ -19,7 +19,7 @@
         <template #actions>
             <q-btn
                 flat
-                :disable="file_name_check !== filename"
+                :disable="fileNameCheck !== filename"
                 label="Delete File"
                 class="bg-button-primary"
                 @click="onDialogOK"
@@ -33,9 +33,9 @@ import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const file_name_check = ref('');
+const fileNameCheck = ref('');
 
-const props = defineProps<{
+defineProps<{
     filename: string;
 }>();
 </script>

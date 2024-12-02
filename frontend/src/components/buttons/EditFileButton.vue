@@ -31,7 +31,6 @@ const props = defineProps<{
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.file) return false;
     return canModifyMission(
         props.file.mission.uuid,
         props.file.mission.project.uuid,
@@ -39,8 +38,7 @@ const canModify = computed(() => {
     );
 });
 
-function editFile() {
-    if (!canModify.value) return;
+const editFile = (): void => {
     $q.dialog({
         component: NewEditFile,
         componentProps: {
@@ -48,7 +46,7 @@ function editFile() {
         },
         persistent: true,
     });
-}
+};
 </script>
 
 <style scoped></style>

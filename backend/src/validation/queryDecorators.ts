@@ -14,6 +14,7 @@ import {
     UUIDValidate,
 } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
+import { AccessGroupType } from '@common/frontend_shared/enum';
 
 export const QueryUUID = (paramName: string, paramDescription: string) =>
     createParamDecorator(
@@ -91,7 +92,7 @@ export const QueryOptionalString = (
             const request = ctx.switchToHttp().getRequest();
             const value = request.query[data];
 
-            if (value === undefined) {
+            if (value === undefined || value === '') {
                 return '';
             }
 
@@ -430,6 +431,37 @@ export const QueryOptionalNumber = (
             return value;
         },
         metadataApplier(paramName, paramDescription, 'query', 'number', false),
+    )(paramName);
+
+export const QueryOptionalAccessGroupType = (
+    paramName: string,
+    paramDescription: string,
+) =>
+    createParamDecorator(
+        (data: string, ctx: ExecutionContext): AccessGroupType | undefined => {
+            const request = ctx.switchToHttp().getRequest();
+            const value = request.query[data];
+
+            if (value === undefined) {
+                return undefined;
+            }
+
+            // validate if value is a valid AccessGroupType
+            if (!Object.values(AccessGroupType).includes(value)) {
+                throw new BadRequestException(
+                    'Parameter is not a valid AccessGroupType',
+                );
+            }
+
+            return value as AccessGroupType;
+        },
+        metadataApplier(
+            paramName,
+            paramDescription,
+            'query',
+            'AccessGroupType',
+            false,
+        ),
     )(paramName);
 
 export const QuerySkip = (paramName: string, paramDescription?: string) =>

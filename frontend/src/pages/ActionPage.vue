@@ -1,7 +1,7 @@
 <template>
     <title-section title="Mission Analysis" />
 
-    <ActionConfiguration :open="createAction" @close="createAction = false" />
+    <ActionConfiguration :open="createAction" @close="closeHandler" />
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
@@ -74,11 +74,7 @@
                     color="icon-secondary"
                     class="button-border"
                     icon="sym_o_loop"
-                    @click="
-                        queryClient.invalidateQueries({
-                            queryKey: ['missions', handler.projectUuid],
-                        })
-                    "
+                    @click="refetchData"
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
@@ -89,7 +85,7 @@
                     label="Create Action"
                     :disable="!canCreate"
                     icon="sym_o_add"
-                    @click="() => (createAction = true)"
+                    @click="createActionEvent"
                 >
                     <q-tooltip v-if="!canCreate">
                         Creating Actions requires Create rights on the mission.
@@ -128,8 +124,8 @@ import TitleSection from 'components/TitleSection.vue';
 import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
 import { UserRole } from '@common/enum';
-import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
-import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { FlatMissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { FlatProjectDto, ProjectsDto } from '@api/types/Project.dto';
 
 const createAction = ref(false);
 
@@ -143,13 +139,13 @@ const handler = useHandler();
 const { data: permissions } = usePermissionsQuery();
 const selectedProject = computed(() =>
     projects.value.find(
-        (project: ProjectDto) => project.uuid === handler.value.projectUuid,
+        (project: FlatProjectDto) => project.uuid === handler.value.projectUuid,
     ),
 );
 
 const selectedMission = computed(() =>
     missions.value.find(
-        (mission: MissionDto) => mission.uuid === handler.value.missionUuid,
+        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );
 const search = computed({
@@ -171,7 +167,7 @@ const projectsReturn = useQuery<ProjectsDto>({
     queryFn: () => filteredProjects(500, 0, 'name', false),
 });
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+    projectsReturn.data.value ? projectsReturn.data.value.projects : [],
 );
 
 // Fetch missions
@@ -182,7 +178,23 @@ const queryKeyMissions = computed(() => [
 const { data: _missions } = useQuery<MissionsDto>({
     queryKey: queryKeyMissions,
     queryFn: () =>
-        missionsOfProjectMinimal(handler.value.projectUuid || '', 500, 0),
+        missionsOfProjectMinimal(handler.value.projectUuid ?? '', 500, 0),
 });
-const missions = computed(() => (_missions.value ? _missions.value[0] : []));
+const missions = computed(() =>
+    _missions.value ? _missions.value.missions : [],
+);
+
+const createActionEvent = (): void => {
+    createAction.value = true;
+};
+
+const refetchData = async (): Promise<void> => {
+    await queryClient.invalidateQueries({
+        queryKey: ['missions', handler.value.projectUuid],
+    });
+};
+
+const closeHandler = (): void => {
+    createAction.value = false;
+};
 </script>

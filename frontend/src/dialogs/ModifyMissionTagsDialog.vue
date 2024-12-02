@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Modify Tags </template>
+        <template #title> Modify Tags</template>
         <template #content>
             <SelectMissionTags
                 :project-u-u-i-d="mission?.project?.uuid"
                 :tag-values="tagValues"
-                @update:tag-values="(update) => (tagValues = update)"
+                @update:tag-values="updateTagValue"
             />
         </template>
         <template #actions>
@@ -42,7 +42,7 @@ watch(
     (newMission) => {
         if (newMission) {
             tagValues.value = {};
-            newMission.tags.tags.forEach((tag) => {
+            newMission.tags.forEach((tag) => {
                 if (tag.type.datatype === DataType.BOOLEAN) {
                     tagValues.value[tag.type.datatype] = tag.BOOLEAN;
                 } else {
@@ -73,8 +73,12 @@ const { mutate: _updateMissionTags } = useMutation({
     },
 });
 
-function modifyTags() {
+const modifyTags = (): void => {
     _updateMissionTags();
-}
+};
+
+const updateTagValue = (update: Record<string, string>): void => {
+    tagValues.value = update;
+};
 </script>
 <style scoped></style>

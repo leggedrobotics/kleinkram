@@ -143,11 +143,9 @@ import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
-import { FileState } from '@common/enum';
 import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
-import { FileDto } from '@api/types/Files.dto';
-import { MissionDto } from '@api/types/Mission.dto';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
+import { FileDto } from '@api/types/Files.dto';
 
 const props = defineProps<{
     file_uuid: string;
@@ -175,21 +173,8 @@ watch(
         if (!newValue) return;
         selected_project.value = newValue.mission.project;
         if (newValue.date && data.value) {
-            editableFile.value = new FileDto(
-                newValue.uuid,
-                newValue.filename,
-                newValue.mission,
-                newValue.creator,
-                newValue.date,
-                [],
-                newValue.size,
-                newValue.type,
-                FileState.UPLOADING,
-                newValue.hash,
-                newValue.categories,
-                newValue.createdAt,
-                newValue.updatedAt,
-            );
+            // TODO: fix
+            editableFile.value = {};
             dateTime.value = formatDate(new Date(newValue.date));
         }
     },
@@ -287,7 +272,6 @@ function _updateMission() {
         editableFile.value.date = convertedDate;
         const noncircularMission = editableFile.value.mission;
         noncircularMission.project = undefined;
-        noncircularMission.files = [];
         editableFile.value.mission = noncircularMission;
         updateFileMutation(editableFile.value);
         onDialogOK();

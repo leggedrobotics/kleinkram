@@ -33,7 +33,7 @@ const canModify = computed(() =>
     canModifyProject(project_uuid, permissions.value),
 );
 
-const editProjectDialog = () => {
+const editProjectDialog = (): void => {
     // abort if the user cannot modify the project
     if (!canModify.value) return;
 
