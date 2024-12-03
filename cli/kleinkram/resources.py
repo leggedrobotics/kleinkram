@@ -159,6 +159,9 @@ def get_files(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
 
 
 def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
+    """\
+    get a unique project by specifying a project spec
+    """
     projects = get_projects(client, spec)
 
     if len(projects) == 1:
@@ -171,6 +174,9 @@ def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
 
 
 def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
+    """\
+    get a unique mission by specifying a mission spec
+    """
     missions = get_missions(client, spec)
 
     if len(missions) == 1:

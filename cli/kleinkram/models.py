@@ -166,6 +166,28 @@ def files_to_table(
     return table
 
 
+def mission_info_table(mission: Mission) -> Table:
+    table = Table("k", "v", title=f"mission info: {mission.name}", show_header=False)
+
+    # TODO: add more fields as we store more information in the Mission object
+    table.add_row("id", Text(str(mission.id), style="green"))
+    table.add_row("name", mission.name)
+    table.add_row("project", mission.project_name)
+    table.add_row("project id", Text(str(mission.project_id), style="green"))
+
+    return table
+
+
+def project_info_table(project: Project) -> Table:
+    table = Table("k", "v", title=f"project info: {project.name}", show_header=False)
+
+    # TODO: add more fields as we store more information in the Project object
+    table.add_row("id", Text(str(project.id), style="green"))
+    table.add_row("name", project.name)
+    table.add_row("description", project.description)
+    return table
+
+
 class FilesById(NamedTuple):
     ids: List[UUID]
 
