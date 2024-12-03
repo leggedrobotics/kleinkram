@@ -26,8 +26,9 @@ from kleinkram.commands.mission import mission_typer
 from kleinkram.commands.project import project_typer
 from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
-from kleinkram.config import Config
 from kleinkram.config import get_shared_state
+from kleinkram.config import load_config
+from kleinkram.config import save_config
 from kleinkram.errors import ErrorHandledTyper
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
@@ -64,6 +65,15 @@ class LogLevel(str, Enum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+LOG_LEVEL_MAP = {
+    LogLevel.DEBUG: logging.DEBUG,
+    LogLevel.INFO: logging.INFO,
+    LogLevel.WARNING: logging.WARNING,
+    LogLevel.ERROR: logging.ERROR,
+    LogLevel.CRITICAL: logging.CRITICAL,
+}
 
 
 class CommandTypes(str, Enum):
@@ -114,8 +124,12 @@ def login(
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> None:
-    config = Config()
-    config.clear_credentials(all=all)
+    config = load_config(init=True, cached=False)
+    if all:
+        config.endpoint_credentials.clear()
+    else:
+        config.endpoint_credentials.pop(config.selected_endpoint, None)
+    save_config(config)
 
 
 @app.command(hidden=True)
@@ -167,8 +181,9 @@ def cli(
         log_level = LogLevel.WARNING
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    level = logging.getLevelName(log_level)
-    logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
+    logging.basicConfig(
+        level=LOG_LEVEL_MAP[log_level], filename=LOG_FILE, format=LOG_FORMAT
+    )
     logger.info(f"CLI version: {__version__}")
 
     try:

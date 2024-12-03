@@ -8,8 +8,9 @@ from http.server import HTTPServer
 from typing import Optional
 
 from kleinkram.config import CONFIG_PATH
-from kleinkram.config import Config
 from kleinkram.config import Credentials
+from kleinkram.config import load_config
+from kleinkram.config import save_credentials
 
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/google?state=cli"
@@ -24,7 +25,7 @@ def _has_browser() -> bool:
 
 
 def _headless_auth(*, url: str) -> None:
-    config = Config()
+    config = load_config(init=True, cached=False)
 
     print(f"Please open the following URL manually to authenticate: {url}")
     print("Enter the authentication token provided after logging in:")
@@ -33,7 +34,7 @@ def _headless_auth(*, url: str) -> None:
 
     if auth_token and refresh_token:
         creds = Credentials(auth_token=auth_token, refresh_token=refresh_token)
-        config.save_credentials(creds)
+        save_credentials(config, creds)
         print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
     else:
         raise ValueError("Please provided tokens.")
@@ -53,8 +54,8 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
             except Exception:
                 raise RuntimeError("Failed to fetch authentication tokens.")
 
-            config = Config()
-            config.save_credentials(creds)
+            config = load_config(init=True, cached=False)
+            save_credentials(config, creds)
 
             self.send_response(200)
             self.send_header("Content-type", "text/html")
@@ -78,12 +79,12 @@ def _browser_auth(*, url: str) -> None:
 
 
 def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
-    config = Config(overwrite=True)
+    config = load_config(init=True, cached=False)
 
     # use cli key login
     if key is not None:
         creds = Credentials(cli_key=key)
-        config.save_credentials(creds)
+        save_credentials(config, creds)
 
     url = f"{config.endpoint}{OAUTH_SLUG}"
 

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import sys
+from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
-from kleinkram.auth import Config
+from kleinkram.config import Config
+from kleinkram.config import Endpoint
+from kleinkram.config import load_config
+from kleinkram.config import save_config
 
 HELP = """\
 Get or set the current endpoint.
@@ -16,48 +23,58 @@ The endpoint is used to determine the API server to connect to\
 endpoint_typer = typer.Typer(
     name="endpoint",
     help=HELP,
-    no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
+    invoke_without_command=True,
 )
 
 
-@endpoint_typer.command("set")
-def set_endpoint(endpoint: str = typer.Argument(None, help="API endpoint to use")):
-    """
-    Use this command to switch between different API endpoints.\n
-    Standard endpoints are:\n
-    - http://localhost:3000\n
-    - https://api.datasets.leggedrobotics.com\n
-    - https://api.datasets.dev.leggedrobotics.com
-    """
+def _endpoints_table(config: Config) -> Table:
+    table = Table(title="Available Endpoints")
+    table.add_column("Name", style="cyan")
+    table.add_column("API", style="cyan")
+    table.add_column("S3", style="cyan")
 
-    if not endpoint:
-        raise ValueError("No endpoint provided.")
-
-    tokenfile = Config()
-    tokenfile.endpoint = endpoint
-    tokenfile.save()
-
-    print(f"Endpoint set to: {endpoint}")
-    if tokenfile.endpoint not in tokenfile.credentials:
-        print("\nLogin with `klein login`.")
+    for name, endpoint in config.endpoints.items():
+        display_name = (
+            Text(name, style="bold yellow")
+            if name == config.selected_endpoint
+            else Text(name)
+        )
+        table.add_row(display_name, endpoint.api, endpoint.s3)
+    return table
 
 
-@endpoint_typer.command("list")
-def list_endpoints():
-    """
-    Get the current endpoint
+@endpoint_typer.callback()
+def endpoint(
+    name: Optional[str] = typer.Argument(None, help="Name of the endpoint to use"),
+    api: Optional[str] = typer.Argument(None, help="API endpoint to use"),
+    s3: Optional[str] = typer.Argument(None, help="S3 endpoint to use"),
+) -> None:
+    config = load_config(init=True, cached=False)
+    console = Console()
 
-    Also displays all endpoints with saved tokens.
-    """
-    config = Config()
-    print(f"Current endpoint: {config.endpoint}\n", file=sys.stderr)
-
-    if not config.credentials:
-        print("No saved credentials found.", file=sys.stderr)
-        return
-
-    print("Found Credentials for:", file=sys.stderr)
-    for ep in config.credentials.keys():
-        print(" - ", file=sys.stderr, end="", flush=True)
-        print(ep, file=sys.stdout, flush=True)
+    if not any([name, api, s3]):
+        console.print(_endpoints_table(config))
+    elif name is not None and not any([api, s3]):
+        if name not in config.endpoints:
+            console.print(f"Endpoint {name} not found.\n", style="red")
+            console.print(_endpoints_table(config))
+        else:
+            config = Config(
+                version=config.version,
+                endpoints=config.endpoints,
+                endpoint_credentials=config.endpoint_credentials,
+                selected_endpoint=name,
+            )
+            save_config(config)
+    elif not (name and api and s3):
+        raise typer.BadParameter("to add a new endpoint, all arguments are required")
+    else:
+        config.endpoints[name] = Endpoint(api, s3)
+        config = Config(
+            version=config.version,
+            endpoints=config.endpoints,
+            endpoint_credentials=config.endpoint_credentials,
+            selected_endpoint=name,
+        )
+        save_config(config)

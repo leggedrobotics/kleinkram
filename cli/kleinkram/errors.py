@@ -43,11 +43,6 @@ class InvalidCLIVersion(Exception): ...
 class FileTypeNotSupported(Exception): ...
 
 
-class InvalidConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__(INVALID_CONFIG_MESSAGE)
-
-
 ExceptionHandler = Callable[[Exception], int]
 
 

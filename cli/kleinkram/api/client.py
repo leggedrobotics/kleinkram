@@ -6,8 +6,10 @@ from typing import Any
 
 import httpx
 
-from kleinkram.auth import Config
+from kleinkram.config import Config
 from kleinkram.config import Credentials
+from kleinkram.config import load_config
+from kleinkram.config import save_config
 from kleinkram.errors import NotAuthenticated
 
 logger = logging.getLogger(__name__)
@@ -28,27 +30,28 @@ class AuthenticatedClient(httpx.Client):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self._config = Config()
+        self._config = load_config()
         self._config_lock = Lock()
 
-        if self._config.has_cli_key:
-            assert self._config.cli_key, "unreachable"
-            logger.info("using cli key...")
-            self.cookies.set(COOKIE_CLI_KEY, self._config.cli_key)
-
-        elif self._config.has_refresh_token:
-            logger.info("using refresh token...")
-            assert self._config.auth_token is not None, "unreachable"
-            self.cookies.set(COOKIE_AUTH_TOKEN, self._config.auth_token)
-        else:
+        if self._config.credentials is None:
             logger.info("not authenticated...")
             raise NotAuthenticated
+        elif (cli_key := self._config.credentials.cli_key) is not None:
+            logger.info("using cli key...")
+            self.cookies.set(COOKIE_CLI_KEY, cli_key)
+        else:
+            logger.info("using refresh token...")
+            assert self._config.credentials.auth_token is not None, "unreachable"
+            self.cookies.set(COOKIE_AUTH_TOKEN, self._config.credentials.auth_token)
 
     def _refresh_token(self) -> None:
-        if self._config.has_cli_key:
+        if self._config.credentials is None:
+            raise NotAuthenticated
+
+        if self._config.credentials.cli_key is not None:
             raise RuntimeError("cannot refresh token when using cli key auth")
 
-        refresh_token = self._config.refresh_token
+        refresh_token = self._config.credentials.refresh_token
         if refresh_token is None:
             raise RuntimeError("no refresh token found")
         self.cookies.set(COOKIE_REFRESH_TOKEN, refresh_token)
@@ -64,7 +67,8 @@ class AuthenticatedClient(httpx.Client):
         logger.info("saving new tokens...")
 
         with self._config_lock:
-            self._config.save_credentials(creds)
+            self._config.endpoint_credentials[self._config.selected_endpoint] = creds
+            save_config(self._config)
 
         self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)
 

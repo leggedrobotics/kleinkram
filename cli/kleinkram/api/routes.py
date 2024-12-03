@@ -13,7 +13,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
-from kleinkram.config import Config
+from kleinkram.config import load_config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
@@ -222,10 +222,10 @@ def _update_mission_metadata(
 
 
 def _get_api_version() -> Tuple[int, int, int]:
-    config = Config()
+    config = load_config()
     client = httpx.Client()
 
-    resp = client.get(f"{config.endpoint}{GET_STATUS}")
+    resp = client.get(f"{config.endpoint.api}{GET_STATUS}")
     vers = resp.headers["kleinkram-version"].split(".")
 
     return tuple(map(int, vers))  # type: ignore
