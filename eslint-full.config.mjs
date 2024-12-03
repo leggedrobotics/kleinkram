@@ -1,24 +1,44 @@
 import pluginVue from 'eslint-plugin-vue';
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import progress from 'eslint-plugin-file-progress';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import tseslint from 'typescript-eslint';
+import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 
 export default tseslint.config(
     progress.configs.recommended,
     ...pluginVue.configs['flat/recommended'],
     // see https://dev.to/cyrilletuzi/typescript-strictly-typed-part-1-configuring-a-project-9ca
+    ...tseslint.configs.recommendedTypeChecked,
+    ...tseslint.configs.strictTypeChecked,
+    ...tseslint.configs.stylisticTypeChecked,
+    eslintPluginUnicorn.configs['flat/recommended'],
+    {
+        languageOptions: {
+            parser: '@typescript-eslint/parser',
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+    },
 
-    // we do not use type checking locally (only in CI pipeline)
-    // we trust the editor to show us type errors
-    ...tseslint.configs.recommended,
-    ...tseslint.configs.strict,
-    ...tseslint.configs.stylistic,
     {
         files: ['**/*.ts', '**/*.vue'],
         rules: {
             // additional rules
+            '@typescript-eslint/require-array-sort-compare': 'error',
             'no-shadow': 'error',
+            '@typescript-eslint/no-unused-vars': 'error',
 
+            '@typescript-eslint/no-unsafe-assignment': 'error',
+            '@typescript-eslint/no-misused-promises': 'error',
+            '@typescript-eslint/no-unsafe-argument': 'error',
+            '@typescript-eslint/no-unsafe-member-access': 'error',
+            '@typescript-eslint/no-unsafe-return': 'error',
+
+            '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+            '@typescript-eslint/prefer-promise-reject-errors': 'warn',
             '@typescript-eslint/naming-convention': ['warn',
                 {
                     'selector': 'default',
@@ -38,15 +58,34 @@ export default tseslint.config(
             'prefer-arrow-callback': 'error',
             'prefer-template': 'error',
             '@typescript-eslint/explicit-function-return-type': 'warn',
+            '@typescript-eslint/no-unnecessary-condition': 'warn',
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-non-null-assertion': 'error',
+            '@typescript-eslint/no-unsafe-call': 'error',
             '@typescript-eslint/prefer-for-of': 'error',
+            '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+            '@typescript-eslint/prefer-optional-chain': 'error',
+            '@typescript-eslint/restrict-plus-operands': ['error', {
+                'allowAny': false,
+                'allowBoolean': false,
+                'allowNullish': false,
+                'allowNumberAndString': false,
+                'allowRegExp': false,
+            }],
+            '@typescript-eslint/restrict-template-expressions': 'error',
+            '@typescript-eslint/strict-boolean-expressions': ['warn', {
+                'allowNumber': false,
+                'allowString': false,
+            }],
+            '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
 
             semi: 'error',
             'prefer-const': 'error',
+            complexity: ['warn', { max: 4 }],
             'no-nested-ternary': 'warn',
             'no-control-regex': 'warn',
             'no-useless-escape': 'warn',
+            '@typescript-eslint/no-deprecated': 'warn',
         },
     },
     {
@@ -55,11 +94,11 @@ export default tseslint.config(
             'no-console': 'error',
         },
     },
-    ...vueTsEslintConfig({ extends: ['recommended'] }),
+    ...vueTsEslintConfig({ extends: ['recommendedTypeChecked'] }),
+    eslintPluginPrettierRecommended,
     {
         files: ['**/*.ts', '**/*.vue'],
         rules: {
-
             // override rules
             '@typescript-eslint/no-explicit-any': 'warn',
             'no-nested-ternary': 'warn',
@@ -67,6 +106,7 @@ export default tseslint.config(
             'no-useless-escape': 'warn',
             'vue/no-v-text-v-html-on-component': 'warn',
             'vue/v-on-handler-style': 'error',
+            'vue/multi-word-component-names': 'error',
             'vue/component-definition-name-casing': 'error',
             'vue/require-name-property': 'error',
             'vue/require-prop-types': 'error',
@@ -74,20 +114,6 @@ export default tseslint.config(
             'vue/require-explicit-emits': 'error',
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
-
-            // used as we have disabled prettier for the local dev setup
-            'vue/html-indent': 'off',
-
-            // these rules are very slow, we thus disable it for the default config
-            '@typescript-eslint/no-floating-promises': 'off',
-            '@typescript-eslint/no-confusing-void-expression': 'off',
-            '@typescript-eslint/no-misused-promises': 'off',
-            '@typescript-eslint/unbound-method': 'off',
-            '@typescript-eslint/await-thenable': 'off',
-            '@typescript-eslint/no-unnecessary-type-arguments': 'off',
-            'vue/multi-word-component-names': 'off',
-            complexity: 'off',
-
         },
     },
     {

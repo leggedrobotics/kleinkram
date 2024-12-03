@@ -8,9 +8,13 @@
   "scripts": {
     "start": "docker compose up --build -d",
     "eslint": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint --fix .)",
+    "eslint-full": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs --fix .)",
     "eslint:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
+    "eslint-full:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs -f summary .)",
     "eslint:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
-    "eslint:quiet": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint --quiet .)",
+    "eslint-full:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs -f summary .)",
+    "eslint:quiet": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint --quiet --fix .)",
+    "eslint-full:quiet": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs --quiet --fix .)",
     "tsc:check": "(tsc --noemit   --project  backend/tsconfig.json); (tsc --noemit   --project  queueConsumer/tsconfig.json); (tsc --noemit   --project  common/tsconfig.json); (vue-tsc --noEmit  --project  frontend/tsconfig.json)",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
@@ -32,13 +36,15 @@
     "eslint-formatter-summary": "^1.1.0",
     "eslint-plugin-file-progress": "^3.0.1",
     "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-unicorn": "^56.0.1",
     "eslint-plugin-vue": "^9.27.0",
     "grunt": "^1.6.1",
     "grunt-bump": "^0.8.0",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.8.1",
-    "vue-eslint-parser": "^9.4.3"
+    "vue-eslint-parser": "^9.4.3",
+    "vue-tsc": "^2.1.10"
   },
   "dependencies": {
     "fs-extra": "^11.2.0"

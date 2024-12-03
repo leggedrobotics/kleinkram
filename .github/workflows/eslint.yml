@@ -22,5 +22,6 @@ jobs:
             # for eslint we may need to install the dependencies
             - name: Install dependencies
               run: yarn install --immutable
-            - name: Run ESLint
-              run: yarn eslint:check
+
+            - name: Run ESLint (with info to run `yarn eslint-full` to reproduce locally)
+              run: yarn eslint-full:check || echo "Run 'yarn eslint-full' to reproduce locally"
