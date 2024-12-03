@@ -56,7 +56,7 @@ export class ProjectService {
         take: number,
         sortBy: string,
         sortDirection: 'ASC' | 'DESC',
-        searchParams: Map<string, string>,
+        searchParameters: Map<string, string>,
     ): Promise<ProjectsDto> {
         // convert take and skip to numbers
         take = Number(take);
@@ -92,16 +92,18 @@ export class ProjectService {
             baseQuery = baseQuery.orderBy(`project.${sortBy}`, sortDirection);
         }
 
-        if (searchParams) {
-            Object.keys(searchParams).forEach((key, index) => {
+        if (searchParameters) {
+            for (const [index, key] of Object.keys(
+                searchParameters,
+            ).entries()) {
                 if (!['name', 'creator.uuid'].includes(key)) {
-                    return;
+                    continue;
                 }
                 if (key.toLowerCase().includes('uuid')) {
                     baseQuery = baseQuery.andWhere(
                         `project.${key} = :${index.toString()}`,
                         {
-                            [index]: searchParams[key],
+                            [index]: searchParameters[key],
                         },
                     );
                 } else {
@@ -109,11 +111,11 @@ export class ProjectService {
                         `project.${key} ILIKE :${index.toString()}`,
                         {
                             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                            [index]: `%${searchParams[key].toString()}%`,
+                            [index]: `%${searchParameters[key].toString()}%`,
                         },
                     );
                 }
-            });
+            }
         }
 
         const [projects, count] = await baseQuery
@@ -322,9 +324,11 @@ export class ProjectService {
             requiredTags: tagTypes,
         });
 
-        const accessGroupsDefaultIds = defaultAccessGroups
-            .map((ag) => ag.uuid)
-            .filter((id) => id !== undefined);
+        const accessGroupsDefaultIds = new Set(
+            defaultAccessGroups
+                .map((ag) => ag.uuid)
+                .filter((id) => id !== undefined),
+        );
 
         let deduplicatedAccessGroups: (
             | { accessGroupUUID: string; rights: AccessGroupRights }
@@ -332,11 +336,9 @@ export class ProjectService {
         )[] = [];
         if (project.accessGroups) {
             deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
-                if ('accessGroupUUID' in ag) {
-                    return !accessGroupsDefaultIds.includes(ag.accessGroupUUID);
-                } else {
-                    return ag.userUUID !== auth.user.uuid;
-                }
+                return 'accessGroupUUID' in ag
+                    ? !accessGroupsDefaultIds.has(ag.accessGroupUUID)
+                    : ag.userUUID !== auth.user.uuid;
             });
         }
 
@@ -460,7 +462,7 @@ export class ProjectService {
                 let rights = AccessGroupRights.WRITE;
 
                 switch (accessGroup.type) {
-                    case AccessGroupType.AFFILIATION:
+                    case AccessGroupType.AFFILIATION: {
                         if (removedDefaultGroups.includes(accessGroup.uuid)) {
                             return;
                         }
@@ -469,9 +471,11 @@ export class ProjectService {
                             return group.uuid === accessGroup.uuid;
                         }).rights;
                         break;
+                    }
 
-                    case AccessGroupType.PRIMARY:
+                    case AccessGroupType.PRIMARY: {
                         rights = AccessGroupRights.DELETE;
+                    }
                 }
 
                 const projectAccess = this.projectAccessRepository.create({
@@ -553,7 +557,7 @@ export class ProjectService {
                         let _rights = AccessGroupRights.WRITE;
 
                         switch (right.type) {
-                            case AccessGroupType.AFFILIATION:
+                            case AccessGroupType.AFFILIATION: {
                                 // @ts-ignore
                                 _rights = this.config.access_groups.find(
                                     (group) => group.uuid === right.uuid,
@@ -563,11 +567,14 @@ export class ProjectService {
                                         right.uuid,
                                     );
                                 break;
-                            case AccessGroupType.PRIMARY:
+                            }
+                            case AccessGroupType.PRIMARY: {
                                 _rights = AccessGroupRights.DELETE;
                                 break;
-                            case AccessGroupType.CUSTOM:
+                            }
+                            case AccessGroupType.CUSTOM: {
                                 return null;
+                            }
                         }
 
                         return {

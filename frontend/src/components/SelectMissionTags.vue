@@ -27,7 +27,7 @@
                     <q-item-label class="tag-label">
                         <span>{{ tagtype.name }}</span>
                         <q-icon
-                            :name="icon(tagtype.type)"
+                            :name="icon(tagtype.datatype)"
                             style="font-size: 18px"
                         />
                     </q-item-label>
@@ -49,7 +49,7 @@
                     Tag: {{ tagtype.name }}
 
                     <template
-                        v-if="requiredTagTypeUUIDs.includes(tagtype.uuid)"
+                        v-if="requiredTagTypeUUIDs?.includes(tagtype.uuid)"
                     >
                         *
                     </template>
@@ -63,7 +63,10 @@
                     clearable
                     required
                     style="padding-bottom: 20px"
-                    :type="DataType_InputType[tagtype.datatype] || 'text'"
+                    :type="
+                        // @ts-ignore
+                        DataType_InputType[tagtype.datatype] ?? 'text'
+                    "
                 />
                 <q-field
                     v-if="tagtype.datatype === DataType.BOOLEAN"
@@ -107,7 +110,7 @@
                     round
                     flat
                     style="margin-top: 19px"
-                    :disable="requiredTagTypeUUIDs.includes(tagtype.uuid)"
+                    :disable="requiredTagTypeUUIDs?.includes(tagtype.uuid)"
                     @click="() => removeTagType(tagtype.uuid)"
                 />
             </div>
@@ -122,49 +125,52 @@ import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/TagsDto.dto';
 import { useAllTags, useProjectQuery } from '../hooks/customQueryHooks';
 
-const props = defineProps<{
+const properties = defineProps<{
     tagValues: Record<string, string>;
-    projectUUID: string;
+    projectUuid: string;
 }>();
 
 const emit = defineEmits(['update:tagValues']);
 const ddr_open2 = ref(false);
 
 // Create a shallow copy of tagValues to make it editable locally
-const localTagValues = ref({ ...props.tagValues });
+const localTagValues = ref({ ...properties.tagValues });
 const additionalTags: Ref<TagTypeDto[]> = ref<TagTypeDto[]>([]);
 
 // Watch for changes in localTagValues and emit them back to the parent
 watch(
     localTagValues,
-    (newVal) => {
-        emit('update:tagValues', newVal);
+    (newValue) => {
+        emit('update:tagValues', newValue);
     },
     { deep: true },
 );
 
 const { data: tagTypes } = useAllTags();
-const { data: project } = useProjectQuery(props.projectUUID);
+const { data: project } = useProjectQuery(properties.projectUuid);
 
 watch(
     () => [project.value, tagTypes.value],
     ([newProject, newTagTypes]) => {
         if (newProject && newTagTypes) {
             additionalTags.value = [];
-            Object.keys(localTagValues.value).forEach((tagTypeUUID) => {
+            for (const tagTypeUUID of Object.keys(localTagValues.value)) {
                 if (
+                    // @ts-ignore
                     !newProject.requiredTags
-                        .map((_tagTypeUUID) => _tagTypeUUID.uuid)
+                        // @ts-ignore
+                        ?.map((_tagTypeUUID) => _tagTypeUUID.uuid)
                         .includes(tagTypeUUID)
                 ) {
                     additionalTags.value.push(
+                        // @ts-ignore
                         newTagTypes.find(
                             (tagType: TagTypeDto) =>
                                 tagType.uuid === tagTypeUUID,
                         ) as TagTypeDto,
                     );
                 }
-            });
+            }
         }
     },
     { immediate: true },
@@ -176,12 +182,12 @@ const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
     if (project.value) {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
-    const addedTagUUIDs = additionalTags.value.map((tag) => tag.uuid);
+    const addedTagUUIDs = new Set(additionalTags.value.map((tag) => tag.uuid));
     if (tagTypes.value.tags === undefined) return [];
     return tagTypes.value.tags.filter(
         (tagtype: TagTypeDto) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
-            !addedTagUUIDs.includes(tagtype.uuid),
+            !addedTagUUIDs.has(tagtype.uuid),
     );
 });
 const DataType_InputType = {

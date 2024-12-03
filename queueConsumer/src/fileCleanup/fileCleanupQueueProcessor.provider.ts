@@ -32,7 +32,7 @@ import { redis, systemUser } from '@common/consts';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import env from '@common/env';
 import { getBucketFromFileType, internalMinio } from '@common/minio_helper';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { Tag } from 'minio';
 
 type CancelUploadJob = Job<{
@@ -120,7 +120,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async fixFileHashes() {
         await this.redlock
-            .using([`lock:hash-repair`], 10000, async () => {
+            .using([`lock:hash-repair`], 10_000, async () => {
                 logger.debug('Fixing file hashes');
 
                 const files = await this.fileRepository.find({
@@ -151,8 +151,8 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
                     );
                     await new Promise((resolve, reject) => {
-                        datastream.on('error', (err) => {
-                            logger.error(err);
+                        datastream.on('error', (error) => {
+                            logger.error(error);
                             resolve(void 0);
                         });
                         datastream.on('data', (chunk) => {
@@ -163,8 +163,8 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             this.fileRepository
                                 .save(file)
                                 .then(resolve)
-                                .catch((e: unknown) => {
-                                    reject(e as Error);
+                                .catch((error: unknown) => {
+                                    reject(error as Error);
                                 });
                         });
                     });
@@ -178,7 +178,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async cleanupFailedUploads() {
         await this.redlock
-            .using([`lock:cleanup-failed-uploads`], 10000, async () => {
+            .using([`lock:cleanup-failed-uploads`], 10_000, async () => {
                 logger.debug('Cleaning up failed uploads');
                 const failedUploads = await this.fileRepository.find({
                     where: {
@@ -251,14 +251,14 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     logger.error(
                         `Mission of file ${file.uuid} is undefined, skipping`,
                     );
-                    return undefined;
+                    return;
                 }
 
                 if (file.mission.project === undefined) {
                     logger.error(
                         `Project of file ${file.uuid} is undefined, skipping`,
                     );
-                    return undefined;
+                    return;
                 }
 
                 return `${file.filename},${file.uuid},${file.mission.name},${file.mission.project.name},${file.mission.project.uuid},${file.mission.uuid}`;
@@ -288,7 +288,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_2AM)
     async synchronizeFileSystem() {
         await this.redlock
-            .using([`lock:fs-sync`], 10000, async () => {
+            .using([`lock:fs-sync`], 10_000, async () => {
                 logger.debug('Synchronizing file system');
 
                 const files = await this.fileRepository.find({
@@ -356,19 +356,22 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         const minioObjects = internalMinio.listObjects(bucket, ''); // ObjectStream
 
         const minioObjectNamesSet = new Set<string>(
-            await minioObjects.map((obj) => obj.name as string).toArray(),
+            await minioObjects.map((object) => object.name as string).toArray(),
         ); // Set of UUIDs
 
-        const dbObjects = await this.fileRepository.find({
+        const databaseObjects = await this.fileRepository.find({
             where: { type: fileType },
         });
-        const dbObjectNames = new Set(dbObjects.map((obj) => obj.uuid));
-        const missingObjects = minioObjectNamesSet.difference(dbObjectNames); // Set of UUIDs found in minio but not in DB
+        const databaseObjectNames = new Set(
+            databaseObjects.map((object) => object.uuid),
+        );
+        const missingObjects =
+            minioObjectNamesSet.difference(databaseObjectNames); // Set of UUIDs found in minio but not in DB
 
         await Promise.all(
-            [...missingObjects].map(async (obj) => {
+            [...missingObjects].map(async (object) => {
                 const tags = (
-                    await internalMinio.getObjectTagging(bucket, obj)
+                    await internalMinio.getObjectTagging(bucket, object)
                 )[0] as unknown as Tag[];
                 const missionUUID = tags.find(
                     (tag: Tag) => tag.Key === 'mission_uuid',
@@ -376,11 +379,14 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 const filename = tags.find(
                     (tag: Tag) => tag.Key === 'filename',
                 )?.Value;
-                const minioObject = await internalMinio.statObject(bucket, obj);
+                const minioObject = await internalMinio.statObject(
+                    bucket,
+                    object,
+                );
 
                 if (missionUUID === undefined || filename === undefined) {
                     logger.error(
-                        `Missing tags in minio object: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
+                        `Missing tags in minio object: UUID: ${object}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
                     );
                     return;
                 }
@@ -396,7 +402,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     );
                 }
                 const recoverQueue = this.queueRepository.create({
-                    identifier: obj,
+                    identifier: object,
 
                     display_name: filename,
                     state: QueueState.AWAITING_PROCESSING,
@@ -406,7 +412,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 });
 
                 const fileEntity = this.fileRepository.create({
-                    uuid: obj,
+                    uuid: object,
                     mission: { uuid: missionUUID },
                     date: new Date(),
                     filename,
@@ -426,11 +432,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     });
                 } catch {
                     logger.error(
-                        `Failed to recover file ${obj} in mission ${missionUUID}`,
+                        `Failed to recover file ${object} in mission ${missionUUID}`,
                     );
                 }
                 logger.error(
-                    `Found missing object in minio: UUID: ${obj}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
+                    `Found missing object in minio: UUID: ${object}, has Tags:${tags.map((tag: Tag) => `${tag.Key}:${tag.Value}`).toString()} in ${fileType === FileType.MCAP ? 'MCAP' : 'BAG'} bucket`,
                 );
             }),
         );
@@ -495,14 +501,14 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         try {
             await internalMinio.statObject(bucketName, objectName);
             return true;
-        } catch (err: unknown) {
-            const errorCode = (err as { code: string }).code;
+        } catch (error: unknown) {
+            const errorCode = (error as { code: string }).code;
 
             if (errorCode === 'NotFound') {
                 return false;
             }
             // Handle other potential errors (e.g., network issues)
-            throw err;
+            throw error;
         }
     }
 }

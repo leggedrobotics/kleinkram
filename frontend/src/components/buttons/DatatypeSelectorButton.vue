@@ -19,7 +19,13 @@
                     <q-item-label v-html="datatype" />
                 </q-item-section>
                 <q-item-section side>
-                    <q-icon :name="icon(datatype)" size="sm" />
+                    <q-icon
+                        :name="
+                            // @ts-ignore
+                            icon(datatype)
+                        "
+                        size="sm"
+                    />
                 </q-item-section>
             </q-item>
         </q-list>
@@ -32,7 +38,7 @@ import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
 
 // Define the props and emits for the component
-const props = defineProps({
+const properties = defineProps({
     modelValue: {
         type: String as PropType<DataType>,
         required: false,
@@ -47,9 +53,9 @@ const selectedLabel = ref<string | null>(null);
 
 // Watch the modelValue prop to keep selectedLabel in sync
 watch(
-    () => props.modelValue,
-    (newVal) => {
-        selectedLabel.value = newVal;
+    () => properties.modelValue,
+    (newValue) => {
+        selectedLabel.value = newValue;
     },
     { immediate: true },
 );

@@ -3,10 +3,10 @@ export function parseMinioMetrics(metricsText) {
 
     const result = {};
 
-    lines.forEach((line) => {
+    for (const line of lines) {
         // Skip comments
         if (line.startsWith('#')) {
-            return;
+            continue;
         }
 
         // Match metric lines
@@ -16,10 +16,10 @@ export function parseMinioMetrics(metricsText) {
 
             // Parse labels
             const labels = {};
-            labelsText.split(',').forEach((labelPair) => {
-                const [key, val] = labelPair.split('=');
-                labels[key] = val.replace(/"/g, ''); // Remove quotes
-            });
+            for (const labelPair of labelsText.split(',')) {
+                const [key, value_] = labelPair.split('=');
+                labels[key] = value_.replaceAll('"', ''); // Remove quotes
+            }
 
             // Add to the result object
             if (!result[metricName]) {
@@ -27,10 +27,10 @@ export function parseMinioMetrics(metricsText) {
             }
             result[metricName].push({
                 labels,
-                value: parseFloat(value),
+                value: Number.parseFloat(value),
             });
         }
-    });
+    }
 
     return result;
 }

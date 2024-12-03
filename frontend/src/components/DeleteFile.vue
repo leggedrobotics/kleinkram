@@ -26,15 +26,15 @@ const client = useQueryClient();
 const route = useRoute();
 const router = useRouter();
 
-async function deleteFileAction() {
-    if (fileNameCheck.value === props.file.filename) {
-        await deleteFile(props.file)
+async function deleteFileAction(): Promise<void> {
+    if (fileNameCheck.value === properties.file.filename) {
+        await deleteFile(properties.file)
             .then(async () => {
                 await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'files' ||
                         (query.queryKey[0] === 'file' &&
-                            query.queryKey[1] === props.file.uuid) ||
+                            query.queryKey[1] === properties.file.uuid) ||
                         query.queryKey[0] === 'Filtered Files',
                 });
                 Notify.create({
@@ -55,9 +55,19 @@ async function deleteFileAction() {
                     });
                 }
             })
-            .catch((e: unknown) => {
+            .catch((error: unknown) => {
+                let errorMessage = '';
+                errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : ((
+                              error as {
+                                  response?: { data?: { message?: string } };
+                              }
+                          ).response?.data?.message ?? 'Unknown error');
+
                 Notify.create({
-                    message: `Error deleting file: ${e.response.data.message}`,
+                    message: `Error deleting file: ${errorMessage}`,
                     color: 'negative',
                     position: 'bottom',
                 });
@@ -65,7 +75,7 @@ async function deleteFileAction() {
     }
 }
 
-const props = defineProps<{
+const properties = defineProps<{
     file: FileDto;
 }>();
 

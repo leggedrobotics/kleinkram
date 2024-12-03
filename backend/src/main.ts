@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Response } from 'express';
 import cookieParser from 'cookie-parser';
-import env from '../../common/env';
+import environment from '../../common/env';
 import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
 
 import {
@@ -139,7 +139,7 @@ async function bootstrap() {
         }),
     );
     app.enableCors({
-        origin: [env.FRONTEND_URL, env.DOCS_URL],
+        origin: [environment.FRONTEND_URL, environment.DOCS_URL],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         preflightContinue: false,
         credentials: true,
@@ -168,7 +168,7 @@ async function bootstrap() {
     logger.debug('Endpoints saved');
 }
 
-bootstrap().catch((err) => {
+bootstrap().catch((error) => {
     logger.error('Failed to start application');
-    logger.error(err);
+    logger.error(error);
 });

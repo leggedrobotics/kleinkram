@@ -14,14 +14,14 @@
 </template>
 
 <script setup lang="ts">
-export interface EssentialLinkProps {
+export interface EssentialLinkProperties {
     title: string;
     caption?: string;
     link?: string;
     icon?: string;
 }
 
-withDefaults(defineProps<EssentialLinkProps>(), {
+withDefaults(defineProps<EssentialLinkProperties>(), {
     caption: '',
     link: '#',
     icon: '',

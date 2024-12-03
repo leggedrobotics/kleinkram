@@ -19,7 +19,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiOkResponse } from '@nestjs/swagger';
 import { FileQueueEntriesDto } from '@common/api/types/FileQueueEntry.dto';
 
@@ -86,7 +86,7 @@ export class QueueController {
     @CanDeleteMission()
     async delete(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @ParamUUID('uuid') uuid: string,
+        @ParameterUID('uuid') uuid: string,
     ) {
         return this.queueService.delete(missionUUID, uuid);
     }

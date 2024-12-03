@@ -16,7 +16,7 @@ export const missionsOfProjectMinimal = async (
     skip = 0,
     sortBy = 'createdAt',
     descending = false,
-    searchParams?: {
+    searchParameters?: {
         name: string;
     },
 ): Promise<MissionsDto> => {
@@ -26,20 +26,20 @@ export const missionsOfProjectMinimal = async (
             count: 0,
         };
     }
-    const params: Record<string, any> = {
+    const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,
         skip,
         sortBy,
         sortDirection: descending ? 'DESC' : 'ASC',
     };
-    if (searchParams?.name) {
-        params.search = searchParams.name;
+    if (searchParameters?.name) {
+        parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
         `/mission/filteredMinimal`,
         {
-            params,
+            params: parameters,
         },
     );
     return response.data;
@@ -51,7 +51,7 @@ export const missionsOfProject = async (
     skip = 0,
     sortBy = 'createdAt',
     descending = false,
-    searchParams?: {
+    searchParameters?: {
         name: string;
     },
 ): Promise<MissionsDto> => {
@@ -61,20 +61,20 @@ export const missionsOfProject = async (
             count: 0,
         };
     }
-    const params: Record<string, any> = {
+    const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,
         skip,
         sortBy,
         sortDirection: descending ? 'DESC' : 'ASC',
     };
-    if (searchParams?.name) {
-        params.search = searchParams.name;
+    if (searchParameters?.name) {
+        parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
         `/mission/filtered`,
         {
-            params,
+            params: parameters,
         },
     );
     return response.data;

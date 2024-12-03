@@ -59,7 +59,7 @@ import { AccessGroupRights } from '@common/enum';
 import { UserDto } from '@api/types/User.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
 
-const props = defineProps<{
+const properties = defineProps<{
     access_group_uuid: string;
 }>();
 const queryClient = useQueryClient();
@@ -74,8 +74,8 @@ const _foundProjects = computed(() =>
     foundProjects.value ? foundProjects.value.projects : [],
 );
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
-    value: parseInt(key, 10),
+    label: accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights],
+    value: Number.parseInt(key, 10),
 }));
 const { mutate } = useMutation({
     mutationFn: () => {
@@ -83,7 +83,7 @@ const { mutate } = useMutation({
             selected.value.map(async (project) => {
                 return addAccessGroupToProject(
                     project.uuid,
-                    props.access_group_uuid,
+                    properties.access_group_uuid,
                     accessRight.value.value,
                 );
             }),
@@ -96,7 +96,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', props.access_group_uuid],
+            queryKey: ['AccessGroup', properties.access_group_uuid],
         });
     },
     onError: () => {

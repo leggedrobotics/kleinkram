@@ -2,16 +2,16 @@
     <q-header class="bg-default text-grey-8 q-px-lg">
         <q-toolbar class="q-pa-none height-xxl">
             <q-toolbar-title shrink class="q-pa-none" @click="backToHome">
-                <kleinkram-logo class="q-pr-lg" />
+                <KleinkramLogo class="q-pr-lg" />
             </q-toolbar-title>
 
             <q-separator vertical />
 
-            <header-navigation-tabs :main_menu="mainMenu" class="q-ml-lg" />
+            <HeaderTabs :main-menu="mainMenu" class="q-ml-lg" />
 
             <q-space />
             <Suspense>
-                <header-right-menu />
+                <HeaderRightMenu />
             </Suspense>
         </q-toolbar>
         <breadcrumb-navigation />
@@ -21,10 +21,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import KleinkramLogo from 'components/header/KleinkramLogo.vue';
-import HeaderNavigationTabs from 'components/header/HeaderTabs.vue';
-import HeaderRightMenu from 'components/header/HeaderMenuRight.vue';
+import HeaderRightMenu from './HeaderMenuRight.vue';
 import BreadcrumbNavigation from 'components/BreadCrumbs.vue';
+import HeaderTabs from './HeaderTabs.vue';
+import KleinkramLogo from './KleinkramLogo.vue';
 
 const $router = useRouter();
 
@@ -65,5 +65,7 @@ const mainMenu = [
     },
 ];
 
-const backToHome = await $router.push('/');
+const backToHome = async (): Promise<void> => {
+    await $router.push('/');
+};
 </script>

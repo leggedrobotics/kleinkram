@@ -15,10 +15,10 @@ const handleDates = (data: unknown) => {
     if (data === null || data === undefined || typeof data !== 'object')
         return data;
 
-    for (const [key, val] of Object.entries(data)) {
+    for (const [key, value] of Object.entries(data)) {
         // @ts-expect-error this is a hack to make the type checker happy
-        if (isIsoDateString(val)) data[key] = parseISO(val);
-        else if (typeof val === 'object') handleDates(val);
+        if (isIsoDateString(value)) data[key] = parseISO(value);
+        else if (typeof value === 'object') handleDates(value);
     }
 
     return data;
@@ -59,7 +59,7 @@ axiosInstance.interceptors.response.use(
             return axios(originalRequest);
         }
 
-        return Promise.reject(error as Error);
+        throw error as Error;
     },
 );
 

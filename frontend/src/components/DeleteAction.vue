@@ -37,9 +37,9 @@ async function deleteActionAction() {
                     position: 'bottom',
                 });
             })
-            .catch((e) => {
+            .catch((error) => {
                 Notify.create({
-                    message: `Error deleting Action: ${e.response.data.message}`,
+                    message: `Error deleting Action: ${error.response.data.message}`,
                     color: 'negative',
                     position: 'bottom',
                 });

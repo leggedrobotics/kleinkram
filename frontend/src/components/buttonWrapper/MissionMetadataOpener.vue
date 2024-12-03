@@ -26,14 +26,14 @@ import ModifyMissionTagsDialog from 'src/dialogs/ModifyMissionTagsDialog.vue';
 import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
-        props.mission.uuid,
-        props.mission.project.uuid,
+        properties.mission.uuid,
+        properties.mission.project.uuid,
         permissions.value,
     ),
 );
@@ -43,7 +43,7 @@ const openTagsDialog = (): void => {
     $q.dialog({
         component: ModifyMissionTagsDialog,
         componentProps: {
-            mission: props.mission,
+            mission: properties.mission,
         },
     });
 };

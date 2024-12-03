@@ -807,7 +807,7 @@ export class CreateActionsGuard extends BaseGuard {
                     ),
                 ),
             );
-            return allCanAccess.every((canAccess) => canAccess);
+            return allCanAccess.every(Boolean);
         }
         const allCanAccess = await Promise.all(
             missionUUIDs.map((missionUUID) =>
@@ -818,7 +818,7 @@ export class CreateActionsGuard extends BaseGuard {
                 ),
             ),
         );
-        return allCanAccess.every((canAccess) => canAccess);
+        return allCanAccess.every(Boolean);
     }
 }
 

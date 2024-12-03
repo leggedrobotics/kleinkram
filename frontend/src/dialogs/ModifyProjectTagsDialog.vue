@@ -42,31 +42,31 @@ import { TagDto } from '@api/types/TagsDto.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     projectUUID: string;
 }>();
 
 const queryClient = useQueryClient();
 
 const { data: project } = useQuery({
-    queryKey: ['project', props.projectUUID],
+    queryKey: ['project', properties.projectUUID],
     queryFn: async () => {
-        return getProject(props.projectUUID);
+        return getProject(properties.projectUUID);
     },
 });
 const selected = ref<TagDto[]>([]);
 
 watch(
     () => project.value,
-    (newVal) => {
-        selected.value = newVal?.requiredTags || ([] as TagDto[]);
+    (newValue) => {
+        selected.value = newValue?.requiredTags || ([] as TagDto[]);
     },
     { immediate: true },
 );
 const { mutate } = useMutation({
     mutationFn: () => {
         return updateTagTypes(
-            project.value?.uuid,
+            project.value?.uuid ?? '',
             selected.value.map((tag) => tag.uuid),
         );
     },
@@ -79,7 +79,7 @@ const { mutate } = useMutation({
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'project' &&
-                query.queryKey[1] === props.projectUUID,
+                query.queryKey[1] === properties.projectUUID,
         });
     },
     onError(error) {

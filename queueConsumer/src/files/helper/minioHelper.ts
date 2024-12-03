@@ -3,7 +3,7 @@ import env from '@common/env';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 const minio: Client = new Client({
     endPoint: 'minio',
@@ -27,11 +27,11 @@ export async function uploadLocalFile(
     bucketName: string,
     identifier: string,
     fileName: string,
-    tmpFilePath: string,
+    temporaryFilePath: string,
 ) {
     return await traceWrapper(async (): Promise<boolean> => {
         logger.debug('Uploading file to Minio in parts...');
-        await minio.fPutObject(bucketName, identifier, tmpFilePath, {
+        await minio.fPutObject(bucketName, identifier, temporaryFilePath, {
             'Content-Type': 'application/octet-stream',
         });
         logger.debug('File uploaded to Minio in parts');
@@ -42,13 +42,13 @@ export async function uploadLocalFile(
 export async function downloadMinioFile(
     bucketName: string,
     fileName: string,
-    tmpFileName: string,
+    temporaryFileName: string,
 ): Promise<string> {
     return await traceWrapper(async (): Promise<string> => {
         const hash = crypto.createHash('md5');
         logger.debug('Downloading file from Minio...');
         const fileStream = await minio.getObject(bucketName, fileName);
-        const writeStream = fs.createWriteStream(tmpFileName);
+        const writeStream = fs.createWriteStream(temporaryFileName);
 
         fileStream.on('data', (chunk) => {
             hash.update(chunk);
@@ -60,8 +60,8 @@ export async function downloadMinioFile(
                 logger.debug('File downloaded from Minio');
                 resolve(fileHash);
             });
-            writeStream.on('error', (err) => {
-                reject(err);
+            writeStream.on('error', (error) => {
+                reject(error);
             });
         });
     }, 'downloadMinioFile')();

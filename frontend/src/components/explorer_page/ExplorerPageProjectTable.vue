@@ -106,35 +106,35 @@ import ConfigureTagsDialogOpener from 'components/buttonWrapper/ConfigureTagsDia
 import { explorerPageTableColumns } from './explorer_page_table_columns';
 import { useFilteredProjects } from '../../hooks/customQueryHooks';
 
-const props = defineProps<{
+const properties = defineProps<{
     url_handler: QueryHandler;
 }>();
 
 function setPagination(update: TableRequest): void {
-    props.url_handler.setPage(update.pagination.page);
-    props.url_handler.setTake(update.pagination.rowsPerPage);
-    props.url_handler.setSort(update.pagination.sortBy);
-    props.url_handler.setDescending(update.pagination.descending);
+    properties.url_handler.setPage(update.pagination.page);
+    properties.url_handler.setTake(update.pagination.rowsPerPage);
+    properties.url_handler.setSort(update.pagination.sortBy);
+    properties.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.url_handler.page,
-        rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler.rowsNumber,
-        sortBy: props.url_handler.sortBy,
-        descending: props.url_handler.descending,
+        page: properties.url_handler.page,
+        rowsPerPage: properties.url_handler.take,
+        rowsNumber: properties.url_handler.rowsNumber,
+        sortBy: properties.url_handler.sortBy,
+        descending: properties.url_handler.descending,
     };
 });
 
 const selected = ref([]);
 
 const { data: rawData, isLoading } = useFilteredProjects(
-    props.url_handler.take,
-    props.url_handler.skip,
-    props.url_handler.sortBy,
-    props.url_handler.descending,
-    props.url_handler.searchParams,
+    properties.url_handler.take,
+    properties.url_handler.skip,
+    properties.url_handler.sortBy,
+    properties.url_handler.descending,
+    properties.url_handler.searchParams,
 );
 const data = computed(() => (rawData.value ? rawData.value.projects : []));
 const total = computed(() => (rawData.value ? rawData.value.count : 0));
@@ -144,7 +144,7 @@ watch(
     () => {
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
-            props.url_handler.rowsNumber = total.value;
+            properties.url_handler.rowsNumber = total.value;
         }
     },
     { immediate: true },

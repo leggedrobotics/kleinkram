@@ -11,7 +11,7 @@
                 flat
                 label="Create Tag Type"
                 class="bg-button-primary"
-                @click="createTagType"
+                @click="createTagTypeAction"
             />
         </template>
     </base-dialog>
@@ -25,7 +25,7 @@ const createTagType = ref();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const createTagType = (): void => {
+const createTagTypeAction = (): void => {
     createTagType.value.createTagTypeAction();
     onDialogOK();
 };

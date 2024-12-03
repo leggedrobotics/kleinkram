@@ -23,7 +23,7 @@ import { UserRole } from '@common/enum';
 import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/User.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     accessGroup: AccessGroupDto;
 }>();
 
@@ -37,7 +37,8 @@ const canModify = computed(() => {
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
-    return props.accessGroup.creator.uuid === me.value.uuid;
+    // @ts-ignore
+    return properties.accessGroup.creator.uuid === me.value.uuid;
 });
 
 function openAddUser(): void {
@@ -47,7 +48,7 @@ function openAddUser(): void {
     $q.dialog({
         component: AddUserToAccessGroupDialog,
         componentProps: {
-            access_group_uuid: props.accessGroup.uuid,
+            access_group_uuid: properties.accessGroup.uuid,
         },
     });
 }

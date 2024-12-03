@@ -1,4 +1,4 @@
-import Env from './env';
+import Environment from './env';
 
 interface DatabaseConfig {
     host: string;
@@ -20,14 +20,14 @@ interface TypeormConfig {
 
 export default (): TypeormConfig => ({
     server: {
-        port: Env.SERVER_PORT || 3000,
+        port: Environment.SERVER_PORT || 3000,
     },
-    entities: Env.ENTITIES,
+    entities: Environment.ENTITIES,
     database: {
-        host: Env.DB_HOST,
-        port: Env.DB_PORT,
-        username: Env.DB_USER,
-        password: Env.DB_PASSWORD,
-        database: Env.DB_DATABASE,
+        host: Environment.DB_HOST,
+        port: Environment.DB_PORT,
+        username: Environment.DB_USER,
+        password: Environment.DB_PASSWORD,
+        database: Environment.DB_DATABASE,
     },
 });

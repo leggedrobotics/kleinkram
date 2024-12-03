@@ -226,10 +226,20 @@
             >
                 <q-chip
                     v-for="value in Object.values(tagFilter)"
-                    :key="value?.name"
+                    :key="
+                        // @ts-ignore
+                        value?.name
+                    "
                     dense
                 >
-                    {{ value?.name }}: {{ value?.value }}
+                    {{
+                        // @ts-ignore
+                        value?.name
+                    }}:
+                    {{
+                        // @ts-ignore
+                        value?.value
+                    }}
                 </q-chip>
             </q-btn>
         </div>
@@ -534,7 +544,7 @@ const columns = [
         label: 'Project',
         align: 'left',
         field: (row: FileDto) => row.mission.project.name,
-        format: (val: string) => val,
+        format: (value: string) => value,
         sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
@@ -544,7 +554,7 @@ const columns = [
         label: 'Mission',
         align: 'left',
         field: (row: FileDto) => row.mission.name,
-        format: (val: string) => val,
+        format: (value: string) => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -554,7 +564,7 @@ const columns = [
         label: 'File',
         align: 'left',
         field: (row: FileDto) => row.filename,
-        format: (val: string) => val,
+        format: (value: string) => value,
         sortable: true,
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
     },
@@ -564,7 +574,7 @@ const columns = [
         label: 'Recoring Date',
         align: 'left',
         field: (row: FileDto) => row.date,
-        format: (val: string) => formatDate(new Date(val)),
+        format: (value: string) => formatDate(new Date(value)),
         sortable: true,
     },
     {
@@ -573,7 +583,7 @@ const columns = [
         label: 'Creation Date',
         align: 'left',
         field: (row: FileDto) => row.createdAt,
-        format: (val: string) => formatDate(new Date(val)),
+        format: (value: string) => formatDate(new Date(value)),
         sortable: true,
     },
     {
@@ -582,7 +592,7 @@ const columns = [
         label: 'Creator',
         align: 'left',
         field: (row: FileDto) => row.creator.name,
-        format: (val: string) => val,
+        format: (value: string) => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -616,8 +626,8 @@ function openTagFilterDialog() {
     });
 }
 
-function filterFn(val: string, update: any) {
-    if (val === '') {
+function filterFn(value: string, update: any) {
+    if (value === '') {
         update(() => {
             displayedTopics.value = allTopics.value;
         });
@@ -625,7 +635,7 @@ function filterFn(val: string, update: any) {
     }
     update(() => {
         if (!allTopics.value) return;
-        const needle = val.toLowerCase();
+        const needle = value.toLowerCase();
         const filtered = allTopics.value.filter((v) =>
             v.toLowerCase().includes(needle),
         );

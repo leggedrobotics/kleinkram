@@ -60,10 +60,10 @@ export class TagService {
         let tag: Tag | undefined;
         const isString = typeof value === 'string';
         switch (tagType.datatype) {
-            case DataType.NUMBER:
+            case DataType.NUMBER: {
                 if (typeof value === 'number' || isString) {
                     if (isString) {
-                        value = parseInt(value as string);
+                        value = Number.parseInt(value as string);
                     }
                     tag = this.tagRepository.create({
                         tagType,
@@ -76,8 +76,9 @@ export class TagService {
                 throw new UnprocessableEntityException(
                     'Value must be a number',
                 );
+            }
             case DataType.STRING:
-            case DataType.LINK:
+            case DataType.LINK: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -89,7 +90,8 @@ export class TagService {
                     mission,
                 });
                 break;
-            case DataType.LOCATION:
+            }
+            case DataType.LOCATION: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -101,7 +103,8 @@ export class TagService {
                     mission,
                 });
                 break;
-            case DataType.BOOLEAN:
+            }
+            case DataType.BOOLEAN: {
                 if (typeof value === 'boolean' || isString) {
                     if (isString) {
                         value = value === 'true';
@@ -117,7 +120,8 @@ export class TagService {
                 throw new UnprocessableEntityException(
                     'Value must be a boolean',
                 );
-            case DataType.DATE:
+            }
+            case DataType.DATE: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -129,9 +133,11 @@ export class TagService {
                     mission,
                 });
                 break;
+            }
 
-            default:
+            default: {
                 throw new Error('Unknown datatype');
+            }
         }
 
         return this.tagRepository.save(tag);
@@ -159,10 +165,10 @@ export class TagService {
 
         const isString = typeof value === 'string';
         switch (tagType.datatype) {
-            case DataType.NUMBER:
+            case DataType.NUMBER: {
                 if (typeof value === 'number' || isString) {
                     if (isString) {
-                        value = parseInt(value as string);
+                        value = Number.parseInt(value as string);
                     }
                     exsitingTag[tagType.datatype] = value as number;
                     break;
@@ -170,9 +176,10 @@ export class TagService {
                 throw new UnprocessableEntityException(
                     'Value must be a number',
                 );
+            }
 
             case DataType.STRING:
-            case DataType.LINK:
+            case DataType.LINK: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -180,8 +187,9 @@ export class TagService {
                 }
                 exsitingTag[DataType.STRING] = value;
                 break;
+            }
 
-            case DataType.LOCATION:
+            case DataType.LOCATION: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -189,8 +197,9 @@ export class TagService {
                 }
                 exsitingTag[tagType.datatype] = value;
                 break;
+            }
 
-            case DataType.BOOLEAN:
+            case DataType.BOOLEAN: {
                 if (typeof value === 'boolean' || isString) {
                     if (isString) {
                         value = value === 'true';
@@ -202,7 +211,8 @@ export class TagService {
                 throw new UnprocessableEntityException(
                     'Value must be a boolean',
                 );
-            case DataType.DATE:
+            }
+            case DataType.DATE: {
                 if (typeof value !== 'string') {
                     throw new UnprocessableEntityException(
                         'Value must be a string',
@@ -210,9 +220,11 @@ export class TagService {
                 }
                 exsitingTag[tagType.datatype] = new Date(value);
                 break;
+            }
 
-            default:
+            default: {
                 throw new Error('Unknown datatype');
+            }
         }
         return this.tagRepository.save(exsitingTag);
     }

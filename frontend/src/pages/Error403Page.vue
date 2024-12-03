@@ -37,7 +37,7 @@
 <script setup lang="ts">
 // extract url params
 
-const urlParams = new URLSearchParams(window.location.search);
-const message = urlParams.get('message');
-const project_uuid = urlParams.get('project_uuid');
+const urlParameters = new URLSearchParams(globalThis.location.search);
+const message = urlParameters.get('message');
+const project_uuid = urlParameters.get('project_uuid');
 </script>

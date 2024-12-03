@@ -59,7 +59,7 @@ import { updateProject } from 'src/services/mutations/project';
 import { ProjectDto } from '@api/types/Project.dto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
 }>();
 const queryClient = useQueryClient();
@@ -70,7 +70,7 @@ const hasValidInput = ref(false);
 
 const invalidProjectNames: Ref<string[]> = ref([]);
 
-const projectResponse = useProjectQuery(props.project_uuid);
+const projectResponse = useProjectQuery(properties.project_uuid);
 
 const project = computed(() => projectResponse.data.value);
 watch(
@@ -90,17 +90,17 @@ async function save_changes(): Promise<void> {
         projectName.value === project.value?.name &&
         projectDescription.value === project.value.description
     )
-        return Promise.resolve();
+        return;
 
     // validate input
     if (!project.value?.uuid) {
-        return Promise.reject(new Error('Project UUID is not valid'));
+        throw new Error('Project UUID is not valid');
     }
     if (!project.value.name) {
-        return Promise.reject(new Error('Project name is not valid'));
+        throw new Error('Project name is not valid');
     }
     if (!project.value.description) {
-        return Promise.reject(new Error('Project description is not valid'));
+        throw new Error('Project description is not valid');
     }
 
     await updateProject(
@@ -108,23 +108,30 @@ async function save_changes(): Promise<void> {
         projectName.value.trim(),
         projectDescription.value,
     ).catch((error: unknown) => {
-        if (error.response.data.message.includes('Project')) {
+        let errorMessage = '';
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : ((error as { response?: { data?: { message?: string } } })
+                    .response?.data?.message ?? 'Unknown error';
+
+        if (errorMessage.includes('Project')) {
             Notify.create({
-                message: `Error updating project: ${error.response.data.message}`,
+                message: `Error updating project: ${errorMessage}`,
                 color: 'negative',
                 position: 'bottom',
                 timeout: 5000,
             });
         } else {
             Notify.create({
-                message: `Error updating project: ${error.response.data.message}`,
+                message: `Error updating project: ${errorMessage}`,
                 color: 'negative',
                 position: 'bottom',
                 timeout: 5000,
             });
         }
 
-        return Promise.reject(error as Error);
+        throw error as Error;
     });
 
     const cache = queryClient.getQueryCache();

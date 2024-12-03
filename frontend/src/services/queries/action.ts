@@ -11,7 +11,7 @@ export const getActions = async (
     descending: boolean,
     search: string,
 ): Promise<ActionsDto> => {
-    const params: Record<string, string | number | boolean> = {
+    const parameters: Record<string, string | number | boolean> = {
         project_uuid: projectUUID,
         mission_uuid: missionUUID,
         take,
@@ -21,32 +21,32 @@ export const getActions = async (
     };
 
     if (search) {
-        params.search = search;
+        parameters.search = search;
     }
 
     const response: AxiosResponse<ActionsDto> = await axios.get<ActionsDto>(
         '/action/listActions',
-        { params },
+        { params: parameters },
     );
     return response.data;
 };
 
 export const actionDetails = async (actionUuid: string) => {
-    const params = {
+    const parameters = {
         uuid: actionUuid,
     };
 
-    const response = await axios.get('/action/details', { params });
+    const response = await axios.get('/action/details', { params: parameters });
     return response.data;
 };
 
 export const listActionTemplates = async (search: string) => {
-    const params: Record<string, string> = {};
+    const parameters: Record<string, string> = {};
     if (search) {
-        params.search = search;
+        parameters.search = search;
     }
     const response = await axios.get('/action/listTemplates', {
-        params,
+        params: parameters,
     });
     return response.data;
 };

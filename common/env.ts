@@ -21,7 +21,7 @@ function asString(value: string | undefined): string {
  */
 function asNumber(value: string | undefined): number {
     const stringValue = asString(value);
-    const numberValue = parseFloat(stringValue);
+    const numberValue = Number.parseFloat(stringValue);
 
     if (Number.isNaN(numberValue)) {
         const message = `The environment variable has to hold a stringified number value - not ${stringValue}`;
@@ -38,12 +38,12 @@ function asNumber(value: string | undefined): number {
  * @returns environment variable as boolean
  */
 function asBoolean(value: string | undefined): boolean {
-    const strVar = asString(value);
-    if (!(strVar === 'true' || strVar === 'false')) {
-        const message = `The environment variable has to hold a stringified boolean value - not ${strVar}`;
+    const stringVariable = asString(value);
+    if (!(stringVariable === 'true' || stringVariable === 'false')) {
+        const message = `The environment variable has to hold a stringified boolean value - not ${stringVariable}`;
         throw new Error(message);
     }
-    return strVar === 'true';
+    return stringVariable === 'true';
 }
 
 export default {

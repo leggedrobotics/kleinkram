@@ -20,23 +20,24 @@ export const fetchOverview = async (
     desc?: boolean,
 ): Promise<FilesDto> => {
     try {
-        const params: Record<string, string> = {};
-        if (filename) params.fileName = filename;
-        if (projectUUID) params.projectUUID = projectUUID;
-        if (missionUUID) params.missionUUID = missionUUID;
-        if (startDate) params.startDate = startDate.toISOString();
-        if (endDate) params.endDate = endDate.toISOString();
-        if (topics && topics.length > 0) params.topics = topics.join(',');
-        if (andOr !== undefined) params.andOr = andOr.toString();
-        if (fileTypes !== undefined) params.fileTypes = fileTypes.join(',');
-        if (tag) params.tags = JSON.stringify(tag);
-        if (take) params.take = take.toString();
-        if (skip) params.skip = skip.toString();
-        if (sort) params.sort = sort;
-        if (desc !== undefined) params.sortDirection = desc ? 'DESC' : 'ASC';
-        const queryParams = new URLSearchParams(params).toString();
+        const parameters: Record<string, string> = {};
+        if (filename) parameters.fileName = filename;
+        if (projectUUID) parameters.projectUUID = projectUUID;
+        if (missionUUID) parameters.missionUUID = missionUUID;
+        if (startDate) parameters.startDate = startDate.toISOString();
+        if (endDate) parameters.endDate = endDate.toISOString();
+        if (topics && topics.length > 0) parameters.topics = topics.join(',');
+        if (andOr !== undefined) parameters.andOr = andOr.toString();
+        if (fileTypes !== undefined) parameters.fileTypes = fileTypes.join(',');
+        if (tag) parameters.tags = JSON.stringify(tag);
+        if (take) parameters.take = take.toString();
+        if (skip) parameters.skip = skip.toString();
+        if (sort) parameters.sort = sort;
+        if (desc !== undefined)
+            parameters.sortDirection = desc ? 'DESC' : 'ASC';
+        const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-            `/file/filtered?${queryParams}`,
+            `/file/filtered?${queryParameters}`,
         );
         return response.data;
     } catch (error) {
@@ -78,24 +79,26 @@ export const filesOfMission = async (
     desc?: boolean,
     health?: 'Healthy' | 'Unhealthy' | 'Uploading',
 ): Promise<FilesDto> => {
-    const params: Record<string, string | number | boolean | string[]> = {
+    const parameters: Record<string, string | number | boolean | string[]> = {
         uuid: missionUUID,
         take,
         skip,
     };
     if (fileType !== undefined && fileType !== FileType.ALL)
-        params.fileType = fileType;
-    if (filename) params.filename = filename;
-    if (health) params.health = health;
-    if (categories && categories.length > 0) params.categories = categories;
-    if (sort) params.sort = sort;
-    else params.sort = 'filename';
-    if (desc !== undefined) params.desc = desc ? 'DESC' : 'ASC';
-    else params.desc = 'ASC';
+        parameters.fileType = fileType;
+    if (filename) parameters.filename = filename;
+    if (health) parameters.health = health;
+    if (categories && categories.length > 0) parameters.categories = categories;
+    parameters.sort = sort ? sort : 'filename';
+    if (desc === undefined) {
+        parameters.desc = 'ASC';
+    } else {
+        parameters.desc = desc ? 'DESC' : 'ASC';
+    }
     const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
         'file/ofMission',
         {
-            params,
+            params: parameters,
         },
     );
     return response.data;

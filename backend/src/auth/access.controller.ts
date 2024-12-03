@@ -24,7 +24,7 @@ import {
     QuerySkip,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { CreateAccessGroupDto } from './dto/CreateAccessGroup.dto';
 import { AddUserToProjectDto } from './dto/AddUserToProject.dto';
 import { AddUserToAccessGroupDto } from './dto/AddUserToAccessGroup.dto';
@@ -68,11 +68,11 @@ export class AccessController {
     ): Promise<AccessGroup> {
         return await this.accessService
             .getAccessGroup(uuid)
-            .catch((e: unknown) => {
-                if (e instanceof EntityNotFoundError) {
+            .catch((error: unknown) => {
+                if (error instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');
                 }
-                throw e;
+                throw error;
             });
     }
 
@@ -160,11 +160,11 @@ export class AccessController {
     async addUserToAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return await this.accessService
             .addUserToAccessGroup(body.uuid, body.userUUID)
-            .catch((e: unknown) => {
-                if (e instanceof EntityNotFoundError) {
+            .catch((error: unknown) => {
+                if (error instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');
                 }
-                throw e;
+                throw error;
             });
     }
 
@@ -253,7 +253,7 @@ export class AccessController {
     @Delete(':uuid')
     @IsAccessGroupCreator()
     async deleteAccessGroup(
-        @ParamUUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
+        @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
     ) {
         return this.accessService.deleteAccessGroup(uuid);
     }

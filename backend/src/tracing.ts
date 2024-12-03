@@ -26,7 +26,7 @@ const sdk = new NodeSDK({
         new BatchSpanProcessor(exporter, {
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
-            scheduledDelayMillis: 5_000,
+            scheduledDelayMillis: 5000,
             maxExportBatchSize: 512,
         }),
     ],

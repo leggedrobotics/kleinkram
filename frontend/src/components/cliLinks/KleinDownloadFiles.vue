@@ -32,12 +32,12 @@
 import { computed } from 'vue';
 import { FileDto } from '@api/types/Files.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     files: FileDto[];
 }>();
 
 const fileArguments = computed(() => {
-    return props.files
+    return properties.files
         .map((file) => {
             return file.uuid.toString();
         })

@@ -4,13 +4,13 @@ import * as process from 'node:process';
 
 dotenv.config({ path: './migration/.env' });
 
-const dbPort = process.env['prod_port'];
+const databasePort = process.env['prod_port'];
 
 export function getConfig() {
     return {
         type: 'postgres',
         host: process.env['prod_dbhost'],
-        port: parseInt(dbPort ?? '5432', 10),
+        port: Number.parseInt(databasePort ?? '5432', 10),
         ssl: process.env['prod_ssl'] === 'true',
         username: process.env['prod_dbuser'],
         password: process.env['prod_dbpassword'],

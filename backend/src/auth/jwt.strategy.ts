@@ -20,10 +20,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         private userService: UserService,
     ) {
         super({
-            jwtFromRequest: (req: Request) => {
+            jwtFromRequest: (request: Request) => {
                 let token = null;
-                if (req.cookies) {
-                    token = req.cookies[CookieNames.AUTH_TOKEN];
+                if (request.cookies) {
+                    token = request.cookies[CookieNames.AUTH_TOKEN];
                 }
                 return token;
             },

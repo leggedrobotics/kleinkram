@@ -133,7 +133,7 @@ export class MissionGuardService {
                 this.canUserAccessMission(user, missionUUID, rights),
             ),
         );
-        return res.every((r) => r);
+        return res.every(Boolean);
     }
 
     async canUserAccessMission(

@@ -29,8 +29,8 @@ export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
     }
 
     public catch(exception: AuthFlowException, host: ArgumentsHost): void {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>();
+        const context = host.switchToHttp();
+        const response = context.getResponse<Response>();
         logger.debug(`Redirecting to login with error: ${exception.message}`);
         const redirectUrl = `${this.frontendUrl}/login?error_state=auth_flow_failed&error_msg=${exception.message}`;
         response.redirect(302, redirectUrl);

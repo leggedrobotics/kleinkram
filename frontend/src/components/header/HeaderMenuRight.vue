@@ -165,28 +165,33 @@ watch(is_uploading, () =>
 const uploads = inject('uploads')!;
 
 const uploads_without_completed = computed(() =>
+    // @ts-ignore
     uploads.value.filter((upload) => upload.value.getProgress() < 1),
 );
 
 const uncompletedUploads = computed(() =>
+    // @ts-ignore
     uploads.value.filter(
+        // @ts-ignore
         (upload) => !upload.value.completed && upload.value.uploaded > 0,
     ),
 );
 
 const totalToUpload = computed(() =>
+    // @ts-ignore
     uploads.value.reduce(
-        (acc: any, upload: any) =>
+        (accumulator: any, upload: any) =>
             // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-            acc + (upload.value.canceled ? 0 : upload.value.size),
+            accumulator + (upload.value.canceled ? 0 : upload.value.size),
         0,
     ),
 );
 const totalUploaded = computed(() =>
+    // @ts-ignore
     uploads.value.reduce(
-        (acc: any, upload: any) =>
+        (accumulator: any, upload: any) =>
             // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-            acc + (upload.value.canceled ? 0 : upload.value.uploaded),
+            accumulator + (upload.value.canceled ? 0 : upload.value.uploaded),
         0,
     ),
 );
@@ -201,7 +206,7 @@ const averageUploadSpeed = computed(() => {
     return (
         uncompletedUploads.value.reduce(
             // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-            (acc: any, upload: any) => acc + upload.value.speed,
+            (accumulator: any, upload: any) => accumulator + upload.value.speed,
             0,
         ) / uncompletedUploads.value.length
     );

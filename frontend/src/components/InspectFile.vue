@@ -12,7 +12,7 @@
                         label="Download"
                         :disable="
                             [FileState.LOST, FileState.UPLOADING].indexOf(
-                                data?.state,
+                                data?.state ?? FileState.LOST,
                             ) !== -1
                         "
                         @click="download(data)"
@@ -58,7 +58,9 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    @click="() => copyToClipboard(data?.uuid)"
+                                    @click="
+                                        () => copyToClipboard(data?.uuid ?? '')
+                                    "
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
@@ -140,8 +142,10 @@
                         <div class="text-placeholder">File State</div>
 
                         <q-icon
-                            :name="getIcon(data?.state)"
-                            :color="getColorFileState(data?.state)"
+                            :name="getIcon(data?.state ?? FileState.OK)"
+                            :color="
+                                getColorFileState(data?.state ?? FileState.OK)
+                            "
                             style="font-size: 24px"
                         >
                             <q-tooltip>
@@ -201,7 +205,7 @@
                 flat
                 bordered
                 separator="none"
-                :rows="data?.topics"
+                :rows="data?.topics ?? []"
                 :columns="columns as any"
                 row-key="uuid"
                 :loading="isLoading"
@@ -280,12 +284,12 @@ import { FileDto } from '@api/types/Files.dto';
 
 const $router = useRouter();
 
-const props = defineProps<{
+const properties = defineProps<{
     uuid: string;
 }>();
 const selected = ref([]);
 
-const fileUuid = computed(() => props.uuid);
+const fileUuid = computed(() => properties.uuid);
 const filterKey = ref<string>('');
 const tableoniRef: Ref<QTable | null> = ref(null);
 
@@ -294,14 +298,14 @@ registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
 const missionUUID = useMissionUUID();
 
-const mcapName = computed(() => data.value.filename.replace('.bag', '.mcap'));
+const mcapName = computed(() => data.value?.filename.replace('.bag', '.mcap'));
 
 const { data: _filesReturn } = useMcapFilesOfMission(
     missionUUID.value,
-    mcapName.value,
+    mcapName.value ?? '',
 );
 const { data: queues } = useQueueForFile(
-    data.value.filename.replace(/\.(bag|mcap)$/, ''),
+    data.value?.filename.replace(/\.(bag|mcap)$/, ''),
     data.value?.mission.uuid ?? '',
 );
 
@@ -310,8 +314,10 @@ const filesReturn = computed(() =>
 );
 
 const displayTopics = computed(() => {
+    if (data.value === undefined) throw new Error('Data is undefined');
+
     return (
-        data.value.type === FileType.MCAP && data.value?.state === FileState.OK
+        data.value.type === FileType.MCAP && data.value.state === FileState.OK
     );
 });
 const mcap = computed(() =>
@@ -338,7 +344,7 @@ const columns = [
         label: 'Frequency',
         field: (row: any) => row.frequency || 0,
         sortable: true,
-        format: (val: number) => Math.round(val * 100) / 100,
+        format: (value: number) => Math.round(value * 100) / 100,
     },
 ];
 
@@ -356,7 +362,7 @@ async function redirectToMcap() {
 }
 
 async function _copyLink() {
-    const res = await downloadFile(props.uuid, false);
+    const res = await downloadFile(properties.uuid, false);
     await copyToClipboard(res);
     Notify.create({
         group: false,
@@ -375,9 +381,9 @@ const pagination = ref({
 });
 
 const copy = async (d: FileDto | undefined): Promise<void> => {
-    await copyToClipboard(d?.hash);
+    await copyToClipboard(d?.hash ?? '');
 };
 const download = async (d: FileDto | undefined): Promise<void> => {
-    await _downloadFile(d?.uuid, d?.filename);
+    await _downloadFile(d?.uuid ?? '', d?.filename ?? '');
 };
 </script>

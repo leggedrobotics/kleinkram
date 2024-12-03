@@ -8,10 +8,13 @@ import { plainToInstance } from 'class-transformer';
 import { StringValidate, UUIDValidate } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
 
-export const ParamUUID = (paramName: string, paramDescription?: string) =>
+export const ParamUUID = (
+    parameterName: string,
+    parameterDescription?: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.params[data];
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
@@ -21,18 +24,18 @@ export const ParamUUID = (paramName: string, paramDescription?: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription || 'UUID',
+            parameterName,
+            parameterDescription || 'UUID',
             'path',
             'string',
             true,
             'uuid',
         ),
-    )(paramName);
+    )(parameterName);
 
 export const ParamString = createParamDecorator(
-    async (data: string, ctx: ExecutionContext) => {
-        const request = ctx.switchToHttp().getRequest();
+    async (data: string, context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest();
         const value = request.params[data];
 
         const object = plainToInstance(StringValidate, { value });

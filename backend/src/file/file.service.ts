@@ -297,12 +297,12 @@ export class FileService implements OnModuleInit {
                 .leftJoin('mission.tags', 'tag')
                 .leftJoin('tag.tagType', 'tagtype');
             await Promise.all(
-                Object.keys(tags).map(async (key, idx) => {
+                Object.keys(tags).map(async (key, index) => {
                     const tagtype = await this.tagTypeRepository.findOneOrFail({
                         where: { uuid: key },
                     });
 
-                    const subqueryname = `tagsubquery${idx.toString()}`;
+                    const subqueryname = `tagsubquery${index.toString()}`;
                     query.innerJoin(
                         (qb) => {
                             let subquery = qb
@@ -311,59 +311,64 @@ export class FileService implements OnModuleInit {
                                 .select('mission.uuid')
                                 .leftJoin('tag.mission', 'mission')
                                 .andWhere(
-                                    `tagtype.uuid = :tagtype${idx.toString()}`,
+                                    `tagtype.uuid = :tagtype${index.toString()}`,
                                     {
-                                        [`tagtype${idx.toString()}`]: key,
+                                        [`tagtype${index.toString()}`]: key,
                                     },
                                 );
 
                             switch (tagtype.datatype) {
-                                case DataType.BOOLEAN:
+                                case DataType.BOOLEAN: {
                                     subquery = subquery.andWhere(
-                                        `tag.BOOLEAN = :value${idx.toString()}`,
+                                        `tag.BOOLEAN = :value${index.toString()}`,
                                         {
-                                            [`value${idx.toString()}`]:
+                                            [`value${index.toString()}`]:
                                                 tags[key],
                                         },
                                     );
                                     break;
-                                case DataType.DATE:
+                                }
+                                case DataType.DATE: {
                                     subquery = subquery.andWhere(
-                                        `tag.DATE = :value${idx.toString()}`,
+                                        `tag.DATE = :value${index.toString()}`,
                                         {
-                                            [`value${idx.toString()}`]:
+                                            [`value${index.toString()}`]:
                                                 tags[key],
                                         },
                                     );
                                     break;
-                                case DataType.LOCATION:
+                                }
+                                case DataType.LOCATION: {
                                     subquery = subquery.andWhere(
-                                        `tag.LOCATION = :value${idx.toString()}`,
+                                        `tag.LOCATION = :value${index.toString()}`,
                                         {
-                                            [`value${idx.toString()}`]:
+                                            [`value${index.toString()}`]:
                                                 tags[key],
                                         },
                                     );
                                     break;
-                                case DataType.NUMBER:
+                                }
+                                case DataType.NUMBER: {
                                     subquery = subquery.andWhere(
-                                        `tag.NUMBER = :value${idx.toString()}`,
+                                        `tag.NUMBER = :value${index.toString()}`,
                                         {
-                                            [`value${idx.toString()}`]:
+                                            [`value${index.toString()}`]:
                                                 tags[key],
                                         },
                                     );
                                     break;
+                                }
                                 case DataType.STRING:
-                                case DataType.LINK:
+                                case DataType.LINK: {
                                     subquery = subquery.andWhere(
-                                        `tag.STRING = :value${idx.toString()}`,
+                                        `tag.STRING = :value${index.toString()}`,
                                         {
-                                            [`value${idx.toString()}`]:
+                                            [`value${index.toString()}`]:
                                                 tags[key],
                                         },
                                     );
                                     break;
+                                }
                             }
 
                             return subquery;
@@ -426,22 +431,24 @@ export class FileService implements OnModuleInit {
         logger.debug(`Updating file with uuid: ${uuid}`);
         logger.debug(`New file data: ${JSON.stringify(file)}`);
 
-        const dbFile = await this.fileRepository.findOneOrFail({
+        const databaseFile = await this.fileRepository.findOneOrFail({
             where: { uuid },
             relations: { mission: { project: true } },
         });
 
-        if (!dbFile.mission) throw new Error('Mission not found!');
-        if (!dbFile.mission.project) throw new Error('Project not found!');
+        if (!databaseFile.mission) throw new Error('Mission not found!');
+        if (!databaseFile.mission.project)
+            throw new Error('Project not found!');
 
         // validate if file ending hasn't changed
-        const fileEnding = dbFile.type === FileType.MCAP ? '.mcap' : '.bag';
+        const fileEnding =
+            databaseFile.type === FileType.MCAP ? '.mcap' : '.bag';
         if (!file.filename.endsWith(fileEnding)) {
             throw new BadRequestException('File ending must not be changed');
         }
 
-        dbFile.filename = file.filename;
-        dbFile.date = file.date;
+        databaseFile.filename = file.filename;
+        databaseFile.date = file.date;
 
         if (file.mission_uuid) {
             const newMission = await this.missionRepository.findOneOrFail({
@@ -452,7 +459,7 @@ export class FileService implements OnModuleInit {
             if (!newMission.project) throw new Error('Project not found!');
 
             if (newMission) {
-                dbFile.mission = newMission;
+                databaseFile.mission = newMission;
             } else {
                 throw new Error('Mission not found');
             }
@@ -462,7 +469,7 @@ export class FileService implements OnModuleInit {
             const cats = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
-            dbFile.categories = cats;
+            databaseFile.categories = cats;
         }
 
         await this.dataSource
@@ -470,28 +477,31 @@ export class FileService implements OnModuleInit {
                 await transactionalEntityManager.save(
                     Project,
                     // @ts-expect-error
-                    dbFile.mission.project,
+                    databaseFile.mission.project,
                 );
                 // @ts-expect-error
-                await transactionalEntityManager.save(Mission, dbFile.mission);
-                await transactionalEntityManager.save(FileEntity, dbFile);
+                await transactionalEntityManager.save(
+                    Mission,
+                    databaseFile.mission,
+                );
+                await transactionalEntityManager.save(FileEntity, databaseFile);
             })
-            .catch((err: any) => {
-                if (err.code === '23505') {
+            .catch((error: any) => {
+                if (error.code === '23505') {
                     throw new ConflictException(
                         'File with this name already exists in the mission',
                     );
                 }
-                throw err;
+                throw error;
             });
         await addTagsToMinioObject(
-            getBucketFromFileType(dbFile.type),
-            dbFile.uuid,
+            getBucketFromFileType(databaseFile.type),
+            databaseFile.uuid,
             {
                 // @ts-expect-error
-                project_uuid: dbFile.mission.project.uuid,
-                mission_uuid: dbFile.mission.uuid,
-                filename: dbFile.filename,
+                project_uuid: databaseFile.mission.project.uuid,
+                mission_uuid: databaseFile.mission.uuid,
+                filename: databaseFile.filename,
             },
         );
         return this.fileRepository.findOne({
@@ -531,7 +541,7 @@ export class FileService implements OnModuleInit {
                 ? env.MINIO_MCAP_BUCKET_NAME
                 : env.MINIO_BAG_BUCKET_NAME,
             file.uuid, // we use the uuid as the filename in Minio
-            expires ? 4 * 60 * 60 : 604800, // 604800 seconds = 1 week
+            expires ? 4 * 60 * 60 : 604_800, // 604800 seconds = 1 week
             {
                 // set filename in response headers
 
@@ -557,17 +567,18 @@ export class FileService implements OnModuleInit {
         if (filename) {
             where.filename = ILike(`%${filename}%`);
         }
-        if (fileType != null) {
+        if (fileType != undefined) {
             where.type = fileType;
         }
         if (categories && categories.length > 0) {
             where.categories = { uuid: In(categories) };
         }
         switch (health) {
-            case 'Healthy':
+            case 'Healthy': {
                 where.state = In([FileState.OK, FileState.FOUND]);
                 break;
-            case 'Unhealthy':
+            }
+            case 'Unhealthy': {
                 where.state = In([
                     FileState.ERROR,
                     FileState.CONVERSION_ERROR,
@@ -575,8 +586,10 @@ export class FileService implements OnModuleInit {
                     FileState.CORRUPTED,
                 ]);
                 break;
-            case 'Uploading':
+            }
+            case 'Uploading': {
                 where.state = FileState.UPLOADING;
+            }
         }
         const select = [
             'uuid',
@@ -637,9 +650,9 @@ export class FileService implements OnModuleInit {
                         // @ts-expect-error
                         project_uuid: newFile.mission.project.uuid,
                     });
-                } catch (e) {
+                } catch (error) {
                     logger.error(
-                        `Error moving file ${uuid} to mission ${missionUUID}: ${e}`,
+                        `Error moving file ${uuid} to mission ${missionUUID}: ${error}`,
                     );
                 }
             }),
@@ -881,10 +894,12 @@ export class FileService implements OnModuleInit {
                 );
 
                 // verify that all files are found in the database
-                const uniqueDbFilesUuids = [
+                const uniqueDatabaseFilesUuids = [
                     ...new Set(files.map((f) => f.uuid)),
                 ];
-                if (uniqueDbFilesUuids.length !== uniqueFilesUuids.length) {
+                if (
+                    uniqueDatabaseFilesUuids.length !== uniqueFilesUuids.length
+                ) {
                     throw new NotFoundException(
                         'Some files not found, aborting',
                     );
@@ -949,8 +964,8 @@ export class FileService implements OnModuleInit {
                     filename: fileEntity.filename,
                 });
             }),
-        ).catch((err: unknown) => {
-            logger.error(err);
+        ).catch((error: unknown) => {
+            logger.error(error);
         });
     }
 
@@ -963,16 +978,16 @@ export class FileService implements OnModuleInit {
         await Promise.all(
             files.map(async (file) => {
                 const stats = await getInfoFromMinio(file.type, file.uuid);
-                if (!stats) {
-                    logger.error(
-                        `File ${file.uuid} not found in Minio, setting state to LOST`,
-                    );
-                    file.state = FileState.LOST;
-                } else {
+                if (stats) {
                     file.size = stats.size;
                     logger.debug(
                         `Updated size for ${file.filename}: ${file.size.toString()}`,
                     );
+                } else {
+                    logger.error(
+                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                    );
+                    file.state = FileState.LOST;
                 }
                 await this.fileRepository.save(file);
             }),

@@ -64,11 +64,11 @@ import { TagTypeDto } from '@api/types/TagsDto.dto';
 
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
-const props = defineProps<{
+const properties = defineProps<{
     selected: TagTypeDto[];
 }>();
 
-const selected = ref([...props.selected]);
+const selected = ref([...properties.selected]);
 
 const emits = defineEmits(['update:selected']);
 

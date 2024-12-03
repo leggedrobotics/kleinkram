@@ -3,5 +3,10 @@ import { DataSource } from 'typeorm';
 
 const datasource = new DataSource(getConfig());
 
-datasource.initialize().then(console.log).catch(console.error);
+datasource
+    .initialize()
+    .then(console.log)
+    .catch((error: unknown) => {
+        console.error(error);
+    });
 export default datasource;

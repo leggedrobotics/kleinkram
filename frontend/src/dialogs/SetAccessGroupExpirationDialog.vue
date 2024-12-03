@@ -38,12 +38,14 @@ import { ref } from 'vue';
 import { formatDate, parseDate } from 'src/services/dateFormating';
 import { GroupMembershipDto } from '@api/types/User.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     agu: GroupMembershipDto;
 }>();
 
 const expirationDate = ref<string | null>(
-    props.agu.expirationDate ? formatDate(props.agu.expirationDate) : null,
+    properties.agu.expirationDate
+        ? formatDate(properties.agu.expirationDate)
+        : null,
 );
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

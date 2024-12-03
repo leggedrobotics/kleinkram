@@ -40,6 +40,8 @@ const { mission_uuid } = defineProps({
 const { data: mission } = useMission(computed(() => mission_uuid));
 
 const deleteMission = (): void => {
+    if (deleteMissionRef.value === null) return;
+    // @ts-ignore
     deleteMissionRef.value.deleteMissionAction();
     onDialogOK();
 };

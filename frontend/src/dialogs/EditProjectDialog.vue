@@ -34,8 +34,10 @@ const props = defineProps<{
 }>();
 
 const saveProjects = (): void => {
+    if (editProjectRef.value === null) return;
     editProjectRef.value
-        ?.save_changes()
+        // @ts-ignore
+        .save_changes()
         .then(onDialogOK)
         .catch(() => {
             console.error('Error saving project');

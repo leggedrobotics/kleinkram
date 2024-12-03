@@ -37,7 +37,7 @@
                                 clearable
                                 multiple
                                 use-chips
-                                :options="data ?? []"
+                                :options="data !== undefined ? data.tags : []"
                                 emit-value
                                 map-options
                                 class="full-width"
@@ -77,8 +77,8 @@ const submitNewProject = async () => {
             [],
             [],
         );
-    } catch (e: unknown) {
-        const errorMessages: string = (e as Error).message;
+    } catch (error: unknown) {
+        const errorMessages: string = (error as Error).message;
 
         Notify.create({
             message: `Error creating project: ${errorMessages}`,

@@ -38,6 +38,8 @@ const { action } = defineProps({
 });
 
 const deleteAction = (): void => {
+    if (deleteActionRef.value === null) return;
+    // @ts-ignore
     deleteActionRef.value.deleteActionAction();
     onDialogOK();
 };

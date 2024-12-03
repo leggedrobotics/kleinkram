@@ -49,7 +49,7 @@ export async function addActionQueue(
     workerRepository: any,
     actionRepository: any,
     actionQueues: Record<string, any>,
-    logger: any = undefined,
+    logger?: any,
 ) {
     const worker = await findWorkerForAction(
         runtimeRequirements,
@@ -84,7 +84,7 @@ export async function addActionQueue(
             {
                 jobId: action.uuid,
                 backoff: {
-                    delay: 60 * 1_000, // 60 seconds
+                    delay: 60 * 1000, // 60 seconds
                     type: 'exponential',
                 },
                 removeOnComplete: true,
@@ -92,7 +92,7 @@ export async function addActionQueue(
                 attempts: 60, // one hour of attempts
             },
         );
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        console.error(error);
     }
 }

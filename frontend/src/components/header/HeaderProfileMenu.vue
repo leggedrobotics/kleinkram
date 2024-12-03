@@ -22,7 +22,17 @@
 
             <q-menu auto-close style="width: 280px; padding: 8px">
                 <q-list style="gap: 4px; display: flex; flex-direction: column">
-                    <q-item v-close-popup clickable @click="navigate">
+                    <q-item
+                        v-close-popup
+                        clickable
+                        @click="
+                            // @ts-ignore
+                            // eslint-disable-next-line vue/v-on-handler-style
+                            () => {
+                                navigate();
+                            }
+                        "
+                    >
                         <q-item-section avatar>
                             <q-icon name="sym_o_person" />
                         </q-item-section>
@@ -82,7 +92,7 @@ const navigateTo = async (path: string) => {
 
 const { data: user } = useUser();
 
-const navigate = navigateTo(ROUTES.USER_PROFILE.path);
+const navigate = () => navigateTo(ROUTES.USER_PROFILE.path);
 </script>
 
 <style scoped>

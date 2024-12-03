@@ -1,7 +1,7 @@
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import Worker from '@common/entities/worker/worker.entity';
-import fs from 'fs';
+import fs from 'node:fs';
 import Docker from 'dockerode';
 import logger from '../../logger';
 import * as util from 'node:util';
@@ -11,8 +11,10 @@ export async function getDiskSpace() {
     // Convert bytes to GB
     return Math.round(
         diskData.reduce(
-            (acc, disk) =>
-                disk.type === 'overlay' ? acc : acc + disk.available,
+            (accumulator, disk) =>
+                disk.type === 'overlay'
+                    ? accumulator
+                    : accumulator + disk.available,
             0,
         ) /
             (1024 * 1024 * 1024),
@@ -97,14 +99,14 @@ const getGpuModels = async () => {
                     return match[1].trim();
                 }
                 return null; // In case the model information is not found
-            } catch (err: unknown) {
-                let errorMsg = '';
+            } catch (error: unknown) {
+                let errorMessage = '';
 
-                if (err instanceof Error) {
-                    errorMsg = err.message;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
                 }
 
-                logger.error(`Error reading file ${filepath}: ${errorMsg}`);
+                logger.error(`Error reading file ${filepath}: ${errorMessage}`);
                 return null;
             }
         });
@@ -112,14 +114,14 @@ const getGpuModels = async () => {
         // Wait for all promises to resolve and filter out null values
         const models = await Promise.all(modelPromises);
         return models.filter((model) => model !== null);
-    } catch (err: unknown) {
-        let errorMsg = '';
+    } catch (error: unknown) {
+        let errorMessage = '';
 
-        if (err instanceof Error) {
-            errorMsg = err.message;
+        if (error instanceof Error) {
+            errorMessage = error.message;
         }
 
-        logger.error(`Error reading NVIDIA GPU data: ${errorMsg}`);
+        logger.error(`Error reading NVIDIA GPU data: ${errorMessage}`);
         return [];
     }
 };

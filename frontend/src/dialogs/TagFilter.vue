@@ -46,9 +46,10 @@
                         clearable
                         required
                         :type="
+                            // @ts-ignore
                             DataType_InputType[
                                 tagLookup[tagTypeUUID].datatype
-                            ] || 'text'
+                            ] ?? 'text'
                         "
                         @clear="() => delete tagValues[tagTypeUUID]"
                     />
@@ -98,20 +99,21 @@ import { useAllTags } from '../hooks/customQueryHooks';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     tagValues?: Record<string, { value: any; name: string }>;
 }>();
 
 const tagtype = ref<string>('');
-const tagValues = ref<Record<string, any>>({ ...props.tagValues } || {});
+// @ts-ignore
+const tagValues = ref<Record<string, any>>({ ...properties.tagValues } || {});
 
 const convertedTagValues = computed(() => {
     const converted: Record<string, any> = {};
-    Object.keys(tagValues.value).forEach((key) => {
+    for (const key of Object.keys(tagValues.value)) {
         const tagType = tagLookup.value[key];
 
         switch (tagType.datatype) {
-            case DataType.BOOLEAN:
+            case DataType.BOOLEAN: {
                 if (tagValues.value[key].value === undefined) {
                     break;
                 }
@@ -121,16 +123,18 @@ const convertedTagValues = computed(() => {
                 };
 
                 break;
-            case DataType.NUMBER:
-                if (isNaN(parseFloat(tagValues.value[key].value))) {
+            }
+            case DataType.NUMBER: {
+                if (isNaN(Number.parseFloat(tagValues.value[key].value))) {
                     break;
                 }
                 converted[key] = {
-                    value: parseFloat(tagValues.value[key].value),
+                    value: Number.parseFloat(tagValues.value[key].value),
                     name: tagValues.value[key].name,
                 };
                 break;
-            case DataType.DATE:
+            }
+            case DataType.DATE: {
                 if (!tagValues.value[key].value) {
                     break;
                 }
@@ -139,7 +143,8 @@ const convertedTagValues = computed(() => {
                     name: tagValues.value[key].name,
                 };
                 break;
-            default:
+            }
+            default: {
                 if (!tagValues.value[key].value) {
                     break;
                 }
@@ -147,8 +152,9 @@ const convertedTagValues = computed(() => {
                     value: tagValues.value[key].value,
                     name: tagValues.value[key].name,
                 };
+            }
         }
-    });
+    }
     return converted;
 });
 
@@ -156,9 +162,9 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    data.value?.tags.forEach((tag) => {
+    for (const tag of data.value?.tags) {
         lookup[tag.uuid] = tag;
-    });
+    }
     return lookup;
 });
 

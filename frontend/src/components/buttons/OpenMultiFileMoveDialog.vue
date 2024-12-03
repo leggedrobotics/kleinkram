@@ -24,15 +24,15 @@ import { MissionDto } from '@api/types/Mission.dto';
 import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
     files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     return canDeleteMission(
-        props.mission.uuid,
-        props.mission.project.uuid,
+        properties.mission.uuid,
+        properties.mission.project.uuid,
         permissions.value,
     );
 });
@@ -42,8 +42,8 @@ const moveFiles = (): void => {
     $q.dialog({
         component: MoveFiles,
         componentProps: {
-            mission: props.mission,
-            files: props.files,
+            mission: properties.mission,
+            files: properties.files,
         },
         persistent: true,
     });

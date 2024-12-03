@@ -22,17 +22,15 @@ export class TopicService {
             where: { uuid: userUUID },
         });
         let distinctNames: any[];
-        if (user.role === UserRole.ADMIN) {
-            distinctNames = await baseQuery.getRawMany();
-        } else {
-            distinctNames = await addAccessConstraints(
-                baseQuery
-                    .leftJoin('topic.file', 'file')
-                    .leftJoin('file.mission', 'mission')
-                    .leftJoin('mission.project', 'project'),
-                userUUID,
-            ).getRawMany();
-        }
+        distinctNames = await (user.role === UserRole.ADMIN
+            ? baseQuery.getRawMany()
+            : addAccessConstraints(
+                  baseQuery
+                      .leftJoin('topic.file', 'file')
+                      .leftJoin('file.mission', 'mission')
+                      .leftJoin('mission.project', 'project'),
+                  userUUID,
+              ).getRawMany());
 
         return distinctNames.map((item) => item.name);
     }

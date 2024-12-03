@@ -32,7 +32,7 @@ import { ActionDto } from '@api/types/Actions.dto';
 
 const $q = useQuasar();
 
-const props = defineProps({
+const properties = defineProps({
     action: ActionDto,
 });
 
@@ -45,7 +45,7 @@ const canDelete = computed(
 );
 
 const actionInDeletableState = computed(() => {
-    const state = props.action?.state;
+    const state = properties.action?.state;
     return (
         state === ActionState.FAILED ||
         state === ActionState.DONE ||
@@ -58,21 +58,23 @@ const isCreator = ref<boolean>(false);
 watchEffect(() => {
     getMe()
         .then((me) => {
-            const actionCreator = props.action?.creator;
+            const actionCreator = properties.action?.creator;
             isCreator.value = me.uuid === actionCreator?.uuid;
         })
-        .catch((e: unknown) => {
-            console.error(e);
+        .catch((error: unknown) => {
+            console.error(error);
         });
 });
 
 const deletePermissions = computed(() => {
     const projectPermissions = getPermissionForProject(
-        props.action?.mission.project.uuid,
+        properties.action?.mission.project.uuid,
+        // @ts-ignore
         permissions.value,
     );
     const missionPermissions = getPermissionForMission(
-        props.action?.mission.uuid,
+        properties.action?.mission.uuid,
+        // @ts-ignore
         permissions.value,
     );
 
@@ -87,7 +89,7 @@ const openDeleteActionDialog = (): void => {
     $q.dialog({
         component: DeleteActionDialog,
         componentProps: {
-            action: props.action,
+            action: properties.action,
         },
     });
 };

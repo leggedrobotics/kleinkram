@@ -37,7 +37,7 @@
         <q-btn-dropdown
             v-model="dropdownNewFileMission"
             :disable="!!props?.mission"
-            :label="selectedProject?.name ?? 'Mission'"
+            :label="selectedMission?.name ?? 'Mission'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
             clearable
@@ -50,7 +50,7 @@
                     clickable
                     @click="
                         () => {
-                            filteredProjects = m;
+                            selectedMission = m;
                             dropdownNewFileMission = false;
                         }
                     "
@@ -102,7 +102,11 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from 'src/services/fileService';
-import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import {
+    FlatMissionDto,
+    MissionDto,
+    MissionsDto,
+} from '@api/types/Mission.dto';
 import { BaseProjectDto } from '@api/types/Project.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
@@ -110,6 +114,7 @@ import { useFilteredProjects } from '../hooks/customQueryHooks';
 const emit = defineEmits(['update:ready']);
 
 const selectedProject: Ref<BaseProjectDto | null> = ref(null);
+const selectedMission: Ref<FlatMissionDto | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -129,7 +134,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const ready = computed(() => {
     const hasProject = !!selectedProject.value;
-    const hasMission = !!filteredProjects.value;
+    const hasMission = !!selectedMission.value;
     const hasFileOrDrive = files.value.length > 0 || driveUrl.value !== '';
     return hasProject && hasMission && hasFileOrDrive;
 });
@@ -148,13 +153,13 @@ const props = defineProps<{
 
 if (props.mission?.project) {
     selectedProject.value = props.mission.project;
-    filteredProjects.value = props.mission;
+    selectedMission.value = props.mission;
 }
 
 const { data: _missions, refetch } = useQuery<MissionsDto>({
     queryKey: ['missions', selectedProject.value?.uuid],
-    queryFn: () => missionsOfProjectMinimal(selectedProject.value?.uuid || ''),
-    enabled: !!selectedProject.value?.uuid,
+    queryFn: () => missionsOfProjectMinimal(selectedProject.value?.uuid ?? ''),
+    enabled: !(selectedProject.value?.uuid === ''),
 });
 const missions = computed(() => {
     if (_missions.value) {
@@ -164,23 +169,26 @@ const missions = computed(() => {
 });
 
 watchEffect(() => {
-    if (selectedProject.value?.uuid) {
-        refetch().catch(() => {});
+    if (selectedProject.value?.uuid !== '') {
+        refetch().catch(() => {
+            // Do nothing
+        });
     }
 });
 
-const createFile = async () => {
-    if (driveUrl.value) {
-        await driveUpload(filteredProjects.value, driveUrl);
+const createFile = async (): Promise<void> => {
+    if (driveUrl.value !== '') {
+        await driveUpload(selectedMission.value, driveUrl);
         return;
     }
 
     await createFileAction(
-        filteredProjects.value,
+        selectedMission.value,
         selectedProject.value,
         files.value,
         queryClient,
         uploadingFiles,
+        // @ts-ignore
         props.uploads,
     );
 };

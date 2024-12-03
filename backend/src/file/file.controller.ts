@@ -30,7 +30,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
@@ -203,7 +203,7 @@ export class FileController {
 
     @Put(':uuid')
     @CanWriteFile()
-    async update(@ParamUUID('uuid') uuid: string, @Body() dto: UpdateFile) {
+    async update(@ParameterUID('uuid') uuid: string, @Body() dto: UpdateFile) {
         return this.fileService.update(uuid, dto);
     }
 
@@ -228,7 +228,7 @@ export class FileController {
 
     @Delete(':uuid')
     @CanDeleteFile()
-    async deleteFile(@ParamUUID('uuid') uuid: string) {
+    async deleteFile(@ParameterUID('uuid') uuid: string) {
         return this.fileService.deleteFile(uuid);
     }
 

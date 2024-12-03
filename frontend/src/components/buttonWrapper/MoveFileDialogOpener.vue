@@ -25,16 +25,16 @@ import MoveFiles from 'src/dialogs/MoveFiles.vue';
 import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: FileDto;
     files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.mission) return false;
+    if (!properties.mission) return false;
     return canDeleteMission(
-        props.mission.mission.uuid,
-        props.mission.mission.project.uuid,
+        properties.mission.mission.uuid,
+        properties.mission.mission.project.uuid,
         permissions.value,
     );
 });
@@ -44,8 +44,8 @@ const moveFiles = (): void => {
     $q.dialog({
         component: MoveFiles,
         componentProps: {
-            mission: props.mission,
-            files: props.files,
+            mission: properties.mission,
+            files: properties.files,
         },
         persistent: true,
     });

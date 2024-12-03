@@ -18,7 +18,7 @@ import {
     QuerySkip,
     QueryTake,
 } from '../validation/queryDecorators';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiOkResponse } from '@nestjs/swagger';
 import { TagsDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
 
@@ -57,7 +57,7 @@ export class TagController {
 
     @Delete(':uuid')
     @CanDeleteTag()
-    async deleteTag(@ParamUUID('uuid') uuid: string) {
+    async deleteTag(@ParameterUID('uuid') uuid: string) {
         return this.tagService.deleteTag(uuid);
     }
 

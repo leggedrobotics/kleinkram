@@ -32,12 +32,14 @@
 import { computed } from 'vue';
 import { MissionDto } from '@api/types/Mission.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     missions: MissionDto[];
 }>();
 
 const params = computed(() => {
-    return props.missions.map((mission) => mission.uuid.toString()).join(' ');
+    return properties.missions
+        .map((mission) => mission.uuid.toString())
+        .join(' ');
 });
 
 const clicked = async (): Promise<void> => {

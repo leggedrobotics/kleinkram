@@ -11,7 +11,7 @@
             <q-menu auto-close style="width: 280px">
                 <q-list>
                     <q-item
-                        v-for="item in main_menu"
+                        v-for="item in mainMenu"
                         :key="item.title"
                         clickable
                         :to="item.to"
@@ -31,7 +31,7 @@
         </q-route-tab>
 
         <q-route-tab
-            v-for="item in main_menu"
+            v-for="item in mainMenu"
             v-show="$q.screen.gt.md"
             :key="item.title"
             no-caps
@@ -52,19 +52,19 @@ interface MainMenu {
     title: string;
     to: string;
     icon: string;
-    subpage_names: string[];
+    subpageNames: string[];
 }
 
-const { main_menu } = defineProps<{
-    main_menu: MainMenu[];
+const { mainMenu } = defineProps<{
+    mainMenu: MainMenu[];
 }>();
 
 const route = useRoute();
 const path = computed(() => {
     const nameWithPostfix = `${route.name as string}Layout`;
-    const menu_item = main_menu.find((item) =>
-        item.subpage_names.includes(nameWithPostfix),
+    const menuItem = mainMenu.find((item) =>
+        item.subpageNames.includes(nameWithPostfix),
     );
-    return menu_item?.to ?? route.path;
+    return menuItem?.to ?? route.path;
 });
 </script>

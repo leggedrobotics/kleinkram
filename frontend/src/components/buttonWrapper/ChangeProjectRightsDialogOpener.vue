@@ -26,14 +26,14 @@ import {
 import ChangeAccessRightsDialog from 'src/dialogs/ChangeAccessRightsDialog.vue';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     projectAccessUUID: string;
     projectUUID: string;
 }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canDeleteProject(props.projectUUID, permissions.value),
+    canDeleteProject(properties.projectUUID, permissions.value),
 );
 
 function changeRights() {
@@ -43,8 +43,8 @@ function changeRights() {
     $q.dialog({
         component: ChangeAccessRightsDialog,
         componentProps: {
-            project_uuid: props.projectUUID,
-            project_access_uuid: props.projectAccessUUID,
+            project_uuid: properties.projectUUID,
+            project_access_uuid: properties.projectAccessUUID,
         },
     });
 }

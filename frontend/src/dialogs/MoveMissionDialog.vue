@@ -67,7 +67,7 @@ import { BaseProjectDto } from '@api/types/Project.dto';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     mission?: MissionDto;
 }>();
 
@@ -78,18 +78,18 @@ const { data } = useFilteredProjects(500, 0, 'name', true, {});
 const projects = computed(() => (data.value ? data.value.projects : []));
 
 const selectedProject = ref<BaseProjectDto | null>(
-    props.mission?.project || null,
+    properties.mission?.project || null,
 );
 
 const dd_open = ref(false);
 
 async function onOk() {
-    if (!props.mission || !selectedProject.value) {
+    if (!properties.mission || !selectedProject.value) {
         return;
     }
     const creating = Notify.create({
         group: false,
-        message: `Moving mission ${props.mission.name} to project ${selectedProject.value.name}`,
+        message: `Moving mission ${properties.mission.name} to project ${selectedProject.value.name}`,
         color: 'grey',
         spinner: true,
         timeout: 4000,
@@ -97,9 +97,9 @@ async function onOk() {
     });
 
     try {
-        await moveMission(props.mission.uuid, selectedProject.value.uuid);
+        await moveMission(properties.mission.uuid, selectedProject.value.uuid);
         creating({
-            message: `Mission ${props.mission.name} moved to project ${selectedProject.value.name}`,
+            message: `Mission ${properties.mission.name} moved to project ${selectedProject.value.name}`,
             color: 'positive',
             spinner: false,
             timeout: 4000,
@@ -120,14 +120,14 @@ async function onOk() {
             ),
         );
         onDialogOK(selectedProject.value.uuid);
-    } catch (e: any) {
+    } catch (error: any) {
         creating({
-            message: `Error moving mission ${props.mission.name} to project ${selectedProject.value.name}`,
+            message: `Error moving mission ${properties.mission.name} to project ${selectedProject.value.name}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,
         });
-        console.error(e);
+        console.error(error);
         onDialogHide();
     }
 }

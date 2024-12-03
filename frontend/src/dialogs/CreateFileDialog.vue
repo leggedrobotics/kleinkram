@@ -42,6 +42,7 @@ defineProps<{
 }>();
 
 const createFile = (): void => {
+    // @ts-ignore
     createFileRef.value.createFileAction();
     onDialogOK();
 };

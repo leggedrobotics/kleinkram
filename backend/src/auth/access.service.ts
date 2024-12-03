@@ -429,10 +429,10 @@ export class AccessService {
         const agu = await this.groupMembershipRepository.findOneOrFail({
             where: { uuid },
         });
-        if (expireDate !== null) {
-            agu.expirationDate = expireDate;
-        } else {
+        if (expireDate === null) {
             delete agu.expirationDate;
+        } else {
+            agu.expirationDate = expireDate;
         }
         return (await this.groupMembershipRepository.save(
             agu,

@@ -38,20 +38,21 @@ import { AccessGroupDto } from '@api/types/User.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
 }>();
 
 const { data: project } = useQuery<ProjectDto>({
-    queryKey: ['project', props.project_uuid],
-    queryFn: () => getProject(props.project_uuid),
-    enabled: !!props.project_uuid,
+    queryKey: ['project', properties.project_uuid],
+    queryFn: () => getProject(properties.project_uuid),
+    enabled: !!properties.project_uuid,
 });
 
 const { data: defaultRights } = useProjectDefaultAccess();
 
 const accessGroups = ref<DefaultRightDto[]>(
-    project.value?.projectAccesses?.map((access) => ({
+    // @ts-ignore
+    project.value?.projectAccesses?.map((access: any) => ({
         name: access.accessGroup?.name,
         uuid: access.accessGroup?.uuid,
         memberCount: access.accessGroup?.memberships?.length || '???',
@@ -60,9 +61,11 @@ const accessGroups = ref<DefaultRightDto[]>(
 );
 
 watch(
+    // @ts-ignore
     () => project.value?.projectAccesses,
     (newValue) => {
         accessGroups.value =
+            // @ts-ignore
             newValue?.map((access) => ({
                 name: access.accessGroup?.name,
                 uuid: access.accessGroup?.uuid,
@@ -88,7 +91,7 @@ const saveChanges = async () => {
     console.log(accessGroups.value);
     const promises = accessGroups.value.map((access) => {
         return updateProjectAccess(
-            props.project_uuid,
+            properties.project_uuid,
             access.uuid,
             access.rights,
         );
@@ -96,16 +99,19 @@ const saveChanges = async () => {
 
     await Promise.all(promises);
 
+    // @ts-ignore
     const deletePromises = project.value?.projectAccesses
         ?.filter(
             (group: AccessGroupDto) =>
                 !accessGroups.value.some(
+                    // @ts-ignore
                     (access) => access.uuid === group.accessGroup.uuid,
                 ),
         )
+        // @ts-ignore
         .map((group) =>
             removeAccessGroupFromProject(
-                props.project_uuid,
+                properties.project_uuid,
                 group.accessGroup.uuid,
             ),
         );
@@ -118,7 +124,7 @@ const saveChanges = async () => {
         .filter(
             (query) =>
                 query.queryKey[0] === 'project' &&
-                query.queryKey[1] === props.project_uuid,
+                query.queryKey[1] === properties.project_uuid,
         );
 
     await Promise.all(

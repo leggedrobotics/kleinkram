@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FlatMissionDto } from './Mission.dto';
 import { CategoryDto } from './Category.dto';
-import { FileState } from '../../frontend_shared/enum';
+import { FileState, FileType } from '../../frontend_shared/enum';
 import { UserDto } from './User.dto';
 import { TopicDto } from './Topic.dto';
 
@@ -35,6 +35,9 @@ export class FileDto {
 
     @ApiProperty()
     creator!: UserDto;
+
+    @ApiProperty()
+    type!: FileType;
 
     @ApiProperty()
     uploaded?: number;

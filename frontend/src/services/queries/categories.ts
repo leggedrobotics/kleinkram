@@ -6,17 +6,17 @@ export const getCategories = async (
     projectUUID: string,
     filter?: string,
 ): Promise<CategoriesDto> => {
-    const params: {
+    const parameters: {
         uuid: string;
         filter?: string;
     } = { uuid: projectUUID };
     if (filter) {
-        params.filter = filter;
+        parameters.filter = filter;
     }
     const response: AxiosResponse<CategoriesDto> = await axios.get(
         '/category/all',
         {
-            params,
+            params: parameters,
         },
     );
     return response.data;

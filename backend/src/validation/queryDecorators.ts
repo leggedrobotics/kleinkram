@@ -16,10 +16,13 @@ import {
 import { metadataApplier } from './MetadataApplier';
 import { AccessGroupType } from '@common/frontend_shared/enum';
 
-export const QueryUUID = (paramName: string, paramDescription: string) =>
+export const QueryUUID = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
@@ -31,22 +34,22 @@ export const QueryUUID = (paramName: string, paramDescription: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'string',
             true,
             'uuid',
         ),
-    )(paramName);
+    )(parameterName);
 
 export const QueryOptionalUUID = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -62,13 +65,22 @@ export const QueryOptionalUUID = (
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'uuid', false),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'uuid',
+            false,
+        ),
+    )(parameterName);
 
-export const QueryString = (paramName: string, paramDescription: string) =>
+export const QueryString = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             const object = plainToInstance(StringValidate, { value });
@@ -80,16 +92,22 @@ export const QueryString = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'string', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'string',
+            true,
+        ),
+    )(parameterName);
 
 export const QueryOptionalString = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext): Promise<string> => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext): Promise<string> => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined || value === '') {
@@ -105,13 +123,22 @@ export const QueryOptionalString = (
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'string', false),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'string',
+            false,
+        ),
+    )(parameterName);
 
-export const QueryStringArray = (paramName: string, paramDescription: string) =>
+export const QueryStringArray = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             const object = plainToInstance(StringArrayValidate, { value });
             await validateOrReject(object).catch(() => {
@@ -122,16 +149,22 @@ export const QueryStringArray = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'string[]', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'string[]',
+            true,
+        ),
+    )(parameterName);
 
 export const QueryOptionalStringArray = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             if (value === undefined) {
                 return;
@@ -146,18 +179,21 @@ export const QueryOptionalStringArray = (
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'string[]',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const QueryBoolean = (paramName: string, paramDescription: string) =>
+export const QueryBoolean = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             const object = plainToInstance(BooleanValidate, { value });
             await validateOrReject(object).catch(() => {
@@ -177,16 +213,22 @@ export const QueryBoolean = (paramName: string, paramDescription: string) =>
                 `Parameter ${data} is not a valid Boolean`,
             );
         },
-        metadataApplier(paramName, paramDescription, 'query', 'boolean', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'boolean',
+            true,
+        ),
+    )(parameterName);
 
 export const QueryOptionalBoolean = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             if (value === undefined) {
                 return;
@@ -209,13 +251,22 @@ export const QueryOptionalBoolean = (
                 `Parameter ${data} is not a valid Boolean`,
             );
         },
-        metadataApplier(paramName, paramDescription, 'query', 'boolean', false),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'boolean',
+            false,
+        ),
+    )(parameterName);
 
-export const QueryDate = (paramName: string, paramDescription: string) =>
+export const QueryDate = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -232,18 +283,21 @@ export const QueryDate = (paramName: string, paramDescription: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'DateString',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const QuerySortBy = (paramName: string, paramDescription?: string) =>
+export const QuerySortBy = (
+    parameterName: string,
+    parameterDescription?: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === '' || value === undefined) {
@@ -284,21 +338,21 @@ export const QuerySortBy = (paramName: string, paramDescription?: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription || 'Sort response by',
+            parameterName,
+            parameterDescription || 'Sort response by',
             'query',
             'string (sortable field)',
             true,
         ),
-    )(paramName);
+    )(parameterName);
 
 export const QuerySortDirection = (
-    paramName: string,
-    paramDescription?: string,
+    parameterName: string,
+    parameterDescription?: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             let value = request.query[data];
 
             if (value === '' || value === undefined) {
@@ -322,21 +376,21 @@ export const QuerySortDirection = (
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription || 'Sort response direction',
+            parameterName,
+            parameterDescription || 'Sort response direction',
             'query',
             'boolean',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
 export const QueryProjectSearchParam = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -351,40 +405,40 @@ export const QueryProjectSearchParam = (
             }
 
             // remove empty values
-            Object.keys(value).forEach((_key) => {
+            for (const _key of Object.keys(value)) {
                 if (value[_key] === '') {
                     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                     delete value[_key];
                 }
-            });
+            }
 
             // check if every value is a string
-            Object.keys(value).forEach((_key) => {
+            for (const _key of Object.keys(value)) {
                 if (typeof value[_key] !== 'string') {
                     throw new BadRequestException(
                         'Parameter is not a valid value',
                     );
                 }
-            });
+            }
 
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'Record<name | creator.uuid, string>',
             true,
         ),
-    )(paramName);
+    )(parameterName);
 
 export const QueryOptionalDate = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -400,21 +454,21 @@ export const QueryOptionalDate = (
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'dateString',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
 export const QueryOptionalNumber = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -430,16 +484,25 @@ export const QueryOptionalNumber = (
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'number', false),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'number',
+            false,
+        ),
+    )(parameterName);
 
 export const QueryOptionalAccessGroupType = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext): AccessGroupType | undefined => {
-            const request = ctx.switchToHttp().getRequest();
+        (
+            data: string,
+            context: ExecutionContext,
+        ): AccessGroupType | undefined => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -456,18 +519,21 @@ export const QueryOptionalAccessGroupType = (
             return value as AccessGroupType;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'AccessGroupType',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const QuerySkip = (paramName: string, paramDescription?: string) =>
+export const QuerySkip = (
+    parameterName: string,
+    parameterDescription?: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -488,18 +554,21 @@ export const QuerySkip = (paramName: string, paramDescription?: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription || 'Pagination Skip',
+            parameterName,
+            parameterDescription || 'Pagination Skip',
             'query',
             'number',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const QueryTake = (paramName: string, paramDescription?: string) =>
+export const QueryTake = (
+    parameterName: string,
+    parameterDescription?: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -522,18 +591,21 @@ export const QueryTake = (paramName: string, paramDescription?: string) =>
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription || 'Pagination Take',
+            parameterName,
+            parameterDescription || 'Pagination Take',
             'query',
             'number',
             false,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const QueryOptional = (paramName: string, paramDescription: string) =>
+export const QueryOptional = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
@@ -542,29 +614,35 @@ export const QueryOptional = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'query', 'any', false),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'any',
+            false,
+        ),
+    )(parameterName);
 
 export const QueryOptionalRecord = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
 
-            return JSON.parse(value.replace(/'/g, '"'));
+            return JSON.parse(value.replaceAll("'", '"'));
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'query',
             'Record<unknown, unknown>',
             false,
         ),
-    )(paramName);
+    )(parameterName);

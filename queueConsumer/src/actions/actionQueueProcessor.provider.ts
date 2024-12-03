@@ -198,9 +198,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
-        } catch (e: unknown) {
+        } catch (error_: unknown) {
             logger.error(
-                `Failed to update action state in database: ${(e as { message: string }).message}`,
+                `Failed to update action state in database: ${(error_ as { message: string }).message}`,
             );
         }
     }

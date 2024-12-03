@@ -6,7 +6,10 @@
                     a.type.name.localeCompare(b.type.name),
                 )"
                 :key="tag.uuid"
-                :icon-right="icons[tag.datatype.type]"
+                :icon-right="
+                    // @ts-ignore
+                    icons[tag.datatype as DataType] as string
+                "
                 class="rotating-element"
                 removable
                 @remove="() => removeTagCallback(tag)"
@@ -33,7 +36,7 @@ import { useMission } from '../hooks/customQueryHooks';
 const queryClient = useQueryClient();
 const $q = useQuasar();
 
-const props = defineProps<{
+const properties = defineProps<{
     mission_uuid: string;
 }>();
 
@@ -45,17 +48,19 @@ const icons = {
     [DataType.LOCATION]: 'sym_o_place',
 };
 
-const { data } = useMission(props.mission_uuid);
+const { data } = useMission(properties.mission_uuid);
 
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
-    document.querySelectorAll('.rotating-element').forEach((el) => {
-        const randomDuration = Math.random() * 10000 + 200; // Random duration between 1s and 5s
-        el.style['-webkit-animation-duration'] =
+    for (const element of document.querySelectorAll('.rotating-element')) {
+        const randomDuration = Math.random() * 10_000 + 200; // Random duration between 1s and 5s
+        // @ts-ignore
+        element.style['-webkit-animation-duration'] =
             `${randomDuration.toString()}s`;
         if (Math.random() > 0.5) {
-            el.style['-webkit-animation-direction'] = `reverse`;
+            // @ts-ignore
+            element.style['-webkit-animation-direction'] = `reverse`;
         }
-    });
+    }
 });
 const { mutate: removeTagCallback } = useMutation({
     mutationFn: (tag: TagDto) => removeTag(tag.uuid),
@@ -71,7 +76,7 @@ const { mutate: removeTagCallback } = useMutation({
             .filter(
                 (query) =>
                     query.queryKey[0] === 'mission' &&
-                    query.queryKey[1] === props.mission_uuid,
+                    query.queryKey[1] === properties.mission_uuid,
             );
         for (const query of filtered) {
             await queryClient.invalidateQueries({
@@ -88,7 +93,7 @@ function openAddTag() {
     $q.dialog({
         component: AddTagDialog,
         componentProps: {
-            mission_uuid: props.mission_uuid,
+            mission_uuid: properties.mission_uuid,
         },
         persistent: true,
     });

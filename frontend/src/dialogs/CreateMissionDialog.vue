@@ -20,7 +20,7 @@
                     name="tags"
                     :label="
                         'Tags' +
-                        (!!project && project.requiredTags.length >= 1
+                        (!!project && project.requiredTags.length > 0
                             ? '*'
                             : '')
                     "
@@ -105,7 +105,7 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :project-u-u-i-d="project.uuid"
+                        :project-uuid="project?.uuid ? ''"
                         @update:tag-values="updateTagValue"
                     />
                 </q-tab-panel>
@@ -171,16 +171,16 @@ import SelectMissionTags from '../components/SelectMissionTags.vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
-const MISSION_NAME_INPUT_VALIDATION: ((val: string) => boolean | string)[] = [
-    (val) => !!val || 'Field is required',
-    (val) =>
-        val.length >= MIN_MISSION_NAME_LENGTH ||
+const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
+    (value) => !!value || 'Field is required',
+    (value) =>
+        value.length >= MIN_MISSION_NAME_LENGTH ||
         `Name must be at least ${MIN_MISSION_NAME_LENGTH.toString()} characters`,
-    (val) =>
-        val.length <= MAX_MISSION_NAME_LENGTH ||
+    (value) =>
+        value.length <= MAX_MISSION_NAME_LENGTH ||
         `Name must be at most ${MAX_MISSION_NAME_LENGTH.toString()} characters`,
-    (val) =>
-        /^[\w\-_]+$/g.test(val) ||
+    (value) =>
+        /^[\w\-_]+$/g.test(value) ||
         'Name must be alphanumeric and contain only - and _',
 ];
 
@@ -214,7 +214,9 @@ const { data: all_projects } = useQuery<ProjectsDto>({
 const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
+    // @ts-ignore
     return all_projects.value.projects.filter((_project: ProjectDto) =>
+        // @ts-ignore
         canCreateMission(_project.uuid, permissions),
     );
 });
@@ -222,6 +224,7 @@ const projectsWithCreateWrite = computed(() => {
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
+    // @ts-ignore
     return project.value.requiredTags.every(
         (tag) =>
             tagValues.value[tag.uuid] !== undefined &&
@@ -241,15 +244,17 @@ const submitNewMission = async () => {
         missionName.value,
         project.value.uuid,
         tagValues.value,
-    ).catch((e: unknown) => {
+    ).catch((error: unknown) => {
         tab_selection.value = 'meta_data';
         isValidMissionName.value = false;
-        errorMessage.value = e.response.data.message[0];
+        // @ts-ignore
+        errorMessage.value = error.response.data.message[0];
     });
 
     // exit if the request failed
     if (!resp) return;
     newMission.value = resp;
+    // @ts-ignore
     newMission.value.project = project.value;
     const cache = queryClient.getQueryCache();
     const filtered = cache
@@ -284,6 +289,7 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
+    // @ts-ignore
     createFileRef.value.createFileAction();
     onDialogOK();
 };

@@ -11,7 +11,7 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 import {
-    QueryProjectSearchParam,
+    QueryProjectSearchParam as QueryProjectSearchParameter,
     QuerySkip,
     QuerySortBy,
     QuerySortDirection,
@@ -20,7 +20,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { AddUser, AuthRes } from '../auth/paramDecorator';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
 import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
@@ -49,8 +49,8 @@ export class ProjectController {
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryProjectSearchParam('searchParams', 'search name and creator')
-        searchParams: Map<string, string>,
+        @QueryProjectSearchParameter('searchParams', 'search name and creator')
+        searchParameters: Map<string, string>,
     ): Promise<ProjectsDto> {
         return this.projectService.findAll(
             authRes.user,
@@ -58,7 +58,7 @@ export class ProjectController {
             take,
             sortBy,
             sortDirection,
-            searchParams,
+            searchParameters,
         );
     }
 
@@ -104,7 +104,7 @@ export class ProjectController {
         type: ProjectDto,
     })
     async updateProject(
-        @ParamUUID('uuid') uuid: string,
+        @ParameterUID('uuid') uuid: string,
         @Body() dto: CreateProject,
     ): Promise<ProjectDto> {
         return this.projectService.update(uuid, dto);
@@ -141,7 +141,7 @@ export class ProjectController {
         description: 'Project deleted',
         status: 200,
     })
-    async deleteProject(@ParamUUID('uuid') uuid: string) {
+    async deleteProject(@ParameterUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);
     }
 

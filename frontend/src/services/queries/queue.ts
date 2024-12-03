@@ -7,11 +7,11 @@ export const currentQueue = async (
     startDate: Date,
     stateFilter: QueueState[],
 ) => {
-    const params = {
+    const parameters = {
         startDate: startDate.toISOString(),
         stateFilter: stateFilter.length > 0 ? stateFilter.join(',') : undefined,
     };
-    const response = await axios.get('/queue/active', { params });
+    const response = await axios.get('/queue/active', { params: parameters });
     return response.data;
 };
 
@@ -19,12 +19,14 @@ export const getQueueForFile = async (
     filename: string,
     missionUUID: string,
 ): Promise<FileQueueEntriesDto> => {
-    const params = {
+    const parameters = {
         filename,
         uuid: missionUUID,
     };
     const response: AxiosResponse<FileQueueEntriesDto> =
-        await axios.get<FileQueueEntriesDto>('/queue/forFile', { params });
+        await axios.get<FileQueueEntriesDto>('/queue/forFile', {
+            params: parameters,
+        });
     return response.data;
 };
 

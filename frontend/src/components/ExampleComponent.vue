@@ -15,14 +15,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-interface Props {
+interface Properties {
     title: string;
     todos?: any[];
     meta: any;
     active: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const properties = withDefaults(defineProps<Properties>(), {
     todos: () => [],
 });
 
@@ -33,5 +33,5 @@ function increment() {
     return clickCount.value;
 }
 
-const todoCount = computed(() => props.todos.length);
+const todoCount = computed(() => properties.todos.length);
 </script>

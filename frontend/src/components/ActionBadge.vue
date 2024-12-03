@@ -22,14 +22,14 @@ import { computed } from 'vue';
 import { ArtifactState } from '@common/enum';
 import { ActionDto } from '@api/types/Actions.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     action: ActionDto;
 }>();
 
 const isArtifactUploading = computed(
     () =>
-        ArtifactState.AWAITING_ACTION < props.action.artifacts &&
-        props.action.artifacts < ArtifactState.UPLOADED,
+        ArtifactState.AWAITING_ACTION < properties.action.artifacts &&
+        properties.action.artifacts < ArtifactState.UPLOADED,
 );
 </script>
 <style scoped></style>

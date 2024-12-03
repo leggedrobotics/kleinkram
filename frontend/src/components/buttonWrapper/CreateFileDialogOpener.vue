@@ -11,7 +11,7 @@ import { inject } from 'vue';
 import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission?: MissionDto;
 }>();
 const uploads = inject('uploads')!;
@@ -20,7 +20,7 @@ const createNewTageType = () =>
         title: 'Create new mission',
         component: CreateFileDialog,
         componentProps: {
-            mission: props.mission,
+            mission: properties.mission,
             uploads,
         },
     });

@@ -14,14 +14,14 @@ export class WorkerService {
         const workers = await this.workerRepository.find();
 
         // deduplicate workers by hostname get last seen worker
-        const workerMap = workers.reduce((acc, worker) => {
+        const workerMap = workers.reduce((accumulator, worker) => {
             if (
-                !acc[worker.hostname] ||
-                acc[worker.hostname].lastSeen < worker.lastSeen
+                !accumulator[worker.hostname] ||
+                accumulator[worker.hostname].lastSeen < worker.lastSeen
             ) {
-                acc[worker.hostname] = worker;
+                accumulator[worker.hostname] = worker;
             }
-            return acc;
+            return accumulator;
         }, {});
 
         const count = Object.keys(workerMap).length;

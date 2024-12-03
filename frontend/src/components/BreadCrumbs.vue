@@ -68,13 +68,13 @@ const resolvedCrumbs = computed(() => {
     });
 
     // remove crumbs with undefined values in to
-    const firstUndefinedIdx = _crumbs.findIndex((crumb: PageBreadCrumb) =>
+    const firstUndefinedIndex = _crumbs.findIndex((crumb: PageBreadCrumb) =>
         crumb.to?.includes('undefined'),
     );
     _crumbs =
-        firstUndefinedIdx === -1
+        firstUndefinedIndex === -1
             ? _crumbs
-            : _crumbs.slice(0, firstUndefinedIdx);
+            : _crumbs.slice(0, firstUndefinedIndex);
 
     // remove link of crumb if it is the only crumb
     if (_crumbs.length === 1) {
@@ -85,9 +85,9 @@ const resolvedCrumbs = computed(() => {
 });
 
 const isClickable = (crumb: PageBreadCrumb): boolean => {
-    const idx = crumbs.value.findIndex(
+    const index = crumbs.value.findIndex(
         (c: PageBreadCrumb) => c.displayName === crumb.displayName,
     );
-    return idx !== crumbs.value.length - 1;
+    return index !== crumbs.value.length - 1;
 };
 </script>

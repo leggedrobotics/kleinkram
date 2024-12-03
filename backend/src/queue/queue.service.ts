@@ -113,8 +113,8 @@ export class QueueService implements OnModuleInit {
                     await this.actionQueues[worker.identifier]?.isReady();
                 }),
             );
-        } catch (e) {
-            logger.error(e);
+        } catch (error) {
+            logger.error(error);
         }
         await Promise.all(
             Object.values(this.actionQueues).map(async (queue) => {
@@ -151,7 +151,7 @@ export class QueueService implements OnModuleInit {
         );
         await this.fileQueue
             .add('processDriveFile', { queueUuid: queueEntry.uuid })
-            .catch((err: unknown) => logger.error(err));
+            .catch((error: unknown) => logger.error(error));
         logger.debug('added to queue');
     }
 
@@ -207,7 +207,7 @@ export class QueueService implements OnModuleInit {
             if (stateFilter) {
                 const filter = stateFilter
                     .split(',')
-                    .map((state) => parseInt(state));
+                    .map((state) => Number.parseInt(state));
                 where.state = In(filter);
             }
             return await this.queueRepository.find({
@@ -236,7 +236,7 @@ export class QueueService implements OnModuleInit {
         if (stateFilter) {
             const filter = stateFilter
                 .split(',')
-                .map((state) => parseInt(state));
+                .map((state) => Number.parseInt(state));
             query.andWhere('queue.state IN (:...filter)', { filter });
         }
         return query.getMany();
@@ -296,11 +296,11 @@ export class QueueService implements OnModuleInit {
         const jobToRemove = waitingJobs.find(
             (job) => job.data.queueUuid === queueUUID,
         );
-        if (!jobToRemove) {
-            logger.debug('Job not found');
-        } else {
+        if (jobToRemove) {
             logger.debug('Removing job:', jobToRemove.data.queueUuid);
             await jobToRemove.remove();
+        } else {
+            logger.debug('Job not found');
         }
         await this.queueRepository.remove(queue);
 
@@ -313,8 +313,8 @@ export class QueueService implements OnModuleInit {
         const minioBucket = getBucketFromFileType(file.type);
         try {
             await internalMinio.removeObject(minioBucket, file.uuid);
-        } catch (err: any) {
-            logger.log(err);
+        } catch (error: any) {
+            logger.log(error);
         }
         await this.fileRepository.remove(file);
         if (file.type === FileType.BAG) {
@@ -330,8 +330,8 @@ export class QueueService implements OnModuleInit {
                         getBucketFromFileType(mcap.type),
                         mcap.uuid,
                     );
-                } catch (err: any) {
-                    logger.log(err);
+                } catch (error: any) {
+                    logger.log(error);
                 }
                 await this.fileRepository.remove(mcap);
             }
@@ -356,11 +356,11 @@ export class QueueService implements OnModuleInit {
         const jobToRemove = waitingJobs.find(
             (job) => job.data.queueUuid === queueUUID,
         );
-        if (!jobToRemove) {
-            logger.debug('Job not found');
-        } else {
+        if (jobToRemove) {
             logger.debug('Removing job:', jobToRemove.data.queueUuid);
             await jobToRemove.remove();
+        } else {
+            logger.debug('Job not found');
         }
         queue.state = QueueState.CANCELED;
         await this.queueRepository.save(queue);
@@ -439,8 +439,8 @@ export class QueueService implements OnModuleInit {
         }
         try {
             await job.remove();
-        } catch (err: any) {
-            logger.log(err);
+        } catch (error: any) {
+            logger.log(error);
         }
     }
 
@@ -449,9 +449,7 @@ export class QueueService implements OnModuleInit {
         const workers = await this.workerRepository.find({
             where: {
                 reachable: true,
-                lastSeen: LessThan(
-                    new Date(new Date().getTime() - 2 * 60 * 1000),
-                ),
+                lastSeen: LessThan(new Date(Date.now() - 2 * 60 * 1000)),
             },
         });
 
@@ -504,8 +502,8 @@ export class QueueService implements OnModuleInit {
                                         this.actionQueues,
                                         logger,
                                     );
-                                } catch (e) {
-                                    logger.error(e);
+                                } catch (error) {
+                                    logger.error(error);
                                 }
                             }),
                         );
@@ -513,8 +511,8 @@ export class QueueService implements OnModuleInit {
                             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                             delete this.actionQueues[worker.identifier];
                         }
-                    } catch (e) {
-                        logger.error(e);
+                    } catch (error) {
+                        logger.error(error);
                         return;
                     }
                 }
@@ -553,7 +551,7 @@ export class QueueService implements OnModuleInit {
         this.completedJobs.set({ queue: 'fileQueue' }, jobsCount.completed);
         this.failedJobs.set({ queue: 'fileQueue' }, jobsCount.failed);
 
-        jobCounts.forEach((count, index) => {
+        for (const [index, count] of jobCounts.entries()) {
             this.pendingJobs.set(
                 { queue: actionQueues[index]?.name },
                 count.waiting + count.delayed,
@@ -570,6 +568,6 @@ export class QueueService implements OnModuleInit {
                 { queue: actionQueues[index]?.name },
                 count.failed,
             );
-        });
+        }
     }
 }

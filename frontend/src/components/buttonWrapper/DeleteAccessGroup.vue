@@ -7,7 +7,13 @@
                 'cursor-not-allowed': canModify,
             } as any
         "
-        @click="_deleteAccessGroup"
+        @click="
+            // eslint-disable-next-line vue/v-on-handler-style
+            () => {
+                // @ts-ignore
+                _deleteAccessGroup();
+            }
+        "
     >
         <slot />
         <q-tooltip v-if="props.accessGroup.type === AccessGroupType.PRIMARY">
@@ -43,6 +49,7 @@ const canModify = computed(() => {
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
+    // @ts-ignore
     return props.accessGroup.creator.uuid === me.value.uuid;
 });
 const queryClient = useQueryClient();

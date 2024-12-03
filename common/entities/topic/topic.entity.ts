@@ -14,7 +14,7 @@ export default class Topic extends BaseEntity {
         type: 'bigint',
         transformer: {
             to: (value: number) => value,
-            from: (value: string) => parseInt(value, 10),
+            from: (value: string) => Number.parseInt(value, 10),
         },
     })
     nrMessages?: bigint;

@@ -116,9 +116,9 @@ const columns = [
         align: 'left',
         sortable: false,
         field: (row: ActionDto): string =>
-            row.template.name !== ''
-                ? `${row.template.name} v${row.template.version}`
-                : 'N/A',
+            row.template.name === ''
+                ? 'N/A'
+                : `${row.template.name} v${row.template.version}`,
     },
 
     {
@@ -131,7 +131,7 @@ const columns = [
 ];
 
 const toActions = async (): Promise<void> => {
-    return await router.push('actions');
+    await router.push('actions');
 };
 </script>
 

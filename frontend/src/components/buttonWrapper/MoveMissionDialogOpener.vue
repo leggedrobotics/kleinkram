@@ -27,15 +27,15 @@ import { useMissionUUID } from 'src/hooks/utils';
 import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
 }>();
 const urlMissionUUID = useMissionUUID();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
-        props.mission.uuid,
-        props.mission.project.uuid,
+        properties.mission.uuid,
+        properties.mission.project.uuid,
         permissions.value,
     ),
 );
@@ -48,7 +48,7 @@ const moveMission = (): void => {
         component: MoveMission,
         persistent: false,
         style: 'max-width: 1500px',
-        componentProps: { mission: props.mission },
+        componentProps: { mission: properties.mission },
     }).onOk((newProjectUUID: string) => {
         if (urlMissionUUID.value) {
             $router
@@ -57,8 +57,8 @@ const moveMission = (): void => {
                         project_uuid: newProjectUUID,
                     },
                 })
-                .catch((e: unknown) => {
-                    console.error(e);
+                .catch((error: unknown) => {
+                    console.error(error);
                 });
         }
     });

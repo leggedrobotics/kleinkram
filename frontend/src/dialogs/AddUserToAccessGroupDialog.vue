@@ -33,6 +33,7 @@ const props = defineProps<{
 }>();
 
 const addUserToAccessGroupAction = (): void => {
+    // @ts-ignore
     addUserRef.value?.mutate();
     onDialogOK();
 };

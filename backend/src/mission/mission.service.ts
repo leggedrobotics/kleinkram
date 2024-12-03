@@ -198,19 +198,17 @@ export class MissionService {
             const rawItem = res.raw.find(
                 (raw) => raw.mission_uuid === mission.uuid,
             );
-            if (rawItem) {
-                return {
-                    ...mission,
-                    nrFiles: rawItem.fileCount,
-                    size: Number(rawItem.totalSize),
-                } as AggregatedMissionDto;
-            } else {
-                return {
-                    ...mission,
-                    nrFiles: 0,
-                    size: 0,
-                } as AggregatedMissionDto;
-            }
+            return rawItem
+                ? ({
+                      ...mission,
+                      nrFiles: rawItem.fileCount,
+                      size: Number(rawItem.totalSize),
+                  } as AggregatedMissionDto)
+                : ({
+                      ...mission,
+                      nrFiles: 0,
+                      size: 0,
+                  } as AggregatedMissionDto);
         });
 
         return [aggregatedRes, res.entities.length];

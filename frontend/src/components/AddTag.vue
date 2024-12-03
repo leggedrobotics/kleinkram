@@ -121,11 +121,11 @@ import { TagDto } from '@api/types/TagsDto.dto';
 
 const queryClient = useQueryClient();
 
-const props = defineProps<{
+const properties = defineProps<{
     mission_uuid: string;
 }>();
 
-const { data } = useMission(props.mission_uuid);
+const { data } = useMission(properties.mission_uuid);
 
 const { data: tagTypes } = useAllTags();
 const tagValues: Ref<Record<string, string>> = ref({});
@@ -146,11 +146,11 @@ const availableAdditionalTags: Ref<TagDto[]> = computed(() => {
     const usedTagUUIDs = data.value
         ? data.value.tags.map((tag) => tag.type.uuid)
         : [];
-    const addedTagUUIDs = additonalTags.value.map((tag) => tag.uuid);
+    const addedTagUUIDs = new Set(additonalTags.value.map((tag) => tag.uuid));
     return tagTypes.value.tags.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
-            !addedTagUUIDs.includes(tagtype.uuid),
+            !addedTagUUIDs.has(tagtype.uuid),
     );
 });
 
@@ -159,7 +159,7 @@ function addTag(tagtype: TagDto) {
 }
 
 const { mutate: saveFunction } = useMutation({
-    mutationFn: () => addTags(props.mission_uuid, tagValues.value),
+    mutationFn: () => addTags(properties.mission_uuid, tagValues.value),
     async onSuccess() {
         Notify.create({
             message: 'Tags saved',
@@ -172,7 +172,7 @@ const { mutate: saveFunction } = useMutation({
             .filter(
                 (query) =>
                     query.queryKey[0] === 'mission' &&
-                    query.queryKey[1] === props.mission_uuid,
+                    query.queryKey[1] === properties.mission_uuid,
             );
         await Promise.all(
             filtered.map((query) =>
@@ -187,7 +187,9 @@ const { mutate: saveFunction } = useMutation({
     },
 });
 
-const saveEvent = (): void => saveFunction();
+const saveEvent = (): void => {
+    saveFunction();
+};
 </script>
 
 <style scoped></style>

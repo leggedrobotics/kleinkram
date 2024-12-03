@@ -1,18 +1,18 @@
-import env from './env';
+import environment from './env';
 import { FileType } from './frontend_shared/enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
-import { BucketItem, Client } from 'minio';
+import { Client } from 'minio';
 import Credentials from 'minio/dist/main/Credentials';
 import { Tags } from 'minio/dist/main/internal/type';
 
 export const externalMinio: Client = new Client({
-    endPoint: env.MINIO_ENDPOINT,
-    useSSL: !env.DEV,
-    port: env.DEV ? 9000 : 443,
+    endPoint: environment.MINIO_ENDPOINT,
+    useSSL: !environment.DEV,
+    port: environment.DEV ? 9000 : 443,
 
     region: 'GUGUS GEWESEN',
-    accessKey: env.MINIO_ACCESS_KEY,
-    secretKey: env.MINIO_SECRET_KEY,
+    accessKey: environment.MINIO_ACCESS_KEY,
+    secretKey: environment.MINIO_SECRET_KEY,
 });
 
 export const internalMinio: Client = new Client({
@@ -21,19 +21,19 @@ export const internalMinio: Client = new Client({
     port: 9000,
 
     region: 'GUGUS GEWESEN',
-    accessKey: env.MINIO_ACCESS_KEY,
-    secretKey: env.MINIO_SECRET_KEY,
+    accessKey: environment.MINIO_ACCESS_KEY,
+    secretKey: environment.MINIO_SECRET_KEY,
 });
 
 export async function getInfoFromMinio(fileType: FileType, location: string) {
     const bucketName = getBucketFromFileType(fileType);
     try {
         return await internalMinio.statObject(bucketName, location);
-    } catch (e: any) {
-        if (e.code === 'NotFound') {
+    } catch (error: any) {
+        if (error.code === 'NotFound') {
             return null;
         }
-        throw e;
+        throw error;
     }
 }
 
@@ -59,8 +59,8 @@ export function getBucketFromFileType(fileType: FileType): string {
     }
 
     return fileType === FileType.BAG
-        ? env.MINIO_BAG_BUCKET_NAME
-        : env.MINIO_MCAP_BUCKET_NAME;
+        ? environment.MINIO_BAG_BUCKET_NAME
+        : environment.MINIO_MCAP_BUCKET_NAME;
 }
 
 /**
@@ -95,8 +95,8 @@ export async function generateTemporaryCredential(
     const resource = `arn:aws:s3:::${bucketName}/${filename}`;
 
     const provider = new AssumeRoleProvider({
-        secretKey: env.MINIO_PASSWORD,
-        accessKey: env.MINIO_USER,
+        secretKey: environment.MINIO_PASSWORD,
+        accessKey: environment.MINIO_USER,
         stsEndpoint: 'http://minio:9000',
         action: 'AssumeRole',
         policy: JSON.stringify(basePolicy(resource)),
@@ -106,4 +106,4 @@ export async function generateTemporaryCredential(
     return await provider.getCredentials();
 }
 
-export { BucketItem };
+export { BucketItem } from 'minio';

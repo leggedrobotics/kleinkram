@@ -26,7 +26,7 @@
             }
         "
     >
-        <template v-if="searchEnabled && searchResults.length" #no-option>
+        <template v-if="searchEnabled && searchResults.length > 0" #no-option>
             <q-item>
                 <q-item-section class="text-grey"> No results</q-item-section>
             </q-item>
@@ -240,14 +240,10 @@
                     color="primary"
                     class="cursor-pointer"
                     :disable="
-                        !!minAccessRights.filter(
-                            (r) => r.uuid === props.row.uuid,
-                        ).length
+                        minAccessRights.some((r) => r.uuid === props.row.uuid)
                     "
                     :text-color="
-                        !!minAccessRights.filter(
-                            (r) => r.uuid === props.row.uuid,
-                        ).length
+                        minAccessRights.some((r) => r.uuid === props.row.uuid)
                             ? 'grey'
                             : 'red'
                     "
@@ -324,7 +320,7 @@ const updateRights = (
 };
 
 const removeGroup = (group: AccessGroupDto): void => {
-    if (minAccessRights.filter((r) => r.uuid === group.uuid).length > 0) {
+    if (minAccessRights.some((r) => r.uuid === group.uuid)) {
         console.log('Cannot remove minimum access group');
         return;
     }
@@ -334,10 +330,7 @@ const removeGroup = (group: AccessGroupDto): void => {
     );
 };
 
-const { data: foundAccessGroups } = useSearchAccessGroup(
-    groupSearch,
-    undefined,
-);
+const { data: foundAccessGroups } = useSearchAccessGroup(groupSearch);
 
 const isBelowMinRights = (
     group: AccessGroupDto,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as fs from 'fs';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import * as fs from 'node:fs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import env from '@common/env';

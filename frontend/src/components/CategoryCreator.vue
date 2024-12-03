@@ -26,7 +26,7 @@ import { createCategory } from 'src/services/mutations/categories';
 import { Notify, QNotifyCreateOptions } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
 }>();
 const queryClient = useQueryClient();
@@ -34,7 +34,7 @@ const queryClient = useQueryClient();
 const newCategory = ref('');
 const { mutate } = useMutation({
     mutationFn: (category: string) =>
-        createCategory(category, props.project_uuid),
+        createCategory(category, properties.project_uuid),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'categories',

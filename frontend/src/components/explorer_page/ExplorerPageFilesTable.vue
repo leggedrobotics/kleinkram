@@ -152,28 +152,28 @@ const $router = useRouter();
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
-const props = defineProps<{
+const properties = defineProps<{
     url_handler: QueryHandler;
 }>();
 
-if (props.url_handler.sortBy === 'name') {
-    props.url_handler.setSort('filename');
+if (properties.url_handler.sortBy === 'name') {
+    properties.url_handler.setSort('filename');
 }
 
 function setPagination(update: TableRequest) {
-    props.url_handler.setPage(update.pagination.page);
-    props.url_handler.setTake(update.pagination.rowsPerPage);
-    props.url_handler.setSort(update.pagination.sortBy);
-    props.url_handler.setDescending(update.pagination.descending);
+    properties.url_handler.setPage(update.pagination.page);
+    properties.url_handler.setTake(update.pagination.rowsPerPage);
+    properties.url_handler.setSort(update.pagination.sortBy);
+    properties.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.url_handler.page,
-        rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler.rowsNumber,
-        sortBy: props.url_handler.sortBy,
-        descending: props.url_handler.descending,
+        page: properties.url_handler.page,
+        rowsPerPage: properties.url_handler.take,
+        rowsNumber: properties.url_handler.rowsNumber,
+        sortBy: properties.url_handler.sortBy,
+        descending: properties.url_handler.descending,
     };
 });
 
@@ -181,9 +181,9 @@ const selected = ref([]);
 const queryKey = computed(() => [
     'files',
     mission_uuid.value,
-    props.url_handler.queryKey,
-    props.url_handler.fileType,
-    props.url_handler.categories,
+    properties.url_handler.queryKey,
+    properties.url_handler.fileType,
+    properties.url_handler.categories,
 ]);
 
 const {
@@ -194,14 +194,15 @@ const {
     queryFn: () =>
         filesOfMission(
             mission_uuid.value ?? '',
-            props.url_handler.take,
-            props.url_handler.skip,
-            props.url_handler.fileType,
-            props.url_handler.searchParams.name,
-            props.url_handler.categories,
-            props.url_handler.sortBy,
-            props.url_handler.descending,
-            props.url_handler.searchParams.health,
+            properties.url_handler.take,
+            properties.url_handler.skip,
+            // @ts-ignore
+            properties.url_handler.fileType,
+            properties.url_handler.searchParams.name,
+            properties.url_handler.categories,
+            properties.url_handler.sortBy,
+            properties.url_handler.descending,
+            properties.url_handler.searchParams.health,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value.files : []));
@@ -212,7 +213,7 @@ watch(
     () => {
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
-            props.url_handler.rowsNumber = total.value;
+            properties.url_handler.rowsNumber = total.value;
         }
     },
     { immediate: true },
@@ -221,6 +222,7 @@ watch(
 const onRowClick = async (_: Event, row: any) => {
     await $router.push({
         path: '',
+        // @ts-ignore
         name: ROUTES.FILE.routeName,
         params: {
             project_uuid: project_uuid.value,
@@ -231,17 +233,18 @@ const onRowClick = async (_: Event, row: any) => {
 };
 
 function chipClicked(cat: CategoryDto) {
-    props.url_handler.addCategory(cat.uuid);
+    properties.url_handler.addCategory(cat.uuid);
 }
 
 watch(
     () => selected.value,
-    (newVal) => {
-        $emit('update:selected', newVal);
+    (newValue) => {
+        $emit('update:selected', newValue);
     },
 );
 
 function sortedCats(file: FileDto) {
+    // @ts-ignore
     const cats = [...(file.categories.categories || [])];
     return cats.sort((a, b) => a.name.localeCompare(b.name));
 }

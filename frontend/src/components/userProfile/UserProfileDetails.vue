@@ -133,6 +133,7 @@ import { AccessGroupType, UserRole } from '@common/enum';
 const { data: user } = useUser();
 const tab = ref('Details');
 
+// @ts-ignore
 const affiliationGroup = computed<AccessGroupDto>(() => {
     return user.value?.memberships.find(
         (group: GroupMembershipDto) =>

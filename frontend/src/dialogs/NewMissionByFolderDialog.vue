@@ -20,7 +20,7 @@
                     name="tags"
                     :label="
                         'Tags' +
-                        (!!project && project.requiredTags.length >= 1
+                        (!!project && project.requiredTags.length > 0
                             ? '*'
                             : '')
                     "
@@ -79,7 +79,7 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :project-u-u-i-d="project.uuid"
+                        :project-uuid="project?.uuid ?? ''"
                         @update:tag-values="onTagValueUpdate"
                     />
                 </q-tab-panel>
@@ -113,23 +113,23 @@ import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQueryClient } from '@tanstack/vue-query';
 import { createMission } from 'src/services/mutations/mission';
-import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { createFileAction } from 'src/services/fileService';
-import { MissionDto } from '@api/types/Mission.dto';
+import { FlatMissionDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
+import SelectMissionTags from '../components/SelectMissionTags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
 const HTMLinput = ref();
-const project_uuid = ref(props.project_uuid);
-const newMission: Ref<MissionDto | undefined> = ref(undefined);
+const project_uuid = ref(properties.project_uuid);
+const newMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 const files = ref<File[]>([]);
 
@@ -146,6 +146,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
+    // @ts-ignore
     return project.value.requiredTags.every(
         (tag) => tagValues.value[tag.uuid] !== '',
     );
@@ -175,17 +176,21 @@ const submitNewMission = async () => {
         missionName.value,
         project.value.uuid,
         tagValues.value,
-    ).catch((e: unknown) => {
+    ).catch((error: unknown) => {
         tab_selection.value = 'meta_data';
         isInErrorState.value = true;
-        if (e instanceof Error) {
-            errorMessage.value = e.response.data.message;
-        }
+        // @ts-ignore
+        errorMessage.value = (
+            error as {
+                response?: { data?: { message?: string } };
+            }
+        ).response?.data?.message;
     });
 
     // exit if the request failed
     if (!resp) return;
     newMission.value = resp;
+    // @ts-ignore
     newMission.value.project = project.value;
     const cache = queryClient.getQueryCache();
     const filtered = cache
@@ -211,15 +216,16 @@ const submitNewMission = async () => {
         position: 'bottom',
     });
     const created = createFileAction(
-        newMission.value,
-        newMission.value?.project,
+        newMission.value ?? null,
+        newMission.value?.project ?? null,
         [...files.value].filter(
             (file: File) =>
                 file.name.endsWith('.bag') || file.name.endsWith('.mcap'),
         ),
         queryClient,
         uploadingFiles,
-        props.uploads,
+        // @ts-ignore
+        properties.uploads,
     );
     onDialogOK();
     await created;

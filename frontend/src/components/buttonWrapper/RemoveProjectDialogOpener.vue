@@ -27,14 +27,14 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { AccessGroupDto } from '@api/types/User.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     accessGroup: AccessGroupDto;
     projectUUID: string;
 }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canDelete = computed(() =>
-    canDeleteProject(props.projectUUID, permissions.value),
+    canDeleteProject(properties.projectUUID, permissions.value),
 );
 const queryClient = useQueryClient();
 
@@ -45,10 +45,13 @@ const removeProject = (): void => {
 
 const { mutate: _removeProject } = useMutation({
     mutationFn: () =>
-        removeAccessGroupFromProject(props.projectUUID, props.accessGroup.uuid),
+        removeAccessGroupFromProject(
+            properties.projectUUID,
+            properties.accessGroup.uuid,
+        ),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', props.accessGroup.uuid],
+            queryKey: ['AccessGroup', properties.accessGroup.uuid],
         });
         Notify.create({
             message: 'Project removed from access group',

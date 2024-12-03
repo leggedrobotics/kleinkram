@@ -9,21 +9,21 @@ export const filteredProjects = async (
     skip: number,
     sortBy: string,
     descending = false,
-    searchParams?: Record<string, string>,
+    searchParameters?: Record<string, string>,
 ): Promise<ProjectsDto> => {
-    const params: Record<string, any> = {
+    const parameters: Record<string, any> = {
         take,
         skip,
         sortBy,
         sortDirection: descending ? 'DESC' : 'ASC',
     };
-    if (searchParams && Object.keys(searchParams).length > 0) {
-        params.searchParams = searchParams;
+    if (searchParameters && Object.keys(searchParameters).length > 0) {
+        parameters.searchParams = searchParameters;
     }
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/project/filtered',
         {
-            params,
+            params: parameters,
         },
     );
     return response.data;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
-    ContainerEnv,
+    ContainerEnv as ContainerEnvironment,
     DockerDaemon,
     dockerDaemonErrorHandler,
 } from './dockerDaemon.service';
@@ -99,7 +99,7 @@ export class ActionManagerService {
 
         const apikey = await this.createAPIkey(action);
         try {
-            const envVariables: ContainerEnv = {
+            const environmentVariables: ContainerEnvironment = {
                 APIKEY: apikey.apikey,
                 PROJECT_UUID: action.mission.project.uuid,
                 MISSION_UUID: action.mission.uuid,
@@ -118,7 +118,7 @@ export class ActionManagerService {
                         name: action.uuid,
                         limits: {
                             max_runtime:
-                                action.template.maxRuntime * 60 * 60 * 1_000, // Hours to milliseconds
+                                action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
                             n_cpu: action.template.cpuCores || 1,
                             memory_limit:
                                 (action.template.cpuMemory || 2) *
@@ -127,7 +127,7 @@ export class ActionManagerService {
                                 1024, // min 2 GB
                         },
                         needs_gpu: needsGpu,
-                        environment: envVariables ?? '',
+                        environment: environmentVariables ?? '',
                         command: action.template.command ?? '',
                         entrypoint: action.template.entrypoint ?? '',
                     },
@@ -138,15 +138,15 @@ export class ActionManagerService {
             await this.setContainerInfo(action, container);
             await this.actionRepository.save(action);
 
-            const sanitize = (str: string): string => {
-                return str.replace(apikey.apikey, '***');
+            const sanitize = (string_: string): string => {
+                return string_.replace(apikey.apikey, '***');
             };
 
             // get logs from container and save them to the database
             const logsObservable = await this.containerDaemon
                 .subscribeToLogs(container.id, sanitize)
-                .catch((err: unknown) => {
-                    logger.error('Error while subscribing to logs:', err);
+                .catch((error: unknown) => {
+                    logger.error('Error while subscribing to logs:', error);
                 });
 
             if (!logsObservable) {
@@ -275,8 +275,8 @@ export class ActionManagerService {
                     );
                 }),
             ),
-        ).catch((err: unknown) => {
-            logger.error('Error while processing logs:', err);
+        ).catch((error: unknown) => {
+            logger.error('Error while processing logs:', error);
         });
     }
 
@@ -297,39 +297,53 @@ export class ActionManagerService {
 
         const exitCode = Number(containerDetailsAfter.State.ExitCode);
 
-        if (exitCode === 125) {
-            action.state = ActionState.FAILED;
-            action.exit_code = exitCode;
-            action.state_cause =
-                'Container failed to run. The docker run command did ' +
-                'not execute successfully. Please open an issue ' +
-                'problem persists.';
-        } else if (exitCode === 139) {
-            action.state = ActionState.FAILED;
-            action.exit_code = exitCode;
-            action.state_cause =
-                'Container was terminated by the operating system via SIGSEGV signal. ' +
-                'This usually happens when the container tries to access memory ' +
-                'it is not allowed to access.';
-        } else if (exitCode === 143) {
-            action.state = ActionState.FAILED;
-            action.exit_code = exitCode;
-            action.state_cause =
-                'Container was terminated by the operating system via SIGTERM signal. ' +
-                'This usually happens when the container is stopped due to approaching ' +
-                'time limit.';
-        } else if (exitCode === 137) {
-            action.state = ActionState.FAILED;
-            action.exit_code = exitCode;
-            action.state_cause =
-                'Container was immediately terminated by the operating ' +
-                'system via SIGKILL signal. This usually happens when the ' +
-                'container exceeds the memory limit or reaches the time CPU limit.';
-        } else {
-            action.state_cause = `Container exited with code ${exitCode.toString()}`;
-            action.state =
-                exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
-            action.exit_code = exitCode;
+        switch (exitCode) {
+            case 125: {
+                action.state = ActionState.FAILED;
+                action.exit_code = exitCode;
+                action.state_cause =
+                    'Container failed to run. The docker run command did ' +
+                    'not execute successfully. Please open an issue ' +
+                    'problem persists.';
+
+                break;
+            }
+            case 139: {
+                action.state = ActionState.FAILED;
+                action.exit_code = exitCode;
+                action.state_cause =
+                    'Container was terminated by the operating system via SIGSEGV signal. ' +
+                    'This usually happens when the container tries to access memory ' +
+                    'it is not allowed to access.';
+
+                break;
+            }
+            case 143: {
+                action.state = ActionState.FAILED;
+                action.exit_code = exitCode;
+                action.state_cause =
+                    'Container was terminated by the operating system via SIGTERM signal. ' +
+                    'This usually happens when the container is stopped due to approaching ' +
+                    'time limit.';
+
+                break;
+            }
+            case 137: {
+                action.state = ActionState.FAILED;
+                action.exit_code = exitCode;
+                action.state_cause =
+                    'Container was immediately terminated by the operating ' +
+                    'system via SIGKILL signal. This usually happens when the ' +
+                    'container exceeds the memory limit or reaches the time CPU limit.';
+
+                break;
+            }
+            default: {
+                action.state_cause = `Container exited with code ${exitCode.toString()}`;
+                action.state =
+                    exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
+                action.exit_code = exitCode;
+            }
         }
         logger.warn(`Action ${action.uuid} has failed with exit code 125`);
         logger.warn(action.state_cause);
@@ -357,10 +371,12 @@ export class ActionManagerService {
         // Find crashed containers
         //////////////////////////////////////////////////////////////////////////////
 
-        const actionIds = runningActionContainers.map((container) =>
-            container.Names[0]?.replace(
-                `/${DockerDaemon.CONTAINER_PREFIX}`,
-                '',
+        const actionIds = new Set(
+            runningActionContainers.map((container) =>
+                container.Names[0]?.replace(
+                    `/${DockerDaemon.CONTAINER_PREFIX}`,
+                    '',
+                ),
             ),
         );
         const name = (await si.osInfo()).hostname;
@@ -376,7 +392,7 @@ export class ActionManagerService {
         );
 
         for (const action of actionsInLocalProcess) {
-            if (!actionIds.includes(action.uuid)) {
+            if (!actionIds.has(action.uuid)) {
                 logger.info(
                     `Action ${action.uuid} is running but has no running container.`,
                 );

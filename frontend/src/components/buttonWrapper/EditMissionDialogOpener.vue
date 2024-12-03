@@ -25,15 +25,15 @@ import EditMissionDialog from 'src/dialogs/EditMissionDialog.vue';
 import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.mission) return false;
+    if (!properties.mission) return false;
     return canModifyMission(
-        props.mission.uuid,
-        props.mission.project.uuid,
+        properties.mission.uuid,
+        properties.mission.project.uuid,
         permissions.value,
     );
 });
@@ -43,7 +43,7 @@ const editMission = (): void => {
     $q.dialog({
         component: EditMissionDialog,
         componentProps: {
-            mission: props.mission,
+            mission: properties.mission,
         },
         persistent: true,
     });

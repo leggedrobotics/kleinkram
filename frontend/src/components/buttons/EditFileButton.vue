@@ -26,14 +26,14 @@ import { FileState } from '@common/enum';
 import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     file: FileDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     return canModifyMission(
-        props.file.mission.uuid,
-        props.file.mission.project.uuid,
+        properties.file.mission.uuid,
+        properties.file.mission.project.uuid,
         permissions.value,
     );
 });
@@ -42,7 +42,7 @@ const editFile = (): void => {
     $q.dialog({
         component: NewEditFile,
         componentProps: {
-            file_uuid: props.file.uuid,
+            file_uuid: properties.file.uuid,
         },
         persistent: true,
     });

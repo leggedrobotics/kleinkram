@@ -13,7 +13,7 @@
     <br />
     <label>Tag Type</label>
     <q-btn-dropdown
-        v-model="ddr_open"
+        v-model="ddrOpen"
         :label="selectedDataType || 'Data Type'"
         class="q-uploader--bordered full-width q-mb-lg"
         flat
@@ -28,7 +28,7 @@
                 @click="
                     () => {
                         selectedDataType = value;
-                        ddr_open = false;
+                        ddrOpen = false;
                     }
                 "
             >
@@ -51,14 +51,22 @@ import { DataType } from '@common/enum';
 const tagName = ref('');
 const selectedDataType = ref(DataType.STRING);
 const queryClient = useQueryClient();
-const ddr_open = ref(false);
+const ddrOpen = ref(false);
 
-const createTagTypeAction = async () => {
+const createTagTypeAction = async (): Promise<void> => {
     try {
         await createTagType(tagName.value, selectedDataType.value);
     } catch (error: unknown) {
+        let errorMessage = '';
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : ((error as { response?: { data?: { message?: string } } })
+                      .response?.data?.message ?? 'Unknown error');
+
         Notify.create({
-            message: `Error creating Tag Type: ${error?.response?.data?.message || error.message}`,
+            message: `Error creating Tag Type: ${errorMessage}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

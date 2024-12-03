@@ -16,14 +16,16 @@ export const getFilteredTagTypes = async (
     if (!name && type === null) {
         response = await axios.get<TagsDto>('/tag/all');
     } else {
-        const params: Record<string, string | DataType> = {};
+        const parameters: Record<string, string | DataType> = {};
         if (name) {
-            params.name = name;
+            parameters.name = name;
         }
         if (type !== null) {
-            params.type = type ?? '';
+            parameters.type = type ?? '';
         }
-        response = await axios.get<TagsDto>(`/tag/filtered`, { params });
+        response = await axios.get<TagsDto>(`/tag/filtered`, {
+            params: parameters,
+        });
     }
     return response.data;
 };

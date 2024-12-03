@@ -42,28 +42,30 @@ import fs from 'node:fs';
 export class AuditLoggerMiddleware implements NestMiddleware {
     constructor(private actionService: ActionService) {}
 
-    async use(req: Request, _: Response, next: NextFunction) {
-        if (!req.cookies) {
+    async use(request: Request, _: Response, next: NextFunction) {
+        if (!request.cookies) {
             next();
             return;
         }
 
-        const key = req.cookies[CookieNames.CLI_KEY];
+        const key = request.cookies[CookieNames.CLI_KEY];
         if (!key) {
             next();
             return;
         }
 
         const auditLog = {
-            method: req.method,
-            url: req.originalUrl,
+            method: request.method,
+            url: request.originalUrl,
         };
 
         logger.debug(
             `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
         );
 
-        await this.actionService.writeAuditLog(key, auditLog).then(() => {});
+        await this.actionService.writeAuditLog(key, auditLog).then(() => {
+            logger.debug('Audit log written');
+        });
         next();
     }
 }

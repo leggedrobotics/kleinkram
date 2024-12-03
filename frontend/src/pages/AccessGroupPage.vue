@@ -317,8 +317,8 @@ const pagination2 = ref({
 const queryClient = useQueryClient();
 
 const refetchOnClick: (
-    evt: Event,
-    go?: (opts?: {
+    event_: Event,
+    go?: (options?: {
         to?: any;
         replace?: boolean | undefined;
         returnRouterError?: boolean | undefined;
@@ -371,6 +371,7 @@ watch(
 
 const projectRows = computed(() => {
     console.log(accessGroup.value);
+    // @ts-ignore
     return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
         return {
             ...project.project,
@@ -394,9 +395,9 @@ const renameColumns = (
     oldLabel: string,
     newLabel: string,
 ): void => {
-    cols.filter((col) => col.label === oldLabel).forEach((col) => {
+    for (const col of cols.filter((col) => col.label === oldLabel)) {
         col.label = newLabel;
-    });
+    }
 };
 
 const dropColumns = (cols: any[], label: string) => {
@@ -453,7 +454,7 @@ const projectCols = computed(() => {
         defaultCols = dropColumns(defaultCols, 'Created');
 
         // add as the second to last column
-        defaultCols.splice(defaultCols.length - 2, 1, {
+        defaultCols.splice(-2, 1, {
             name: 'rights',
             required: true,
             label: 'Group Rights',
@@ -472,7 +473,7 @@ const userCols = [
         label: 'Name',
         align: 'left',
         field: (row: GroupMembershipDto): string => row.user.name,
-        format: (val: string): string => val,
+        format: (value: string): string => value,
         style: 'width: 10%',
     },
     {

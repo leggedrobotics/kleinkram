@@ -10,20 +10,27 @@ import { FileDto } from '@api/types/Files.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {
-        case DataType.BOOLEAN:
+        case DataType.BOOLEAN: {
             return 'sym_o_check_box';
-        case DataType.NUMBER:
+        }
+        case DataType.NUMBER: {
             return 'sym_o_looks_one';
-        case DataType.STRING:
+        }
+        case DataType.STRING: {
             return 'sym_o_text_fields';
-        case DataType.DATE:
+        }
+        case DataType.DATE: {
             return 'sym_o_event';
-        case DataType.LOCATION:
+        }
+        case DataType.LOCATION: {
             return 'sym_o_location_on';
-        case DataType.LINK:
+        }
+        case DataType.LINK: {
             return 'sym_o_link';
-        case DataType.ANY:
+        }
+        case DataType.ANY: {
             return 'sym_o_help';
+        }
     }
 };
 
@@ -46,85 +53,114 @@ export function getAccessRightDescription(
 
 export function getColor(state: QueueState) {
     switch (state) {
-        case QueueState.COMPLETED:
+        case QueueState.COMPLETED: {
             return 'green';
+        }
         case QueueState.ERROR:
-        case QueueState.CANCELED:
+        case QueueState.CANCELED: {
             return 'red';
-        case QueueState.AWAITING_PROCESSING:
+        }
+        case QueueState.AWAITING_PROCESSING: {
             return 'yellow';
+        }
         case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
         case QueueState.UPLOADING:
         case QueueState.DOWNLOADING:
-        case QueueState.PROCESSING:
+        case QueueState.PROCESSING: {
             return 'blue';
-        case QueueState.AWAITING_UPLOAD:
+        }
+        case QueueState.AWAITING_UPLOAD: {
             return 'purple';
+        }
         case QueueState.CORRUPTED:
         case QueueState.UNSUPPORTED_FILE_TYPE:
-        case QueueState.FILE_ALREADY_EXISTS:
+        case QueueState.FILE_ALREADY_EXISTS: {
             return 'orange';
+        }
 
-        default:
-            return 'grey'; // Default color for unknown states
+        default: {
+            return 'grey';
+        } // Default color for unknown states
     }
 }
 
 export function getSimpleFileStateName(state: QueueState) {
     switch (state) {
-        case QueueState.COMPLETED:
+        case QueueState.COMPLETED: {
             return 'Completed';
-        case QueueState.ERROR:
+        }
+        case QueueState.ERROR: {
             return 'Error';
-        case QueueState.CANCELED:
+        }
+        case QueueState.CANCELED: {
             return 'Canceled';
-        case QueueState.AWAITING_PROCESSING:
+        }
+        case QueueState.AWAITING_PROCESSING: {
             return 'Awaiting Processing';
+        }
         case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
         case QueueState.UPLOADING:
         case QueueState.DOWNLOADING:
-        case QueueState.PROCESSING:
+        case QueueState.PROCESSING: {
             return 'Processing';
-        case QueueState.AWAITING_UPLOAD:
+        }
+        case QueueState.AWAITING_UPLOAD: {
             return 'Awaiting Upload';
-        case QueueState.CORRUPTED:
+        }
+        case QueueState.CORRUPTED: {
             return 'Corrupted';
+        }
         case QueueState.UNSUPPORTED_FILE_TYPE:
-        case QueueState.FILE_ALREADY_EXISTS:
+        case QueueState.FILE_ALREADY_EXISTS: {
             return 'Skipped';
-        default:
-            return 'Unknown'; // Default color for unknown states
+        }
+        default: {
+            return 'Unknown';
+        } // Default color for unknown states
     }
 }
 
 export function getDetailedFileState(state: QueueState) {
     switch (state) {
-        case QueueState.COMPLETED:
+        case QueueState.COMPLETED: {
             return 'File has been processed and is ready for download';
-        case QueueState.ERROR:
+        }
+        case QueueState.ERROR: {
             return 'An error occurred during processing';
-        case QueueState.CANCELED:
+        }
+        case QueueState.CANCELED: {
             return 'File upload was canceled';
-        case QueueState.AWAITING_PROCESSING:
+        }
+        case QueueState.AWAITING_PROCESSING: {
             return 'File is awaiting processing';
-        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS:
+        }
+        case QueueState.CONVERTING_AND_EXTRACTING_TOPICS: {
             return 'File is being converted and topics are being extracted';
-        case QueueState.UPLOADING:
+        }
+        case QueueState.UPLOADING: {
             return 'File is being uploaded';
-        case QueueState.PROCESSING:
+        }
+        case QueueState.PROCESSING: {
             return 'File is being processed';
-        case QueueState.AWAITING_UPLOAD:
+        }
+        case QueueState.AWAITING_UPLOAD: {
             return 'File is awaiting upload';
-        case QueueState.CORRUPTED:
+        }
+        case QueueState.CORRUPTED: {
             return 'File is corrupted';
-        case QueueState.DOWNLOADING:
+        }
+        case QueueState.DOWNLOADING: {
             return 'File is being downloaded';
-        case QueueState.UNSUPPORTED_FILE_TYPE:
+        }
+        case QueueState.UNSUPPORTED_FILE_TYPE: {
             return 'File has an unsupported file type';
-        case QueueState.FILE_ALREADY_EXISTS:
+        }
+        case QueueState.FILE_ALREADY_EXISTS: {
             return 'A File with the same name already exists';
-        default:
-            return 'Unknown'; // Default color for unknown states
+        }
+        default: {
+            return 'Unknown';
+        } // Default color for unknown states
     }
 }
 
@@ -133,9 +169,9 @@ export async function _downloadFile(fileUUID: string, filename: string) {
     const a = document.createElement('a');
     a.href = res;
     a.download = filename;
-    document.body.appendChild(a);
+    document.body.append(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
 }
 
 export async function _downloadFiles(files: FileDto[]) {
@@ -154,7 +190,7 @@ export async function _downloadFiles(files: FileDto[]) {
 async function downloadFiles(files: { url: string; filename: string }[]) {
     // Ensure that the File System Access API is supported
     // @ts-expect-error
-    if (!window.showDirectoryPicker) {
+    if (!globalThis.showDirectoryPicker) {
         throw new Error(
             'File System Access API is not supported in this browser.',
         );
@@ -163,7 +199,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
     try {
         // Open a directory picker so the user can select where to save the files
         // @ts-expect-error
-        const directoryHandle = await window.showDirectoryPicker();
+        const directoryHandle = await globalThis.showDirectoryPicker();
 
         for (const { url, filename } of files) {
             // Fetch the file using streaming
@@ -220,22 +256,30 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
 
 export function getActionColor(state: ActionState) {
     switch (state) {
-        case ActionState.DONE:
+        case ActionState.DONE: {
             return 'green';
-        case ActionState.FAILED:
+        }
+        case ActionState.FAILED: {
             return 'red';
-        case ActionState.PENDING:
+        }
+        case ActionState.PENDING: {
             return 'orange';
-        case ActionState.STARTING:
+        }
+        case ActionState.STARTING: {
             return 'blue-4';
-        case ActionState.PROCESSING:
+        }
+        case ActionState.PROCESSING: {
             return 'blue';
-        case ActionState.UNPROCESSABLE:
+        }
+        case ActionState.UNPROCESSABLE: {
             return 'purple';
-        case ActionState.STOPPING:
+        }
+        case ActionState.STOPPING: {
             return 'light-green';
-        default:
-            return 'grey'; // Default color for unknown states
+        }
+        default: {
+            return 'grey';
+        } // Default color for unknown states
     }
 }
 
@@ -245,58 +289,79 @@ export function getTooltip(state: FileState | undefined) {
     }
 
     switch (state) {
-        case FileState.OK:
+        case FileState.OK: {
             return 'File is OK';
-        case FileState.ERROR:
+        }
+        case FileState.ERROR: {
             return 'File has an error';
-        case FileState.UPLOADING:
+        }
+        case FileState.UPLOADING: {
             return 'File is uploading';
-        case FileState.CORRUPTED:
+        }
+        case FileState.CORRUPTED: {
             return 'File is corrupted';
-        case FileState.LOST:
+        }
+        case FileState.LOST: {
             return 'File cannot be found in storage';
-        case FileState.FOUND:
+        }
+        case FileState.FOUND: {
             return 'File was recovered';
-        case FileState.CONVERSION_ERROR:
+        }
+        case FileState.CONVERSION_ERROR: {
             return 'File conversion failed';
+        }
     }
 }
 
 export function getIcon(state: FileState) {
     switch (state) {
-        case FileState.OK:
+        case FileState.OK: {
             return 'sym_o_check_circle';
-        case FileState.ERROR:
+        }
+        case FileState.ERROR: {
             return 'sym_o_error';
-        case FileState.UPLOADING:
+        }
+        case FileState.UPLOADING: {
             return 'sym_o_arrow_upload_progress';
-        case FileState.CORRUPTED:
+        }
+        case FileState.CORRUPTED: {
             return 'sym_o_sentiment_very_dissatisfied';
-        case FileState.LOST:
+        }
+        case FileState.LOST: {
             return 'sym_o_pulse_alert';
-        case FileState.FOUND:
+        }
+        case FileState.FOUND: {
             return 'sym_o_helicopter';
-        case FileState.CONVERSION_ERROR:
+        }
+        case FileState.CONVERSION_ERROR: {
             return 'sym_o_conversion_path_off';
+        }
     }
 }
 
 export function getColorFileState(state: FileState) {
     switch (state) {
-        case FileState.OK:
+        case FileState.OK: {
             return 'positive';
-        case FileState.ERROR:
+        }
+        case FileState.ERROR: {
             return 'negative';
-        case FileState.UPLOADING:
+        }
+        case FileState.UPLOADING: {
             return 'warning';
-        case FileState.CORRUPTED:
+        }
+        case FileState.CORRUPTED: {
             return 'negative';
-        case FileState.LOST:
+        }
+        case FileState.LOST: {
             return 'negative';
-        case FileState.FOUND:
+        }
+        case FileState.FOUND: {
             return 'positive';
-        case FileState.CONVERSION_ERROR:
+        }
+        case FileState.CONVERSION_ERROR: {
             return 'negative';
+        }
     }
 }
 
@@ -326,7 +391,7 @@ const colorPalette = [
 export function hashUUIDtoColor(uuid: string): string {
     const hash = uuid
         .split('')
-        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        .reduce((accumulator, char) => accumulator + char.charCodeAt(0), 0);
     const colorIndex = hash % colorPalette.length;
     return colorPalette[colorIndex];
 }

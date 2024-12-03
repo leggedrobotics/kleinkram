@@ -55,7 +55,7 @@ import { FileDto } from '@api/types/Files.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     mission_uuid: string;
     project_uuid: string;
     files: FileDto[];
@@ -72,8 +72,8 @@ const updateSelected = (value: CategoryDto[]): void => {
 const { mutate } = useMutation({
     mutationFn: async () => {
         await addManyCategories(
-            props.mission_uuid,
-            props.files.map((f) => f.uuid),
+            properties.mission_uuid,
+            properties.files.map((f) => f.uuid),
             selected.value.map((c) => c.uuid),
         );
         onDialogOK();

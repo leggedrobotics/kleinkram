@@ -23,7 +23,7 @@ export const searchAccessGroups = async (
     skip: number,
     take: number,
 ): Promise<AccessGroupsDto> => {
-    const params: {
+    const parameters: {
         take: number;
         search: string;
         skip: number;
@@ -38,7 +38,7 @@ export const searchAccessGroups = async (
     const response: AxiosResponse<AccessGroupsDto> = await axios.get(
         '/access/filtered',
         {
-            params,
+            params: parameters,
         },
     );
 

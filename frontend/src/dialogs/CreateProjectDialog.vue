@@ -181,12 +181,12 @@ const verifyInput = () => {
         errorMessagesProjectName.value = '';
     }
 
-    if (!newProjectDescription.value) {
-        isInErrorStateProjectDescr.value = true;
-        errorMessagesProjectDescr.value = 'Project description is required';
-    } else {
+    if (newProjectDescription.value) {
         isInErrorStateProjectDescr.value = false;
         errorMessagesProjectDescr.value = '';
+    } else {
+        isInErrorStateProjectDescr.value = true;
+        errorMessagesProjectDescr.value = 'Project description is required';
     }
 };
 
@@ -207,6 +207,7 @@ const submitNewProject = async () => {
             accessGroupUUID: r.uuid,
             rights: r.rights,
         })) || [],
+        // @ts-ignore
         defaultRights.value?.defaultRights
             .filter((r) => !accessGroups.value.find((a) => a.uuid === r.uuid))
             .map((r) => r.uuid),
@@ -225,14 +226,25 @@ const submitNewProject = async () => {
             onDialogOK();
         })
         .catch((error: unknown) => {
+            // @ts-ignore
             if (error.code === 'ERR_BAD_REQUEST') {
                 isInErrorStateProjectName.value = true;
-                errorMessagesProjectName.value = error.response?.data.message;
+                // @ts-ignore
+                errorMessagesProjectName.value = (
+                    error as {
+                        response?: { data?: { message?: string } };
+                    }
+                ).response?.data.message;
                 invalidProjectNames.value.push(newProjectName.value);
             }
 
             isInErrorStateProjectName.value = true;
-            errorMessagesProjectName.value = error.response?.data.message;
+            // @ts-ignore
+            errorMessagesProjectName.value = (
+                error as {
+                    response?: { data?: { message?: string } };
+                }
+            ).response?.data.message;
 
             // abort the close of the dialog
             dialogRef.value?.show();

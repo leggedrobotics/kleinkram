@@ -23,17 +23,17 @@ import {
 import { computed } from 'vue';
 import { FileDto } from '@api/types/Files.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     file: FileDto;
 }>();
 
 const $q = useQuasar();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!props.file) return false;
+    if (!properties.file) return false;
     return canDeleteMission(
-        props.file.mission.uuid,
-        props.file.mission.project.uuid,
+        properties.file.mission.uuid,
+        properties.file.mission.project.uuid,
         permissions.value,
     );
 });
@@ -44,7 +44,7 @@ const deleteFile = (): void => {
         title: 'Delete File',
         component: DeleteFileDialog,
         componentProps: {
-            file: props.file,
+            file: properties.file,
         },
     });
 };

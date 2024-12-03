@@ -1,25 +1,30 @@
 import { loadDecompressHandlers } from '@mcap/support';
 import { McapIndexedReader } from '@mcap/core';
 
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import { promisify } from 'node:util';
+import { exec } from 'node:child_process';
 import { traceWrapper } from '../../tracing';
 import logger from '../../logger';
-import { open } from 'fs/promises';
+import { open } from 'node:fs/promises';
 import { FileHandleReadable } from '@mcap/nodejs';
 
 const execPromisify = promisify(exec);
 
-export async function convertToMcap(tmpFileName: string): Promise<string> {
+export async function convertToMcap(
+    temporaryFileName: string,
+): Promise<string> {
     return await traceWrapper(async () => {
-        const tmpFileNameMcap = tmpFileName.replace('.bag', '.mcap');
+        const temporaryFileNameMcap = temporaryFileName.replace(
+            '.bag',
+            '.mcap',
+        );
 
         logger.debug(
-            `Converting file ${tmpFileName} from bag to mcap ${tmpFileNameMcap}`,
+            `Converting file ${temporaryFileName} from bag to mcap ${temporaryFileNameMcap}`,
         );
-        await convert(tmpFileName, tmpFileNameMcap);
+        await convert(temporaryFileName, temporaryFileNameMcap);
         logger.debug('File converted successfully');
-        return tmpFileNameMcap;
+        return temporaryFileNameMcap;
     }, 'convertToMcap')();
 }
 
@@ -30,10 +35,10 @@ export const convert = (infile: string, outfile: string): Promise<boolean> =>
     }, 'MCAP Conversion')();
 
 export async function mcapMetaInfo(
-    mcapTmpFileName: string,
+    mcapTemporaryFileName: string,
 ): Promise<{ topics: Record<string, unknown>[]; date: Date; size: number }> {
     const decompressHandlers = await loadDecompressHandlers();
-    const fileHandle = await open(mcapTmpFileName, 'r');
+    const fileHandle = await open(mcapTemporaryFileName, 'r');
 
     const fileSize = (await fileHandle.stat()).size;
     const reader = await McapIndexedReader.Initialize({
@@ -46,7 +51,7 @@ export async function mcapMetaInfo(
     const topics: Record<string, unknown>[] = [];
     const stats: any = reader.statistics;
     const duration = BigInt(stats.messageEndTime - stats.messageStartTime);
-    reader.channelsById.forEach((channel) => {
+    for (const channel of reader.channelsById) {
         const schema: any = reader.schemasById.get(channel.schemaId);
         const nrMessages = stats.channelMessageCounts.get(channel.id);
         const topic = {
@@ -54,14 +59,14 @@ export async function mcapMetaInfo(
             type: schema.name,
             nrMessages: nrMessages,
             frequency:
-                Number(nrMessages) / (Number(duration / 1000n) / 1000000),
+                Number(nrMessages) / (Number(duration / 1000n) / 1_000_000),
         };
         topics.push(topic);
-    });
+    }
 
     return {
         topics: topics,
-        date: new Date(Number(stats.messageStartTime / 1000000n)),
+        date: new Date(Number(stats.messageStartTime / 1_000_000n)),
         size: fileSize,
     };
 }

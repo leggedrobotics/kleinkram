@@ -106,39 +106,39 @@ import { useActions } from '../hooks/customQueryHooks';
 const router = useRouter();
 
 // list all props of the component
-const props = defineProps<{
+const properties = defineProps<{
     handler: QueryHandler;
 }>();
-props.handler.setSort('createdAt');
-props.handler.setDescending(true);
+properties.handler.setSort('createdAt');
+properties.handler.setDescending(true);
 
 const { data: rawData, isLoading } = useActions(
-    props.handler.projectUuid ?? '',
-    props.handler.missionUuid ?? '',
-    props.handler.take,
-    props.handler.skip,
-    props.handler.sortBy,
-    props.handler.descending,
-    props.handler.searchParams.name,
-    JSON.stringify(props.handler.queryKey) ?? '',
+    properties.handler.projectUuid ?? '',
+    properties.handler.missionUuid ?? '',
+    properties.handler.take,
+    properties.handler.skip,
+    properties.handler.sortBy,
+    properties.handler.descending,
+    properties.handler.searchParams.name,
+    JSON.stringify(properties.handler.queryKey) ?? '',
 );
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 
 function setPagination(update: TableRequest) {
-    props.handler.setPage(update.pagination.page);
-    props.handler.setTake(update.pagination.rowsPerPage);
-    props.handler.setSort(update.pagination.sortBy);
-    props.handler.setDescending(update.pagination.descending);
+    properties.handler.setPage(update.pagination.page);
+    properties.handler.setTake(update.pagination.rowsPerPage);
+    properties.handler.setSort(update.pagination.sortBy);
+    properties.handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.handler.page,
-        rowsPerPage: props.handler.take,
-        rowsNumber: props.handler.rowsNumber,
-        sortBy: props.handler.sortBy,
-        descending: props.handler.descending,
+        page: properties.handler.page,
+        rowsPerPage: properties.handler.take,
+        rowsNumber: properties.handler.rowsNumber,
+        sortBy: properties.handler.sortBy,
+        descending: properties.handler.descending,
     };
 });
 
@@ -149,7 +149,7 @@ watch(
     () => {
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
-            props.handler.rowsNumber = total.value;
+            properties.handler.rowsNumber = total.value;
         }
     },
     { immediate: true },

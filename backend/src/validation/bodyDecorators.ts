@@ -22,15 +22,15 @@ export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
         }),
     );
 }
-export const BodyUUID = (paramName: string, paramDescription: string) =>
+export const BodyUUID = (parameterName: string, parameterDescription: string) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
+        async (data: string, context: ExecutionContext) => {
             if (!data) {
                 throw new InternalServerErrorException(
                     'Parameter is missing field in controller',
                 );
             }
-            const request = ctx.switchToHttp().getRequest();
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
@@ -41,13 +41,22 @@ export const BodyUUID = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'uuid', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'uuid',
+            true,
+        ),
+    )(parameterName);
 
-export const BodyString = (paramName: string, paramDescription: string) =>
+export const BodyString = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             const object = plainToInstance(StringValidate, { value });
@@ -60,13 +69,19 @@ export const BodyString = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'string', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'string',
+            true,
+        ),
+    )(parameterName);
 
-export const BodyName = (paramName: string, paramDescription: string) =>
+export const BodyName = (parameterName: string, parameterDescription: string) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             const object = plainToInstance(NameValidate, { value });
@@ -78,16 +93,22 @@ export const BodyName = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'string', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'string',
+            true,
+        ),
+    )(parameterName);
 
 export const BodyAccessGroupRights = (
-    paramName: string,
-    paramDescription: string,
+    parameterName: string,
+    parameterDescription: string,
 ) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             if (!Object.values(AccessGroupRights).includes(value)) {
@@ -99,18 +120,21 @@ export const BodyAccessGroupRights = (
             return value;
         },
         metadataApplier(
-            paramName,
-            paramDescription,
+            parameterName,
+            parameterDescription,
             'body',
             'AccessGroupRights',
             true,
         ),
-    )(paramName);
+    )(parameterName);
 
-export const BodyDataType = (paramName: string, paramDescription: string) =>
+export const BodyDataType = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             if (!Object.values(DataType).includes(value)) {
@@ -121,13 +145,22 @@ export const BodyDataType = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'DataType', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'DataType',
+            true,
+        ),
+    )(parameterName);
 
-export const BodyNotNull = (paramName: string, paramDescription: string) =>
+export const BodyNotNull = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             if (value === undefined || value === null) {
@@ -136,13 +169,22 @@ export const BodyNotNull = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'unknown', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'unknown',
+            true,
+        ),
+    )(parameterName);
 
-export const BodyUUIDArray = (paramName: string, paramDescription: string) =>
+export const BodyUUIDArray = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
     createParamDecorator(
-        async (data: string, ctx: ExecutionContext) => {
-            const request = ctx.switchToHttp().getRequest();
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
             const value = request.body[data];
 
             if (!Array.isArray(value)) {
@@ -160,5 +202,11 @@ export const BodyUUIDArray = (paramName: string, paramDescription: string) =>
 
             return value;
         },
-        metadataApplier(paramName, paramDescription, 'body', 'uuid[]', true),
-    )(paramName);
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'uuid[]',
+            true,
+        ),
+    )(parameterName);

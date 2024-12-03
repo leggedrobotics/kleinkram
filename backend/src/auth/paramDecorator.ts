@@ -8,8 +8,8 @@ import Apikey from '@common/entities/auth/apikey.entity';
  * Throws an error if the user is not authenticated.
  *
  */
-export const AddUser = createParamDecorator((_, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+export const AddUser = createParamDecorator((_, context: ExecutionContext) => {
+    const request = context.switchToHttp().getRequest();
 
     if (request.user === undefined || request.user === null) {
         throw new Error('User not authenticated');

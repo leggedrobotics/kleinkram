@@ -174,9 +174,9 @@ watch(
     () => workers.value,
     () => {
         extendedWorkers.value = workers.value.reduce<Record<string, boolean>>(
-            (acc, w) => {
-                acc[w.uuid] = !!extendedWorkers.value[w.uuid];
-                return acc;
+            (accumulator, w) => {
+                accumulator[w.uuid] = !!extendedWorkers.value[w.uuid];
+                return accumulator;
             },
             {},
         );

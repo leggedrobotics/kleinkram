@@ -37,7 +37,7 @@ import { calculateFileHash } from './helper/hashHelper';
 import { addTagsToMinioObject } from '@common/minio_helper';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const fsPromises = require('fs').promises;
+const fsPromises = require('node:fs').promises;
 
 type FileProcessorJob = Job<{
     queueUuid: string;
@@ -81,14 +81,15 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
     private async deleteTmpFiles(job: FileProcessorJob) {
         try {
-            const tmpFilesDeduplicated = job.data.tmp_files.filter(
+            const temporaryFilesDeduplicated = job.data.tmp_files.filter(
                 (value, index, self) => self.indexOf(value) === index,
             );
 
             await Promise.all(
-                tmpFilesDeduplicated.map((tmpFile) => {
-                    logger.debug(`Deleting tmp file: ${tmpFile}`);
-                    if (fs.existsSync(tmpFile)) fsPromises.unlink(tmpFile);
+                temporaryFilesDeduplicated.map((temporaryFile) => {
+                    logger.debug(`Deleting tmp file: ${temporaryFile}`);
+                    if (fs.existsSync(temporaryFile))
+                        fsPromises.unlink(temporaryFile);
                 }),
             );
         } catch {
@@ -113,10 +114,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         // mark queue as done
         const queue = await this.getQueue(job);
-        queue.state =
-            queue.state < QueueState.COMPLETED
-                ? QueueState.COMPLETED
-                : queue.state;
+        queue.state = Math.max(queue.state, QueueState.COMPLETED);
         queue.processingDuration =
             (job.finishedOn ?? 0) - (job.processedOn ?? 0);
         await this.queueRepository.save(queue);
@@ -154,8 +152,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const sourceIsBag = _queue.display_name.endsWith('.bag');
 
         const uuid = crypto.randomUUID();
-        const tmpFileName = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
-        job.data.tmp_files.push(tmpFileName); // saved for cleanup
+        const temporaryFileName = `/tmp/${uuid}.${sourceIsBag ? 'bag' : 'mcap'}`;
+        job.data.tmp_files.push(temporaryFileName); // saved for cleanup
 
         _queue.state = QueueState.DOWNLOADING;
         const queue = await this.queueRepository.save(_queue);
@@ -186,15 +184,15 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     ? env.MINIO_BAG_BUCKET_NAME
                     : env.MINIO_MCAP_BUCKET_NAME,
                 queue.identifier,
-                tmpFileName,
+                temporaryFileName,
             );
         }, 'downloadMinioFile')();
         let bagSize;
         let mcapSize;
         if (sourceIsBag) {
-            bagSize = fs.statSync(tmpFileName).size;
+            bagSize = fs.statSync(temporaryFileName).size;
         } else {
-            mcapSize = fs.statSync(tmpFileName).size;
+            mcapSize = fs.statSync(temporaryFileName).size;
         }
 
         let bagHash = '';
@@ -216,7 +214,10 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         let bagFileEntity: FileEntity | undefined;
         let mcapFileEntity: FileEntity | undefined;
 
-        const mcapTempFileName = tmpFileName.replace('.bag', '.mcap');
+        const mcapTemporaryFileName = temporaryFileName.replace(
+            '.bag',
+            '.mcap',
+        );
 
         if (__queue.mission === undefined)
             throw new Error('Mission is undefined');
@@ -273,20 +274,18 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 await this.fileRepository.save(_bagFileEntity);
 
                 // ------------- Convert to MCAP -------------
-                const tmpFileNameMcap = await convertToMcap(tmpFileName).catch(
-                    async (error: unknown) => {
-                        logger.error(
-                            `Error converting file, possibly corrupted!`,
-                        );
-                        __queue.state = QueueState.CORRUPTED;
-                        await this.queueRepository.save(__queue);
-                        _bagFileEntity.state = FileState.CONVERSION_ERROR;
-                        await this.fileRepository.save(_bagFileEntity);
-                        await this.fileRepository.remove(_mcapFileEntity);
-                        throw error;
-                    },
-                );
-                mcapHash = await calculateFileHash(tmpFileNameMcap);
+                const temporaryFileNameMcap = await convertToMcap(
+                    temporaryFileName,
+                ).catch(async (error: unknown) => {
+                    logger.error(`Error converting file, possibly corrupted!`);
+                    __queue.state = QueueState.CORRUPTED;
+                    await this.queueRepository.save(__queue);
+                    _bagFileEntity.state = FileState.CONVERSION_ERROR;
+                    await this.fileRepository.save(_bagFileEntity);
+                    await this.fileRepository.remove(_mcapFileEntity);
+                    throw error;
+                });
+                mcapHash = await calculateFileHash(temporaryFileNameMcap);
 
                 // ------------- Upload to Minio -------------
                 __queue.state = QueueState.UPLOADING;
@@ -295,7 +294,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     env.MINIO_MCAP_BUCKET_NAME,
                     _mcapFileEntity.uuid,
                     _mcapFileEntity.filename,
-                    tmpFileNameMcap,
+                    temporaryFileNameMcap,
                 ).catch(async (error: unknown) => {
                     logger.error(`Error converting file, possibly corrupted!`);
                     __queue.state = QueueState.ERROR;
@@ -317,9 +316,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     },
                 );
 
-                job.data.tmp_files.push(mcapTempFileName); // saved for cleanup
+                job.data.tmp_files.push(mcapTemporaryFileName); // saved for cleanup
 
-                mcapSize = fs.statSync(mcapTempFileName).size;
+                mcapSize = fs.statSync(mcapTemporaryFileName).size;
                 // @ts-ignore
                 mcapFileEntity.hash = mcapHash;
             }
@@ -331,15 +330,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // Extract Topics from MCAP file
         ////////////////////////////////////////////////////////////////
         let date: Date;
-        if (!mcapExists) {
-            date = await this.extractTopics(
-                job,
-                queue,
-                // @ts-ignore
-                mcapFileEntity,
-                mcapTempFileName,
-            );
-        } else {
+        if (mcapExists) {
             const existingMCAP = await this.fileRepository.findOneOrFail({
                 where: {
                     mission: { uuid: queue.mission.uuid },
@@ -347,6 +338,14 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 },
             });
             date = existingMCAP.date;
+        } else {
+            date = await this.extractTopics(
+                job,
+                queue,
+                // @ts-ignore
+                mcapFileEntity,
+                mcapTemporaryFileName,
+            );
         }
 
         ////////////////////////////////////////////////////////////////
@@ -476,13 +475,16 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }
 
         const fileType = originalFileName.endsWith('.bag') ? 'bag' : 'mcap';
-        const tmpFileName = `/tmp/${queueEntity.identifier}.${fileType}`;
-        job.data.tmp_files.push(tmpFileName); // saved for cleanup
+        const temporaryFileName = `/tmp/${queueEntity.identifier}.${fileType}`;
+        job.data.tmp_files.push(temporaryFileName); // saved for cleanup
         queueEntity.state = QueueState.DOWNLOADING;
         await this.queueRepository.save(queueEntity);
 
         const filehash = await traceWrapper(async () => {
-            return await downloadDriveFile(queueEntity.identifier, tmpFileName);
+            return await downloadDriveFile(
+                queueEntity.identifier,
+                temporaryFileName,
+            );
         }, 'downloadDriveFile')();
 
         queueEntity.state = QueueState.PROCESSING;
@@ -499,7 +501,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         await this.processTmpFile(
             job,
             queueEntity,
-            tmpFileName,
+            temporaryFileName,
             originalFileName,
             filehash,
         );
@@ -510,19 +512,21 @@ export class FileQueueProcessorProvider implements OnModuleInit {
     private async processTmpFile(
         job: FileProcessorJob,
         queueEntity: QueueEntity,
-        tmpFileName: string,
+        temporaryFileName: string,
         originalFileName: string,
         filehash: string,
     ) {
         // validate that the tmp file exists
-        if (!fs.existsSync(tmpFileName))
-            throw new Error(`File ${tmpFileName} does not exist`);
+        if (!fs.existsSync(temporaryFileName))
+            throw new Error(`File ${temporaryFileName} does not exist`);
         const sourceIsBag = originalFileName.endsWith('.bag');
         const fileType = sourceIsBag ? 'bag' : 'mcap';
 
         // validate that the tmp file is of the correct type
-        if (!tmpFileName.endsWith(`.${fileType}`))
-            throw new Error(`File ${tmpFileName} is not a ${fileType} file`);
+        if (!temporaryFileName.endsWith(`.${fileType}`))
+            throw new Error(
+                `File ${temporaryFileName} is not a ${fileType} file`,
+            );
 
         ////////////////////////////////////////////////////////////////
         // Upload file to Minio (and convert to mcap if necessary)
@@ -539,7 +543,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const newFileEntity = this.fileRepository.create({
             date: new Date(),
             mission: queueEntity.mission,
-            size: fs.statSync(tmpFileName).size,
+            size: fs.statSync(temporaryFileName).size,
             filename: originalFileName,
             creator: queueEntity.creator,
             type: sourceIsBag ? FileType.BAG : FileType.MCAP,
@@ -583,31 +587,28 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
             queueEntity.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
             await this.queueRepository.save(queueEntity);
-            const tmpFileNameMcap = await convertToMcap(tmpFileName).catch(
-                async (error: unknown) => {
-                    let errorMessage: string;
+            const temporaryFileNameMcap = await convertToMcap(
+                temporaryFileName,
+            ).catch(async (error: unknown) => {
+                let errorMessage: string;
 
-                    if (error instanceof Error) {
-                        errorMessage = error.message;
-                    } else {
-                        errorMessage = String(error);
-                    }
+                errorMessage =
+                    error instanceof Error ? error.message : String(error);
 
-                    logger.error(
-                        `Error converting file ${queueEntity.identifier} to mcap: ${errorMessage}`,
-                    );
-                    queueEntity.state = QueueState.CORRUPTED;
-                    await this.queueRepository.save(queueEntity);
-                    bagFileEntity.state = FileState.CONVERSION_ERROR;
-                    await this.fileRepository.save(bagFileEntity);
+                logger.error(
+                    `Error converting file ${queueEntity.identifier} to mcap: ${errorMessage}`,
+                );
+                queueEntity.state = QueueState.CORRUPTED;
+                await this.queueRepository.save(queueEntity);
+                bagFileEntity.state = FileState.CONVERSION_ERROR;
+                await this.fileRepository.save(bagFileEntity);
 
-                    if (mcapFileEntity !== undefined)
-                        await this.fileRepository.remove(mcapFileEntity);
-                    throw error;
-                },
-            );
+                if (mcapFileEntity !== undefined)
+                    await this.fileRepository.remove(mcapFileEntity);
+                throw error;
+            });
 
-            const mcapHash = await calculateFileHash(tmpFileNameMcap);
+            const mcapHash = await calculateFileHash(temporaryFileNameMcap);
 
             // ------------- Upload to Minio -------------
             queueEntity.state = QueueState.UPLOADING;
@@ -617,15 +618,12 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 env.MINIO_MCAP_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 mcapFileEntity.filename,
-                tmpFileNameMcap,
+                temporaryFileNameMcap,
             ).catch(async (error: unknown) => {
                 let errorMessage: string;
 
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = String(error);
-                }
+                errorMessage =
+                    error instanceof Error ? error.message : String(error);
 
                 logger.error(
                     `Error converting file, possibly corrupted: ${errorMessage}`,
@@ -655,7 +653,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             );
 
             logger.debug(`File ${originalFileName} converted successfully`);
-            mcapFileEntity.size = fs.statSync(tmpFileNameMcap).size;
+            mcapFileEntity.size = fs.statSync(temporaryFileNameMcap).size;
             mcapFileEntity.state = FileState.OK;
             mcapFileEntity.hash = mcapHash;
             mcapFileEntity = await this.fileRepository.save(mcapFileEntity);
@@ -670,7 +668,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 : env.MINIO_MCAP_BUCKET_NAME,
             savedFileEntity.uuid,
             savedFileEntity.filename,
-            tmpFileName,
+            temporaryFileName,
         );
 
         if (queueEntity.mission.project === undefined)
@@ -689,8 +687,11 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             },
         );
 
-        const mcapTempFileName = tmpFileName.replace('.bag', '.mcap');
-        job.data.tmp_files.push(mcapTempFileName); // saved for cleanup
+        const mcapTemporaryFileName = temporaryFileName.replace(
+            '.bag',
+            '.mcap',
+        );
+        job.data.tmp_files.push(mcapTemporaryFileName); // saved for cleanup
 
         ////////////////////////////////////////////////////////////////
         // Extract Topics from MCAP file
@@ -703,7 +704,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             job,
             queueEntity,
             mcapFileEntity,
-            mcapTempFileName,
+            mcapTemporaryFileName,
         );
 
         ////////////////////////////////////////////////////////////////
@@ -728,33 +729,30 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         job: FileProcessorJob,
         queueEntity: QueueEntity,
         savedFile: FileEntity,
-        tmpFileName: string,
+        temporaryFileName: string,
     ) {
-        if (!tmpFileName.endsWith('.mcap'))
+        if (!temporaryFileName.endsWith('.mcap'))
             throw new Error(
-                `File ${tmpFileName} is not an mcap file, cannot extract topics`,
+                `File ${temporaryFileName} is not an mcap file, cannot extract topics`,
             );
 
-        if (!fs.existsSync(tmpFileName))
-            throw new Error(`File ${tmpFileName} does not exist`);
+        if (!fs.existsSync(temporaryFileName))
+            throw new Error(`File ${temporaryFileName} does not exist`);
 
         if (savedFile.type !== FileType.MCAP)
             throw new Error(
                 `File ${savedFile.filename} is not an mcap file, cannot extract topics`,
             );
 
-        const meta = await mcapMetaInfo(tmpFileName).catch(
+        const meta = await mcapMetaInfo(temporaryFileName).catch(
             async (error: unknown) => {
                 let errorMessage: string;
 
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = String(error);
-                }
+                errorMessage =
+                    error instanceof Error ? error.message : String(error);
 
                 logger.error(
-                    `Error extracting topics from file ${tmpFileName}: ${errorMessage}`,
+                    `Error extracting topics from file ${temporaryFileName}: ${errorMessage}`,
                 );
 
                 queueEntity.state = QueueState.CORRUPTED;

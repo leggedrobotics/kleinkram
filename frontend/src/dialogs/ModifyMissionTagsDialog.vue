@@ -12,7 +12,7 @@
             <q-btn
                 class="bg-button-primary"
                 label="Save"
-                :disable="tagValues === {}"
+                :disable="tagValues === undefined"
                 @click="modifyTags"
             />
         </template>
@@ -30,7 +30,7 @@ import { MissionDto } from '@api/types/Mission.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     mission?: MissionDto;
 }>();
 
@@ -38,24 +38,28 @@ const queryClient = useQueryClient();
 
 const tagValues: Ref<Record<string, string>> = ref({});
 watch(
-    () => props.mission,
+    () => properties.mission,
     (newMission) => {
         if (newMission) {
             tagValues.value = {};
-            newMission.tags.forEach((tag) => {
+            for (const tag of newMission.tags) {
                 if (tag.type.datatype === DataType.BOOLEAN) {
-                    tagValues.value[tag.type.datatype] = tag.BOOLEAN;
+                    // @ts-ignore
+                    tagValues.value[tag.type.datatype] = TagType.BOOLEAN;
                 } else {
                     tagValues.value[tag.type.uuid] = tag.valueAsString;
                 }
-            });
+            }
         }
     },
     { immediate: true },
 );
 const { mutate: _updateMissionTags } = useMutation({
     mutationFn: () => {
-        return updateMissionTags(props.mission?.uuid, tagValues.value);
+        return updateMissionTags(
+            properties.mission?.uuid ?? '',
+            tagValues.value,
+        );
     },
     onSuccess: async () => {
         Notify.create({
@@ -64,7 +68,7 @@ const { mutate: _updateMissionTags } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['mission', props.mission?.uuid],
+            queryKey: ['mission', properties.mission?.uuid],
         });
         await queryClient.invalidateQueries({
             queryKey: ['missions'],

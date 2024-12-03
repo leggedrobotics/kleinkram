@@ -5,6 +5,7 @@
         <template #content>
             <q-form class="row flex" @submit="onDialogOK">
                 <b v-if="projectAccess" style="align-content: center">{{
+                    // @ts-ignore
                     projectAccess.project?.name
                 }}</b>
                 <q-select
@@ -40,7 +41,7 @@ import { ProjectAccessDto } from '@api/types/Project.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
     project_access_uuid: string;
 }>();
@@ -49,15 +50,19 @@ const rights = ref({ label: 'None', value: AccessGroupRights.READ });
 const queryClient = useQueryClient();
 
 const { data: projectAccess } = useQuery<ProjectAccessDto>({
-    queryKey: ['projectAccess', props.project_access_uuid],
+    queryKey: ['projectAccess', properties.project_access_uuid],
     queryFn: () =>
-        getProjectAccess(props.project_uuid, props.project_access_uuid),
+        getProjectAccess(
+            properties.project_uuid,
+            properties.project_access_uuid,
+        ),
 });
 
 const { mutate: changeAccessRights } = useMutation({
     mutationFn: () => {
         return updateProjectAccess(
-            props.project_uuid,
+            properties.project_uuid,
+            // @ts-ignore
             projectAccess.value?.accessGroup.uuid,
             rights.value.value,
         );
@@ -71,13 +76,14 @@ const { mutate: changeAccessRights } = useMutation({
         });
     },
     onError: (e: unknown) => {
-        let errorMsg = '';
+        let errorMessage = '';
         if (e instanceof Error) {
-            errorMsg = e.response?.data.message;
+            // @ts-ignore
+            errorMessage = e.response?.data.message;
         }
 
         Notify.create({
-            message: `Failed to change access rights:  ${errorMsg}`,
+            message: `Failed to change access rights:  ${errorMessage}`,
             color: 'negative',
             position: 'bottom',
         });
@@ -87,7 +93,9 @@ watch(
     projectAccess,
     () => {
         rights.value = {
+            // @ts-ignore
             label: accessGroupRightsMap[projectAccess.value?.rights || 0],
+            // @ts-ignore
             value: projectAccess.value?.rights || 0,
         };
     },
@@ -98,8 +106,10 @@ watch(
 
 const options = Object.keys(accessGroupRightsMap)
     .map((key) => ({
-        label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
-        value: parseInt(key, 10),
+        label: accessGroupRightsMap[
+            Number.parseInt(key, 10) as AccessGroupRights
+        ],
+        value: Number.parseInt(key, 10),
     }))
     // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     .filter((option) => option.value !== AccessGroupRights.READ);

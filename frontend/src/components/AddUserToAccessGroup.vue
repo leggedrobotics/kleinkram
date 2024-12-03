@@ -68,7 +68,7 @@ import { Notify } from 'quasar';
 import { useUserSearch } from '../hooks/customQueryHooks';
 import { UserDto } from '@api/types/User.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     access_group_uuid: string;
 }>();
 const queryClient = useQueryClient();
@@ -81,7 +81,10 @@ const { mutate } = useMutation({
     mutationFn: () => {
         return Promise.all(
             selected.value.map(async (user) => {
-                return addUserToAccessGroup(user.uuid, props.access_group_uuid);
+                return addUserToAccessGroup(
+                    user.uuid,
+                    properties.access_group_uuid,
+                );
             }),
         );
     },
@@ -92,7 +95,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', props.access_group_uuid],
+            queryKey: ['AccessGroup', properties.access_group_uuid],
         });
     },
     onError: () => {

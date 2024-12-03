@@ -27,7 +27,7 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
     has_missions: boolean;
 }>();
@@ -35,8 +35,8 @@ const props = defineProps<{
 const { data: permissions } = usePermissionsQuery();
 const canDelete = computed(
     () =>
-        canDeleteProject(props.project_uuid, permissions.value) &&
-        !props.has_missions,
+        canDeleteProject(properties.project_uuid, permissions.value) &&
+        !properties.has_missions,
 );
 
 const $q = useQuasar();
@@ -50,7 +50,7 @@ const deleteProject = (): void => {
         title: 'Delete Project',
         component: DeleteProjectDialog,
         componentProps: {
-            project_uuid: props.project_uuid,
+            project_uuid: properties.project_uuid,
         },
     });
 };

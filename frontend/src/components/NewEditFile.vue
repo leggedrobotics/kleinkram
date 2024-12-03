@@ -107,7 +107,12 @@
                     <ConfigureCategories
                         v-if="data?.mission?.project"
                         :file="editableFile"
-                        @update:selected="editableFile.categories = $event"
+                        @update:selected="
+                            ($event) => {
+                                editableFile !== null &&
+                                    (editableFile.categories = $event);
+                            }
+                        "
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -144,11 +149,11 @@ import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from 'src/dialogs/BaseDialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
-import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { BaseProjectDto, ProjectsDto } from '@api/types/Project.dto';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
 import { FileDto } from '@api/types/Files.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     file_uuid: string;
 }>();
 
@@ -159,10 +164,10 @@ const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected_project = ref<ProjectDto | null | undefined>(null);
+const selected_project = ref<BaseProjectDto | null | undefined>(null);
 const { data } = useQuery({
-    queryKey: ['file', props.file_uuid],
-    queryFn: () => fetchFile(props.file_uuid),
+    queryKey: ['file', properties.file_uuid],
+    queryFn: () => fetchFile(properties.file_uuid),
 });
 
 const dateTime = ref('');
@@ -175,7 +180,7 @@ watch(
         selected_project.value = newValue.mission.project;
         if (newValue.date && data.value) {
             // TODO: fix
-            editableFile.value = {};
+            editableFile.value = null;
             dateTime.value = formatDate(new Date(newValue.date));
         }
     },
@@ -188,11 +193,13 @@ const projectsReturn = useQuery<ProjectsDto>({
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value[0] : [],
+    projectsReturn.data.value
+        ? projectsReturn.data.value.projects
+        : ([] as BaseProjectDto[]),
 );
 
 const { data: _missions, refetch } = useMissionsOfProjectMinimal(
-    selected_project.value?.uuid,
+    selected_project.value?.uuid ?? '',
     100,
     0,
 );
@@ -210,7 +217,7 @@ watch(
                     missions.value.length !== undefined &&
                     missions.value.length > 0 &&
                     editableFile.value.mission.project.uuid !==
-                        selected_project.value.uuid
+                        selected_project.value?.uuid
                 ) {
                     editableFile.value.mission = missions.value[0];
                 }
@@ -240,7 +247,7 @@ const { mutate: updateFileMutation } = useMutation({
                 (query) =>
                     query.queryKey[0] === 'Filtered Files' ||
                     (query.queryKey[0] === 'file' &&
-                        query.queryKey[1] === props.file_uuid) ||
+                        query.queryKey[1] === properties.file_uuid) ||
                     query.queryKey[0] === 'files',
             );
 
@@ -272,6 +279,7 @@ function _updateMission() {
     ) {
         editableFile.value.date = convertedDate;
         const noncircularMission = editableFile.value.mission;
+        // @ts-ignore
         noncircularMission.project = undefined;
         editableFile.value.mission = noncircularMission;
         updateFileMutation(editableFile.value);

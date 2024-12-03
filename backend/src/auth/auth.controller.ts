@@ -23,17 +23,17 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
-    googleAuthRedirect(@Req() req, @Res() res: Response) {
-        const user = req.user;
+    googleAuthRedirect(@Req() request, @Res() res: Response) {
+        const user = request.user;
         const token = this.authService.login(user);
-        const state = req.query.state;
-        if (state == 'cli') {
+        const state = request.query.state;
+        if (state === 'cli') {
             res.redirect(
                 `http://localhost:8000/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
             );
             return;
         }
-        if (state == 'cli-no-redirect') {
+        if (state === 'cli-no-redirect') {
             const authToken = token[CookieNames.AUTH_TOKEN];
             const refreshToken = token[CookieNames.REFRESH_TOKEN];
             res.status(200).send(`
@@ -97,14 +97,14 @@ export class AuthController {
 
     @Get('validate-token')
     @UserOnly()
-    validateToken(@Req() req: Request, @Res() res: Response) {
+    validateToken(@Req() request: Request, @Res() res: Response) {
         // If we reach here, the token is valid
         res.status(200).json({ message: 'Token is valid' });
     }
 
     @Post('refresh-token')
-    async refreshToken(@Req() req: Request, @Res() res: Response) {
-        const refreshToken = req.cookies[CookieNames.REFRESH_TOKEN];
+    async refreshToken(@Req() request: Request, @Res() res: Response) {
+        const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
             return res.status(401).json({ message: 'Refresh token not found' });
         }

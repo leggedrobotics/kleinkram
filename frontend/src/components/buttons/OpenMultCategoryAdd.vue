@@ -21,15 +21,15 @@ import AddMultiCategory from 'src/dialogs/AddMultiCategory.vue';
 import { FileDto } from '@api/types/Files.dto';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     mission: FileDto;
     files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     return canModifyMission(
-        props.mission.mission.uuid,
-        props.mission.mission.project.uuid,
+        properties.mission.mission.uuid,
+        properties.mission.mission.project.uuid,
         permissions.value,
     );
 });
@@ -38,9 +38,9 @@ const addCategories = (): void => {
     $q.dialog({
         component: AddMultiCategory,
         componentProps: {
-            project_uuid: props.mission.mission.project.uuid,
-            files: props.files,
-            mission_uuid: props.mission.uuid,
+            project_uuid: properties.mission.mission.project.uuid,
+            files: properties.files,
+            mission_uuid: properties.mission.uuid,
         },
         persistent: true,
     });

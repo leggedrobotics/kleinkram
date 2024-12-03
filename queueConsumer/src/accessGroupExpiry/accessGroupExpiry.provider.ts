@@ -28,7 +28,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
     async removeExpiredAccessGroups() {
         if (!this.redlock) throw new Error('RedLock not initialized');
 
-        await this.redlock.using([`accessGroupExpiry`], 10000, async () => {
+        await this.redlock.using([`accessGroupExpiry`], 10_000, async () => {
             await this.groupMembershipRepository.softDelete({
                 expirationDate: LessThan(new Date()),
             });

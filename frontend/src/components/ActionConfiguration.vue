@@ -306,14 +306,14 @@ const _open = ref(false);
 
 const emits = defineEmits(['close']);
 
-const props = defineProps<{
+const properties = defineProps<{
     mission_uuids?: string[];
     open: boolean;
 }>();
 
 const addedMissions = ref<string[]>([]);
 const allMissionUUIDs = computed(() => {
-    return [...(props.mission_uuids || []), ...addedMissions.value];
+    return [...(properties.mission_uuids || []), ...addedMissions.value];
 });
 const editingTemplate: Ref = ref({
     imageName: '',
@@ -330,7 +330,7 @@ const editingTemplate: Ref = ref({
 // Fetch missions based on props ----------------------------------------------
 
 const hasMissionUUIDs = computed(
-    () => !!props.mission_uuids && props.mission_uuids.length > 0,
+    () => !!properties.mission_uuids && properties.mission_uuids.length > 0,
 );
 const selectedMissionsKey = computed(() => ['missions', allMissionUUIDs.value]);
 const { data: selectedMissions } = useManyMissions(
@@ -452,7 +452,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
         }),
-    onSuccess: async (newVal: { name: string; version: string }) => {
+    onSuccess: async (newValue_: { name: string; version: string }) => {
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return query.queryKey[0] === 'actionTemplates';
@@ -460,7 +460,7 @@ const { mutateAsync: updateTemplate } = useMutation({
         });
         Notify.create({
             group: false,
-            message: `Template updated: ${newVal.name} v${newVal.version}`,
+            message: `Template updated: ${newValue_.name} v${newValue_.version}`,
             color: 'positive',
             position: 'bottom',
             timeout: 2000,
@@ -602,15 +602,15 @@ const isModified = computed(() => {
     );
 });
 
-function newValue(val: string, done: any) {
+function newValue(value: string, done: any) {
     const existingTemplate = actionTemplatesRes.value.find(
-        (template: ActionTemplateDto) => template.name === val,
+        (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {
         editingTemplate.value = existingTemplate.clone();
         select.value = existingTemplate;
     }
-    editingTemplate.value.name = val;
+    editingTemplate.value.name = value;
     done(editingTemplate);
 }
 
@@ -661,9 +661,9 @@ function removeMission(uuid: string) {
 }
 
 watch(
-    () => props.open,
-    (newVal) => {
-        _open.value = newVal;
+    () => properties.open,
+    (newValue_) => {
+        _open.value = newValue_;
     },
     { immediate: true },
 );
@@ -677,8 +677,10 @@ watch(
 );
 
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights] ?? '',
-    value: parseInt(key, 10),
+    label:
+        accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights] ??
+        '',
+    value: Number.parseInt(key, 10),
 }));
 </script>
 <style scoped></style>

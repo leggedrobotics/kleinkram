@@ -17,20 +17,38 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
-import { MissionDto } from '@api/types/Mission.dto';
-import { ProjectDto } from '@api/types/Project.dto';
+import { FlatMissionDto } from '@api/types/Mission.dto';
+import { BaseProjectDto } from '@api/types/Project.dto';
 import { FileDto } from '@api/types/Files.dto';
 import { AxiosError } from 'axios';
 
 export const createFileAction = async (
-    selectedMission: MissionDto,
-    selectedProject: ProjectDto,
+    selectedMission: FlatMissionDto | null,
+    selectedProject: BaseProjectDto | null,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
     injectedFiles: Ref<Ref<FileDto>[]>,
-) => {
-    const confirmDialog = (e: BeforeUnloadEvent) => {
+): Promise<void> => {
+    if (selectedMission === null) {
+        Notify.create({
+            message: 'No mission selected',
+            color: 'negative',
+            spinner: false,
+            timeout: 2000,
+        });
+        return;
+    } else if (selectedProject === null) {
+        Notify.create({
+            message: 'No project selected',
+            color: 'negative',
+            spinner: false,
+            timeout: 2000,
+        });
+        return;
+    }
+
+    const confirmDialog = (e: BeforeUnloadEvent): void => {
         e.preventDefault();
         e.returnValue = ''; // This triggers the generic browser dialog.
     };
@@ -50,13 +68,13 @@ export const createFileAction = async (
 };
 
 async function _createFileAction(
-    selectedMission: MissionDto,
-    selectedProject: ProjectDto,
+    selectedMission: FlatMissionDto,
+    selectedProject: BaseProjectDto,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
     injectedFiles: Ref<Ref<FileDto>[]>,
-) {
+): Promise<void> {
     if (files.length === 0) {
         Notify.create({
             message: 'No file or URL provided',
@@ -103,7 +121,7 @@ async function _createFileAction(
         const invalidFileTypeMessage = `Invalid file type. Only .bag and .mcap files are allowed.`;
         const invalidFileNameMessage = `Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
         const invalidFileNameLengthMessage = `File name is too long. Maximum length is 50 characters.`;
-        invalidFiles.forEach((file) => {
+        for (const file of invalidFiles) {
             if (file.name.length > 50) {
                 message += `${file.name}: ${invalidFileNameLengthMessage}`;
             }
@@ -113,14 +131,14 @@ async function _createFileAction(
             if (!isValidNameFilter(file.name)) {
                 message += `${file.name}: ${invalidFileNameMessage}`;
             }
-        });
+        }
         Notify.create({
             group: false,
             message,
             color: 'negative',
             spinner: false,
             position: 'bottom',
-            timeout: 30000,
+            timeout: 30_000,
             closeBtn: true,
         });
     }
@@ -129,26 +147,27 @@ async function _createFileAction(
     const temporaryCredentials = await generateTemporaryCredentials(
         fileNames,
         selectedMission.uuid,
-    ).catch((e: unknown) => {
-        let errorMsg = '';
-        if (e instanceof AxiosError) {
-            errorMsg = e.response.message;
+    ).catch((error: unknown) => {
+        let errorMessage = '';
+
+        if (error instanceof Error) {
+            errorMessage = error.message;
         }
 
-        let msg = `Upload of Files failed: ${errorMsg}`;
+        let message = `Upload of Files failed: ${errorMessage}`;
 
         // show special error for 403
-        if (e instanceof AxiosError && e.response?.status === 403) {
-            msg = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
+        if (error instanceof AxiosError && error.response?.status === 403) {
+            message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
         }
 
         // close the notification
         Notify.create({
-            message: msg,
+            message: message,
             color: 'negative',
             spinner: false,
             position: 'bottom',
-            timeout: 30000,
+            timeout: 30_000,
             closeBtn: true,
         });
     });
@@ -180,8 +199,8 @@ async function _createFileAction(
     const limit = pLimit(5);
 
     await Promise.all(
-        temporaryCredentials.map(async (accessResp, i) => {
-            const file = validFiles[i];
+        temporaryCredentials.map(async (accessResp, index) => {
+            const file = validFiles[index];
 
             const accessCredentials = accessResp.accessCredentials;
             if (accessCredentials === null) {
@@ -212,8 +231,8 @@ async function _createFileAction(
                 fileUUID: accessResp.fileUUID,
                 uuid: selectedMission.uuid,
             } as unknown as FileDto;
-            const newFileUploadRef = ref(newFileUpload);
-            injectedFiles.value.push(newFileUploadRef);
+            const newFileUploadReference = ref(newFileUpload);
+            injectedFiles.value.push(newFileUploadReference);
             return limit(async () => {
                 try {
                     const md5Hash = await uploadFileMultipart(
@@ -221,20 +240,20 @@ async function _createFileAction(
                         accessResp.bucket,
                         accessResp.fileUUID,
                         minioClient,
-                        newFileUploadRef,
+                        newFileUploadReference,
                     );
 
                     return await confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (e: unknown) {
-                    let errorMsg = '';
-                    if (e instanceof Error) {
-                        errorMsg = e.message;
+                } catch (error: unknown) {
+                    let errorMessage = '';
+                    if (error instanceof Error) {
+                        errorMessage = error.message;
                     }
 
-                    console.error('err', e);
-                    newFileUploadRef.value.canceled = true;
+                    console.error('err', error);
+                    newFileUploadReference.value.canceled = true;
                     Notify.create({
-                        message: `Upload of File ${file.name} failed: ${errorMsg}`,
+                        message: `Upload of File ${file.name} failed: ${errorMessage}`,
                         color: 'negative',
                         spinner: false,
                         timeout: 0,
@@ -270,11 +289,11 @@ async function _createFileAction(
  * @param driveUrl the URL of the Google Drive folder to import
  */
 export async function driveUpload(
-    selectedMission: MissionDto,
+    selectedMission: FlatMissionDto | null,
     driveUrl: Ref<string>,
 ) {
     // abort if no mission is selected
-    if (!selectedMission) return;
+    if (selectedMission === null) return;
 
     const noti = Notify.create({
         group: false,
@@ -294,14 +313,14 @@ export async function driveUpload(
                 timeout: 5000,
             });
         })
-        .catch((e: unknown) => {
-            let errorMsg = '';
-            if (e instanceof Error) {
-                errorMsg = e.message;
+        .catch((error: unknown) => {
+            let errorMessage = '';
+            if (error instanceof Error) {
+                errorMessage = error.message;
             }
 
             noti({
-                message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMsg}`,
+                message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMessage}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,
@@ -317,7 +336,7 @@ async function uploadFileMultipart(
     minioClient: S3Client,
     newFileUpload: Ref<FileDto>,
 ) {
-    let UploadId: string | undefined;
+    let uploadId: string | undefined;
     try {
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
             Bucket: bucket,
@@ -326,7 +345,7 @@ async function uploadFileMultipart(
         const { UploadId: _uploadID } = await minioClient.send(
             createMultipartUploadCommand,
         );
-        UploadId = _uploadID;
+        uploadId = _uploadID;
 
         const partSize = 50 * 1024 * 1024; // 50 MB per part
         const parts = [];
@@ -352,7 +371,7 @@ async function uploadFileMultipart(
                 Bucket: bucket,
                 Key: key,
                 PartNumber: partNumber,
-                UploadId,
+                UploadId: uploadId,
                 Body: partBlob,
             });
             const maxRetries = 60;
@@ -381,7 +400,7 @@ async function uploadFileMultipart(
             new CompleteMultipartUploadCommand({
                 Bucket: bucket,
                 Key: key,
-                UploadId,
+                UploadId: uploadId,
                 MultipartUpload: { Parts: parts },
             });
         const finalMD5 = btoa(spark.end(true));
@@ -393,12 +412,12 @@ async function uploadFileMultipart(
         newFileUpload.value.canceled = true;
 
         // Step 4 (Optional): Abort Multipart Upload
-        if (UploadId) {
+        if (uploadId) {
             const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
                 {
                     Bucket: bucket,
                     Key: key,
-                    UploadId,
+                    UploadId: uploadId,
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);

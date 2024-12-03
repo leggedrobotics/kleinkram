@@ -171,7 +171,7 @@ const filterOptions: Ref<{
 
 watch(
     () => prefilter.value,
-    (newVal) => {
+    (newValue) => {
         // TODO set filter
         /*
         if (newVal.value === 'all') {
@@ -219,8 +219,8 @@ const { data: foundAccessGroups, refetch } = useQuery<AccessGroupsDto>({
 });
 
 const refetchAccessGroup: (
-    evt: Event,
-    go?: (opts?: {
+    event_: Event,
+    go?: (options?: {
         to?: any;
         replace?: boolean | undefined;
         returnRouterError?: boolean | undefined;
@@ -247,7 +247,7 @@ const accessGroupsColumns = [
         label: 'Access Group',
         align: 'left',
         field: (row: AccessGroupDto): string => row.name,
-        format: (val: string): string => val,
+        format: (value: string): string => value,
         sortable: true,
         style: 'width:  20%; max-width: 60%; min-width: 10%;',
     },
@@ -257,7 +257,7 @@ const accessGroupsColumns = [
         label: 'Group Creator',
         align: 'center',
         field: (row: AccessGroupDto): string => row.creator?.name ?? 'N/A',
-        format: (val: string): string => val,
+        format: (value: string): string => value,
         sortable: false,
     },
 
@@ -268,7 +268,7 @@ const accessGroupsColumns = [
         align: 'center',
         field: (row: AccessGroupDto): string =>
             row.createdAt.toLocaleDateString(),
-        format: (val: string): string => formatDate(new Date(val)),
+        format: (value: string): string => formatDate(new Date(value)),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 10%;',
     },
@@ -280,7 +280,7 @@ const accessGroupsColumns = [
         align: 'center',
         field: (row: AccessGroupDto): string =>
             row.memberships.length.toString(),
-        format: (val: number): string => val.toString(),
+        format: (value: number): string => value.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',
     },
@@ -290,8 +290,9 @@ const accessGroupsColumns = [
         label: 'Nr of Projects',
         align: 'center',
         field: (row: AccessGroupDto): string =>
+            // @ts-ignore
             row.projectAccesses.flat().length,
-        format: (val: number): string => val.toString(),
+        format: (value: number): string => value.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',
     },

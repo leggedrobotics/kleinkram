@@ -9,7 +9,7 @@ let userFetchPromise: Promise<CurrentAPIUserDto | null> | null = null;
 
 export const getUser = async (): Promise<CurrentAPIUserDto> => {
     if (userCache !== null) {
-        return Promise.resolve(userCache);
+        return userCache;
     }
     if (isFetchingUser) {
         return (
@@ -49,7 +49,7 @@ export function logout() {
             .post('/auth/logout')
             .then(() => {
                 // reload the page to clear the cache
-                window.location.reload();
+                globalThis.location.reload();
             })
             .catch(() => {
                 reject(new Error('Failed to logout'));
@@ -58,5 +58,5 @@ export function logout() {
 }
 
 export const login = (): void => {
-    window.location.href = `${ENV.ENDPOINT}/auth/google`;
+    globalThis.location.href = `${ENV.ENDPOINT}/auth/google`;
 };

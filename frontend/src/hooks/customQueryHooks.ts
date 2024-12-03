@@ -93,9 +93,9 @@ export const useUser = (): UseQueryReturnType<
 
 export const getPermissionForProject = (
     projectUuid: string | undefined,
-    permissions: PermissionsDto,
+    permissions: PermissionsDto | undefined,
 ): AccessGroupRights => {
-    if (!permissions) return 0;
+    if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
@@ -103,15 +103,16 @@ export const getPermissionForProject = (
         (p: ProjectAccessDto) => p.uuid === projectUuid,
     );
 
+    // @ts-ignore
     const projectPermission = project?.access && 0;
     return Math.max(defaultPermission, projectPermission);
 };
 
 export const getPermissionForMission = (
     missionUuid: string | undefined,
-    permissions: PermissionsDto,
+    permissions: PermissionsDto | null,
 ): AccessGroupRights => {
-    if (!permissions) return 0;
+    if (permissions === null) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
     const defaultPermission = permissions.default_permission;
 
@@ -217,10 +218,13 @@ export const useProjectQuery = (
     useQuery<ProjectDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
         queryFn: (): Promise<ProjectDto> => {
+            // @ts-ignore
             if (!projectUuid.value)
                 return Promise.reject(new Error('Project UUID is not defined'));
+            // @ts-ignore
             return getProject(projectUuid.value);
         },
+        // @ts-ignore
         enabled: () => !!projectUuid.value,
     });
 
@@ -354,12 +358,12 @@ export const useFilteredProjects = (
     skip: number,
     sortBy: string,
     descending: boolean,
-    searchParam?: Record<string, string>,
+    searchParameter?: Record<string, string>,
 ): UseQueryReturnType<ProjectsDto | undefined, Error> => {
     return useQuery<ProjectsDto>({
         queryKey: ['projects'],
         queryFn: () =>
-            filteredProjects(take, skip, sortBy, descending, searchParam),
+            filteredProjects(take, skip, sortBy, descending, searchParameter),
     });
 };
 
@@ -381,7 +385,7 @@ export const useWorkers = (): UseQueryReturnType<
     return useQuery<WorkersDto>({
         queryKey: ['worker'],
         queryFn: () => allWorkers(),
-        refetchInterval: 10000,
+        refetchInterval: 10_000,
     });
 };
 
@@ -482,7 +486,7 @@ export const useFile = (
     return useQuery({
         queryKey: ['file', uuid],
         queryFn: async () => {
-            if (uuid === undefined) return undefined;
+            if (uuid === undefined) return;
             return fetchFile(uuid);
         },
         enabled: computed(() => uuid !== undefined),

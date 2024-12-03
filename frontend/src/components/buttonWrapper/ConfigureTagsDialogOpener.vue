@@ -24,24 +24,24 @@ import { computed } from 'vue';
 import ModifyProjectTagsDialog from 'src/dialogs/ModifyProjectTagsDialog.vue';
 
 const $q = useQuasar();
-const props = defineProps<{
+const properties = defineProps<{
     project_uuid: string;
 }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canModifyProject(props.project_uuid, permissions.value),
+    canModifyProject(properties.project_uuid, permissions.value),
 );
 
 const clicked = (): void => {
     // abort if the user cannot modify the project
     if (!canModify.value) return;
-    console.log(props.project_uuid);
+    console.log(properties.project_uuid);
     // open the dialog
     $q.dialog({
         component: ModifyProjectTagsDialog,
         componentProps: {
-            projectUUID: props.project_uuid,
+            projectUUID: properties.project_uuid,
         },
     });
 };

@@ -19,9 +19,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         });
     }
 
-    authenticate(req: e.Request, options?: any) {
-        options.state = req.query['state'];
-        super.authenticate(req, options);
+    authenticate(request: e.Request, options?: any) {
+        options.state = request.query['state'];
+        super.authenticate(request, options);
     }
 
     async validate(
@@ -35,7 +35,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         // currently only google is supported
         if (provider !== Providers.GOOGLE) {
             logger.error('Invalid provider, expected google but got', provider);
-            callback(new AuthFlowException('Invalid provider!'), undefined);
+            callback(new AuthFlowException('Invalid provider!'));
             return;
         }
 
@@ -46,7 +46,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
                     'Error while validating and creating user by google',
                     error,
                 );
-                callback(error, undefined);
+                callback(error);
                 return;
             });
 
@@ -56,7 +56,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             return;
         }
 
-        callback(null, undefined);
+        callback(null);
         return;
     }
 }

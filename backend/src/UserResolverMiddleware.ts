@@ -7,11 +7,15 @@ import { CookieNames } from '@common/frontend_shared/enum';
 export class UserResolverMiddleware implements NestMiddleware {
     constructor(private userService: UserService) {}
 
-    async use(req: Request, res: Response, next: NextFunction) {
-        if (req && req.cookies) {
-            const key = req.cookies[CookieNames.CLI_KEY] as string;
-            if (key) {
-                req.user = await this.userService.findOneByApiKey(key);
+    async use(
+        request: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        if (request.cookies) {
+            const key = request.cookies[CookieNames.CLI_KEY] as string;
+            if (key !== '') {
+                request.user = await this.userService.findOneByApiKey(key);
             }
         }
         next();

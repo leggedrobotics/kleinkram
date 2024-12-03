@@ -135,10 +135,10 @@ export const createAccessGroups = async (
     // Read access_config/*.json and create access groups
     await Promise.all(
         config.access_groups.map(async (group) => {
-            const dbGroup = await accessGroupRepository.findOne({
+            const databaseGroup = await accessGroupRepository.findOne({
                 where: { uuid: group.uuid },
             });
-            if (!dbGroup) {
+            if (!databaseGroup) {
                 const newGroup = accessGroupRepository.create({
                     name: group.name,
                     uuid: group.uuid,
@@ -170,7 +170,7 @@ async function createPrimaryGroup(
     });
 
     if (exists) {
-        const randomSuffix = Math.random().toString(36).substring(7);
+        const randomSuffix = Math.random().toString(36).slice(7);
         primaryGroupName = `${user.name} ${randomSuffix}`;
     }
 

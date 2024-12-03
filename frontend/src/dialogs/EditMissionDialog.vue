@@ -39,14 +39,14 @@ const $q = useQuasar();
 const queryClient = useQueryClient();
 const isNameValid = ref(true);
 
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
 }>();
 
-const missionName = ref(props.mission.name);
+const missionName = ref(properties.mission.name);
 
 const saveMissionName = async () => {
-    await updateMissionName(props.mission.uuid, missionName.value)
+    await updateMissionName(properties.mission.uuid, missionName.value)
         .then(async () => {
             $q.notify({
                 message: 'Mission name updated',
@@ -56,13 +56,13 @@ const saveMissionName = async () => {
             // clear mission and missions cache
             // to force a refetch of the missions
             await queryClient.invalidateQueries({
-                queryKey: ['project', props.mission.project.uuid],
+                queryKey: ['project', properties.mission.project.uuid],
             });
             await queryClient.invalidateQueries({
                 queryKey: ['missions'],
             });
             await queryClient.invalidateQueries({
-                queryKey: ['mission', props.mission.uuid],
+                queryKey: ['mission', properties.mission.uuid],
             });
             dialogRef.value?.hide();
         })

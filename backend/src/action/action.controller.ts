@@ -23,7 +23,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
-import { ParamUUID } from '../validation/paramDecorators';
+import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { ActionsDto } from '@common/api/types/Actions.dto';
 import {
@@ -62,7 +62,7 @@ export class ActionController {
         description: 'True if the action was deleted',
         type: Boolean,
     })
-    async deleteAction(@ParamUUID('uuid') uuid: string): Promise<boolean> {
+    async deleteAction(@ParameterUID('uuid') uuid: string): Promise<boolean> {
         return this.actionService.delete(uuid);
     }
 

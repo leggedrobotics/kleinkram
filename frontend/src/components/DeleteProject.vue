@@ -28,7 +28,7 @@ const { project } = defineProps<{
 
 const handler = useHandler();
 
-async function deleteProjectAction() {
+async function deleteProjectAction(): Promise<void> {
     if (projectNameCheck.value === project.name) {
         await deleteProject(project.uuid)
             .then(async () => {
@@ -47,9 +47,19 @@ async function deleteProjectAction() {
 
                 handler.value.setProjectUUID('');
             })
-            .catch((e: unknown) => {
+            .catch((error: unknown) => {
+                let errorMessage = '';
+                errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : ((
+                              error as {
+                                  response?: { data?: { message?: string } };
+                              }
+                          ).response?.data?.message ?? 'Unknown error');
+
                 Notify.create({
-                    message: `Error deleting project: ${e.response.data.message}`,
+                    message: `Error deleting project: ${errorMessage}`,
                     color: 'negative',
                     position: 'bottom',
                 });

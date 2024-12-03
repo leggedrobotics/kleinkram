@@ -141,23 +141,23 @@ import { TagDto } from '@api/types/TagsDto.dto';
 
 const $emit = defineEmits(['update:selected']);
 
-const props = defineProps<{
+const properties = defineProps<{
     url_handler: QueryHandler;
 }>();
 
 function setPagination(update: TableRequest) {
-    props.url_handler.setPage(update.pagination.page);
-    props.url_handler.setTake(update.pagination.rowsPerPage);
-    props.url_handler.setSort(update.pagination.sortBy);
-    props.url_handler.setDescending(update.pagination.descending);
+    properties.url_handler.setPage(update.pagination.page);
+    properties.url_handler.setTake(update.pagination.rowsPerPage);
+    properties.url_handler.setSort(update.pagination.sortBy);
+    properties.url_handler.setDescending(update.pagination.descending);
 }
 
 const pagination = computed(() => {
     return {
-        page: props.url_handler.page,
-        rowsPerPage: props.url_handler.take,
-        rowsNumber: props.url_handler.rowsNumber,
-        sortBy: props.url_handler.sortBy,
+        page: properties.url_handler.page,
+        rowsPerPage: properties.url_handler.take,
+        rowsNumber: properties.url_handler.rowsNumber,
+        sortBy: properties.url_handler.sortBy,
         descending: false,
     };
 });
@@ -169,31 +169,32 @@ const selected = ref([]);
 const queryKey = computed(() => [
     'missions',
     project_uuid,
-    props.url_handler.queryKey,
+    properties.url_handler.queryKey,
 ]);
 
 const { data: rawData, isLoading } = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         missionsOfProject(
-            project_uuid.value,
-            props.url_handler.take,
-            props.url_handler.skip,
-            props.url_handler.sortBy,
-            props.url_handler.descending,
-            props.url_handler.searchParams,
+            project_uuid.value ?? '',
+            properties.url_handler.take,
+            properties.url_handler.skip,
+            properties.url_handler.sortBy,
+            properties.url_handler.descending,
+            // @ts-ignore
+            properties.url_handler.searchParams,
         ),
 });
 
-const data = computed(() => (rawData.value ? rawData.value[0] : []));
-const total = computed(() => (rawData.value ? rawData.value[1] : 0));
+const data = computed(() => (rawData.value ? rawData.value.missions : []));
+const total = computed(() => (rawData.value ? rawData.value.count : 0));
 
 watch(
     () => total.value,
     () => {
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
-            props.url_handler.rowsNumber = total.value;
+            properties.url_handler.rowsNumber = total.value;
         }
     },
     { immediate: true },
@@ -217,7 +218,8 @@ const missingTags = (row: MissionDto): TagDto[] => {
             return tagType;
         }
     });
-    return mapped.filter((val) => !!val);
+    // @ts-ignore
+    return mapped.filter((value) => !!value);
 };
 
 const missingTagsText = (row: MissionDto): string => {
@@ -230,8 +232,8 @@ const missingTagsText = (row: MissionDto): string => {
 
 watch(
     () => selected.value,
-    (newVal) => {
-        $emit('update:selected', newVal);
+    (newValue) => {
+        $emit('update:selected', newValue);
     },
 );
 </script>

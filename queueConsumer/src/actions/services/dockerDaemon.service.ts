@@ -39,10 +39,10 @@ export interface ContainerLimits {
 }
 
 const defaultContainerLimitations: ContainerLimits = {
-    max_runtime: 60 * 60 * 1_000, // 1 hour
+    max_runtime: 60 * 60 * 1000, // 1 hour
     memory_limit: 1024 * 1024 * 1024, // 1GB
     n_cpu: 2, // CPU limit in nano CPUs
-    disk_quota: 40737418240,
+    disk_quota: 40_737_418_240,
 };
 
 export type ContainerEnv = Record<string, string>;
@@ -215,8 +215,8 @@ export class DockerDaemon {
             let errorString = util.inspect(error);
 
             // cleanup error message
-            errorString = errorString.replace(/\(.*?\)/g, '');
-            errorString = errorString.replace(/ +/g, ' ').trim();
+            errorString = errorString.replaceAll(/\(.*?\)/g, '');
+            errorString = errorString.replaceAll(/ +/g, ' ').trim();
             logger.error(`Failed to create container: ${errorString}`);
             throw error;
         };
@@ -250,7 +250,7 @@ export class DockerDaemon {
                     `Killing container ${container.id} after 10 seconds of stopping`,
                 );
                 this.killAndRemoveContainer(container.id, clearVolume).catch(
-                    (e: unknown) => logger.error(e),
+                    (error: unknown) => logger.error(error),
                 );
             }, 10_000);
 
@@ -260,7 +260,7 @@ export class DockerDaemon {
                     // clear the kill timeout
                     this.removeContainer(container.id, clearVolume);
                 })
-                .catch((e: unknown) => logger.error(e));
+                .catch((error: unknown) => logger.error(error));
         }, maxRuntimeMs);
 
         await container.wait().finally(() => {
@@ -378,21 +378,21 @@ export class DockerDaemon {
      */
     private static parseContainerLogLine(
         line: string,
-        sanitizeCallback?: (str: string) => string,
+        sanitizeCallback?: (string_: string) => string,
     ): ContainerLog {
         const logLevel = line.split('')[0]?.charCodeAt(0) ?? 0;
 
         // remove all non-printable characters
-        line = line.replace(/[\x00-\x1F\x7F]/u, '');
+        line = line.replace(/[\u0000-\u001F\u007F]/u, '');
 
-        const dateStartIdx = line.indexOf('20');
-        let dateEndIdx = line.indexOf(' ', dateStartIdx);
-        dateEndIdx = dateEndIdx === -1 ? line.length : dateEndIdx;
+        const dateStartIndex = line.indexOf('20');
+        let dateEndIndex = line.indexOf(' ', dateStartIndex);
+        dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
 
-        const dateStr = line.substring(dateStartIdx, dateEndIdx);
-        const timestamp = new Date(dateStr).toISOString();
+        const dateString = line.substring(dateStartIndex, dateEndIndex);
+        const timestamp = new Date(dateString).toISOString();
 
-        let message = line.substring(dateEndIdx);
+        let message = line.slice(Math.max(0, dateEndIndex));
         if (sanitizeCallback && message !== '') {
             message = sanitizeCallback(message);
         }
@@ -417,7 +417,7 @@ export class DockerDaemon {
     @tracing()
     async subscribeToLogs(
         containerId: string,
-        sanitizeCallback?: (str: string) => string,
+        sanitizeCallback?: (string_: string) => string,
     ) {
         const container = this.docker.getContainer(containerId);
 
@@ -431,7 +431,7 @@ export class DockerDaemon {
 
         return new Observable<ContainerLog>((observer) => {
             dockerodeLogStream.on('data', (chunk) => {
-                chunk
+                for (const logEntry of chunk
                     .toString()
                     .split('\n')
                     .filter((line) => line !== '')
@@ -440,10 +440,9 @@ export class DockerDaemon {
                             line,
                             sanitizeCallback,
                         ),
-                    )
-                    .forEach((logEntry) => {
-                        observer.next(logEntry);
-                    });
+                    )) {
+                    observer.next(logEntry);
+                }
             });
 
             dockerodeLogStream.on('end', () => {
@@ -501,7 +500,7 @@ export class DockerDaemon {
         const repoDigests = details.RepoDigests;
         const googleKey = fs.readFileSync(
             Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
-            'utf-8',
+            'utf8',
         );
 
         // assert non empty env variables

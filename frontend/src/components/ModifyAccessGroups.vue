@@ -84,30 +84,28 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
 import { useSearchAccessGroup, useUserSearch } from '../hooks/customQueryHooks';
+import { AccessGroupsDto } from '@api/types/User.dto';
 
-const props = defineProps<{
+const properties = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;
 }>();
 const emit = defineEmits(['addAccessGroupToProject', 'addUsersToProject']);
 
 const search = ref('');
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label: accessGroupRightsMap[parseInt(key, 10) as AccessGroupRights],
-    value: parseInt(key, 10),
+    label: accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights],
+    value: Number.parseInt(key, 10),
 }));
 const rights: Ref<Record<string, { label: string; value: AccessGroupRights }>> =
-    ref({ ...props.existingRights });
+    ref({ ...properties.existingRights });
 
 const { data: foundUsers } = useUserSearch(search);
 
-const searchAccessGroupsKey = computed(() => ['accessGroups', search.value]);
-const enabled = computed(() => search.value.length >= 2);
-const { data: _foundAccessGroups } = useSearchAccessGroup(
-    searchAccessGroupsKey.value,
-    enabled.value,
-);
+const { data: _foundAccessGroups } = useSearchAccessGroup(search);
 const foundAccessGroups = computed(() =>
-    _foundAccessGroups.value ? _foundAccessGroups.value[0] : [],
+    _foundAccessGroups.value
+        ? _foundAccessGroups.value.accessGroups
+        : ([] as AccessGroupsDto[]),
 );
 
 function addAccessGroupToProject(accessGroupUUID: string, name: string) {
@@ -139,7 +137,7 @@ const columns = [
         label: 'Rights',
         align: 'left',
         field: 'rights',
-        format: (val: string) => val,
+        format: (value: string) => value,
     },
 ];
 </script>

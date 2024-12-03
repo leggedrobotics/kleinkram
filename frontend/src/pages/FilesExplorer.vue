@@ -371,7 +371,6 @@ import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/TagsDto.dto';
 import { CategoryDto } from '@api/types/Category.dto';
 import { FileDto } from '@api/types/Files.dto';
-import { AxiosError } from 'axios';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -404,8 +403,8 @@ const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
 const selectedFileHealth = computed<string, string | undefined>({
     get: () => handler.value.searchParams.health,
-    set: (value: string) => {
-        handler.value.setSearch({ health: value, name: search.value });
+    set: (value: string | undefined) => {
+        handler.value.setSearch({ health: value ?? '', name: search.value });
     },
 });
 
@@ -440,13 +439,12 @@ const {
 } = useMission(
     missionUuid.value ?? '',
     (e: unknown) => {
-        let errorMsg = '';
-        if (e instanceof AxiosError) {
-            errorMsg = e.response.data.message;
-        }
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } }).response?.data
+                ?.message ?? 'Unknown error';
 
         Notify.create({
-            message: `Error fetching Mission: ${errorMsg}`,
+            message: `Error fetching Mission: ${errorMessage}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -456,12 +454,7 @@ const {
     },
     200,
 );
-registerNoPermissionErrorHandler(
-    isLoadingError,
-    missionUuid.value,
-    'mission',
-    error,
-);
+registerNoPermissionErrorHandler(isLoadingError, missionUuid, 'mission', error);
 
 const { data: _all_categories } = useCategories(projectUuid.value ?? '', '');
 const allCategories: Ref<CategoryDto[]> = computed(() =>
@@ -501,13 +494,15 @@ const { mutate: _deleteFiles } = useMutation({
         });
     },
     onError: (e: unknown) => {
-        let errorMsg = '';
-        if (e instanceof AxiosError) {
-            errorMsg = e.response.data.message;
-        }
+        const errorMessage =
+            (
+                e as {
+                    response?: { data?: { message?: string } };
+                }
+            ).response?.data?.message ?? '';
 
         Notify.create({
-            message: `Error deleting files: ${errorMsg}`,
+            message: `Error deleting files: ${errorMessage}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -571,14 +566,14 @@ const downloadCallback = async (): Promise<void> => {
             timeout: 2000,
             position: 'bottom',
         });
-    } catch (e: unknown) {
-        let errorMsg = '';
-        if (e instanceof Error) {
-            errorMsg = e.message;
+    } catch (error_: unknown) {
+        let errorMessage = '';
+        if (error_ instanceof Error) {
+            errorMessage = error_.message;
         }
 
         Notify.create({
-            message: `Error downloading files: ${errorMsg}`,
+            message: `Error downloading files: ${errorMessage}`,
             color: 'negative',
             timeout: 2000,
             position: 'bottom',
@@ -592,27 +587,35 @@ const updateSelected = (value: CategoryDto[]): void => {
 
 const fileHealthColor = (health: string): string => {
     switch (health) {
-        case 'Healthy':
+        case 'Healthy': {
             return 'positive';
-        case 'Uploading':
+        }
+        case 'Uploading': {
             return 'warning';
-        case 'Unhealthy':
+        }
+        case 'Unhealthy': {
             return 'negative';
-        default:
+        }
+        default: {
             return 'grey';
+        }
     }
 };
 
 const fileHealthTextColor = (health: string): string => {
     switch (health) {
-        case 'Healthy':
+        case 'Healthy': {
             return 'white';
-        case 'Uploading':
+        }
+        case 'Uploading': {
             return 'black';
-        case 'Unhealthy':
+        }
+        case 'Unhealthy': {
             return 'white';
-        default:
+        }
+        default: {
             return 'black';
+        }
     }
 };
 

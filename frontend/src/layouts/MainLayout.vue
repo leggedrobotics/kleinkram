@@ -4,7 +4,7 @@
         style="position: absolute"
         class="transparent-on-open-dialog"
     >
-        <header-component />
+        <HeaderComponent />
 
         <main>
             <q-page-container
@@ -28,6 +28,6 @@
 
 <script setup lang="ts">
 import FooterComponent from 'components/footer/FooterComponent.vue';
-import HeaderComponent from 'components/header/HeaderComponent.vue';
 import DevInstanceWarning from 'components/DevInstanceWarning.vue';
+import HeaderComponent from '../components/header/HeaderComponent.vue';
 </script>

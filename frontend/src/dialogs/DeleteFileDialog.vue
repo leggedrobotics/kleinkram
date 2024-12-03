@@ -31,7 +31,9 @@ const { file } = defineProps<{
     file: FileDto;
 }>();
 
-const deleteFile = () => {
+const deleteFile = (): void => {
+    if (deleteFileRef.value === null) return;
+    // @ts-ignore
     deleteFileRef.value.deleteFileAction();
     onDialogOK();
 };

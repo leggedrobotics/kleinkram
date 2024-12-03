@@ -378,7 +378,7 @@ const $router = useRouter();
 const { data } = useQuery<ActionDto>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
-    refetchInterval: 5_000,
+    refetchInterval: 5000,
 });
 
 const action: ComputedRef<ActionDto> = computed(
@@ -386,12 +386,17 @@ const action: ComputedRef<ActionDto> = computed(
 ) as ComputedRef<ActionDto>;
 
 const artifactState = computed(() => {
-    if (action.value.artifacts === ArtifactState.UPLOADING) {
-        return 'Uploading...';
-    } else if (action.value.artifacts === ArtifactState.ERROR) {
-        return 'N/A';
-    } else if (action.value.artifacts === ArtifactState.AWAITING_ACTION) {
-        return 'Waiting action completion...';
+    switch (action.value.artifacts) {
+        case ArtifactState.UPLOADING: {
+            return 'Uploading...';
+        }
+        case ArtifactState.ERROR: {
+            return 'N/A';
+        }
+        case ArtifactState.AWAITING_ACTION: {
+            return 'Waiting action completion...';
+        }
+        // No default
     }
     return 'N/A';
 });
@@ -404,8 +409,8 @@ const openMission = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
-            project_uuid: action.value.mission.project?.uuid,
-            mission_uuid: action.value.mission?.uuid,
+            project_uuid: action.value.mission.project.uuid,
+            mission_uuid: action.value.mission.uuid,
         },
     });
 };

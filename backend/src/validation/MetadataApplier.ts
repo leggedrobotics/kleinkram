@@ -1,11 +1,11 @@
 import { DECORATORS } from '@nestjs/swagger/dist/constants';
 
 export const metadataApplier = (
-    paramName: string,
-    paramDescription: string,
-    paramType: string,
-    paramDatatype: string,
-    paramRequired: boolean,
+    parameterName: string,
+    parameterDescription: string,
+    parameterType: string,
+    parameterDatatype: string,
+    parameterRequired: boolean,
     format?: string,
 ) => [
     (target, key) => {
@@ -17,11 +17,11 @@ export const metadataApplier = (
             [
                 ...explicit,
                 {
-                    description: paramDescription,
-                    in: paramType,
-                    name: paramName,
-                    required: paramRequired,
-                    type: paramDatatype,
+                    description: parameterDescription,
+                    in: parameterType,
+                    name: parameterName,
+                    required: parameterRequired,
+                    type: parameterDatatype,
                     format,
                 },
             ],

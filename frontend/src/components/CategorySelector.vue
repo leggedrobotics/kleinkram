@@ -54,7 +54,7 @@ import { computed, ref, Ref } from 'vue';
 import { CategoryDto } from '@api/types/Category.dto';
 import { useCategories } from '../hooks/customQueryHooks';
 
-const props = defineProps<{
+const properties = defineProps<{
     selected: Ref<CategoryDto[]>;
     project_uuid: string;
 }>();
@@ -63,7 +63,7 @@ const emit = defineEmits(['update:selected']);
 
 const filter = ref('');
 const selected = computed({
-    get: () => props.selected,
+    get: () => properties.selected,
     set: (value: CategoryDto[]) => {
         emit('update:selected', value);
     },
@@ -73,7 +73,10 @@ const clear = () => {
     selected.value = [];
 };
 
-const { data: _categories } = useCategories(props.project_uuid, filter.value);
+const { data: _categories } = useCategories(
+    properties.project_uuid,
+    filter.value,
+);
 
 const categories: Ref<CategoryDto[]> = computed(() =>
     _categories.value ? _categories.value.categories || [] : [],

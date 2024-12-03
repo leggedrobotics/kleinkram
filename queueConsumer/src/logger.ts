@@ -40,28 +40,28 @@ const logger = winston.createLogger({
 
 @Injectable()
 export class NestLoggerWrapper implements LoggerService {
-    log(message: any, ...optionalParams: any[]) {
-        logger.info(message, ...optionalParams);
+    log(message: any, ...optionalParameters: any[]) {
+        logger.info(message, ...optionalParameters);
     }
 
-    fatal(message: any, ...optionalParams: any[]) {
-        logger.error(message, ...optionalParams);
+    fatal(message: any, ...optionalParameters: any[]) {
+        logger.error(message, ...optionalParameters);
     }
 
-    error(message: any, ...optionalParams: any[]) {
-        logger.error(message, ...optionalParams);
+    error(message: any, ...optionalParameters: any[]) {
+        logger.error(message, ...optionalParameters);
     }
 
-    warn(message: any, ...optionalParams: any[]) {
-        logger.warn(message, ...optionalParams);
+    warn(message: any, ...optionalParameters: any[]) {
+        logger.warn(message, ...optionalParameters);
     }
 
-    debug?(message: any, ...optionalParams: any[]) {
-        logger.debug(message, ...optionalParams);
+    debug?(message: any, ...optionalParameters: any[]) {
+        logger.debug(message, ...optionalParameters);
     }
 
-    verbose?(message: any, ...optionalParams: any[]) {
-        logger.verbose(message, ...optionalParams);
+    verbose?(message: any, ...optionalParameters: any[]) {
+        logger.verbose(message, ...optionalParameters);
     }
 }
 

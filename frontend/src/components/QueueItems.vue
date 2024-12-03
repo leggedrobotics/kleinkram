@@ -63,7 +63,9 @@
                         :tabindex="scope.tabindex"
                         dense
                         :color="
-                            getColor(QueueState[scope.opt] as QueueState) as any
+                            getColor(
+                                QueueState[scope.opt] as unknown as QueueState,
+                            ) as any
                         "
                         @remove="() => removeItem(scope.opt)"
                     >
@@ -236,6 +238,7 @@ const clearSelection = () => {
 watch(fileStateFilter, () => {
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
+            // @ts-ignore
             (((QueueState[a] as number) > QueueState[b]) as number) ? 1 : -1,
         );
     }
@@ -243,6 +246,7 @@ watch(fileStateFilter, () => {
 
 const fileStateFilterEnums = computed(() => {
     if (!fileStateFilter.value) return [];
+    // @ts-ignore
     return fileStateFilter.value.map((state) => QueueState[state] as number);
 });
 
@@ -269,7 +273,14 @@ const { mutate: removeFile } = useMutation({
     },
     onError: (error: unknown) => {
         Notify.create({
-            message: `Error deleting file: ${error.response?.data?.message || error.message}`,
+            message: `Error deleting file: ${
+                (
+                    error as {
+                        response?: { data?: { message?: string } };
+                    }
+                ).response?.data?.message ??
+                (error as { message: string }).message
+            }`,
             color: 'negative',
             timeout: 4000,
             position: 'bottom',
@@ -287,7 +298,15 @@ const { mutate: _cancelProcessing } = useMutation({
     },
     onError: (error: unknown) => {
         Notify.create({
-            message: `Error canceling processing: ${error.response?.data?.message || error.message}`,
+            message: `Error canceling processing: ${
+                (
+                    error as {
+                        response?: { data?: { message?: string } };
+                    }
+                ).response?.data?.message ??
+                (error as { message?: string }).message ??
+                ''
+            }`,
             color: 'negative',
             timeout: 4000,
             position: 'bottom',

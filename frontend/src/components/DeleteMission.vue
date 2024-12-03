@@ -23,7 +23,7 @@ import { MissionDto } from '@api/types/Mission.dto';
 
 const missionNameCheck = ref('');
 const client = useQueryClient();
-const props = defineProps<{
+const properties = defineProps<{
     mission: MissionDto;
 }>();
 
@@ -31,21 +31,22 @@ const route = useRoute();
 const router = useRouter();
 
 const deleteMissionAction = async (): Promise<void> => {
-    if (missionNameCheck.value === props.mission.name) {
-        await deleteMission(props.mission)
+    if (missionNameCheck.value === properties.mission.name) {
+        await deleteMission(properties.mission)
             .then(async () => {
                 await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'missions' ||
                         (query.queryKey[0] === 'mission' &&
-                            query.queryKey[1] === props.mission.uuid),
+                            query.queryKey[1] === properties.mission.uuid),
                 });
 
                 await client.invalidateQueries({
                     predicate: (query) =>
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
-                            query.queryKey[1] === props.mission.project.uuid),
+                            query.queryKey[1] ===
+                                properties.mission.project.uuid),
                 });
 
                 Notify.create({
@@ -64,9 +65,19 @@ const deleteMissionAction = async (): Promise<void> => {
                     });
                 }
             })
-            .catch((e: unknown) => {
+            .catch((error: unknown) => {
+                let errorMessage = '';
+                errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : ((
+                              error as {
+                                  response?: { data?: { message?: string } };
+                              }
+                          ).response?.data?.message ?? 'Unknown error');
+
                 Notify.create({
-                    message: `Error deleting mission: ${e.response.data.message}`,
+                    message: `Error deleting mission: ${errorMessage}`,
                     color: 'negative',
                     position: 'bottom',
                 });

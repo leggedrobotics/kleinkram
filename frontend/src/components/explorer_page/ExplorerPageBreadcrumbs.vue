@@ -40,15 +40,15 @@ import { computed, ref, watchEffect } from 'vue';
 import { useMission, useProjectQuery } from 'src/hooks/customQueryHooks';
 import { QueryHandler } from 'src/services/QueryHandler';
 
-const props = defineProps({
+const properties = defineProps({
     url_handler: {
         type: QueryHandler,
         required: true,
     },
 });
 
-const project_uuid = computed(() => props.url_handler.projectUuid);
-const mission_uuid = computed(() => props.url_handler.missionUuid);
+const project_uuid = computed(() => properties.url_handler.projectUuid);
+const mission_uuid = computed(() => properties.url_handler.missionUuid);
 
 const { data: project, isLoading: projectLoading } =
     useProjectQuery(project_uuid);
@@ -62,8 +62,8 @@ watchEffect(() => {
             name: 'All Projects',
             uuid: 'projects',
             click: () => {
-                props.url_handler.setProjectUUID(undefined);
-                props.url_handler.setMissionUUID(undefined);
+                properties.url_handler.setProjectUUID(undefined);
+                properties.url_handler.setMissionUUID(undefined);
             },
         },
         ...(project.value && !!project_uuid.value
@@ -72,8 +72,10 @@ watchEffect(() => {
                       name: project.value.name,
                       uuid: project.value.uuid,
                       click: () => {
-                          props.url_handler.setProjectUUID(project.value.uuid);
-                          props.url_handler.setMissionUUID(undefined);
+                          properties.url_handler.setProjectUUID(
+                              project.value.uuid,
+                          );
+                          properties.url_handler.setMissionUUID(undefined);
                       },
                   },
               ]
@@ -90,7 +92,7 @@ watchEffect(() => {
 });
 
 const isLastCrumb = (crumb: any) => {
-    const idx = crumbs.value.findIndex((c: any) => c.uuid === crumb.uuid);
-    return idx === crumbs.value.length - 1;
+    const index = crumbs.value.findIndex((c: any) => c.uuid === crumb.uuid);
+    return index === crumbs.value.length - 1;
 };
 </script>

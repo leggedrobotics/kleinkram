@@ -40,6 +40,8 @@ const { project_uuid } = defineProps({
 const { data: project } = useProjectQuery(computed(() => project_uuid));
 
 const deleteProject = (): void => {
+    if (deleteProjectRef.value === null) return;
+    // @ts-ignore
     deleteProjectRef.value.deleteProjectAction();
     onDialogOK();
 };
