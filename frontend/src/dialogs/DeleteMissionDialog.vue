@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Mission</template>
+        <template #title> Delete Mission </template>
         <template #content>
             <DeleteMission
                 v-if="mission"

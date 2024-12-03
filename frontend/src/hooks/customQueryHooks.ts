@@ -43,7 +43,7 @@ import {
 } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { allWorkers } from '../services/queries/worker';
-import { WorkersDto } from '@api/types/Workers.dto';
+import { ActionWorkersDto } from '@api/types/ActionWorkersDto';
 import { TagsDto } from '@api/types/TagsDto.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
@@ -379,10 +379,10 @@ export const useMissionsOfProjectMinimal = (
 };
 
 export const useWorkers = (): UseQueryReturnType<
-    WorkersDto | undefined,
+    ActionWorkersDto | undefined,
     Error
 > => {
-    return useQuery<WorkersDto>({
+    return useQuery<ActionWorkersDto>({
         queryKey: ['worker'],
         queryFn: () => allWorkers(),
         refetchInterval: 10_000,

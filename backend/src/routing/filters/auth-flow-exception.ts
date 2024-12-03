@@ -5,7 +5,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import logger from '../logger';
+import logger from '../../logger';
 
 export class AuthFlowException extends UnauthorizedException {
     constructor(message: string) {

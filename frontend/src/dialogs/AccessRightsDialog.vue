@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Project Access Rights</template>
+        <template #title> Project Access Rights </template>
 
         <template #content>
             <ConfigureAccess

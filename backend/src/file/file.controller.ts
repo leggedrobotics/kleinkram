@@ -35,7 +35,7 @@ import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import env from '@common/env';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 
 @Controller('file')

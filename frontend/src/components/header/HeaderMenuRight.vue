@@ -181,7 +181,6 @@ const totalToUpload = computed(() =>
     // @ts-ignore
     uploads.value.reduce(
         (accumulator: any, upload: any) =>
-            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
             accumulator + (upload.value.canceled ? 0 : upload.value.size),
         0,
     ),
@@ -190,7 +189,6 @@ const totalUploaded = computed(() =>
     // @ts-ignore
     uploads.value.reduce(
         (accumulator: any, upload: any) =>
-            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
             accumulator + (upload.value.canceled ? 0 : upload.value.uploaded),
         0,
     ),
@@ -205,7 +203,6 @@ const averageUploadSpeed = computed(() => {
     if (uncompletedUploads.value.length === 0) return 0;
     return (
         uncompletedUploads.value.reduce(
-            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
             (accumulator: any, upload: any) => accumulator + upload.value.speed,
             0,
         ) / uncompletedUploads.value.length

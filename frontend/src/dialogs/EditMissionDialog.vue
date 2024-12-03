@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit Mission</template>
+        <template #title> Edit Mission </template>
 
         <template #content>
             <q-input

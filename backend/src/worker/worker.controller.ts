@@ -1,8 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import { WorkerService } from './worker.service';
 import { LoggedIn } from '../auth/roles.decorator';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { WorkersDto } from '@common/api/types/Workers.dto';
+import { ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
+import { ActionWorkersDto } from '@common/api/types/ActionWorkersDto';
 
 @Controller('worker')
 export class WorkerController {
@@ -16,9 +17,9 @@ export class WorkerController {
     })
     @ApiOkResponse({
         description: 'List of workers',
-        type: WorkersDto,
+        type: ActionWorkersDto,
     })
-    async allWorkers(): Promise<WorkersDto> {
+    async allWorkers(): Promise<ActionWorkersDto> {
         return this.workerService.findAll();
     }
 }

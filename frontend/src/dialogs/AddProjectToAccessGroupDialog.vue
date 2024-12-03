@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Project to Access Group</template>
+        <template #title> Add Project to Access Group </template>
 
         <template #content>
             <AddProjectToAccessGroupDialog

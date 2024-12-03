@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Create File</template>
+        <template #title> Create File </template>
 
         <template #content>
             <create-file

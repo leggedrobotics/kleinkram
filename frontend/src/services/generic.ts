@@ -224,7 +224,6 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
                 let done: boolean;
                 let value: Uint8Array;
 
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 while (true) {
                     if (reader === undefined) break;
 

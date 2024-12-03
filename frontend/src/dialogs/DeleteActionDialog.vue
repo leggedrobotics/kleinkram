@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Action</template>
+        <template #title> Delete Action </template>
         <template #content>
             <delete-action
                 v-if="action"

@@ -4,7 +4,7 @@ import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { AuthService } from './auth.service';
 import e from 'express';
 import logger from '../logger';
-import { AuthFlowException } from './authFlowException';
+import { AuthFlowException } from '../routing/filters/auth-flow-exception';
 import env from '@common/env';
 import { Providers } from '@common/frontend_shared/enum';
 

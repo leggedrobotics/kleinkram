@@ -24,7 +24,8 @@ import {
     UpdateTemplateDto,
 } from './entities/createTemplate.dto';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
-import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { ActionsDto } from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,

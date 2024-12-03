@@ -1,6 +1,6 @@
 <template>
     <BaseDialog ref="dialogRef">
-        <template #title> New Project</template>
+        <template #title> New Project </template>
 
         <template #tabs>
             <q-tabs

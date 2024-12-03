@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 import { AddUser, AuthRes } from '../auth/paramDecorator';
@@ -7,13 +7,15 @@ import {
     QueryString,
     QueryTake,
 } from '../validation/queryDecorators';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 import {
     CurrentAPIUserDto,
     UserDto,
     UsersDto,
 } from '@common/api/types/User.dto';
 import { PermissionsDto } from '@common/api/types/Permissions.dto';
+import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
+import { ApiOkResponse } from '../decarators';
 
 @Controller('user')
 export class UserController {
@@ -44,19 +46,16 @@ export class UserController {
 
     @Get('me')
     @LoggedIn()
-    @ApiOperation({
-        summary: 'Get the currently logged in user',
-    })
+    @ApiOperation({ summary: 'Get the currently logged in user' })
     @ApiOkResponse({
         description: 'The currently logged in user',
         type: CurrentAPIUserDto,
     })
-    @ApiOkResponse({
-        description: 'Claimed admin',
-        type: CurrentAPIUserDto,
-    })
-    async me(@AddUser() user: AuthRes): Promise<CurrentAPIUserDto> {
-        return this.userService.me(user);
+    async me(
+        @Query() _query: NoQueryParamsDto,
+        @AddUser() user: AuthRes,
+    ): Promise<CurrentAPIUserDto | undefined> {
+        return await this.userService.me(user);
     }
 
     @Post('promote')

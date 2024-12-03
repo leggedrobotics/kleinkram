@@ -474,12 +474,18 @@ export class FileService implements OnModuleInit {
 
         await this.dataSource
             .transaction(async (transactionalEntityManager) => {
+                if (
+                    databaseFile.mission === undefined ||
+                    databaseFile.mission.project === undefined
+                ) {
+                    throw new Error('Mission or project not found!');
+                }
+
                 await transactionalEntityManager.save(
                     Project,
-                    // @ts-expect-error
                     databaseFile.mission.project,
                 );
-                // @ts-expect-error
+
                 await transactionalEntityManager.save(
                     Mission,
                     databaseFile.mission,

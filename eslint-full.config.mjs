@@ -39,22 +39,23 @@ export default tseslint.config(
 
             '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
             '@typescript-eslint/prefer-promise-reject-errors': 'warn',
-            '@typescript-eslint/naming-convention': ['warn',
+            '@typescript-eslint/naming-convention': [
+                'warn',
                 {
-                    'selector': 'default',
-                    'format': ['camelCase', 'PascalCase', 'UPPER_CASE'],
+                    selector: 'default',
+                    format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
                 },
                 {
-                    'selector': 'parameter',
-                    'format': ['camelCase'],
-                    'leadingUnderscore': 'allow',
+                    selector: 'parameter',
+                    format: ['camelCase'],
+                    leadingUnderscore: 'allow',
                 },
             ],
 
             'no-undef': 'error',
             'no-unused-vars': 'warn',
 
-            'eqeqeq': 'error',
+            eqeqeq: 'error',
             'prefer-arrow-callback': 'error',
             'prefer-template': 'error',
             '@typescript-eslint/explicit-function-return-type': 'warn',
@@ -65,19 +66,26 @@ export default tseslint.config(
             '@typescript-eslint/prefer-for-of': 'error',
             '@typescript-eslint/prefer-nullish-coalescing': 'warn',
             '@typescript-eslint/prefer-optional-chain': 'error',
-            '@typescript-eslint/restrict-plus-operands': ['error', {
-                'allowAny': false,
-                'allowBoolean': false,
-                'allowNullish': false,
-                'allowNumberAndString': false,
-                'allowRegExp': false,
-            }],
+            '@typescript-eslint/restrict-plus-operands': [
+                'error',
+                {
+                    allowAny: false,
+                    allowBoolean: false,
+                    allowNullish: false,
+                    allowNumberAndString: false,
+                    allowRegExp: false,
+                },
+            ],
             '@typescript-eslint/restrict-template-expressions': 'error',
-            '@typescript-eslint/strict-boolean-expressions': ['warn', {
-                'allowNumber': false,
-                'allowString': false,
-            }],
-            '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
+            '@typescript-eslint/strict-boolean-expressions': [
+                'warn',
+                {
+                    allowNumber: false,
+                    allowString: false,
+                },
+            ],
+            '@typescript-eslint/use-unknown-in-catch-callback-variable':
+                'error',
 
             semi: 'error',
             'prefer-const': 'error',

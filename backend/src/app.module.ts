@@ -1,9 +1,4 @@
-import {
-    Injectable,
-    MiddlewareConsumer,
-    Module,
-    NestMiddleware,
-} from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './file/file.module';
 import { ProjectModule } from './project/project.module';
@@ -22,65 +17,17 @@ import { TagModule } from './tag/tag.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import accessConfig from '../access_config.json';
 import { DBDumper } from './dbdumper/dbdumper.service';
-import { UserResolverMiddleware } from './UserResolverMiddleware';
+import { APIKeyResolverMiddleware } from './routing/middlewares/api-key-resolver-middleware.service';
 import { WorkerModule } from './worker/worker.module';
-import { NextFunction, Request, Response } from 'express';
-import logger from './logger';
-import { CookieNames } from '@common/frontend_shared/enum';
-import { ActionService } from './action/action.service';
 import { CategoryModule } from './category/category.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import fs from 'node:fs';
+import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
+import { appVersion } from './app-version';
 
-/**
- *
- * Logger middleware for audit logging.
- * Logs every authenticated request made to the application.*
- *
- */
-@Injectable()
-export class AuditLoggerMiddleware implements NestMiddleware {
-    constructor(private actionService: ActionService) {}
-
-    async use(request: Request, _: Response, next: NextFunction) {
-        if (!request.cookies) {
-            next();
-            return;
-        }
-
-        const key = request.cookies[CookieNames.CLI_KEY];
-        if (!key) {
-            next();
-            return;
-        }
-
-        const auditLog = {
-            method: request.method,
-            url: request.originalUrl,
-        };
-
-        logger.debug(
-            `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
-        );
-
-        await this.actionService.writeAuditLog(key, auditLog).then(() => {
-            logger.debug('Audit log written');
-        });
-        next();
-    }
+export interface AccessGroupConfig {
+    emails: [{ email: string; access_groups: string[] }];
+    access_groups: [{ name: string; uuid: string; rights: number }];
 }
-
-interface PackageJson {
-    name?: string;
-    version?: string;
-    description?: string;
-}
-
-const packageJson = JSON.parse(
-    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
-) as PackageJson;
-
-export const appVersion = packageJson.version || '';
 
 @Module({
     imports: [
@@ -92,7 +39,12 @@ export const appVersion = packageJson.version || '';
         }),
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [configuration, () => ({ accessConfig: accessConfig })],
+            load: [
+                configuration,
+                (): {
+                    accessConfig: AccessGroupConfig;
+                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+            ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -129,16 +81,19 @@ export const appVersion = packageJson.version || '';
     ],
     providers: [DBDumper],
 })
-export class AppModule {
-    configure(consumer: MiddlewareConsumer) {
-        consumer
-            .apply(UserResolverMiddleware, AuditLoggerMiddleware)
+export class AppModule implements NestModule {
+    /**
+     * Apply middleware to all routes.
+     * Middleware is a function which is called before the route handler.
+     *
+     * The middleware function has access to the request and response objects
+     * and is used find the user by the API key or JWT token.
+     *
+     * @param consumer
+     */
+    configure(consumer: MiddlewareConsumer): void {
+        consumer // enable default middleware for all routes
+            .apply(APIKeyResolverMiddleware, AuditLoggerMiddleware)
             .forRoutes('*');
     }
-}
-
-export interface AccessGroupConfig {
-    emails: [{ email: string; access_groups: string[] }];
-
-    access_groups: [{ name: string; uuid: string; rights: number }];
 }

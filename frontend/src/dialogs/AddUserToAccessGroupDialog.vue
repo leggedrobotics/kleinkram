@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add User to Access Group</template>
+        <template #title> Add User to Access Group </template>
 
         <template #content>
             <AddUserToAccessGroup

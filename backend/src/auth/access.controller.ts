@@ -32,7 +32,8 @@ import { AddAccessGroupToProjectDto } from './dto/AddAccessGroupToProject.dto';
 import { RemoveAccessGroupFromProjectDto } from './dto/RemoveAccessGroupFromProject.dto';
 import { SetAccessGroupUserExpirationDto } from './dto/SetAccessGroupUserExpiration.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
 import {

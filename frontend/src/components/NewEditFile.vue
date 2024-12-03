@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit File</template>
+        <template #title> Edit File </template>
         <template #tabs>
             <q-tabs
                 v-model="tab"

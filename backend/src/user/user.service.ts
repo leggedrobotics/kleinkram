@@ -192,16 +192,27 @@ export class UserService implements OnModuleInit {
         } as unknown as PermissionsDto;
     }
 
-    async findOneByApiKey(apikey: string) {
+    /**
+     * Find a user by their API key.
+     *
+     * Returns the user and the API key.
+     * Fails if the user or API key is not found.
+     *
+     */
+    async findUserByAPIKey(
+        apikey: string,
+    ): Promise<{ apiKey: Apikey; user: User }> {
         const user = await this.userRepository.findOneOrFail({
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
             select: ['uuid', 'name', 'role'],
         });
+
         const apiKey = await this.apikeyRepository.findOneOrFail({
             where: { apikey },
             relations: ['action'],
         });
+
         return { user, apiKey };
     }
 

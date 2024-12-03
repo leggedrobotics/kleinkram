@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Categories</template>
+        <template #title> Add Categories </template>
         <template #tabs>
             <q-tabs
                 v-model="tab"

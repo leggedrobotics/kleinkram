@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit Project</template>
+        <template #title> Edit Project </template>
 
         <template #content>
             <edit-project

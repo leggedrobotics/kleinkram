@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Create Tag Type</template>
+        <template #title> Create Tag Type </template>
 
         <template #content>
             <create-tag-type ref="createTagType" />

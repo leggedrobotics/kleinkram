@@ -22,7 +22,8 @@ import {
 import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
-import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
 import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
 import { ProjectDto, ProjectsDto } from '@common/api/types/Project.dto';

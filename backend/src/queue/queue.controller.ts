@@ -20,7 +20,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { FileQueueEntriesDto } from '@common/api/types/FileQueueEntry.dto';
 
 @Controller('queue')

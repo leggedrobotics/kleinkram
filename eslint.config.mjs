@@ -19,22 +19,23 @@ export default tseslint.config(
             // additional rules
             'no-shadow': 'error',
 
-            '@typescript-eslint/naming-convention': ['warn',
+            '@typescript-eslint/naming-convention': [
+                'warn',
                 {
-                    'selector': 'default',
-                    'format': ['camelCase', 'PascalCase', 'UPPER_CASE'],
+                    selector: 'default',
+                    format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
                 },
                 {
-                    'selector': 'parameter',
-                    'format': ['camelCase'],
-                    'leadingUnderscore': 'allow',
+                    selector: 'parameter',
+                    format: ['camelCase'],
+                    leadingUnderscore: 'allow',
                 },
             ],
 
             'no-undef': 'error',
             'no-unused-vars': 'warn',
 
-            'eqeqeq': 'error',
+            eqeqeq: 'error',
             'prefer-arrow-callback': 'error',
             'prefer-template': 'error',
             '@typescript-eslint/explicit-function-return-type': 'warn',
@@ -59,7 +60,6 @@ export default tseslint.config(
     {
         files: ['**/*.ts', '**/*.vue'],
         rules: {
-
             // override rules
             '@typescript-eslint/no-explicit-any': 'warn',
             'no-nested-ternary': 'warn',
@@ -77,6 +77,8 @@ export default tseslint.config(
 
             // used as we have disabled prettier for the local dev setup
             'vue/html-indent': 'off',
+            'vue/max-attributes-per-line': 'off',
+            'vue/singleline-html-element-content-newline': 'off',
 
             // these rules are very slow, we thus disable it for the default config
             '@typescript-eslint/no-floating-promises': 'off',
@@ -87,7 +89,6 @@ export default tseslint.config(
             '@typescript-eslint/no-unnecessary-type-arguments': 'off',
             'vue/multi-word-component-names': 'off',
             complexity: 'off',
-
         },
     },
     {

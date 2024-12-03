@@ -28,7 +28,7 @@
     >
         <template v-if="searchEnabled && searchResults.length > 0" #no-option>
             <q-item>
-                <q-item-section class="text-grey"> No results</q-item-section>
+                <q-item-section class="text-grey"> No results </q-item-section>
             </q-item>
         </template>
 

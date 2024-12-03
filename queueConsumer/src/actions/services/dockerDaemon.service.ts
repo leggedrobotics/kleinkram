@@ -483,10 +483,7 @@ export class DockerDaemon {
                 this.errorHandling(),
             );
 
-            logger.info(
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Image pulled: ${pullRes}. Starting container...`,
-            );
+            logger.info(`Image pulled: ${pullRes}. Starting container...`);
             image = this.docker.getImage(artifactUploaderImage);
         }
 

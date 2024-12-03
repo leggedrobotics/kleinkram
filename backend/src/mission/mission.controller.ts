@@ -25,7 +25,7 @@ import {
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
 import { MISSION_NAME_REGEX } from '../validation/validationLogic';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { FlatMissionDto } from '@common/api/types/Mission.dto';
 
 @Controller('mission')

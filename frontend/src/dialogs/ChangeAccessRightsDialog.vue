@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Change Access Rights</template>
+        <template #title> Change Access Rights </template>
 
         <template #content>
             <q-form class="row flex" @submit="onDialogOK">
@@ -111,7 +111,7 @@ const options = Object.keys(accessGroupRightsMap)
         ],
         value: Number.parseInt(key, 10),
     }))
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+
     .filter((option) => option.value !== AccessGroupRights.READ);
 
 function confirmAction() {

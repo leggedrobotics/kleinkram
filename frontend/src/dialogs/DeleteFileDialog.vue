@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete File</template>
+        <template #title> Delete File </template>
         <template #content>
             <delete-file v-if="file" ref="deleteFileRef" :file="file" />
             <q-skeleton v-else height="250px" />

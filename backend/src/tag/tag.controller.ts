@@ -19,7 +19,7 @@ import {
     QueryTake,
 } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiOkResponse } from '../decarators';
 import { TagsDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
 
 @Controller('tag')

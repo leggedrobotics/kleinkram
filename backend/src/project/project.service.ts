@@ -110,7 +110,6 @@ export class ProjectService {
                     baseQuery = baseQuery.andWhere(
                         `project.${key} ILIKE :${index.toString()}`,
                         {
-                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                             [index]: `%${searchParameters[key].toString()}%`,
                         },
                     );

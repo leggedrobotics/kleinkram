@@ -4,7 +4,7 @@ import { JwtPayload } from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../logger';
-import { AuthFlowException } from './authFlowException';
+import { AuthFlowException } from '../routing/filters/auth-flow-exception';
 import Account from '@common/entities/auth/account.entity';
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';

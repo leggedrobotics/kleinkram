@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef" title="New Mission">
-        <template #title> Upload Folder</template>
+        <template #title> Upload Folder </template>
 
         <template #tabs>
             <q-tabs

@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete File</template>
+        <template #title> Delete File </template>
         <template #content>
             <q-card-section class="q-pa-md">
                 <p>

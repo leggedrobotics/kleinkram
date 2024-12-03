@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Configure Project Tags</template>
+        <template #title> Configure Project Tags </template>
 
         <template #content>
             <ConfigureTags v-if="project" v-model:selected="selected" />

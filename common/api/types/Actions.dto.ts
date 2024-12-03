@@ -6,7 +6,7 @@ import {
 } from '../../frontend_shared/enum';
 import { FlatMissionDto } from './Mission.dto';
 import { UserDto } from './User.dto';
-import { WorkerDto } from './Workers.dto';
+import { ActionWorkerDto } from './ActionWorkersDto';
 
 export class AuditLogDto {
     @ApiProperty()
@@ -108,7 +108,7 @@ export class ActionDto {
     creator!: UserDto;
 
     @ApiProperty()
-    worker!: WorkerDto;
+    worker!: ActionWorkerDto;
 
     get runtimeInMS(): number {
         return this.updatedAt.getTime() - this.createdAt.getTime();

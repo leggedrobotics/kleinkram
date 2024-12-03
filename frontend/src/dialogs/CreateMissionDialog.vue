@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef" title="New Mission">
-        <template #title> New Mission</template>
+        <template #title> New Mission </template>
 
         <template #tabs>
             <q-tabs
@@ -105,7 +105,7 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :project-uuid="project?.uuid ? ''"
+                        :project-uuid="project?.uuid"
                         @update:tag-values="updateTagValue"
                     />
                 </q-tab-panel>

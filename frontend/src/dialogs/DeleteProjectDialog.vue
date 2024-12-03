@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Project</template>
+        <template #title> Delete Project </template>
         <template #content>
             <DeleteProject
                 v-if="project"

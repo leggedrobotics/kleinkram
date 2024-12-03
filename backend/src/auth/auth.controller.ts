@@ -8,6 +8,7 @@ import { UserService } from '../user/user.service';
 import { CookieNames } from '@common/frontend_shared/enum';
 import env from '@common/env';
 import { InvalidJwtTokenException } from './jwt.strategy';
+import { OutputDto } from '../decarators';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,7 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
+    @OutputDto(null) // explicitly disabled DTO output check
     googleAuthRedirect(@Req() request, @Res() res: Response) {
         const user = request.user;
         const token = this.authService.login(user);

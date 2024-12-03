@@ -159,13 +159,13 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { useWorkers } from '../hooks/customQueryHooks';
-import { WorkerDto } from '@api/types/Workers.dto';
+import { ActionWorkerDto } from '@api/types/ActionWorkersDto';
 
 const { data: _workers } = useWorkers();
 
-const workers: ComputedRef<WorkerDto[]> = computed(() => {
-    if (!_workers.value?.workers) return [];
-    return _workers.value.workers;
+const workers: ComputedRef<ActionWorkerDto[]> = computed(() => {
+    if (!_workers.value?.data) return [];
+    return _workers.value.data;
 });
 const online = computed(() => workers.value.filter((w) => w.reachable));
 const offline = computed(() => workers.value.filter((w) => !w.reachable));
@@ -184,9 +184,9 @@ watch(
     { immediate: true },
 );
 
-function extendWorker(uuid: string) {
+const extendWorker = (uuid: string): void => {
     extendedWorkers.value[uuid] = !extendedWorkers.value[uuid];
-}
+};
 </script>
 
 <style scoped>

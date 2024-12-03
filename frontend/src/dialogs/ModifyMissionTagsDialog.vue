@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Modify Tags</template>
+        <template #title> Modify Tags </template>
         <template #content>
             <SelectMissionTags
                 :project-u-u-i-d="mission?.project?.uuid"
