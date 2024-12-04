@@ -71,7 +71,7 @@ const { data: foundProjects } = useFilteredProjects(100, 0, 'name', true, {
     name: search.value,
 });
 const _foundProjects = computed(() =>
-    foundProjects.value ? foundProjects.value.projects : [],
+    foundProjects.value ? foundProjects.value.data : [],
 );
 const options = Object.keys(accessGroupRightsMap).map((key) => ({
     label: accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights],

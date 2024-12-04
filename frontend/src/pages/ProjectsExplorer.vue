@@ -52,7 +52,7 @@
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
 
-                <create-project-button-opener>
+                <create-project-dialog-opener>
                     <q-btn
                         flat
                         style="height: 100%"
@@ -60,7 +60,7 @@
                         label="Create Project"
                         icon="sym_o_add"
                     />
-                </create-project-button-opener>
+                </create-project-dialog-opener>
             </button-group>
         </div>
 
@@ -83,7 +83,7 @@
 
         <div>
             <Suspense>
-                <projects-table v-if="handler" :url_handler="handler" />
+                <explorer-page-project-table />
             </Suspense>
         </div>
     </div>
@@ -91,12 +91,12 @@
 <script setup lang="ts">
 import { useHandler } from 'src/hooks/customQueryHooks';
 import { useQueryClient } from '@tanstack/vue-query';
-import ProjectsTable from 'components/explorer_page/ExplorerPageProjectTable.vue';
-import ButtonGroup from 'components/ButtonGroup.vue';
-import CreateProjectButtonOpener from 'components/buttonWrapper/CreateProjectDialogOpener.vue';
-import TitleSection from 'components/TitleSection.vue';
 import { computed, ref, watch } from 'vue';
 import { getUser } from 'src/services/auth';
+import ExplorerPageProjectTable from '../components/explorer-page/ExplorerPageProjectTable.vue';
+import CreateProjectDialogOpener from '../components/button-wrapper/CreateProjectDialogOpener.vue';
+import ButtonGroup from '../components/ButtonGroup.vue';
+import TitleSection from '../components/TitleSection.vue';
 
 const myProjects = ref(false);
 
@@ -110,7 +110,7 @@ watch(myProjects, async () => {
         handler.value.setSearch({
             ...handler.value.searchParams,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            'creator.uuid': user.uuid,
+            'creator.uuid': user?.uuid ?? '',
         });
     } else {
         handler.value.setSearch({

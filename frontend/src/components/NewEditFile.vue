@@ -147,11 +147,13 @@ import { formatDate, parseDate } from 'src/services/dateFormating';
 import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
-import BaseDialog from 'src/dialogs/BaseDialog.vue';
+import BaseDialog from '../dialogs/base-dialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
-import { BaseProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { ProjectsDto } from '@api/types/project/project.dto';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
+import { BaseProjectDto } from '@api/types/project/base-project.dto';
 
 const properties = defineProps<{
     file_uuid: string;

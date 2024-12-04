@@ -84,7 +84,8 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
 import { useSearchAccessGroup, useUserSearch } from '../hooks/customQueryHooks';
-import { AccessGroupsDto } from '@api/types/User.dto';
+
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 
 const properties = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;
@@ -104,7 +105,7 @@ const { data: foundUsers } = useUserSearch(search);
 const { data: _foundAccessGroups } = useSearchAccessGroup(search);
 const foundAccessGroups = computed(() =>
     _foundAccessGroups.value
-        ? _foundAccessGroups.value.accessGroups
+        ? _foundAccessGroups.value.data
         : ([] as AccessGroupsDto[]),
 );
 

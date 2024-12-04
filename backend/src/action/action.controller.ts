@@ -31,6 +31,16 @@ import {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
+import { IsTake } from '@common/validation/take-validation';
+import { IsSkip } from '@common/validation/skip-validation';
+
+export class RunningActionsQuery {
+    @IsSkip()
+    skip?: number;
+
+    @IsTake()
+    take?: number;
+}
 
 @Controller('action')
 export class ActionController {
@@ -137,13 +147,19 @@ export class ActionController {
 
     @Get('running')
     @UserOnly()
-    // TODO: type API response
+    @ApiOkResponse({
+        description: 'List of running actions',
+        type: ActionsDto,
+    })
     async runningActions(
         @AddUser() auth: AuthRes,
-        @QuerySkip('skip') skip: number,
-        @QuerySkip('take') take: number,
-    ) {
-        return this.actionService.runningActions(auth.user.uuid, skip, take);
+        @Query() params: RunningActionsQuery,
+    ): Promise<ActionsDto> {
+        return this.actionService.runningActions(
+            auth.user.uuid,
+            params.skip ?? 0,
+            params.take ?? 10,
+        );
     }
 
     @Get('listTemplates')

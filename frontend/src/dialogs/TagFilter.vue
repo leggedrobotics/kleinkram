@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data?.tags ?? []"
+                        :rows="data?.data ?? []"
                         :columns="columns as any"
                         row-key="uuid"
                         wrap-cells
@@ -94,7 +94,7 @@
 import { QTable, useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
 import { DataType } from '@common/enum';
-import { TagTypeDto } from '@api/types/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
 import { useAllTags } from '../hooks/customQueryHooks';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
@@ -162,7 +162,7 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    for (const tag of data.value?.tags) {
+    for (const tag of data.value?.data ?? []) {
         lookup[tag.uuid] = tag;
     }
     return lookup;

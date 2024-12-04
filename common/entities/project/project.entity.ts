@@ -6,6 +6,8 @@ import TagType from '../tagType/tagType.entity';
 import ProjectAccess from '../auth/project_access.entity';
 import CategoryEntity from '../category/category.entity';
 
+import { FlatProjectDto } from '../../api/types/project/flat-project.dto';
+
 @Entity()
 export default class Project extends BaseEntity {
     /**
@@ -23,8 +25,8 @@ export default class Project extends BaseEntity {
     })
     project_accesses?: ProjectAccess[];
 
-    @Column({ nullable: true })
-    description?: string;
+    @Column()
+    description!: string;
 
     @ManyToOne(() => User, (user) => user.projects, { nullable: false })
     creator?: User;
@@ -37,4 +39,20 @@ export default class Project extends BaseEntity {
 
     @OneToMany(() => CategoryEntity, (category) => category.project)
     categories?: CategoryEntity[];
+
+    get flatProjectDto(): FlatProjectDto {
+        if (this.creator === undefined) {
+            throw new Error('Creator can never be undefined');
+        }
+
+        return {
+            uuid: this.uuid,
+            name: this.name,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            description: this.description,
+            creator: this.creator.userDto,
+            missionCount: this.missions?.length ?? 0,
+        };
+    }
 }

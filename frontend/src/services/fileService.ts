@@ -18,9 +18,9 @@ import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
 import { FlatMissionDto } from '@api/types/Mission.dto';
-import { BaseProjectDto } from '@api/types/Project.dto';
-import { FileDto } from '@api/types/Files.dto';
 import { AxiosError } from 'axios';
+import { FileDto } from '@api/types/files/file.dto';
+import { BaseProjectDto } from '@api/types/project/base-project.dto';
 
 export const createFileAction = async (
     selectedMission: FlatMissionDto | null,

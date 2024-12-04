@@ -361,9 +361,10 @@ import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
 import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
-import { FileDto, FilesDto } from '@api/types/Files.dto';
 import { FlatMissionDto } from '@api/types/Mission.dto';
-import { FlatProjectDto } from '@api/types/Project.dto';
+import { FileDto } from '@api/types/files/file.dto';
+import { FilesDto } from '@api/types/files/files.dto';
+import { FlatProjectDto } from '@api/types/project/flat-project.dto';
 
 const $router = useRouter();
 
@@ -406,7 +407,7 @@ const selected = ref([]);
 // Fetch projects
 const projectsReturn = useFilteredProjects(500, 0, 'name', false);
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value.projects : [],
+    projectsReturn.data.value ? projectsReturn.data.value.data : [],
 );
 
 // Fetch missions
@@ -517,7 +518,7 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 handler.value.descending,
             ),
     });
-const data = computed(() => (_data.value ? _data.value.files : []));
+const data = computed(() => (_data.value ? _data.value.data : []));
 const total = computed(() => (_data.value ? _data.value.count : 0));
 
 watch(

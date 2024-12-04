@@ -70,7 +70,7 @@
                                     v-if="action.image.repoDigests?.[0]"
                                     style="color: #525252; font-size: 0.8em"
                                 >
-                                    <br />
+                                    <br>
                                     {{ action.image.repoDigests?.[0] }}
                                 </span>
                             </td>
@@ -180,9 +180,9 @@
                             </td>
                             <td class="q-table__cell">
                                 <div v-if="action.template">
-                                    Cores: {{ action.template.cpuCores }}<br />
+                                    Cores: {{ action.template.cpuCores }}<br>
                                     RAM:
-                                    {{ action.template.cpuMemory }} GB<br />
+                                    {{ action.template.cpuMemory }} GB<br>
                                     min vRAM:
                                     <template
                                         v-if="action?.template.gpuMemory >= 0"
@@ -192,7 +192,7 @@
                                     <template v-else>
                                         no GPU requested
                                     </template>
-                                    <br />
+                                    <br>
                                 </div>
                                 <div v-else>N/A</div>
                             </td>
@@ -226,7 +226,7 @@
                                 <div v-else>
                                     {{ artifactState }}
                                 </div>
-                                <br />
+                                <br>
                                 <span style="color: #525252; font-size: 0.8em">
                                     Artifacts are only be stored for 3 months.
                                     Please download them if you need them for
@@ -269,8 +269,7 @@
                                 style="user-select: none; color: #525252"
                                 >{{
                                     formatDate(new Date(log.timestamp), true)
-                                }}</span
-                            >
+                                }}</span>
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #525252"
@@ -291,8 +290,7 @@
                                 style="user-select: none; color: #fd7c7cff"
                                 >{{
                                     formatDate(new Date(log.timestamp), true)
-                                }}</span
-                            >
+                                }}</span>
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #fd7c7cff"
@@ -342,8 +340,7 @@
                     <span
                         class="q-pr-sm"
                         style="user-select: none; color: #525252"
-                        >{{ log.method }}</span
-                    >
+                        >{{ log.method }}</span>
 
                     <span>
                         {{ log.url }}

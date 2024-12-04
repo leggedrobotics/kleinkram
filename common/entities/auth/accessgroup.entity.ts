@@ -42,7 +42,7 @@ export default class AccessGroup extends BaseEntity {
         enum: AccessGroupType,
         default: AccessGroupType.CUSTOM,
     })
-    type?: AccessGroupType;
+    type!: AccessGroupType;
 
     @ManyToOne(() => User, (user) => user.files, { nullable: true })
     creator?: User;

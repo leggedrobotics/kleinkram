@@ -3,7 +3,6 @@ import {
     ApiOkResponse as SwaggerApiOkResponse,
     ApiResponseCommonMetadata,
 } from '@nestjs/swagger';
-import { registerDecorator, ValidationOptions } from 'class-validator';
 
 export const OutputDto = (
     dto: ApiResponseCommonMetadata['type'] | null,

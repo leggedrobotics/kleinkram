@@ -8,5 +8,5 @@
 </template>
 
 <script setup lang="ts">
-import FooterComponent from 'components/footer/FooterComponent.vue';
+import FooterComponent from '../components/footer/footer-component.vue';
 </script>

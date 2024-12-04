@@ -143,8 +143,9 @@ import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteAccessGroup from 'components/buttonWrapper/DeleteAccessGroup.vue';
 import CreateAccessGroupDialogOpener from 'components/buttonWrapper/CreateAccessGroupDialogOpener.vue';
 import { AccessGroupType } from '@common/enum';
-import { ProjectDto } from '@api/types/Project.dto';
-import { AccessGroupDto, AccessGroupsDto } from '@api/types/User.dto';
+import { ProjectDto } from '@api/types/project/project.dto';
+import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 
 const $router = useRouter();
 const prefilterOptions = [

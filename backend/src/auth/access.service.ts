@@ -18,12 +18,10 @@ import Project from '@common/entities/project/project.entity';
 import { AuthRes } from './paramDecorator';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
-import {
-    AccessGroupsDto,
-    GroupMembershipDto,
-} from '@common/api/types/User.dto';
+import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/User.dto';
 import logger from '../logger';
-import { ProjectDto } from '@common/api/types/Project.dto';
+import { ProjectDto } from '@common/api/types/project/project.dto';
+import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 
 @Injectable()
 export class AccessService {
@@ -250,11 +248,13 @@ export class AccessService {
     async searchAccessGroup(
         search: string,
         type: AccessGroupType | undefined,
-        auth: AuthRes,
         skip: number,
         take: number,
     ): Promise<AccessGroupsDto> {
-        const where: FindOptionsWhere<AccessGroup> = {};
+        // we only list the access groups that are not hidden
+        const where: FindOptionsWhere<AccessGroup> = {
+            hidden: false,
+        };
 
         if (type !== undefined) {
             where.type = type;
@@ -264,26 +264,42 @@ export class AccessService {
             where.name = ILike(`%${search}%`);
         }
 
-        const [found, count] = await this.accessGroupRepository.findAndCount({
-            where,
-            skip,
-            take,
-            relations: [
-                'memberships',
-                'memberships.user',
-                'project_accesses',
-                'project_accesses.project',
-                'creator',
-            ],
-        });
+        const [accessGroups, count] =
+            await this.accessGroupRepository.findAndCount({
+                where,
+                skip,
+                take,
+                relations: [
+                    'memberships',
+                    'memberships.user',
+                    'project_accesses',
+                    'project_accesses.project',
+                    'creator',
+                ],
+            });
 
         logger.debug(`Search access group with name containing '${search}'`);
         logger.debug(`Found ${count.toString()} access groups`);
 
-        return {
-            accessGroups: found,
-            count: count,
-        } as unknown as AccessGroupsDto;
+        const data: AccessGroupDto[] = accessGroups.map(
+            (accessGroup: AccessGroup): AccessGroupDto => {
+                return {
+                    creator: accessGroup.creator?.userDto ?? null,
+                    memberships:
+                        accessGroup.memberships?.map(
+                            (m) => m.groupMembershipDto,
+                        ) ?? [],
+                    createdAt: accessGroup.createdAt,
+                    updatedAt: accessGroup.updatedAt,
+                    uuid: accessGroup.uuid,
+                    name: accessGroup.name,
+                    type: accessGroup.type,
+                    hidden: accessGroup.hidden,
+                };
+            },
+        );
+
+        return { data, count, skip, take };
     }
 
     async addAccessGroupToProject(

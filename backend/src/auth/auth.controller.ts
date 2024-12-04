@@ -20,12 +20,15 @@ export class AuthController {
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth() {}
+    async googleAuth(): Promise<void> {
+        // Initiates the Google OAuth flow
+        // OAuth is handled by the AuthGuard
+    }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // explicitly disabled DTO output check
-    googleAuthRedirect(@Req() request, @Res() res: Response) {
+    googleAuthRedirect(@Req() request, @Res() res: Response): void {
         const user = request.user;
         const token = this.authService.login(user);
         const state = request.query.state;
@@ -99,12 +102,14 @@ export class AuthController {
 
     @Get('validate-token')
     @UserOnly()
-    validateToken(@Req() request: Request, @Res() res: Response) {
+    @OutputDto(null) // explicitly disabled DTO output check
+    validateToken(@Res() res: Response): void {
         // If we reach here, the token is valid
         res.status(200).json({ message: 'Token is valid' });
     }
 
     @Post('refresh-token')
+    @OutputDto(null) // explicitly disabled DTO output check
     async refreshToken(@Req() request: Request, @Res() res: Response) {
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
@@ -143,7 +148,8 @@ export class AuthController {
     }
 
     @Post('logout')
-    logout(@Res() res: Response) {
+    @OutputDto(null) // explicitly disabled DTO output check
+    logout(@Res() res: Response): void {
         res.cookie(CookieNames.AUTH_TOKEN, '', {
             httpOnly: false,
             expires: new Date(0),

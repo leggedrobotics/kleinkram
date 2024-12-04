@@ -125,7 +125,8 @@ import ActionConfiguration from 'components/ActionConfiguration.vue';
 import BullQueue from 'components/BullQueue.vue';
 import { UserRole } from '@common/enum';
 import { FlatMissionDto, MissionsDto } from '@api/types/Mission.dto';
-import { FlatProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { ProjectsDto } from '@api/types/project/project.dto';
+import { FlatProjectDto } from '@api/types/project/flat-project.dto';
 
 const createAction = ref(false);
 

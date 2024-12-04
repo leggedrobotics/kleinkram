@@ -10,7 +10,7 @@
         autofocus
     />
 
-    <br />
+    <br>
     <label>Tag Type</label>
     <q-btn-dropdown
         v-model="ddrOpen"
@@ -89,8 +89,6 @@ const createTagTypeAction = async (): Promise<void> => {
     selectedDataType.value = DataType.STRING;
 };
 
-defineExpose({
-    createTagTypeAction,
-});
+defineExpose({ createTagTypeAction });
 </script>
 <style scoped></style>

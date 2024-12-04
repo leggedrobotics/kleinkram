@@ -192,11 +192,12 @@ import {
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
-import ConfirmDeleteFile from 'src/dialogs/ConfirmDeleteFileDialog.vue';
+import ConfirmDeleteFile from '../dialogs/confirm-delete-file-dialog.vue';
 import { FileLocation, QueueState } from '@common/enum';
 import { FileQueueEntryDto } from '@api/types/FileQueueEntry.dto';
-import { ProjectDto } from '@api/types/Project.dto';
-import { FileDto } from '@api/types/Files.dto';
+import { ProjectDto } from '@api/types/project/project.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
 
 const $router = useRouter();
 const queryClient = useQueryClient();

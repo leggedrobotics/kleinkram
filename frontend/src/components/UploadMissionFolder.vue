@@ -18,7 +18,7 @@ import {
     canCreateMission,
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
-import NewMissionByFolderDialog from 'src/dialogs/NewMissionByFolderDialog.vue';
+import NewMissionByFolderDialog from '../dialogs/create-mission-from-folder-dialog.vue';
 
 const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
 

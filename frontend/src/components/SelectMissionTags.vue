@@ -122,7 +122,7 @@
 import { computed, Ref, ref, watch } from 'vue';
 import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
-import { TagTypeDto } from '@api/types/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
 import { useAllTags, useProjectQuery } from '../hooks/customQueryHooks';
 
 const properties = defineProps<{
@@ -183,8 +183,8 @@ const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
     const addedTagUUIDs = new Set(additionalTags.value.map((tag) => tag.uuid));
-    if (tagTypes.value.tags === undefined) return [];
-    return tagTypes.value.tags.filter(
+    if (tagTypes.value.data === undefined) return [];
+    return tagTypes.value.data.filter(
         (tagtype: TagTypeDto) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
             !addedTagUUIDs.has(tagtype.uuid),

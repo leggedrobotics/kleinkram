@@ -20,6 +20,7 @@ import {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
+import logger from '../logger';
 
 @Injectable()
 export class ActionService {
@@ -231,7 +232,12 @@ export class ActionService {
 
             const [actions, count] = await query.getManyAndCount();
             // TODO: fix
-            return { count, actions: actions as unknown as ActionDto[] };
+            return {
+                count,
+                data: actions as unknown as ActionDto[],
+                skip,
+                take,
+            };
         }
 
         const baseQuery = this.actionRepository
@@ -272,7 +278,7 @@ export class ActionService {
             baseQuery,
             userUUID,
         ).getManyAndCount();
-        return { count, actions };
+        return { count, data: actions, skip, take };
     }
 
     async details(actionUuid: string) {
@@ -288,7 +294,11 @@ export class ActionService {
         });
     }
 
-    async runningActions(userUUID: string, skip: number, take: number) {
+    async runningActions(
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<ActionsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -313,7 +323,8 @@ export class ActionService {
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(baseQuery, userUUID);
         }
-        return baseQuery.getManyAndCount();
+        const [data, count] = await baseQuery.getManyAndCount();
+        return { data: data as unknown as ActionDto[], count, skip, take };
     }
 
     async writeAuditLog(

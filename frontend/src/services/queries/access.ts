@@ -1,8 +1,9 @@
 import axios from 'src/api/axios';
-import { AccessGroupDto, AccessGroupsDto } from '@api/types/User.dto';
-import { ProjectAccessDto } from '@api/types/Project.dto';
+import { AccessGroupDto } from '@api/types/User.dto';
 import { AxiosResponse } from 'axios';
 import { AccessGroupType } from '@common/enum';
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 
 export const canAddAccessGroup = async (
     projectUuid: string,

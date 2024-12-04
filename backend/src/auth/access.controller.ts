@@ -6,6 +6,7 @@ import {
     Get,
     NotFoundException,
     Post,
+    Query,
 } from '@nestjs/common';
 import { AccessService } from './access.service';
 import {
@@ -18,12 +19,7 @@ import {
     UserOnly,
 } from './roles.decorator';
 import { AddUser, AuthRes } from './paramDecorator';
-import {
-    QueryOptionalAccessGroupType,
-    QueryOptionalString,
-    QuerySkip,
-    QueryUUID,
-} from '../validation/queryDecorators';
+import { QueryUUID } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { CreateAccessGroupDto } from './dto/CreateAccessGroup.dto';
 import { AddUserToProjectDto } from './dto/AddUserToProject.dto';
@@ -36,12 +32,10 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiOkResponse } from '../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
-import {
-    AccessGroupsDto,
-    GroupMembershipDto,
-} from '@common/api/types/User.dto';
-import { AccessGroupType } from '@common/frontend_shared/enum';
-import { ProjectDto } from '@common/api/types/Project.dto';
+import { GroupMembershipDto } from '@common/api/types/User.dto';
+import { ProjectDto } from '@common/api/types/project/project.dto';
+import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
+import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 
 @Controller('access')
 export class AccessController {
@@ -199,20 +193,13 @@ export class AccessController {
     @CanCreate()
     @UserOnly()
     async search(
-        @QueryOptionalString('search', 'Searchkey for accessgroup name')
-        search: string,
-        @QuerySkip('skip') skip: number,
-        @QuerySkip('take') take: number,
-        @AddUser() user: AuthRes,
-        @QueryOptionalAccessGroupType('type', 'Type of AccessGroup')
-        type?: AccessGroupType,
+        @Query() query: GetFilteredAccessGroupsDto,
     ): Promise<AccessGroupsDto> {
         return this.accessService.searchAccessGroup(
-            search,
-            type,
-            user,
-            skip,
-            take,
+            query.search,
+            query.type,
+            query.skip,
+            query.take,
         );
     }
 

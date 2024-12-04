@@ -56,7 +56,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
 import { updateProject } from 'src/services/mutations/project';
-import { ProjectDto } from '@api/types/Project.dto';
+import { ProjectDto } from '@api/types/project/project.dto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
 
 const properties = defineProps<{
@@ -113,7 +113,7 @@ async function save_changes(): Promise<void> {
             error instanceof Error
                 ? error.message
                 : ((error as { response?: { data?: { message?: string } } })
-                    .response?.data?.message ?? 'Unknown error';
+                      .response?.data?.message ?? 'Unknown error');
 
         if (errorMessage.includes('Project')) {
             Notify.create({

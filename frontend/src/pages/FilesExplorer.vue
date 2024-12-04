@@ -351,12 +351,11 @@ import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpe
 import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
 import { Notify, useQuasar } from 'quasar';
 import TitleSection from 'components/TitleSection.vue';
-import { useMissionUUID, useProjectUUID } from 'src/hooks/utils';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { deleteFiles } from 'src/services/mutations/file';
 import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
-import ConfirmDeleteDialog from 'src/dialogs/ConfirmDeleteDialog.vue';
+import ConfirmDeleteDialog from '../dialogs/confirm-delete-dialog.vue';
 import { _downloadFiles } from 'src/services/generic';
 import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
 import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
@@ -366,11 +365,13 @@ import CategorySelector from 'components/CategorySelector.vue';
 import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
 import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
 import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
-import ConfirmDeleteFileDialog from 'src/dialogs/ConfirmDeleteFileDialog.vue';
+import ConfirmDeleteFileDialog from '../dialogs/confirm-delete-file-dialog.vue';
 import { DataType, FileType } from '@common/enum';
-import { TagDto } from '@api/types/TagsDto.dto';
+import { TagDto } from '@api/types/tags/TagsDto.dto';
 import { CategoryDto } from '@api/types/Category.dto';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
+import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

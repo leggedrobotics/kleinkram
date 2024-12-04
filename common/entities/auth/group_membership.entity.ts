@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import AccessGroup from './accessgroup.entity';
 import User from '../user/user.entity';
+import { GroupMembershipDto } from '../../api/types/User.dto';
 
 @Unique('no_duplicated_user_in_access_group', ['accessGroup', 'user'])
 @Entity()
@@ -36,4 +37,20 @@ export default class GroupMembership extends BaseEntity {
      */
     @Column({ default: false })
     canEditGroup!: boolean;
+
+    get groupMembershipDto(): GroupMembershipDto {
+        if (this.user === undefined) {
+            throw new Error('Member can never be undefined');
+        }
+
+        return {
+            uuid: this.uuid,
+            canEditGroup: this.canEditGroup,
+            accessGroup: null, // we don't want to return the access group
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            expirationDate: this.expirationDate ?? null,
+            user: this.user.userDto,
+        };
+    }
 }

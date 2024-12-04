@@ -29,11 +29,10 @@ import { getPermissions, searchUsers } from 'src/services/queries/user';
 import { getUser } from 'src/services/auth';
 import {
     AccessGroupDto,
-    AccessGroupsDto,
     CurrentAPIUserDto,
     UsersDto,
 } from '@api/types/User.dto';
-import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
+import { DefaultRights } from '@api/types/access-control/default-rights';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -44,7 +43,7 @@ import {
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { allWorkers } from '../services/queries/worker';
 import { ActionWorkersDto } from '@api/types/ActionWorkersDto';
-import { TagsDto } from '@api/types/TagsDto.dto';
+import { TagsDto } from '@api/types/tags/TagsDto.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
     FlatMissionDto,
@@ -53,18 +52,17 @@ import {
 } from '@api/types/Mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
-import {
-    ProjectAccessDto,
-    ProjectDto,
-    ProjectsDto,
-} from '@api/types/Project.dto';
+import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
 import { PermissionsDto } from '@api/types/Permissions.dto';
 import { ActionsDto } from '@api/types/Actions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
 import { getCategories } from '../services/queries/categories';
-import { FileDto, FilesDto } from '@api/types/Files.dto';
 import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
+import { FileDto } from '@api/types/files/file.dto';
+import { FilesDto } from '@api/types/files/files.dto';
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -97,7 +95,7 @@ export const getPermissionForProject = (
 ): AccessGroupRights => {
     if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.default_permission;
+    const defaultPermission = permissions.defaultPermission;
 
     const project = permissions.projects.find(
         (p: ProjectAccessDto) => p.uuid === projectUuid,
@@ -114,7 +112,7 @@ export const getPermissionForMission = (
 ): AccessGroupRights => {
     if (permissions === null) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.default_permission;
+    const defaultPermission = permissions.defaultPermission;
 
     const mission = permissions.missions.find(
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
@@ -130,7 +128,7 @@ export const canCreateProject = (
     if (!permissions) return false;
     if (permissions.role === UserRole.ADMIN) return true;
 
-    return permissions.default_permission >= AccessGroupRights.CREATE;
+    return permissions.defaultPermission >= AccessGroupRights.CREATE;
 };
 
 export const canCreateMission = (
@@ -334,10 +332,10 @@ export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
  *
  */
 export const useProjectDefaultAccess = (): UseQueryReturnType<
-    DefaultRightsDto | undefined,
+    DefaultRights | undefined,
     Error
 > => {
-    return useQuery<DefaultRightsDto>({
+    return useQuery<DefaultRights>({
         queryKey: ['defaultRights'],
         queryFn: getProjectDefaultAccess,
     });

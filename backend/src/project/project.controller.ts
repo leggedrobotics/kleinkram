@@ -24,9 +24,9 @@ import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUIDArray } from '../validation/bodyDecorators';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiOkResponse } from '../decarators';
-import { DefaultRightsDto } from '@common/api/types/DefaultRights.dto';
+import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
-import { ProjectDto, ProjectsDto } from '@common/api/types/Project.dto';
+import { ProjectDto, ProjectsDto } from '@common/api/types/project/project.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -72,17 +72,22 @@ export class ProjectController {
     })
     @ApiOkResponse({
         description: 'Returns the most recent projects',
-        type: [ResentProjectsDto],
+        type: ResentProjectsDto,
     })
     async getRecentProjects(
         @QueryTake('take') take: number,
         @AddUser() user: AuthRes,
     ): Promise<ResentProjectsDto> {
+        const projects = await this.projectService.getRecentProjects(
+            take,
+            user.user,
+        );
+
         return {
-            projects: await this.projectService.getRecentProjects(
-                take,
-                user.user,
-            ),
+            data: projects,
+            count: projects.length,
+            skip: 0,
+            take: projects.length,
         };
     }
 
@@ -183,11 +188,9 @@ export class ProjectController {
     })
     @ApiOkResponse({
         description: 'Returns the default rights for a project',
-        type: DefaultRightsDto,
+        type: DefaultRights,
     })
-    async getDefaultRights(
-        @AddUser() user: AuthRes,
-    ): Promise<DefaultRightsDto> {
+    async getDefaultRights(@AddUser() user: AuthRes): Promise<DefaultRights> {
         return this.projectService.getDefaultRights(user);
     }
 }

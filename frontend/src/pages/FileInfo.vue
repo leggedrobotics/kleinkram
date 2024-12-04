@@ -4,7 +4,8 @@
 
 <script setup lang="ts">
 import InspectFile from 'components/InspectFile.vue';
-import { useFileUUID } from 'src/hooks/utils';
+
+import { useFileUUID } from '../hooks/router-hooks';
 
 const file_uuid = useFileUUID();
 </script>

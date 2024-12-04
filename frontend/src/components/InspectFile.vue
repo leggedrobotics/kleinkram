@@ -267,7 +267,6 @@ import {
     getTooltip,
     hashUUIDtoColor,
 } from '../services/generic';
-import { useMissionUUID } from 'src/hooks/utils';
 import { useRouter } from 'vue-router';
 import TitleSection from 'components/TitleSection.vue';
 import {
@@ -280,7 +279,9 @@ import EditFileButton from 'components/buttons/EditFileButton.vue';
 import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
 import { FileState, FileType } from '@common/enum';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
+import { useMissionUUID } from '../hooks/router-hooks';
 
 const $router = useRouter();
 
@@ -310,7 +311,7 @@ const { data: queues } = useQueueForFile(
 );
 
 const filesReturn = computed(() =>
-    _filesReturn.value ? _filesReturn.value.files : [],
+    _filesReturn.value ? _filesReturn.value.data : [],
 );
 
 const displayTopics = computed(() => {

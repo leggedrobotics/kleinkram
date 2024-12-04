@@ -20,12 +20,12 @@
 
         <!-- Scrollable Card Section -->
         <div
-            v-if="isFetched && actions && actions?.actions?.length > 0"
+            v-if="isFetched && actions && actions?.data?.length > 0"
             ref="cardWrapper"
             class="card-wrapper"
         >
             <q-table
-                :rows="actions?.actions"
+                :rows="actions?.data"
                 :columns="columns as any"
                 hide-pagination
                 class="q-pa-md"

@@ -290,8 +290,8 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
 import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
-import { FlatProjectDto } from '@api/types/Project.dto';
 import { ActionTemplateDto } from '@api/types/Actions.dto';
+import { FlatProjectDto } from '@api/types/project/flat-project.dto';
 
 const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');
@@ -341,7 +341,7 @@ const { data: selectedMissions } = useManyMissions(
 // Fetch projects
 const { data: projectsReturn } = useFilteredProjects(500, 0, 'name', false);
 const projects = computed(() =>
-    projectsReturn.value ? projectsReturn.value.projects : [],
+    projectsReturn.value ? projectsReturn.value.data : [],
 );
 
 const selectedProject = computed(() =>

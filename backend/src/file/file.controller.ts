@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
 import { FileService } from './file.service';
 import { UpdateFile } from './entities/update-file.dto';
 import logger from '../logger';
@@ -37,6 +45,8 @@ import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import env from '@common/env';
 import { ApiOkResponse } from '../decarators';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
+import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
+import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 
 @Controller('file')
 export class FileController {
@@ -245,11 +255,16 @@ export class FileController {
     @Get('isUploading')
     @LoggedIn()
     @ApiOkResponse({
-        description: 'Is uploading',
-        type: Boolean,
+        description: 'Indicates if the current API user is uplaoding any files',
+        type: IsUploadingDto,
     })
-    async isUploading(@AddUser() auth: AuthRes) {
-        return this.fileService.isUploading(auth.user.uuid);
+    async isUploading(
+        @Query() _query: NoQueryParamsDto,
+        @AddUser() auth: AuthRes,
+    ): Promise<IsUploadingDto> {
+        return {
+            isUploading: await this.fileService.isUploading(auth.user.uuid),
+        };
     }
 
     @Post('temporaryAccess')

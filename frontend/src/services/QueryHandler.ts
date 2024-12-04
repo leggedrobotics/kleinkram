@@ -383,13 +383,15 @@ export class QueryURLHandler extends QueryHandler {
     }
 }
 
+export interface Pagination {
+    page: number;
+    rowsPerPage: number;
+    sortBy: string;
+    descending: boolean;
+}
+
 export interface TableRequest {
     filter?: any;
-    pagination: {
-        page: number;
-        rowsPerPage: number;
-        sortBy: string;
-        descending: boolean;
-    };
+    pagination: Pagination;
     getCellValue: any;
 }

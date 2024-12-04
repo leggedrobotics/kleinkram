@@ -107,9 +107,9 @@ import {
     MissionDto,
     MissionsDto,
 } from '@api/types/Mission.dto';
-import { BaseProjectDto } from '@api/types/Project.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
+import { BaseProjectDto } from '@api/types/project/base-project.dto';
 
 const emit = defineEmits(['update:ready']);
 
@@ -123,7 +123,7 @@ const { data: filteredProjects } = useFilteredProjects(500, 0, 'name', true);
 
 const data = computed(() => {
     if (filteredProjects.value !== undefined) {
-        return filteredProjects.value.projects;
+        return filteredProjects.value.data;
     }
     return [];
 });

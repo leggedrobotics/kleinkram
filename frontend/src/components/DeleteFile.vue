@@ -18,7 +18,8 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();

@@ -7,15 +7,12 @@ let userCache: CurrentAPIUserDto | null = null;
 let isFetchingUser = false;
 let userFetchPromise: Promise<CurrentAPIUserDto | null> | null = null;
 
-export const getUser = async (): Promise<CurrentAPIUserDto> => {
+export const getUser = async (): Promise<CurrentAPIUserDto | null> => {
     if (userCache !== null) {
         return userCache;
     }
     if (isFetchingUser) {
-        return (
-            (await userFetchPromise) ??
-            (await Promise.reject(new Error('Failed to fetch user')))
-        );
+        return userFetchPromise;
     }
     isFetchingUser = true;
     userFetchPromise = getMe()
@@ -29,10 +26,7 @@ export const getUser = async (): Promise<CurrentAPIUserDto> => {
             return null;
         });
 
-    return (
-        (await userFetchPromise) ??
-        (await Promise.reject(new Error('Failed to fetch user')))
-    );
+    return userFetchPromise;
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {

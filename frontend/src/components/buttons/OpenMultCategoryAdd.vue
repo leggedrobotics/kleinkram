@@ -17,8 +17,9 @@ import {
     usePermissionsQuery,
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
-import AddMultiCategory from 'src/dialogs/AddMultiCategory.vue';
-import { FileDto } from '@api/types/Files.dto';
+import AddMultiCategory from '../../dialogs/add-multi-category.vue';
+
+import { FileDto } from '@api/types/files/file.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{

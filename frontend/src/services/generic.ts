@@ -6,7 +6,8 @@ import {
     FileState,
     QueueState,
 } from '@common/enum';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {

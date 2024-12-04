@@ -12,7 +12,7 @@
                 use-input
                 multiple
                 input-debounce="100"
-                :options="tags?.tags"
+                :options="tags?.data"
                 option-label="name"
                 @input-value="
                     (val) => {
@@ -56,11 +56,11 @@
 </template>
 <script setup lang="ts">
 import { icon } from 'src/services/generic';
-import DatatypeSelectorButton from 'components/buttons/DatatypeSelectorButton.vue';
 import { ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/customQueryHooks';
-import { TagTypeDto } from '@api/types/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
+import DatatypeSelectorButton from './buttons/DatatypeSelectorButton.vue';
 
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);

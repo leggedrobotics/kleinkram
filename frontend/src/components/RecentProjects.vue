@@ -81,13 +81,13 @@ const { data } = useQuery<ResentProjectsDto | undefined>({
 });
 
 const projects: ComputedRef<ResentProjectDto[]> = computed(() =>
-    data.value ? data.value.projects : [],
+    data.value ? data.value.data : [],
 );
 
 const cardWrapper = ref<HTMLElement | null>(null);
 
 // Function to scroll left
-const scrollLeft = () => {
+const scrollLeft = (): void => {
     if (cardWrapper.value) {
         cardWrapper.value.scrollBy({
             left: -300, // Adjust scroll distance as needed
@@ -97,7 +97,7 @@ const scrollLeft = () => {
 };
 
 // Function to scroll right
-const scrollRight = () => {
+const scrollRight = (): void => {
     if (cardWrapper.value) {
         cardWrapper.value.scrollBy({
             left: 300, // Adjust scroll distance as needed
@@ -108,7 +108,7 @@ const scrollRight = () => {
 const canScrollRight = ref(true);
 const canScrollLeft = ref(false);
 
-function checkScroll() {
+function checkScroll(): void {
     if (cardWrapper.value) {
         canScrollRight.value =
             cardWrapper.value.scrollWidth - cardWrapper.value.scrollLeft >
@@ -119,11 +119,11 @@ function checkScroll() {
 
 checkScroll();
 
-async function goToProject(uuid: string) {
+async function goToProject(uuid: string): Promise<void> {
     await router.push(`/project/${uuid}/missions`);
 }
 
-const timeAgo = (project: ResentProjectDto) => {
+const timeAgo = (project: ResentProjectDto): string => {
     return formatDistanceToNow(project.updatedAt, { addSuffix: true });
 };
 

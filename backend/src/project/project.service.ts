@@ -17,16 +17,10 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import {
-    DefaultRightDto,
-    DefaultRightsDto,
-} from '@common/api/types/DefaultRights.dto';
+import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectDto } from '@common/api/types/RecentProjects.dto';
-import {
-    FlatProjectDto,
-    ProjectDto,
-    ProjectsDto,
-} from '@common/api/types/Project.dto';
+import { ProjectDto, ProjectsDto } from '@common/api/types/project/project.dto';
+import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
 
 @Injectable()
 export class ProjectService {
@@ -123,8 +117,10 @@ export class ProjectService {
             .getManyAndCount();
 
         return {
-            projects: projects as unknown as FlatProjectDto[],
+            data: projects.map((p) => p.flatProjectDto),
             count,
+            skip,
+            take,
         };
     }
 
@@ -534,7 +530,7 @@ export class ProjectService {
         );
     }
 
-    async getDefaultRights(auth: AuthRes): Promise<DefaultRightsDto> {
+    async getDefaultRights(auth: AuthRes): Promise<DefaultRights> {
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},
@@ -588,8 +584,10 @@ export class ProjectService {
         ).filter((right) => right !== null);
 
         return {
-            defaultRights,
+            data: defaultRights,
             count: defaultRights.length,
+            skip: 0,
+            take: defaultRights.length,
         };
     }
 }

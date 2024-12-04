@@ -2,7 +2,11 @@ import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
-import { AccessGroupType, UserRole } from '@common/frontend_shared/enum';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import { AuthRes } from '../auth/paramDecorator';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -154,7 +158,7 @@ export class UserService implements OnModuleInit {
 
         if (user?.memberships === undefined)
             throw new Error('Membership undefined');
-        let defaultPermission;
+        let defaultPermission: AccessGroupRights;
         if (user) {
             defaultPermission = user.memberships.length > 0 ? 10 : 0;
         } else {
@@ -186,10 +190,10 @@ export class UserService implements OnModuleInit {
 
         return {
             role,
-            default_permission: defaultPermission,
+            defaultPermission,
             projects,
             missions,
-        } as unknown as PermissionsDto;
+        } as PermissionsDto;
     }
 
     /**

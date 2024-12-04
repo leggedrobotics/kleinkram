@@ -13,7 +13,8 @@ import CategorySelector from 'components/CategorySelector.vue';
 
 import CategoryCreator from 'components/CategoryCreator.vue';
 import { CategoryDto } from '@api/types/Category.dto';
-import { FileDto } from '@api/types/Files.dto';
+
+import { FileDto } from '@api/types/files/file.dto';
 
 const emit = defineEmits(['update:selected']);
 const props = defineProps<{

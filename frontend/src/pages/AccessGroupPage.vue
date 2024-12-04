@@ -271,7 +271,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import AddProjectToAccessGroupDialog from 'src/dialogs/AddProjectToAccessGroupDialog.vue';
+import AddProjectToAccessGroupDialog from '../dialogs/add-project-access-group-dialog.vue';
 import TitleSection from 'components/TitleSection.vue';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import {
@@ -283,9 +283,9 @@ import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDia
 import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 import { formatDate } from 'src/services/dateFormating';
-import SetAccessGroupExpirationDialog from 'src/dialogs/SetAccessGroupExpirationDialog.vue';
+import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
-import { explorerPageTableColumns } from '../components/explorer_page/explorer_page_table_columns';
+import { explorerPageTableColumns } from '../components/explorer-page/explorer-page-table-columns';
 import { GroupMembershipDto } from '@api/types/User.dto';
 import { useAccessGroup } from '../hooks/customQueryHooks';
 

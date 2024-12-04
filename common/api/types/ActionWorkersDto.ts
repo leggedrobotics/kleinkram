@@ -9,6 +9,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaggedResponse } from './pagged-response';
+import { IsTake } from '../../validation/take-validation';
+import { IsSkip } from '../../validation/skip-validation';
 
 export class ActionWorkerDto {
     @ApiProperty()
@@ -32,7 +34,7 @@ export class ActionWorkerDto {
     hostname!: string;
 
     @ApiProperty()
-    @IsString()
+    @IsNumber()
     cpuMemory!: number;
 
     @ApiProperty()
@@ -75,10 +77,10 @@ export class ActionWorkersDto implements PaggedResponse<ActionWorkerDto> {
     count!: number;
 
     @ApiProperty()
-    @IsNumber()
+    @IsSkip()
     skip!: number;
 
     @ApiProperty()
-    @IsNumber()
+    @IsTake()
     take!: number;
 }

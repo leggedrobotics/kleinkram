@@ -117,7 +117,7 @@ import { Notify } from 'quasar';
 import { addTags } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { useAllTags, useMission } from '../hooks/customQueryHooks';
-import { TagDto } from '@api/types/TagsDto.dto';
+import { TagDto } from '@api/types/tags/TagsDto.dto';
 
 const queryClient = useQueryClient();
 
@@ -147,7 +147,7 @@ const availableAdditionalTags: Ref<TagDto[]> = computed(() => {
         ? data.value.tags.map((tag) => tag.type.uuid)
         : [];
     const addedTagUUIDs = new Set(additonalTags.value.map((tag) => tag.uuid));
-    return tagTypes.value.tags.filter(
+    return tagTypes.value.data.filter(
         (tagtype) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
             !addedTagUUIDs.has(tagtype.uuid),

@@ -5,14 +5,33 @@ import {
     IsDate,
     IsEmail,
     IsEnum,
+    IsOptional,
     IsString,
-    IsUrl,
     IsUUID,
     registerDecorator,
     ValidateNested,
     ValidationOptions,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const IsNotUndefined = (validationOptions?: ValidationOptions) => {
+    return function (object: object, propertyName: string): void {
+        registerDecorator({
+            name: 'isNotUndefined',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: validationOptions ?? {},
+            validator: {
+                validate(value: unknown): Promise<boolean> | boolean {
+                    return value !== undefined;
+                },
+                defaultMessage(): string {
+                    return '$property must not be undefined';
+                },
+            },
+        });
+    };
+};
 
 export class UserDto {
     @ApiProperty()
@@ -24,14 +43,10 @@ export class UserDto {
     name!: string;
 
     @ApiProperty()
-    @IsUrl()
-    avatarUrl!: string;
-}
-
-export class AccessGroupMemberDto extends UserDto {
-    @ApiProperty()
-    @IsBoolean()
-    canEditGroup!: boolean;
+    @IsNotUndefined()
+    @IsOptional()
+    @IsString()
+    avatarUrl!: string | null;
 }
 
 export class AccessGroupDto {
@@ -60,44 +75,16 @@ export class AccessGroupDto {
     hidden!: boolean;
 
     @ApiProperty()
+    @IsNotUndefined()
+    @IsOptional()
     @ValidateNested()
-    creator!: AccessGroupMemberDto | null;
+    creator!: UserDto | null;
 
     @ApiProperty()
     @ValidateNested({ each: true })
-    @Type(() => AccessGroupMemberDto)
-    memberships!: AccessGroupMemberDto[];
+    @Type(() => GroupMembershipDto)
+    memberships!: GroupMembershipDto[];
 }
-
-export class AccessGroupsDto {
-    @ApiProperty()
-    count!: number;
-
-    @ApiProperty({
-        type: [AccessGroupDto],
-        description: 'List of access groups',
-    })
-    accessGroups!: AccessGroupDto[];
-}
-
-const IsDateOrNull = (validationOptions?: ValidationOptions) => {
-    return function (object: object, propertyName: string): void {
-        registerDecorator({
-            name: 'isDateOrNull',
-            target: object.constructor,
-            propertyName: propertyName,
-            options: validationOptions ?? {},
-            validator: {
-                validate(value: unknown): Promise<boolean> | boolean {
-                    return value === null || value instanceof Date;
-                },
-                defaultMessage(): string {
-                    return '$property must be a Date or null';
-                },
-            },
-        });
-    };
-};
 
 export class GroupMembershipDto {
     @ApiProperty()
@@ -113,7 +100,9 @@ export class GroupMembershipDto {
     updatedAt!: Date;
 
     @ApiProperty()
-    @IsDateOrNull()
+    @IsNotUndefined()
+    @IsOptional()
+    @IsDate()
     expirationDate!: Date | null;
 
     @ApiProperty()
@@ -126,12 +115,14 @@ export class GroupMembershipDto {
     canEditGroup!: boolean;
 
     @ApiProperty({
-        type: [AccessGroupDto, undefined],
+        type: [AccessGroupDto, null],
         description: 'Access Group',
     })
+    @IsNotUndefined()
+    @IsOptional()
     @ValidateNested()
     @Type(() => AccessGroupDto)
-    accessGroup?: AccessGroupDto;
+    accessGroup!: AccessGroupDto | null;
 }
 
 export class CurrentAPIUserDto extends UserDto {

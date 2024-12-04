@@ -37,20 +37,6 @@ async function bootstrap(): Promise<void> {
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());
     app.useGlobalPipes(
-        /**
-         * Enable validation pipe with whitelist and transform options.
-         *
-         * Whitelist removes any properties that do not have a corresponding
-         * decorator in the DTO file of the response.
-         * TODO: does that really work?
-         *
-         * Transform enables implicit conversion of primitive types.
-         *
-         * transformOptions.enableImplicitConversion enables implicit conversion
-         * of primitive types. This means that if a string is expected, but a number
-         * is provided, the number will be converted to a string.
-         *
-         */
         new ValidationPipe({
             whitelist: true,
             forbidNonWhitelisted: true,

@@ -142,7 +142,7 @@ const pagination = computed(() => {
     };
 });
 
-const data = computed(() => (rawData.value ? rawData.value.actions : []));
+const data = computed(() => (rawData.value ? rawData.value.data : []));
 const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,

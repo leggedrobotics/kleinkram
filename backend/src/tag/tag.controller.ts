@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { TagService } from './tag.service';
 import { DataType } from '@common/frontend_shared/enum';
 import {
@@ -7,12 +7,7 @@ import {
     CanDeleteTag,
     LoggedIn,
 } from '../auth/roles.decorator';
-import {
-    BodyDataType,
-    BodyNotNull,
-    BodyString,
-    BodyUUID,
-} from '../validation/bodyDecorators';
+import { BodyNotNull, BodyUUID } from '../validation/bodyDecorators';
 import {
     QueryOptionalString,
     QuerySkip,
@@ -20,7 +15,12 @@ import {
 } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiOkResponse } from '../decarators';
-import { TagsDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
+import {
+    TagsDto,
+    TagTypeDto,
+    TagTypesDto,
+} from '@common/api/types/tags/TagsDto.dto';
+import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 
 @Controller('tag')
 export class TagController {
@@ -28,11 +28,12 @@ export class TagController {
 
     @Post('create')
     @CanCreate()
-    async createTagType(
-        @BodyString('name', 'Tag name') name: string,
-        @BodyDataType('type', 'Tag type') type: DataType,
-    ) {
-        return this.tagService.create(name, type);
+    @ApiOkResponse({
+        description: 'Returns the created TagType',
+        type: TagTypeDto,
+    })
+    async createTagType(@Body() body: CreateTagTypeDto): Promise<TagTypeDto> {
+        return await this.tagService.create(body.name, body.type);
     }
 
     @Post('addTag')

@@ -9,7 +9,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
-import { TagTypeDto, TagTypesDto } from '@common/api/types/TagsDto.dto';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/TagsDto.dto';
 
 @Injectable()
 export class TagService {
@@ -22,7 +22,7 @@ export class TagService {
         private missionRepository: Repository<Mission>,
     ) {}
 
-    async create(name: string, type: DataType): Promise<TagType> {
+    async create(name: string, type: DataType): Promise<TagTypeDto> {
         const existingTagType = await this.tagTypeRepository.findOne({
             where: { name, datatype: type },
         });
@@ -33,7 +33,17 @@ export class TagService {
             name,
             datatype: type,
         });
-        return this.tagTypeRepository.save(tagType);
+
+        const dbTag = await this.tagTypeRepository.save(tagType);
+
+        return {
+            uuid: dbTag.uuid,
+            updatedAt: dbTag.updatedAt,
+            createdAt: dbTag.createdAt,
+            name: dbTag.name,
+            datatype: dbTag.datatype,
+            description: '',
+        };
     }
 
     async addTagType(
@@ -245,13 +255,13 @@ export class TagService {
     }
 
     async getAll(skip: number, take: number): Promise<TagTypesDto> {
-        const [tags, _count] = await this.tagTypeRepository.findAndCount({
+        const [tags, count] = await this.tagTypeRepository.findAndCount({
             skip,
             take,
         });
 
         return {
-            tagTypes: tags.map(
+            data: tags.map(
                 (tag: TagType): TagTypeDto => ({
                     uuid: tag.uuid,
                     updatedAt: tag.updatedAt,
@@ -261,7 +271,9 @@ export class TagService {
                     description: '',
                 }),
             ),
-            count: _count,
+            count,
+            take,
+            skip,
         };
     }
 
@@ -275,17 +287,17 @@ export class TagService {
         if (name !== '') {
             where.name = ILike(`%${name}%`);
         }
-        if (type !== undefined) {
+        if (type !== undefined && type !== DataType.ANY) {
             where.datatype = type;
         }
-        const [tags, _count] = await this.tagTypeRepository.findAndCount({
+        const [tags, count] = await this.tagTypeRepository.findAndCount({
             where,
             skip,
             take,
         });
 
         return {
-            tagTypes: tags.map(
+            data: tags.map(
                 (tag: TagType): TagTypeDto => ({
                     uuid: tag.uuid,
                     updatedAt: tag.updatedAt,
@@ -295,7 +307,9 @@ export class TagService {
                     description: '',
                 }),
             ),
-            count: _count,
+            count,
+            take,
+            skip,
         };
     }
 }

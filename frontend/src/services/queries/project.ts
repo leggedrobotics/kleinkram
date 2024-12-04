@@ -1,8 +1,8 @@
 import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
-import { DefaultRightsDto } from '@api/types/DefaultRights.dto';
+import { DefaultRights } from '@api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@api/types/RecentProjects.dto';
-import { ProjectDto, ProjectsDto } from '@api/types/Project.dto';
+import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
 
 export const filteredProjects = async (
     take: number,
@@ -37,8 +37,8 @@ export const getProject = async (uuid: string): Promise<ProjectDto> => {
     return response.data;
 };
 
-export const getProjectDefaultAccess = async (): Promise<DefaultRightsDto> => {
-    const response: AxiosResponse<DefaultRightsDto> = await axios.get(
+export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
+    const response: AxiosResponse<DefaultRights> = await axios.get(
         '/project/getDefaultRights',
     );
     return response.data;

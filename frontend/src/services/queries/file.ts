@@ -2,7 +2,9 @@ import axios from 'src/api/axios';
 import { FileType } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { AxiosResponse } from 'axios';
-import { FileDto, FilesDto } from '@api/types/Files.dto';
+import { FileDto } from '@api/types/files/file.dto';
+import { FilesDto } from '@api/types/files/files.dto';
+import { IsUploadingDto } from '@api/types/files/is-uploading.dto';
 
 export const fetchOverview = async (
     filename: string,
@@ -127,8 +129,9 @@ export const getStorage = async (): Promise<StorageOverviewDto> => {
 };
 
 export const getIsUploading = async (): Promise<boolean> => {
-    const response = await axios.get('file/isUploading');
-    return response.data as boolean;
+    const response: AxiosResponse<IsUploadingDto> =
+        await axios.get('file/isUploading');
+    return response.data.isUploading;
 };
 
 export const existsFile = async (uuid: string) => {
