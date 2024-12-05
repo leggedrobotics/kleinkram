@@ -48,6 +48,7 @@ import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
+import { FileDto, FileWithTopicDto } from '@common/api/types/files/file.dto';
 
 @Controller('file')
 export class FileController {
@@ -176,7 +177,13 @@ export class FileController {
 
     @Get('one')
     @CanReadFile()
-    async getFileById(@QueryUUID('uuid', 'File UUID') uuid: string) {
+    @ApiOkResponse({
+        description: 'File',
+        type: FileWithTopicDto,
+    })
+    async getFileById(
+        @QueryUUID('uuid', 'File UUID') uuid: string,
+    ): Promise<FileWithTopicDto> {
         return this.fileService.findOne(uuid);
     }
 

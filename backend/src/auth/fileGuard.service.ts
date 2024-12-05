@@ -42,9 +42,7 @@ export class FileGuardService {
 
         if (file.mission === undefined) throw new Error('File has no mission');
         if (file.mission.project === undefined)
-            throw new Error('File has no mission');
-        if (file.mission.project.creator === undefined)
-            throw new Error('File has no mission');
+            throw new Error('File has no project');
 
         if (file.creator?.uuid === user.uuid) {
             return true;

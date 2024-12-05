@@ -59,7 +59,7 @@ import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
 import { getCategories } from '../services/queries/categories';
 import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
@@ -499,7 +499,7 @@ export const useCategories = (
 
 export const useFile = (
     uuid: string | undefined,
-): UseQueryReturnType<FileDto | undefined, Error> => {
+): UseQueryReturnType<FileWithTopicDto | undefined, Error> => {
     return useQuery({
         queryKey: ['file', uuid],
         queryFn: async () => {

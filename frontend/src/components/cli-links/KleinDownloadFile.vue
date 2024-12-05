@@ -39,10 +39,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const props = defineProps<{
-    file: FileDto;
+    file: FileWithTopicDto;
 }>();
 
 const clicked = async (): Promise<void> => {

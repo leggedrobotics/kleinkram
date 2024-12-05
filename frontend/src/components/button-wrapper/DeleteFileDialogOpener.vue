@@ -22,10 +22,10 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const properties = defineProps<{
-    file: FileDto;
+    file: FileWithTopicDto;
 }>();
 
 const $q = useQuasar();

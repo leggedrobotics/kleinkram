@@ -2,7 +2,7 @@ import { formatDate } from 'src/services/dateFormating';
 import { formatSize } from 'src/services/generalFormatting';
 import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 
@@ -14,13 +14,18 @@ export interface ProjectColumnType {
     field?:
         | ((row: ProjectWithMissionCountDto) => any)
         | ((row: FlatMissionDto) => any)
-        | ((row: FileDto) => any)
+        | ((row: FileWithTopicDto) => any)
         // @ts-ignore
         | ((row: AggregatedMission) => any);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;
     style?: string;
-    sort?: (_a: string, _b: string, a: FileDto, b: FileDto) => number;
+    sort?: (
+        _a: string,
+        _b: string,
+        a: FileWithTopicDto,
+        b: FileWithTopicDto,
+    ) => number;
 }
 
 export const explorerPageTableColumns: ProjectColumnType[] = [
@@ -154,7 +159,7 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'File',
         align: 'left',
-        field: (row: FileDto) => row.filename,
+        field: (row: FileWithTopicDto) => row.filename,
         format: (value: string) => value,
         sortable: true,
     },
@@ -169,7 +174,7 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'Created',
         align: 'left',
-        field: (row: FileDto) => row.date,
+        field: (row: FileWithTopicDto) => row.date,
         format: (value: string) => formatDate(new Date(value)),
         sortable: true,
     },
@@ -178,10 +183,14 @@ export const fileColumns: ProjectColumnType[] = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FileDto) => row.size,
+        field: (row: FileWithTopicDto) => row.size,
         format: formatSize,
-        sort: (_a: string, _b: string, a: FileDto, b: FileDto) =>
-            a.size - b.size,
+        sort: (
+            _a: string,
+            _b: string,
+            a: FileWithTopicDto,
+            b: FileWithTopicDto,
+        ) => a.size - b.size,
         style: 'width: 40px',
         sortable: true,
     },

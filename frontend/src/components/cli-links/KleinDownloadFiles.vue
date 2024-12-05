@@ -31,10 +31,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const properties = defineProps<{
-    files: FileDto[];
+    files: FileWithTopicDto[];
 }>();
 
 const fileArguments = computed(() => {

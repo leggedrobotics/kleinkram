@@ -357,7 +357,7 @@ import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/tags/TagsDto.dto';
 import { CategoryDto } from '@api/types/Category.dto';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';
 import ButtonGroup from '../components/ButtonGroup.vue';
 import MissionMetadataOpener from '../components/button-wrapper/MissionMetadataOpener.vue';
@@ -412,7 +412,7 @@ const selectedFileHealth = computed<string, string | undefined>({
     },
 });
 
-const selectedFiles: Ref<FileDto[]> = ref([]);
+const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {

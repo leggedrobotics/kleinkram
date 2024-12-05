@@ -15,7 +15,7 @@ import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { FileOrigin, FileState, FileType } from '../../frontend_shared/enum';
 import CategoryEntity from '../category/category.entity';
-import { FileDto } from '../../api/types/files/file.dto';
+import { FileDto, FileWithTopicDto } from '../../api/types/files/file.dto';
 
 @Entity()
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
@@ -96,8 +96,17 @@ export default class FileEntity extends BaseEntity {
             hash: this.hash ?? '',
             creator: this.creator.userDto,
             mission: this.mission.missionDto,
-            topics: [],
             categories: [],
+        };
+    }
+
+    get fileWithTopicDto(): FileWithTopicDto {
+        if (!this.topics) {
+            throw new Error('File topics are not set');
+        }
+        return {
+            ...this.fileDto,
+            topics: this.topics.map((topic) => topic.topicDto) ?? [],
         };
     }
 }

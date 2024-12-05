@@ -151,7 +151,7 @@ import BaseDialog from '../dialogs/base-dialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { ProjectWithCreator } from '@api/types/project/base-project.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 
@@ -173,7 +173,7 @@ const { data } = useQuery({
 });
 
 const dateTime = ref('');
-const editableFile: Ref<FileDto | null> = ref(null);
+const editableFile: Ref<FileWithTopicDto | null> = ref(null);
 // Watch for changes in data.value and update dateTime accordingly
 watch(
     () => data.value,
@@ -230,7 +230,7 @@ watch(
 );
 
 const { mutate: updateFileMutation } = useMutation({
-    mutationFn: (fileData: FileDto) => updateFile({ file: fileData }),
+    mutationFn: (fileData: FileWithTopicDto) => updateFile({ file: fileData }),
     onSuccess: async () => {
         Notify.create({
             group: false,

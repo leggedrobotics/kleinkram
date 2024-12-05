@@ -7,7 +7,7 @@ import {
     QueueState,
 } from '@common/enum';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {
@@ -175,7 +175,7 @@ export async function _downloadFile(fileUUID: string, filename: string) {
     a.remove();
 }
 
-export async function _downloadFiles(files: FileDto[]) {
+export async function _downloadFiles(files: FileWithTopicDto[]) {
     const downloadPromises = files.map(async (file) => {
         try {
             const url = await downloadFile(file.uuid, true);

@@ -52,14 +52,14 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
 import { CategoryDto } from '@api/types/Category.dto';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const properties = defineProps<{
     mission_uuid: string;
     project_uuid: string;
-    files: FileDto[];
+    files: FileWithTopicDto[];
 }>();
 const queryClient = useQueryClient();
 const selected: Ref<CategoryDto[]> = ref<CategoryDto[]>([]);

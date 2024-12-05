@@ -22,12 +22,12 @@ import { computed } from 'vue';
 import MoveFiles from '../../dialogs/move-files.vue';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{
     mission: MissionWithFilesDto;
-    files: FileDto[];
+    files: FileWithTopicDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {

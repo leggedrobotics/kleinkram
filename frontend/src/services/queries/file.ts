@@ -2,7 +2,7 @@ import axios from 'src/api/axios';
 import { FileType } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
 import { AxiosResponse } from 'axios';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { IsUploadingDto } from '@api/types/files/is-uploading.dto';
 
@@ -48,12 +48,12 @@ export const fetchOverview = async (
     }
 };
 
-export const fetchFile = async (uuid: string): Promise<FileDto> => {
+export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
     try {
-        const response: AxiosResponse<FileDto> = await axios.get<FileDto>(
-            '/file/one',
-            { params: { uuid } },
-        );
+        const response: AxiosResponse<FileWithTopicDto> =
+            await axios.get<FileWithTopicDto>('/file/one', {
+                params: { uuid },
+            });
         return response.data;
     } catch (error) {
         console.error('Error fetching file:', error);
@@ -109,16 +109,14 @@ export const filesOfMission = async (
 export const findOneByNameAndMission = async (
     filename: string,
     missionUUID: string,
-): Promise<FileDto> => {
-    const response: AxiosResponse<FileDto> = await axios.get<FileDto>(
-        'file/oneByName',
-        {
+): Promise<FileWithTopicDto> => {
+    const response: AxiosResponse<FileWithTopicDto> =
+        await axios.get<FileWithTopicDto>('file/oneByName', {
             params: {
                 filename,
                 uuid: missionUUID,
             },
-        },
-    );
+        });
     return response.data;
 };
 

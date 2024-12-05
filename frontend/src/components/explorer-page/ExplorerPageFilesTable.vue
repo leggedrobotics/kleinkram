@@ -140,7 +140,7 @@ import {
 import { useRouter } from 'vue-router';
 import { fileColumns } from './explorer-page-table-columns';
 import { CategoryDto } from '@api/types/Category.dto';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/DeleteFileDialogOpener.vue';
@@ -244,7 +244,7 @@ watch(
     },
 );
 
-function sortedCats(file: FileDto) {
+function sortedCats(file: FileWithTopicDto) {
     // @ts-ignore
     const cats = [...(file.categories.categories || [])];
     return cats.sort((a, b) => a.name.localeCompare(b.name));

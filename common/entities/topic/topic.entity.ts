@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import FileEntity from '../file/file.entity';
+import { TopicDto } from '../../api/types/Topic.dto';
 
 @Entity()
 export default class Topic extends BaseEntity {
@@ -24,4 +25,13 @@ export default class Topic extends BaseEntity {
 
     @ManyToOne(() => FileEntity, (file) => file.topics, { onDelete: 'CASCADE' })
     file?: FileEntity;
+
+    get topicDto(): TopicDto {
+        return {
+            name: this.name,
+            type: this.type,
+            nrMessages: this.nrMessages ?? 0n,
+            frequency: this.frequency,
+        };
+    }
 }

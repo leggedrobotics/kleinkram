@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MissionDto, MissionWithCreatorDto } from '../Mission.dto';
+import { MissionDto } from '../Mission.dto';
 import { CategoryDto } from '../Category.dto';
 import { FileState, FileType } from '../../../frontend_shared/enum';
 import { UserDto } from '../User.dto';
@@ -81,7 +81,9 @@ export class FileDto {
     @ApiProperty()
     @IsString()
     hash!: string;
+}
 
+export class FileWithTopicDto extends FileDto {
     @ApiProperty({
         description: 'List of topics',
         type: [TopicDto],

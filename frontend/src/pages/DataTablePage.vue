@@ -360,7 +360,7 @@ import {
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { FlatMissionDto } from '@api/types/Mission.dto';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
@@ -545,7 +545,7 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: FileDto) => row.mission.project.name,
+        field: (row: FileWithTopicDto) => row.mission.project.name,
         format: (value: string) => value,
         sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
@@ -555,7 +555,7 @@ const columns = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: FileDto) => row.mission.name,
+        field: (row: FileWithTopicDto) => row.mission.name,
         format: (value: string) => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
@@ -565,7 +565,7 @@ const columns = [
         required: true,
         label: 'File',
         align: 'left',
-        field: (row: FileDto) => row.filename,
+        field: (row: FileWithTopicDto) => row.filename,
         format: (value: string) => value,
         sortable: true,
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
@@ -575,7 +575,7 @@ const columns = [
         required: true,
         label: 'Recoring Date',
         align: 'left',
-        field: (row: FileDto) => row.date,
+        field: (row: FileWithTopicDto) => row.date,
         format: (value: string) => formatDate(new Date(value)),
         sortable: true,
     },
@@ -584,7 +584,7 @@ const columns = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: FileDto) => row.createdAt,
+        field: (row: FileWithTopicDto) => row.createdAt,
         format: (value: string) => formatDate(new Date(value)),
         sortable: true,
     },
@@ -593,7 +593,7 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: FileDto) => row.creator.name,
+        field: (row: FileWithTopicDto) => row.creator.name,
         format: (value: string) => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
@@ -603,7 +603,7 @@ const columns = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FileDto) => row.size,
+        field: (row: FileWithTopicDto) => row.size,
         format: formatSize,
         sortable: true,
     },

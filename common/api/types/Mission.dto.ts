@@ -11,7 +11,7 @@ import {
 import { Type } from 'class-transformer';
 import { FilesDto } from './files/files.dto';
 import { ProjectDto } from './project/base-project.dto';
-import { FileDto } from './files/file.dto';
+import { FileDto, FileWithTopicDto } from './files/file.dto';
 import { PaggedResponse } from './pagged-response';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
@@ -69,7 +69,7 @@ export class FlatMissionDto extends MissionWithCreatorDto {
 export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
         description: 'List of files',
-        type: FilesDto,
+        type: FileDto,
     })
     @ValidateNested()
     @Type(() => FileDto)

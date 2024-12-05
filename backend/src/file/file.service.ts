@@ -56,6 +56,7 @@ import { BucketItem } from 'minio';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
+import { FileWithTopicDto } from '@common/api/types/files/file.dto';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -407,23 +408,25 @@ export class FileService implements OnModuleInit {
             .getMany();
         return {
             count,
-            data: res.map((file) => file.fileDto),
+            data: res.map((file) => file.fileWithTopicDto),
             take,
             skip,
         };
     }
 
-    async findOne(uuid: string) {
-        return this.fileRepository.findOne({
-            where: { uuid },
-            relations: [
-                'mission',
-                'topics',
-                'mission.project',
-                'creator',
-                'categories',
-            ],
-        });
+    async findOne(uuid: string): Promise<FileWithTopicDto> {
+        return (
+            await this.fileRepository.findOneOrFail({
+                where: { uuid },
+                relations: [
+                    'mission',
+                    'topics',
+                    'mission.project',
+                    'creator',
+                    'categories',
+                ],
+            })
+        ).fileWithTopicDto;
     }
 
     async findByFilename(filename: string) {
@@ -610,11 +613,6 @@ export class FileService implements OnModuleInit {
             sort?.toString() ?? 'name',
         ] as FindOptionsSelect<FileEntity>;
 
-        console.log('Select:', select);
-        console.log('Where:', where);
-        console.log('Take:', take);
-        console.log('Skip:', skip);
-
         const [resUUIDs, count] = await this.fileRepository.findAndCount({
             select,
             where,
@@ -623,7 +621,6 @@ export class FileService implements OnModuleInit {
             order: { [sort ?? 'name']: sortDirection },
         });
         if (resUUIDs.length === 0) {
-            console.log('No files found');
             return {
                 count,
                 data: [],

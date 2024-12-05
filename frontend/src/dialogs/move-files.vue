@@ -105,11 +105,11 @@ import {
     useFilteredProjects,
     useMissionsOfProjectMinimal,
 } from '../hooks/customQueryHooks';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const props = defineProps<{
     mission: MissionWithFilesDto;
-    files: FileDto[];
+    files: FileWithTopicDto[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);

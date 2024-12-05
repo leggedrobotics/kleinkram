@@ -1,11 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, ValidateNested } from 'class-validator';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { PaggedResponse } from './pagged-response';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
 import { Type } from 'class-transformer';
 
-export class TopicDto {}
+export class TopicDto {
+    @ApiProperty()
+    @IsString()
+    name!: string;
+
+    @ApiProperty()
+    @IsString()
+    type!: string;
+
+    @ApiProperty()
+    @IsNumber()
+    nrMessages?: bigint;
+
+    @ApiProperty()
+    @IsNumber()
+    frequency!: number;
+}
 
 export class TopicsDto {
     @ApiProperty()

@@ -197,7 +197,7 @@ import { FileLocation, QueueState } from '@common/enum';
 import { FileQueueEntryDto } from '@api/types/FileQueueEntry.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const $router = useRouter();
 const queryClient = useQueryClient();
@@ -332,7 +332,7 @@ async function rowClick(event: any, row: FileQueueEntryDto) {
     const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
         await findOneByNameAndMission(row.filename, row.mission.uuid).then(
-            async (file: FileDto) => {
+            async (file: FileWithTopicDto) => {
                 await $router.push({
                     name: ROUTES.FILE.routeName,
                     params: {
@@ -360,7 +360,7 @@ function canDelete(row: FileQueueEntryDto) {
 
 async function downloadFile(row: FileQueueEntryDto) {
     await findOneByNameAndMission(row.filename, row.mission.uuid).then(
-        async (file: FileDto) => {
+        async (file: FileWithTopicDto) => {
             await _downloadFile(file.uuid, file.filename);
         },
     );

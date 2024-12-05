@@ -19,7 +19,7 @@ import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
 import { FlatMissionDto } from '@api/types/Mission.dto';
 import { AxiosError } from 'axios';
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { ProjectWithCreator } from '@api/types/project/base-project.dto';
 
 export const createFileAction = async (
@@ -28,7 +28,7 @@ export const createFileAction = async (
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileDto>[]>,
+    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
 ): Promise<void> => {
     if (selectedMission === null) {
         Notify.create({
@@ -73,7 +73,7 @@ async function _createFileAction(
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileDto>[]>,
+    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
 ): Promise<void> {
     if (files.length === 0) {
         Notify.create({
@@ -230,7 +230,7 @@ async function _createFileAction(
                 size: file.size,
                 fileUUID: accessResp.fileUUID,
                 uuid: selectedMission.uuid,
-            } as unknown as FileDto;
+            } as unknown as FileWithTopicDto;
             const newFileUploadReference = ref(newFileUpload);
             injectedFiles.value.push(newFileUploadReference);
             return limit(async () => {
@@ -334,7 +334,7 @@ async function uploadFileMultipart(
     bucket: string,
     key: string,
     minioClient: S3Client,
-    newFileUpload: Ref<FileDto>,
+    newFileUpload: Ref<FileWithTopicDto>,
 ) {
     let uploadId: string | undefined;
     try {

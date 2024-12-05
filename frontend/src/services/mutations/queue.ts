@@ -1,6 +1,6 @@
 import axios from 'src/api/axios';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 export const confirmUpload = async (uuid: string, md5: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid, md5 });
@@ -11,7 +11,7 @@ export const createFile = async (
     name: string,
     missionUUID: string,
     file: File,
-): Promise<FileDto> => {
+): Promise<FileWithTopicDto> => {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('missionUUID', missionUUID);

@@ -275,12 +275,13 @@ import {
 import { formatSize } from 'src/services/generalFormatting';
 import { FileState, FileType } from '@common/enum';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { useMissionUUID } from '../hooks/router-hooks';
 import DeleteFileDialogOpener from './button-wrapper/DeleteFileDialogOpener.vue';
 import ButtonGroup from './ButtonGroup.vue';
 import EditFileButton from './buttons/EditFileButton.vue';
 import KleinDownloadFile from './cli-links/KleinDownloadFile.vue';
+import TitleSection from './TitleSection.vue';
 
 const $router = useRouter();
 
@@ -314,7 +315,9 @@ const filesReturn = computed(() =>
 );
 
 const displayTopics = computed(() => {
-    if (data.value === undefined) throw new Error('Data is undefined');
+    if (data.value === undefined) {
+        return false;
+    }
 
     return (
         data.value.type === FileType.MCAP && data.value.state === FileState.OK
@@ -380,10 +383,10 @@ const pagination = ref({
     rowsPerPage: 20,
 });
 
-const copy = async (d: FileDto | undefined): Promise<void> => {
+const copy = async (d: FileWithTopicDto | undefined): Promise<void> => {
     await copyToClipboard(d?.hash ?? '');
 };
-const download = async (d: FileDto | undefined): Promise<void> => {
+const download = async (d: FileWithTopicDto | undefined): Promise<void> => {
     await _downloadFile(d?.uuid ?? '', d?.filename ?? '');
 };
 </script>

@@ -24,11 +24,11 @@ import { computed } from 'vue';
 import NewEditFile from 'components/NewEditFile.vue';
 import { FileState } from '@common/enum';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{
-    file: FileDto;
+    file: FileWithTopicDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {

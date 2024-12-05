@@ -19,7 +19,7 @@ import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 
-import { FileDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();
@@ -77,7 +77,7 @@ async function deleteFileAction(): Promise<void> {
 }
 
 const properties = defineProps<{
-    file: FileDto;
+    file: FileWithTopicDto;
 }>();
 
 defineExpose({
