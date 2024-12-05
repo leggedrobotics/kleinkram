@@ -15,11 +15,7 @@ import {
 } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiOkResponse } from '../decarators';
-import {
-    TagsDto,
-    TagTypeDto,
-    TagTypesDto,
-} from '@common/api/types/tags/TagsDto.dto';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/TagsDto.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 
 @Controller('tag')
@@ -66,7 +62,7 @@ export class TagController {
     @LoggedIn()
     @ApiOkResponse({
         description: 'Returns all TagTypes',
-        type: TagsDto,
+        type: TagTypesDto,
     })
     async getAll(
         @QuerySkip('skip') skip: number,
