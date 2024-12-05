@@ -184,7 +184,7 @@ export const canLaunchInMission = (
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (!mission) return false;
+    if (mission?.project.uuid === undefined) return false;
 
     const projectPermission = getPermissionForProject(
         mission.project.uuid,
