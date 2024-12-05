@@ -9,6 +9,8 @@ services:
         volumes:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
+            - /usr/src/app/backend/node_modules
+            - /usr/src/app/backend/dist
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
