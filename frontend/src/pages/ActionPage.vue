@@ -146,24 +146,6 @@ const selectedProject = computed(() =>
     ),
 );
 
-const selectedMission = computed(() =>
-    missions.value.find(
-        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
-    ),
-);
-const search = computed({
-    get: () => handler.value.searchParams.name,
-    set: (value) => {
-        handler.value.setSearch({ name: value });
-    },
-});
-
-const canCreate = computed(() =>
-    selectedMission.value
-        ? canLaunchInMission(selectedMission.value, permissions.value)
-        : true,
-);
-
 // Fetch projects
 const projectsReturn = useQuery<ProjectsDto>({
     queryKey: ['projects', 500, 0, 'name', false],
@@ -185,6 +167,24 @@ const { data: _missions } = useQuery<MissionsDto>({
 });
 const missions = computed(() =>
     _missions.value ? _missions.value.missions : [],
+);
+
+const selectedMission = computed(() =>
+    missions.value?.find(
+        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
+    ),
+);
+const search = computed({
+    get: () => handler.value.searchParams.name,
+    set: (value) => {
+        handler.value.setSearch({ name: value });
+    },
+});
+
+const canCreate = computed(() =>
+    selectedMission.value
+        ? canLaunchInMission(selectedMission.value, permissions.value)
+        : true,
 );
 
 const createActionEvent = (): void => {

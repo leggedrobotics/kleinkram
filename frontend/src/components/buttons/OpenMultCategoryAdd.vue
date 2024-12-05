@@ -41,7 +41,7 @@ const addCategories = (): void => {
         componentProps: {
             project_uuid: properties.mission.mission.project.uuid,
             files: properties.files,
-            mission_uuid: properties.mission.uuid,
+            missionUuid: properties.mission.uuid,
         },
         persistent: true,
     });

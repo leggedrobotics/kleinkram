@@ -401,7 +401,7 @@ export class ProjectService {
         })) as unknown as ProjectWithMissionsDto;
     }
 
-    async addTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
+    async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
@@ -409,13 +409,10 @@ export class ProjectService {
             where: { uuid: tagTypeUUID },
         });
         project.requiredTags.push(tagType);
-        return this.projectRepository.save(project);
+        await this.projectRepository.save(project);
     }
 
-    async updateTagTypes(
-        uuid: string,
-        tagTypeUUIDs: string[],
-    ): Promise<Project> {
+    async updateTagTypes(uuid: string, tagTypeUUIDs: string[]): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
             relations: ['requiredTags'],
@@ -427,17 +424,17 @@ export class ProjectService {
                 });
             }),
         );
-        return this.projectRepository.save(project);
+        await this.projectRepository.save(project);
     }
 
-    async removeTagType(uuid: string, tagTypeUUID: string): Promise<Project> {
+    async removeTagType(uuid: string, tagTypeUUID: string): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
         project.requiredTags = project.requiredTags.filter(
             (tagType) => tagType.uuid !== tagTypeUUID,
         );
-        return this.projectRepository.save(project);
+        await this.projectRepository.save(project);
     }
 
     async deleteProject(uuid: string): Promise<void> {

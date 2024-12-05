@@ -22,7 +22,7 @@ import {
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
 import { BodyUUIDArray } from '../../validation/bodyDecorators';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
@@ -148,35 +148,39 @@ export class ProjectController {
         description: 'Project deleted',
         status: 204,
     })
-    async deleteProject(@ParameterUID('uuid') uuid: string) {
+    @OutputDto(null)
+    async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.projectService.deleteProject(uuid);
     }
 
     @Post('addTagType')
     @CanWriteProject()
+    @OutputDto(null)
     async addTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ) {
+    ): Promise<void> {
         return this.projectService.addTagType(uuid, tagTypeUUID);
     }
 
     @Post('removeTagType')
     @CanWriteProject()
+    @OutputDto(null)
     async removeTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ) {
+    ): Promise<void> {
         return this.projectService.removeTagType(uuid, tagTypeUUID);
     }
 
     @Post('updateTagTypes')
     @CanWriteProject()
+    @OutputDto(null)
     async updateTagTypes(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
         tagTypeUUIDs: string[],
-    ) {
+    ): Promise<void> {
         return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
     }
 

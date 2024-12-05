@@ -188,7 +188,8 @@ export class MissionController {
 
     @Delete(':uuid')
     @CanDeleteMission()
-    async deleteMission(@ParameterUID('uuid') uuid: string) {
+    @OutputDto(null)
+    async deleteMission(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.missionService.deleteMission(uuid);
     }
 

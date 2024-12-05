@@ -17,7 +17,7 @@ export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
         filename: file.filename,
-        mission_uuid: file.mission.uuid,
+        missionUuid: file.mission.uuid,
         date: file.date,
         categories: file.categories.map(
             (category: CategoryDto) => category.uuid,

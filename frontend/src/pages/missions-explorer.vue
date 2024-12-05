@@ -274,7 +274,7 @@ const deleteMission = (): void => {
         title: 'Delete Mission',
         component: DeleteMissionDialog,
         componentProps: {
-            mission_uuid: mission.uuid,
+            missionUuid: mission.uuid,
         },
     });
 

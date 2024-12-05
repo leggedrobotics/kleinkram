@@ -602,7 +602,7 @@ const isModified = computed(() => {
 });
 
 function newValue(value: string, done: any) {
-    const existingTemplate = actionTemplatesRes.value.find(
+    const existingTemplate = actionTemplatesRes.value?.find(
         (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {

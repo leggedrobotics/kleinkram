@@ -93,7 +93,7 @@ function openAddTag() {
     $q.dialog({
         component: AddTagDialog,
         componentProps: {
-            mission_uuid: properties.mission_uuid,
+            missionUuid: properties.mission_uuid,
         },
         persistent: true,
     });

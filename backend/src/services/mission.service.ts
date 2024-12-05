@@ -358,7 +358,7 @@ export class MissionService {
         });
     }
 
-    async deleteMission(uuid: string): Promise<Mission> {
+    async deleteMission(uuid: string): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
             relations: ['files'],
@@ -371,7 +371,6 @@ export class MissionService {
             );
         }
         await this.missionRepository.remove(mission);
-        return mission;
     }
 
     async updateTags(

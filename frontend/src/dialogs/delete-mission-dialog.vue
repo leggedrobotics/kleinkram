@@ -1,8 +1,8 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Mission </template>
+        <template #title> Delete Mission</template>
         <template #content>
-            <DeleteMission
+            <delete-mission
                 v-if="mission"
                 ref="deleteMissionRef"
                 :mission="mission"
@@ -18,7 +18,7 @@
                 "
                 label="Delete Mission"
                 class="bg-button-primary"
-                @click="deleteMission"
+                @click="deleteMissionAction"
             />
         </template>
     </base-dialog>
@@ -33,15 +33,14 @@ import DeleteMission from 'components/DeleteMission.vue';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteMissionRef = ref<InstanceType<typeof DeleteMission> | null>(null);
 
-const { mission_uuid } = defineProps({
-    mission_uuid: String,
-});
+const { missionUuid } = defineProps<{
+    missionUuid: string;
+}>();
 
-const { data: mission } = useMission(computed(() => mission_uuid));
+const { data: mission } = useMission(computed(() => missionUuid));
 
-const deleteMission = (): void => {
+const deleteMissionAction = (): void => {
     if (deleteMissionRef.value === null) return;
-    // @ts-ignore
     deleteMissionRef.value.deleteMissionAction();
     onDialogOK();
 };

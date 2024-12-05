@@ -213,10 +213,7 @@ export class DeleteProjectGuard extends BaseGuard {
 
 @Injectable()
 export class DeleteFileGuard extends BaseGuard {
-    constructor(
-        private fileGuardService: FileGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private fileGuardService: FileGuardService) {
         super();
     }
 
