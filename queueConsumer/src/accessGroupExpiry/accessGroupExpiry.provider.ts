@@ -16,7 +16,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
         private groupMembershipRepository: Repository<GroupMembership>,
     ) {}
 
-    onModuleInit() {
+    onModuleInit(): void {
         const redisClient = new Redis(redis);
         this.redlock = new Redlock([redisClient], {
             retryCount: 0,
@@ -25,7 +25,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
     }
 
     @Cron(CronExpression.EVERY_4_HOURS)
-    async removeExpiredAccessGroups() {
+    async removeExpiredAccessGroups(): Promise<void> {
         if (!this.redlock) throw new Error('RedLock not initialized');
 
         await this.redlock.using([`accessGroupExpiry`], 10_000, async () => {

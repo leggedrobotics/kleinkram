@@ -94,7 +94,7 @@ export class QueueService implements OnModuleInit {
         private failedJobs: Gauge,
     ) {}
 
-    async onModuleInit() {
+    async onModuleInit(): Promise<void> {
         this.fileQueue = new Queue('file-queue', {
             redis,
         });
