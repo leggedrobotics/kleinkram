@@ -1,9 +1,10 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Modify Tags </template>
+        <template #title> Modify Tags</template>
         <template #content>
             <select-mission-tags
-                :project-uuid="mission?.project?.uuid"
+                v-if="mission?.project?.uuid"
+                :project-uuid="mission.project.uuid"
                 :tag-values="tagValues"
                 @update:tag-values="updateTagValue"
             />

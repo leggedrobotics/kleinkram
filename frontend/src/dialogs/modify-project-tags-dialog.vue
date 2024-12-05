@@ -35,7 +35,7 @@ import { getProject } from 'src/services/queries/project';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { updateTagTypes } from 'src/services/mutations/project';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
 import CreateTagTypeDialogOpener from '../components/button-wrapper/CreateTagTypeDialogOpener.vue';
 import ButtonGroup from '../components/ButtonGroup.vue';
 import ConfigureMetadata from '../components/ConfigureMetadata.vue';
@@ -54,12 +54,12 @@ const { data: project } = useQuery({
         return getProject(properties.projectUUID);
     },
 });
-const selected = ref<TagDto[]>([]);
+const selected = ref<TagTypeDto[]>([]);
 
 watch(
     () => project.value,
     (newValue) => {
-        selected.value = newValue?.requiredTags || ([] as TagDto[]);
+        selected.value = newValue?.requiredTags || ([] as TagTypeDto[]);
     },
     { immediate: true },
 );

@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { MissionWithFilesDto, MissionsDto } from '@api/types/Mission.dto';
+import { MissionsDto, MissionWithFilesDto } from '@api/types/Mission.dto';
 import { AxiosResponse } from 'axios';
 
 export const getMission = async (
@@ -26,6 +26,8 @@ export const missionsOfProjectMinimal = async (
         return {
             data: [],
             count: 0,
+            take,
+            skip,
         };
     }
     const parameters: Record<string, any> = {
@@ -61,6 +63,8 @@ export const missionsOfProject = async (
         return {
             data: [],
             count: 0,
+            take,
+            skip,
         };
     }
     const parameters: Record<string, any> = {

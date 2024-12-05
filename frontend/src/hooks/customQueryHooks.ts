@@ -52,7 +52,6 @@ import {
 } from '@api/types/Mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { PermissionsDto, ProjectPermissions } from '@api/types/Permissions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
@@ -63,6 +62,7 @@ import { FilesDto } from '@api/types/files/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { ActionsDto } from '@api/types/actions/action.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,

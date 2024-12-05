@@ -46,7 +46,7 @@ const canDelete = computed(
 );
 
 const actionInDeletableState = computed(() => {
-    const state = properties.action?.state;
+    const state = properties.action.state;
     return (
         state === ActionState.FAILED ||
         state === ActionState.DONE ||
@@ -59,8 +59,8 @@ const isCreator = ref<boolean>(false);
 watchEffect(() => {
     getMe()
         .then((me) => {
-            const actionCreator = properties.action?.creator;
-            isCreator.value = me.uuid === actionCreator?.uuid;
+            const actionCreator = properties.action.creator;
+            isCreator.value = me.uuid === actionCreator.uuid;
         })
         .catch((error: unknown) => {
             console.error(error);
@@ -69,12 +69,12 @@ watchEffect(() => {
 
 const deletePermissions = computed(() => {
     const projectPermissions = getPermissionForProject(
-        properties.action?.mission.project.uuid,
+        properties.action.mission.project.uuid,
         // @ts-ignore
         permissions.value,
     );
     const missionPermissions = getPermissionForMission(
-        properties.action?.mission.uuid,
+        properties.action.mission.uuid,
         // @ts-ignore
         permissions.value,
     );

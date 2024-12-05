@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit File </template>
+        <template #title> Edit File</template>
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -152,7 +152,10 @@ import ConfigureCategories from 'components/ConfigureCategories.vue';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import { ProjectWithCreator } from '@api/types/project/base-project.dto';
+import {
+    ProjectDto,
+    ProjectWithCreator,
+} from '@api/types/project/base-project.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 
 const properties = defineProps<{
@@ -166,7 +169,7 @@ const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected_project = ref<ProjectWithCreator | null | undefined>(null);
+const selected_project = ref<ProjectDto | null | undefined>(null);
 const { data } = useQuery({
     queryKey: ['file', properties.file_uuid],
     queryFn: () => fetchFile(properties.file_uuid),
@@ -196,7 +199,7 @@ const projectsReturn = useQuery<ProjectsDto>({
 });
 const projects = computed(() =>
     projectsReturn.data.value
-        ? projectsReturn.data.value.projects
+        ? projectsReturn.data.value.data
         : ([] as ProjectWithCreator[]),
 );
 

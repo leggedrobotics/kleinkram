@@ -128,12 +128,12 @@ export class MissionGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const res = await Promise.all(
+        const result = await Promise.all(
             missionUUIDs.map(async (missionUUID) =>
                 this.canUserAccessMission(user, missionUUID, rights),
             ),
         );
-        return res.every(Boolean);
+        return result.every(Boolean);
     }
 
     async canUserAccessMission(

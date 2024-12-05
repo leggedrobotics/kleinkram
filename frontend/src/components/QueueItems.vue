@@ -195,9 +195,9 @@ import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import ConfirmDeleteFile from '../dialogs/confirm-delete-file-dialog.vue';
 import { FileLocation, QueueState } from '@common/enum';
 import { FileQueueEntryDto } from '@api/types/FileQueueEntry.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 const $router = useRouter();
 const queryClient = useQueryClient();

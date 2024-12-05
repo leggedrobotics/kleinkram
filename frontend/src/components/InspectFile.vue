@@ -324,7 +324,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    filesReturn.value.length > 0 ? filesReturn.value.data : null,
+    filesReturn.value.length > 0 ? filesReturn.value.length : null,
 );
 
 const columns = [

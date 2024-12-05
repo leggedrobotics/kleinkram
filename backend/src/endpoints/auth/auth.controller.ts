@@ -28,12 +28,12 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // explicitly disabled DTO output check
-    googleAuthRedirect(@Req() request, @Res() res: Response): void {
+    googleAuthRedirect(@Req() request, @Res() response: Response): void {
         const user = request.user;
         const token = this.authService.login(user);
         const state = request.query.state;
         if (state === 'cli') {
-            res.redirect(
+            response.redirect(
                 `http://localhost:8000/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
             );
             return;
@@ -41,7 +41,7 @@ export class AuthController {
         if (state === 'cli-no-redirect') {
             const authToken = token[CookieNames.AUTH_TOKEN];
             const refreshToken = token[CookieNames.REFRESH_TOKEN];
-            res.status(200).send(`
+            response.status(200).send(`
         <html>
         <head>
             <title>Authentication Successful</title>
@@ -82,12 +82,12 @@ export class AuthController {
     `);
             return;
         }
-        res.cookie(CookieNames.AUTH_TOKEN, token[CookieNames.AUTH_TOKEN], {
+        response.cookie(CookieNames.AUTH_TOKEN, token[CookieNames.AUTH_TOKEN], {
             httpOnly: false,
             secure: env.DEV,
             sameSite: 'strict',
         });
-        res.cookie(
+        response.cookie(
             CookieNames.REFRESH_TOKEN,
             token[CookieNames.REFRESH_TOKEN],
             {
@@ -97,23 +97,25 @@ export class AuthController {
                 maxAge: 30 * 24 * 60 * 60 * 1000,
             },
         );
-        res.redirect(`${env.FRONTEND_URL}/landing`);
+        response.redirect(`${env.FRONTEND_URL}/landing`);
     }
 
     @Get('validate-token')
     @UserOnly()
     @OutputDto(null) // explicitly disabled DTO output check
-    validateToken(@Res() res: Response): void {
+    validateToken(@Res() response: Response): void {
         // If we reach here, the token is valid
-        res.status(200).json({ message: 'Token is valid' });
+        response.status(200).json({ message: 'Token is valid' });
     }
 
     @Post('refresh-token')
     @OutputDto(null) // explicitly disabled DTO output check
-    async refreshToken(@Req() request: Request, @Res() res: Response) {
+    async refreshToken(@Req() request: Request, @Res() response: Response) {
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
-            return res.status(401).json({ message: 'Refresh token not found' });
+            return response
+                .status(401)
+                .json({ message: 'Refresh token not found' });
         }
 
         try {
@@ -127,7 +129,7 @@ export class AuthController {
             });
 
             if (!user) {
-                return res
+                return response
                     .status(401)
                     .json({ message: 'Invalid refresh token' });
             }
@@ -136,12 +138,12 @@ export class AuthController {
                 { uuid: user.uuid },
                 { expiresIn: '30m' },
             );
-            res.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {
+            response.cookie(CookieNames.AUTH_TOKEN, newAuthToken, {
                 httpOnly: false,
                 secure: env.DEV,
                 sameSite: 'strict',
             });
-            res.status(200).json({ message: 'Token refreshed' });
+            response.status(200).json({ message: 'Token refreshed' });
         } catch {
             throw InvalidJwtTokenException;
         }
@@ -149,17 +151,17 @@ export class AuthController {
 
     @Post('logout')
     @OutputDto(null) // explicitly disabled DTO output check
-    logout(@Res() res: Response): void {
-        res.cookie(CookieNames.AUTH_TOKEN, '', {
+    logout(@Res() response: Response): void {
+        response.cookie(CookieNames.AUTH_TOKEN, '', {
             httpOnly: false,
             expires: new Date(0),
             secure: true,
         });
-        res.cookie(CookieNames.REFRESH_TOKEN, '', {
+        response.cookie(CookieNames.REFRESH_TOKEN, '', {
             httpOnly: true,
             expires: new Date(0),
             secure: true,
         });
-        res.status(200).json({ message: 'Logged out' });
+        response.status(200).json({ message: 'Logged out' });
     }
 }

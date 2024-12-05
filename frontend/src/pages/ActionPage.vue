@@ -166,11 +166,11 @@ const { data: _missions } = useQuery<MissionsDto>({
         missionsOfProjectMinimal(handler.value.projectUuid ?? '', 500, 0),
 });
 const missions = computed(() =>
-    _missions.value ? _missions.value.missions : [],
+    _missions.value === undefined ? [] : _missions.value.data,
 );
 
 const selectedMission = computed(() =>
-    missions.value?.find(
+    missions.value.find(
         (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );

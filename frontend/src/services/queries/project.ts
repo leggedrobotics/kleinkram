@@ -2,8 +2,8 @@ import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
 import { DefaultRights } from '@api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@api/types/RecentProjects.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 export const filteredProjects = async (
     take: number,

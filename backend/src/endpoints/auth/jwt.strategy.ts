@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
-import { ConfigService } from '@nestjs/config';
 import { CookieNames } from '@common/frontend_shared/enum';
 import env from '@common/env';
 import { UserService } from '../../services/user.service';
@@ -15,10 +14,7 @@ export class InvalidJwtTokenException extends Error {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(
-        private configService: ConfigService,
-        private userService: UserService,
-    ) {
+    constructor(private userService: UserService) {
         super({
             jwtFromRequest: (request: Request) => {
                 let token = null;

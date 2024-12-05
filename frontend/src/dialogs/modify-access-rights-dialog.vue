@@ -95,9 +95,9 @@ watch(
     () => {
         rights.value = {
             label: accessGroupRightsMap[
-                projectAccess.value?.rights !== undefined ?? 0
+                projectAccess.value?.rights ?? AccessGroupRights.READ
             ],
-            value: projectAccess.value?.rights !== undefined ?? 0,
+            value: projectAccess.value?.rights ?? AccessGroupRights.READ,
         };
     },
     {

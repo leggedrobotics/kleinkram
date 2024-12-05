@@ -169,6 +169,7 @@ import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import SelectMissionTags from '../components/SelectMissionTags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
+import { TagDto } from '@api/types/tags/TagsDto.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
@@ -223,9 +224,8 @@ const projectsWithCreateWrite = computed(() => {
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    // @ts-ignore
     return project.value.requiredTags.every(
-        (tag) =>
+        (tag: TagDto) =>
             tagValues.value[tag.uuid] !== undefined &&
             tagValues.value[tag.uuid] !== '',
     );

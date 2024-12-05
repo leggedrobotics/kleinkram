@@ -60,7 +60,10 @@
 
                     <q-menu auto-close style="width: 320px">
                         <q-list>
-                            <klein-download-mission :mission="mission" />
+                            <klein-download-mission
+                                v-if="mission"
+                                :mission="mission"
+                            />
                             <q-separator class="q-ma-sm" />
                             <MoveMissionDialogOpener
                                 v-if="mission"
@@ -91,7 +94,10 @@
                                 </q-tooltip>
                             </q-item>
 
-                            <EditMissionDialogOpener :mission="mission">
+                            <EditMissionDialogOpener
+                                v-if="mission"
+                                :mission="mission"
+                            >
                                 <q-item v-close-popup clickable>
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_edit" />
@@ -104,7 +110,10 @@
                                 </q-item>
                             </EditMissionDialogOpener>
 
-                            <delete-mission-dialog-opener :mission="mission">
+                            <delete-mission-dialog-opener
+                                v-if="mission"
+                                :mission="mission"
+                            >
                                 <q-item
                                     v-close-popup
                                     clickable
@@ -194,6 +203,7 @@
                     </template>
                 </q-select>
                 <CategorySelector
+                    v-if="projectUuid"
                     :selected="selectedCategories"
                     :project_uuid="projectUuid"
                     @update:selected="updateSelected"
@@ -265,7 +275,7 @@
                         selected
                     </div>
                 </template>
-                <template #end>
+                <template v-if="mission" #end>
                     <klein-download-files
                         :files="selectedFiles"
                         style="max-width: 300px"

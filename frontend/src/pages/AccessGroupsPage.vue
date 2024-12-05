@@ -140,12 +140,12 @@ import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 import { QTable } from 'quasar';
 import { AccessGroupType } from '@common/enum';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { AccessGroupDto } from '@api/types/User.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import CreateAccessGroupDialogOpener from '../components/button-wrapper/CreateAccessGroupDialogOpener.vue';
 import ButtonGroup from '../components/ButtonGroup.vue';
 import DeleteAccessGroup from '../components/button-wrapper/DeleteAccessGroup.vue';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 const $router = useRouter();
 const prefilterOptions = [

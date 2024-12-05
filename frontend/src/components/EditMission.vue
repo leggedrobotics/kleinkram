@@ -51,6 +51,7 @@ const icons = {
 const { data } = useMission(properties.mission_uuid);
 
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
+    // @ts-ignore
     for (const element of document.querySelectorAll('.rotating-element')) {
         const randomDuration = Math.random() * 10_000 + 200; // Random duration between 1s and 5s
         // @ts-ignore

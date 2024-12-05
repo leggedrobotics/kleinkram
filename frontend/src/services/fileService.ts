@@ -20,11 +20,11 @@ import SparkMD5 from 'spark-md5';
 import { FlatMissionDto } from '@api/types/Mission.dto';
 import { AxiosError } from 'axios';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import { ProjectWithCreator } from '@api/types/project/base-project.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 
 export const createFileAction = async (
     selectedMission: FlatMissionDto | null,
-    selectedProject: ProjectWithCreator | null,
+    selectedProject: ProjectDto | null,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
@@ -69,7 +69,7 @@ export const createFileAction = async (
 
 async function _createFileAction(
     selectedMission: FlatMissionDto,
-    selectedProject: ProjectWithCreator,
+    selectedProject: ProjectDto,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,

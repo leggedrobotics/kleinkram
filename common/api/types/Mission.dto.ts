@@ -91,7 +91,6 @@ export class MissionsDto implements PaggedResponse<FlatMissionDto> {
         description: 'List of missions',
         type: FlatMissionDto,
     })
-    // @IsObject({ each: true })
     @ValidateNested()
     @Type(() => FlatMissionDto)
     data!: FlatMissionDto[];

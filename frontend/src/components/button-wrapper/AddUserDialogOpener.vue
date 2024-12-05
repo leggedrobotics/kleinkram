@@ -29,7 +29,7 @@ const properties = defineProps<{
 
 const me: Ref<CurrentAPIUserDto | undefined> = ref(undefined);
 await getUser().then((user) => {
-    me.value = user;
+    me.value = user ?? undefined;
 });
 
 const canModify = computed(() => {
@@ -37,8 +37,7 @@ const canModify = computed(() => {
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
-    // @ts-ignore
-    return properties.accessGroup.creator.uuid === me.value.uuid;
+    return properties.accessGroup.creator?.uuid === me.value.uuid;
 });
 
 function openAddUser(): void {

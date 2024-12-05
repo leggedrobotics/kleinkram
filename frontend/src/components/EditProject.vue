@@ -59,8 +59,8 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
 import { updateProject } from 'src/services/mutations/project';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 const { project_uuid } = defineProps<{
     project_uuid: string;

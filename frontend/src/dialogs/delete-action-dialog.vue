@@ -18,7 +18,7 @@
                 "
                 label="Delete Action"
                 class="bg-button-primary"
-                @click="deleteAction"
+                @click="deleteActionAction"
             />
         </template>
     </base-dialog>
@@ -28,9 +28,9 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
-import DeleteAction from 'components/DeleteAction.vue';
 
 import { ActionDto } from '@api/types/actions/action.dto';
+import DeleteAction from '../components/DeleteAction.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteActionRef = ref<InstanceType<typeof DeleteAction> | null>(null);
@@ -39,7 +39,7 @@ const { action } = defineProps<{
     action: ActionDto;
 }>();
 
-const deleteAction = (): void => {
+const deleteActionAction = (): void => {
     if (deleteActionRef.value === null) return;
     deleteActionRef.value.deleteActionAction();
     onDialogOK();
