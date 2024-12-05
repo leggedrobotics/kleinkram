@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { AccessGroupType, UserRole } from '../../frontend_shared/enum';
 import {
     IsBoolean,

@@ -1,0 +1,47 @@
+import { Module } from '@nestjs/common';
+import { FileService } from '../../services/file.service';
+import { FileController } from './file.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import FileEntity from '@common/entities/file/file.entity';
+import { TopicService } from '../../services/topic.service';
+import Topic from '@common/entities/topic/topic.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+
+import { MissionService } from '../../services/mission.service';
+import Account from '@common/entities/auth/account.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { TagService } from '../../services/tag.service';
+import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tagType.entity';
+
+import QueueEntity from '@common/entities/queue/queue.entity';
+import Category from '@common/entities/category/category.entity';
+import { FileGuardService } from '../../services/file-guard.service';
+
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([
+            Mission,
+            FileEntity,
+            Topic,
+            QueueEntity,
+            Project,
+            Account,
+            AccessGroup,
+            Tag,
+            TagType,
+            Category,
+        ]),
+    ],
+    providers: [
+        FileService,
+        TopicService,
+        MissionService,
+        FileGuardService,
+        TagService,
+    ],
+    controllers: [FileController],
+    exports: [FileService],
+})
+export class FileModule {}

@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { ActionService } from '../../action/action.service';
+import { ActionService } from '../../services/action.service';
 import { NextFunction, Request, Response } from 'express';
 import { CookieNames } from '@common/frontend_shared/enum';
 import logger from '../../logger';

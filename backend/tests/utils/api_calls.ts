@@ -1,7 +1,7 @@
-import { CreateProject } from '../../src/project/entities/create-project.dto';
+import { CreateProject } from '@common/api/types/create-project.dto';
 import { getJwtToken } from './database_utils';
 import User from '@common/entities/user/user.entity';
-import { CreateMission } from '../../src/mission/entities/create-mission.dto';
+import { CreateMission } from '@common/api/types/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { QueueState } from '@common/frontend_shared/enum';
 import * as fs from 'node:fs';

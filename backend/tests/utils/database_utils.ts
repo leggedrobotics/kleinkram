@@ -1,7 +1,10 @@
 import { DataSource } from 'typeorm';
 import process from 'node:process';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { createAccessGroups, createNewUser } from '../../src/auth/auth.service';
+import {
+    createAccessGroups,
+    createNewUser,
+} from '../../src/services/auth.service';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/frontend_shared/enum';
