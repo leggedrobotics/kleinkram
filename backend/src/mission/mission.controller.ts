@@ -27,9 +27,11 @@ import { BodyUUID } from '../validation/bodyDecorators';
 import { MISSION_NAME_REGEX } from '../validation/validationLogic';
 import { ApiOkResponse } from '../decarators';
 import {
+    FlatMissionDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/Mission.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('mission')
 export class MissionController {
@@ -37,10 +39,14 @@ export class MissionController {
 
     @Post('create')
     @CanCreateInProjectByBody()
+    @ApiOkResponse({
+        description: 'Returns the created mission',
+        type: FlatMissionDto,
+    })
     async createMission(
         @Body() createMission: CreateMission,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<FlatMissionDto> {
         return this.missionService.create(createMission, user);
     }
 
@@ -60,6 +66,9 @@ export class MissionController {
 
     @Get('filteredMinimal')
     @UserOnly()
+    @ApiOperation({
+        deprecated: true,
+    })
     async filteredMissionsMinimal(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryOptionalString('search', 'Search in mission name') search: string,

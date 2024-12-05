@@ -408,7 +408,7 @@ export class FileService implements OnModuleInit {
             .getMany();
         return {
             count,
-            data: res.map((file) => file.fileWithTopicDto),
+            data: res.map((file) => file.fileDto),
             take,
             skip,
         };

@@ -19,8 +19,8 @@ import {
 import logger from '../logger';
 import {
     FlatMissionDto,
-    MissionWithFilesDto,
     MissionsDto,
+    MissionWithFilesDto,
 } from '@common/api/types/Mission.dto';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class MissionService {
     async create(
         createMission: CreateMission,
         auth: AuthRes,
-    ): Promise<Mission> {
+    ): Promise<FlatMissionDto> {
         // @ts-ignore
         const creator = await this.userService.findOneByUUID(auth.user.uuid);
         const project = await this.projectRepository.findOneOrFail({
@@ -98,9 +98,12 @@ export class MissionService {
                 },
             ),
         );
-        return this.missionRepository.findOneOrFail({
-            where: { uuid: newMission.uuid },
-        });
+        return this.missionRepository
+            .findOneOrFail({
+                where: { uuid: newMission.uuid },
+                relations: ['project', 'creator'],
+            })
+            .then((m) => m.flatMissionDto);
     }
 
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
