@@ -79,8 +79,10 @@ export default class Mission extends BaseEntity {
             ...this.missionWithCreatorDto,
             filesCount: this.files?.length || 0,
             size:
-                this.files?.reduce((acc, file) => acc + (file.size ?? 0), 0) ||
-                0,
+                this.files?.reduce(
+                    (accumulator, file) => accumulator + (file.size ?? 0),
+                    0,
+                ) || 0,
         };
     }
 

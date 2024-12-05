@@ -215,10 +215,10 @@ export class MissionService {
         const { raw, entities } = await query.getRawAndEntities();
 
         return {
-            data: entities.map((m, i) => ({
+            data: entities.map((m, index) => ({
                 ...m.missionWithCreatorDto,
-                filesCount: raw[i].fileCount,
-                size: Number.parseInt(raw[i].totalSize),
+                filesCount: raw[index].fileCount,
+                size: Number.parseInt(raw[index].totalSize),
             })),
             count,
             skip,
