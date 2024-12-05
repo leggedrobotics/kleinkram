@@ -54,8 +54,7 @@
             <h4 style="margin-bottom: 12px; margin-top: 16px">RequestBody</h4>
 
             <div :class="{ collapsed }" @click="toggleCollapse">
-                <pre
-                    data-v-09e7fdb2=""
+                <div
                     style="
                         background-color: white;
                         padding: 12px;
@@ -64,14 +63,13 @@
                         font-size: 10px;
                         line-height: 12px;
                     "
-                    >{{
-                        JSON.stringify(
-                            resolveSchemaRefs(methodSpec.requestBody),
-                            null,
-                            2,
-                        )
-                    }}</pre
                 >
+                    <vue-json-pretty
+                        :deep="2"
+                        :showDoubleQuotes="false"
+                        :data="resolveSchemaRefs(methodSpec.requestBody)"
+                    />
+                </div>
             </div>
         </div>
 
@@ -113,8 +111,7 @@
                 :key="response.code"
             >
                 <span>{{ response.type }}</span>
-                <pre
-                    v-if="schema[response.type]"
+                <div
                     style="
                         background-color: white;
                         padding: 12px;
@@ -123,14 +120,14 @@
                         font-size: 10px;
                         line-height: 12px;
                     "
-                    >{{
-                        JSON.stringify(
-                            resolveSchemaRefs(schema[response.type]),
-                            null,
-                            2,
-                        )
-                    }}</pre
+                    v-if="schema[response.type]"
                 >
+                    <vue-json-pretty
+                        :showDoubleQuotes="false"
+                        :deep="2"
+                        :data="resolveSchemaRefs(schema[response.type])"
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -140,6 +137,8 @@
 import { computed, ref } from 'vue';
 import Paramtype from './Paramtype.vue';
 import Paramdatatype from './Paramdatatype.vue';
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 // Reactive state to control collapse/expand behavior
 const collapsed = ref(true);
