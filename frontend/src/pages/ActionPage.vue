@@ -168,7 +168,7 @@ const projectsReturn = useQuery<ProjectsDto>({
     queryFn: () => filteredProjects(500, 0, 'name', false),
 });
 const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value.projects : [],
+    projectsReturn.data.value ? projectsReturn.data.value.data : [],
 );
 
 // Fetch missions

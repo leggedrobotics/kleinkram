@@ -8,7 +8,6 @@ import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { BaseProjectDto } from './base-project.dto';
 import { FlatProjectDto } from './flat-project.dto';
-import { ProjectAccessDto } from '../access-control/project-access.dto';
 
 export class ProjectDto extends BaseProjectDto {
     @ApiProperty({
@@ -26,14 +25,6 @@ export class ProjectDto extends BaseProjectDto {
     @ValidateNested()
     @Type(() => FlatMissionDto)
     missions!: FlatMissionDto[];
-
-    @ApiProperty({
-        type: [ProjectAccessDto],
-        description: 'List of project access',
-    })
-    @ValidateNested()
-    @Type(() => ProjectAccessDto)
-    projectAccess!: ProjectAccessDto[];
 }
 
 export class ProjectsDto implements PaggedResponse<FlatProjectDto> {

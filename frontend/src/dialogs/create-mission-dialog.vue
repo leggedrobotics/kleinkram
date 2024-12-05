@@ -105,7 +105,7 @@
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
                         :tag-values="tagValues"
-                        :project-uuid="project?.uuid"
+                        :project-uuid="project.uuid"
                         @update:tag-values="updateTagValue"
                     />
                 </q-tab-panel>

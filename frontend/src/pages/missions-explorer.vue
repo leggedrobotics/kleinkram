@@ -30,10 +30,15 @@
                 >
                     <q-tooltip> More Actions</q-tooltip>
 
-                    <q-menu auto-close style="width: 280px">
+                    <q-menu
+                        auto-close
+                        style="width: 280px"
+                        v-if="projectUuid !== undefined"
+                    >
                         <q-list>
-                            <edit-project-dialog-opener
-                                :project_uuid="projectUuid"
+                            <change-project-rights-dialog-opener
+                                :project-uuid="projectUuid"
+                                project-access-uuid=""
                             >
                                 <q-item v-close-popup clickable>
                                     <q-item-section avatar>
@@ -45,7 +50,7 @@
                                         </q-item-section>
                                     </q-item-section>
                                 </q-item>
-                            </edit-project-dialog-opener>
+                            </change-project-rights-dialog-opener>
 
                             <edit-project-dialog-opener
                                 :project_uuid="projectUuid"
@@ -64,7 +69,7 @@
                             <DeleteProjectDialogOpener
                                 :project_uuid="projectUuid ?? ''"
                                 :has_missions="
-                                    project?.missions?.length ?? 0 > 0 ?? false
+                                    (project?.missions?.length ?? 0) > 0
                                 "
                             >
                                 <q-item
@@ -247,6 +252,7 @@ import DeleteProjectDialogOpener from '../components/button-wrapper/DeleteProjec
 import ConfigureTagsDialogOpener from '../components/button-wrapper/ConfigureTagsDialogOpener.vue';
 import TitleSection from '../components/TitleSection.vue';
 import { useProjectUUID } from '../hooks/router-hooks';
+import ChangeProjectRightsDialogOpener from '../components/button-wrapper/ChangeProjectRightsDialogOpener.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

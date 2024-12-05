@@ -326,10 +326,7 @@ const removeGroup = (group: AccessGroupDto): void => {
     );
 };
 
-const { data: foundAccessGroups } = useSearchAccessGroup(
-    groupSearch,
-    undefined,
-);
+const { data: foundAccessGroups } = useSearchAccessGroup(groupSearch);
 
 const isBelowMinRights = (
     group: AccessGroupDto,

@@ -106,9 +106,9 @@
                                         </q-item-section>
                                     </q-item>
 
-                                    <ChangeProjectRightsDialogOpener
-                                        :project-u-u-i-d="props.row.uuid"
-                                        :project-access-u-u-i-d="
+                                    <change-project-rights-dialog-opener
+                                        :project-uuid="props.row.uuid"
+                                        :project-access-uuid="
                                             props.row.project_access_uuid
                                         "
                                     >
@@ -117,7 +117,7 @@
                                                 Change rights
                                             </q-item-section>
                                         </q-item>
-                                    </ChangeProjectRightsDialogOpener>
+                                    </change-project-rights-dialog-opener>
                                     <RemoveProjectDialogOpener
                                         :access-group="accessGroup"
                                         :project-u-u-i-d="props.row.uuid"
@@ -280,7 +280,6 @@ import {
 } from 'src/services/mutations/access';
 import ROUTES from 'src/router/routes';
 import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
-import ChangeProjectRightsDialogOpener from 'components/buttonWrapper/ChangeProjectRightsDialogOpener.vue';
 import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
 import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
@@ -288,6 +287,7 @@ import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { explorerPageTableColumns } from '../components/explorer-page/explorer-page-table-columns';
 import { GroupMembershipDto } from '@api/types/User.dto';
 import { useAccessGroup } from '../hooks/customQueryHooks';
+import ChangeProjectRightsDialogOpener from '../components/button-wrapper/ChangeProjectRightsDialogOpener.vue';
 
 const $q = useQuasar();
 const router = useRouter();

@@ -34,7 +34,11 @@ export class ResentProjectDto {
 }
 
 export class ResentProjectsDto implements PaggedResponse<ResentProjectDto> {
-    @ApiProperty()
+    @ApiProperty({
+        name: 'data',
+        description: 'List of resent projects',
+        type: ResentProjectDto,
+    })
     @ValidateNested()
     @Type(() => ResentProjectDto)
     data!: ResentProjectDto[];

@@ -1,12 +1,9 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit Project </template>
+        <template #title> Edit Project</template>
 
         <template #content>
-            <edit-project
-                ref="editProjectRef"
-                :project_uuid="props.project_uuid"
-            />
+            <edit-project ref="editProjectRef" :project_uuid="project_uuid" />
         </template>
 
         <template #actions>
@@ -29,9 +26,12 @@ const editProjectRef = ref<InstanceType<typeof EditProject> | null>(null);
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const { project_uuid } = defineProps<{
     project_uuid: string;
 }>();
+
+// verify that the project_uuid is not empty
+if (project_uuid === '') throw new Error('Project UUID is required');
 
 const saveProjects = (): void => {
     if (editProjectRef.value === null) return;

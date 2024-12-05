@@ -34,14 +34,14 @@ export class TagService {
             datatype: type,
         });
 
-        const dbTag = await this.tagTypeRepository.save(tagType);
+        const databaseTag = await this.tagTypeRepository.save(tagType);
 
         return {
-            uuid: dbTag.uuid,
-            updatedAt: dbTag.updatedAt,
-            createdAt: dbTag.createdAt,
-            name: dbTag.name,
-            datatype: dbTag.datatype,
+            uuid: databaseTag.uuid,
+            updatedAt: databaseTag.updatedAt,
+            createdAt: databaseTag.createdAt,
+            name: databaseTag.name,
+            datatype: databaseTag.datatype,
             description: '',
         };
     }

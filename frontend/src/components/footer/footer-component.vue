@@ -32,7 +32,8 @@
                         "
                         >{{ BUILD_INFO.version }} ({{
                             new Date(BUILD_INFO.timestamp).toLocaleString()
-                        }})</a>
+                        }})</a
+                    >
                     <span> • </span>
 
                     <a
@@ -65,7 +66,8 @@
                         style="text-decoration: none"
                         href="https://uptime.leggedrobotics.com/status/kleinkram"
                     >
-                        Statuspage</a>
+                        Statuspage</a
+                    >
                 </span>
             </q-toolbar>
         </q-toolbar>

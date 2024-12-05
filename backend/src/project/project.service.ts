@@ -81,9 +81,17 @@ export class ProjectService {
         // add sorting
         if (
             sortBy &&
-            ['name', 'createdAt', 'updatedAt', 'creator'].includes(sortBy) // SQL Sanitization
+            [
+                'name',
+                'createdAt',
+                'updatedAt',
+                'creator',
+                'description',
+            ].includes(sortBy) // SQL Sanitization
         ) {
             baseQuery = baseQuery.orderBy(`project.${sortBy}`, sortDirection);
+        } else if (sortBy !== undefined && sortBy !== '') {
+            throw new ConflictException('Invalid sortBy parameter');
         }
 
         if (searchParameters) {
@@ -93,21 +101,19 @@ export class ProjectService {
                 if (!['name', 'creator.uuid'].includes(key)) {
                     continue;
                 }
-                if (key.toLowerCase().includes('uuid')) {
-                    baseQuery = baseQuery.andWhere(
-                        `project.${key} = :${index.toString()}`,
-                        {
-                            [index]: searchParameters[key],
-                        },
-                    );
-                } else {
-                    baseQuery = baseQuery.andWhere(
-                        `project.${key} ILIKE :${index.toString()}`,
-                        {
-                            [index]: `%${searchParameters[key].toString()}%`,
-                        },
-                    );
-                }
+                baseQuery = key.toLowerCase().includes('uuid')
+                    ? baseQuery.andWhere(
+                          `project.${key} = :${index.toString()}`,
+                          {
+                              [index]: searchParameters[key],
+                          },
+                      )
+                    : baseQuery.andWhere(
+                          `project.${key} ILIKE :${index.toString()}`,
+                          {
+                              [index]: `%${searchParameters[key].toString()}%`,
+                          },
+                      );
             }
         }
 
@@ -125,17 +131,25 @@ export class ProjectService {
     }
 
     async findOne(uuid: string): Promise<ProjectDto> {
-        return (await this.projectRepository
-            .createQueryBuilder('project')
-            .where('project.uuid = :uuid', { uuid })
-            .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.missions', 'missions')
-            .leftJoinAndSelect('project.requiredTags', 'requiredTags')
-            .leftJoinAndSelect('project.project_accesses', 'project_accesses')
-            .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
-            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
-            .leftJoinAndSelect('memberships.user', 'user')
-            .getOneOrFail()) as unknown as ProjectDto;
+        return (
+            await this.projectRepository
+                .createQueryBuilder('project')
+                .where('project.uuid = :uuid', { uuid })
+                .leftJoinAndSelect('project.creator', 'creator')
+                .leftJoinAndSelect('project.missions', 'missions')
+                .leftJoinAndSelect('project.requiredTags', 'requiredTags')
+                .leftJoinAndSelect(
+                    'project.project_accesses',
+                    'project_accesses',
+                )
+                .leftJoinAndSelect(
+                    'project_accesses.accessGroup',
+                    'accessGroup',
+                )
+                .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+                .leftJoinAndSelect('memberships.user', 'user')
+                .getOneOrFail()
+        ).projectDto;
     }
 
     async findOneByName(name: string): Promise<ProjectDto> {

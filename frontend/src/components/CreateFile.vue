@@ -114,7 +114,7 @@ import { BaseProjectDto } from '@api/types/project/base-project.dto';
 const emit = defineEmits(['update:ready']);
 
 const selectedProject: Ref<BaseProjectDto | null> = ref(null);
-const selectedMission: Ref<FlatMissionDto | null> = ref(null);
+const selectedMission: Ref<MissionDto | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);

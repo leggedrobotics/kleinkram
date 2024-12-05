@@ -145,7 +145,7 @@ export class ProjectController {
     @CanDeleteProject()
     @ApiResponse({
         description: 'Project deleted',
-        status: 200,
+        status: 204,
     })
     async deleteProject(@ParameterUID('uuid') uuid: string) {
         return this.projectService.deleteProject(uuid);

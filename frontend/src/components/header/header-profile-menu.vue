@@ -13,7 +13,7 @@
                     :src="user['avatarUrl']"
                     referrerpolicy="no-referrer"
                     alt="avatar"
-                >
+                />
             </q-avatar>
 
             <q-avatar v-else size="36px">

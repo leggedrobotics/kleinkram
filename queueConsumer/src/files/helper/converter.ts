@@ -52,9 +52,12 @@ export async function mcapMetaInfo(
     const stats: any = reader.statistics;
     const duration = BigInt(stats.messageEndTime - stats.messageStartTime);
     for (const channel of reader.channelsById) {
+        //@ts-ignore
         const schema: any = reader.schemasById.get(channel.schemaId);
+        //@ts-ignore
         const nrMessages = stats.channelMessageCounts.get(channel.id);
         const topic = {
+            //@ts-ignore
             name: channel.topic,
             type: schema.name,
             nrMessages: nrMessages,

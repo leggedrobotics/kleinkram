@@ -24,9 +24,9 @@ import {
 import { computed } from 'vue';
 
 const $q = useQuasar();
-const { project_uuid } = defineProps({
-    project_uuid: String,
-});
+const { project_uuid } = defineProps<{
+    project_uuid: string;
+}>();
 
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>

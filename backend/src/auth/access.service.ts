@@ -22,6 +22,7 @@ import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/User.dto';
 import logger from '../logger';
 import { ProjectDto } from '@common/api/types/project/project.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
+import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 
 @Injectable()
 export class AccessService {
@@ -399,14 +400,26 @@ export class AccessService {
         return;
     }
 
-    async getProjectAccess(
-        projectUUID: string,
-        projectAccessUUID: string,
-    ): Promise<ProjectAccess> {
-        return this.projectAccessRepository.findOneOrFail({
-            where: { uuid: projectAccessUUID, project: { uuid: projectUUID } },
+    async getProjectAccess(projectUUID: string): Promise<ProjectAccessDto> {
+        const access = await this.projectAccessRepository.findOneOrFail({
+            where: { project: { uuid: projectUUID } },
             relations: ['project', 'accessGroup'],
         });
+
+        if (access.accessGroup === undefined) {
+            throw new Error('Access group not found');
+        }
+
+        return {
+            createdAt: access.createdAt,
+            hidden: false,
+            memberCount: 0,
+            type: access.accessGroup.type,
+            updatedAt: access.updatedAt,
+            name: access.accessGroup.name,
+            rights: access.rights,
+            uuid: access.accessGroup.uuid,
+        };
     }
 
     async updateProjectAccess(

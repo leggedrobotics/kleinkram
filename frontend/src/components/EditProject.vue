@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="project">
         <label for="projectName">Project Name *</label>
         <q-input
             ref="projectNameInput"
@@ -50,6 +50,9 @@
             "
         />
     </div>
+    <div v-else>
+        <q-spinner />
+    </div>
 </template>
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
@@ -59,7 +62,7 @@ import { updateProject } from 'src/services/mutations/project';
 import { ProjectDto } from '@api/types/project/project.dto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
 
-const properties = defineProps<{
+const { project_uuid } = defineProps<{
     project_uuid: string;
 }>();
 const queryClient = useQueryClient();
@@ -70,9 +73,8 @@ const hasValidInput = ref(false);
 
 const invalidProjectNames: Ref<string[]> = ref([]);
 
-const projectResponse = useProjectQuery(properties.project_uuid);
+const { data: project } = useProjectQuery(computed(() => project_uuid));
 
-const project = computed(() => projectResponse.data.value);
 watch(
     () => project.value,
     (newVale: ProjectDto | undefined) => {

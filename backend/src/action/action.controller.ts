@@ -153,12 +153,12 @@ export class ActionController {
     })
     async runningActions(
         @AddUser() auth: AuthRes,
-        @Query() params: RunningActionsQuery,
+        @Query() parameters: RunningActionsQuery,
     ): Promise<ActionsDto> {
         return this.actionService.runningActions(
             auth.user.uuid,
-            params.skip ?? 0,
-            params.take ?? 10,
+            parameters.skip ?? 0,
+            parameters.take ?? 10,
         );
     }
 

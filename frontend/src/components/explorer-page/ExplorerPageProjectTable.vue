@@ -75,7 +75,7 @@
                                 <change-project-rights-dialog-opener
                                     :project-uuid="props.row.uuid"
                                     :project-access-uuid="
-                                        props.row.project_access_uuid
+                                        props.row.project_access_uuid ?? ''
                                     "
                                 >
                                     <q-item v-ripple clickable>
@@ -121,26 +121,37 @@ function setPagination(update: TableRequest): void {
     urlHandler.value.setTake(update.pagination.rowsPerPage);
     urlHandler.value.setSort(update.pagination.sortBy);
     urlHandler.value.setDescending(update.pagination.descending);
+    refetch();
 }
 
-const pagination = computed(() => {
-    return {
+const pagination = computed({
+    get: () => ({
         page: urlHandler.value.page,
         rowsPerPage: urlHandler.value.take,
         rowsNumber: urlHandler.value.rowsNumber,
         sortBy: urlHandler.value.sortBy,
         descending: urlHandler.value.descending,
-    };
+    }),
+    set: (value) => ({
+        page: value.page,
+        rowsPerPage: value.rowsPerPage,
+        sortBy: value.sortBy,
+        descending: value.descending,
+    }),
 });
 
 const selected = ref([]);
 
-const { data: rawData, isLoading } = useFilteredProjects(
-    urlHandler.value.take,
-    urlHandler.value.skip,
-    urlHandler.value.sortBy,
-    urlHandler.value.descending,
-    urlHandler.value.searchParams,
+const {
+    data: rawData,
+    isLoading,
+    refetch,
+} = useFilteredProjects(
+    computed(() => urlHandler.value.take),
+    computed(() => urlHandler.value.skip),
+    computed(() => urlHandler.value.sortBy),
+    computed(() => urlHandler.value.descending),
+    computed(() => urlHandler.value.searchParams),
 );
 
 const data = computed(() => (rawData.value ? rawData.value.data : []));

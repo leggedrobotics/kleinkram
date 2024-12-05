@@ -10,7 +10,7 @@
         autofocus
     />
 
-    <br>
+    <br />
     <label>Tag Type</label>
     <q-btn-dropdown
         v-model="ddrOpen"

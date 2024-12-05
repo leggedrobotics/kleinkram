@@ -53,7 +53,7 @@ import {
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
-import { PermissionsDto } from '@api/types/Permissions.dto';
+import { PermissionsDto, ProjectPermissions } from '@api/types/Permissions.dto';
 import { ActionsDto } from '@api/types/Actions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
@@ -62,7 +62,6 @@ import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
 import { FileDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -98,11 +97,10 @@ export const getPermissionForProject = (
     const defaultPermission = permissions.defaultPermission;
 
     const project = permissions.projects.find(
-        (p: ProjectAccessDto) => p.uuid === projectUuid,
+        (p: ProjectPermissions) => p.uuid === projectUuid,
     );
 
-    // @ts-ignore
-    const projectPermission = project?.access && 0;
+    const projectPermission = (project?.access as number) ?? 0;
     return Math.max(defaultPermission, projectPermission);
 };
 
@@ -211,18 +209,13 @@ export const canDeleteProject = (
 };
 
 export const useProjectQuery = (
-    projectUuid: Ref<string | undefined> | string,
+    projectUuid: Ref<string | undefined>,
 ): UseQueryReturnType<ProjectDto, Error> =>
     useQuery<ProjectDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
         queryFn: (): Promise<ProjectDto> => {
-            // @ts-ignore
-            if (!projectUuid.value)
-                return Promise.reject(new Error('Project UUID is not defined'));
-            // @ts-ignore
-            return getProject(projectUuid.value);
+            return getProject(projectUuid.value ?? '');
         },
-        // @ts-ignore
         enabled: () => !!projectUuid.value,
     });
 
@@ -352,16 +345,36 @@ export const useStorageOverview = (): UseQueryReturnType<
 };
 
 export const useFilteredProjects = (
-    take: number,
-    skip: number,
-    sortBy: string,
-    descending: boolean,
-    searchParameter?: Record<string, string>,
+    take: number | ComputedRef<number>,
+    skip: number | ComputedRef<number>,
+    sortBy: string | ComputedRef<string>,
+    descending: boolean | ComputedRef<boolean>,
+    searchParameter?:
+        | Record<string, string>
+        | ComputedRef<Record<string, string>>,
 ): UseQueryReturnType<ProjectsDto | undefined, Error> => {
     return useQuery<ProjectsDto>({
         queryKey: ['projects'],
-        queryFn: () =>
-            filteredProjects(take, skip, sortBy, descending, searchParameter),
+        queryFn: () => {
+            const _take = typeof take === 'number' ? take : take.value;
+            const _skip = typeof skip === 'number' ? skip : skip.value;
+            const _sortBy = typeof sortBy === 'string' ? sortBy : sortBy.value;
+            const _descending =
+                typeof descending === 'boolean' ? descending : descending.value;
+
+            const _searchParameter: Record<string, string> =
+                (typeof searchParameter?.value === 'object'
+                    ? (searchParameter?.value as Record<string, string>)
+                    : (searchParameter as Record<string, string>)) ?? {};
+
+            return filteredProjects(
+                _take,
+                _skip,
+                _sortBy,
+                _descending,
+                _searchParameter,
+            );
+        },
     });
 };
 

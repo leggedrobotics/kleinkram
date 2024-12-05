@@ -1,6 +1,7 @@
 <template>
     <div v-if="user" class="row">
         <q-img
+            v-if="user.avatarUrl"
             :src="user.avatarUrl"
             style="width: 100px; height: 100px; border-radius: 50%"
         />

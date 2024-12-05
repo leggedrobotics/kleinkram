@@ -70,7 +70,8 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
         if (dto === null) return next.handle(); // explicitly disabled
 
         // enforce that a DTO must be defined uns
-        if (dto === undefined) throw new BadRequestException('No DTO defined');
+        if (dto === undefined)
+            throw new InternalServerErrorException('No DTO defined');
 
         return next.handle().pipe(map(validateResponseJSON(dto)));
     }

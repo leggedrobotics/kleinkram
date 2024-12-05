@@ -36,6 +36,7 @@ import { GroupMembershipDto } from '@common/api/types/User.dto';
 import { ProjectDto } from '@common/api/types/project/project.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
+import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 
 @Controller('access')
 export class AccessController {
@@ -248,12 +249,14 @@ export class AccessController {
 
     @Get('projectAccess')
     @CanReadProject()
+    @ApiOkResponse({
+        description: 'Returns the ProjectAccess',
+        type: ProjectAccessDto,
+    })
     async getProjectAccess(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryUUID('projectAccessUUID', 'ProjectAccess UUID')
-        projectAccessUUID: string,
-    ) {
-        return this.accessService.getProjectAccess(uuid, projectAccessUUID);
+    ): Promise<ProjectAccessDto> {
+        return this.accessService.getProjectAccess(uuid);
     }
 
     @Post('updateProjectAccess')

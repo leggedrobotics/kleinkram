@@ -231,7 +231,7 @@ const refetchAccessGroup: (
 };
 
 const accessGroupsTable = computed(() =>
-    foundAccessGroups.value ? foundAccessGroups.value.accessGroups : [],
+    foundAccessGroups.value ? foundAccessGroups.value.data : [],
 );
 
 async function rowClick(event: any, row: AccessGroupDto) {
