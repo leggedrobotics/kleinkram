@@ -8,9 +8,9 @@ import {
 import { IsUUID, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
-import { AccessGroupRights, DataType } from '@common/frontend_shared/enum';
 import { metadataApplier } from './MetadataApplier';
 import { ApiProperty } from '@nestjs/swagger';
+import { AccessGroupRights, DataType } from '@common/frontend_shared/enum';
 
 export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
     return applyDecorators(

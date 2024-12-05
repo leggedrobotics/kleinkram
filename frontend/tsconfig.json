@@ -4,6 +4,12 @@
     "compilerOptions": {
         "skipLibCheck": true,
         "experimentalDecorators": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "strict": true,
+        "jsx": "preserve",
+        "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
             // we cannot use all paths in the frontend due to library dependencies
@@ -22,6 +28,9 @@
             //
             ////////////////////////////////////
             "@common/*": ["../common/frontend_shared/*"]
-        }
-    }
+        },
+        "types": ["vite/client"]
+    },
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+
 }
