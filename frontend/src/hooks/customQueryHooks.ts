@@ -47,12 +47,12 @@ import { TagsDto } from '@api/types/tags/TagsDto.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
     FlatMissionDto,
-    MissionDto,
+    MissionWithFilesDto,
     MissionsDto,
 } from '@api/types/Mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
-import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { PermissionsDto, ProjectPermissions } from '@api/types/Permissions.dto';
 import { ActionsDto } from '@api/types/Actions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
@@ -62,6 +62,7 @@ import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
 import { FileDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -210,10 +211,10 @@ export const canDeleteProject = (
 
 export const useProjectQuery = (
     projectUuid: Ref<string | undefined>,
-): UseQueryReturnType<ProjectDto, Error> =>
-    useQuery<ProjectDto>({
+): UseQueryReturnType<ProjectWithMissionsDto, Error> =>
+    useQuery<ProjectWithMissionsDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
-        queryFn: (): Promise<ProjectDto> => {
+        queryFn: (): Promise<ProjectWithMissionsDto> => {
             return getProject(projectUuid.value ?? '');
         },
         enabled: () => !!projectUuid.value,
@@ -228,15 +229,20 @@ export const useProjectQuery = (
 export const useMission = (
     missionUuid: Ref<string | undefined> | string,
     throwOnError:
-        | ThrowOnError<MissionDto, Error, MissionDto, readonly unknown[]>
+        | ThrowOnError<
+              MissionWithFilesDto,
+              Error,
+              MissionWithFilesDto,
+              readonly unknown[]
+          >
         | undefined = undefined,
     retryDelay = 1000,
-): UseQueryReturnType<MissionDto | undefined, Error> => {
+): UseQueryReturnType<MissionWithFilesDto | undefined, Error> => {
     if (typeof missionUuid === 'string') {
         missionUuid = ref(missionUuid);
     }
 
-    return useQuery<MissionDto>({
+    return useQuery<MissionWithFilesDto>({
         queryKey: ['mission', missionUuid],
         queryFn: () => getMission(missionUuid.value ?? ''),
         enabled: missionUuid.value !== undefined && missionUuid.value !== '',

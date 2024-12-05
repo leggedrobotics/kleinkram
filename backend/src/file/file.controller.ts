@@ -47,6 +47,7 @@ import { ApiOkResponse } from '../decarators';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
+import { FilesDto } from '@common/api/types/files/files.dto';
 
 @Controller('file')
 export class FileController {
@@ -96,6 +97,10 @@ export class FileController {
 
     @Get('filtered')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'Filtered Files',
+        type: FilesDto,
+    })
     async filteredFiles(
         @QueryOptionalString('fileName', 'Filter for Filename')
         fileName: string,
@@ -132,7 +137,7 @@ export class FileController {
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @AddUser() auth: AuthRes,
-    ) {
+    ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
         if (auth.apikey) {
             _missionUUID = auth.apikey.mission.uuid;
@@ -148,8 +153,8 @@ export class FileController {
             fileTypes,
             tags, // todo check if this is correct
             auth.user.uuid,
-            take,
-            skip,
+            Number.parseInt(String(take)), // TODO: fix
+            Number.parseInt(String(skip)), // TODO: fix
             sort,
             sortDirection,
         );
@@ -183,12 +188,16 @@ export class FileController {
 
     @Get('ofMission')
     @CanReadMission()
+    @ApiOkResponse({
+        description: 'Files of a Mission',
+        type: FilesDto,
+    })
     async getFilesOfMission(
         @QueryUUID('uuid', 'File UUID') uuid: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QueryOptionalString('filename', 'Filename filter') filename: string,
-        @QueryOptionalString('fileType', 'Filetype filter') fileType: FileType,
+        @QueryOptionalString('fileType', 'Filetype filter') fileType: string,
         @QueryOptionalStringArray(
             'categories',
             'Categories to filter by (logical OR)',
@@ -197,13 +206,14 @@ export class FileController {
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryOptionalString('health', 'File health') health: string,
-    ) {
+    ): Promise<FilesDto> {
         return this.fileService.findByMission(
             uuid,
-            take,
-            skip,
+            Number.parseInt(String(take)), // TODO: fix
+            Number.parseInt(String(skip)), // TODO: fix
             filename,
-            fileType,
+            // TODO: fix the following, it's ugly
+            fileType !== '' ? (fileType as FileType) : FileType.ALL,
             categories,
             sort,
             sortDirection,

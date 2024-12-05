@@ -129,7 +129,7 @@ import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useHandler, useProjectQuery } from 'src/hooks/customQueryHooks';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { missionColumns } from './explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/TagsDto.dto';
 import DeleteMissionDialogOpener from '../button-wrapper/DeleteMissionDialogOpener.vue';
@@ -185,7 +185,7 @@ const { data: rawData, isLoading } = useQuery({
         ),
 });
 
-const data = computed(() => (rawData.value ? rawData.value.missions : []));
+const data = computed(() => (rawData.value ? rawData.value.data : []));
 const total = computed(() => (rawData.value ? rawData.value.count : 0));
 
 watch(
@@ -209,7 +209,7 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-const missingTags = (row: MissionDto): TagDto[] => {
+const missingTags = (row: MissionWithFilesDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
         const setTypes = row.tags.map((tag) => tag.type);
         if (!setTypes.find((setType) => setType.uuid === tagType.uuid)) {
@@ -220,7 +220,7 @@ const missingTags = (row: MissionDto): TagDto[] => {
     return mapped.filter((value) => !!value);
 };
 
-const missingTagsText = (row: MissionDto): string => {
+const missingTagsText = (row: MissionWithFilesDto): string => {
     const _missionTags = missingTags(row);
     if (_missionTags.length === 1) {
         return `1 Tag missing`;

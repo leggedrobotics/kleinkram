@@ -26,7 +26,10 @@ import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
 import { MISSION_NAME_REGEX } from '../validation/validationLogic';
 import { ApiOkResponse } from '../decarators';
-import { FlatMissionDto } from '@common/api/types/Mission.dto';
+import {
+    MissionsDto,
+    MissionWithFilesDto,
+} from '@common/api/types/Mission.dto';
 
 @Controller('mission')
 export class MissionController {
@@ -79,6 +82,10 @@ export class MissionController {
 
     @Get('filtered')
     @UserOnly()
+    @ApiOkResponse({
+        description: 'Returns all missions filtered by project',
+        type: MissionsDto,
+    })
     async filteredMissions(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryOptionalString('search', 'Search in mission name') search: string,
@@ -87,12 +94,15 @@ export class MissionController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<MissionsDto> {
         return this.missionService.findMissionByProject(
             user.user,
             uuid,
-            skip,
-            take,
+            // TODO: cleanup by using a dto for the query params
+            //  this automatically validates the query params
+            //  and converts them to the correct types
+            Number.parseInt(String(skip)),
+            Number.parseInt(String(take)),
             search,
             sortDirection,
             sortBy,
@@ -103,11 +113,11 @@ export class MissionController {
     @CanReadMission()
     @ApiOkResponse({
         description: 'Returns the mission',
-        type: FlatMissionDto,
+        type: MissionWithFilesDto,
     })
     async getMissionById(
         @QueryUUID('uuid', 'Mission UUID') uuid: string,
-    ): Promise<FlatMissionDto> {
+    ): Promise<MissionWithFilesDto> {
         return this.missionService.findOne(uuid);
     }
 
@@ -138,6 +148,10 @@ export class MissionController {
 
     @Get('filteredByProjectName')
     @UserOnly()
+    @ApiOkResponse({
+        description: 'Returns all missions filtered by project name',
+        type: MissionsDto,
+    })
     async filteredByProjectName(
         @QueryString('projectName', 'Project Name') projectName: string,
         @QuerySkip('skip') skip: number,

@@ -3,6 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import TagType from '../tagType/tagType.entity';
 import User from '../user/user.entity';
+import { TagDto } from '../../api/types/tags/TagsDto.dto';
 
 @Entity()
 export default class Tag extends BaseEntity {
@@ -31,4 +32,30 @@ export default class Tag extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.tags)
     creator?: User;
+
+    get tagDto(): TagDto {
+        if (!this.tagType) {
+            throw new Error('TagType is not set');
+        }
+
+        return {
+            get valueAsString(): string {
+                return this.value.toString();
+            },
+            type: this.tagType.tagTypeDto,
+            value:
+                this.STRING ??
+                this.NUMBER ??
+                this.BOOLEAN ??
+                this.DATE ??
+                this.LOCATION ??
+                '',
+            createdAt: this.createdAt,
+            datatype: this.tagType.datatype,
+            description: this.tagType.description,
+            name: this.tagType.name,
+            updatedAt: this.updatedAt,
+            uuid: this.uuid,
+        };
+    }
 }

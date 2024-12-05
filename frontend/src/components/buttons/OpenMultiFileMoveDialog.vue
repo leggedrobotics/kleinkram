@@ -20,13 +20,13 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import MoveFiles from '../../dialogs/move-files.vue';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 import { FileDto } from '@api/types/files/file.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{
-    mission: MissionDto;
+    mission: MissionWithFilesDto;
     files: FileDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();

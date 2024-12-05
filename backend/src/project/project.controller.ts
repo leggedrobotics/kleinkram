@@ -26,7 +26,8 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiOkResponse } from '../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
-import { ProjectDto, ProjectsDto } from '@common/api/types/project/project.dto';
+import { ProjectsDto } from '@common/api/types/project/projects.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -95,11 +96,11 @@ export class ProjectController {
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the project',
-        type: ProjectDto,
+        type: ProjectWithMissionsDto,
     })
     async getProjectById(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         return this.projectService.findOne(uuid);
     }
 
@@ -107,12 +108,12 @@ export class ProjectController {
     @CanWriteProject()
     @ApiOkResponse({
         description: 'Returns the updated project',
-        type: ProjectDto,
+        type: ProjectWithMissionsDto,
     })
     async updateProject(
         @ParameterUID('uuid') uuid: string,
         @Body() dto: CreateProject,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         return this.projectService.update(uuid, dto);
     }
 
@@ -120,12 +121,12 @@ export class ProjectController {
     @CanCreate()
     @ApiOkResponse({
         description: 'Returns the updated project',
-        type: ProjectDto,
+        type: ProjectWithMissionsDto,
     })
     async createProject(
         @Body() dto: CreateProject,
         @AddUser() user: AuthRes,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         return this.projectService.create(dto, user);
     }
 
@@ -133,11 +134,11 @@ export class ProjectController {
     @CanReadProjectByName()
     @ApiOkResponse({
         description: 'Returns the project',
-        type: ProjectDto,
+        type: ProjectWithMissionsDto,
     })
     async getProjectByName(
         @QueryString('name', 'Project Name') name: string,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         return await this.projectService.findOneByName(name);
     }
 

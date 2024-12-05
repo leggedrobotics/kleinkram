@@ -31,9 +31,9 @@
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu
+                        v-if="projectUuid !== undefined"
                         auto-close
                         style="width: 280px"
-                        v-if="projectUuid !== undefined"
                     >
                         <q-list>
                             <change-project-rights-dialog-opener
@@ -239,7 +239,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import ExplorerPageMissionTable from '../components/explorer-page/ExplorerPageMissionTable.vue';
 import KleinDownloadMissions from '../components/cli-links/KleinDownloadMissions.vue';
 import ButtonGroupOverlay from '../components/ButtonGroupOverlay.vue';
@@ -281,7 +281,7 @@ const deleteMission = (): void => {
     deselect();
 };
 
-const selectedMissions: Ref<MissionDto[]> = ref([]);
+const selectedMissions: Ref<MissionWithFilesDto[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.searchParams.name,

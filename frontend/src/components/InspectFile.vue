@@ -255,8 +255,6 @@ import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { downloadFile } from 'src/services/queries/file';
-import ButtonGroup from 'components/ButtonGroup.vue';
-import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import {
     _downloadFile,
     getColor,
@@ -268,20 +266,21 @@ import {
     hashUUIDtoColor,
 } from '../services/generic';
 import { useRouter } from 'vue-router';
-import TitleSection from 'components/TitleSection.vue';
 import {
     registerNoPermissionErrorHandler,
     useFile,
     useMcapFilesOfMission,
     useQueueForFile,
 } from 'src/hooks/customQueryHooks';
-import EditFileButton from 'components/buttons/EditFileButton.vue';
-import KleinDownloadFile from 'components/cliLinks/KleinDownloadFile.vue';
 import { formatSize } from 'src/services/generalFormatting';
 import { FileState, FileType } from '@common/enum';
 
 import { FileDto } from '@api/types/files/file.dto';
 import { useMissionUUID } from '../hooks/router-hooks';
+import DeleteFileDialogOpener from './button-wrapper/DeleteFileDialogOpener.vue';
+import ButtonGroup from './ButtonGroup.vue';
+import EditFileButton from './buttons/EditFileButton.vue';
+import KleinDownloadFile from './cli-links/KleinDownloadFile.vue';
 
 const $router = useRouter();
 
@@ -322,7 +321,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    filesReturn.value.length > 0 ? filesReturn.value[0] : null,
+    filesReturn.value.length > 0 ? filesReturn.value.data : null,
 );
 
 const columns = [

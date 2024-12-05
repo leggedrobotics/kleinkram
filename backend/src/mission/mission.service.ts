@@ -17,8 +17,11 @@ import {
     getBucketFromFileType,
 } from '@common/minio_helper';
 import logger from '../logger';
-import { AggregatedMissionDto } from './entities/AggregatedMission.dto';
-import { FlatMissionDto } from '@common/api/types/Mission.dto';
+import {
+    FlatMissionDto,
+    MissionWithFilesDto,
+    MissionsDto,
+} from '@common/api/types/Mission.dto';
 
 @Injectable()
 export class MissionService {
@@ -100,19 +103,24 @@ export class MissionService {
         });
     }
 
-    async findOne(uuid: string): Promise<FlatMissionDto> {
-        const mission = (await this.missionRepository.findOneOrFail({
-            where: { uuid },
-            relations: [
-                'project',
-                'creator',
-                'tags',
-                'tags.tagType',
-                'project.requiredTags',
-            ],
-        })) as unknown as FlatMissionDto;
-        logger.debug(JSON.stringify(mission, null, 2));
-        return mission;
+    async findOne(uuid: string): Promise<MissionWithFilesDto> {
+        return (
+            await this.missionRepository.findOneOrFail({
+                where: { uuid },
+                relations: [
+                    'project',
+                    'creator',
+                    'tags',
+                    'files',
+                    'files.creator',
+                    'files.mission', // TODO: we can remove this property
+                    'files.mission.creator', // TODO: we can remove this property
+                    'files.mission.project', // TODO: we can remove this property
+                    'tags.tagType',
+                    'project.requiredTags',
+                ],
+            })
+        ).missionWithFilesDto;
     }
 
     async findMissionByProjectMinimal(
@@ -158,12 +166,12 @@ export class MissionService {
         search?: string,
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
-    ): Promise<[AggregatedMissionDto[], number]> {
+    ): Promise<MissionsDto> {
         const query = this.missionRepository
             .createQueryBuilder('mission')
             .addSelect('COUNT(files.uuid)::int', 'fileCount')
             .addSelect('COALESCE(SUM(files.size), 0)::bigint', 'totalSize')
-            .leftJoin('mission.project', 'project')
+            .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoin('mission.files', 'files')
             .leftJoinAndSelect('mission.tags', 'tags')
@@ -191,27 +199,15 @@ export class MissionService {
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, user.uuid);
         }
-        const res: { entities: Mission[]; raw: any[] } =
-            await query.getRawAndEntities();
-        const aggregatedRes = res.entities.map((mission) => {
-            // Find the corresponding raw item for this mission by id
-            const rawItem = res.raw.find(
-                (raw) => raw.mission_uuid === mission.uuid,
-            );
-            return rawItem
-                ? ({
-                      ...mission,
-                      nrFiles: rawItem.fileCount,
-                      size: Number(rawItem.totalSize),
-                  } as AggregatedMissionDto)
-                : ({
-                      ...mission,
-                      nrFiles: 0,
-                      size: 0,
-                  } as AggregatedMissionDto);
-        });
 
-        return [aggregatedRes, res.entities.length];
+        const [missions, count] = await query.getManyAndCount();
+
+        return {
+            data: missions.map((m) => m.flatMissionDto),
+            count,
+            skip,
+            take,
+        };
     }
 
     async filteredByProjectName(
@@ -219,7 +215,7 @@ export class MissionService {
         userUUID: string,
         skip: number,
         take: number,
-    ): Promise<Mission[]> {
+    ): Promise<MissionsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -228,9 +224,18 @@ export class MissionService {
                 where: { name: projectName },
                 relations: ['missions', 'missions.project', 'missions.creator'],
             });
-            return project.missions ?? [];
+
+            const missions = project.missions ?? [];
+
+            return {
+                data: missions.map((m) => m.flatMissionDto),
+                count: missions.length,
+                skip,
+                take,
+            };
         }
-        return addAccessConstraints(
+
+        const [missions, count] = await addAccessConstraints(
             this.missionRepository
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')
@@ -240,7 +245,14 @@ export class MissionService {
         )
             .take(take)
             .skip(skip)
-            .getMany();
+            .getManyAndCount();
+
+        return {
+            data: missions.map((m) => m.flatMissionDto),
+            count,
+            skip,
+            take,
+        };
     }
 
     // TODO Test!

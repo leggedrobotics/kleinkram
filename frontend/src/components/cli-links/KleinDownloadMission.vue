@@ -31,10 +31,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const props = defineProps<{
-    mission: MissionDto;
+    mission: MissionWithFilesDto;
 }>();
 
 const clicked = async (): Promise<void> => {

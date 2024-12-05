@@ -15,12 +15,15 @@ import {
 } from './entities/createTemplate.dto';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
-import { ActionDto, ActionsDto } from '@common/api/types/Actions.dto';
+import {
+    ActionDto,
+    ActionsDto,
+    ActionTemplatesDto,
+} from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
-import logger from '../logger';
 
 @Injectable()
 export class ActionService {
@@ -174,17 +177,29 @@ export class ActionService {
         return this.actionTemplateRepository.save(template);
     }
 
-    async listTemplates(skip: number, take: number, search: string) {
+    async listTemplates(
+        skip: number,
+        take: number,
+        search: string,
+    ): Promise<ActionTemplatesDto> {
         const where: FindOptionsWhere<ActionTemplate> = { searchable: true };
         if (search !== '') {
             where.name = ILike(`%${search}%`);
         }
-        return this.actionTemplateRepository.findAndCount({
-            where,
+        const [templates, count] =
+            await this.actionTemplateRepository.findAndCount({
+                where,
+                skip,
+                take,
+                relations: ['createdBy'],
+            });
+
+        return {
+            count,
+            data: templates.map((t) => t.actionTemplateDto),
             skip,
             take,
-            relations: ['createdBy'],
-        });
+        };
     }
 
     async listActions(

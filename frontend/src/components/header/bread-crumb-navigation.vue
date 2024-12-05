@@ -89,9 +89,6 @@ const resolvedCrumbs = computed(() => {
 });
 
 const isClickable = (crumb: PageBreadCrumb): boolean => {
-    const index = crumbs.value.findIndex(
-        (c: PageBreadCrumb) => c.displayName === crumb.displayName,
-    );
-    return index !== crumbs.value.length - 1;
+    return crumb.to !== undefined;
 };
 </script>

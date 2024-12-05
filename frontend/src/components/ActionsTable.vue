@@ -97,11 +97,11 @@ import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
-import ActionBadge from 'components/ActionBadge.vue';
-import DeleteActionDialogOpener from 'components/buttonWrapper/DeleteActionDialogOpener.vue';
 import { ActionState } from '@common/enum';
 import { ActionDto } from '@api/types/Actions.dto';
 import { useActions } from '../hooks/customQueryHooks';
+import ActionBadge from './ActionBadge.vue';
+import DeleteActionDialogOpener from './button-wrapper/DeleteActionDialogOpener.vue';
 
 const router = useRouter();
 

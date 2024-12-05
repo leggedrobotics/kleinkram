@@ -14,7 +14,7 @@ import {
     UUIDValidate,
 } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
-import { AccessGroupType } from '@common/frontend_shared/enum';
+import { AccessGroupType, FileType } from '@common/frontend_shared/enum';
 
 export const QueryUUID = (
     parameterName: string,

@@ -19,8 +19,9 @@ import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectDto } from '@common/api/types/RecentProjects.dto';
-import { ProjectDto, ProjectsDto } from '@common/api/types/project/project.dto';
 import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
+import { ProjectsDto } from '@common/api/types/project/projects.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 
 @Injectable()
 export class ProjectService {
@@ -130,7 +131,7 @@ export class ProjectService {
         };
     }
 
-    async findOne(uuid: string): Promise<ProjectDto> {
+    async findOne(uuid: string): Promise<ProjectWithMissionsDto> {
         return (
             await this.projectRepository
                 .createQueryBuilder('project')
@@ -152,11 +153,11 @@ export class ProjectService {
         ).projectDto;
     }
 
-    async findOneByName(name: string): Promise<ProjectDto> {
+    async findOneByName(name: string): Promise<ProjectWithMissionsDto> {
         return (await this.projectRepository.findOneOrFail({
             where: { name },
             relations: ['requiredTags'],
-        })) as unknown as ProjectDto;
+        })) as unknown as ProjectWithMissionsDto;
     }
 
     async getRecentProjects(
@@ -288,7 +289,10 @@ export class ProjectService {
             );
     }
 
-    async create(project: CreateProject, auth: AuthRes): Promise<ProjectDto> {
+    async create(
+        project: CreateProject,
+        auth: AuthRes,
+    ): Promise<ProjectWithMissionsDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
         });
@@ -373,13 +377,13 @@ export class ProjectService {
         );
         return (await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
-        })) as unknown as ProjectDto;
+        })) as unknown as ProjectWithMissionsDto;
     }
 
     async update(
         uuid: string,
         project: { name: string; description: string },
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });
@@ -394,7 +398,7 @@ export class ProjectService {
         });
         return (await this.projectRepository.findOneOrFail({
             where: { uuid },
-        })) as unknown as ProjectDto;
+        })) as unknown as ProjectWithMissionsDto;
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<Project> {

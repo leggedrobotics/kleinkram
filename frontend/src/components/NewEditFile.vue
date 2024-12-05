@@ -149,11 +149,11 @@ import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from '../dialogs/base-dialog.vue';
 import ConfigureCategories from 'components/ConfigureCategories.vue';
-import { ProjectsDto } from '@api/types/project/project.dto';
 import { useMissionsOfProjectMinimal } from '../hooks/customQueryHooks';
 
 import { FileDto } from '@api/types/files/file.dto';
-import { BaseProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectWithCreator } from '@api/types/project/base-project.dto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
 
 const properties = defineProps<{
     file_uuid: string;
@@ -166,7 +166,7 @@ const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected_project = ref<BaseProjectDto | null | undefined>(null);
+const selected_project = ref<ProjectWithCreator | null | undefined>(null);
 const { data } = useQuery({
     queryKey: ['file', properties.file_uuid],
     queryFn: () => fetchFile(properties.file_uuid),
@@ -197,7 +197,7 @@ const projectsReturn = useQuery<ProjectsDto>({
 const projects = computed(() =>
     projectsReturn.data.value
         ? projectsReturn.data.value.projects
-        : ([] as BaseProjectDto[]),
+        : ([] as ProjectWithCreator[]),
 );
 
 const { data: _missions, refetch } = useMissionsOfProjectMinimal(
@@ -205,9 +205,7 @@ const { data: _missions, refetch } = useMissionsOfProjectMinimal(
     100,
     0,
 );
-const missions = computed(() =>
-    _missions.value ? _missions.value.missions : [],
-);
+const missions = computed(() => (_missions.value ? _missions.value.data : []));
 
 watch(
     () => selected_project.value,

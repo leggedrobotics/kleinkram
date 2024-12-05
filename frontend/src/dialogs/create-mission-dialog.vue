@@ -164,10 +164,11 @@ import {
     usePermissionsQuery,
     useProjectQuery,
 } from 'src/hooks/customQueryHooks';
-import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
-import { MissionDto } from '@api/types/Mission.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import SelectMissionTags from '../components/SelectMissionTags.vue';
+import { ProjectsDto } from '@api/types/project/projects.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
@@ -194,7 +195,7 @@ const props = defineProps<{
 }>();
 
 const project_uuid = ref(props.project_uuid);
-const newMission: Ref<MissionDto | undefined> = ref(undefined);
+const newMission: Ref<MissionWithFilesDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
 const { data: project, refetch } = useProjectQuery(project_uuid);
@@ -215,9 +216,10 @@ const permissions = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
     // @ts-ignore
-    return all_projects.value.projects.filter((_project: ProjectDto) =>
-        // @ts-ignore
-        canCreateMission(_project.uuid, permissions),
+    return all_projects.value.projects.filter(
+        (_project: ProjectWithMissionsDto) =>
+            // @ts-ignore
+            canCreateMission(_project.uuid, permissions),
     );
 });
 

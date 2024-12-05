@@ -36,7 +36,7 @@ const canModify = computed(() =>
 const clicked = (): void => {
     // abort if the user cannot modify the project
     if (!canModify.value) return;
-    console.log(properties.project_uuid);
+
     // open the dialog
     $q.dialog({
         component: ModifyProjectTagsDialog,

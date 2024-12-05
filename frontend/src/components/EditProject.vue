@@ -59,7 +59,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
 import { updateProject } from 'src/services/mutations/project';
-import { ProjectDto } from '@api/types/project/project.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { useProjectQuery } from '../hooks/customQueryHooks';
 
 const { project_uuid } = defineProps<{
@@ -77,7 +77,7 @@ const { data: project } = useProjectQuery(computed(() => project_uuid));
 
 watch(
     () => project.value,
-    (newVale: ProjectDto | undefined) => {
+    (newVale: ProjectWithMissionsDto | undefined) => {
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;

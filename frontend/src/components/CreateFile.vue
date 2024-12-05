@@ -104,17 +104,17 @@ import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { createFileAction, driveUpload } from 'src/services/fileService';
 import {
     FlatMissionDto,
-    MissionDto,
+    MissionWithFilesDto,
     MissionsDto,
 } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
-import { BaseProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectWithCreator } from '@api/types/project/base-project.dto';
 
 const emit = defineEmits(['update:ready']);
 
-const selectedProject: Ref<BaseProjectDto | null> = ref(null);
-const selectedMission: Ref<MissionDto | null> = ref(null);
+const selectedProject: Ref<ProjectWithCreator | null> = ref(null);
+const selectedMission: Ref<MissionWithFilesDto | null> = ref(null);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -147,7 +147,7 @@ watch(
 );
 
 const props = defineProps<{
-    mission?: MissionDto;
+    mission?: MissionWithFilesDto;
     uploads: Ref<FileUploadDto[]>;
 }>();
 

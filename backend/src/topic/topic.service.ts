@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
 import { addAccessConstraints } from '../auth/authHelper';
+import { TopicNamesDto } from '@common/api/types/Topic.dto';
 
 @Injectable()
 export class TopicService {
@@ -13,26 +14,30 @@ export class TopicService {
         @InjectRepository(User) private userRepository: Repository<User>,
     ) {}
 
-    async findAllNames(userUUID) {
+    async findAllNames(userUuid): Promise<TopicNamesDto> {
         const baseQuery = this.topicRepository
             .createQueryBuilder('topic')
             .select('DISTINCT topic.name', 'name')
             .orderBy('name');
         const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
+            where: { uuid: userUuid },
         });
-        let distinctNames: any[];
-        distinctNames = await (user.role === UserRole.ADMIN
+        const [topics, count] = await (user.role === UserRole.ADMIN
             ? baseQuery.getRawMany()
             : addAccessConstraints(
                   baseQuery
                       .leftJoin('topic.file', 'file')
                       .leftJoin('file.mission', 'mission')
                       .leftJoin('mission.project', 'project'),
-                  userUUID,
-              ).getRawMany());
+                  userUuid,
+              ).getManyAndCount());
 
-        return distinctNames.map((item) => item.name);
+        return {
+            count,
+            data: topics.map((t) => t.name),
+            take: count,
+            skip: 0,
+        };
     }
 
     async findAll(userUUID: string, skip: number, take: number) {

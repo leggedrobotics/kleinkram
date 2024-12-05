@@ -25,15 +25,15 @@ import {
 } from 'src/hooks/customQueryHooks';
 import { computed } from 'vue';
 import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
 const props = defineProps<{
-    mission: MissionDto;
+    mission: MissionWithFilesDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (props.mission.files.count > 0) {
+    if (props.mission.filesCount > 0) {
         return false;
     }
     return canModifyMission(

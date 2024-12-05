@@ -6,8 +6,9 @@ import TagType from '../tagType/tagType.entity';
 import ProjectAccess from '../auth/project_access.entity';
 import CategoryEntity from '../category/category.entity';
 
-import { FlatProjectDto } from '../../api/types/project/flat-project.dto';
-import { ProjectDto } from '../../api/types/project/project.dto';
+import { ProjectDto } from '../../api/types/project/base-project.dto';
+import { ProjectWithMissionCountDto } from '../../api/types/project/project-with-mission-count.dto';
+import { ProjectWithMissionsDto } from '../../api/types/project/project-with-missions.dto';
 
 @Entity()
 export default class Project extends BaseEntity {
@@ -41,35 +42,37 @@ export default class Project extends BaseEntity {
     @OneToMany(() => CategoryEntity, (category) => category.project)
     categories?: CategoryEntity[];
 
-    get flatProjectDto(): FlatProjectDto {
-        if (this.creator === undefined) {
-            throw new Error('Creator can never be undefined');
-        }
-
+    get minimalProjectDto(): ProjectDto {
         return {
             uuid: this.uuid,
             name: this.name,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             description: this.description,
+        };
+    }
+
+    get flatProjectDto(): ProjectWithMissionCountDto {
+        if (this.creator === undefined) {
+            throw new Error('Creator can never be undefined');
+        }
+
+        return {
+            ...this.minimalProjectDto,
             creator: this.creator.userDto,
             missionCount: this.missions?.length ?? 0,
         };
     }
 
-    get projectDto(): ProjectDto {
+    get projectDto(): ProjectWithMissionsDto {
         if (this.creator === undefined) {
             throw new Error('Creator can never be undefined');
         }
 
         return {
-            uuid: this.uuid,
-            name: this.name,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            description: this.description,
+            ...this.minimalProjectDto,
             creator: this.creator.userDto,
-            requiredTags: this.requiredTags.map((t) => t.requiredTagDto),
+            requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
             missions: [],
         };
     }

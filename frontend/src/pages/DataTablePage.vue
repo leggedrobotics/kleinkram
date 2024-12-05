@@ -268,6 +268,7 @@
         row-key="uuid"
         :loading="loading"
         selection="multiple"
+        binary-state-sort
         @row-click="onRowClick"
         @request="setPagination"
     >
@@ -356,15 +357,16 @@ import {
     useHandler,
     useMissionsOfProjectMinimal,
 } from 'src/hooks/customQueryHooks';
-import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
-import TitleSection from 'components/TitleSection.vue';
 import { useRouter } from 'vue-router';
-import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
 import { FlatMissionDto } from '@api/types/Mission.dto';
 import { FileDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
-import { FlatProjectDto } from '@api/types/project/flat-project.dto';
+
+import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import DeleteFileDialogOpener from '../components/button-wrapper/DeleteFileDialogOpener.vue';
+import TitleSection from '../components/TitleSection.vue';
+import EditFileDialogOpener from '../components/button-wrapper/EditFileDialogOpener.vue';
 
 const $router = useRouter();
 
@@ -390,7 +392,8 @@ const fileTypeFilter = ref([
 
 const selected_project = computed(() =>
     projects.value.find(
-        (project: FlatProjectDto) => project.uuid === handler.value.projectUuid,
+        (project: ProjectWithMissionCountDto) =>
+            project.uuid === handler.value.projectUuid,
     ),
 );
 
@@ -416,9 +419,7 @@ const { data: _missions } = useMissionsOfProjectMinimal(
     500,
     0,
 );
-const missions = computed(() =>
-    _missions.value ? _missions.value.missions : [],
-);
+const missions = computed(() => (_missions.value ? _missions.value.data : []));
 
 // Fetch topics
 const { data: allTopics } = useQuery<string[]>({

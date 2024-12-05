@@ -143,7 +143,7 @@ import ButtonGroup from 'components/ButtonGroup.vue';
 import DeleteAccessGroup from 'components/buttonWrapper/DeleteAccessGroup.vue';
 import CreateAccessGroupDialogOpener from 'components/buttonWrapper/CreateAccessGroupDialogOpener.vue';
 import { AccessGroupType } from '@common/enum';
-import { ProjectDto } from '@api/types/project/project.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { AccessGroupDto } from '@api/types/User.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 
@@ -156,7 +156,7 @@ const prefilterOptions = [
 ];
 const prefilter = ref(prefilterOptions[0]);
 
-const selectedAccessGroups: Ref<ProjectDto[]> = ref([]);
+const selectedAccessGroups: Ref<ProjectWithMissionsDto[]> = ref([]);
 
 const filterOptions: Ref<{
     type: AccessGroupType;

@@ -130,7 +130,6 @@ import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
-import DeleteFileDialogOpener from 'components/buttonWrapper/DeleteFileDialogOpener.vue';
 import {
     _downloadFile,
     getColorFileState,
@@ -139,13 +138,14 @@ import {
     hashUUIDtoColor,
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
-import EditFileDialogOpener from 'components/buttonWrapper/EditFileDialogOpener.vue';
-import MoveFileDialogOpener from 'components/buttonWrapper/MoveFileDialogOpener.vue';
 import { fileColumns } from './explorer-page-table-columns';
 import { CategoryDto } from '@api/types/Category.dto';
 import { FileDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
+import DeleteFileDialogOpener from '../button-wrapper/DeleteFileDialogOpener.vue';
+import EditFileDialogOpener from '../button-wrapper/EditFileDialogOpener.vue';
+import MoveFileDialogOpener from '../button-wrapper/MoveFileDialogOpener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();

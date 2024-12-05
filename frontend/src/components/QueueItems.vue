@@ -195,7 +195,7 @@ import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import ConfirmDeleteFile from '../dialogs/confirm-delete-file-dialog.vue';
 import { FileLocation, QueueState } from '@common/enum';
 import { FileQueueEntryDto } from '@api/types/FileQueueEntry.dto';
-import { ProjectDto } from '@api/types/project/project.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 
 import { FileDto } from '@api/types/files/file.dto';
 
@@ -251,7 +251,7 @@ const fileStateFilterEnums = computed(() => {
     return fileStateFilter.value.map((state) => QueueState[state] as number);
 });
 
-const { data: queueEntries, isLoading } = useQuery<ProjectDto[]>({
+const { data: queueEntries, isLoading } = useQuery<ProjectWithMissionsDto[]>({
     queryKey: queueKey,
     queryFn: () =>
         currentQueue(parseDate(startDate.value), fileStateFilterEnums.value),

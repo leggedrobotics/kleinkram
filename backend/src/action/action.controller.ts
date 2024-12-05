@@ -26,7 +26,7 @@ import {
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse } from '../decarators';
-import { ActionsDto } from '@common/api/types/Actions.dto';
+import { ActionsDto, ActionTemplatesDto } from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -164,13 +164,17 @@ export class ActionController {
 
     @Get('listTemplates')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'List of templates',
+        type: ActionTemplatesDto,
+    })
     // TODO: type API response
     async listTemplates(
         @AddUser() user: AuthRes,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('search', 'Searchkey in name') search: string,
-    ) {
+    ): Promise<ActionTemplatesDto> {
         return this.actionService.listTemplates(skip, take, search);
     }
 

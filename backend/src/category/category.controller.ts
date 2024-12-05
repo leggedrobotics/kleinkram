@@ -12,6 +12,8 @@ import {
     BodyUUID,
     BodyUUIDArray,
 } from '../validation/bodyDecorators';
+import { ApiOkResponse } from '../decarators';
+import { CategoriesDto, CategoryDto } from '@common/api/types/Category.dto';
 
 @Controller('category')
 export class CategoryController {
@@ -19,12 +21,15 @@ export class CategoryController {
 
     @Get('all')
     @CanReadProject()
+    @ApiOkResponse({
+        description: 'Get all categories in a project',
+        type: CategoriesDto,
+    })
     async getAll(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @AddUser() user: AuthRes,
         @QueryOptionalString('filter', 'Filter by Category name')
         filter?: string,
-    ) {
+    ): Promise<CategoriesDto> {
         return this.categoryService.getAll(uuid, filter);
     }
 

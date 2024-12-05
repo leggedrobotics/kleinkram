@@ -15,6 +15,7 @@ import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { FileOrigin, FileState, FileType } from '../../frontend_shared/enum';
 import CategoryEntity from '../category/category.entity';
+import { FileDto } from '../../api/types/files/file.dto';
 
 @Entity()
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
@@ -73,4 +74,30 @@ export default class FileEntity extends BaseEntity {
 
     @Column({ nullable: true })
     origin?: FileOrigin;
+
+    get fileDto(): FileDto {
+        if (!this.creator) {
+            throw new Error('File creator is not set');
+        }
+
+        if (!this.mission) {
+            throw new Error('File mission is not set');
+        }
+
+        return {
+            uuid: this.uuid,
+            state: this.state,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            date: this.date,
+            filename: this.filename,
+            type: this.type,
+            size: this.size ?? 0,
+            hash: this.hash ?? '',
+            creator: this.creator.userDto,
+            mission: this.mission.missionDto,
+            topics: [],
+            categories: [],
+        };
+    }
 }

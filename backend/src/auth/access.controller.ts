@@ -33,10 +33,10 @@ import { ApiOkResponse } from '../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
 import { GroupMembershipDto } from '@common/api/types/User.dto';
-import { ProjectDto } from '@common/api/types/project/project.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 
 @Controller('access')
 export class AccessController {
@@ -210,14 +210,14 @@ export class AccessController {
     })
     @ApiOkResponse({
         description: 'Returns the Project',
-        type: ProjectDto,
+        type: ProjectWithMissionsDto,
     })
     @Post('addAccessGroupToProject')
     @CanWriteProject()
     async addAccessGroupToProject(
         @Body() body: AddAccessGroupToProjectDto,
         @AddUser() user: AuthRes,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         return this.accessService.addAccessGroupToProject(
             body.uuid,
             body.accessGroupUUID,

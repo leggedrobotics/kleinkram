@@ -79,7 +79,7 @@ const { data: _categories } = useCategories(
 );
 
 const categories: Ref<CategoryDto[]> = computed(() =>
-    _categories.value ? _categories.value.categories || [] : [],
+    _categories.value ? _categories.value.data || [] : [],
 );
 </script>
 

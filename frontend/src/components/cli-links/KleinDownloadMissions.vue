@@ -30,10 +30,10 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const properties = defineProps<{
-    missions: MissionDto[];
+    missions: MissionWithFilesDto[];
 }>();
 
 const params = computed(() => {

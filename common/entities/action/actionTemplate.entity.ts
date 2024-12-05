@@ -4,6 +4,7 @@ import Action from './action.entity';
 import User from '../user/user.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
+import { ActionTemplateDto } from '../../api/types/Actions.dto';
 
 @Entity()
 @Unique('unique_versioned_action_name', ['name', 'version'])
@@ -46,4 +47,19 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column()
     accessRights!: AccessGroupRights;
+
+    get actionTemplateDto(): ActionTemplateDto {
+        return {
+            accessRights: this.accessRights,
+            command: this.command || '',
+            cpuCores: this.cpuCores,
+            cpuMemory: this.cpuMemory,
+            entrypoint: this.entrypoint || '',
+            gpuMemory: this.gpuMemory,
+            imageName: this.image_name,
+            maxRuntime: this.maxRuntime,
+            name: this.name,
+            version: this.version.toString(),
+        };
+    }
 }

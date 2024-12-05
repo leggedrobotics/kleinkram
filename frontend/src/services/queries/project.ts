@@ -2,7 +2,8 @@ import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
 import { DefaultRights } from '@api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@api/types/RecentProjects.dto';
-import { ProjectDto, ProjectsDto } from '@api/types/project/project.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
 
 export const filteredProjects = async (
     take: number,
@@ -29,11 +30,13 @@ export const filteredProjects = async (
     return response.data;
 };
 
-export const getProject = async (uuid: string): Promise<ProjectDto> => {
-    const response: AxiosResponse<ProjectDto> = await axios.get<ProjectDto>(
-        '/project/one',
-        { params: { uuid } },
-    );
+export const getProject = async (
+    uuid: string,
+): Promise<ProjectWithMissionsDto> => {
+    const response: AxiosResponse<ProjectWithMissionsDto> =
+        await axios.get<ProjectWithMissionsDto>('/project/one', {
+            params: { uuid },
+        });
     return response.data;
 };
 

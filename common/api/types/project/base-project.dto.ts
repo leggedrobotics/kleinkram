@@ -3,7 +3,7 @@ import { IsDate, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UserDto } from '../User.dto';
 
-export class BaseProjectDto {
+export class ProjectDto {
     @ApiProperty()
     @IsUUID()
     uuid!: string;
@@ -23,7 +23,9 @@ export class BaseProjectDto {
     @ApiProperty()
     @IsString()
     description!: string;
+}
 
+export class ProjectWithCreator extends ProjectDto {
     @ApiProperty()
     @ValidateNested()
     @Type(() => UserDto)

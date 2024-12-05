@@ -5,6 +5,7 @@ import Category from '@common/entities/category/category.entity';
 import { AuthRes } from '../auth/paramDecorator';
 import FileEntity from '@common/entities/file/file.entity';
 import logger from '../logger';
+import { CategoriesDto } from '@common/api/types/Category.dto';
 
 @Injectable()
 export class CategoryService {
@@ -12,19 +13,29 @@ export class CategoryService {
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
         @InjectRepository(FileEntity)
-        private fileEntityRepository: Repository<any>,
+        private fileEntityRepository: Repository<FileEntity>,
     ) {}
 
-    async getAll(projectUUID: string, filter?: string) {
+    async getAll(projectUUID: string, filter?: string): Promise<CategoriesDto> {
         const where: FindOptionsWhere<Category> = {
             project: { uuid: projectUUID },
         };
         if (filter) {
             where.name = ILike(`%${filter}%`);
         }
-        return this.categoryRepository.findAndCount({
+        const [categories, count] = await this.categoryRepository.findAndCount({
             where,
         });
+
+        return {
+            count,
+            data: categories.map((category) => ({
+                uuid: category.uuid,
+                name: category.name,
+            })),
+            take: count,
+            skip: 0,
+        };
     }
 
     async create(name: string, projectUUID: string, user: AuthRes) {

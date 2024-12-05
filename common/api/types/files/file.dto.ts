@@ -1,11 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BaseMissionDto, FlatMissionDto } from '../Mission.dto';
+import { MissionDto, MissionWithCreatorDto } from '../Mission.dto';
 import { CategoryDto } from '../Category.dto';
 import { FileState, FileType } from '../../../frontend_shared/enum';
 import { UserDto } from '../User.dto';
 import { TopicDto } from '../Topic.dto';
 import {
-    IsBoolean,
     IsDate,
     IsEnum,
     IsNumber,
@@ -37,18 +36,18 @@ export class FileDto {
 
     @ApiProperty({
         description: 'The mission the file belongs to',
-        type: [BaseMissionDto],
+        type: [MissionDto],
     })
     @ValidateNested()
-    @Type(() => BaseMissionDto)
-    mission!: BaseMissionDto;
+    @Type(() => MissionDto)
+    mission!: MissionDto;
 
     @ApiProperty({
         description: 'List of categories',
-        type: [FlatMissionDto],
+        type: [CategoryDto],
     })
     @ValidateNested()
-    @Type(() => FlatMissionDto)
+    @Type(() => CategoryDto)
     categories!: CategoryDto[];
 
     @ApiProperty()
@@ -80,18 +79,6 @@ export class FileDto {
     type!: FileType;
 
     @ApiProperty()
-    @IsNumber()
-    uploaded?: number;
-
-    @ApiProperty()
-    @IsBoolean()
-    canceled?: boolean;
-
-    @ApiProperty()
-    @IsString()
-    missionUuid?: string;
-
-    @ApiProperty()
     @IsString()
     hash!: string;
 
@@ -102,4 +89,10 @@ export class FileDto {
     @ValidateNested()
     @Type(() => TopicDto)
     topics!: TopicDto[];
+
+    // additional properties only used in frontend
+    // TODO: extract them in a subclass
+    uploaded?: number;
+    canceled?: boolean;
+    missionUuid?: string;
 }

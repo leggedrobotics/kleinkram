@@ -147,7 +147,9 @@ watch(
 );
 
 const { data: tagTypes } = useAllTags();
-const { data: project } = useProjectQuery(properties.projectUuid);
+const { data: project } = useProjectQuery(
+    computed(() => properties.projectUuid),
+);
 
 watch(
     () => [project.value, tagTypes.value],

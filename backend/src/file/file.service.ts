@@ -55,6 +55,7 @@ import Credentials from 'minio/dist/main/Credentials';
 import { BucketItem } from 'minio';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
+import { FilesDto } from '@common/api/types/files/files.dto';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -218,7 +219,7 @@ export class FileService implements OnModuleInit {
         skip: number,
         sort: string,
         sortOrder: 'ASC' | 'DESC',
-    ) {
+    ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -386,7 +387,12 @@ export class FileService implements OnModuleInit {
         const [fileIds, count] = await query.getManyAndCount();
         if (fileIds.length === 0) {
             logger.silly('No files found');
-            return [];
+            return {
+                count,
+                data: [],
+                take,
+                skip,
+            };
         }
 
         const fileIdsArray = fileIds.map((file) => file.uuid);
@@ -399,7 +405,12 @@ export class FileService implements OnModuleInit {
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
             .orderBy(sort, sortOrder)
             .getMany();
-        return [res, count];
+        return {
+            count,
+            data: res.map((file) => file.fileDto),
+            take,
+            skip,
+        };
     }
 
     async findOne(uuid: string) {
@@ -563,14 +574,14 @@ export class FileService implements OnModuleInit {
         sort?: string,
         sortDirection?: 'ASC' | 'DESC',
         health?: string,
-    ): Promise<[FileEntity[], number]> {
+    ): Promise<FilesDto> {
         const where: FindOptionsWhere<FileEntity> = {
             mission: { uuid: missionUUID },
         };
         if (filename) {
             where.filename = ILike(`%${filename}%`);
         }
-        if (fileType != undefined) {
+        if (fileType !== undefined && fileType !== FileType.ALL) {
             where.type = fileType;
         }
         if (categories && categories.length > 0) {
@@ -598,6 +609,12 @@ export class FileService implements OnModuleInit {
             'uuid',
             sort?.toString() ?? 'name',
         ] as FindOptionsSelect<FileEntity>;
+
+        console.log('Select:', select);
+        console.log('Where:', where);
+        console.log('Take:', take);
+        console.log('Skip:', skip);
+
         const [resUUIDs, count] = await this.fileRepository.findAndCount({
             select,
             where,
@@ -606,7 +623,13 @@ export class FileService implements OnModuleInit {
             order: { [sort ?? 'name']: sortDirection },
         });
         if (resUUIDs.length === 0) {
-            return [[], count];
+            console.log('No files found');
+            return {
+                count,
+                data: [],
+                take,
+                skip,
+            };
         }
         const secondWhere = {
             uuid: In(resUUIDs.map((file) => file.uuid)),
@@ -623,7 +646,12 @@ export class FileService implements OnModuleInit {
             ],
             order: { [sort ?? 'name']: sortDirection },
         });
-        return [files, count];
+        return {
+            count,
+            data: files.map((file) => file.fileDto),
+            take,
+            skip,
+        };
     }
 
     async findOneByName(missionUUID: string, name: string) {

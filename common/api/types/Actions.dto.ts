@@ -97,6 +97,28 @@ export class ActionTemplateDto {
     maxRuntime!: number;
 }
 
+export class ActionTemplatesDto implements PaggedResponse<ActionTemplateDto> {
+    @ApiProperty()
+    @IsNumber()
+    count!: number;
+
+    @ApiProperty({
+        type: [ActionTemplateDto],
+        description: 'List of templates',
+    })
+    @ValidateNested({ each: true })
+    @Type(() => ActionTemplateDto)
+    data!: ActionTemplateDto[];
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
+}
+
 export class ActionDto {
     @ApiProperty()
     @IsUUID()

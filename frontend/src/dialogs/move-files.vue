@@ -100,7 +100,7 @@ import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { moveFiles } from 'src/services/mutations/file';
 import BaseDialog from './base-dialog.vue';
-import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
 import {
     useFilteredProjects,
     useMissionsOfProjectMinimal,
@@ -108,7 +108,7 @@ import {
 import { FileDto } from '@api/types/files/file.dto';
 
 const props = defineProps<{
-    mission: MissionDto;
+    mission: MissionWithFilesDto;
     files: FileDto[];
 }>();
 
@@ -143,9 +143,7 @@ const { data: _missions } = useMissionsOfProjectMinimal(
     100,
     0,
 );
-const missions = computed(() =>
-    _missions.value ? _missions.value.missions : [],
-);
+const missions = computed(() => (_missions.value ? _missions.value.data : []));
 
 watch(
     () => missions.value,

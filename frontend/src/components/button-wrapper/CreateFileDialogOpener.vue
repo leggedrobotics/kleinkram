@@ -8,11 +8,11 @@
 import { useQuasar } from 'quasar';
 import CreateFileDialog from '../../dialogs/create-file-dialog.vue';
 import { inject } from 'vue';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{
-    mission?: MissionDto;
+    mission?: MissionWithFilesDto;
 }>();
 const uploads = inject('uploads')!;
 const createNewTageType = () =>

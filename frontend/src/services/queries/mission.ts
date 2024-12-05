@@ -1,12 +1,14 @@
 import axios from 'src/api/axios';
-import { MissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto, MissionsDto } from '@api/types/Mission.dto';
 import { AxiosResponse } from 'axios';
 
-export const getMission = async (uuid: string): Promise<MissionDto> => {
-    const response: AxiosResponse<MissionDto> = await axios.get<MissionDto>(
-        '/mission/one',
-        { params: { uuid } },
-    );
+export const getMission = async (
+    uuid: string,
+): Promise<MissionWithFilesDto> => {
+    const response: AxiosResponse<MissionWithFilesDto> =
+        await axios.get<MissionWithFilesDto>('/mission/one', {
+            params: { uuid },
+        });
     return response.data;
 };
 
@@ -22,7 +24,7 @@ export const missionsOfProjectMinimal = async (
 ): Promise<MissionsDto> => {
     if (!projectUUID) {
         return {
-            missions: [],
+            data: [],
             count: 0,
         };
     }
@@ -57,7 +59,7 @@ export const missionsOfProject = async (
 ): Promise<MissionsDto> => {
     if (!projectUUID) {
         return {
-            missions: [],
+            data: [],
             count: 0,
         };
     }

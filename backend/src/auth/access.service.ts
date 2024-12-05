@@ -20,9 +20,9 @@ import ProjectAccess from '@common/entities/auth/project_access.entity';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/User.dto';
 import logger from '../logger';
-import { ProjectDto } from '@common/api/types/project/project.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 
 @Injectable()
 export class AccessService {
@@ -308,7 +308,7 @@ export class AccessService {
         accessGroupUUID: string,
         rights: AccessGroupRights,
         auth: AuthRes,
-    ): Promise<ProjectDto> {
+    ): Promise<ProjectWithMissionsDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
@@ -344,14 +344,14 @@ export class AccessService {
             .getOne();
         if (existingAccess) {
             if (existingAccess.rights >= rights) {
-                return project as unknown as ProjectDto;
+                return project as unknown as ProjectWithMissionsDto;
             }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
             return this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
                 relations: ['project_accesses', 'project_accesses.accessGroup'],
-            }) as unknown as ProjectDto;
+            }) as unknown as ProjectWithMissionsDto;
         }
 
         const projectAccess = this.projectAccessRepository.create({
@@ -363,7 +363,7 @@ export class AccessService {
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
-        }) as unknown as ProjectDto;
+        }) as unknown as ProjectWithMissionsDto;
     }
 
     async removeAccessGroupFromProject(

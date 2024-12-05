@@ -133,7 +133,10 @@
             class="q-my-lg flex justify-between items-center"
         >
             <Suspense>
-                <TableHeader v-if="handler" :url_handler="handler" />
+                <ExplorerPageTableHeader
+                    v-if="handler"
+                    :url_handler="handler"
+                />
 
                 <template #fallback>
                     <div style="width: 550px; height: 67px">
@@ -312,7 +315,7 @@
                 <explorer-page-files-table
                     v-if="handler"
                     v-model:selected="selectedFiles"
-                    :url_handler="handler"
+                    :url-handler="handler"
                 />
 
                 <template #fallback>
@@ -336,7 +339,6 @@
 </template>
 
 <script setup lang="ts">
-import TableHeader from 'components/explorer_page/ExplorerPageTableHeader.vue';
 import {
     registerNoPermissionErrorHandler,
     useCategories,
@@ -344,34 +346,35 @@ import {
     useMission,
 } from 'src/hooks/customQueryHooks';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import ExplorerPageFilesTable from 'components/explorer_page/ExplorerPageFilesTable.vue';
-import ButtonGroup from 'components/ButtonGroup.vue';
 import ROUTES from 'src/router/routes';
-import CreateFileDialogOpener from 'components/buttonWrapper/CreateFileDialogOpener.vue';
-import DeleteMissionDialogOpener from 'components/buttonWrapper/DeleteMissionDialogOpener.vue';
 import { Notify, useQuasar } from 'quasar';
-import TitleSection from 'components/TitleSection.vue';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { deleteFiles } from 'src/services/mutations/file';
-import ButtonGroupOverlay from 'components/ButtonGroupOverlay.vue';
 import ConfirmDeleteDialog from '../dialogs/confirm-delete-dialog.vue';
 import { _downloadFiles } from 'src/services/generic';
-import MissionMetadataOpener from 'components/buttonWrapper/MissionMetadataOpener.vue';
-import MoveMissionDialogOpener from 'components/buttonWrapper/MoveMissionDialogOpener.vue';
-import KleinDownloadMission from 'components/cliLinks/KleinDownloadMission.vue';
-import KleinDownloadFiles from 'components/cliLinks/KleinDownloadFiles.vue';
-import CategorySelector from 'components/CategorySelector.vue';
-import OpenMultCategoryAdd from 'components/buttons/OpenMultCategoryAdd.vue';
-import EditMissionDialogOpener from 'components/buttonWrapper/EditMissionDialogOpener.vue';
-import OpenMultiFileMoveDialog from 'components/buttons/OpenMultiFileMoveDialog.vue';
-import ConfirmDeleteFileDialog from '../dialogs/confirm-delete-file-dialog.vue';
 import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/tags/TagsDto.dto';
 import { CategoryDto } from '@api/types/Category.dto';
 
 import { FileDto } from '@api/types/files/file.dto';
 import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';
+import ButtonGroup from '../components/ButtonGroup.vue';
+import MissionMetadataOpener from '../components/button-wrapper/MissionMetadataOpener.vue';
+import KleinDownloadMission from '../components/cli-links/KleinDownloadMission.vue';
+import EditMissionDialogOpener from '../components/button-wrapper/EditMissionDialogOpener.vue';
+import DeleteMissionDialogOpener from '../components/button-wrapper/DeleteMissionDialogOpener.vue';
+import CategorySelector from '../components/CategorySelector.vue';
+import CreateFileDialogOpener from '../components/button-wrapper/CreateFileDialogOpener.vue';
+import ButtonGroupOverlay from '../components/ButtonGroupOverlay.vue';
+import KleinDownloadFiles from '../components/cli-links/KleinDownloadFiles.vue';
+import OpenMultCategoryAdd from '../components/buttons/OpenMultCategoryAdd.vue';
+import OpenMultiFileMoveDialog from '../components/buttons/OpenMultiFileMoveDialog.vue';
+import ExplorerPageFilesTable from '../components/explorer-page/ExplorerPageFilesTable.vue';
+import TitleSection from '../components/TitleSection.vue';
+import ConfirmDeleteFileDialog from '../dialogs/confirm-delete-file-dialog.vue';
+import MoveMissionDialogOpener from '../components/button-wrapper/MoveMissionDialogOpener.vue';
+import ExplorerPageTableHeader from '../components/explorer-page/ExplorerPageTableHeader.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -457,9 +460,9 @@ const {
 );
 registerNoPermissionErrorHandler(isLoadingError, missionUuid, 'mission', error);
 
-const { data: _all_categories } = useCategories(projectUuid.value ?? '', '');
+const { data: all_categories } = useCategories(projectUuid.value ?? '', '');
 const allCategories: Ref<CategoryDto[]> = computed(() =>
-    _all_categories.value ? _all_categories.value.categories : [],
+    all_categories.value ? all_categories.value.data : [],
 );
 
 const selectedCategories = computed({

@@ -23,7 +23,7 @@ export default class TagType extends BaseEntity {
     @OneToMany(() => Tag, (tag) => tag.tagType)
     tags?: Tag[];
 
-    get requiredTagDto(): TagTypeDto {
+    get tagTypeDto(): TagTypeDto {
         return {
             uuid: this.uuid,
             createdAt: this.createdAt,

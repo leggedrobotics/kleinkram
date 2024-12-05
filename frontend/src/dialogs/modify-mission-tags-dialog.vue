@@ -26,12 +26,12 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const properties = defineProps<{
-    mission?: MissionDto;
+    mission?: MissionWithFilesDto;
 }>();
 
 const queryClient = useQueryClient();

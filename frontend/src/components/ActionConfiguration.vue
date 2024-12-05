@@ -40,7 +40,7 @@
                         <q-select
                             v-model="select"
                             label="Select a Template or name a new one. (Confirm with Enter)"
-                            :options="actionTemplatesRes"
+                            :options="actionTemplatesRes?.data"
                             use-input
                             input-debounce="20"
                             outlined
@@ -112,8 +112,7 @@
                     </div>
                     <div v-if="hasMissionUUIDs">
                         <q-chip
-                            v-for="chip_mission in selectedMissions?.missions ??
-                            []"
+                            v-for="chip_mission in selectedMissions?.data ?? []"
                             :key="chip_mission.uuid"
                             :removable="canRemoveMission(chip_mission.uuid)"
                             @remove="() => removeMission(chip_mission.uuid)"
@@ -289,9 +288,10 @@ import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
-import { FlatMissionDto, MissionDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
 import { ActionTemplateDto } from '@api/types/Actions.dto';
-import { FlatProjectDto } from '@api/types/project/flat-project.dto';
+
+import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 
 const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');
@@ -346,7 +346,8 @@ const projects = computed(() =>
 
 const selectedProject = computed(() =>
     projects.value.find(
-        (project: FlatProjectDto) => project.uuid === handler.value.projectUuid,
+        (project: ProjectWithMissionCountDto) =>
+            project.uuid === handler.value.projectUuid,
     ),
 );
 
@@ -364,9 +365,7 @@ const { data: _missions } = useMissionsOfProjectMinimal(
     500,
     0,
 );
-const missions = computed(() =>
-    _missions.value ? _missions.value.missions : [],
-);
+const missions = computed(() => (_missions.value ? _missions.value.data : []));
 
 const selectedMission = computed(() =>
     missions.value.find(
@@ -644,7 +643,7 @@ function selectTemplate(template: ActionTemplateDto | undefined) {
     editingTemplate.value = template.clone();
 }
 
-function missionSelected(mission: MissionDto) {
+function missionSelected(mission: MissionWithFilesDto) {
     if (hasMissionUUIDs.value) {
         addedMissions.value.push(mission.uuid);
     } else {

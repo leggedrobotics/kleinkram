@@ -3,6 +3,8 @@ import { TopicService } from './topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
 import { AddUser, AuthRes } from '../auth/paramDecorator';
 import { QuerySkip, QueryTake } from '../validation/queryDecorators';
+import { ApiOkResponse } from '../decarators';
+import { TopicNamesDto } from '@common/api/types/Topic.dto';
 
 @Controller('topic')
 export class TopicController {
@@ -20,7 +22,11 @@ export class TopicController {
 
     @Get('names')
     @LoggedIn()
-    async allNames(@AddUser() user: AuthRes) {
+    @ApiOkResponse({
+        description: 'Get all topic names',
+        type: TopicNamesDto,
+    })
+    async allNames(@AddUser() user: AuthRes): Promise<TopicNamesDto> {
         return await this.topicService.findAllNames(user.user.uuid);
     }
 }

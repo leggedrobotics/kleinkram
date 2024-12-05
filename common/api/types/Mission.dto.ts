@@ -10,10 +10,13 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { FilesDto } from './files/files.dto';
-import { BaseProjectDto } from './project/base-project.dto';
+import { ProjectDto } from './project/base-project.dto';
 import { FileDto } from './files/file.dto';
+import { PaggedResponse } from './pagged-response';
+import { IsSkip } from '../../validation/skip-validation';
+import { IsTake } from '../../validation/take-validation';
 
-export class BaseMissionDto {
+export class MissionDto {
     @ApiProperty()
     @IsUUID()
     uuid!: string;
@@ -32,19 +35,11 @@ export class BaseMissionDto {
 
     @ApiProperty({
         description: 'The project the mission belongs to',
-        type: BaseProjectDto,
+        type: ProjectDto,
     })
     @ValidateNested()
-    @Type(() => BaseProjectDto)
-    project!: BaseProjectDto;
-
-    @ApiProperty({
-        description: 'The creator of the mission',
-        type: UserDto,
-    })
-    @ValidateNested()
-    @Type(() => UserDto)
-    creator!: UserDto;
+    @Type(() => ProjectDto)
+    project!: ProjectDto;
 
     @ApiProperty({
         description: 'List of tags',
@@ -55,13 +50,23 @@ export class BaseMissionDto {
     tags!: TagDto[];
 }
 
-export class FlatMissionDto extends BaseMissionDto {
+export class MissionWithCreatorDto extends MissionDto {
+    @ApiProperty({
+        description: 'The creator of the mission',
+        type: UserDto,
+    })
+    @ValidateNested()
+    @Type(() => UserDto)
+    creator!: UserDto;
+}
+
+export class FlatMissionDto extends MissionWithCreatorDto {
     @ApiProperty()
     @IsNumber()
     filesCount!: number;
 }
 
-export class MissionDto extends BaseMissionDto {
+export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
         description: 'List of files',
         type: FilesDto,
@@ -71,16 +76,25 @@ export class MissionDto extends BaseMissionDto {
     files!: FileDto[];
 }
 
-export class MissionsDto {
+export class MissionsDto implements PaggedResponse<FlatMissionDto> {
     @ApiProperty()
     @IsNumber()
     count!: number;
 
     @ApiProperty({
         description: 'List of missions',
-        type: [FlatMissionDto],
+        type: FlatMissionDto,
     })
+    // @IsObject({ each: true })
     @ValidateNested()
     @Type(() => FlatMissionDto)
-    missions!: FlatMissionDto[];
+    data!: FlatMissionDto[];
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
 }

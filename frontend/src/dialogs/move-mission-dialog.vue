@@ -61,15 +61,15 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { moveMission } from 'src/services/mutations/mission';
-import { MissionDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { useFilteredProjects } from '../hooks/customQueryHooks';
 
-import { BaseProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectWithCreator } from '@api/types/project/base-project.dto';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
 const properties = defineProps<{
-    mission?: MissionDto;
+    mission?: MissionWithFilesDto;
 }>();
 
 const queryClient = useQueryClient();
@@ -78,7 +78,7 @@ const { data } = useFilteredProjects(500, 0, 'name', true, {});
 
 const projects = computed(() => (data.value ? data.value.data : []));
 
-const selectedProject = ref<BaseProjectDto | null>(
+const selectedProject = ref<ProjectWithCreator | null>(
     properties.mission?.project || null,
 );
 

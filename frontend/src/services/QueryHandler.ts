@@ -1,5 +1,5 @@
 import { RouteLocationNormalizedLoaded, Router } from 'vue-router';
-import { reactive, Ref, watch } from 'vue';
+import { watch } from 'vue';
 import { FileType } from '@common/enum';
 
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
@@ -370,12 +370,10 @@ export class QueryURLHandler extends QueryHandler {
 
         // check if any query was set before writing to the URL
         const queries = this.router.currentRoute.value.query;
-        const hasQueries = Object.keys(queries).length > 0;
+        const hasQueries = (Object.keys(queries)?.length ?? 0) > 0;
         if (hasQueries) {
-            // @ts-ignore
             await this.router.push({ query: newQuery });
         } else {
-            // @ts-ignore
             await this.router.replace({ query: newQuery });
         }
 
