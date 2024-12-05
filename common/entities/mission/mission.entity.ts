@@ -10,6 +10,7 @@ import MissionAccess from '../auth/mission_access.entity';
 import Action from '../action/action.entity';
 import {
     FlatMissionDto,
+    MinimumMissionDto,
     MissionDto,
     MissionWithCreatorDto,
     MissionWithFilesDto,
@@ -77,6 +78,9 @@ export default class Mission extends BaseEntity {
         return {
             ...this.missionWithCreatorDto,
             filesCount: this.files?.length || 0,
+            size:
+                this.files?.reduce((acc, file) => acc + (file.size ?? 0), 0) ||
+                0,
         };
     }
 
@@ -93,6 +97,13 @@ export default class Mission extends BaseEntity {
             ...this.missionWithCreatorDto,
             files: this.files.map((file) => file.fileDto),
             tags: this.tags.map((tag) => tag.tagDto),
+        };
+    }
+
+    get minimumMissionDto(): MinimumMissionDto {
+        return {
+            name: this.name,
+            uuid: this.uuid,
         };
     }
 }

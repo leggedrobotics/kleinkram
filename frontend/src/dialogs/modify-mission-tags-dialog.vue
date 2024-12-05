@@ -2,8 +2,8 @@
     <base-dialog ref="dialogRef">
         <template #title> Modify Tags </template>
         <template #content>
-            <SelectMissionTags
-                :project-u-u-i-d="mission?.project?.uuid"
+            <select-mission-tags
+                :project-uuid="mission?.project?.uuid"
                 :tag-values="tagValues"
                 @update:tag-values="updateTagValue"
             />
@@ -20,13 +20,13 @@
 </template>
 <script setup lang="ts">
 import BaseDialog from './base-dialog.vue';
-import SelectMissionTags from 'components/SelectMissionTags.vue';
 import { ref, Ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
+import SelectMissionTags from '../components/SelectMissionTags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

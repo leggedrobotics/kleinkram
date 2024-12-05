@@ -147,30 +147,32 @@ async function _createFileAction(
     const temporaryCredentials = await generateTemporaryCredentials(
         fileNames,
         selectedMission.uuid,
-    ).catch((error: unknown) => {
-        let errorMessage = '';
+    )
+        .then((response) => response.data)
+        .catch((error: unknown) => {
+            let errorMessage = '';
 
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        }
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
 
-        let message = `Upload of Files failed: ${errorMessage}`;
+            let message = `Upload of Files failed: ${errorMessage}`;
 
-        // show special error for 403
-        if (error instanceof AxiosError && error.response?.status === 403) {
-            message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
-        }
+            // show special error for 403
+            if (error instanceof AxiosError && error.response?.status === 403) {
+                message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
+            }
 
-        // close the notification
-        Notify.create({
-            message: message,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 30_000,
-            closeBtn: true,
+            // close the notification
+            Notify.create({
+                message: message,
+                color: 'negative',
+                spinner: false,
+                position: 'bottom',
+                timeout: 30_000,
+                closeBtn: true,
+            });
         });
-    });
 
     // reset query key isUploading
     await queryClient.invalidateQueries({

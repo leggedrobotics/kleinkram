@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { DataType } from '../../../frontend_shared/enum';
 import {
     IsDate,
+    IsDefined,
     IsEnum,
     IsNumber,
     IsObject,
@@ -61,10 +62,6 @@ export class TagDto {
     @IsString()
     name!: string;
 
-    @ApiProperty()
-    @IsString()
-    description!: string;
-
     @ApiProperty({
         description: 'The data type of the tag',
         format: 'DataType',
@@ -82,7 +79,7 @@ export class TagDto {
     type!: TagTypeDto;
 
     @ApiProperty()
-    @IsObject()
+    @IsDefined()
     value!: string | Date | number | boolean;
 
     get valueAsString(): string {

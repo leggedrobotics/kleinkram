@@ -12,7 +12,7 @@
                 :disable="deleteFileRef?.file_name_check !== file?.filename"
                 label="Delete File"
                 class="bg-button-primary"
-                @click="deleteFile"
+                @click="deleteFileAction"
             />
         </template>
     </base-dialog>
@@ -21,9 +21,9 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
-import DeleteFile from 'components/DeleteFile.vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import DeleteFile from '../components/DeleteFile.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteFileRef = ref<InstanceType<typeof DeleteFile> | null>(null);
@@ -32,9 +32,8 @@ const { file } = defineProps<{
     file: FileWithTopicDto;
 }>();
 
-const deleteFile = (): void => {
+const deleteFileAction = (): void => {
     if (deleteFileRef.value === null) return;
-    // @ts-ignore
     deleteFileRef.value.deleteFileAction();
     onDialogOK();
 };

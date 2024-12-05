@@ -19,6 +19,7 @@ import {
 import logger from '../logger';
 import {
     FlatMissionDto,
+    MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/Mission.dto';
@@ -134,7 +135,7 @@ export class MissionService {
         search?: string,
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
-    ): Promise<[Mission[], number]> {
+    ): Promise<MinimumMissionsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -158,7 +159,14 @@ export class MissionService {
         if (user.role !== UserRole.ADMIN) {
             addAccessConstraints(query, userUUID);
         }
-        return query.getManyAndCount();
+        const [missions, count] = await query.getManyAndCount();
+
+        return {
+            data: missions.map((m) => m.minimumMissionDto),
+            count,
+            skip,
+            take,
+        };
     }
 
     async findMissionByProject(
@@ -203,10 +211,15 @@ export class MissionService {
             addAccessConstraints(query, user.uuid);
         }
 
-        const [missions, count] = await query.getManyAndCount();
+        const count = await query.getCount();
+        const { raw, entities } = await query.getRawAndEntities();
 
         return {
-            data: missions.map((m) => m.flatMissionDto),
+            data: entities.map((m, i) => ({
+                ...m.missionWithCreatorDto,
+                filesCount: raw[i].fileCount,
+                size: Number.parseInt(raw[i].totalSize),
+            })),
             count,
             skip,
             take,
@@ -361,7 +374,10 @@ export class MissionService {
         return mission;
     }
 
-    async updateTags(missionUUID: string, tags: Record<string, string>) {
+    async updateTags(
+        missionUUID: string,
+        tags: Record<string, string>,
+    ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['tags', 'tags.tagType'],

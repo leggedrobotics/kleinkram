@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Create File </template>
+        <template #title> Create File</template>
 
         <template #content>
             <create-file
@@ -17,7 +17,7 @@
                 label="Create File"
                 class="bg-button-primary"
                 :disable="!ready"
-                @click="createFile"
+                @click="createFileAction"
             />
         </template>
     </base-dialog>
@@ -25,11 +25,11 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import CreateFile from 'components/CreateFile.vue';
 import BaseDialog from './base-dialog.vue';
 import { Ref, ref } from 'vue';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
+import CreateFile from '../components/CreateFile.vue';
 
 const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
 const ready = ref(false);
@@ -41,7 +41,7 @@ defineProps<{
     uploads: Ref<FileUploadDto[]>;
 }>();
 
-const createFile = (): void => {
+const createFileAction = (): void => {
     // @ts-ignore
     createFileRef.value.createFileAction();
     onDialogOK();

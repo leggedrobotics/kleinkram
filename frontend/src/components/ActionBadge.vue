@@ -20,7 +20,8 @@
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
 import { ArtifactState } from '@common/enum';
-import { ActionDto } from '@api/types/Actions.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const properties = defineProps<{
     action: ActionDto;

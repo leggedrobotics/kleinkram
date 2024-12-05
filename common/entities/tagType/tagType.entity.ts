@@ -11,7 +11,7 @@ export default class TagType extends BaseEntity {
     name!: string;
 
     @Column({ nullable: true })
-    description!: string;
+    description?: string;
 
     @Column()
     datatype!: DataType;
@@ -29,7 +29,7 @@ export default class TagType extends BaseEntity {
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             name: this.name,
-            description: this.description,
+            description: this.description ?? '',
             datatype: this.datatype,
         };
     }

@@ -57,6 +57,11 @@ import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
 import { FileWithTopicDto } from '@common/api/types/files/file.dto';
+import {
+    FileExistsResponseDto,
+    TemporaryFileAccessDto,
+    TemporaryFileAccessesDto,
+} from './file.controller';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -693,7 +698,7 @@ export class FileService implements OnModuleInit {
      *
      * @param uuid The unique identifier of the file
      */
-    async deleteFile(uuid: string) {
+    async deleteFile(uuid: string): Promise<void> {
         if (!uuid || uuid === '')
             throw new BadRequestException('UUID is required');
 
@@ -701,7 +706,7 @@ export class FileService implements OnModuleInit {
 
         // we delete the file from the database and Minio
         // using a transaction to ensure consistency
-        return this.fileRepository.manager.transaction(
+        await this.fileRepository.manager.transaction(
             async (transactionalEntityManager) => {
                 // find the file in the database
                 const file = await transactionalEntityManager.findOneOrFail(
@@ -720,6 +725,8 @@ export class FileService implements OnModuleInit {
                 await transactionalEntityManager.remove(file);
             },
         );
+
+        logger.debug(`File with uuid ${uuid} deleted`);
     }
 
     async getStorage(): Promise<StorageOverviewDto> {
@@ -786,13 +793,7 @@ export class FileService implements OnModuleInit {
         filenames: string[],
         missionUUID: string,
         userUUID: string,
-    ): Promise<
-        {
-            bucket: string;
-            fileUUID: string;
-            accessCredentials: Credentials;
-        }[]
-    > {
+    ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -801,7 +802,7 @@ export class FileService implements OnModuleInit {
             where: { uuid: userUUID },
         });
 
-        return await Promise.all(
+        const credentials = await Promise.all(
             filenames.map(async (filename) => {
                 const emptyCredentials: {
                     bucket: string | null;
@@ -851,6 +852,7 @@ export class FileService implements OnModuleInit {
                         size: 0,
                         filename,
                         mission,
+
                         creator: user,
                         type: fileType,
                         state: FileState.UPLOADING,
@@ -879,9 +881,17 @@ export class FileService implements OnModuleInit {
                         getBucketFromFileType(fileType),
                     ),
                     queueUUID: queueEntity.uuid,
-                } as any;
+                };
             }),
         );
+
+        return {
+            // TODO: fix typing
+            data: credentials as unknown as TemporaryFileAccessDto[],
+            count: credentials.length,
+            skip: 0,
+            take: credentials.length,
+        };
     }
 
     async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {
@@ -953,8 +963,13 @@ export class FileService implements OnModuleInit {
      * Check if a file with the given uuid exists.
      * @param fileUUID
      */
-    async exists(fileUUID: string) {
-        return this.fileRepository.exists({ where: { uuid: fileUUID } });
+    async exists(fileUUID: string): Promise<FileExistsResponseDto> {
+        return {
+            exists: await this.fileRepository.exists({
+                where: { uuid: fileUUID },
+            }),
+            uuid: fileUUID,
+        };
     }
 
     async renameTags(bucked: string) {

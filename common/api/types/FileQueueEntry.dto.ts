@@ -1,47 +1,77 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FileLocation, QueueState } from '../../frontend_shared/enum';
 import { UserDto } from './User.dto';
-import { FlatMissionDto } from './Mission.dto';
+import {
+    IsDate,
+    IsEnum,
+    IsNumber,
+    IsString,
+    IsUUID,
+    ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { PaggedResponse } from './pagged-response';
+import { IsSkip } from '../../validation/skip-validation';
+import { IsTake } from '../../validation/take-validation';
 
 export class FileQueueEntryDto {
     @ApiProperty()
+    @IsUUID()
     uuid!: string;
 
     @ApiProperty()
+    @IsDate()
     createdAt!: Date;
 
     @ApiProperty()
+    @IsDate()
     updatedAt!: Date;
 
     @ApiProperty()
+    @IsString()
     identifier!: string;
 
     @ApiProperty()
+    @IsString()
     displayName!: string;
 
     @ApiProperty()
+    @IsEnum(FileLocation)
     location!: FileLocation;
 
     @ApiProperty()
+    @IsNumber()
     processingDuration!: number;
 
     @ApiProperty()
+    @ValidateNested()
+    @Type(() => UserDto)
     creator!: UserDto;
 
     @ApiProperty()
+    @IsEnum(QueueState)
     state!: QueueState;
 
     @ApiProperty()
-    mission!: FlatMissionDto;
-
-    @ApiProperty()
+    @IsString()
     filename!: string;
 }
 
-export class FileQueueEntriesDto {
+export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {
     @ApiProperty()
-    entries!: FileQueueEntryDto[];
+    @ValidateNested()
+    @Type(() => FileQueueEntryDto)
+    data!: FileQueueEntryDto[];
 
     @ApiProperty()
+    @IsNumber()
     count!: number;
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
 }

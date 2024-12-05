@@ -17,7 +17,8 @@ import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { deleteAction } from 'src/services/mutations/action';
-import { ActionDto } from '@api/types/Actions.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const actionNameCheck = ref('');
 const client = useQueryClient();

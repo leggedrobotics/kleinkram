@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Action </template>
+        <template #title> Delete Action</template>
         <template #content>
             <delete-action
                 v-if="action"
@@ -23,23 +23,24 @@
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
 import DeleteAction from 'components/DeleteAction.vue';
-import { ActionDto } from '@api/types/Actions.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteActionRef = ref<InstanceType<typeof DeleteAction> | null>(null);
 
-const { action } = defineProps({
-    action: ActionDto,
-});
+const { action } = defineProps<{
+    action: ActionDto;
+}>();
 
 const deleteAction = (): void => {
     if (deleteActionRef.value === null) return;
-    // @ts-ignore
     deleteActionRef.value.deleteActionAction();
     onDialogOK();
 };

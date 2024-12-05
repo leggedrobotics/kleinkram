@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Change Access Rights </template>
+        <template #title> Change Access Rights</template>
 
         <template #content>
             <q-form class="row flex" @submit="onDialogOK">
@@ -94,10 +94,10 @@ watch(
     projectAccess,
     () => {
         rights.value = {
-            // @ts-ignore
-            label: accessGroupRightsMap[projectAccess.value?.rights || 0],
-            // @ts-ignore
-            value: projectAccess.value?.rights || 0,
+            label: accessGroupRightsMap[
+                projectAccess.value?.rights !== undefined ?? 0
+            ],
+            value: projectAccess.value?.rights !== undefined ?? 0,
         };
     },
     {
@@ -115,7 +115,7 @@ const options = Object.keys(accessGroupRightsMap)
 
     .filter((option) => option.value !== AccessGroupRights.READ);
 
-function confirmAction() {
+function confirmAction(): void {
     changeAccessRights();
     onDialogOK();
 }

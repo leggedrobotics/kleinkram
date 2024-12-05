@@ -26,13 +26,14 @@ import {
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse } from '../decarators';
-import { ActionsDto, ActionTemplatesDto } from '@common/api/types/Actions.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
 import { IsTake } from '@common/validation/take-validation';
 import { IsSkip } from '@common/validation/skip-validation';
+import { ActionTemplatesDto } from '@common/api/types/actions/action-template.dto';
+import { ActionsDto } from '@common/api/types/actions/action.dto';
 
 export class RunningActionsQuery {
     @IsSkip()

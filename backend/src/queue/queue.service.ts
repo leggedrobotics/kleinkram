@@ -155,7 +155,7 @@ export class QueueService implements OnModuleInit {
         logger.debug('added to queue');
     }
 
-    async confirmUpload(uuid: string, md5: string) {
+    async confirmUpload(uuid: string, md5: string): Promise<void> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { identifier: uuid },
             relations: ['mission', 'mission.project'],
@@ -259,6 +259,8 @@ export class QueueService implements OnModuleInit {
                 if (queue.creator === undefined) return null;
 
                 return {
+                    filename: queue.display_name,
+                    state: queue.state,
                     uuid: queue.uuid,
                     creator: {
                         uuid: queue.creator.uuid,
@@ -271,13 +273,15 @@ export class QueueService implements OnModuleInit {
                     processingDuration: queue.processingDuration ?? 0,
                     updatedAt: queue.updatedAt,
                     location: queue.location,
-                } as unknown as FileQueueEntryDto;
+                };
             })
             .filter((entry): entry is FileQueueEntryDto => entry !== null);
 
         return {
-            entries,
+            data: entries,
             count: entries.length,
+            take: entries.length,
+            skip: 0,
         };
     }
 

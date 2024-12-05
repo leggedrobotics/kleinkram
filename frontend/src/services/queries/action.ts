@@ -1,6 +1,6 @@
 import axios from 'src/api/axios';
-import { ActionDto, ActionsDto } from '@api/types/Actions.dto';
 import { AxiosResponse } from 'axios';
+import { ActionDto, ActionsDto } from '@api/types/actions/action.dto';
 
 export const getActions = async (
     projectUUID: string,

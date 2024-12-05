@@ -20,7 +20,7 @@ import {
     QueryUUID,
 } from '../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
-import { ApiOkResponse } from '../decarators';
+import { ApiOkResponse, OutputDto } from '../decarators';
 import { FileQueueEntriesDto } from '@common/api/types/FileQueueEntry.dto';
 
 @Controller('queue')
@@ -38,12 +38,13 @@ export class QueueController {
 
     @Post('confirmUpload')
     @CanCreateQueueByBody()
+    @OutputDto(null)
     async confirmUpload(
         @BodyUUID('uuid', 'File UUID of file that successfully uploaded')
         uuid: string,
         @BodyString('md5', 'MD5 hash to validate uncorrupted upload')
         md5: string,
-    ) {
+    ): Promise<void> {
         return this.queueService.confirmUpload(uuid, md5);
     }
 

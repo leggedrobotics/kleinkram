@@ -126,8 +126,7 @@ export const missionColumns: ProjectColumnType[] = [
         label: 'Tag Verification',
         align: 'left',
     },
-    /*
-    TODO: bring back file size
+
     {
         name: 'Size',
         required: true,
@@ -136,7 +135,7 @@ export const missionColumns: ProjectColumnType[] = [
         field: (row: FlatMissionDto) => row.size,
         format: formatSize,
     },
-     */
+
     {
         name: 'missionaction',
         label: '',

@@ -34,8 +34,8 @@ const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     if (!properties.mission) return false;
     return canDeleteMission(
-        properties.mission.mission.uuid,
-        properties.mission.mission.project.uuid,
+        properties.mission.uuid,
+        properties.mission.project.uuid,
         permissions.value,
     );
 });

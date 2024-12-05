@@ -289,9 +289,9 @@ import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
 import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
-import { ActionTemplateDto } from '@api/types/Actions.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 
 const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');

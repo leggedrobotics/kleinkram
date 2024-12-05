@@ -4,7 +4,8 @@ import Action from './action.entity';
 import User from '../user/user.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
-import { ActionTemplateDto } from '../../api/types/Actions.dto';
+
+import { ActionTemplateDto } from '../../api/types/actions/action-template.dto';
 
 @Entity()
 @Unique('unique_versioned_action_name', ['name', 'version'])

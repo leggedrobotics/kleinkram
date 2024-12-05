@@ -370,12 +370,10 @@ export class QueryURLHandler extends QueryHandler {
 
         // check if any query was set before writing to the URL
         const queries = this.router.currentRoute.value.query;
-        const hasQueries = (Object.keys(queries)?.length ?? 0) > 0;
-        if (hasQueries) {
-            await this.router.push({ query: newQuery });
-        } else {
-            await this.router.replace({ query: newQuery });
-        }
+        const hasQueries = (Object.keys(queries).length ?? 0) > 0;
+        await (hasQueries
+            ? this.router.push({ query: newQuery })
+            : this.router.replace({ query: newQuery }));
 
         this.internalUpdate = false;
     }

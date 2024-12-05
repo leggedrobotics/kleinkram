@@ -3,7 +3,7 @@ import { MissionWithFilesDto, MissionsDto } from '@api/types/Mission.dto';
 import { AxiosResponse } from 'axios';
 
 export const getMission = async (
-    uuid: string,
+    uuid: string | undefined,
 ): Promise<MissionWithFilesDto> => {
     const response: AxiosResponse<MissionWithFilesDto> =
         await axios.get<MissionWithFilesDto>('/mission/one', {

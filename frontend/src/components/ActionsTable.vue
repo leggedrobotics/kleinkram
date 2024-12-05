@@ -98,10 +98,10 @@ import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from 'src/services/QueryHandler';
 import { getActionColor } from 'src/services/generic';
 import { ActionState } from '@common/enum';
-import { ActionDto } from '@api/types/Actions.dto';
 import { useActions } from '../hooks/customQueryHooks';
 import ActionBadge from './ActionBadge.vue';
 import DeleteActionDialogOpener from './button-wrapper/DeleteActionDialogOpener.vue';
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const router = useRouter();
 

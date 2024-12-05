@@ -28,13 +28,14 @@ import { computed, ref, watchEffect } from 'vue';
 import DeleteActionDialog from '../../dialogs/delete-action-dialog.vue';
 import { getMe } from 'src/services/queries/user';
 import { ActionState } from '@common/enum';
-import { ActionDto } from '@api/types/Actions.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const $q = useQuasar();
 
-const properties = defineProps({
-    action: ActionDto,
-});
+const properties = defineProps<{
+    action: ActionDto;
+}>();
 
 const { data: permissions } = usePermissionsQuery();
 

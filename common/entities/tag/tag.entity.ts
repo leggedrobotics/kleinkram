@@ -52,7 +52,6 @@ export default class Tag extends BaseEntity {
                 '',
             createdAt: this.createdAt,
             datatype: this.tagType.datatype,
-            description: this.tagType.description,
             name: this.tagType.name,
             updatedAt: this.updatedAt,
             uuid: this.uuid,

@@ -43,12 +43,92 @@ import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../validation/bodyDecorators';
 import { CreatePreSignedURLSDto } from './entities/createPreSignedURLS.dto';
 import env from '@common/env';
-import { ApiOkResponse } from '../decarators';
+import { ApiOkResponse, OutputDto } from '../decarators';
 import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
-import { FileDto, FileWithTopicDto } from '@common/api/types/files/file.dto';
+import { FileWithTopicDto } from '@common/api/types/files/file.dto';
+import { PaggedResponse } from '@common/api/types/pagged-response';
+import { ApiProperty } from '@nestjs/swagger';
+import {
+    IsBoolean,
+    IsNumber,
+    IsString,
+    IsUUID,
+    ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsSkip } from '@common/validation/skip-validation';
+import { IsTake } from '@common/validation/take-validation';
+
+export class AccessCredentialsDto {
+    @ApiProperty()
+    @IsString()
+    accessKey!: string;
+
+    @ApiProperty()
+    @IsString()
+    secretKey!: string;
+
+    @ApiProperty()
+    @IsString()
+    sessionToken!: string;
+}
+
+export class TemporaryFileAccessDto {
+    @ApiProperty()
+    @IsString()
+    bucket!: string;
+
+    @ApiProperty()
+    @IsUUID()
+    fileUUID!: string;
+
+    @ApiProperty()
+    @IsString()
+    fileName!: string;
+
+    @ApiProperty()
+    @ValidateNested()
+    @Type(() => AccessCredentialsDto)
+    accessCredentials!: AccessCredentialsDto;
+
+    @ApiProperty()
+    @IsString()
+    queueUUID!: string;
+}
+
+export class TemporaryFileAccessesDto
+    implements PaggedResponse<TemporaryFileAccessDto>
+{
+    @ApiProperty()
+    @ValidateNested({ each: true })
+    @Type(() => TemporaryFileAccessDto)
+    data!: TemporaryFileAccessDto[];
+
+    @ApiProperty()
+    @IsNumber()
+    count!: number;
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
+}
+
+export class FileExistsResponseDto {
+    @ApiProperty()
+    @IsBoolean()
+    exists!: boolean;
+
+    @ApiProperty()
+    @IsUUID()
+    uuid!: string;
+}
 
 @Controller('file')
 export class FileController {
@@ -220,7 +300,7 @@ export class FileController {
             Number.parseInt(String(skip)), // TODO: fix
             filename,
             // TODO: fix the following, it's ugly
-            fileType !== '' ? (fileType as FileType) : FileType.ALL,
+            fileType === '' ? FileType.ALL : (fileType as FileType),
             categories,
             sort,
             sortDirection,
@@ -255,8 +335,9 @@ export class FileController {
 
     @Delete(':uuid')
     @CanDeleteFile()
-    async deleteFile(@ParameterUID('uuid') uuid: string) {
-        return this.fileService.deleteFile(uuid);
+    @OutputDto(null)
+    async deleteFile(@ParameterUID('uuid') uuid: string): Promise<void> {
+        await this.fileService.deleteFile(uuid);
     }
 
     @Get('storage')
@@ -286,10 +367,14 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
+    @ApiOkResponse({
+        description: 'Temporary access granted',
+        type: TemporaryFileAccessesDto,
+    })
     async getTemporaryAccess(
         @AddUser() auth: AuthRes,
         @Body() body: CreatePreSignedURLSDto,
-    ) {
+    ): Promise<TemporaryFileAccessesDto> {
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
@@ -330,9 +415,11 @@ export class FileController {
     @CanReadFile()
     @ApiOkResponse({
         description: 'File exists',
-        type: Boolean,
+        type: FileExistsResponseDto,
     })
-    async exists(@QueryUUID('uuid', 'FileUUID searched') uuid: string) {
+    async exists(
+        @QueryUUID('uuid', 'FileUUID searched') uuid: string,
+    ): Promise<FileExistsResponseDto> {
         return this.fileService.exists(uuid);
     }
 

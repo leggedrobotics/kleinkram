@@ -25,13 +25,13 @@ import {
 import { ParamUUID as ParameterUID } from '../validation/paramDecorators';
 import { BodyUUID } from '../validation/bodyDecorators';
 import { MISSION_NAME_REGEX } from '../validation/validationLogic';
-import { ApiOkResponse } from '../decarators';
+import { ApiOkResponse, OutputDto } from '../decarators';
 import {
     FlatMissionDto,
+    MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/Mission.dto';
-import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('mission')
 export class MissionController {
@@ -66,8 +66,9 @@ export class MissionController {
 
     @Get('filteredMinimal')
     @UserOnly()
-    @ApiOperation({
-        deprecated: true,
+    @ApiOkResponse({
+        description: 'Returns all missions filtered by project',
+        type: MinimumMissionsDto,
     })
     async filteredMissionsMinimal(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
@@ -77,12 +78,13 @@ export class MissionController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<MinimumMissionsDto> {
         return this.missionService.findMissionByProjectMinimal(
             user.user.uuid,
             uuid,
-            skip,
-            take,
+            // TODO: fix the following
+            Number.parseInt(String(skip)),
+            Number.parseInt(String(take)),
             search,
             sortDirection,
             sortBy,
@@ -192,11 +194,12 @@ export class MissionController {
 
     @Post('tags')
     @CanWriteMissionByBody()
+    @OutputDto(null)
     async updateMissionTags(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('tags') tags: Record<string, string>,
-    ) {
-        return this.missionService.updateTags(missionUUID, tags);
+    ): Promise<void> {
+        await this.missionService.updateTags(missionUUID, tags);
     }
 
     @Get('many')

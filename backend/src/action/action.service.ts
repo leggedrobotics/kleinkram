@@ -16,14 +16,11 @@ import {
 import Apikey from '@common/entities/auth/apikey.entity';
 import { RuntimeDescription } from '@common/types';
 import {
-    ActionDto,
-    ActionsDto,
-    ActionTemplatesDto,
-} from '@common/api/types/Actions.dto';
-import {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
+import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
+import { ActionTemplatesDto } from '@common/api/types/actions/action-template.dto';
 
 @Injectable()
 export class ActionService {

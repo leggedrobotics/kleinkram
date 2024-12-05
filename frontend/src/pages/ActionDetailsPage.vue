@@ -367,8 +367,8 @@ import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import ButtonGroup from 'components/ButtonGroup.vue';
 import { ArtifactState } from '@common/enum';
-import { ActionDto } from '@api/types/Actions.dto';
 import ROUTES from '../router/routes';
+import { ActionDto } from '@api/types/actions/action.dto';
 
 const tab = ref('info');
 

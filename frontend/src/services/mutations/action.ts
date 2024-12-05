@@ -1,7 +1,8 @@
 import axios from 'src/api/axios';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
-import { ActionDto } from '@api/types/Actions.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 export const createAnalysis = async (action: {
     missionUUID: string;

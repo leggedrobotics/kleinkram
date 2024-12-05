@@ -47,14 +47,13 @@ import { TagsDto } from '@api/types/tags/TagsDto.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
     FlatMissionDto,
-    MissionWithFilesDto,
     MissionsDto,
+    MissionWithFilesDto,
 } from '@api/types/Mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { PermissionsDto, ProjectPermissions } from '@api/types/Permissions.dto';
-import { ActionsDto } from '@api/types/Actions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/Category.dto';
 import { getCategories } from '../services/queries/categories';
@@ -63,6 +62,7 @@ import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
+import { ActionsDto } from '@api/types/actions/action.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -245,7 +245,9 @@ export const useMission = (
     return useQuery<MissionWithFilesDto>({
         queryKey: ['mission', missionUuid],
         queryFn: () => getMission(missionUuid.value ?? ''),
-        enabled: missionUuid.value !== undefined && missionUuid.value !== '',
+        enabled: computed(
+            () => missionUuid.value !== undefined && missionUuid.value !== '',
+        ),
         retryDelay,
         throwOnError,
     });
@@ -370,7 +372,7 @@ export const useFilteredProjects = (
 
             const _searchParameter: Record<string, string> =
                 (typeof searchParameter?.value === 'object'
-                    ? (searchParameter?.value as Record<string, string>)
+                    ? searchParameter.value
                     : (searchParameter as Record<string, string>)) ?? {};
 
             return filteredProjects(

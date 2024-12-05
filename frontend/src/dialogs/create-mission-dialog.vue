@@ -212,14 +212,11 @@ const { data: all_projects } = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
 });
-const permissions = usePermissionsQuery();
+const { data: permissions } = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
-    // @ts-ignore
-    return all_projects.value.projects.filter(
-        (_project: ProjectWithMissionsDto) =>
-            // @ts-ignore
-            canCreateMission(_project.uuid, permissions),
+    return all_projects.value.data.filter((_project: ProjectWithMissionsDto) =>
+        canCreateMission(_project.uuid, permissions.value),
     );
 });
 
