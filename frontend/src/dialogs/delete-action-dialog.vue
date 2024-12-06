@@ -4,7 +4,7 @@
         <template #content>
             <delete-action
                 v-if="action"
-                ref="deleteActionRef"
+                ref="deleteActionReference"
                 :action="action"
             />
             <q-skeleton v-else height="250px" />
@@ -14,7 +14,8 @@
             <q-btn
                 flat
                 :disable="
-                    deleteActionRef?.action_name_check !== action?.template.name
+                    deleteActionReference?.action_name_check !==
+                    action?.template.name
                 "
                 label="Delete Action"
                 class="bg-button-primary"
@@ -33,15 +34,17 @@ import { ActionDto } from '@api/types/actions/action.dto';
 import DeleteAction from '@components/delete-action.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionRef = ref<InstanceType<typeof DeleteAction> | null>(null);
+const deleteActionReference = ref<InstanceType<typeof DeleteAction> | null>(
+    null,
+);
 
 const { action } = defineProps<{
     action: ActionDto;
 }>();
 
 const deleteActionAction = (): void => {
-    if (deleteActionRef.value === null) return;
-    deleteActionRef.value.deleteActionAction();
+    if (deleteActionReference.value === null) return;
+    deleteActionReference.value.deleteActionAction();
     onDialogOK();
 };
 </script>

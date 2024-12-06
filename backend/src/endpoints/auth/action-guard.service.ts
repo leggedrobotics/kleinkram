@@ -20,12 +20,12 @@ export class ActionGuardService {
 
     async canAccessAction(
         user: User,
-        actionUUID: string,
+        actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
-        if (!actionUUID || !user) {
+    ): Promise<boolean> {
+        if (!actionUuid || !user) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
+                `ActionGuard: actionUUID (${actionUuid}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
@@ -34,7 +34,7 @@ export class ActionGuardService {
             return true;
         }
         const action = await this.actionRepository.findOne({
-            where: { uuid: actionUUID },
+            where: { uuid: actionUuid },
             relations: ['mission', 'mission.project'],
         });
 
@@ -62,16 +62,16 @@ export class ActionGuardService {
 
     async canKeyAccessAction(
         apikey: Apikey,
-        actionUUID: string,
+        actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
-        if (!actionUUID) {
+    ): Promise<boolean> {
+        if (!actionUuid) {
             logger.error(
-                `ActionGuard: actionUUID (${actionUUID}) not provided. Requesting ${rights.toString()} access.`,
+                `ActionGuard: actionUUID (${actionUuid}) not provided. Requesting ${rights.toString()} access.`,
             );
         }
         const action = await this.actionRepository.findOne({
-            where: { uuid: actionUUID },
+            where: { uuid: actionUuid },
             relations: ['mission'],
         });
         if (!action) {

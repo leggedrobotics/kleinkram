@@ -57,7 +57,10 @@ export class AccessService {
             .getOneOrFail();
     }
 
-    async createAccessGroup(name: string, auth: AuthRes) {
+    async createAccessGroup(
+        name: string,
+        auth: AuthRes,
+    ): Promise<AccessGroup[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });

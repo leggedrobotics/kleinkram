@@ -2,14 +2,16 @@
     <base-dialog ref="dialogRef">
         <template #title> Delete File </template>
         <template #content>
-            <delete-file v-if="file" ref="deleteFileRef" :file="file" />
+            <delete-file v-if="file" ref="deleteFileReference" :file="file" />
             <q-skeleton v-else height="250px" />
         </template>
 
         <template #actions>
             <q-btn
                 flat
-                :disable="deleteFileRef?.file_name_check !== file?.filename"
+                :disable="
+                    deleteFileReference?.file_name_check !== file?.filename
+                "
                 label="Delete File"
                 class="bg-button-primary"
                 @click="deleteFileAction"
@@ -26,15 +28,15 @@ import { FileWithTopicDto } from '@api/types/files/file.dto';
 import DeleteFile from '@components/delete-file.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteFileRef = ref<InstanceType<typeof DeleteFile> | null>(null);
+const deleteFileReference = ref<InstanceType<typeof DeleteFile> | null>(null);
 
 const { file } = defineProps<{
     file: FileWithTopicDto;
 }>();
 
 const deleteFileAction = (): void => {
-    if (deleteFileRef.value === null) return;
-    deleteFileRef.value.deleteFileAction();
+    if (deleteFileReference.value === null) return;
+    deleteFileReference.value.deleteFileAction();
     onDialogOK();
 };
 </script>

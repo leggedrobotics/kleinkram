@@ -13,7 +13,10 @@ export class AuthGuardService {
         private accessGroupRepository: Repository<AccessGroup>,
     ) {}
 
-    async canAddUserToAccessGroup(user: User, accessGroupUUID: string) {
+    async canAddUserToAccessGroup(
+        user: User,
+        accessGroupUUID: string,
+    ): Promise<boolean> {
         if (!user || !accessGroupUUID) {
             logger.error(
                 `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User (${user.uuid}) not provided.`,
@@ -36,7 +39,7 @@ export class AuthGuardService {
     async canEditAccessGroupByProjectUuid(
         user: User,
         projectAccessUUID: string,
-    ) {
+    ): Promise<boolean> {
         if (!user || !projectAccessUUID) {
             logger.error(
                 `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user.uuid}) not provided.`,
@@ -54,7 +57,10 @@ export class AuthGuardService {
         });
     }
 
-    async canEditAccessGroupByGroupUuid(user: User, aguUUID: string) {
+    async canEditAccessGroupByGroupUuid(
+        user: User,
+        aguUUID: string,
+    ): Promise<boolean> {
         if (!user || !aguUUID) {
             logger.error(
                 `AuthGuard: aguUUID (${aguUUID}) or User (${user.uuid}) not provided.`,

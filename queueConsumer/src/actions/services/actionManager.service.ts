@@ -354,7 +354,7 @@ export class ActionManagerService {
      * it updates the state of the mission to 'FAILED'.
      */
     @tracing()
-    async cleanupContainers() {
+    async cleanupContainers(): Promise<void> {
         logger.debug('Cleanup containers and dangling actions...');
 
         const runningActionContainers: Dockerode.ContainerInfo[] =
@@ -366,7 +366,7 @@ export class ActionManagerService {
                 container.Names[0]?.startsWith(
                     `/${DockerDaemon.CONTAINER_PREFIX}`,
                 ),
-            ) || [];
+            ) ?? [];
         //////////////////////////////////////////////////////////////////////////////
         // Find crashed containers
         //////////////////////////////////////////////////////////////////////////////
@@ -379,7 +379,7 @@ export class ActionManagerService {
                 ),
             ),
         );
-        const name = (await si.osInfo()).hostname;
+        const { hostname: name } = await si.osInfo();
         const actionsInLocalProcess = await this.actionRepository.find({
             where: {
                 state: ActionState.PROCESSING,

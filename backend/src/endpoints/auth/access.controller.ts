@@ -74,9 +74,9 @@ export class AccessController {
 
     @Post('create')
     @CanCreate()
-    @ApiResponse({
+    @ApiOkResponse({
         status: 200,
-        type: AccessGroup,
+        type: AccessGroup, // TODO: this type is wrong
         description: 'Returns the created AccessGroup',
     })
     @ApiOperation({
@@ -87,7 +87,7 @@ export class AccessController {
     async createAccessGroup(
         @Body() body: CreateAccessGroupDto,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<AccessGroup[]> {
         return this.accessService.createAccessGroup(body.name, user);
     }
 

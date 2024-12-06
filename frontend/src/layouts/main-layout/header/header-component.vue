@@ -33,7 +33,7 @@ import BreadCrumbsNavigation from './bread-crumb-navigation.vue';
 
 const $router = useRouter();
 
-const mainMenu: MainMenu = [
+const mainMenu: MainMenu[] = [
     {
         title: 'Dashboard',
         icon: 'sym_o_dashboard',

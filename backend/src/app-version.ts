@@ -13,4 +13,4 @@ const packageJson = JSON.parse(
 /**
  * The version of the application as defined in the package.json file.
  */
-export const appVersion = packageJson.version || '';
+export const appVersion = packageJson.version ?? '';

@@ -27,7 +27,7 @@ export class MissionGuardService {
         user: User,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!isUUID(missionUUID)) {
             logger.error(
                 `MissionGuard: missionUUID (${missionUUID}) not provided. Requesting ${rights} access.`,
@@ -49,7 +49,7 @@ export class MissionGuardService {
         missionName: string,
         projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!missionName || !user) {
             logger.error(
                 `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -68,7 +68,7 @@ export class MissionGuardService {
         user: User,
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!tagUUID || !user) {
             logger.error(
                 `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -98,7 +98,7 @@ export class MissionGuardService {
         apikey: Apikey,
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!tagUUID) {
             throw new ConflictException('Tag UUID not provided');
         }
@@ -115,7 +115,7 @@ export class MissionGuardService {
         user: User,
         missionUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!missionUUIDs || !user) {
             logger.error(
                 `MissionGuard: missionUUIDs (${missionUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting READ access.`,
@@ -140,7 +140,7 @@ export class MissionGuardService {
         user: User,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         const mission = await this.missionRepository.findOne({
             where: { uuid: missionUUID },
             relations: ['project'],
@@ -174,7 +174,7 @@ export class MissionGuardService {
         apikey: Apikey,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): boolean {
         return apikey.mission.uuid === missionUUID && apikey.rights >= rights;
     }
 
@@ -183,7 +183,7 @@ export class MissionGuardService {
         missionName: string,
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
-    ) {
+    ): Promise<boolean> {
         if (!missionName) {
             throw new ConflictException('Mission name not provided');
         }

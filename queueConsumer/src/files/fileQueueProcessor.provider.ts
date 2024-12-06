@@ -590,9 +590,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             const temporaryFileNameMcap = await convertToMcap(
                 temporaryFileName,
             ).catch(async (error: unknown) => {
-                let errorMessage: string;
-
-                errorMessage =
+                const errorMessage =
                     error instanceof Error ? error.message : String(error);
 
                 logger.error(
@@ -620,9 +618,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 mcapFileEntity.filename,
                 temporaryFileNameMcap,
             ).catch(async (error: unknown) => {
-                let errorMessage: string;
-
-                errorMessage =
+                const errorMessage =
                     error instanceof Error ? error.message : String(error);
 
                 logger.error(
@@ -746,9 +742,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         const meta = await mcapMetaInfo(temporaryFileName).catch(
             async (error: unknown) => {
-                let errorMessage: string;
-
-                errorMessage =
+                const errorMessage =
                     error instanceof Error ? error.message : String(error);
 
                 logger.error(
