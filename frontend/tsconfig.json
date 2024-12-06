@@ -27,10 +27,16 @@
             // types are only used at compile time, thus no need to add them to the quasar.config.js
             //
             ////////////////////////////////////
-            "@common/*": ["../common/frontend_shared/*"]
+            "@common/*": ["../common/frontend_shared/*"],
+            "@components/*": ["src/components/*"]
         },
         "types": ["vite/client"]
     },
-    "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
-
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "src/**/*.tsx",
+        "src/**/*.vue",
+        "src/shims-vue.d.ts"
+    ]
 }

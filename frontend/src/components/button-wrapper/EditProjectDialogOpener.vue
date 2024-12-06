@@ -17,10 +17,7 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import EditProjectDialog from '../../dialogs/modify-project-dialog.vue';
-import {
-    canModifyProject,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyProject, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 
 const $q = useQuasar();

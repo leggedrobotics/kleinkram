@@ -5,17 +5,13 @@
                 <tr>
                     <td class="q-table__cell first-column">Name:</td>
                     <td class="q-table__cell">
-                        <q-chip>
-                            {{ user.name }}
-                        </q-chip>
+                        <q-chip> {{ user.name }}</q-chip>
                     </td>
                 </tr>
                 <tr>
                     <td class="q-table__cell first-column">Email:</td>
                     <td class="q-table__cell">
-                        <q-chip>
-                            {{ user.email }}
-                        </q-chip>
+                        <q-chip> {{ user.email }}</q-chip>
                     </td>
                 </tr>
                 <tr>
@@ -27,9 +23,7 @@
                 <tr>
                     <td class="q-table__cell first-column">UUID:</td>
                     <td class="q-table__cell">
-                        <q-chip>
-                            {{ user.uuid }}
-                        </q-chip>
+                        <q-chip> {{ user.uuid }}</q-chip>
                     </td>
                 </tr>
                 <tr>
@@ -53,7 +47,7 @@
 import { computed } from 'vue';
 import { GroupMembershipDto } from '@api/types/User.dto';
 import { AccessGroupType } from '@common/enum';
-import { useUser } from '../../hooks/customQueryHooks';
+import { useUser } from '../../hooks/query-hooks';
 
 const { data: user } = useUser();
 

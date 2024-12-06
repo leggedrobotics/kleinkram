@@ -4,10 +4,10 @@
 
 There are four possible access rights for any resource (e.g., a project, mission, file, ...):
 
--   <Read/>: The ability to view the content of a resource.
--   <Create/>: The ability to create new content within a resource.
--   <Modify/>: The ability to change or update an existing resource.
--   <Delete/>: The ability to delete / remove a resource.
+- <Read/>: The ability to view the content of a resource.
+- <Create/>: The ability to create new content within a resource.
+- <Modify/>: The ability to change or update an existing resource.
+- <Delete/>: The ability to delete / remove a resource.
 
 These above permission levels are hierarchically ordered and transitive, meaning a higher level (e.g., <Delete/>)
 automatically includes the permissions of all lower levels (e.g., <Read/>).
@@ -21,8 +21,8 @@ For some resources the creator has more rights. These operations are marked with
 Access rights are linked to two key entities: **projects** and **missions**. Since projects contain missions,
 a user’s access rights to a mission is determined by the highest of the following:
 
--   the access rights on the mission
--   the access rights on the project
+- the access rights on the mission
+- the access rights on the project
 
 ### Mission Level Access Implies Project Level Access
 
@@ -47,10 +47,10 @@ members access rights to the resource.
 
 On top of that, affiliation groups can be used to
 
--   assign default access rights to its members (e.g. all members of the `Leggedrobotics` affiliation group get <Read/> on
-    all new projects by default (unless explicitly changed))
--   can restrict or allow global access rights (e.g. all users not part of the `Leggedrobotics` affiliation group are not
-    allowed create new projects or creation of new access groups)
+- assign default access rights to its members (e.g. all members of the `Leggedrobotics` affiliation group get <Read/> on
+  all new projects by default (unless explicitly changed))
+- can restrict or allow global access rights (e.g. all users not part of the `Leggedrobotics` affiliation group are not
+  allowed create new projects or creation of new access groups)
 
 ## Primary Group
 

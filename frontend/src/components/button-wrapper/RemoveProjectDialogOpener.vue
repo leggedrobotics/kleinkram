@@ -21,20 +21,17 @@ import { Notify } from 'quasar';
 import { computed } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { removeAccessGroupFromProject } from 'src/services/mutations/access';
-import {
-    canDeleteProject,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canDeleteProject, usePermissionsQuery } from '../../hooks/query-hooks';
 import { AccessGroupDto } from '@api/types/User.dto';
 
-const properties = defineProps<{
+const { accessGroup, projectUUID } = defineProps<{
     accessGroup: AccessGroupDto;
     projectUUID: string;
 }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canDelete = computed(() =>
-    canDeleteProject(properties.projectUUID, permissions.value),
+    canDeleteProject(projectUUID, permissions.value),
 );
 const queryClient = useQueryClient();
 
@@ -45,13 +42,10 @@ const removeProject = (): void => {
 
 const { mutate: _removeProject } = useMutation({
     mutationFn: () =>
-        removeAccessGroupFromProject(
-            properties.projectUUID,
-            properties.accessGroup.uuid,
-        ),
+        removeAccessGroupFromProject(projectUUID, accessGroup.uuid),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', properties.accessGroup.uuid],
+            queryKey: ['AccessGroup', accessGroup.uuid],
         });
         Notify.create({
             message: 'Project removed from access group',
@@ -74,5 +68,3 @@ const { mutate: _removeProject } = useMutation({
     opacity: 0.5;
 }
 </style>
-
-<style scoped></style>

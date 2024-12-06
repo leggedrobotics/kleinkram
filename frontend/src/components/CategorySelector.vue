@@ -52,7 +52,7 @@
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
 import { CategoryDto } from '@api/types/Category.dto';
-import { useCategories } from '../hooks/customQueryHooks';
+import { useCategories } from '../hooks/query-hooks';
 
 const properties = defineProps<{
     selected: Ref<CategoryDto[]>;

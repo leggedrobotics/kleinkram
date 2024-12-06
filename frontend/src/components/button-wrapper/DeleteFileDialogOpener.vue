@@ -16,25 +16,19 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import DeleteFileDialog from '../../dialogs/delete-file-dialog.vue';
-import {
-    canDeleteMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canDeleteMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
-const properties = defineProps<{
-    file: FileWithTopicDto;
-}>();
+const { file } = defineProps<{ file: FileWithTopicDto }>();
 
 const $q = useQuasar();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!properties.file) return false;
     return canDeleteMission(
-        properties.file.mission.uuid,
-        properties.file.mission.project.uuid,
+        file.mission.uuid,
+        file.mission.project.uuid,
         permissions.value,
     );
 });
@@ -45,7 +39,7 @@ const deleteFile = (): void => {
         title: 'Delete File',
         component: DeleteFileDialog,
         componentProps: {
-            file: properties.file,
+            file: file,
         },
     });
 };

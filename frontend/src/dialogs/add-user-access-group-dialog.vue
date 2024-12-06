@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add User to Access Group </template>
+        <template #title>Add User to Access Group</template>
 
         <template #content>
             <AddUserToAccessGroup
                 ref="addUserRef"
-                :access_group_uuid="props.access_group_uuid"
+                :access_group_uuid="accessGroupUuid"
             />
         </template>
 
@@ -21,20 +21,23 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import AddUserToAccessGroup from 'components/AddUserToAccessGroup.vue';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
+import AddUserToAccessGroup from '@components/add-user-access-group.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const addUserRef = ref<InstanceType<typeof AddUserToAccessGroup> | null>(null);
+const addUserReference = ref<InstanceType<typeof AddUserToAccessGroup> | null>(
+    // TODO: check why we need null as a value
+    // eslint-disable-next-line unicorn/no-null
+    null,
+);
 
-const props = defineProps<{
-    access_group_uuid: string;
+const { accessGroupUuid } = defineProps<{
+    accessGroupUuid: string;
 }>();
 
 const addUserToAccessGroupAction = (): void => {
-    // @ts-ignore
-    addUserRef.value?.mutate();
+    addUserReference.value?.mutate();
     onDialogOK();
 };
 </script>

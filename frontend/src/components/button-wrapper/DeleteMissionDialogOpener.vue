@@ -19,18 +19,13 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import {
-    canModifyMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
 import { FlatMissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const { mission } = defineProps<{
-    mission: FlatMissionDto;
-}>();
+const { mission } = defineProps<{ mission: FlatMissionDto }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     if (mission.filesCount > 0) {

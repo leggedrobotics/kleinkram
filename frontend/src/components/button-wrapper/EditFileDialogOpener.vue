@@ -16,25 +16,19 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import {
-    canModifyMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
-import NewEditFile from 'components/NewEditFile.vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import NewEditFile from '../new-edit-file.vue';
 
 const $q = useQuasar();
-const properties = defineProps<{
-    file: FileWithTopicDto;
-}>();
+const { file } = defineProps<{ file: FileWithTopicDto }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!properties.file) return false;
     return canModifyMission(
-        properties.file.mission.uuid,
-        properties.file.mission.project.uuid,
+        file.mission.uuid,
+        file.mission.project.uuid,
         permissions.value,
     );
 });
@@ -44,7 +38,7 @@ const editFile = (): void => {
     $q.dialog({
         component: NewEditFile,
         componentProps: {
-            file_uuid: properties.file.uuid,
+            fileUuid: file.uuid,
         },
         persistent: true,
     });

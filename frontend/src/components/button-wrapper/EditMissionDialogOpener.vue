@@ -16,24 +16,20 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import {
-    canModifyMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import EditMissionDialog from '../../dialogs/modify-mission-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const properties = defineProps<{
+const { mission } = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!properties.mission) return false;
     return canModifyMission(
-        properties.mission.uuid,
-        properties.mission.project.uuid,
+        mission.uuid,
+        mission.project.uuid,
         permissions.value,
     );
 });
@@ -43,7 +39,7 @@ const editMission = (): void => {
     $q.dialog({
         component: EditMissionDialog,
         componentProps: {
-            mission: properties.mission,
+            mission: mission,
         },
         persistent: true,
     });

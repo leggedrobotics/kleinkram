@@ -17,10 +17,7 @@
 <script setup lang="ts">
 import AccessRightsDialog from '../../dialogs/modify-access-rights-dialog.vue';
 import { useQuasar } from 'quasar';
-import {
-    canModifyProject,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyProject, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 
 const { project_uuid } = defineProps({

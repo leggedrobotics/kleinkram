@@ -43,6 +43,7 @@ module.exports = configure(function (/* ctx */) {
             // and to the Dockerfiles
             alias: {
                 '@common': path.resolve(__dirname, 'common/frontend_shared'),
+                '@components': path.resolve(__dirname, 'src/components'),
             },
 
             target: {

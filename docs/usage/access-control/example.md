@@ -4,10 +4,10 @@
 This scenario shows how access rights can be granted to individuals and groups.
 The chapter illustrate:
 
--   Affiliation Groups
--   Individual Access Rights
--   Groups
--   Admins
+- Affiliation Groups
+- Individual Access Rights
+- Groups
+- Admins
 
 :::
 

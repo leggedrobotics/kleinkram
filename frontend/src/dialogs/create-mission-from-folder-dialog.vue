@@ -116,8 +116,8 @@ import { createMission } from 'src/services/mutations/mission';
 import { createFileAction } from 'src/services/fileService';
 import { FlatMissionDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
-import { useProjectQuery } from '../hooks/customQueryHooks';
-import SelectMissionTags from '../components/SelectMissionTags.vue';
+import { useProjectQuery } from '../hooks/query-hooks';
+import SelectMissionTags from '@components/select-mission-tags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');

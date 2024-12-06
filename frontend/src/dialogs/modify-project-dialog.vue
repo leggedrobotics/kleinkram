@@ -20,7 +20,7 @@
 import BaseDialog from './base-dialog.vue';
 import { useDialogPluginComponent } from 'quasar';
 import { ref } from 'vue';
-import EditProject from '../components/EditProject.vue';
+import EditProject from '@components/edit-project.vue';
 
 const editProjectRef = ref<InstanceType<typeof EditProject> | null>(null);
 

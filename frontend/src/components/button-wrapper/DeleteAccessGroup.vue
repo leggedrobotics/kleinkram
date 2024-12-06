@@ -16,7 +16,7 @@
         "
     >
         <slot />
-        <q-tooltip v-if="props.accessGroup.type === AccessGroupType.PRIMARY">
+        <q-tooltip v-if="accessGroup.type === AccessGroupType.PRIMARY">
             You can't delete the primary access group
         </q-tooltip>
         <q-tooltip v-else-if="!canModify">
@@ -35,9 +35,7 @@ import { getUser } from 'src/services/auth';
 import { AccessGroupType, UserRole } from '@common/enum';
 import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/User.dto';
 
-const props = defineProps<{
-    accessGroup: AccessGroupDto;
-}>();
+const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
 
 const me: Ref<CurrentAPIUserDto | undefined> = ref(undefined);
 await getUser().then((user) => {
@@ -49,12 +47,12 @@ const canModify = computed(() => {
     if (me.value.role === UserRole.ADMIN) {
         return true;
     }
-    return props.accessGroup.creator?.uuid === me.value.uuid;
+    return accessGroup.creator?.uuid === me.value.uuid;
 });
 const queryClient = useQueryClient();
 
 const { mutate: _deleteAccessGroup } = useMutation({
-    mutationFn: () => deleteAccessGroup(props.accessGroup.uuid),
+    mutationFn: () => deleteAccessGroup(accessGroup.uuid),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => {

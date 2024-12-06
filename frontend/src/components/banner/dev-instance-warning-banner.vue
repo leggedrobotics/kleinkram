@@ -1,6 +1,6 @@
 <template>
     <q-banner
-        v-if="is_dev_instance"
+        v-if="isDevInstance"
         inline-actions
         class="text-white bg-red"
         style="margin: 10px 0"
@@ -23,5 +23,5 @@
 import ENV from '../../env';
 
 // TODO: currently, all hosted versions should show this warning
-const is_dev_instance = ENV.ENDPOINT.includes('.dev.leggedrobotics.com');
+const isDevInstance = ENV.ENDPOINT.includes('.dev.leggedrobotics.com');
 </script>

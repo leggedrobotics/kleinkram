@@ -23,7 +23,7 @@ import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import DeleteFile from '../components/DeleteFile.vue';
+import DeleteFile from '@components/delete-file.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteFileRef = ref<InstanceType<typeof DeleteFile> | null>(null);

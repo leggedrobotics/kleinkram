@@ -59,19 +59,21 @@
 
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
-import TitleSection from 'components/TitleSection.vue';
 import { ref } from 'vue';
-import { useHandler, useUser } from 'src/hooks/customQueryHooks';
+import { useHandler, useUser } from '../../hooks/query-hooks';
 import { UserRole } from '@common/enum';
-import ExplorerPageProjectTable from '../explorer-page/ExplorerPageProjectTable.vue';
+import ExplorerPageProjectTable from '../explorer-page/explorer-page-project-table.vue';
 import AdminSettings from './admin-settings.vue';
 import UserProfileDetails from './user-profile-details.vue';
 import UserProfileBanner from './user-profile-banner.vue';
+import TitleSection from '../title-section.vue';
 
 const { data: user } = useUser();
 const tab = ref('Details');
 
-// we need to set the creator.uuid search param in order to fetch the correct projects
 const handler = useHandler();
-handler.value.searchParams = { 'creator.uuid': user.value?.uuid || '' };
+
+// we need to set the creator.uuid search param in order to fetch the correct projects
+// eslint-disable-next-line @typescript-eslint/naming-convention
+handler.value.searchParams = { 'creator.uuid': user.value?.uuid ?? '' };
 </script>

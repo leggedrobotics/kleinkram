@@ -14,9 +14,7 @@ export interface ProjectColumnType {
     field?:
         | ((row: ProjectWithMissionCountDto) => any)
         | ((row: FlatMissionDto) => any)
-        | ((row: FileWithTopicDto) => any)
-        // @ts-ignore
-        | ((row: AggregatedMission) => any);
+        | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;
     style?: string;

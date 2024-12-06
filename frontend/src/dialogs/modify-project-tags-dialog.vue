@@ -36,9 +36,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { updateTagTypes } from 'src/services/mutations/project';
 import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
-import CreateTagTypeDialogOpener from '../components/button-wrapper/CreateTagTypeDialogOpener.vue';
-import ButtonGroup from '../components/ButtonGroup.vue';
-import ConfigureMetadata from '../components/ConfigureMetadata.vue';
+import CreateTagTypeDialogOpener from '@components/button-wrapper/dialog-opener-create-tag-type.vue';
+import ButtonGroup from '@components/buttons/button-group.vue';
+import ConfigureMetadata from '@components/configure-metadata.vue';
+import { useProjectQuery } from '../hooks/query-hooks';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -48,12 +49,7 @@ const properties = defineProps<{
 
 const queryClient = useQueryClient();
 
-const { data: project } = useQuery({
-    queryKey: ['project', properties.projectUUID],
-    queryFn: async () => {
-        return getProject(properties.projectUUID);
-    },
-});
+const { data: project } = useProjectQuery(properties.projectUUID);
 const selected = ref<TagTypeDto[]>([]);
 
 watch(

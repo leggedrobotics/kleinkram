@@ -23,12 +23,12 @@
                     <label for="categoryName">Select Categories</label>
                     <category-selector
                         :selected="selected"
-                        :project_uuid="project_uuid"
+                        :project_uuid="projectUuid"
                         @update:selected="updateSelected"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="create" style="min-height: 180px">
-                    <CategoryCreator :project_uuid="project_uuid" />
+                    <CategoryCreator :project_uuid="projectUuid" />
                 </q-tab-panel>
             </q-tab-panels>
         </template>
@@ -46,19 +46,19 @@
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { Ref, ref } from 'vue';
-import CategorySelector from 'components/CategorySelector.vue';
-import CategoryCreator from 'components/CategoryCreator.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
 import { CategoryDto } from '@api/types/Category.dto';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import CategorySelector from '@components/CategorySelector.vue';
+import CategoryCreator from '@components/category-creator.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const properties = defineProps<{
-    mission_uuid: string;
-    project_uuid: string;
+const { missionUuid, projectUuid, files } = defineProps<{
+    missionUuid: string;
+    projectUuid: string;
     files: FileWithTopicDto[];
 }>();
 const queryClient = useQueryClient();
@@ -73,8 +73,8 @@ const updateSelected = (value: CategoryDto[]): void => {
 const { mutate } = useMutation({
     mutationFn: async () => {
         await addManyCategories(
-            properties.mission_uuid,
-            properties.files.map((f) => f.uuid),
+            missionUuid,
+            files.map((f) => f.uuid),
             selected.value.map((c) => c.uuid),
         );
         onDialogOK();

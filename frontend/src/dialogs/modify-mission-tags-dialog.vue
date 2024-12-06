@@ -27,7 +27,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
-import SelectMissionTags from '../components/SelectMissionTags.vue';
+import SelectMissionTags from '@components/select-mission-tags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

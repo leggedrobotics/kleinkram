@@ -120,10 +120,10 @@ import { computed, Ref, ref, watch } from 'vue';
 import { createProject } from '../services/mutations/project';
 import { useQueryClient } from '@tanstack/vue-query';
 import { AccessGroupType } from '@common/enum';
-import { useProjectDefaultAccess } from '../hooks/customQueryHooks';
+import { useProjectDefaultAccess } from '../hooks/query-hooks';
 import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import ConfigureMetadata from '../components/ConfigureMetadata.vue';
+import ConfigureMetadata from '@components/configure-metadata.vue';
 import ConfigureAccessRights from '../components/configure-access-rights/configure-access-rights.vue';
 
 const formIsValid = ref(false);

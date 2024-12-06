@@ -95,7 +95,7 @@ import { QTable, useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
 import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
-import { useAllTags } from '../hooks/customQueryHooks';
+import { useAllTags } from '../hooks/query-hooks';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 

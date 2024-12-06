@@ -27,8 +27,8 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { computed, ref } from 'vue';
-import { useMission } from 'src/hooks/customQueryHooks';
-import DeleteMission from '../components/DeleteMission.vue';
+import { useMission } from '../hooks/query-hooks';
+import DeleteMission from '@components/delete-mission.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteMissionRef = ref<InstanceType<typeof DeleteMission> | null>(null);

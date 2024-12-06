@@ -16,26 +16,23 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import {
-    canDeleteMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canDeleteMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
-import MoveFiles from '../../dialogs/move-files.vue';
+import MoveFiles from '../../dialogs/modify-file-location-dialog.vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { MissionDto } from '@api/types/Mission.dto';
 
 const $q = useQuasar();
-const properties = defineProps<{
-    mission: FileWithTopicDto;
+const { mission, files } = defineProps<{
+    mission: MissionDto;
     files: FileWithTopicDto[];
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
-    if (!properties.mission) return false;
     return canDeleteMission(
-        properties.mission.uuid,
-        properties.mission.project.uuid,
+        mission.uuid,
+        mission.project.uuid,
         permissions.value,
     );
 });
@@ -45,8 +42,8 @@ const moveFiles = (): void => {
     $q.dialog({
         component: MoveFiles,
         componentProps: {
-            mission: properties.mission,
-            files: properties.files,
+            mission: mission,
+            files: files,
         },
         persistent: true,
     });

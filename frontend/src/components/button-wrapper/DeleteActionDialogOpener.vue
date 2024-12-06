@@ -23,19 +23,17 @@ import {
     getPermissionForMission,
     getPermissionForProject,
     usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
-import { computed, ref, watchEffect } from 'vue';
+    useUser,
+} from '../../hooks/query-hooks';
+import { computed } from 'vue';
 import DeleteActionDialog from '../../dialogs/delete-action-dialog.vue';
-import { getMe } from 'src/services/queries/user';
 import { ActionState } from '@common/enum';
 
 import { ActionDto } from '@api/types/actions/action.dto';
 
 const $q = useQuasar();
 
-const properties = defineProps<{
-    action: ActionDto;
-}>();
+const { action } = defineProps<{ action: ActionDto }>();
 
 const { data: permissions } = usePermissionsQuery();
 
@@ -46,7 +44,7 @@ const canDelete = computed(
 );
 
 const actionInDeletableState = computed(() => {
-    const state = properties.action.state;
+    const state = action.state;
     return (
         state === ActionState.FAILED ||
         state === ActionState.DONE ||
@@ -54,29 +52,17 @@ const actionInDeletableState = computed(() => {
     );
 });
 
-const isCreator = ref<boolean>(false);
-
-watchEffect(() => {
-    getMe()
-        .then((me) => {
-            const actionCreator = properties.action.creator;
-            isCreator.value = me.uuid === actionCreator.uuid;
-        })
-        .catch((error: unknown) => {
-            console.error(error);
-        });
-});
+const { data: user } = useUser();
+const isCreator = computed(() => action.creator.uuid === user.value?.uuid);
 
 const deletePermissions = computed(() => {
     const projectPermissions = getPermissionForProject(
-        properties.action.mission.project.uuid,
-        // @ts-ignore
-        permissions.value,
+        action.mission.project.uuid,
+        permissions.value ?? undefined,
     );
     const missionPermissions = getPermissionForMission(
-        properties.action.mission.uuid,
-        // @ts-ignore
-        permissions.value,
+        action.mission.uuid,
+        permissions.value ?? undefined,
     );
 
     return Math.max(projectPermissions, missionPermissions);
@@ -90,7 +76,7 @@ const openDeleteActionDialog = (): void => {
     $q.dialog({
         component: DeleteActionDialog,
         componentProps: {
-            action: properties.action,
+            action: action,
         },
     });
 };

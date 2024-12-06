@@ -158,18 +158,18 @@ import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
 import { createMission } from 'src/services/mutations/mission';
-import CreateFile from 'components/CreateFile.vue';
 import {
     canCreateMission,
     usePermissionsQuery,
     useProjectQuery,
-} from 'src/hooks/customQueryHooks';
+} from '../hooks/query-hooks';
 import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { FileUploadDto } from '@api/types/Upload.dto';
-import SelectMissionTags from '../components/SelectMissionTags.vue';
+import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { TagDto } from '@api/types/tags/TagsDto.dto';
+import CreateFile from '@components/create-file.vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;

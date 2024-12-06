@@ -255,7 +255,7 @@ import { QSelect, QTable } from 'quasar';
 import { computed, ref } from 'vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { accessGroupRightsList } from '../../enums/accessGroupRightsList';
-import { useSearchAccessGroup } from '../../hooks/customQueryHooks';
+import { useSearchAccessGroup } from '../../hooks/query-hooks';
 import { AccessGroupDto } from '@api/types/User.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 

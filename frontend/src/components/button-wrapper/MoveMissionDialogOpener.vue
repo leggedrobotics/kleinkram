@@ -16,28 +16,21 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import {
-    canModifyMission,
-    usePermissionsQuery,
-} from 'src/hooks/customQueryHooks';
+import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
-import MoveMission from '../../dialogs/move-mission-dialog.vue';
+import MoveMission from '../../dialogs/modify-mission-location-dialog.vue';
 import { useRouter } from 'vue-router';
 import { MissionWithFilesDto } from '@api/types/Mission.dto';
 import { useMissionUUID } from '../../hooks/router-hooks';
 
 const $q = useQuasar();
-const properties = defineProps<{
+const { mission } = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 const urlMissionUUID = useMissionUUID();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canModifyMission(
-        properties.mission.uuid,
-        properties.mission.project.uuid,
-        permissions.value,
-    ),
+    canModifyMission(mission.uuid, mission.project.uuid, permissions.value),
 );
 const $router = useRouter();
 
@@ -48,7 +41,7 @@ const moveMission = (): void => {
         component: MoveMission,
         persistent: false,
         style: 'max-width: 1500px',
-        componentProps: { mission: properties.mission },
+        componentProps: { mission: mission },
     }).onOk((newProjectUUID: string) => {
         if (urlMissionUUID.value) {
             $router
