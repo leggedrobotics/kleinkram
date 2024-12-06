@@ -31,8 +31,7 @@
 <script setup lang="ts">
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
-import { getProject } from 'src/services/queries/project';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { updateTagTypes } from 'src/services/mutations/project';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
@@ -43,19 +42,17 @@ import { useProjectQuery } from '../hooks/query-hooks';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const properties = defineProps<{
-    projectUUID: string;
-}>();
+const { projectUUID } = defineProps<{ projectUUID: string }>();
 
 const queryClient = useQueryClient();
 
-const { data: project } = useProjectQuery(properties.projectUUID);
+const { data: project } = useProjectQuery(projectUUID);
 const selected = ref<TagTypeDto[]>([]);
 
 watch(
     () => project.value,
     (newValue) => {
-        selected.value = newValue?.requiredTags || ([] as TagTypeDto[]);
+        selected.value = newValue?.requiredTags ?? ([] as TagTypeDto[]);
     },
     { immediate: true },
 );
@@ -75,7 +72,7 @@ const { mutate } = useMutation({
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'project' &&
-                query.queryKey[1] === properties.projectUUID,
+                query.queryKey[1] === projectUUID,
         });
     },
     onError(error) {

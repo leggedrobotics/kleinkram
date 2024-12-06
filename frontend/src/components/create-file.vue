@@ -101,7 +101,7 @@ import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
-import { createFileAction, driveUpload } from 'src/services/fileService';
+import { createFileAction, driveUpload } from '../services/file-service';
 import {
     FlatMissionDto,
     MissionsDto,

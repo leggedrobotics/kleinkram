@@ -3,7 +3,10 @@
         <template #title> Edit Project</template>
 
         <template #content>
-            <edit-project ref="editProjectRef" :project_uuid="project_uuid" />
+            <edit-project
+                ref="editProjectReference"
+                :project_uuid="project_uuid"
+            />
         </template>
 
         <template #actions>
@@ -22,7 +25,7 @@ import { useDialogPluginComponent } from 'quasar';
 import { ref } from 'vue';
 import EditProject from '@components/edit-project.vue';
 
-const editProjectRef = ref<InstanceType<typeof EditProject> | null>(null);
+const editProjectReference = ref<InstanceType<typeof EditProject> | null>(null);
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -34,8 +37,8 @@ const { project_uuid } = defineProps<{
 if (project_uuid === '') throw new Error('Project UUID is required');
 
 const saveProjects = (): void => {
-    if (editProjectRef.value === null) return;
-    editProjectRef.value
+    if (editProjectReference.value === null) return;
+    editProjectReference.value
         // @ts-ignore
         .save_changes()
         .then(onDialogOK)

@@ -212,14 +212,14 @@ export const canDeleteProject = (
 };
 
 export const useProjectQuery = (
-    projectUuid: Ref<string | undefined>,
+    projectUuid: Ref<string | undefined> | string,
 ): UseQueryReturnType<ProjectWithMissionsDto, Error> =>
     useQuery<ProjectWithMissionsDto>({
         queryKey: ['project', projectUuid ? projectUuid : ''],
         queryFn: (): Promise<ProjectWithMissionsDto> => {
-            return getProject(projectUuid.value ?? '');
+            return getProject(unref(projectUuid) ?? '');
         },
-        enabled: () => !!projectUuid.value,
+        enabled: () => !!unref(projectUuid),
     });
 
 /**

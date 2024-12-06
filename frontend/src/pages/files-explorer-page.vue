@@ -507,10 +507,10 @@ const { mutate: _deleteFiles } = useMutation({
                 query.queryKey[1] === missionUuid.value,
         });
     },
-    onError: (e: unknown) => {
+    onError: (error: unknown) => {
         const errorMessage =
             (
-                e as {
+                error as {
                     response?: { data?: { message?: string } };
                 }
             ).response?.data?.message ?? '';

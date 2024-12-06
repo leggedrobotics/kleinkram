@@ -256,7 +256,7 @@
     </div>
 
     <q-table
-        ref="tableRef"
+        ref="tableReference"
         v-model:pagination="pagination"
         v-model:selected="selected"
         flat
@@ -371,7 +371,7 @@ import EditFileDialogOpener from '../components/button-wrapper/EditFileDialogOpe
 const $router = useRouter();
 
 const $q = useQuasar();
-const tableRef: Ref<QTable | null> = ref(null);
+const tableReference: Ref<QTable | null> = ref(null);
 
 const handler = useHandler();
 handler.value.sortBy = 'file.createdAt';

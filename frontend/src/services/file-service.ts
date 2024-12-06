@@ -67,6 +67,9 @@ export const createFileAction = async (
     });
 };
 
+const isBagOrMCAPFilter = (filename: string): boolean =>
+    filename.endsWith('.bag') || filename.endsWith('.mcap');
+
 async function _createFileAction(
     selectedMission: FlatMissionDto,
     selectedProject: ProjectDto,
@@ -91,9 +94,6 @@ async function _createFileAction(
         spinner: false,
         timeout: 2000,
     });
-
-    const isBagOrMCAPFilter = (filename: string): boolean =>
-        filename.endsWith('.bag') || filename.endsWith('.mcap');
 
     const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
     const isValidNameFilter = (filename: string): boolean =>
@@ -293,7 +293,7 @@ async function _createFileAction(
 export async function driveUpload(
     selectedMission: FlatMissionDto | null,
     driveUrl: Ref<string>,
-) {
+): Promise<void> {
     // abort if no mission is selected
     if (selectedMission === null) return;
 
@@ -337,7 +337,7 @@ async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
     newFileUpload: Ref<FileWithTopicDto>,
-) {
+): Promise<string> {
     let uploadId: string | undefined;
     try {
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
@@ -414,7 +414,7 @@ async function uploadFileMultipart(
         newFileUpload.value.canceled = true;
 
         // Step 4 (Optional): Abort Multipart Upload
-        if (uploadId) {
+        if (uploadId !== undefined) {
             const abortMultipartUploadCommand = new AbortMultipartUploadCommand(
                 {
                     Bucket: bucket,
