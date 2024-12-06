@@ -1,6 +1,6 @@
 import axios from 'src/api/axios';
 import { FileType } from '@common/enum';
-import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
+import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { AxiosResponse } from 'axios';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';

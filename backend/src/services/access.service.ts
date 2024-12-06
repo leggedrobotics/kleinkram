@@ -17,7 +17,7 @@ import {
 import Project from '@common/entities/project/project.entity';
 import ProjectAccess from '@common/entities/auth/project_access.entity';
 import GroupMembership from '@common/entities/auth/group_membership.entity';
-import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/User.dto';
+import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import logger from '../logger';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';

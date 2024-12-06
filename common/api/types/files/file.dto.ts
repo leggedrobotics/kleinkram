@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MissionDto } from '../Mission.dto';
-import { CategoryDto } from '../Category.dto';
+import { MissionDto } from '../mission.dto';
+import { CategoryDto } from '../category.dto';
 import { FileState, FileType } from '../../../frontend_shared/enum';
-import { UserDto } from '../User.dto';
-import { TopicDto } from '../Topic.dto';
+import { UserDto } from '../user.dto';
+import { TopicDto } from '../topic.dto';
 import {
     IsDate,
     IsEnum,

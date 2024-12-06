@@ -11,7 +11,7 @@ import { AddVersionInterceptor } from './routing/interceptors/version-injector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { GlobalErrorFilter } from './routing/filters/global-error-filter';
-import { DelayPipe } from './routing/pipelines/artificial-delay';
+import { DelayPipe } from './routing/pipes/artificial-delay';
 import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
 
 function saveEndpointsAsJson(app: INestApplication, filename: string): void {

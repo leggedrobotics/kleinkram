@@ -122,7 +122,7 @@
 import { computed, Ref, ref, watch } from 'vue';
 import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
-import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags, useProjectQuery } from '../hooks/query-hooks';
 
 const properties = defineProps<{

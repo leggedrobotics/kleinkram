@@ -119,7 +119,7 @@ import {
     usePermissionsQuery,
 } from '../hooks/query-hooks';
 import { UserRole } from '@common/enum';
-import { FlatMissionDto, MissionsDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionsDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';

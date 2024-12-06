@@ -31,7 +31,7 @@ import {
     AccessGroupDto,
     CurrentAPIUserDto,
     UsersDto,
-} from '@api/types/User.dto';
+} from '@api/types/user.dto';
 import { DefaultRights } from '@api/types/access-control/default-rights';
 import {
     AccessGroupRights,
@@ -40,21 +40,21 @@ import {
     FileType,
     UserRole,
 } from '@common/enum';
-import { StorageOverviewDto } from '@api/types/StorageOverview.dto';
+import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { allWorkers } from '../services/queries/worker';
-import { ActionWorkersDto } from '@api/types/ActionWorkersDto';
-import { TagsDto } from '@api/types/tags/TagsDto.dto';
+import { ActionWorkersDto } from '@api/types/action-workers.dto';
+import { TagsDto } from '@api/types/tags/tags.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
     FlatMissionDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@api/types/Mission.dto';
+} from '@api/types/mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
-import { PermissionsDto, ProjectPermissions } from '@api/types/Permissions.dto';
+import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
-import { CategoriesDto } from '@api/types/Category.dto';
+import { CategoriesDto } from '@api/types/category.dto';
 import { getCategories } from '../services/queries/categories';
 import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
@@ -548,7 +548,7 @@ export const useRunningActions = (): UseQueryReturnType<
 
 export const useSearchAccessGroup = (
     search: Ref<string> | string,
-    type: AccessGroupType | undefined,
+    type?: AccessGroupType,
 ): UseQueryReturnType<AccessGroupsDto | undefined, Error> => {
     return useQuery({
         queryKey: ['searchAccessGroup', search],

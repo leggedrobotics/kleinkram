@@ -17,7 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
-import { ResentProjectDto } from '@common/api/types/RecentProjects.dto';
+import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
 import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';

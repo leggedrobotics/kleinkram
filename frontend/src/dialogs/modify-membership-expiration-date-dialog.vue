@@ -36,7 +36,7 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
 import { formatDate, parseDate } from 'src/services/dateFormating';
-import { GroupMembershipDto } from '@api/types/User.dto';
+import { GroupMembershipDto } from '@api/types/user.dto';
 
 const properties = defineProps<{
     agu: GroupMembershipDto;

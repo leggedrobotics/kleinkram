@@ -256,7 +256,7 @@ import { computed, ref } from 'vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { accessGroupRightsList } from '../../enums/accessGroupRightsList';
 import { useSearchAccessGroup } from '../../hooks/query-hooks';
-import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 
 const { minAccessRights } = defineProps<{

@@ -364,8 +364,8 @@ import { deleteFiles } from 'src/services/mutations/file';
 import ConfirmDeleteDialog from '../dialogs/confirm-delete-dialog.vue';
 import { _downloadFiles } from 'src/services/generic';
 import { DataType, FileType } from '@common/enum';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
-import { CategoryDto } from '@api/types/Category.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
+import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';

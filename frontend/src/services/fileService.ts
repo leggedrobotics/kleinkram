@@ -17,7 +17,7 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
-import { FlatMissionDto } from '@api/types/Mission.dto';
+import { FlatMissionDto } from '@api/types/mission.dto';
 import { AxiosError } from 'axios';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';

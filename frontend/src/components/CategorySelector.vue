@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
-import { CategoryDto } from '@api/types/Category.dto';
+import { CategoryDto } from '@api/types/category.dto';
 import { useCategories } from '../hooks/query-hooks';
 
 const properties = defineProps<{

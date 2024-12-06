@@ -14,7 +14,7 @@ import {
     MissionDto,
     MissionWithCreatorDto,
     MissionWithFilesDto,
-} from '../../api/types/Mission.dto';
+} from '../../api/types/mission.dto';
 
 @Unique('unique_mission_name_per_project', ['name', 'project'])
 @Entity()

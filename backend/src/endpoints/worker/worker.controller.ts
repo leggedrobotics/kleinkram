@@ -3,7 +3,7 @@ import { WorkerService } from '../../services/worker.service';
 import { LoggedIn } from '../auth/roles.decorator';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse } from '../../decarators';
-import { ActionWorkersDto } from '@common/api/types/ActionWorkersDto';
+import { ActionWorkersDto } from '@common/api/types/action-workers.dto';
 
 @Controller('worker')
 export class WorkerController {

@@ -22,7 +22,7 @@ import { computed } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { removeAccessGroupFromProject } from 'src/services/mutations/access';
 import { canDeleteProject, usePermissionsQuery } from '../../hooks/query-hooks';
-import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
 
 const { accessGroup, projectUUID } = defineProps<{
     accessGroup: AccessGroupDto;

@@ -24,7 +24,7 @@ import { BodyUUIDArray } from '../../validation/bodyDecorators';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
-import { ResentProjectsDto } from '@common/api/types/RecentProjects.dto';
+import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';

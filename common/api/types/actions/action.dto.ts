@@ -11,10 +11,10 @@ import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
 import { Type } from 'class-transformer';
 import { AuditLogDto } from './audit-log.dto';
 import { LogsDto } from './logs.dto';
-import { FlatMissionDto } from '../Mission.dto';
+import { FlatMissionDto } from '../mission.dto';
 import { DockerImageDto } from './docker-image.dto';
-import { UserDto } from '../User.dto';
-import { ActionWorkerDto } from '../ActionWorkersDto';
+import { UserDto } from '../user.dto';
+import { ActionWorkerDto } from '../action-workers.dto';
 
 import { ActionTemplateDto } from './action-template.dto';
 import { PaggedResponse } from '../pagged-response';

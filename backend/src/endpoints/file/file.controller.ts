@@ -42,7 +42,7 @@ import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../../validation/bodyDecorators';
 import env from '@common/env';
 import { ApiOkResponse, OutputDto } from '../../decarators';
-import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
+import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';

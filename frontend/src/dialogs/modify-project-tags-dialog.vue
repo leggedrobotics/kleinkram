@@ -35,7 +35,7 @@ import { getProject } from 'src/services/queries/project';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import { updateTagTypes } from 'src/services/mutations/project';
-import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/tags.dto';
 import CreateTagTypeDialogOpener from '@components/button-wrapper/dialog-opener-create-tag-type.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import ConfigureMetadata from '@components/configure-metadata.vue';

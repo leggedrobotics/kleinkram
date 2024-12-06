@@ -117,7 +117,7 @@ import { Notify } from 'quasar';
 import { addTags } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { useAllTags, useMission } from '../hooks/query-hooks';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
 
 const queryClient = useQueryClient();
 

@@ -3,7 +3,7 @@ import BaseEntity from '../base-entity.entity';
 import { DataType } from '../../frontend_shared/enum';
 import Project from '../project/project.entity';
 import Tag from '../tag/tag.entity';
-import { TagTypeDto } from '../../api/types/tags/TagsDto.dto';
+import { TagTypeDto } from '../../api/types/tags/tags.dto';
 
 @Entity()
 export default class TagType extends BaseEntity {

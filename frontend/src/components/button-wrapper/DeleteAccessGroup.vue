@@ -33,7 +33,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { deleteAccessGroup } from 'src/services/mutations/access';
 import { getUser } from 'src/services/auth';
 import { AccessGroupType, UserRole } from '@common/enum';
-import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/User.dto';
+import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/user.dto';
 
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
 

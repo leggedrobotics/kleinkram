@@ -1,7 +1,7 @@
 import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
 import { DefaultRights } from '@api/types/access-control/default-rights';
-import { ResentProjectsDto } from '@api/types/RecentProjects.dto';
+import { ResentProjectsDto } from '@api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 

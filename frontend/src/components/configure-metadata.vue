@@ -59,7 +59,7 @@ import { icon } from 'src/services/generic';
 import { ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/query-hooks';
-import { TagTypeDto } from '@api/types/tags/TagsDto.dto';
+import { TagTypeDto } from '@api/types/tags/tags.dto';
 import DatatypeSelectorButton from './buttons/datatype-select-button.vue';
 
 const tagSearch = ref('');

@@ -19,7 +19,7 @@ import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import EditMissionDialog from '../../dialogs/modify-mission-dialog.vue';
-import { MissionWithFilesDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission.dto';
 
 const $q = useQuasar();
 const { mission } = defineProps<{

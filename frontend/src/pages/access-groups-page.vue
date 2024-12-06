@@ -140,7 +140,7 @@ import ROUTES from 'src/router/routes';
 import TitleSection from 'components/TitleSection.vue';
 import { QTable } from 'quasar';
 import { AccessGroupType } from '@common/enum';
-import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import CreateAccessGroupDialogOpener from '@components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';

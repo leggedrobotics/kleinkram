@@ -14,8 +14,8 @@ import {
     CurrentAPIUserDto,
     UserDto,
     UsersDto,
-} from '@common/api/types/User.dto';
-import { PermissionsDto } from '@common/api/types/Permissions.dto';
+} from '@common/api/types/user.dto';
+import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { AuthRes } from '../endpoints/auth/param-decorator';
 
 @Injectable()

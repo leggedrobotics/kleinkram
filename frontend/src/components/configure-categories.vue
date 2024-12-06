@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
-import { CategoryDto } from '@api/types/Category.dto';
+import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import CategorySelector from '@components/CategorySelector.vue';

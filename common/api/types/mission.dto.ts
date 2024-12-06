@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserDto } from './User.dto';
-import { TagDto } from './tags/TagsDto.dto';
+import { UserDto } from './user.dto';
+import { TagDto } from './tags/tags.dto';
 import {
     IsDate,
     IsInt,

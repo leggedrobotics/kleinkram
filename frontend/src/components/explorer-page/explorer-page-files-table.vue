@@ -139,7 +139,7 @@ import {
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { fileColumns } from './explorer-page-table-columns';
-import { CategoryDto } from '@api/types/Category.dto';
+import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';

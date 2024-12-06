@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { MissionsDto, MissionWithFilesDto } from '@api/types/Mission.dto';
+import { MissionsDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import { AxiosResponse } from 'axios';
 
 export const getMission = async (

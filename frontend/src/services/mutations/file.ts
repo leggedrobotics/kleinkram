@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { CategoryDto } from '@api/types/Category.dto';
+import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 // define type for generateTemporaryCredentials 'files' return

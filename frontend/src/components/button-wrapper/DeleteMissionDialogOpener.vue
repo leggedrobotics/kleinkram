@@ -22,7 +22,7 @@ import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
-import { FlatMissionDto } from '@api/types/Mission.dto';
+import { FlatMissionDto } from '@api/types/mission.dto';
 
 const $q = useQuasar();
 const { mission } = defineProps<{ mission: FlatMissionDto }>();

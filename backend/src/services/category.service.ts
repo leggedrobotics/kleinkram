@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Category from '@common/entities/category/category.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import logger from '../logger';
-import { CategoriesDto } from '@common/api/types/Category.dto';
+import { CategoriesDto } from '@common/api/types/category.dto';
 import { AuthRes } from '../endpoints/auth/param-decorator';
 
 @Injectable()

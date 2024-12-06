@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaggedResponse } from './pagged-response';
-import { IsSkip } from '../../validation/skip-validation';
-import { IsTake } from '../../validation/take-validation';
+import { PaggedResponse } from '../pagged-response';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
 import {
     IsDate,
     IsNumber,

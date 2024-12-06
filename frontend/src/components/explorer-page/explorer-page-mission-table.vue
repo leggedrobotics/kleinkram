@@ -129,9 +129,9 @@ import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useHandler, useProjectQuery } from '../../hooks/query-hooks';
-import { MissionWithFilesDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { missionColumns } from './explorer-page-table-columns';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
 
 import { useProjectUUID } from '../../hooks/router-hooks';
 import MoveMissionDialogOpener from '@components/button-wrapper/MoveMissionDialogOpener.vue';

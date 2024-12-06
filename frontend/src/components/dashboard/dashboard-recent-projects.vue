@@ -71,7 +71,7 @@ import { useRouter } from 'vue-router';
 import {
     ResentProjectDto,
     ResentProjectsDto,
-} from '@api/types/RecentProjects.dto';
+} from '@api/types/project/recent-projects.dto';
 
 const router = useRouter();
 

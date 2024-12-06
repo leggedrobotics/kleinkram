@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDate, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { UserDto } from '../User.dto';
+import { UserDto } from '../user.dto';
 
 export class ProjectDto {
     @ApiProperty()

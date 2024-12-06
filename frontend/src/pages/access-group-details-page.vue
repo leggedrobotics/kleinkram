@@ -285,7 +285,7 @@ import { formatDate } from 'src/services/dateFormating';
 import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { explorerPageTableColumns } from '../components/explorer-page/explorer-page-table-columns';
-import { GroupMembershipDto } from '@api/types/User.dto';
+import { GroupMembershipDto } from '@api/types/user.dto';
 import { useAccessGroup } from '../hooks/query-hooks';
 import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
 

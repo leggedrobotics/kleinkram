@@ -106,8 +106,8 @@ import {
     FlatMissionDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@api/types/Mission.dto';
-import { FileUploadDto } from '@api/types/Upload.dto';
+} from '@api/types/mission.dto';
+import { FileUploadDto } from '@api/types/upload.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 

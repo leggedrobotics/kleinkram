@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FileLocation, QueueState } from '../../frontend_shared/enum';
-import { UserDto } from './User.dto';
+import { UserDto } from './user.dto';
 import {
     IsDate,
     IsEnum,

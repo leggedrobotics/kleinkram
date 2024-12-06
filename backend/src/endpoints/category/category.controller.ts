@@ -15,7 +15,7 @@ import {
     BodyUUIDArray,
 } from '../../validation/bodyDecorators';
 import { ApiOkResponse } from '../../decarators';
-import { CategoriesDto } from '@common/api/types/Category.dto';
+import { CategoriesDto } from '@common/api/types/category.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';
 
 @Controller('category')

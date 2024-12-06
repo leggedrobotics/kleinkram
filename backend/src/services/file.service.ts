@@ -53,7 +53,7 @@ import { parseMinioMetrics } from '../endpoints/file/utils';
 import Credentials from 'minio/dist/main/Credentials';
 import { BucketItem } from 'minio';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
-import { StorageOverviewDto } from '@common/api/types/StorageOverview.dto';
+import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
 import { FileWithTopicDto } from '@common/api/types/files/file.dto';
 import {

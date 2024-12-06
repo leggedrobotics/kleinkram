@@ -56,7 +56,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addAccessGroupToProject } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
-import { UserDto } from '@api/types/User.dto';
+import { UserDto } from '@api/types/user.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 
 const properties = defineProps<{

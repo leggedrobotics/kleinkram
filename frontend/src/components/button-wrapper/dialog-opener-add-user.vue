@@ -12,7 +12,7 @@ import { useQuasar } from 'quasar';
 import { computed, reactive } from 'vue';
 import AddUserToAccessGroupDialog from '../../dialogs/add-user-access-group-dialog.vue';
 import { UserRole } from '@common/enum';
-import { AccessGroupDto } from '@api/types/User.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
 import { useUser } from '../../hooks/query-hooks';
 
 const $q = useQuasar();

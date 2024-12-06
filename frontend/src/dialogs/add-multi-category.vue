@@ -48,7 +48,7 @@ import BaseDialog from './base-dialog.vue';
 import { Ref, ref } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
-import { CategoryDto } from '@api/types/Category.dto';
+import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import CategorySelector from '@components/CategorySelector.vue';

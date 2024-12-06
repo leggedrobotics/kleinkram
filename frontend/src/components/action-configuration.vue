@@ -288,7 +288,7 @@ import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';

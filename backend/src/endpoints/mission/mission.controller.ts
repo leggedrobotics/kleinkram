@@ -30,7 +30,7 @@ import {
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@common/api/types/Mission.dto';
+} from '@common/api/types/mission.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';
 
 @Controller('mission')

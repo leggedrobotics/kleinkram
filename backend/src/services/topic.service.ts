@@ -4,7 +4,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import { TopicNamesDto } from '@common/api/types/Topic.dto';
+import { TopicNamesDto } from '@common/api/types/topic.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 
 @Injectable()

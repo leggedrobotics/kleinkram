@@ -20,7 +20,7 @@ import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import MoveMission from '../../dialogs/modify-mission-location-dialog.vue';
 import { useRouter } from 'vue-router';
-import { MissionWithFilesDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { useMissionUUID } from '../../hooks/router-hooks';
 
 const $q = useQuasar();

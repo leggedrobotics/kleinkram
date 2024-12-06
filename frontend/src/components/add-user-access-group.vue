@@ -66,7 +66,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addUserToAccessGroup } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
 import { useUserSearch } from '../hooks/query-hooks';
-import { UserDto } from '@api/types/User.dto';
+import { UserDto } from '@api/types/user.dto';
 
 const properties = defineProps<{
     access_group_uuid: string;

@@ -9,7 +9,7 @@ import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
-import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/TagsDto.dto';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 
 @Injectable()
 export class TagService {

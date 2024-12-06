@@ -1,6 +1,6 @@
 import { formatDate } from 'src/services/dateFormating';
 import { formatSize } from 'src/services/generalFormatting';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';

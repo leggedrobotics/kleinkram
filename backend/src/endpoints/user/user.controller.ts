@@ -11,8 +11,8 @@ import {
     CurrentAPIUserDto,
     UserDto,
     UsersDto,
-} from '@common/api/types/User.dto';
-import { PermissionsDto } from '@common/api/types/Permissions.dto';
+} from '@common/api/types/user.dto';
+import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { ApiOkResponse } from '../../decarators';
 import { AddUser, AuthRes } from '../auth/param-decorator';

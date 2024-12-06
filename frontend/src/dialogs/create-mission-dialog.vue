@@ -164,11 +164,11 @@ import {
     useProjectQuery,
 } from '../hooks/query-hooks';
 import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
-import { MissionWithFilesDto } from '@api/types/Mission.dto';
-import { FileUploadDto } from '@api/types/Upload.dto';
+import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
 import CreateFile from '@components/create-file.vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;

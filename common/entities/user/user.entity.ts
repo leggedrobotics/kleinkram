@@ -12,7 +12,7 @@ import ActionTemplate from '../action/actionTemplate.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
 import GroupMembership from '../auth/group_membership.entity';
-import { UserDto } from '../../api/types/User.dto';
+import { UserDto } from '../../api/types/user.dto';
 
 @Entity()
 export default class User extends BaseEntity {

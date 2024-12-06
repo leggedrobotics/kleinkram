@@ -239,7 +239,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
-import { MissionWithFilesDto } from '@api/types/Mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission.dto';
 import KleinDownloadMissions from '@components/cli-links/klein-download-missions.vue';
 import ButtonGroupOverlay from '@components/buttons/button-group-overlay.vue';
 import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-create-mission.vue';

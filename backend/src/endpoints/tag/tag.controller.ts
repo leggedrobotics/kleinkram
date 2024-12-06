@@ -15,7 +15,7 @@ import {
 } from '../../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
 import { ApiOkResponse } from '../../decarators';
-import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/TagsDto.dto';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 
 @Controller('tag')

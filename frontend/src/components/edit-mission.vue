@@ -30,7 +30,7 @@ import { Notify, useQuasar } from 'quasar';
 import AddTagDialog from '../dialogs/add-tag-dialog.vue';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
-import { TagDto } from '@api/types/tags/TagsDto.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
 import { useMission } from '../hooks/query-hooks';
 
 const queryClient = useQueryClient();

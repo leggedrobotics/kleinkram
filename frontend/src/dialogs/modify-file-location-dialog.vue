@@ -100,7 +100,7 @@ import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { moveFiles } from 'src/services/mutations/file';
 import BaseDialog from './base-dialog.vue';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/Mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import {
     useFilteredProjects,
     useMissionsOfProjectMinimal,

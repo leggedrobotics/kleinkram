@@ -1,6 +1,6 @@
 import axios from 'src/api/axios';
 import { AxiosResponse } from 'axios';
-import { CategoriesDto } from '@api/types/Category.dto';
+import { CategoriesDto } from '@api/types/category.dto';
 
 export const getCategories = async (
     projectUUID: string,

@@ -45,7 +45,7 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
-import { GroupMembershipDto } from '@api/types/User.dto';
+import { GroupMembershipDto } from '@api/types/user.dto';
 import { AccessGroupType } from '@common/enum';
 import { useUser } from '../../hooks/query-hooks';
 

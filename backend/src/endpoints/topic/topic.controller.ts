@@ -3,7 +3,7 @@ import { TopicService } from '../../services/topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
 import { QuerySkip, QueryTake } from '../../validation/queryDecorators';
 import { ApiOkResponse } from '../../decarators';
-import { TopicNamesDto } from '@common/api/types/Topic.dto';
+import { TopicNamesDto } from '@common/api/types/topic.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';
 
 @Controller('topic')
