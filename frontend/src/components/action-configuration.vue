@@ -222,23 +222,27 @@
                         :label="saveButtonLable"
                         :disable="!isModified || !isNameSelected"
                         @click="saveAsTemplate"
-                    />
+                    >
+                        <q-tooltip v-if="!isNameSelected">
+                            Cant save Template without a Name
+                        </q-tooltip>
+                        <q-tooltip v-else-if="!isModified">
+                            Can't save a Template that is unmodified
+                        </q-tooltip>
+                    </q-btn>
                     <q-btn
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
+                        :disable="!isNameSelected"
                         @click="submitAnalysis"
-                    />
+                    >
+                        <q-tooltip v-if="!isNameSelected"
+                            >Cant submit Action without a name
+                        </q-tooltip>
+                    </q-btn>
                 </div>
             </q-form>
-            <button
-                @click="
-                    console.log('selectedTemplate: ');
-                    console.log(selectedTemplate);
-                "
-            >
-                Log ActionSelector
-            </button>
         </div>
     </q-drawer>
 </template>

@@ -86,39 +86,68 @@
         </template>
     </q-select>
 
-    <q-table
-        class="table-white"
-        :columns="selectionFieldHeader"
-        :rows="selectedTemplate ? [selectedTemplate] : []"
-        hide-pagination
-        flat
-        separator="horizontal"
-        bordered
-        style="margin-top: 6px"
+    <q-list
+        class="bg-orange rounded-borders"
+        v-if="selectedTemplate && selectedTemplate.createdBy == null"
     >
-        <template v-slot:body-cell-name="props">
-            <q-td :props="props">
-                <q-icon
-                    name="sym_o_terminal"
-                    class="q-mr-sm"
-                    style="
-                        background-color: #e8e8e8;
-                        padding: 6px;
-                        border-radius: 50%;
-                    "
-                />
-                <span>{{ props.row.name }}</span>
-            </q-td>
-        </template>
+        <q-item clickable v-ripple>
+            <q-item-section avatar top>
+                <q-avatar icon="sym_o_terminal"></q-avatar>
+            </q-item-section>
 
-        <template v-slot:body-cell-version="props">
-            <q-td :props="props"> v{{ props.row.version }}</q-td>
-        </template>
-        <!--    option for empty table-->
-        <template v-slot:no-data
-            >Find an Action in the Field above (or create a new one)
-        </template>
-    </q-table>
+            <q-item-section>
+                <q-item-label lines="1"
+                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                </q-item-label>
+                <q-item-label caption> new Template </q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+                <q-icon name="sym_o_info"></q-icon>
+            </q-item-section>
+        </q-item>
+    </q-list>
+
+    <q-list
+        class="bg-light-green-14 rounded-borders"
+        v-else-if="selectedTemplate"
+    >
+        <q-item clickable v-ripple>
+            <q-item-section avatar top>
+                <q-avatar icon="sym_o_terminal"></q-avatar>
+            </q-item-section>
+
+            <q-item-section>
+                <q-item-label lines="1"
+                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                </q-item-label>
+                <q-item-label caption>
+                    created: {{ selectedTemplate.createdAt }}
+                </q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+                <q-icon name="sym_o_info"></q-icon>
+            </q-item-section>
+        </q-item>
+    </q-list>
+
+    <q-list class="bg-red-2 rounded-borders" v-else>
+        <q-item clickable v-ripple>
+            <q-item-section avatar top>
+                <q-avatar icon="sym_o_terminal"></q-avatar>
+            </q-item-section>
+
+            <q-item-section>
+                <q-item-label lines="1">An action needs a name</q-item-label>
+                <q-item-label caption></q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+                <q-icon name="sym_o_info"></q-icon>
+            </q-item-section>
+        </q-item>
+    </q-list>
 </template>
 <script setup lang="ts">
 import { getAccessRightDescription } from 'src/services/generic';
