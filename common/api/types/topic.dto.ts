@@ -23,13 +23,23 @@ export class TopicDto {
     frequency!: number;
 }
 
-export class TopicsDto {
+export class TopicsDto implements PaggedResponse<TopicDto> {
+    @ApiProperty()
+    @ValidateNested()
+    @Type(() => TopicDto)
+    data!: TopicDto[];
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
+
     @ApiProperty()
     @IsNumber()
     count!: number;
-
-    //@ApiProperty()
-    //files!: TopicDto[];
 }
 
 export class TopicNamesDto implements PaggedResponse<string> {

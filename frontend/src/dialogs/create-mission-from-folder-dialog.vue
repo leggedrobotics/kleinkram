@@ -146,8 +146,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    // @ts-ignore
-    return project.value.requiredTags.every(
+    return project.value?.requiredTags.every(
         (tag) => tagValues.value[tag.uuid] !== '',
     );
 });
@@ -163,8 +162,8 @@ const handle = (a: any): void => {
     }
 };
 
-function transferClick(e: any): void {
-    e.preventDefault();
+function transferClick(event: any): void {
+    event.preventDefault();
     HTMLinput.value.click();
 }
 
@@ -216,8 +215,8 @@ const submitNewMission = async () => {
         position: 'bottom',
     });
     const created = createFileAction(
-        newMission.value ?? null,
-        newMission.value?.project ?? null,
+        newMission.value ?? undefined,
+        newMission.value?.project ?? undefined,
         [...files.value].filter(
             (file: File) =>
                 file.name.endsWith('.bag') || file.name.endsWith('.mcap'),

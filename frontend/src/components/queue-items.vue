@@ -90,7 +90,7 @@
     </div>
 
     <q-table
-        ref="tableRef"
+        ref="tableReference"
         v-model:pagination="pagination"
         v-model:selected="selected"
         :rows="queueEntries || []"
@@ -203,7 +203,7 @@ const $router = useRouter();
 const queryClient = useQueryClient();
 const $q = useQuasar();
 
-const tableRef: Ref<QTable | null> = ref(null);
+const tableReference: Ref<QTable | undefined> = ref(undefined);
 const now = new Date();
 const startDate = ref(formatDate(new Date(now.getTime() - 1000 * 60 * 30)));
 const pagination = ref({
@@ -226,20 +226,19 @@ const FileStateOptions = Object.keys(QueueState).splice(
     Object.keys(QueueState).length / 2,
 ); //  WHY JAVASCRIPT, WHY?
 
-const removeItem = (value: string) => {
+const removeItem = (value: string): void => {
     fileStateFilter.value = fileStateFilter.value.filter(
         (item) => item !== value,
     );
 };
 
-const clearSelection = () => {
+const clearSelection = (): void => {
     fileStateFilter.value = fileStateFilter.value.slice(0, 0);
 };
 
 watch(fileStateFilter, () => {
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
-            // @ts-ignore
             (((QueueState[a] as number) > QueueState[b]) as number) ? 1 : -1,
         );
     }
@@ -247,7 +246,6 @@ watch(fileStateFilter, () => {
 
 const fileStateFilterEnums = computed(() => {
     if (!fileStateFilter.value) return [];
-    // @ts-ignore
     return fileStateFilter.value.map((state) => QueueState[state] as number);
 });
 
@@ -326,7 +324,7 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     });
 };
 
-async function rowClick(event: any, row: FileQueueEntryDto) {
+async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
     const isFile =
         row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
@@ -346,7 +344,7 @@ async function rowClick(event: any, row: FileQueueEntryDto) {
     }
 }
 
-function canDelete(row: FileQueueEntryDto) {
+function canDelete(row: FileQueueEntryDto): boolean {
     return (
         row.state !== QueueState.AWAITING_PROCESSING &&
         row.state !== QueueState.CANCELED &&
@@ -358,7 +356,7 @@ function canDelete(row: FileQueueEntryDto) {
     );
 }
 
-async function downloadFile(row: FileQueueEntryDto) {
+async function downloadFile(row: FileQueueEntryDto): Promise<void> {
     await findOneByNameAndMission(row.filename, row.mission.uuid).then(
         async (file: FileWithTopicDto) => {
             await _downloadFile(file.uuid, file.filename);

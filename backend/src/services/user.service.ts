@@ -16,7 +16,7 @@ import {
     UsersDto,
 } from '@common/api/types/user.dto';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -58,7 +58,7 @@ export class UserService implements OnModuleInit {
         });
     }
 
-    async claimAdmin(auth: AuthRes): Promise<CurrentAPIUserDto> {
+    async claimAdmin(auth: AuthHeader): Promise<CurrentAPIUserDto> {
         const nrAdmins = await this.userRepository.count({
             where: { role: UserRole.ADMIN },
         });
@@ -74,7 +74,7 @@ export class UserService implements OnModuleInit {
         return user as unknown as CurrentAPIUserDto;
     }
 
-    async me(auth: AuthRes): Promise<CurrentAPIUserDto> {
+    async me(auth: AuthHeader): Promise<CurrentAPIUserDto> {
         return (await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
@@ -144,7 +144,7 @@ export class UserService implements OnModuleInit {
         };
     }
 
-    async permissions(auth: AuthRes): Promise<PermissionsDto> {
+    async permissions(auth: AuthHeader): Promise<PermissionsDto> {
         let user = await this.userRepository.findOne({
             where: {
                 uuid: auth.user.uuid,

@@ -159,32 +159,33 @@ watch(isUploading, () =>
     }),
 );
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const uploads = inject('uploads')!;
+const uploads: any = inject('uploads');
 
 const uploadsWithoutCompleted = computed(() =>
-    uploads.value.filter((upload) => upload.value.getProgress() < 1),
+    uploads.value.filter((upload: any) => upload.value.getProgress() < 1),
 );
 
 const uncompletedUploads = computed(() =>
     uploads.value.filter(
-        (upload) => !upload.value.completed && upload.value.uploaded > 0,
+        (upload: any) => !upload.value.completed && upload.value.uploaded > 0,
     ),
 );
 
 const totalToUpload = computed(() =>
     // @ts-ignore
     uploads.value.reduce(
-        (accumulator: any, upload: any) =>
-            accumulator + (upload.value.canceled ? 0 : upload.value.size),
+        (accumulator: number, upload: any) =>
+            accumulator +
+            (upload.value.canceled ? 0 : (upload.value.size as number)),
         0,
     ),
 );
 const totalUploaded = computed(() =>
     // @ts-ignore
     uploads.value.reduce(
-        (accumulator: any, upload: any) =>
-            accumulator + (upload.value.canceled ? 0 : upload.value.uploaded),
+        (accumulator: number, upload: any) =>
+            accumulator +
+            (upload.value.canceled ? 0 : (upload.value.uploaded as number)),
         0,
     ),
 );
@@ -198,7 +199,8 @@ const averageUploadSpeed = computed(() => {
     if (uncompletedUploads.value.length === 0) return 0;
     return (
         uncompletedUploads.value.reduce(
-            (accumulator: any, upload: any) => accumulator + upload.value.speed,
+            (accumulator: number, upload: any) =>
+                accumulator + (upload.value.speed as number),
             0,
         ) / uncompletedUploads.value.length
     );

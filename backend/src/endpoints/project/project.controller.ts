@@ -27,7 +27,7 @@ import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('project')
 export class ProjectController {
@@ -46,7 +46,7 @@ export class ProjectController {
     })
     async allProjects(
         @AddUser()
-        authRes: AuthRes,
+        authRes: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy: string,
@@ -77,7 +77,7 @@ export class ProjectController {
     })
     async getRecentProjects(
         @QueryTake('take') take: number,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ResentProjectsDto> {
         const projects = await this.projectService.getRecentProjects(
             take,
@@ -125,7 +125,7 @@ export class ProjectController {
     })
     async createProject(
         @Body() dto: CreateProject,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ProjectWithMissionsDto> {
         return this.projectService.create(dto, user);
     }
@@ -148,14 +148,14 @@ export class ProjectController {
         description: 'Project deleted',
         status: 204,
     })
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.projectService.deleteProject(uuid);
     }
 
     @Post('addTagType')
     @CanWriteProject()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async addTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
@@ -165,7 +165,7 @@ export class ProjectController {
 
     @Post('removeTagType')
     @CanWriteProject()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async removeTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
@@ -175,7 +175,7 @@ export class ProjectController {
 
     @Post('updateTagTypes')
     @CanWriteProject()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async updateTagTypes(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
@@ -195,7 +195,9 @@ export class ProjectController {
         description: 'Returns the default rights for a project',
         type: DefaultRights,
     })
-    async getDefaultRights(@AddUser() user: AuthRes): Promise<DefaultRights> {
+    async getDefaultRights(
+        @AddUser() user: AuthHeader,
+    ): Promise<DefaultRights> {
         return this.projectService.getDefaultRights(user);
     }
 }

@@ -59,7 +59,7 @@ import {
 import { Type } from 'class-transformer';
 import { IsSkip } from '@common/validation/skip-validation';
 import { IsTake } from '@common/validation/take-validation';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
 
 export class AccessCredentialsDto {
@@ -136,8 +136,9 @@ export class FileController {
 
     @Get('all')
     @UserOnly()
+    @OutputDto(null) // TODO: type API response
     async allFiles(
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -146,6 +147,7 @@ export class FileController {
 
     @Get('filteredByNames')
     @UserOnly()
+    @OutputDto(null) // TODO: type API response
     async filteredByNames(
         @QueryOptionalString(
             'projectName',
@@ -163,7 +165,7 @@ export class FileController {
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
     ) {
         return await this.fileService.findFilteredByNames(
             projectName,
@@ -217,7 +219,7 @@ export class FileController {
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
         if (auth.apikey) {
@@ -243,6 +245,7 @@ export class FileController {
 
     @Get('download')
     @CanReadFile()
+    @OutputDto(null) // TODO: type API response
     async download(
         @QueryUUID('uuid', 'File UUID') uuid: string,
         @QueryBoolean(
@@ -269,6 +272,7 @@ export class FileController {
 
     @Get('byName')
     @CanReadFileByName()
+    @OutputDto(null) // TODO: type API response
     async getFileByName(@QueryString('name', 'Filename') name: string) {
         return this.fileService.findByFilename(name);
     }
@@ -310,12 +314,14 @@ export class FileController {
 
     @Put(':uuid')
     @CanWriteFile()
+    @OutputDto(null) // TODO: type API response
     async update(@ParameterUID('uuid') uuid: string, @Body() dto: UpdateFile) {
         return this.fileService.update(uuid, dto);
     }
 
     @Post('moveFiles')
     @CanMoveFiles()
+    @OutputDto(null) // TODO: type API response
     async moveFiles(
         @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
         fileUUIDs: string[],
@@ -326,6 +332,7 @@ export class FileController {
 
     @Get('oneByName')
     @CanReadMission()
+    @OutputDto(null) // TODO: type API response
     async getOneFileByName(
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
@@ -335,7 +342,7 @@ export class FileController {
 
     @Delete(':uuid')
     @CanDeleteFile()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async deleteFile(@ParameterUID('uuid') uuid: string): Promise<void> {
         await this.fileService.deleteFile(uuid);
     }
@@ -358,7 +365,7 @@ export class FileController {
     })
     async isUploading(
         @Query() _query: NoQueryParamsDto,
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
     ): Promise<IsUploadingDto> {
         return {
             isUploading: await this.fileService.isUploading(auth.user.uuid),
@@ -372,7 +379,7 @@ export class FileController {
         type: TemporaryFileAccessesDto,
     })
     async getTemporaryAccess(
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
         @Body() body: CreatePreSignedURLSDto,
     ): Promise<TemporaryFileAccessesDto> {
         return await this.fileService.getTemporaryAccess(
@@ -384,6 +391,7 @@ export class FileController {
 
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
+    // TODO: type API response
     async cancelUpload(
         @BodyUUIDArray(
             'uuids',
@@ -391,7 +399,7 @@ export class FileController {
         )
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
     ) {
         logger.debug(`cancelUpload ${uuids.toString()}`);
         return this.fileService.cancelUpload(
@@ -403,7 +411,7 @@ export class FileController {
 
     @Post('deleteMultiple')
     @CanDeleteMission()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async deleteMultiple(
         @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
         uuids: string[],

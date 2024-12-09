@@ -22,7 +22,7 @@ import logger from '../logger';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 
 @Injectable()
 export class AccessService {
@@ -59,30 +59,31 @@ export class AccessService {
 
     async createAccessGroup(
         name: string,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<AccessGroup[]> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
 
-        // @ts-ignore
         const newGroup = this.accessGroupRepository.create({
             name,
             type: AccessGroupType.CUSTOM,
             memberships: [
                 {
                     user: { uuid: user.uuid },
-                    expirationDate: undefined,
                 },
             ],
             creator: user,
         });
-        return await this.accessGroupRepository.save(newGroup);
+
+        return (await this.accessGroupRepository.save(
+            newGroup,
+        )) as unknown as AccessGroup[];
     }
 
     async hasProjectRights(
         projectUUID: string,
-        auth: AuthRes,
+        auth: AuthHeader,
         rights: AccessGroupRights = AccessGroupRights.WRITE,
     ): Promise<boolean> {
         const dbuser = await this.userRepository.findOneOrFail({
@@ -113,7 +114,7 @@ export class AccessService {
         projectUUID: string,
         userUUID: string,
         rights: AccessGroupRights,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<Project> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
@@ -310,7 +311,7 @@ export class AccessService {
         projectUUID: string,
         accessGroupUUID: string,
         rights: AccessGroupRights,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<ProjectWithMissionsDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
@@ -372,7 +373,7 @@ export class AccessService {
     async removeAccessGroupFromProject(
         projectUUID: string,
         accessGroupUUID: string,
-        auth: AuthRes,
+        auth: AuthHeader,
     ) {
         const canDelete = await this.hasProjectRights(
             projectUUID,
@@ -429,7 +430,7 @@ export class AccessService {
         projectUUID: string,
         groupUuid: string,
         rights: AccessGroupRights,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<InsertResult> {
         if (rights === AccessGroupRights.DELETE) {
             const canDelete = await this.hasProjectRights(

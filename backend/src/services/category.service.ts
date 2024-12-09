@@ -5,7 +5,7 @@ import Category from '@common/entities/category/category.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import logger from '../logger';
 import { CategoriesDto } from '@common/api/types/category.dto';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 
 @Injectable()
 export class CategoryService {
@@ -38,7 +38,7 @@ export class CategoryService {
         };
     }
 
-    async create(name: string, projectUUID: string, user: AuthRes) {
+    async create(name: string, projectUUID: string, user: AuthHeader) {
         const category = this.categoryRepository.create({
             name,
             project: { uuid: projectUUID },

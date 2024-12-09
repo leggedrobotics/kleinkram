@@ -4,7 +4,6 @@ import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 export interface ProjectColumnType {
     name: string;
@@ -76,7 +75,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         format: (value: number) => value.toString(),
     },
     {
-        name: 'projectaction',
+        name: 'projectAction',
         label: '',
         style: 'width: 10px',
         align: 'center',
@@ -89,7 +88,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: MissionWithFilesDto) => row.name,
+        field: (row: ProjectWithMissionCountDto) => row.name,
         format: (value: string) => value,
     },
     {
@@ -97,7 +96,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: FlatMissionDto) => row.filesCount,
+        field: (row: ProjectWithMissionCountDto) => row.filesCount,
         format: (value: number) => value.toString(),
     },
     {
@@ -105,7 +104,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: ProjectWithMissionsDto) => row.creator.name,
+        field: (row: ProjectWithMissionCountDto) => row.creator.name,
         format: (value: number) => value.toString(),
         style: 'min-width: 100px',
         sortable: false,
@@ -115,7 +114,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: MissionWithFilesDto) => row.createdAt,
+        field: (row: ProjectWithMissionCountDto) => row.createdAt,
         format: (value: string) => formatDate(new Date(value)),
     },
     {
@@ -130,7 +129,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FlatMissionDto) => row.size,
+        field: (row: MissionWithFilesDto) => row.size,
         format: formatSize,
     },
 

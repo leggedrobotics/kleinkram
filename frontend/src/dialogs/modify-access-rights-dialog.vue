@@ -33,7 +33,7 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { getProjectAccess } from 'src/services/queries/access';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { ref, watch } from 'vue';
+import { Ref, ref, watch } from 'vue';
 import { updateProjectAccess } from 'src/services/mutations/access';
 import { AccessGroupRights } from '@common/enum';
 
@@ -41,7 +41,7 @@ import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const properties = defineProps<{
+const { project_uuid, project_access_uuid } = defineProps<{
     project_uuid: string;
     project_access_uuid: string;
 }>();
@@ -50,12 +50,8 @@ const rights = ref({ label: 'None', value: AccessGroupRights.READ });
 const queryClient = useQueryClient();
 
 const { data: projectAccess } = useQuery<ProjectAccessDto>({
-    queryKey: ['projectAccess', properties.project_access_uuid],
-    queryFn: () =>
-        getProjectAccess(
-            properties.project_uuid,
-            properties.project_access_uuid,
-        ),
+    queryKey: ['projectAccess', project_access_uuid],
+    queryFn: () => getProjectAccess(project_uuid, project_access_uuid),
 });
 
 console.log(projectAccess.value);
@@ -63,7 +59,7 @@ console.log(projectAccess.value);
 const { mutate: changeAccessRights } = useMutation({
     mutationFn: () => {
         return updateProjectAccess(
-            properties.project_uuid,
+            project_uuid,
             projectAccess.value?.accessGroup.uuid,
             rights.value.value,
         );
@@ -112,7 +108,10 @@ const options = Object.keys(accessGroupRightsMap)
         value: Number.parseInt(key, 10),
     }))
 
-    .filter((option) => option.value !== AccessGroupRights.READ);
+    .filter(
+        (option: Ref<AccessGroupRights>) =>
+            option.value !== AccessGroupRights.READ,
+    );
 
 function confirmAction(): void {
     changeAccessRights();

@@ -55,7 +55,7 @@ import { CategoryDto } from '@api/types/category.dto';
 import { useCategories } from '../hooks/query-hooks';
 
 const properties = defineProps<{
-    selected: Ref<CategoryDto[]>;
+    selected: CategoryDto[];
     project_uuid: string;
 }>();
 

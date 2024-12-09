@@ -31,7 +31,7 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('mission')
 export class MissionController {
@@ -45,13 +45,14 @@ export class MissionController {
     })
     async createMission(
         @Body() createMission: CreateMission,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<FlatMissionDto> {
         return this.missionService.create(createMission, user);
     }
 
     @Post('updateName')
     @CanWriteMissionByBody()
+    @OutputDto(null) // TODO: type API response
     async updateMissionName(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('name') name: string,
@@ -77,7 +78,7 @@ export class MissionController {
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<MinimumMissionsDto> {
         return this.missionService.findMissionByProjectMinimal(
             user.user.uuid,
@@ -104,7 +105,7 @@ export class MissionController {
         @QuerySortBy('sortBy') sortBy: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {
         return this.missionService.findMissionByProject(
             user.user,
@@ -134,8 +135,9 @@ export class MissionController {
 
     @Get('all')
     @UserOnly()
+    @OutputDto(null) // TODO: type API response
     async allMissions(
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
     ) {
@@ -144,6 +146,7 @@ export class MissionController {
 
     @Get('byName')
     @CanReadMissionByName()
+    @OutputDto(null) // TODO: type API response
     async getMissionByName(
         @QueryString('name', 'Mission Name') name: string,
         @QueryUUID('projectUUID', 'Project UUID') projectUuid: string,
@@ -153,6 +156,7 @@ export class MissionController {
 
     @Get('download')
     @CanReadMission()
+    @OutputDto(null) // TODO: type API response
     async downloadWithToken(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
         return this.missionService.download(uuid);
     }
@@ -167,8 +171,8 @@ export class MissionController {
         @QueryString('projectName', 'Project Name') projectName: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @AddUser() user: AuthRes,
-    ) {
+        @AddUser() user: AuthHeader,
+    ): Promise<MissionsDto> {
         return this.missionService.filteredByProjectName(
             projectName,
             user.user.uuid,
@@ -179,7 +183,7 @@ export class MissionController {
 
     @Post('move')
     @CanMoveMission()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async moveMission(
         @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
@@ -189,14 +193,14 @@ export class MissionController {
 
     @Delete(':uuid')
     @CanDeleteMission()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async deleteMission(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.missionService.deleteMission(uuid);
     }
 
     @Post('tags')
     @CanWriteMissionByBody()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async updateMissionTags(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @Body('tags') tags: Record<string, string>,
@@ -206,6 +210,7 @@ export class MissionController {
 
     @Get('many')
     @CanReadManyMissions()
+    @OutputDto(null) // TODO: type API response
     async getManyMissions(
         @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
     ) {

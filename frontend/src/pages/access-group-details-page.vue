@@ -81,7 +81,7 @@
                         class="checkbox-with-hitbox"
                     />
                 </template>
-                <template #body-cell-projectaction="props">
+                <template #body-cell-project-action="props">
                     <q-td :props="props">
                         <q-btn
                             flat

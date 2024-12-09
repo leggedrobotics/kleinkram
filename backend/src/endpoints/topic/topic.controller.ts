@@ -3,8 +3,8 @@ import { TopicService } from '../../services/topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
 import { QuerySkip, QueryTake } from '../../validation/queryDecorators';
 import { ApiOkResponse } from '../../decarators';
-import { TopicNamesDto } from '@common/api/types/topic.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('topic')
 export class TopicController {
@@ -12,11 +12,15 @@ export class TopicController {
 
     @Get('all')
     @LoggedIn()
+    @ApiOkResponse({
+        description: 'Get all topics',
+        type: TopicsDto,
+    })
     async allTopics(
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<TopicsDto> {
         return await this.topicService.findAll(user.user.uuid, skip, take);
     }
 
@@ -26,7 +30,7 @@ export class TopicController {
         description: 'Get all topic names',
         type: TopicNamesDto,
     })
-    async allNames(@AddUser() user: AuthRes): Promise<TopicNamesDto> {
+    async allNames(@AddUser() user: AuthHeader): Promise<TopicNamesDto> {
         return await this.topicService.findAllNames(user.user.uuid);
     }
 }

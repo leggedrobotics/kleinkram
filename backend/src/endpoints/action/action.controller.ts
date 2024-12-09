@@ -20,7 +20,7 @@ import {
 } from '@common/api/types/createTemplate.dto';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -32,7 +32,7 @@ import {
     ActionTemplatesDto,
 } from '@common/api/types/actions/action-template.dto';
 import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 import {
     ActionQuery,
     SubmitActionMulti,
@@ -66,7 +66,7 @@ export class ActionController {
     })
     async createActionRun(
         @Body() dto: SubmitActionDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ActionSubmitResponseDto> {
         return this.actionService.submit(dto, user);
     }
@@ -83,10 +83,10 @@ export class ActionController {
 
     @Post('multiSubmit')
     @CanCreateActions()
-    // TODO: type API response
+    @OutputDto(null) // TODO: type API response
     async multiSubmit(
         @Body() dto: SubmitActionMulti,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ) {
         return this.actionService.multiSubmit(dto, user);
     }
@@ -99,7 +99,7 @@ export class ActionController {
     })
     async createTemplate(
         @Body() dto: CreateTemplateDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ActionTemplateDto> {
         return this.actionService.createTemplate(dto, user);
     }
@@ -112,7 +112,7 @@ export class ActionController {
     })
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ActionTemplateDto> {
         return this.actionService.createNewVersion(dto, user);
     }
@@ -128,7 +128,7 @@ export class ActionController {
     })
     async list(
         @Query() dto: ActionQuery,
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
         // TODO: bring back filter options
         /* @QuerySortBy('sortBy') sortBy: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
@@ -166,7 +166,7 @@ export class ActionController {
         type: ActionsDto,
     })
     async runningActions(
-        @AddUser() auth: AuthRes,
+        @AddUser() auth: AuthHeader,
         @Query() parameters: RunningActionsQuery,
     ): Promise<ActionsDto> {
         return this.actionService.runningActions(
@@ -182,9 +182,8 @@ export class ActionController {
         description: 'List of templates',
         type: ActionTemplatesDto,
     })
-    // TODO: type API response
     async listTemplates(
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QuerySkip('take') take: number,
         @QueryOptionalString('search', 'Searchkey in name') search: string,

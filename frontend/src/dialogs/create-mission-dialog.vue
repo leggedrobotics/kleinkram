@@ -36,12 +36,12 @@
             </q-tabs>
         </template>
         <template #content>
-            <q-tab-panels v-model="tab_selection">
+            <q-tab-panels v-if="project" v-model="tab_selection">
                 <q-tab-panel name="meta_data" style="min-height: 280px">
                     <label for="projectDescription">Project*</label>
                     <q-btn-dropdown
                         v-model="ddr_open"
-                        :disable="!!props?.project_uuid"
+                        :disable="!!project_uuid"
                         :label="project?.name || 'Project'"
                         class="q-uploader--bordered full-width full-height q-mb-lg"
                         flat
@@ -83,12 +83,7 @@
                         :error="!isValidMissionName"
                         :rules="MISSION_NAME_INPUT_VALIDATION"
                         :error-message="errorMessage"
-                        @change="
-                            () => {
-                                errorMessage = '';
-                                isValidMissionName = true;
-                            }
-                        "
+                        @change="onMissionNameChange"
                     >
                         <template #error>
                             {{ errorMessage }}
@@ -97,7 +92,7 @@
                             <q-icon
                                 name="sym_o_cancel"
                                 class="cursor-pointer"
-                                @click.stop.prevent="missionName = ''"
+                                @click.stop.prevent="clearMissionName"
                             />
                         </template>
                     </q-input>
@@ -112,7 +107,7 @@
                 <q-tab-panel name="upload" style="min-width: 280px">
                     <CreateFile
                         v-if="newMission"
-                        ref="createFileRef"
+                        ref="createFileReference"
                         :mission="newMission"
                         :uploads="uploads"
                     />
@@ -130,7 +125,7 @@
                     missionName.length > MAX_MISSION_NAME_LENGTH
                 "
                 class="bg-button-primary"
-                @click="tab_selection = 'tags'"
+                @click="navigateToMetadataTab"
             />
             <q-btn
                 v-if="tab_selection === 'tags'"
@@ -152,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import BaseDialog from './base-dialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -163,7 +158,7 @@ import {
     usePermissionsQuery,
     useProjectQuery,
 } from '../hooks/query-hooks';
-import { ProjectWithMissionsDto } from '@api/types/project/projectWithMissionsDto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
@@ -188,21 +183,19 @@ const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
-const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
+const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
+    undefined,
+);
 
-const props = defineProps<{
+const { project_uuid, uploads } = defineProps<{
     project_uuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
-const project_uuid = ref(props.project_uuid);
 const newMission: Ref<MissionWithFilesDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project, refetch } = useProjectQuery(project_uuid);
-
-// we load the new project if the project_uuid changes
-watch(project_uuid, () => refetch());
+const { data: project } = useProjectQuery(project_uuid);
 
 const missionName = ref('');
 const isValidMissionName = ref(true);
@@ -288,8 +281,21 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
-    // @ts-ignore
-    createFileRef.value.createFileAction();
+    // TODO: this is wrong....
+    createFileReference.value.createFileAction();
     onDialogOK();
 };
+
+function onMissionNameChange(): void {
+    errorMessage.value = '';
+    isValidMissionName.value = true;
+}
+
+function navigateToMetadataTab(): void {
+    tab_selection.value = 'tags';
+}
+
+function clearMissionName(): void {
+    missionName.value = '';
+}
 </script>

@@ -21,7 +21,7 @@ import {
     ActionTemplateDto,
     ActionTemplatesDto,
 } from '@common/api/types/actions/action-template.dto';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 import { SubmitActionMulti } from '@common/api/types/submit-action.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 
@@ -41,7 +41,7 @@ export class ActionService {
 
     async submit(
         data: SubmitActionDto,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<ActionSubmitResponseDto> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.templateUUID },
@@ -83,7 +83,7 @@ export class ActionService {
         return true;
     }
 
-    async multiSubmit(data: SubmitActionMulti, user: AuthRes) {
+    async multiSubmit(data: SubmitActionMulti, user: AuthHeader) {
         return Promise.all(
             data.missionUUIDs.map((uuid) =>
                 this.submit(
@@ -96,7 +96,7 @@ export class ActionService {
 
     async createTemplate(
         data: CreateTemplateDto,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(
@@ -148,7 +148,7 @@ export class ActionService {
 
     async createNewVersion(
         data: UpdateTemplateDto,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(

@@ -365,7 +365,7 @@ import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ArtifactState } from '@common/enum';
@@ -386,12 +386,8 @@ const { data: action } = useQuery<ActionDto>({
     refetchInterval: 5000,
 });
 
-watch(() => {
-    console.log(action.value);
-}, [action]);
-
 const artifactState = computed(() => {
-    switch (action.value.artifacts) {
+    switch (action.value?.artifacts ?? ArtifactState.ERROR) {
         case ArtifactState.UPLOADING: {
             return 'Uploading...';
         }
@@ -407,10 +403,13 @@ const artifactState = computed(() => {
 });
 
 const openArtifact = (): void => {
+    if (action.value === undefined) return;
     window.open(action.value.artifactUrl, '_blank');
 };
 
 const openMission = async (): Promise<void> => {
+    if (action.value === undefined) return;
+
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {

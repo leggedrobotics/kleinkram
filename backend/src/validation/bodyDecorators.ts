@@ -7,10 +7,9 @@ import {
 } from '@nestjs/common';
 import { IsUUID, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { NameValidate, StringValidate, UUIDValidate } from './validationTypes';
+import { StringValidate, UUIDValidate } from './validationTypes';
 import { metadataApplier } from './MetadataApplier';
 import { ApiProperty } from '@nestjs/swagger';
-import { AccessGroupRights, DataType } from '@common/frontend_shared/enum';
 
 export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
     return applyDecorators(
@@ -22,6 +21,7 @@ export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
         }),
     );
 }
+
 export const BodyUUID = (parameterName: string, parameterDescription: string) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
@@ -74,82 +74,6 @@ export const BodyString = (
             parameterDescription,
             'body',
             'string',
-            true,
-        ),
-    )(parameterName);
-
-export const BodyName = (parameterName: string, parameterDescription: string) =>
-    createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
-            const request = context.switchToHttp().getRequest();
-            const value = request.body[data];
-
-            const object = plainToInstance(NameValidate, { value });
-            await validateOrReject(object).catch(() => {
-                throw new BadRequestException(
-                    'Parameter is not a valid String',
-                );
-            });
-
-            return value;
-        },
-        metadataApplier(
-            parameterName,
-            parameterDescription,
-            'body',
-            'string',
-            true,
-        ),
-    )(parameterName);
-
-export const BodyAccessGroupRights = (
-    parameterName: string,
-    parameterDescription: string,
-) =>
-    createParamDecorator(
-        (data: string, context: ExecutionContext) => {
-            const request = context.switchToHttp().getRequest();
-            const value = request.body[data];
-
-            if (!Object.values(AccessGroupRights).includes(value)) {
-                throw new BadRequestException(
-                    'Parameter is not a valid AccessGroupRights',
-                );
-            }
-
-            return value;
-        },
-        metadataApplier(
-            parameterName,
-            parameterDescription,
-            'body',
-            'AccessGroupRights',
-            true,
-        ),
-    )(parameterName);
-
-export const BodyDataType = (
-    parameterName: string,
-    parameterDescription: string,
-) =>
-    createParamDecorator(
-        (data: string, context: ExecutionContext) => {
-            const request = context.switchToHttp().getRequest();
-            const value = request.body[data];
-
-            if (!Object.values(DataType).includes(value)) {
-                throw new BadRequestException(
-                    'Parameter is not a valid DataType',
-                );
-            }
-
-            return value;
-        },
-        metadataApplier(
-            parameterName,
-            parameterDescription,
-            'body',
-            'DataType',
             true,
         ),
     )(parameterName);

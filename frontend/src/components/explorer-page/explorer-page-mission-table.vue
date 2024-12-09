@@ -182,7 +182,7 @@ const { data: rawData, isLoading } = useQuery({
             queryHandler.value.skip,
             queryHandler.value.sortBy,
             queryHandler.value.descending,
-            queryHandler.value.searchParams,
+            queryHandler.value.searchParams as { name: string },
         ),
 });
 

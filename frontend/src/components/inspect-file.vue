@@ -324,6 +324,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
+    // TODO: this is broken!!!
     filesReturn.value.length > 0 ? filesReturn.value.length : null,
 );
 

@@ -17,20 +17,25 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
-import { FlatMissionDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/mission.dto';
 import { AxiosError } from 'axios';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
+const confirmDialog = (event: BeforeUnloadEvent): void => {
+    event.preventDefault();
+    event.returnValue = ''; // This triggers the generic browser dialog.
+};
+
 export const createFileAction = async (
-    selectedMission: FlatMissionDto | null,
-    selectedProject: ProjectDto | null,
+    selectedMission: MissionDto | undefined,
+    selectedProject: ProjectDto | undefined,
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
     injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
 ): Promise<void> => {
-    if (selectedMission === null) {
+    if (selectedMission === undefined) {
         Notify.create({
             message: 'No mission selected',
             color: 'negative',
@@ -38,7 +43,7 @@ export const createFileAction = async (
             timeout: 2000,
         });
         return;
-    } else if (selectedProject === null) {
+    } else if (selectedProject === undefined) {
         Notify.create({
             message: 'No project selected',
             color: 'negative',
@@ -47,11 +52,6 @@ export const createFileAction = async (
         });
         return;
     }
-
-    const confirmDialog = (e: BeforeUnloadEvent): void => {
-        e.preventDefault();
-        e.returnValue = ''; // This triggers the generic browser dialog.
-    };
 
     window.addEventListener('beforeunload', confirmDialog);
 
@@ -147,32 +147,30 @@ async function _createFileAction(
     const temporaryCredentials = await generateTemporaryCredentials(
         fileNames,
         selectedMission.uuid,
-    )
-        .then((response) => response.data)
-        .catch((error: unknown) => {
-            let errorMessage = '';
+    ).catch((error: unknown) => {
+        let errorMessage = '';
 
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            }
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
 
-            let message = `Upload of Files failed: ${errorMessage}`;
+        let message = `Upload of Files failed: ${errorMessage}`;
 
-            // show special error for 403
-            if (error instanceof AxiosError && error.response?.status === 403) {
-                message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
-            }
+        // show special error for 403
+        if (error instanceof AxiosError && error.response?.status === 403) {
+            message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
+        }
 
-            // close the notification
-            Notify.create({
-                message: message,
-                color: 'negative',
-                spinner: false,
-                position: 'bottom',
-                timeout: 30_000,
-                closeBtn: true,
-            });
+        // close the notification
+        Notify.create({
+            message: message,
+            color: 'negative',
+            spinner: false,
+            position: 'bottom',
+            timeout: 30_000,
+            closeBtn: true,
         });
+    });
 
     // reset query key isUploading
     await queryClient.invalidateQueries({
@@ -201,7 +199,7 @@ async function _createFileAction(
     const limit = pLimit(5);
 
     await Promise.all(
-        temporaryCredentials.map(async (accessResp, index) => {
+        temporaryCredentials.map(async (accessResp: any, index: number) => {
             const file = validFiles[index];
 
             const accessCredentials = accessResp.accessCredentials;
@@ -291,13 +289,13 @@ async function _createFileAction(
  * @param driveUrl the URL of the Google Drive folder to import
  */
 export async function driveUpload(
-    selectedMission: FlatMissionDto | null,
+    selectedMission: MissionDto | undefined,
     driveUrl: Ref<string>,
 ): Promise<void> {
     // abort if no mission is selected
-    if (selectedMission === null) return;
+    if (selectedMission === undefined) return;
 
-    const noti = Notify.create({
+    const notification = Notify.create({
         group: false,
         message: 'Processing files...',
         color: 'positive',
@@ -308,7 +306,7 @@ export async function driveUpload(
 
     await createDrive(selectedMission.uuid, driveUrl.value)
         .then(() => {
-            noti({
+            notification({
                 message: `Files for Mission ${selectedMission.name} are now importing...`,
                 color: 'positive',
                 spinner: false,
@@ -321,7 +319,7 @@ export async function driveUpload(
                 errorMessage = error.message;
             }
 
-            noti({
+            notification({
                 message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMessage}`,
                 color: 'negative',
                 spinner: false,

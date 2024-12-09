@@ -15,7 +15,7 @@
                 padding="6px"
                 class="button-border"
                 icon="sym_o_close"
-                @click="() => (_open = false)"
+                @click="submitNewAction"
             />
         </div>
 
@@ -40,7 +40,7 @@
                         <q-select
                             v-model="select"
                             label="Select a Template or name a new one. (Confirm with Enter)"
-                            :options="actionTemplatesRes?.data"
+                            :options="actionTemplatesResult?.data"
                             use-input
                             input-debounce="20"
                             outlined
@@ -376,7 +376,7 @@ const selectedMission = computed(() =>
 // Fetch action templates -----------------------------------------------------
 
 const actionTemplateKey = computed(() => ['actionTemplates', filter.value]);
-const { data: actionTemplatesRes } = useQuery({
+const { data: actionTemplatesResult } = useQuery({
     queryKey: actionTemplateKey,
     queryFn: () => listActionTemplates(filter.value),
 });
@@ -515,7 +515,6 @@ async function submitAnalysis() {
 
         res = await createTemplate(false);
     }
-    console.log(res);
 
     editingTemplate.value = res;
     select.value = structuredClone(res);
@@ -524,7 +523,7 @@ async function submitAnalysis() {
     if (hasMissionUUIDs.value) {
         createPromise = createMultipleAnalysis({
             missionUUIDs: allMissionUUIDs.value,
-            templateUUID: updateTemplate.uuid,
+            templateUUID: res.uuid,
         });
     } else if (selectedMission.value) {
         createPromise = createAnalysis({
@@ -607,7 +606,7 @@ const isModified = computed(() => {
 });
 
 function newValue(value: string, done: any) {
-    const existingTemplate = actionTemplatesRes.value?.data.find(
+    const existingTemplate = actionTemplatesResult.value?.data.find(
         (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {
@@ -686,5 +685,9 @@ const options = Object.keys(accessGroupRightsMap).map((key) => ({
         '',
     value: Number.parseInt(key, 10),
 }));
+
+function submitNewAction(): void {
+    _open.value = false;
+}
 </script>
 <style scoped></style>

@@ -21,7 +21,7 @@ import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto'
 import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 
 @Injectable()
 export class ProjectService {
@@ -291,7 +291,7 @@ export class ProjectService {
 
     async create(
         project: CreateProject,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<ProjectWithMissionsDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
@@ -545,7 +545,7 @@ export class ProjectService {
         );
     }
 
-    async getDefaultRights(auth: AuthRes): Promise<DefaultRights> {
+    async getDefaultRights(auth: AuthHeader): Promise<DefaultRights> {
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},

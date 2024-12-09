@@ -246,36 +246,40 @@ export class QueueService implements OnModuleInit {
         filename: string,
         missionUUID: string,
     ): Promise<FileQueueEntriesDto> {
-        const entries: FileQueueEntryDto[] = (
-            await this.queueRepository.find({
+        const entries: FileQueueEntryDto[] = await this.queueRepository
+            .find({
                 where: {
                     display_name: Like(`${filename}%`),
                     mission: { uuid: missionUUID },
                 },
                 relations: ['creator'],
             })
-        )
-            .map((queue: QueueEntity): FileQueueEntryDto | null => {
-                if (queue.creator === undefined) return null;
+            .then((fileQueueEntries) =>
+                fileQueueEntries
+                    .map((queue: QueueEntity): FileQueueEntryDto | null => {
+                        if (queue.creator === undefined) return null;
 
-                return {
-                    filename: queue.display_name,
-                    state: queue.state,
-                    uuid: queue.uuid,
-                    creator: {
-                        uuid: queue.creator.uuid,
-                        name: queue.creator.name,
-                        avatarUrl: queue.creator.avatarUrl ?? '',
-                    },
-                    createdAt: queue.createdAt,
-                    displayName: queue.display_name,
-                    identifier: queue.identifier,
-                    processingDuration: queue.processingDuration ?? 0,
-                    updatedAt: queue.updatedAt,
-                    location: queue.location,
-                };
-            })
-            .filter((entry): entry is FileQueueEntryDto => entry !== null);
+                        return {
+                            filename: queue.display_name,
+                            state: queue.state,
+                            uuid: queue.uuid,
+                            creator: {
+                                uuid: queue.creator.uuid,
+                                name: queue.creator.name,
+                                avatarUrl: queue.creator.avatarUrl ?? '',
+                            },
+                            createdAt: queue.createdAt,
+                            displayName: queue.display_name,
+                            identifier: queue.identifier,
+                            processingDuration: queue.processingDuration ?? 0,
+                            updatedAt: queue.updatedAt,
+                            location: queue.location,
+                        };
+                    })
+                    .filter(
+                        (entry): entry is FileQueueEntryDto => entry !== null,
+                    ),
+            );
 
         return {
             data: entries,

@@ -4,7 +4,7 @@ import Topic from '@common/entities/topic/topic.entity';
 import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import { TopicNamesDto } from '@common/api/types/topic.dto';
+import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 
 @Injectable()
@@ -40,14 +40,27 @@ export class TopicService {
         };
     }
 
-    async findAll(userUUID: string, skip: number, take: number) {
+    async findAll(
+        userUUID: string,
+        skip: number,
+        take: number,
+    ): Promise<TopicsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.topicRepository.find({ skip, take });
+            const [topics, count] = await this.topicRepository.findAndCount({
+                skip,
+                take,
+            });
+            return {
+                data: topics.map((t) => t.topicDto),
+                count,
+                take,
+                skip,
+            };
         }
-        return addAccessConstraints(
+        const [topics, count] = await addAccessConstraints(
             this.topicRepository
                 .createQueryBuilder('topic')
                 .leftJoin('topic.file', 'file')
@@ -56,7 +69,14 @@ export class TopicService {
                 .take(take)
                 .skip(skip),
             userUUID,
-        ).getMany();
+        ).getManyAndCount();
+
+        return {
+            data: topics.map((t) => t.topicDto),
+            count,
+            take,
+            skip,
+        };
     }
 
     async create(

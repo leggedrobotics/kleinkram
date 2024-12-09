@@ -21,7 +21,7 @@ import {
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { FileQueueEntriesDto } from '@common/api/types/FileQueueEntry.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('queue')
 export class QueueController {
@@ -29,16 +29,17 @@ export class QueueController {
 
     @Post('import_from_drive')
     @CanCreateInMissionByBody()
+    @OutputDto(null) // TODO: type API response
     async importFromDrive(
         @Body() body: DriveCreate,
-        @AddUser() authRes: AuthRes,
+        @AddUser() authHeader: AuthHeader,
     ) {
-        return this.queueService.importFromDrive(body, authRes.user);
+        return this.queueService.importFromDrive(body, authHeader.user);
     }
 
     @Post('confirmUpload')
     @CanCreateQueueByBody()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async confirmUpload(
         @BodyUUID('uuid', 'File UUID of file that successfully uploaded')
         uuid: string,
@@ -50,7 +51,7 @@ export class QueueController {
 
     @Get('active')
     @LoggedIn()
-    // TODO: add response type
+    @OutputDto(null) // TODO: type API response
     async active(
         @QueryDate('startDate', 'Start of time range to filter queue by')
         startDate: string,
@@ -58,7 +59,7 @@ export class QueueController {
         stateFilter: string,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ) {
         const date = new Date(startDate);
 
@@ -80,13 +81,13 @@ export class QueueController {
     async forFile(
         @QueryString('filename', 'Filename') filename: string,
         @QueryUUID('uuid', 'Mission UUID') uuid: string,
-    ) {
+    ): Promise<FileQueueEntriesDto> {
         return this.queueService.forFile(filename, uuid);
     }
 
     @Delete(':uuid')
     @CanDeleteMission()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async delete(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @ParameterUID('uuid') uuid: string,
@@ -96,7 +97,7 @@ export class QueueController {
 
     @Post('cancelProcessing')
     @CanDeleteMission()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async cancelProcessing(
         @BodyUUID('queueUUID', 'Queue UUID to cancel') queueUUID: string,
         @BodyUUID('missionUUID', 'Mission UUID of Queue') missionUUID: string,
@@ -106,14 +107,14 @@ export class QueueController {
 
     @Get('bullQueue')
     @AdminOnly()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async bullQueue() {
         return this.queueService.bullQueue();
     }
 
     @Post('stopJob')
     @AdminOnly()
-    @OutputDto(null)
+    @OutputDto(null) // TODO: type API response
     async stopJob(
         @BodyUUID('jobId', 'Bull ID of Job to cancel') jobId: string,
     ) {

@@ -14,7 +14,7 @@ import {
     QueryTake,
 } from '../../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 
@@ -34,6 +34,7 @@ export class TagController {
 
     @Post('addTag')
     @CanAddTag()
+    @OutputDto(null) // TODO: type API response
     async addTag(
         @BodyUUID('mission', 'Mission UUID') mission: string,
         @BodyUUID('tagType', 'TagType UUID') tagType: string,
@@ -44,6 +45,7 @@ export class TagController {
 
     @Post('addTags')
     @CanAddTag()
+    @OutputDto(null) // TODO: type API response
     async addTags(
         @BodyUUID('uuid', 'Mission UUID') uuid: string,
         @BodyNotNull('tags', 'Record Tagtype UUID to Tag value')
@@ -54,6 +56,7 @@ export class TagController {
 
     @Delete(':uuid')
     @CanDeleteTag()
+    @OutputDto(null) // TODO: type API response
     async deleteTag(@ParameterUID('uuid') uuid: string) {
         return this.tagService.deleteTag(uuid);
     }

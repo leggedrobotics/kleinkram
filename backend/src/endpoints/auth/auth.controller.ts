@@ -27,7 +27,7 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
-    @OutputDto(null) // explicitly disabled DTO output check
+    @OutputDto(null) // TODO: type API response
     googleAuthRedirect(@Req() request, @Res() response: Response): void {
         const user = request.user;
         const token = this.authService.login(user);
@@ -102,14 +102,14 @@ export class AuthController {
 
     @Get('validate-token')
     @UserOnly()
-    @OutputDto(null) // explicitly disabled DTO output check
+    @OutputDto(null) // TODO: type API response
     validateToken(@Res() response: Response): void {
         // If we reach here, the token is valid
         response.status(200).json({ message: 'Token is valid' });
     }
 
     @Post('refresh-token')
-    @OutputDto(null) // explicitly disabled DTO output check
+    @OutputDto(null) // TODO: type API response
     async refreshToken(@Req() request: Request, @Res() response: Response) {
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
@@ -150,7 +150,7 @@ export class AuthController {
     }
 
     @Post('logout')
-    @OutputDto(null) // explicitly disabled DTO output check
+    @OutputDto(null) // TODO: type API response
     logout(@Res() response: Response): void {
         response.cookie(CookieNames.AUTH_TOKEN, '', {
             httpOnly: false,

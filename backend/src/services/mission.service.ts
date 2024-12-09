@@ -22,7 +22,7 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { AuthRes } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/param-decorator';
 
 @Injectable()
 export class MissionService {
@@ -38,10 +38,13 @@ export class MissionService {
 
     async create(
         createMission: CreateMission,
-        auth: AuthRes,
+        auth: AuthHeader,
     ): Promise<FlatMissionDto> {
-        // @ts-ignore
-        const creator = await this.userService.findOneByUUID(auth.user.uuid);
+        const creator = await this.userService.findOneByUUID(
+            auth.user.uuid,
+            {},
+            {},
+        );
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
             relations: ['requiredTags'],
@@ -108,23 +111,23 @@ export class MissionService {
     }
 
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
-        return (
-            await this.missionRepository.findOneOrFail({
-                where: { uuid },
-                relations: [
-                    'project',
-                    'creator',
-                    'tags',
-                    'files',
-                    'files.creator',
-                    'files.mission', // TODO: we can remove this property
-                    'files.mission.creator', // TODO: we can remove this property
-                    'files.mission.project', // TODO: we can remove this property
-                    'tags.tagType',
-                    'project.requiredTags',
-                ],
-            })
-        ).missionWithFilesDto;
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: [
+                'project',
+                'creator',
+                'tags',
+                'files',
+                'files.creator',
+                'files.mission', // TODO: we can remove this property
+                'files.mission.creator', // TODO: we can remove this property
+                'files.mission.project', // TODO: we can remove this property
+                'tags.tagType',
+                'project.requiredTags',
+            ],
+        });
+
+        return mission.missionWithFilesDto;
     }
 
     async findMissionByProjectMinimal(

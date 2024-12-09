@@ -29,7 +29,7 @@
             <q-inner-loading showing color="primary" />
         </template>
 
-        <template #body-cell-projectaction="props">
+        <template #body-cell-project-action="props">
             <Suspense>
                 <q-td :props="props">
                     <q-btn

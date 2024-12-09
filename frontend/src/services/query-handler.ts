@@ -19,7 +19,7 @@ export class QueryHandler {
     missionUuid?: string;
     projectUuid?: string;
     searchParams: Record<string, string>;
-    fileType?: boolean | FileType;
+    fileType?: FileType;
     rowsNumber: number;
     categories: string[];
 
@@ -40,13 +40,13 @@ export class QueryHandler {
         this.descending = descending;
         this.projectUuid = projectUuid;
         this.missionUuid = missionUuid;
-        this.searchParams = searchParameters || DEFAULT_SEARCH;
+        this.searchParams = searchParameters ?? DEFAULT_SEARCH;
         this.fileType = fileType !== null || FileType.ALL;
-        this.categories = categories || [];
+        this.categories = categories ?? [];
         this.rowsNumber = 0;
     }
 
-    get skip() {
+    get skip(): number {
         return (this.page - 1) * this.take;
     }
 
@@ -126,15 +126,6 @@ export class QueryHandler {
         this.page = DEFAULT_PAGINATION.page;
     }
 
-    /**
-     * ---------------------------------------------
-     * Which data type is currently being displayed
-     * ---------------------------------------------
-     */
-    get isListingProjects() {
-        return !this.projectUuid && !this.missionUuid;
-    }
-
     get isListingMissions() {
         return !!this.projectUuid && !this.missionUuid;
     }
@@ -198,7 +189,7 @@ export class QueryURLHandler extends QueryHandler {
      * Once a router is set, the handler will listen to URL changes and update the query accordingly
      * @param router
      */
-    setRouter(router: Router) {
+    setRouter(router: Router): void {
         this.router = router;
         watch(
             router.currentRoute,
@@ -318,9 +309,7 @@ export class QueryURLHandler extends QueryHandler {
             searchParameters.name = route.query.name as string;
         if (route.query.health)
             searchParameters.health = route.query.health as string;
-        this.searchParams = searchParameters
-            ? searchParameters
-            : DEFAULT_SEARCH;
+        this.searchParams = searchParameters ?? DEFAULT_SEARCH;
         this.fileType = route.query.file_type
             ? (route.query.file_type as FileType)
             : DEFAULT_FILE_TYPE;
@@ -355,14 +344,14 @@ export class QueryURLHandler extends QueryHandler {
                     ? undefined
                     : this.descending.toString(),
 
-            project_uuid: this.projectUuid || undefined,
+            project_uuid: this.projectUuid ?? undefined,
 
-            missionUuid: this.missionUuid || undefined,
+            missionUuid: this.missionUuid ?? undefined,
             ...this.searchParams,
 
             file_type:
                 !(this.fileType === null) && this.fileType !== FileType.ALL
-                    ? this.fileType || undefined
+                    ? (this.fileType ?? undefined)
                     : undefined,
             categories:
                 this.categories.length > 0 ? this.categories : undefined,
@@ -370,7 +359,7 @@ export class QueryURLHandler extends QueryHandler {
 
         // check if any query was set before writing to the URL
         const queries = this.router.currentRoute.value.query;
-        const hasQueries = (Object.keys(queries).length ?? 0) > 0;
+        const hasQueries = Object.keys(queries).length > 0;
         await (hasQueries
             ? this.router.push({ query: newQuery })
             : this.router.replace({ query: newQuery }));

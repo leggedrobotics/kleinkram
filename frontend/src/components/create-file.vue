@@ -4,7 +4,7 @@
 
         <q-btn-dropdown
             v-model="dropdownNewFileProject"
-            :disable="!!props?.mission?.project"
+            :disable="!!properties?.mission?.project"
             :label="selectedProject?.name || 'Project'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
@@ -36,7 +36,7 @@
 
         <q-btn-dropdown
             v-model="dropdownNewFileMission"
-            :disable="!!props?.mission"
+            :disable="!!properties?.mission"
             :label="selectedMission?.name ?? 'Mission'"
             class="q-uploader--bordered full-width full-height q-mb-lg"
             flat
@@ -103,7 +103,7 @@ import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from '../services/file-service';
 import {
-    FlatMissionDto,
+    MissionDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@api/types/mission.dto';
@@ -113,8 +113,8 @@ import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const emit = defineEmits(['update:ready']);
 
-const selectedProject: Ref<ProjectDto | null> = ref(null);
-const selectedMission: Ref<FlatMissionDto | null> = ref(null);
+const selectedProject: Ref<ProjectDto | undefined> = ref(undefined);
+const selectedMission: Ref<MissionDto | undefined> = ref(undefined);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -146,14 +146,14 @@ watch(
     },
 );
 
-const props = defineProps<{
+const properties = defineProps<{
     mission?: MissionWithFilesDto;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
-if (props.mission?.project) {
-    selectedProject.value = props.mission.project;
-    selectedMission.value = props.mission;
+if (properties.mission?.project) {
+    selectedProject.value = properties.mission.project;
+    selectedMission.value = properties.mission;
 }
 
 const { data: _missions, refetch } = useQuery<MissionsDto>({
@@ -189,7 +189,7 @@ const createFile = async (): Promise<void> => {
         queryClient,
         uploadingFiles,
         // @ts-ignore
-        props.uploads,
+        properties.uploads,
     );
 };
 

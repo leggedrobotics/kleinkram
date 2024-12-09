@@ -15,7 +15,7 @@ import {
 import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { ApiOkResponse } from '../../decarators';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('user')
 export class UserController {
@@ -27,7 +27,7 @@ export class UserController {
         description: 'Claimed admin',
         type: CurrentAPIUserDto,
     })
-    async claimAdmin(@AddUser() user: AuthRes): Promise<CurrentAPIUserDto> {
+    async claimAdmin(@AddUser() user: AuthHeader): Promise<CurrentAPIUserDto> {
         return this.userService.claimAdmin(user);
     }
 
@@ -53,7 +53,7 @@ export class UserController {
     })
     async me(
         @Query() _query: NoQueryParamsDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<CurrentAPIUserDto | undefined> {
         return await this.userService.me(user);
     }
@@ -98,7 +98,7 @@ export class UserController {
         type: PermissionsDto,
         description: 'The permissions of the currently logged in user',
     })
-    async permissions(@AddUser() user: AuthRes): Promise<PermissionsDto> {
+    async permissions(@AddUser() user: AuthHeader): Promise<PermissionsDto> {
         return this.userService.permissions(user);
     }
 }

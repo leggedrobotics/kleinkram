@@ -45,11 +45,7 @@ import { allWorkers } from '../services/queries/worker';
 import { ActionWorkersDto } from '@api/types/action-workers.dto';
 import { TagsDto } from '@api/types/tags/tags.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
-import {
-    FlatMissionDto,
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@api/types/mission.dto';
+import { MissionsDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
@@ -184,7 +180,7 @@ export const canDeleteMission = (
 export const canLaunchInMission = (
     missionUuid?: string,
     projectUuid?: string,
-    permissions: PermissionsDto | null | undefined,
+    permissions?: PermissionsDto | null,
 ): boolean => {
     if (!permissions) return false;
     if (missionUuid === undefined) return false;
@@ -211,11 +207,11 @@ export const useProjectQuery = (
     projectUuid: Ref<string | undefined> | string,
 ): UseQueryReturnType<ProjectWithMissionsDto, Error> =>
     useQuery<ProjectWithMissionsDto>({
-        queryKey: ['project', projectUuid ? projectUuid : ''],
+        queryKey: ['project', projectUuid],
         queryFn: (): Promise<ProjectWithMissionsDto> => {
             return getProject(unref(projectUuid) ?? '');
         },
-        enabled: () => !!unref(projectUuid),
+        enabled: () => unref(projectUuid) !== undefined,
     });
 
 /**
@@ -434,12 +430,12 @@ export const useAllTags = (): UseQueryReturnType<
 
 export const useActions = (
     projectUuid: string,
-    missionUuid?: string,
+    missionUuid: string | undefined = undefined,
     take: number,
     skip: number,
     sortBy: string,
     descending: boolean,
-    search?: string,
+    search?: string = undefined,
     queryKey: string,
 ): UseQueryReturnType<ActionsDto | undefined, Error> => {
     if (missionUuid === undefined) missionUuid = '';

@@ -14,9 +14,9 @@ import {
     BodyUUID,
     BodyUUIDArray,
 } from '../../validation/bodyDecorators';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { CategoriesDto } from '@common/api/types/category.dto';
-import { AddUser, AuthRes } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/param-decorator';
 
 @Controller('category')
 export class CategoryController {
@@ -38,9 +38,10 @@ export class CategoryController {
 
     @Post('create')
     @CanCreateInProjectByBody()
+    @OutputDto(null) // TODO: type API response
     async createCategory(
         @BodyString('name', 'Category Name') name: string,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
         @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
     ) {
         return this.categoryService.create(name, projectUUID, user);
@@ -48,6 +49,7 @@ export class CategoryController {
 
     @Post('addMany')
     @CanWriteMissionByBody()
+    @OutputDto(null) // TODO: type API response
     async addManyCategories(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @BodyUUIDArray('files', 'List of File UUID where Categries are added')

@@ -18,7 +18,7 @@ export const AddUser = createParamDecorator((_, context: ExecutionContext) => {
     return request.user;
 });
 
-export interface AuthRes {
+export interface AuthHeader {
     user: User;
     apikey?: Apikey;
 }

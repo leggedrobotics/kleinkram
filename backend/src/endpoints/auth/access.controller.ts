@@ -28,7 +28,7 @@ import { RemoveAccessGroupFromProjectDto } from '@common/api/types/RemoveAccessG
 import { SetAccessGroupUserExpirationDto } from '@common/api/types/SetAccessGroupUserExpiration.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
 import { GroupMembershipDto } from '@common/api/types/user.dto';
@@ -36,7 +36,7 @@ import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AddUser, AuthRes } from './param-decorator';
+import { AddUser, AuthHeader } from './param-decorator';
 
 @Controller('access')
 export class AccessController {
@@ -86,7 +86,7 @@ export class AccessController {
     })
     async createAccessGroup(
         @Body() body: CreateAccessGroupDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<AccessGroup[]> {
         return this.accessService.createAccessGroup(body.name, user);
     }
@@ -103,9 +103,10 @@ export class AccessController {
     })
     @Get('canAddAccessGroupToProject')
     @UserOnly()
+    @OutputDto(null) // TODO: type API response
     async canAddAccessGroup(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ) {
         return this.accessService.hasProjectRights(uuid, user);
     }
@@ -126,9 +127,10 @@ export class AccessController {
     })
     @Post('addUserToProject')
     @CanWriteProject()
+    @OutputDto(null) // TODO: type API response
     async addUserToProject(
         @Body() body: AddUserToProjectDto,
-        @AddUser() requestUser: AuthRes,
+        @AddUser() requestUser: AuthHeader,
     ) {
         return this.accessService.addUserToProject(
             body.uuid,
@@ -153,6 +155,7 @@ export class AccessController {
     })
     @Post('addUserToAccessGroup')
     @IsAccessGroupCreator()
+    @OutputDto(null) // TODO: type API response
     async addUserToAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return await this.accessService
             .addUserToAccessGroup(body.uuid, body.userUUID)
@@ -174,6 +177,7 @@ export class AccessController {
     })
     @Post('removeUserFromAccessGroup')
     @IsAccessGroupCreator()
+    @OutputDto(null) // TODO: type API response
     async removeUserFromAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return this.accessService.removeUserFromAccessGroup(
             body.uuid,
@@ -216,7 +220,7 @@ export class AccessController {
     @CanWriteProject()
     async addAccessGroupToProject(
         @Body() body: AddAccessGroupToProjectDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<ProjectWithMissionsDto> {
         return this.accessService.addAccessGroupToProject(
             body.uuid,
@@ -230,7 +234,7 @@ export class AccessController {
     @CanDeleteProject()
     async removeAccessGroupFromProject(
         @Body() body: RemoveAccessGroupFromProjectDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ): Promise<void> {
         return this.accessService.removeAccessGroupFromProject(
             body.uuid,
@@ -241,6 +245,7 @@ export class AccessController {
 
     @Delete(':uuid')
     @IsAccessGroupCreator()
+    @OutputDto(null) // TODO: type API response
     async deleteAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
     ) {
@@ -261,9 +266,10 @@ export class AccessController {
 
     @Post('updateProjectAccess')
     @CanWriteProject()
+    @OutputDto(null) // TODO: type API response
     async updateProjectAccess(
         @Body() body: AddAccessGroupToProjectDto,
-        @AddUser() user: AuthRes,
+        @AddUser() user: AuthHeader,
     ) {
         return this.accessService.updateProjectAccess(
             body.uuid,

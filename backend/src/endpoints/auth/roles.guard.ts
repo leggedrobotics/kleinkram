@@ -26,6 +26,7 @@ import { FileGuardService } from '../../services/file-guard.service';
 import { MissionGuardService } from './mission-guard.service';
 import { ActionGuardService } from './action-guard.service';
 import { AuthGuardService } from './auth-guard.service';
+import { UserService } from '../../services/user.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -50,10 +51,6 @@ export class BaseGuard extends AuthGuard('jwt') {
 
 @Injectable()
 export class LoggedInUserGuard extends BaseGuard {
-    constructor(private reflector: Reflector) {
-        super();
-    }
-
     async canActivate(context: ExecutionContext): Promise<boolean> {
         await this.getUser(context); // Will throw if not logged in
         return true;
@@ -75,7 +72,7 @@ export class UserGuard extends BaseGuard {
 
 @Injectable()
 export class AdminOnlyGuard extends BaseGuard {
-    constructor(private reflector: Reflector) {
+    constructor(private userService: UserService) {
         super();
     }
 
@@ -86,7 +83,13 @@ export class AdminOnlyGuard extends BaseGuard {
             throw new UnauthorizedException('CLI Keys are never admins');
         }
 
-        if (user.role !== UserRole.ADMIN) {
+        const databaseUser = await this.userService.findOneByUUID(
+            user.uuid,
+            { role: true },
+            {},
+        );
+
+        if (databaseUser.role !== UserRole.ADMIN) {
             throw new ForbiddenException('User is not an admin');
         }
 
@@ -96,10 +99,7 @@ export class AdminOnlyGuard extends BaseGuard {
 
 @Injectable()
 export class ReadProjectGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 

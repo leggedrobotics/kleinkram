@@ -452,10 +452,10 @@ const {
     error,
 } = useMission(
     missionUuid.value ?? '',
-    (e: unknown) => {
+    (error: unknown) => {
         const errorMessage =
-            (e as { response?: { data?: { message?: string } } }).response?.data
-                ?.message ?? 'Unknown error';
+            (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message ?? 'Unknown error';
 
         Notify.create({
             message: `Error fetching Mission: ${errorMessage}`,
@@ -478,9 +478,11 @@ const allCategories: Ref<CategoryDto[]> = computed(() =>
 const selectedCategories = computed({
     get: () => {
         if (!handler.value.categories) return [];
-        return handler.value.categories.map((catUUID) =>
-            allCategories.value.find((cat) => cat.uuid === catUUID),
-        );
+        return handler.value.categories
+            .map((catUUID) =>
+                allCategories.value.find((cat) => cat.uuid === catUUID),
+            )
+            .filter((cat) => cat !== undefined);
     },
     set: (value: CategoryDto[]) => {
         if (!value) {
