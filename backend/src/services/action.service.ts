@@ -273,10 +273,9 @@ export class ActionService {
             }
 
             const [actions, count] = await query.getManyAndCount();
-            // TODO: fix
             return {
                 count,
-                data: actions as unknown as ActionDto[],
+                data: actions.map((a) => a.actionDto),
                 skip,
                 take,
             };
@@ -320,7 +319,13 @@ export class ActionService {
             baseQuery,
             userUUID,
         ).getManyAndCount();
-        return { count, data: actions, skip, take };
+
+        return {
+            count,
+            data: actions.map((a) => a.actionDto),
+            skip,
+            take,
+        };
     }
 
     async details(actionUuid: string) {

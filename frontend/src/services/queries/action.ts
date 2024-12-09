@@ -13,7 +13,7 @@ export const getActions = async (
 ): Promise<ActionsDto> => {
     const parameters: Record<string, string | number | boolean> = {
         project_uuid: projectUUID,
-        ...(mission_uuid === undefined ? {} : { mission_uuid: missionUUID }),
+        ...(missionUUID === '' ? {} : { mission_uuid: missionUUID }),
         take,
         skip,
         sortBy,
@@ -23,11 +23,11 @@ export const getActions = async (
     if (search) {
         parameters.search = search;
     }
-
     const response: AxiosResponse<ActionsDto> = await axios.get<ActionsDto>(
         '/action/listActions',
         { params: parameters },
     );
+
     return response.data;
 };
 

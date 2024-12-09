@@ -112,7 +112,11 @@ const properties = defineProps<{
 properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
-const { data: rawData, isLoading } = useActions(
+const {
+    data: rawData,
+    isLoading,
+    error,
+} = useActions(
     properties.handler.projectUuid ?? '',
     properties.handler.missionUuid ?? '',
     properties.handler.take,
@@ -120,8 +124,9 @@ const { data: rawData, isLoading } = useActions(
     properties.handler.sortBy,
     properties.handler.descending,
     properties.handler.searchParams.name,
-    JSON.stringify(properties.handler.queryKey) ?? '',
+    JSON.stringify(properties.handler.queryKey),
 );
+
 const tableRef: Ref<QTable | null> = ref(null);
 const loading = ref(false);
 

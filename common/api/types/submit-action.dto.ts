@@ -14,7 +14,7 @@ export class ActionQuery {
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    mission_uuid?: string | undefined;
+    mission_uuid?: string;
 
     @ApiProperty()
     @IsOptional()

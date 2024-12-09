@@ -438,14 +438,17 @@ export const useAllTags = (): UseQueryReturnType<
 
 export const useActions = (
     projectUuid: string,
-    missionUuid: string,
+    missionUuid?: string,
     take: number,
     skip: number,
     sortBy: string,
     descending: boolean,
-    search: string,
+    search?: string,
     queryKey: string,
 ): UseQueryReturnType<ActionsDto | undefined, Error> => {
+    if (missionUuid === undefined) missionUuid = '';
+    if (search === undefined) search = '';
+
     return useQuery<ActionsDto>({
         queryKey: computed(() => [
             'action_mission',

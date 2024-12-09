@@ -11,7 +11,7 @@ import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
 import { Type } from 'class-transformer';
 import { AuditLogDto } from './audit-log.dto';
 import { LogsDto } from './logs.dto';
-import { FlatMissionDto } from '../mission.dto';
+import { MissionDto } from '../mission.dto';
 import { DockerImageDto } from './docker-image.dto';
 import { UserDto } from '../user.dto';
 import { ActionWorkerDto } from '../action-workers.dto';
@@ -67,8 +67,8 @@ export class ActionDto {
 
     @ApiProperty()
     @ValidateNested()
-    @Type(() => FlatMissionDto)
-    mission!: FlatMissionDto;
+    @Type(() => MissionDto)
+    mission!: MissionDto;
 
     @ApiProperty()
     @ValidateNested()
@@ -84,10 +84,6 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto;
-
-    get runtimeInMS(): number {
-        return this.updatedAt.getTime() - this.createdAt.getTime();
-    }
 }
 
 export class ActionsDto implements PaggedResponse<ActionDto> {

@@ -168,10 +168,15 @@
                                 {{ action.worker.hostname || 'N/A' }}
                             </td>
                         </tr>
-                        <tr v-if="action && action?.runtimeInMS != 0">
+                        <tr v-if="action">
                             <td class="q-table__cell">Runtime:</td>
                             <td class="q-table__cell">
-                                {{ action?.runtimeInMS / 1000 }} seconds
+                                {{
+                                    (action.updatedAt.getTime() -
+                                        action.createdAt.getTime()) /
+                                    1000
+                                }}
+                                seconds
                             </td>
                         </tr>
                         <tr>
