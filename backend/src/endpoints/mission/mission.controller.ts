@@ -179,10 +179,11 @@ export class MissionController {
 
     @Post('move')
     @CanMoveMission()
+    @OutputDto(null)
     async moveMission(
         @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ) {
+    ): Promise<void> {
         return this.missionService.moveMission(missionUUID, projectUUID);
     }
 

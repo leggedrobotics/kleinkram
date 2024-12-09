@@ -106,7 +106,7 @@ export default class FileEntity extends BaseEntity {
         }
         return {
             ...this.fileDto,
-            topics: this.topics.map((topic) => topic.topicDto) ?? [],
+            topics: this.topics.map((topic) => topic.topicDto),
         };
     }
 }

@@ -403,11 +403,12 @@ export class FileController {
 
     @Post('deleteMultiple')
     @CanDeleteMission()
+    @OutputDto(null)
     async deleteMultiple(
         @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-    ) {
+    ): Promise<void> {
         return this.fileService.deleteMultiple(uuids, missionUUID);
     }
 

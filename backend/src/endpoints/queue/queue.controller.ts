@@ -50,6 +50,7 @@ export class QueueController {
 
     @Get('active')
     @LoggedIn()
+    // TODO: add response type
     async active(
         @QueryDate('startDate', 'Start of time range to filter queue by')
         startDate: string,
@@ -85,6 +86,7 @@ export class QueueController {
 
     @Delete(':uuid')
     @CanDeleteMission()
+    @OutputDto(null)
     async delete(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @ParameterUID('uuid') uuid: string,
@@ -94,6 +96,7 @@ export class QueueController {
 
     @Post('cancelProcessing')
     @CanDeleteMission()
+    @OutputDto(null)
     async cancelProcessing(
         @BodyUUID('queueUUID', 'Queue UUID to cancel') queueUUID: string,
         @BodyUUID('missionUUID', 'Mission UUID of Queue') missionUUID: string,
@@ -103,12 +106,14 @@ export class QueueController {
 
     @Get('bullQueue')
     @AdminOnly()
+    @OutputDto(null)
     async bullQueue() {
         return this.queueService.bullQueue();
     }
 
     @Post('stopJob')
     @AdminOnly()
+    @OutputDto(null)
     async stopJob(
         @BodyUUID('jobId', 'Bull ID of Job to cancel') jobId: string,
     ) {

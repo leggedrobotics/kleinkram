@@ -5,8 +5,7 @@
         <template #content>
             <q-form class="row flex" @submit="onDialogOK">
                 <b v-if="projectAccess" style="align-content: center">{{
-                    // @ts-ignore
-                    projectAccess.project?.name
+                    projectAccess.name
                 }}</b>
                 <q-select
                     v-if="projectAccess"
@@ -59,11 +58,12 @@ const { data: projectAccess } = useQuery<ProjectAccessDto>({
         ),
 });
 
+console.log(projectAccess.value);
+
 const { mutate: changeAccessRights } = useMutation({
     mutationFn: () => {
         return updateProjectAccess(
             properties.project_uuid,
-            // @ts-ignore
             projectAccess.value?.accessGroup.uuid,
             rights.value.value,
         );
@@ -76,11 +76,10 @@ const { mutate: changeAccessRights } = useMutation({
             predicate: (query) => query.queryKey[0] === 'AccessGroup',
         });
     },
-    onError: (e: unknown) => {
+    onError: (error: unknown) => {
         let errorMessage = '';
-        if (e instanceof Error) {
-            // @ts-ignore
-            errorMessage = e.response?.data.message;
+        if (error instanceof Error) {
+            errorMessage = error.response?.data.message;
         }
 
         Notify.create({

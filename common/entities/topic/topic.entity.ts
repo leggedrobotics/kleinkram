@@ -31,7 +31,7 @@ export default class Topic extends BaseEntity {
             name: this.name,
             type: this.type,
             nrMessages: this.nrMessages ?? 0n,
-            frequency: this.frequency,
+            frequency: Number.isNaN(this.frequency) ? 0 : this.frequency,
         };
     }
 }

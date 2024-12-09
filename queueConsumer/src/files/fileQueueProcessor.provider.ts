@@ -36,7 +36,7 @@ import fs from 'node:fs';
 import { calculateFileHash } from './helper/hashHelper';
 import { addTagsToMinioObject } from '@common/minio_helper';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module
 const fsPromises = require('node:fs').promises;
 
 type FileProcessorJob = Job<{
@@ -248,6 +248,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         if (sourceIsBag) {
             const _bagFileEntity =
                 await this.fileRepository.save(existingFileEntity);
+            bagFileEntity = _bagFileEntity;
 
             logger.debug(`Convert file ${__queue.identifier} from bag to mcap`);
             mcapExists = await this.fileRepository.exists({
@@ -319,12 +320,15 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 job.data.tmp_files.push(mcapTemporaryFileName); // saved for cleanup
 
                 mcapSize = fs.statSync(mcapTemporaryFileName).size;
-                // @ts-ignore
+                mcapFileEntity = _mcapFileEntity;
                 mcapFileEntity.hash = mcapHash;
             }
         } else {
             mcapFileEntity = existingFileEntity;
         }
+
+        if (mcapFileEntity === undefined || bagFileEntity === undefined)
+            throw new Error('File entities are undefined');
 
         ////////////////////////////////////////////////////////////////
         // Extract Topics from MCAP file
@@ -342,7 +346,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             date = await this.extractTopics(
                 job,
                 queue,
-                // @ts-ignore
                 mcapFileEntity,
                 mcapTemporaryFileName,
             );
@@ -352,38 +355,22 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // Update recording date
         ////////////////////////////////////////////////////////////////
         if (sourceIsBag) {
-            // @ts-ignore
             bagFileEntity.hash = bagHash;
-            // @ts-ignore
             bagFileEntity.size = bagSize;
-            // @ts-ignore
             bagFileEntity.date = date;
-            if (job.data.recovering) {
-                // @ts-ignore
-                bagFileEntity.state = FileState.FOUND;
-            } else {
-                // @ts-ignore
-                bagFileEntity.state = FileState.OK;
-            }
-            // @ts-ignore
+            bagFileEntity.state = job.data.recovering
+                ? FileState.FOUND
+                : FileState.OK;
             await this.fileRepository.save(bagFileEntity);
         }
 
         if (!mcapExists) {
-            // @ts-ignore
             mcapFileEntity.size = mcapSize;
-            // @ts-ignore
             mcapFileEntity.hash = mcapHash;
-            // @ts-ignore
             mcapFileEntity.date = date;
-            if (job.data.recovering) {
-                // @ts-ignore
-                mcapFileEntity.state = FileState.FOUND;
-            } else {
-                // @ts-ignore
-                mcapFileEntity.state = FileState.OK;
-            }
-            // @ts-ignore
+            mcapFileEntity.state = job.data.recovering
+                ? FileState.FOUND
+                : FileState.OK;
             await this.fileRepository.save(mcapFileEntity);
         }
         return true; // return true to indicate that the job is done
@@ -761,11 +748,17 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             `Job {${job.id.toString()}} saved file: ${savedFile.filename}`,
         );
 
-        const res = topics.map(async (topic) => {
+        const foundTopics = topics.map(async (topic) => {
             const newTopic = this.topicRepository.create({
                 ...topic,
                 file: savedFile,
             });
+
+            // TODO: why is this needed?
+            if (newTopic.name === undefined) newTopic.name = 'N/A';
+            if (newTopic.nrMessages === undefined) newTopic.nrMessages = 0n;
+            if (newTopic.frequency === null) newTopic.frequency = 0;
+
             await this.topicRepository.save(newTopic);
 
             return this.topicRepository.findOne({
@@ -774,7 +767,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             });
         });
 
-        const createdTopics = await Promise.all(res);
+        const createdTopics = await Promise.all(foundTopics);
         logger.debug(
             `Job {${job.id.toString()}} created topics: ${createdTopics.map((topic) => topic?.name).toString()}`,
         );
@@ -795,6 +788,11 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
         await Promise.all(
             files.map(async (file): Promise<void> => {
+                if (queue.mission === undefined)
+                    throw new Error('Mission is undefined');
+                if (queue.creator === undefined)
+                    throw new Error('Creator is undefined');
+
                 // create new queue entity
                 if (
                     file.name?.endsWith('.bag') ||
@@ -804,10 +802,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     if (file.id === undefined)
                         throw new Error('File ID is undefined');
 
-                    // @ts-ignore
                     const newQueue = this.queueRepository.create({
-                        display_name: `Google Drive File: '${file.name || 'N/A'}'`,
-                        identifier: file.id,
+                        display_name: `Google Drive File: '${file.name ?? 'N/A'}'`,
+                        identifier: file.id ?? 'N/A',
                         state: QueueState.AWAITING_PROCESSING,
                         location: FileLocation.DRIVE,
                         mission: queue.mission,

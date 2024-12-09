@@ -299,7 +299,7 @@ export class MissionService {
             .getMany();
     }
 
-    async moveMission(missionUUID: string, projectUUID: string) {
+    async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
         });
@@ -319,7 +319,7 @@ export class MissionService {
             );
         }
 
-        const savedMission = await this.missionRepository.update(missionUUID, {
+        await this.missionRepository.update(missionUUID, {
             project: project,
         });
 
@@ -332,16 +332,12 @@ export class MissionService {
                     file.uuid,
                     {
                         filename: file.filename,
-
                         mission_uuid: missionUUID,
-
                         project_uuid: projectUUID,
                     },
                 ),
             ),
         );
-
-        return savedMission;
     }
 
     async findOneByName(

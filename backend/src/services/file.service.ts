@@ -915,7 +915,10 @@ export class FileService implements OnModuleInit {
      * @param missionUUID The unique identifier of the mission
      *
      */
-    async deleteMultiple(fileUUIDs: string[], missionUUID: string) {
+    async deleteMultiple(
+        fileUUIDs: string[],
+        missionUUID: string,
+    ): Promise<void> {
         const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
         await this.fileRepository.manager.transaction(

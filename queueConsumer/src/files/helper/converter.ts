@@ -40,7 +40,7 @@ export async function mcapMetaInfo(
     const decompressHandlers = await loadDecompressHandlers();
     const fileHandle = await open(mcapTemporaryFileName, 'r');
 
-    const fileSize = (await fileHandle.stat()).size;
+    const { size: fileSize } = await fileHandle.stat();
     const reader = await McapIndexedReader.Initialize({
         readable: new FileHandleReadable(fileHandle),
         decompressHandlers,
@@ -59,7 +59,7 @@ export async function mcapMetaInfo(
         const topic = {
             //@ts-ignore
             name: channel.topic,
-            type: schema.name,
+            type: schema?.name ?? 'Unknown',
             nrMessages: nrMessages,
             frequency:
                 Number(nrMessages) / (Number(duration / 1000n) / 1_000_000),
