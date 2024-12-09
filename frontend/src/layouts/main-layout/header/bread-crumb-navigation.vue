@@ -32,7 +32,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useCrumbs } from '../../../hooks/crumbs';
 import { PageBreadCrumb } from '../../../router/routes-utils';
 import {
@@ -60,8 +60,8 @@ const resolvedCrumbs = computed(() => {
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
-                ?.replace(':project_uuid', projectUuid.value ?? '')
-                .replace(':mission_uuid', missionUuid.value ?? '')
+                ?.replace(':project_uuid', projectUuid.value ?? 'undefined')
+                .replace(':mission_uuid', missionUuid.value ?? 'undefined')
                 .replace(':file_uuid', fileUuid.value ?? ''),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
