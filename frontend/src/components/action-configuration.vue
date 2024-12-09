@@ -392,8 +392,7 @@ async function saveAsTemplate() {
         res = await createTemplate(true);
     }
     editingTemplate.value = res;
-    // @ts-ignore
-    select.value = res.clone();
+    select.value = structuredClone(res);
 }
 
 const { mutateAsync: createTemplate } = useMutation({
@@ -506,20 +505,26 @@ async function submitAnalysis() {
 
     // post: the input should be valid now
     let res = editingTemplate.value;
+    console.log(res);
 
     if (isModified.value && editingTemplate.value.uuid) {
+        console.log('updating template');
         res = await updateTemplate(false);
     } else if (!editingTemplate.value.uuid) {
+        console.log('createTemplate template');
+
         res = await createTemplate(false);
     }
+    console.log(res);
+
     editingTemplate.value = res;
-    select.value = res.clone();
+    select.value = structuredClone(res);
 
     let createPromise: Promise<ActionSubmitResponseDto>;
     if (hasMissionUUIDs.value) {
         createPromise = createMultipleAnalysis({
             missionUUIDs: allMissionUUIDs.value,
-            templateUUID: res.uuid,
+            templateUUID: updateTemplate.uuid,
         });
     } else if (selectedMission.value) {
         createPromise = createAnalysis({
@@ -602,7 +607,7 @@ const isModified = computed(() => {
 });
 
 function newValue(value: string, done: any) {
-    const existingTemplate = actionTemplatesRes.value?.find(
+    const existingTemplate = actionTemplatesRes.value?.data.find(
         (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {

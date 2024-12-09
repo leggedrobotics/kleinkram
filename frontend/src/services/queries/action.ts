@@ -13,7 +13,7 @@ export const getActions = async (
 ): Promise<ActionsDto> => {
     const parameters: Record<string, string | number | boolean> = {
         project_uuid: projectUUID,
-        mission_uuid: missionUUID,
+        ...(mission_uuid === undefined ? {} : { mission_uuid: missionUUID }),
         take,
         skip,
         sortBy,

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
+import {
+    IsEnum,
+    IsNumber,
+    IsString,
+    IsUUID,
+    ValidateNested,
+} from 'class-validator';
 import { AccessGroupRights } from '../../../frontend_shared/enum';
 import { PaggedResponse } from '../pagged-response';
 import { Type } from 'class-transformer';
@@ -7,6 +13,10 @@ import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 
 export class ActionTemplateDto {
+    @ApiProperty()
+    @IsUUID()
+    uuid!: string;
+
     @ApiProperty()
     @IsString()
     name!: string;

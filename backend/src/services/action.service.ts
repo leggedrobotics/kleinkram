@@ -17,7 +17,10 @@ import {
     SubmitActionDto,
 } from '@common/api/types/SubmitAction.dto';
 import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
-import { ActionTemplatesDto } from '@common/api/types/actions/action-template.dto';
+import {
+    ActionTemplateDto,
+    ActionTemplatesDto,
+} from '@common/api/types/actions/action-template.dto';
 import { AuthRes } from '../endpoints/auth/param-decorator';
 import { SubmitActionMulti } from '@common/api/types/submit-action.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
@@ -91,7 +94,10 @@ export class ActionService {
         );
     }
 
-    async createTemplate(data: CreateTemplateDto, auth: AuthRes) {
+    async createTemplate(
+        data: CreateTemplateDto,
+        auth: AuthRes,
+    ): Promise<ActionTemplateDto> {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
@@ -121,10 +127,29 @@ export class ActionService {
             entrypoint: data.entrypoint ?? '',
             accessRights: data.accessRights,
         });
-        return this.actionTemplateRepository.save(template);
+
+        const createdTemplate =
+            await this.actionTemplateRepository.save(template);
+
+        return {
+            uuid: createdTemplate.uuid,
+            accessRights: createdTemplate.accessRights,
+            command: createdTemplate.command ?? '',
+            cpuCores: createdTemplate.cpuCores,
+            cpuMemory: createdTemplate.cpuMemory,
+            entrypoint: createdTemplate.entrypoint ?? '',
+            gpuMemory: createdTemplate.gpuMemory,
+            imageName: createdTemplate.image_name,
+            maxRuntime: createdTemplate.maxRuntime,
+            name: createdTemplate.name,
+            version: createdTemplate.version.toString(),
+        };
     }
 
-    async createNewVersion(data: UpdateTemplateDto, auth: AuthRes) {
+    async createNewVersion(
+        data: UpdateTemplateDto,
+        auth: AuthRes,
+    ): Promise<ActionTemplateDto> {
         if (!data.image.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
@@ -146,7 +171,9 @@ export class ActionService {
             template.accessRights === data.accessRights
         ) {
             template.searchable = true;
-            return this.actionTemplateRepository.save(template);
+            const savedTemplate =
+                await this.actionTemplateRepository.save(template);
+            return savedTemplate.actionTemplateDto;
         }
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
@@ -171,7 +198,10 @@ export class ActionService {
         template.maxRuntime = data.maxRuntime;
         template.entrypoint = data.entrypoint ?? '';
         template.accessRights = data.accessRights;
-        return this.actionTemplateRepository.save(template);
+
+        const savedTemplate =
+            await this.actionTemplateRepository.save(template);
+        return savedTemplate.actionTemplateDto;
     }
 
     async listTemplates(

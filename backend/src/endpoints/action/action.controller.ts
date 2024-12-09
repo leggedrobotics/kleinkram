@@ -12,9 +12,6 @@ import {
 import {
     QueryOptionalString,
     QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryTake,
     QueryUUID,
 } from '../../validation/queryDecorators';
 import {
@@ -30,7 +27,10 @@ import {
 } from '@common/api/types/SubmitAction.dto';
 import { IsTake } from '@common/validation/take-validation';
 import { IsSkip } from '@common/validation/skip-validation';
-import { ActionTemplatesDto } from '@common/api/types/actions/action-template.dto';
+import {
+    ActionTemplateDto,
+    ActionTemplatesDto,
+} from '@common/api/types/actions/action-template.dto';
 import { ActionsDto } from '@common/api/types/actions/action.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';
 import {
@@ -93,21 +93,27 @@ export class ActionController {
 
     @Post('createTemplate')
     @CanCreate()
-    // TODO: type API response
+    @ApiOkResponse({
+        description: 'The created template',
+        type: ActionTemplateDto,
+    })
     async createTemplate(
         @Body() dto: CreateTemplateDto,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<ActionTemplateDto> {
         return this.actionService.createTemplate(dto, user);
     }
 
     @Post('createNewVersion')
     @CanCreate()
-    // TODO: type API response
+    @ApiOkResponse({
+        description: 'The created template',
+        type: ActionTemplateDto,
+    })
     async createNewVersion(
         @Body() dto: UpdateTemplateDto,
         @AddUser() user: AuthRes,
-    ) {
+    ): Promise<ActionTemplateDto> {
         return this.actionService.createNewVersion(dto, user);
     }
 
@@ -123,15 +129,14 @@ export class ActionController {
     async list(
         @Query() dto: ActionQuery,
         @AddUser() auth: AuthRes,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sortBy') sortBy: string,
+        // TODO: bring back filter options
+        /* @QuerySortBy('sortBy') sortBy: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryOptionalString(
             'search',
             'Searchkey in name, state_cause or image_name',
         )
-        search: string,
+        search: string,*/
     ): Promise<ActionsDto> {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -141,11 +146,16 @@ export class ActionController {
             dto.project_uuid,
             missionUuid,
             auth.user.uuid,
-            skip,
-            take,
+            Number.parseInt((dto.skip ?? 0).toString()),
+            Number.parseInt((dto.take ?? 0).toString()),
+            'updatedAt',
+            'ASC',
+            '',
+            /*
             sortBy,
             sortDirection,
             search,
+             */
         );
     }
 

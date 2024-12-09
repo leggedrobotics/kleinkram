@@ -13,5 +13,6 @@ export class SubmitActionDto {
 
 export class ActionSubmitResponseDto {
     @ApiProperty()
+    @IsUUID()
     actionUUID!: string;
 }

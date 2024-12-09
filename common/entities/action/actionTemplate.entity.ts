@@ -51,6 +51,7 @@ export default class ActionTemplate extends BaseEntity {
 
     get actionTemplateDto(): ActionTemplateDto {
         return {
+            uuid: this.uuid,
             accessRights: this.accessRights,
             command: this.command || '',
             cpuCores: this.cpuCores,
