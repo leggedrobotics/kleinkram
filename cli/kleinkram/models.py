@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Project:
     id: UUID
     name: str
@@ -22,7 +22,7 @@ class Project:
     missions: List[Mission] = field(default_factory=list)
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Mission:
     id: UUID
     name: str

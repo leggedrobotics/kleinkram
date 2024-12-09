@@ -85,5 +85,7 @@ klein --help
 ```bash
 pytest .
 ```
-
-You can also look in `scripts` for some scripts that might be useful for testing.
+or if you want to skip slow tests...
+```bash
+pytest -m "not slow" .
+```

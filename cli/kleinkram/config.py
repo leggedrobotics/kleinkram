@@ -12,7 +12,6 @@ from typing import Optional
 
 from kleinkram._version import __local__
 from kleinkram._version import __version__
-from kleinkram.errors import CorruptedConfigFile
 from kleinkram.errors import InvalidConfigFile
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
@@ -71,7 +70,7 @@ class Config:
 
         try:
             self._read_config()
-        except (InvalidConfigFile, CorruptedConfigFile):
+        except InvalidConfigFile:
             if not overwrite:
                 self.credentials = {}
                 self.endpoint = default_endpoint
@@ -84,7 +83,7 @@ class Config:
             try:
                 content = json.load(file)
             except Exception:
-                raise CorruptedConfigFile
+                raise InvalidConfigFile
 
         endpoint = content.get(JSON_ENDPOINT_KEY, None)
         if not isinstance(endpoint, str):

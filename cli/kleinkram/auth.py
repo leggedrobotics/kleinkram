@@ -9,9 +9,7 @@ from typing import Optional
 
 from kleinkram.config import Config
 from kleinkram.config import CONFIG_PATH
-from kleinkram.config import CorruptedConfigFile
 from kleinkram.config import Credentials
-from kleinkram.config import InvalidConfigFile
 
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/google?state=cli"

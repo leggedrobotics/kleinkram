@@ -1,33 +1,43 @@
 from __future__ import annotations
 
+import logging
 import sys
 from enum import Enum
 from pathlib import Path
+from typing import Dict
 from typing import List
 from typing import Optional
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import get_mission_by_spec
 from kleinkram.config import get_shared_state
-from kleinkram.errors import MissionDoesNotExist
+from kleinkram.errors import InvalidMissionSpec
+from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileState
+from kleinkram.resources import FileSpec
+from kleinkram.resources import get_files_by_spec
+from kleinkram.resources import get_missions_by_spec
+from kleinkram.resources import mission_spec_is_unique
+from kleinkram.resources import MissionSpec
+from kleinkram.resources import ProjectSpec
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
-from kleinkram.utils import get_valid_mission_spec
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.utils import split_args
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 from tqdm import tqdm
 
+logger = logging.getLogger(__name__)
+
 
 class FileVerificationStatus(str, Enum):
     UPLAODED = "uploaded"
     UPLOADING = "uploading"
+    COMPUTING_HASH = "computing hash"
     MISSING = "missing"
-    CORRUPTED = "hash mismatch"
+    MISMATCHED_HASH = "hash mismatch"
     UNKNOWN = "unknown"
 
 
@@ -35,8 +45,9 @@ FILE_STATUS_STYLES = {
     FileVerificationStatus.UPLAODED: "green",
     FileVerificationStatus.UPLOADING: "yellow",
     FileVerificationStatus.MISSING: "yellow",
-    FileVerificationStatus.CORRUPTED: "red",
+    FileVerificationStatus.MISMATCHED_HASH: "red",
     FileVerificationStatus.UNKNOWN: "gray",
+    FileVerificationStatus.COMPUTING_HASH: "purple",
 }
 
 
@@ -56,61 +67,75 @@ def verify(
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     skip_hash: bool = typer.Option(False, help="skip hash check"),
 ) -> None:
-    _project = to_name_or_uuid(project) if project else None
-    _mission = to_name_or_uuid(mission)
-
-    client = AuthenticatedClient()
-
+    # get all filepaths
     if files is None:
         files = []
 
-    mission_spec = get_valid_mission_spec(_mission, _project)
-    mission_parsed = get_mission_by_spec(client, mission_spec)
-
-    if mission_parsed is None:
-        raise MissionDoesNotExist(f"Mission {mission} does not exist")
-
-    # check file types
     file_paths = [Path(file) for file in files]
     check_file_paths(file_paths)
+    files_map = get_filename_map(file_paths)
 
-    filename_map = get_filename_map(file_paths)
-    remote_files = {file.name: file for file in mission_parsed.files}
+    # get the mission by the provided spec
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
 
-    status_dct = {}
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    mission_spec = MissionSpec(
+        ids=mission_ids, patterns=mission_patterns, project_spec=project_spec
+    )
+    file_spec = FileSpec(mission_spec=mission_spec)
+
+    client = AuthenticatedClient()
+
+    # check first that the mission even exists, the mission could be empty
+    if not mission_spec_is_unique(mission_spec):
+        raise InvalidMissionSpec(f"mission spec is not unique: {mission_spec}")
+    missions = get_missions_by_spec(client, mission_spec)
+    if len(missions) > 1:
+        raise AssertionError("unreachable")
+    if not missions:
+        raise MissionNotFound(f"mission: {mission_spec} does not exist")
+
+    # get all files from that mission
+    remote_files = {file.name: file for file in get_files_by_spec(client, file_spec)}
+
+    # verify files
+    file_status: Dict[Path, FileVerificationStatus] = {}
     for name, file in tqdm(
-        filename_map.items(),
+        files_map.items(),
         desc="verifying files",
         unit="file",
-        disable=skip_hash or not get_shared_state().verbose,
+        disable=not get_shared_state().verbose,
     ):
         if name not in remote_files:
-            status_dct[file] = FileVerificationStatus.MISSING
+            file_status[file] = FileVerificationStatus.MISSING
             continue
 
-        state = remote_files[name].state
+        remote_file = remote_files[name]
 
-        if state == FileState.UPLOADING:
-            status_dct[file] = FileVerificationStatus.UPLOADING
-        elif state == FileState.OK and remote_files[name].hash != b64_md5(file):
-            status_dct[file] = FileVerificationStatus.CORRUPTED
-        elif state == FileState.OK:
-            status_dct[file] = FileVerificationStatus.UPLAODED
+        if remote_file.state == FileState.UPLOADING:
+            file_status[file] = FileVerificationStatus.UPLOADING
+        elif remote_file.state == FileState.OK:
+            if remote_file.hash is None:
+                file_status[file] = FileVerificationStatus.COMPUTING_HASH
+            elif skip_hash or remote_file.hash == b64_md5(file):
+                file_status[file] = FileVerificationStatus.UPLAODED
+            else:
+                file_status[file] = FileVerificationStatus.MISMATCHED_HASH
         else:
-            status_dct[file] = FileVerificationStatus.UNKNOWN
+            file_status[file] = FileVerificationStatus.UNKNOWN
 
     if get_shared_state().verbose:
         table = Table(title="file status")
         table.add_column("filename", style="cyan")
         table.add_column("status", style="green")
 
-        for path, status in status_dct.items():
+        for path, status in file_status.items():
             table.add_row(str(path), Text(status, style=FILE_STATUS_STYLES[status]))
 
-        console = Console()
-        console.print(table)
+        Console().print(table)
     else:
-        for path, status in status_dct.items():
+        for path, status in file_status.items():
             stream = (
                 sys.stdout if status == FileVerificationStatus.UPLAODED else sys.stderr
             )

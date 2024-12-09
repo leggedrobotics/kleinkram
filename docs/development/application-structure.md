@@ -48,3 +48,7 @@ The operational containers are again split into publicly accessible and non-publ
 ::: details How to Edit the Figure
 The above figure can be edited using https://drive.google.com/file/d/1w4JAuPfGMLiISAmuAbiq0NbgInp4VGlP/view?ts=6666d313
 :::
+
+## Git Workflow
+
+We use three designated branches `main`, `dev` and `staging`. To submit new code open a pull request to `staging`. Once enough features are present, we merge `staging` into `dev`. This will trigger our CI/CD pipeline and update the dev deployment. When we are happy with the stability of the dev deployment we merge into `main`.

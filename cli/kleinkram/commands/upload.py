@@ -3,24 +3,26 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from typing import Optional
-from uuid import UUID
 
 import typer
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import upload_files
-from kleinkram.api.routes import create_mission
-from kleinkram.api.routes import get_mission_by_id
-from kleinkram.api.routes import get_mission_by_spec
-from kleinkram.api.routes import get_project_id_by_name
-from kleinkram.api.routes import get_tags_map
+from kleinkram.api.routes import _create_mission as _create_mission_api
 from kleinkram.config import get_shared_state
-from kleinkram.errors import MissionDoesNotExist
-from kleinkram.models import MissionByName
+from kleinkram.errors import MissionNotFound
+from kleinkram.errors import ProjectNotFound
+from kleinkram.models import Mission
+from kleinkram.resources import check_mission_spec_is_creatable
+from kleinkram.resources import get_missions_by_spec
+from kleinkram.resources import get_projects_by_spec
+from kleinkram.resources import InvalidMissionSpec
+from kleinkram.resources import mission_spec_is_unique
+from kleinkram.resources import MissionSpec
+from kleinkram.resources import ProjectSpec
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
-from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import load_metadata
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.utils import split_args
 from rich.console import Console
 
 
@@ -34,6 +36,45 @@ upload_typer = typer.Typer(
     invoke_without_command=True,
     help=HELP,
 )
+
+
+# TODO: move this to core
+def _create_mission(
+    client: AuthenticatedClient,
+    mission_spec: MissionSpec,
+    metadata_path: Optional[Path],
+    ignore_missing_tags: bool,
+) -> Mission:
+    check_mission_spec_is_creatable(mission_spec)
+    mission_name = mission_spec.patterns[0]
+
+    # get the metadata
+    metadata_dct = {}
+    if metadata_path is not None:
+        metadata_dct = load_metadata(metadata_path)
+
+    # get project
+    projects = get_projects_by_spec(client, mission_spec.project_spec)
+
+    if not projects:
+        raise ProjectNotFound(f"project {mission_spec.project_spec} does not exist")
+    elif len(projects) > 1:
+        raise AssertionError("unreachable")
+
+    parsed_project = projects[0]
+
+    _create_mission_api(
+        client,
+        parsed_project.id,
+        mission_name,
+        metadata=metadata_dct,
+        ignore_missing_tags=ignore_missing_tags,
+    )
+
+    missions = get_missions_by_spec(client, mission_spec)
+    assert len(missions) is not None, "unreachable, the ghost is back"
+
+    return missions[0]
 
 
 @upload_typer.callback()
@@ -50,21 +91,13 @@ def upload(
     fix_filenames: bool = typer.Option(False, help="fix filenames"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
-    _project = to_name_or_uuid(project) if project else None
-    _mission = to_name_or_uuid(mission)
-
-    client = AuthenticatedClient()
-
     # check files and `fix` filenames
     if files is None:
         files = []
 
     file_paths = [Path(file) for file in files]
     check_file_paths(file_paths)
-
-    files_map = get_filename_map(
-        [Path(file) for file in files],
-    )
+    files_map = get_filename_map(file_paths)
 
     if not fix_filenames:
         for name, path in files_map.items():
@@ -73,51 +106,43 @@ def upload(
                     f"invalid filename format {path.name}, use `--fix-filenames`"
                 )
 
-    # parse the mission spec and get mission
-    mission_spec = get_valid_mission_spec(_mission, _project)
-    mission_parsed = get_mission_by_spec(client, mission_spec)
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
 
-    if not create and mission_parsed is None:
-        raise MissionDoesNotExist(f"mission: {mission} does not exist, use `--create`")
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    mission_spec = MissionSpec(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_spec=project_spec,
+    )
 
-    # create missing mission
-    if mission_parsed is None:
-        if not isinstance(mission_spec, MissionByName):
-            raise ValueError(
-                "cannot create mission using mission id, pecify a mission name"
-            )
+    if not mission_spec_is_unique(mission_spec):
+        raise InvalidMissionSpec(f"mission spec is not unique: {mission_spec}")
 
-        # get the metadata
-        tags_dct = {}
-        if metadata is not None:
-            metadata_dct = load_metadata(Path(metadata))
-            tags_dct = get_tags_map(client, metadata_dct)
+    client = AuthenticatedClient()
+    missions = get_missions_by_spec(client, mission_spec)
 
-        # get project id
-        if isinstance(mission_spec.project, UUID):
-            project_id = mission_spec.project
-        else:
-            project_id = get_project_id_by_name(client, mission_spec.project)
-            if project_id is None:
-                raise ValueError(
-                    f"unable to create mission, project: {mission_spec.project} not found"
-                )
+    if len(missions) > 1:
+        raise AssertionError("unreachable")
 
-        mission_id = create_mission(
+    if not create and not missions:
+        raise MissionNotFound(f"mission: {mission_spec} does not exist, use `--create`")
+
+    # create mission if it does not exist
+    mission_parsed = (
+        missions[0]
+        if missions
+        else _create_mission(
             client,
-            project_id,
-            mission_spec.name,
-            tags=tags_dct,
+            mission_spec,
+            metadata_path=Path(metadata) if metadata else None,
             ignore_missing_tags=ignore_missing_tags,
         )
-
-        mission_parsed = get_mission_by_id(client, mission_id)
-        assert mission_parsed is not None, "unreachable"
-
-    filtered_files_map = {}
-    remote_file_names = [file.name for file in mission_parsed.files]
+    )
 
     console = Console()
+    filtered_files_map = {}
+    remote_file_names = [file.name for file in mission_parsed.files]
     for name, path in files_map.items():
         if name in remote_file_names:
             console.print(
@@ -131,6 +156,7 @@ def upload(
         return
 
     upload_files(
+        client,
         filtered_files_map,
         mission_parsed.id,
         n_workers=2,
