@@ -58,7 +58,7 @@
 
     <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
         <q-tab-panel name="info">
-            <div class="q-table-container">
+            <div v-if="action" class="q-table-container">
                 <table class="q-table__table">
                     <tbody>
                         <tr>
@@ -365,30 +365,30 @@ import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
-import TitleSection from 'components/TitleSection.vue';
-import { computed, ComputedRef, ref } from 'vue';
-import ActionBadge from './action-badge.vue';
+import { computed, ref, watch } from 'vue';
 import { formatDate } from '../services/dateFormating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ArtifactState } from '@common/enum';
 import ROUTES from '../router/routes';
 import { ActionDto } from '@api/types/actions/action.dto';
 import ButtonGroup from '@components/buttons/button-group.vue';
+import TitleSection from '@components/title-section.vue';
+import ActionBadge from '@components/action-badge.vue';
 
 const tab = ref('info');
 
 const $route = useRoute();
 const $router = useRouter();
 
-const { data } = useQuery<ActionDto>({
+const { data: action } = useQuery<ActionDto>({
     queryKey: ['missions_action', $route.params.id],
     queryFn: () => actionDetails($route.params.id as string),
     refetchInterval: 5000,
 });
 
-const action: ComputedRef<ActionDto> = computed(
-    () => data.value,
-) as ComputedRef<ActionDto>;
+watch(() => {
+    console.log(action.value);
+}, [action]);
 
 const artifactState = computed(() => {
     switch (action.value.artifacts) {

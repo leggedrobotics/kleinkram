@@ -183,7 +183,11 @@ const search = computed({
 
 const canCreate = computed(() =>
     selectedMission.value
-        ? canLaunchInMission(selectedMission.value, permissions.value)
+        ? canLaunchInMission(
+              selectedMission.value.uuid,
+              selectedProject.value.uuid,
+              permissions.value,
+          )
         : true,
 );
 

@@ -31,7 +31,7 @@ import {
     ActionTemplateDto,
     ActionTemplatesDto,
 } from '@common/api/types/actions/action-template.dto';
-import { ActionsDto } from '@common/api/types/actions/action.dto';
+import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
 import { AddUser, AuthRes } from '../auth/param-decorator';
 import {
     ActionQuery,
@@ -194,8 +194,13 @@ export class ActionController {
 
     @Get('details')
     @CanReadAction()
-    // TODO: type API response
-    async details(@QueryUUID('uuid', 'ActionUUID') uuid: string) {
+    @ApiOkResponse({
+        description: 'Details of the action',
+        type: ActionDto,
+    })
+    async details(
+        @QueryUUID('uuid', 'ActionUUID') uuid: string,
+    ): Promise<ActionDto> {
         return this.actionService.details(uuid);
     }
 }

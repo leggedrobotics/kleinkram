@@ -328,8 +328,8 @@ export class ActionService {
         };
     }
 
-    async details(actionUuid: string) {
-        return await this.actionRepository.findOneOrFail({
+    async details(actionUuid: string): Promise<ActionDto> {
+        const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
             relations: [
                 'mission',
@@ -339,6 +339,8 @@ export class ActionService {
                 'worker',
             ],
         });
+
+        return action.actionDto;
     }
 
     async runningActions(

@@ -182,22 +182,18 @@ export const canDeleteMission = (
 };
 
 export const canLaunchInMission = (
-    mission: FlatMissionDto | null,
+    missionUuid?: string,
+    projectUuid?: string,
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
-    if (mission?.project.uuid === undefined) return false;
+    if (missionUuid === undefined) return false;
+    if (projectUuid === undefined) return false;
 
-    const projectPermission = getPermissionForProject(
-        mission.project.uuid,
-        permissions,
-    );
+    const projectPermission = getPermissionForProject(projectUuid, permissions);
     if (projectPermission >= AccessGroupRights.WRITE) return true;
 
-    const missionPermission = getPermissionForMission(
-        mission.uuid,
-        permissions,
-    );
+    const missionPermission = getPermissionForMission(missionUuid, permissions);
     return missionPermission >= AccessGroupRights.WRITE;
 };
 
