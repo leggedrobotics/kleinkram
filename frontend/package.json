@@ -13,7 +13,7 @@
     "dependencies": {
         "@aws-sdk/client-s3": "^3.689.0",
         "@tanstack/vue-query": "^5.59.20",
-        "axios": "^1.7.7",
+        "axios": "^1.7.9",
         "date-fns": "^4.1.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
