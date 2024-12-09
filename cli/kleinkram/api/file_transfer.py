@@ -21,7 +21,7 @@ from rich.console import Console
 from tqdm import tqdm
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.config import load_config
+from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -52,7 +52,7 @@ class UploadCredentials(NamedTuple):
 
 
 def _get_s3_endpoint() -> str:
-    return load_config().endpoint.s3
+    return get_config().endpoint.s3
 
 
 def _confirm_file_upload(

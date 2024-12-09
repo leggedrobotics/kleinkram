@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import sys
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
-from rich.text import Text
 
-from kleinkram.config import Config
 from kleinkram.config import Endpoint
+from kleinkram.config import add_endpoint
+from kleinkram.config import endpoint_table
 from kleinkram.config import get_config
-from kleinkram.config import save_config
+from kleinkram.config import select_endpoint
 
 HELP = """\
 Get or set the current endpoint.
@@ -28,22 +26,6 @@ endpoint_typer = typer.Typer(
 )
 
 
-def _endpoints_table(config: Config) -> Table:
-    table = Table(title="Available Endpoints")
-    table.add_column("Name", style="cyan")
-    table.add_column("API", style="cyan")
-    table.add_column("S3", style="cyan")
-
-    for name, endpoint in config.endpoints.items():
-        display_name = (
-            Text(name, style="bold yellow")
-            if name == config.selected_endpoint
-            else Text(name)
-        )
-        table.add_row(display_name, endpoint.api, endpoint.s3)
-    return table
-
-
 @endpoint_typer.callback()
 def endpoint(
     name: Optional[str] = typer.Argument(None, help="Name of the endpoint to use"),
@@ -54,17 +36,15 @@ def endpoint(
     console = Console()
 
     if not any([name, api, s3]):
-        console.print(_endpoints_table(config))
+        console.print(endpoint_table(config))
     elif name is not None and not any([api, s3]):
-        if name not in config.endpoints:
+        try:
+            select_endpoint(config, name)
+        except ValueError:
             console.print(f"Endpoint {name} not found.\n", style="red")
-            console.print(_endpoints_table(config))
-        else:
-            config.selected_endpoint = name
-            save_config(config)
+            console.print(endpoint_table(config))
     elif not (name and api and s3):
         raise typer.BadParameter("to add a new endpoint, all arguments are required")
     else:
-        config.endpoints[name] = Endpoint(name, api, s3)
-        config.selected_endpoint = name
-        save_config(config)
+        new_endpoint = Endpoint(name, api, s3)
+        add_endpoint(config, new_endpoint)

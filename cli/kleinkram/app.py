@@ -26,6 +26,8 @@ from kleinkram.commands.mission import mission_typer
 from kleinkram.commands.project import project_typer
 from kleinkram.commands.upload import upload_typer
 from kleinkram.commands.verify import verify_typer
+from kleinkram.config import Config
+from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.config import save_config
@@ -170,6 +172,10 @@ def cli(
     ),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
 ):
+    if not check_config_compatibility():
+        typer.confirm("found incompatible config file, overwrite?", abort=True)
+        save_config(Config())
+
     _ = version  # suppress unused variable warning
     shared_state = get_shared_state()
     shared_state.verbose = verbose
@@ -192,7 +198,7 @@ def cli(
         logger.error(format_traceback(e))
         raise
     except Exception:
-        err = ("failed to check version compatibility",)
+        err = "failed to check version compatibility"
         Console(file=sys.stderr).print(
             err, style="yellow" if shared_state.verbose else None
         )

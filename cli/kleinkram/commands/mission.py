@@ -75,13 +75,13 @@ def create(
     project_ids, project_patterns = split_args([project] if project else [])
 
     project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
+    mission_spec = MissionSpec(  # noqa
         ids=mission_ids,
         patterns=mission_patterns,
         project_spec=project_spec,
     )
 
-    metadata_dct = load_metadata(Path(metadata)) if metadata else {}
+    metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
 
     raise NotImplementedError("Not implemented yet")
 

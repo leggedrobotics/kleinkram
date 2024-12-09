@@ -19,6 +19,9 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from rich.table import Table
+from rich.text import Text
+
 from kleinkram._version import __local__
 from kleinkram._version import __version__
 
@@ -140,6 +143,51 @@ def get_config(path: Path = CONFIG_PATH) -> Config:
     if path not in LOADED_CONFIGS:
         LOADED_CONFIGS[path] = _load_config(path=path)
     return LOADED_CONFIGS[path]
+
+
+def select_endpoint(config: Config, name: str, path: Path = CONFIG_PATH) -> None:
+    if name not in config.endpoints:
+        raise ValueError(f"Endpoint {name} not found.")
+    config.selected_endpoint = name
+    save_config(config, path)
+
+
+def add_endpoint(config: Config, endpoint: Endpoint, path: Path = CONFIG_PATH) -> None:
+    config.endpoints[endpoint.name] = endpoint
+    config.selected_endpoint = endpoint.name
+    save_config(config, path)
+
+
+def check_config_compatibility(path: Path = CONFIG_PATH) -> bool:
+    """\
+    returns `False` if config file exists but is not compatible with the current version
+
+    TODO: add more sophisticated version checking
+    """
+    if not path.exists():
+        return True
+    try:
+        _ = _load_config(path=path)
+    except Exception as e:
+        logger.info(f"Error loading config: {e}")
+        return False
+    return True
+
+
+def endpoint_table(config: Config) -> Table:
+    table = Table(title="Available Endpoints")
+    table.add_column("Name", style="cyan")
+    table.add_column("API", style="cyan")
+    table.add_column("S3", style="cyan")
+
+    for name, endpoint in config.endpoints.items():
+        display_name = (
+            Text(name, style="bold yellow")
+            if name == config.selected_endpoint
+            else Text(name)
+        )
+        table.add_row(display_name, endpoint.api, endpoint.s3)
+    return table
 
 
 @dataclass
