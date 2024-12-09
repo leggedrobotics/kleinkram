@@ -8,7 +8,7 @@ import httpx
 
 from kleinkram.config import Config
 from kleinkram.config import Credentials
-from kleinkram.config import load_config
+from kleinkram.config import get_config
 from kleinkram.config import save_config
 from kleinkram.errors import NotAuthenticated
 
@@ -30,7 +30,7 @@ class AuthenticatedClient(httpx.Client):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self._config = load_config()
+        self._config = get_config()
         self._config_lock = Lock()
 
         if self._config.credentials is None:
@@ -67,7 +67,7 @@ class AuthenticatedClient(httpx.Client):
         logger.info("saving new tokens...")
 
         with self._config_lock:
-            self._config.endpoint_credentials[self._config.selected_endpoint] = creds
+            self._config.credentials = creds
             save_config(self._config)
 
         self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)

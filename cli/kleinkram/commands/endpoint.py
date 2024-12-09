@@ -10,7 +10,7 @@ from rich.text import Text
 
 from kleinkram.config import Config
 from kleinkram.config import Endpoint
-from kleinkram.config import load_config
+from kleinkram.config import get_config
 from kleinkram.config import save_config
 
 HELP = """\
@@ -50,7 +50,7 @@ def endpoint(
     api: Optional[str] = typer.Argument(None, help="API endpoint to use"),
     s3: Optional[str] = typer.Argument(None, help="S3 endpoint to use"),
 ) -> None:
-    config = load_config(init=True, cached=False)
+    config = get_config()
     console = Console()
 
     if not any([name, api, s3]):
@@ -60,21 +60,11 @@ def endpoint(
             console.print(f"Endpoint {name} not found.\n", style="red")
             console.print(_endpoints_table(config))
         else:
-            config = Config(
-                version=config.version,
-                endpoints=config.endpoints,
-                endpoint_credentials=config.endpoint_credentials,
-                selected_endpoint=name,
-            )
+            config.selected_endpoint = name
             save_config(config)
     elif not (name and api and s3):
         raise typer.BadParameter("to add a new endpoint, all arguments are required")
     else:
-        config.endpoints[name] = Endpoint(api, s3)
-        config = Config(
-            version=config.version,
-            endpoints=config.endpoints,
-            endpoint_credentials=config.endpoint_credentials,
-            selected_endpoint=name,
-        )
+        config.endpoints[name] = Endpoint(name, api, s3)
+        config.selected_endpoint = name
         save_config(config)
