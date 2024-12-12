@@ -17,7 +17,6 @@ from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import TypeVar
-from typing import Union
 from typing import overload
 from uuid import UUID
 
@@ -27,10 +26,8 @@ from kleinkram.models import Project
 from kleinkram.resources import FileSpec
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
-
-IdLike = Union[UUID, str]
-PathLike = Union[Path, str]
-
+from kleinkram.types import IdLike
+from kleinkram.types import PathLike
 
 T = TypeVar("T")
 
@@ -165,8 +162,34 @@ def _list_projects(spec: ProjectSpec) -> List[Project]:
     raise NotImplementedError
 
 
+def _create_project() -> None:
+    raise NotImplementedError
+
+
+def _delete_project() -> None:
+    raise NotImplementedError
+
+
+def _update_project() -> None:
+    raise NotImplementedError
+
+
+def _create_mission() -> None:
+    raise NotImplementedError
+
+
+def _delete_mission() -> None:
+    raise NotImplementedError
+
+
 def _update_mission(*, spec: MissionSpec, metadata: Dict[str, str]) -> None:
     raise NotImplementedError
+
+
+##################################################
+# everything below is part of the public api
+# TODO: move different parts into separate files
+##################################################
 
 
 @overload

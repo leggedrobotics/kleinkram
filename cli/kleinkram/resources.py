@@ -1,3 +1,12 @@
+"""\
+this file contains dataclasses for specifying remote resources on kleinkram
+here we also provide some helper functions to validate certain properties
+of these specifications
+
+additionally we provide wrappers around the api for fetching the specified
+resources (TODO: move this part to another file)
+"""
+
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
