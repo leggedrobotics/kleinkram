@@ -11,7 +11,7 @@ BUCKET_NAME = "upload-test"
 ENDPOINT_URL = "https://minio.datasets.dev.leggedrobotics.com"
 ACCESS_KEY = ""
 SECRET_KEY = ""
-LARGE_FILE = Path(__file__).parent.parent / "data" / "large" / "20_G.bag"
+LARGE_FILE = Path(__file__).parent.parent / "data" / "large.bag"
 
 
 for _ in tqdm.tqdm(range(100)):
