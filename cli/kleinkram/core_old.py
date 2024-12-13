@@ -69,55 +69,6 @@ def _file_desitations(
         }
 
 
-def _file_spec_from_args(
-    file_ids: Optional[Sequence[Union[UUID, str]]] = None,
-    file_patterns: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[Union[UUID, str]]] = None,
-    mission_patterns: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[Union[UUID, str]]] = None,
-    project_patterns: Optional[Sequence[str]] = None,
-) -> FileSpec:
-    mission_spec = _mission_spec_from_args(
-        mission_ids=mission_ids,
-        mission_patterns=mission_patterns,
-        project_ids=project_ids,
-        project_patterns=project_patterns,
-    )
-
-    file_spec = FileSpec(
-        ids=_map_to_ids(file_ids) if file_ids else [],
-        patterns=list(file_patterns) if file_patterns else [],
-        mission_spec=mission_spec,
-    )
-    return file_spec
-
-
-def _mission_spec_from_args(
-    mission_ids: Optional[Sequence[Union[str, UUID]]] = None,
-    mission_patterns: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
-    project_patterns: Optional[Sequence[str]] = None,
-) -> MissionSpec:
-    project_spec = _project_spec_from_args(project_ids, project_patterns)
-    mission_spec = MissionSpec(
-        ids=_map_to_ids(mission_ids) if mission_ids else [],
-        patterns=list(mission_patterns) if mission_patterns else [],
-        project_spec=project_spec,
-    )
-    return mission_spec
-
-
-def _project_spec_from_args(
-    project_ids: Optional[Sequence[Union[str, UUID]]] = None,
-    project_patterns: Optional[Sequence[str]] = None,
-) -> ProjectSpec:
-    project_spec = ProjectSpec(
-        ids=_map_to_ids(project_ids) if project_ids else [],
-        patterns=list(project_patterns) if project_patterns else [],
-    )
-    return project_spec
-
-
 @overload
 def download(
     *file: File,

@@ -81,7 +81,7 @@ class AuthenticatedClient(httpx.Client):
             url = f"/{url}"
 
         # try to do a request
-        full_url = f"{self._config.endpoint}{url}"
+        full_url = f"{self._config.endpoint.api}{url}"
         logger.info(f"requesting {method} {full_url}")
         response = super().request(method, full_url, *args, **kwargs)
 

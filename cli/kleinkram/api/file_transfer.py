@@ -163,10 +163,13 @@ def upload_file(
     filename: str,
     path: Path,
     verbose: bool = False,
+    s3_endpoint: Optional[str] = None,
 ) -> UploadState:
     """\
     returns bytes uploaded
     """
+    if s3_endpoint is None:
+        s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
     with tqdm(
@@ -177,8 +180,6 @@ def upload_file(
         leave=False,
         disable=not verbose,
     ) as pbar:
-        endpoint = _get_s3_endpoint()
-
         # get per file upload credentials
         creds = _get_upload_creditials(
             client, internal_filename=filename, mission_id=mission_id
@@ -187,7 +188,7 @@ def upload_file(
             return UploadState.EXISTS
 
         try:
-            _s3_upload(path, endpoint=endpoint, credentials=creds, pbar=pbar)
+            _s3_upload(path, endpoint=s3_endpoint, credentials=creds, pbar=pbar)
         except Exception as e:
             logger.error(format_traceback(e))
             _cancel_file_upload(client, creds.file_id, mission_id)

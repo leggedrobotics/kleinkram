@@ -88,7 +88,7 @@ def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
         save_config(config)
         return
 
-    oauth_url = f"{config.endpoint}{OAUTH_SLUG}"
+    oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}"
     if not headless and _has_browser():
         _browser_auth(url=oauth_url)
     else:

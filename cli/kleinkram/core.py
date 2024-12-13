@@ -26,6 +26,8 @@ from kleinkram.models import Project
 from kleinkram.resources import FileSpec
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
+from kleinkram.resources import get_files
+from kleinkram.api.client import AuthenticatedClient
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
@@ -126,6 +128,12 @@ def _args_to_file_spec(
 def _download(
     *, spec: FileSpec, dest: Path, nested: bool = False, overwrite: bool = False
 ) -> None:
+    client = AuthenticatedClient()
+    files = get_files(client, spec)
+
+
+
+
     raise NotImplementedError
 
 

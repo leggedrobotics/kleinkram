@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
 from itertools import chain
-from typing import List
+from typing import List, Generator
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
@@ -104,7 +104,9 @@ def mission_spec_is_unique(spec: MissionSpec) -> bool:
     return False
 
 
-def get_projects(client: AuthenticatedClient, spec: ProjectSpec) -> List[Project]:
+def get_projects(
+    client: AuthenticatedClient, spec: ProjectSpec
+) -> Generator[Project, None, None]:
     projects = _get_projects(client)
 
     matched_names = filtered_by_patterns(
@@ -112,16 +114,18 @@ def get_projects(client: AuthenticatedClient, spec: ProjectSpec) -> List[Project
     )
 
     if not spec.patterns and not spec.ids:
-        return projects
+        yield from projects
 
-    return [
+    yield from [
         project
         for project in projects
         if project.name in matched_names or project.id in spec.ids
     ]
 
 
-def get_missions(client: AuthenticatedClient, spec: MissionSpec) -> List[Mission]:
+def get_missions(
+    client: AuthenticatedClient, spec: MissionSpec
+) -> Generator[Mission, None, None]:
     projects = get_projects(client, spec.project_spec)
 
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
@@ -134,22 +138,22 @@ def get_missions(client: AuthenticatedClient, spec: MissionSpec) -> List[Mission
     missions = list(missions)
 
     if not spec.patterns and not spec.ids:
-        return list(missions)
+        yield from list(missions)
 
     matched_names = filtered_by_patterns(
         [mission.name for mission in missions], spec.patterns
     )
 
-    filter = [
+    yield from [
         mission
         for mission in missions
         if mission.name in matched_names or mission.id in spec.ids
     ]
 
-    return filter
 
-
-def get_files(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
+def get_files(
+    client: AuthenticatedClient, spec: FileSpec
+) -> Generator[File, None, None]:
     missions = get_missions(client, spec.mission_spec)
 
     # collect files
@@ -161,10 +165,12 @@ def get_files(client: AuthenticatedClient, spec: FileSpec) -> List[File]:
         )
 
     if not spec.patterns and not spec.ids:
-        return list(files)
+        yield from list(files)
     matched_names = filtered_by_patterns([file.name for file in files], spec.patterns)
 
-    return [file for file in files if file.name in matched_names or file.id in spec.ids]
+    yield from [
+        file for file in files if file.name in matched_names or file.id in spec.ids
+    ]
 
 
 def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:

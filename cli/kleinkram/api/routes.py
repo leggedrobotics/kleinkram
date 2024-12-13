@@ -53,16 +53,13 @@ GET_STATUS = "/user/me"
 
 def _get_projects(client: AuthenticatedClient) -> list[Project]:
     resp = client.get(PROJECT_ALL)
-
     if resp.status_code in (403, 404):
         return []
-
     resp.raise_for_status()
 
     ret = []
     for pr in resp.json()[0]:
         ret.append(_parse_project(pr))
-
     return ret
 
 
@@ -70,20 +67,15 @@ def _get_missions_by_project(
     client: AuthenticatedClient, project: Project
 ) -> List[Mission]:
     params = {"uuid": str(project.id), "take": MAX_PAGINATION}
-
     resp = client.get(MISSIONS_BY_PROJECT, params=params)
-
     if resp.status_code in (403, 404):
         return []
-
     resp.raise_for_status()
 
     data = resp.json()
     missions = []
-
     for mission in data[0]:
         missions.append(_parse_mission(mission, project))
-
     return missions
 
 
@@ -214,7 +206,6 @@ def _update_mission_metadata(
 
     if resp.status_code == 404:
         raise MissionNotFound
-
     if resp.status_code == 403:
         raise AccessDenied(f"cannot update mission: {mission_id}")
 
