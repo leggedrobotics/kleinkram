@@ -104,7 +104,7 @@
         </template>
     </div>
 
-    <BullQueue v-if="permissions?.role === UserRole.ADMIN" />
+    <BullQueue v-if="showBullQueue" />
 </template>
 
 <script setup lang="ts">
@@ -118,7 +118,6 @@ import {
     useHandler,
     usePermissionsQuery,
 } from '../hooks/query-hooks';
-import { UserRole } from '@common/enum';
 import { FlatMissionDto, MissionsDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
@@ -137,6 +136,12 @@ const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 
 const handler = useHandler();
+
+const showBullQueue = computed(
+    // TODO: change to `UserRole.Admin` and fix build
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+    () => permissions.value?.role === 'ADMIN',
+);
 
 const { data: permissions } = usePermissionsQuery();
 const selectedProject = computed(() =>
