@@ -83,7 +83,7 @@
 
         <div>
             <Suspense>
-                <explorer-page-project-table />
+                <explorer-page-project-table :my-projects="myProjects" />
             </Suspense>
         </div>
     </div>
@@ -92,7 +92,6 @@
 import { useHandler } from '../hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, watch } from 'vue';
-import { getUser } from 'src/services/auth';
 import ExplorerPageProjectTable from '@components/explorer-page/explorer-page-project-table.vue';
 import CreateProjectDialogOpener from '@components/button-wrapper/dialog-opener-create-project.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
@@ -103,24 +102,6 @@ const myProjects = ref(false);
 const queryClient = useQueryClient();
 const handler = useHandler();
 
-watch(myProjects, async () => {
-    const user = await getUser();
-
-    if (myProjects.value) {
-        handler.value.setSearch({
-            ...handler.value.searchParams,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'creator.uuid': user?.uuid ?? '',
-        });
-    } else {
-        handler.value.setSearch({
-            ...handler.value.searchParams,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'creator.uuid': '',
-        });
-    }
-});
-
 const search = computed({
     get: () => handler.value.searchParams.name,
     set: (value: string) => {
@@ -128,9 +109,11 @@ const search = computed({
     },
 });
 
-async function refresh() {
+async function refresh(): Promise<void> {
     await queryClient.invalidateQueries({
         queryKey: ['projects'],
     });
 }
+
+watch(myProjects, async () => refresh());
 </script>

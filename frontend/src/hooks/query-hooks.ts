@@ -347,13 +347,14 @@ export const useStorageOverview = (): UseQueryReturnType<
 };
 
 export const useFilteredProjects = (
-    take: number | ComputedRef<number>,
-    skip: number | ComputedRef<number>,
-    sortBy: string | ComputedRef<string>,
-    descending: boolean | ComputedRef<boolean>,
+    take: number | ComputedRef<number> | Ref<number>,
+    skip: number | ComputedRef<number> | Ref<number>,
+    sortBy: string | ComputedRef<string> | Ref<string>,
+    descending: boolean | ComputedRef<boolean> | Ref<boolean>,
     searchParameter?:
         | Record<string, string>
-        | ComputedRef<Record<string, string>>,
+        | ComputedRef<Record<string, string>>
+        | Ref<Record<string, string>>,
 ): UseQueryReturnType<ProjectsDto | undefined, Error> => {
     return useQuery<ProjectsDto>({
         queryKey: ['projects'],

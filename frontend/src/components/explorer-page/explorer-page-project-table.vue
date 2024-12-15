@@ -108,7 +108,11 @@ import { TableRequest } from '../../services/query-handler';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { explorerPageTableColumns } from './explorer-page-table-columns';
-import { useFilteredProjects, useHandler } from '../../hooks/query-hooks';
+import {
+    useFilteredProjects,
+    useHandler,
+    useUser,
+} from '../../hooks/query-hooks';
 import DeleteProjectDialogOpener from '../button-wrapper/delete-project-dialog-opener.vue';
 import ConfigureTagsDialogOpener from '../button-wrapper/dialog-opener-configure-tags.vue';
 import EditProjectDialogOpener from '../button-wrapper/EditProjectDialogOpener.vue';
@@ -116,12 +120,15 @@ import ChangeProjectRightsDialogOpener from '../button-wrapper/dialog-opener-cha
 
 const urlHandler = useHandler();
 
-function setPagination(update: TableRequest): void {
+const { myProjects } = defineProps<{ myProjects: boolean }>();
+const { data: user } = useUser();
+
+async function setPagination(update: TableRequest): Promise<void> {
     urlHandler.value.setPage(update.pagination.page);
     urlHandler.value.setTake(update.pagination.rowsPerPage);
     urlHandler.value.setSort(update.pagination.sortBy);
     urlHandler.value.setDescending(update.pagination.descending);
-    refetch();
+    await refetch();
 }
 
 const pagination = computed({
@@ -151,7 +158,14 @@ const {
     computed(() => urlHandler.value.skip),
     computed(() => urlHandler.value.sortBy),
     computed(() => urlHandler.value.descending),
-    computed(() => urlHandler.value.searchParams),
+    computed(() =>
+        myProjects
+            ? ({ 'creator.uuid': user.value?.uuid ?? '' } as Record<
+                  string,
+                  string
+              >)
+            : {},
+    ),
 );
 
 const data = computed(() => (rawData.value ? rawData.value.data : []));
