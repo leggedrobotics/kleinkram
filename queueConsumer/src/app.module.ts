@@ -14,7 +14,7 @@ import User from '@common/entities/user/user.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import env from '@common/env';
+import env from '@common/environment';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import Tag from '@common/entities/tag/tag.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
@@ -26,7 +26,7 @@ import { ContainerCleanupService } from './actions/services/cleanup-containers.s
 import { ActionManagerService } from './actions/services/action-manager.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import ActionTemplate from '@common/entities/action/action-template.entity';
 import Worker from '@common/entities/worker/worker.entity';

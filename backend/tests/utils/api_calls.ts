@@ -1,4 +1,3 @@
-import { CreateProject } from '@common/api/types/create-project.dto';
 import { getJwtToken } from './database_utils';
 import User from '@common/entities/user/user.entity';
 import { CreateMission } from '@common/api/types/create-mission.dto';
@@ -8,6 +7,7 @@ import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import { CreateProject } from '@common/api/types/create-project.dto';
 
 export const createProjectUsingPost = async (
     project: CreateProject,

@@ -35,7 +35,7 @@ export async function createWorker(
     // Gather GPU information
     const gpuModels = await getGpuModels();
     const hasGPU = gpuModels.length > 0;
-    const gpuModel = (hasGPU && gpuModels[0]) ?? '';
+    const gpuModel = hasGPU ? (gpuModels[0] ?? '') : '';
     const gpuMemory = hasGPU ? 1000 : -1; // Not available in the current implementation
 
     // Gather Disk storage information
@@ -56,7 +56,7 @@ export async function createWorker(
         identifier: name,
         hostname,
         cpuMemory,
-        gpuModel,
+        gpuModel: gpuModel,
         gpuMemory,
         cpuCores,
         cpuModel,

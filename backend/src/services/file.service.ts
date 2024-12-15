@@ -19,7 +19,7 @@ import {
 } from 'typeorm';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from '@common/api/types/update-file.dto';
-import env from '@common/env';
+import env from '@common/environment';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
 import {
@@ -62,6 +62,11 @@ import {
     TemporaryFileAccessDto,
     TemporaryFileAccessesDto,
 } from '@common/api/types/files/access.dto';
+
+// Type guard function to check if the error has a 'code' property
+function isErrorWithCode(error: unknown): error is { code: string } {
+    return typeof error === 'object' && error !== null && 'code' in error;
+}
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -449,18 +454,18 @@ export class FileService implements OnModuleInit {
     }
 
     async findOne(uuid: string): Promise<FileWithTopicDto> {
-        return (
-            await this.fileRepository.findOneOrFail({
-                where: { uuid },
-                relations: [
-                    'mission',
-                    'topics',
-                    'mission.project',
-                    'creator',
-                    'categories',
-                ],
-            })
-        ).fileWithTopicDto;
+        const { fileWithTopicDto } = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: [
+                'mission',
+                'topics',
+                'mission.project',
+                'creator',
+                'categories',
+            ],
+        });
+
+        return fileWithTopicDto;
     }
 
     async findByFilename(filename: string) {
@@ -537,8 +542,8 @@ export class FileService implements OnModuleInit {
                 );
                 await transactionalEntityManager.save(FileEntity, databaseFile);
             })
-            .catch((error: any) => {
-                if (error.code === '23505') {
+            .catch((error: unknown) => {
+                if (isErrorWithCode(error) && error.code === '23505') {
                     throw new ConflictException(
                         'File with this name already exists in the mission',
                     );
@@ -647,14 +652,14 @@ export class FileService implements OnModuleInit {
             sort?.toString() ?? 'name',
         ] as FindOptionsSelect<FileEntity>;
 
-        const [resUUIDs, count] = await this.fileRepository.findAndCount({
+        const [filesUuids, count] = await this.fileRepository.findAndCount({
             select,
             where,
             take,
             skip,
             order: { [sort ?? 'name']: sortDirection },
         });
-        if (resUUIDs.length === 0) {
+        if (filesUuids.length === 0) {
             return {
                 count,
                 data: [],
@@ -663,7 +668,7 @@ export class FileService implements OnModuleInit {
             };
         }
         const secondWhere = {
-            uuid: In(resUUIDs.map((file) => file.uuid)),
+            uuid: In(filesUuids.map((file) => file.uuid)),
         };
 
         const files = await this.fileRepository.find({
@@ -714,6 +719,7 @@ export class FileService implements OnModuleInit {
                     });
                 } catch (error) {
                     logger.error(
+                        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                         `Error moving file ${uuid} to mission ${missionUUID}: ${error}`,
                     );
                 }
@@ -804,7 +810,7 @@ export class FileService implements OnModuleInit {
                     creator: { uuid: userUUID },
                 },
             })
-            .then((res) => !!res);
+            .then((r) => !!r);
     }
 
     /**
@@ -841,10 +847,14 @@ export class FileService implements OnModuleInit {
                     error: string | null;
                     queueUUID?: string;
                 } = {
+                    // eslint-disable-next-line unicorn/no-null
                     bucket: null,
                     fileName: filename,
+                    // eslint-disable-next-line unicorn/no-null
                     fileUUID: null,
+                    // eslint-disable-next-line unicorn/no-null
                     accessCredentials: null,
+                    // eslint-disable-next-line unicorn/no-null
                     error: null,
                 };
 
@@ -955,6 +965,7 @@ export class FileService implements OnModuleInit {
                 // get a list of all files to delete
                 const files = await transactionalEntityManager.find(
                     FileEntity,
+                    // eslint-disable-next-line unicorn/no-array-method-this-argument
                     {
                         where: {
                             uuid: In(uniqueFilesUuids),

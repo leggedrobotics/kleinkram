@@ -12,9 +12,9 @@ import {
     StringArrayValidate,
     StringValidate,
     UUIDValidate,
-} from './validationTypes';
+} from './validation-types';
 import { metadataApplier } from './metadata-applier';
-import { AccessGroupType, FileType } from '@common/frontend_shared/enum';
+import { AccessGroupType } from '@common/frontend_shared/enum';
 
 export const QueryUUID = (
     parameterName: string,
@@ -384,7 +384,7 @@ export const QuerySortDirection = (
         ),
     )(parameterName);
 
-export const QueryProjectSearchParam = (
+export const QueryProjectSearchParameters = (
     parameterName: string,
     parameterDescription: string,
 ) =>

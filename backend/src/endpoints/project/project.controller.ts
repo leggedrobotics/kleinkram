@@ -11,7 +11,7 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 import {
-    QueryProjectSearchParam as QueryProjectSearchParameter,
+    QueryProjectSearchParameters as QueryProjectSearchParameter,
     QuerySkip,
     QuerySortBy,
     QuerySortDirection,
@@ -19,7 +19,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, ApiResponse } from '../../decarators';

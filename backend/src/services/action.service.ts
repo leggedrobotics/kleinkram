@@ -60,13 +60,13 @@ export class ActionService {
             where: { uuid: action.uuid },
             relations: ['mission', 'mission.project', 'template'],
         });
-        const res = await this.queueService._addActionQueue(action, {
+        const result = await this.queueService._addActionQueue(action, {
             cpuCores: template.cpuCores,
             cpuMemory: template.cpuMemory,
             gpuMemory: template.gpuMemory,
             maxRuntime: template.maxRuntime,
         } as RuntimeDescription);
-        if (!res) {
+        if (!Boolean(result)) {
             action.state = ActionState.UNPROCESSABLE;
             await this.actionRepository.save(action);
             throw new ConflictException(

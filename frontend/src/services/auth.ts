@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import ENV from 'src/env';
+import ENV from '../environment';
 import { getMe } from 'src/services/queries/user';
 import { CurrentAPIUserDto } from '@api/types/user.dto';
 

@@ -13,7 +13,7 @@ import {
     UsersDto,
 } from '@common/api/types/user.dto';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
-import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
+import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { ApiOkResponse } from '../../decarators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
@@ -52,7 +52,7 @@ export class UserController {
         type: CurrentAPIUserDto,
     })
     async me(
-        @Query() _query: NoQueryParamsDto,
+        @Query() _query: NoQueryParametersDto,
         @AddUser() user: AuthHeader,
     ): Promise<CurrentAPIUserDto> {
         return await this.userService.me(user);

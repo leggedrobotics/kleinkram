@@ -11,7 +11,7 @@ import { QueueModule } from './endpoints/queue/queue.module';
 import { UserModule } from './endpoints/user/user.module';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
-import env from '@common/env';
+import env from '@common/environment';
 import { TagModule } from './endpoints/tag/tag.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import accessConfig from '../access_config.json';

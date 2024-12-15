@@ -230,7 +230,7 @@ const columns = [
     },
 ];
 
-const handleRowClick = async (_: MouseEvent, row: any): Promise<void> => {
+const handleRowClick = async (_: Event, row: any): Promise<void> => {
     await router.push({
         name: ROUTES.ANALYSIS_DETAILS.routeName,
         params: { id: row.uuid },

@@ -449,7 +449,7 @@ const onFileTypeClicked = (index: number): void => {
 const {
     data: mission,
     isLoadingError,
-    error,
+    error: missionError,
 } = useMission(
     missionUuid.value ?? '',
     (error: unknown) => {
@@ -468,7 +468,12 @@ const {
     },
     200,
 );
-registerNoPermissionErrorHandler(isLoadingError, missionUuid, 'mission', error);
+registerNoPermissionErrorHandler(
+    isLoadingError,
+    missionUuid,
+    'mission',
+    missionError,
+);
 
 const { data: all_categories } = useCategories(projectUuid.value ?? '', '');
 const allCategories: Ref<CategoryDto[]> = computed(() =>

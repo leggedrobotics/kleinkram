@@ -6,7 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../../services/user.service';
 import { CookieNames } from '@common/frontend_shared/enum';
-import env from '@common/env';
+import env from '@common/environment';
 import { InvalidJwtTokenException } from './jwt.strategy';
 import { OutputDto } from '../../decarators';
 

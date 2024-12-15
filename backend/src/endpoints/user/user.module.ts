@@ -5,7 +5,7 @@ import { UserController } from './user.controller';
 import User from '@common/entities/user/user.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Account from '@common/entities/auth/account.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 
 @Global()
 @Module({

@@ -7,7 +7,7 @@ import {
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { systemUser } from '@common/consts';
 import {

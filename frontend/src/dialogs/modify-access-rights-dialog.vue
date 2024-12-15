@@ -33,7 +33,7 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { getProjectAccess } from 'src/services/queries/access';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Ref, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { updateProjectAccess } from 'src/services/mutations/access';
 import { AccessGroupRights } from '@common/enum';
 
@@ -113,10 +113,9 @@ const options = Object.keys(accessGroupRightsMap)
         value: Number.parseInt(key, 10),
     }))
 
-    .filter(
-        (option: Ref<AccessGroupRights>) =>
-            option.value !== AccessGroupRights.READ,
-    );
+    // TODO: fix typing here
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+    .filter((option) => option.value !== AccessGroupRights.READ);
 
 function confirmAction(): void {
     changeAccessRights();

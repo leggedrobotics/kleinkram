@@ -39,7 +39,7 @@
                     () => {
                         if (!searchEnabled) return;
                         searchEnabled = false;
-                        model = null;
+                        model = undefined;
 
                         // verify if the group is already in the list
                         if (
@@ -265,7 +265,7 @@ const sortedAccessRights = computed(() =>
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
-const model = ref(null);
+const model = ref(undefined);
 
 const accessRightsColumns = [
     {
@@ -342,7 +342,7 @@ const enableSearch = (): void => {
     searchEnabled.value = true;
 };
 
-function handleFilter(value, update) {
+function handleFilter(value: any, update: any) {
     groupSearch.value = value;
     enableSearch();
     // @ts-ignore

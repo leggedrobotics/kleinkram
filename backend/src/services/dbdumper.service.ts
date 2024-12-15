@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import * as fs from 'node:fs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import env from '@common/env';
+import env from '@common/environment';
 import { internalMinio } from '@common/minio-helper';
 import logger from '../logger';
 
@@ -30,10 +30,10 @@ export class DBDumper {
             this.configService.getOrThrow<string>('database.password');
         const DB_NAME =
             this.configService.getOrThrow<string>('database.database');
-        const dumpFile = `backup-${Date.now()}.sql`;
+        const dumpFile = `backup-${Date.now().toString()}.sql`;
 
         // The pg_dump command
-        const command = `PGPASSWORD=${DB_PASSWORD} pg_dump -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -F c -b -v -f ${dumpFile} ${DB_NAME}`;
+        const command = `PGPASSWORD=${DB_PASSWORD} pg_dump -h ${DB_HOST} -p ${DB_PORT.toString()} -U ${DB_USERNAME} -F c -b -v -f ${dumpFile} ${DB_NAME}`;
 
         try {
             // Execute the command

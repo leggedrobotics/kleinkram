@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { getConfig } from './prod-datasource.config';
+import { getConfig } from './production-datasource.config';
 
 const datasource = new DataSource(getConfig());
 

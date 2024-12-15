@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, RawAxiosResponseHeaders } from 'axios';
-import ENV from 'src/env';
+import ENV from '../environment';
 import { ref } from 'vue';
 import { parseISO } from 'date-fns';
 

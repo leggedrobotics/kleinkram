@@ -73,7 +73,7 @@ export default class CreateUsers implements Seeder {
             role: UserRole.USER,
         }).createMany(remainingUserCount);
 
-        const allUsers = adminUsers.concat(users);
+        const allUsers = [...adminUsers, ...users];
 
         // create personal access groups
         const personalAccessGroups = await Promise.all(
@@ -91,7 +91,7 @@ export default class CreateUsers implements Seeder {
             isPersonal: false,
         } as AccessGroupFactoryContext).createMany(this.ACCESS_GROUP_COUNT);
 
-        const allAccessGroups = personalAccessGroups.concat(groups);
+        const allAccessGroups = [...personalAccessGroups, ...groups];
 
         // Generate Projects, Missions, Files, and Topics...
         const projects = await factory(Project)({

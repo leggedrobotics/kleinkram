@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { UUIDValidate } from './validationTypes';
+import { UUIDValidate } from './validation-types';
 import { metadataApplier } from './metadata-applier';
 
-export const ParamUUID = (
+export const ParameterUuid = (
     parameterName: string,
     parameterDescription?: string,
 ) =>

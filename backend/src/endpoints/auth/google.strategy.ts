@@ -5,7 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import e from 'express';
 import logger from '../../logger';
 import { AuthFlowException } from '../../routing/filters/auth-flow-exception';
-import env from '@common/env';
+import env from '@common/environment';
 import { Providers } from '@common/frontend_shared/enum';
 
 @Injectable()

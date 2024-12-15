@@ -23,7 +23,7 @@ export async function findWorkerForAction(
         },
     });
     logger.debug(
-        `Available Worker (GPU: ${runtimeRequirements.gpuMemory}GB): ${worker.map((a) => a.identifier).join(', ')}`,
+        `Available Worker (GPU: ${runtimeRequirements.gpuMemory.toString()}GB): ${worker.map((a) => a.identifier).join(', ')}`,
     );
 
     if (worker.length === 0) {
@@ -37,12 +37,11 @@ export async function findWorkerForAction(
         }),
     );
     logger.debug('jobDistribution: ', nrJobs);
-    const res = worker.sort(
+    return worker.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];
-    // return worker[Math.floor(Math.random() * worker.length)];
-    return res;
 }
+
 export async function addActionQueue(
     action: Action,
     runtimeRequirements: RuntimeDescription,

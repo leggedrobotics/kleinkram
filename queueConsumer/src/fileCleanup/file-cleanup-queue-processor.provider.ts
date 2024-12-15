@@ -23,14 +23,14 @@ import {
 import QueueEntity from '@common/entities/queue/queue.entity';
 import User from '@common/entities/user/user.entity';
 import Mission from '@common/entities/mission/mission.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import logger from '../logger';
 import Redlock from 'redlock';
 import { Redis } from 'ioredis';
 import { redis, systemUser } from '@common/consts';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import env from '@common/env';
+import env from '@common/environment';
 import { getBucketFromFileType, internalMinio } from '@common/minio-helper';
 import crypto from 'node:crypto';
 import { Tag } from 'minio';

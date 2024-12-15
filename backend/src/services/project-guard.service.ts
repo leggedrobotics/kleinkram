@@ -9,7 +9,7 @@ import {
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
-import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 import logger from '../logger';
 
 @Injectable()

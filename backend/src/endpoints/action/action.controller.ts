@@ -18,7 +18,7 @@ import {
     CreateTemplateDto,
     UpdateTemplateDto,
 } from '@common/api/types/create-template.dto';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import {

@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { CookieNames } from '@common/frontend_shared/enum';
-import env from '@common/env';
+import env from '@common/environment';
 import { UserService } from '../../services/user.service';
 
 export class InvalidJwtTokenException extends Error {

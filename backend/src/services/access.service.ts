@@ -289,6 +289,7 @@ export class AccessService {
         const data: AccessGroupDto[] = accessGroups.map(
             (accessGroup: AccessGroup): AccessGroupDto => {
                 return {
+                    // eslint-disable-next-line unicorn/no-null
                     creator: accessGroup.creator?.userDto ?? null,
                     memberships:
                         accessGroup.memberships?.map(

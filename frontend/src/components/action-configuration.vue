@@ -385,6 +385,7 @@ const { data: actionTemplatesResult } = useQuery({
 // Save the template ----------------------------------------------------------
 async function saveAsTemplate() {
     let result: undefined | ActionTemplateDto;
+    // eslint-disable-next-line unicorn/prefer-ternary
     if (isModified.value && editingTemplate.value.uuid) {
         // @ts-ignore
         result = await updateTemplate(true);

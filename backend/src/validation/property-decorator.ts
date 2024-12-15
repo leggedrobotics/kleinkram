@@ -5,7 +5,7 @@ import {
     MISSION_NAME_REGEX,
     PROJECT_NAME_REGEX,
     NON_UUID_REGEX,
-} from './validationLogic';
+} from './validation-logic';
 
 export const IsNoValidUUID = (
     validationOptions?: ValidationOptions,

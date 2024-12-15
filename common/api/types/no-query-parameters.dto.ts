@@ -1,6 +1,6 @@
 import { IsEmpty } from 'class-validator';
 
-export class NoQueryParamsDto {
+export class NoQueryParametersDto {
     @IsEmpty({
         message: 'property empty should not exist',
     }) // Disallow any properties

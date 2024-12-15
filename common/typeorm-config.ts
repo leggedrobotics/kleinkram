@@ -1,4 +1,4 @@
-import Environment from './env';
+import Environment from './environment';
 
 interface DatabaseConfig {
     host: string;
@@ -18,7 +18,7 @@ interface TypeormConfig {
     database: DatabaseConfig;
 }
 
-export default (): TypeormConfig => ({
+const typeormConfig = (): TypeormConfig => ({
     server: {
         port: Environment.SERVER_PORT || 3000,
     },
@@ -31,3 +31,4 @@ export default (): TypeormConfig => ({
         database: Environment.DB_DATABASE,
     },
 });
+export default typeormConfig;

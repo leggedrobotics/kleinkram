@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 // eslint-disable-next-line unicorn/prevent-abbreviations
-import ENV from '../../env';
+import ENV from '../../environment';
 
 // TODO: currently, all hosted versions should show this warning
 // eslint-disable-next-line unicorn/prevent-abbreviations

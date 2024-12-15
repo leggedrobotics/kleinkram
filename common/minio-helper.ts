@@ -1,4 +1,4 @@
-import environment from './env';
+import environment from './environment';
 import { FileType } from './frontend_shared/enum';
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import { Client } from 'minio';

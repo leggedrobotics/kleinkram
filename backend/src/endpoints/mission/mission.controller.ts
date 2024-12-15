@@ -21,9 +21,9 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { BodyUUID } from '../../validation/body-decorators';
-import { MISSION_NAME_REGEX } from '../../validation/validationLogic';
+import { MISSION_NAME_REGEX } from '../../validation/validation-logic';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import {
     FlatMissionDto,

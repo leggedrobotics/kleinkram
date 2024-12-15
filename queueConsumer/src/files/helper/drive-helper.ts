@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import env from '@common/env';
+import env from '@common/environment';
 import logger from '../../logger';
 import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';

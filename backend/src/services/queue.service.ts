@@ -28,7 +28,7 @@ import Action from '@common/entities/action/action.entity';
 import { RuntimeDescription } from '@common/types';
 
 import Queue from 'bull';
-import { addActionQueue } from '@common/schedulingLogic';
+import { addActionQueue } from '@common/scheduling-logic';
 import {
     getBucketFromFileType,
     getInfoFromMinio,

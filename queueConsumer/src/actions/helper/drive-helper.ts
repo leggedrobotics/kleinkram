@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import env from '@common/env';
+import env from '@common/environment';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const KEYFILEPATH = env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE;

@@ -1,4 +1,4 @@
-import { getConfig } from './dev-datasource.config';
+import { getConfig } from './development-datasource.config';
 import { DataSource } from 'typeorm';
 
 const datasource = new DataSource(getConfig());

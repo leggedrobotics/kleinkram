@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { IsUUID, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { StringValidate, UUIDValidate } from './validationTypes';
+import { StringValidate, UUIDValidate } from './validation-types';
 import { metadataApplier } from './metadata-applier';
 import { ApiProperty } from '@nestjs/swagger';
 

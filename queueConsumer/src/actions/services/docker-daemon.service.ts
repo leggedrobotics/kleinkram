@@ -6,8 +6,8 @@ import { ContainerLog } from '@common/entities/action/action.entity';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import process from 'node:process';
-import Env from '@common/env';
-import env from '@common/env';
+import Env from '@common/environment';
+import env from '@common/environment';
 import { createDriveFolder } from '../helper/drive-helper';
 import fs from 'node:fs';
 import {
@@ -45,14 +45,14 @@ const defaultContainerLimitations: ContainerLimits = {
     disk_quota: 40_737_418_240,
 };
 
-export type ContainerEnv = Record<string, string>;
+export type ContainerEnvironment = Record<string, string>;
 
 export interface ContainerStartOptions {
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
     needs_gpu?: boolean;
-    environment?: ContainerEnv;
+    environment?: ContainerEnvironment;
     command?: string;
     entrypoint?: string;
 }

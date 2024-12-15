@@ -23,7 +23,7 @@ import { traceWrapper, tracing } from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import Topic from '@common/entities/topic/topic.entity';
-import env from '@common/env';
+import env from '@common/environment';
 import {
     FileLocation,
     FileOrigin,

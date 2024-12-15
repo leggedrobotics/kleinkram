@@ -1,5 +1,5 @@
 import { Client } from 'minio';
-import env from '@common/env';
+import env from '@common/environment';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 import fs from 'node:fs';

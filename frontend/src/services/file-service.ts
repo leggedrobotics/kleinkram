@@ -3,7 +3,7 @@ import {
     cancelUploads,
     generateTemporaryCredentials,
 } from 'src/services/mutations/file';
-import ENV from 'src/env';
+import ENV from '../environment';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,

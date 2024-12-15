@@ -37,13 +37,13 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
-import env from '@common/env';
+import env from '@common/environment';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
+import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
 import { FileWithTopicDto } from '@common/api/types/files/file.dto';
@@ -294,7 +294,7 @@ export class FileController {
         type: IsUploadingDto,
     })
     async isUploading(
-        @Query() _query: NoQueryParamsDto,
+        @Query() _query: NoQueryParametersDto,
         @AddUser() auth: AuthHeader,
     ): Promise<IsUploadingDto> {
         return {

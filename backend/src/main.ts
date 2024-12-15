@@ -2,7 +2,7 @@ import tracer from './tracing';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
-import environment from '../../common/env';
+import environment from '@common/environment';
 import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
 
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -64,7 +64,7 @@ async function bootstrap(): Promise<void> {
      */
     if (environment.DEV) {
         logger.debug(
-            `Enabling global response validation interceptor (dev-mode = ${environment.DEV})`,
+            `Enabling global response validation interceptor (dev-mode = ${environment.DEV.toString()})`,
         );
         logger.warn(
             'Global response validation interceptor is enabled. This should only be ' +
@@ -95,7 +95,8 @@ async function bootstrap(): Promise<void> {
     logger.debug('Endpoints saved');
 }
 
-bootstrap().catch((error) => {
+// eslint-disable-next-line unicorn/prefer-top-level-await
+bootstrap().catch((error: unknown) => {
     logger.error('Failed to start application');
     logger.error(error);
 });

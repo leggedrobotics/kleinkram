@@ -18,7 +18,7 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { FileQueueEntriesDto } from '@common/api/types/file-queue-entry.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';

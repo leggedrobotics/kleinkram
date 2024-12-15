@@ -19,7 +19,7 @@ import {
     UserOnly,
 } from './roles.decorator';
 import { QueryUUID } from '../../validation/query-decorators';
-import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 import { AddUserToProjectDto } from '@common/api/types/add-user-project.dto';
 import { AddUserToAccessGroupDto } from '@common/api/types/add-user-access-group.dto';
