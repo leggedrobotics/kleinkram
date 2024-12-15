@@ -17,10 +17,10 @@ export async function createDriveFolder(name: string) {
         mimeType: 'application/vnd.google-apps.folder',
         parents: [parent],
     };
-    const res = await drive.files.create({
+    const result = await drive.files.create({
         requestBody: fileMetadata,
         fields: 'id',
         supportsAllDrives: true,
     });
-    return res.data.id;
+    return result.data.id;
 }

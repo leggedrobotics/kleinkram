@@ -16,7 +16,7 @@ import {
     UsersDto,
 } from '@common/api/types/user.dto';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
-import { AuthHeader } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class UserService implements OnModuleInit {

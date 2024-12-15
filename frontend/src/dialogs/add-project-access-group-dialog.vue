@@ -1,11 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Project to Access Group </template>
+        <template #title> Add Project to Access Group</template>
 
         <template #content>
             <AddProjectToAccessGroupDialog
-                ref="addProjectRef"
-                :access_group_uuid="props.access_group_uuid"
+                ref="addProjectReference"
+                :access_group_uuid="access_group_uuid"
             />
         </template>
 
@@ -28,16 +28,16 @@ import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const addProjectRef = ref<InstanceType<
-    typeof AddProjectToAccessGroupDialog
-> | null>(null);
+const addProjectReference = ref<
+    InstanceType<typeof AddProjectToAccessGroupDialog> | undefined
+>(undefined);
 
-const props = defineProps<{
+const { access_group_uuid } = defineProps<{
     access_group_uuid: string;
 }>();
 
 const addProjectToAccessGroupAction = (): void => {
-    addProjectRef.value?.mutate();
+    addProjectReference.value?.mutate();
     onDialogOK();
 };
 </script>

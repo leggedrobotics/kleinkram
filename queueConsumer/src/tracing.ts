@@ -83,6 +83,7 @@ export const traceWrapper =
                 let result: U | Promise<any>;
 
                 // capture some metadata about the function call
+                // eslint-disable-next-line unicorn/no-array-for-each
                 arguments_.forEach((argument: any) => {
                     // check if arg is of type Job or QueueEntity and add metadata
                     if (
@@ -135,7 +136,7 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
-
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function tracing<A extends unknown[], C>(
     traceName = '',
 ):
@@ -157,6 +158,7 @@ export function tracing<A extends unknown[], C>(
         const applyWrap = (
             methodName: string | symbol,
             originalMethod: (...arguments_: A) => C,
+            // eslint-disable-next-line unicorn/consistent-function-scoping
         ): ((...arguments_: A) => C) => {
             return function (...arguments_: A): C {
                 return traceWrapper(
@@ -169,18 +171,16 @@ export function tracing<A extends unknown[], C>(
 
         if (propertyKey === undefined) {
             // Decorator is applied to all methods of a class
-            Reflect.ownKeys(target.prototype).forEach(
-                (methodName: string | symbol): void => {
-                    const originalMethod: (...arguments_: A) => C =
-                        target.prototype[methodName];
-                    if (typeof originalMethod === 'function') {
-                        target.prototype[methodName] = applyWrap(
-                            methodName,
-                            originalMethod,
-                        );
-                    }
-                },
-            );
+            for (const methodName of Reflect.ownKeys(target.prototype)) {
+                const originalMethod: (...arguments_: A) => C =
+                    target.prototype[methodName];
+                if (typeof originalMethod === 'function') {
+                    target.prototype[methodName] = applyWrap(
+                        methodName,
+                        originalMethod,
+                    );
+                }
+            }
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method

@@ -91,7 +91,7 @@ export const filesOfMission = async (
     if (filename) parameters.filename = filename;
     if (health) parameters.health = health;
     if (categories && categories.length > 0) parameters.categories = categories;
-    parameters.sort = sort ? sort : 'filename';
+    parameters.sort = sort ?? 'filename';
     if (desc === undefined) {
         parameters.desc = 'ASC';
     } else {

@@ -20,8 +20,10 @@
 </template>
 
 <script setup lang="ts">
+// eslint-disable-next-line unicorn/prevent-abbreviations
 import ENV from '../../env';
 
 // TODO: currently, all hosted versions should show this warning
+// eslint-disable-next-line unicorn/prevent-abbreviations
 const isDevInstance = ENV.ENDPOINT.includes('.dev.leggedrobotics.com');
 </script>

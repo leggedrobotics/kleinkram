@@ -4,7 +4,7 @@
 
         <template #content>
             <create-file
-                ref="createFileRef"
+                ref="createFileReference"
                 v-model:ready="ready"
                 :mission="mission"
                 :uploads="uploads"
@@ -31,7 +31,9 @@ import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import CreateFile from '@components/create-file.vue';
 
-const createFileRef = ref<InstanceType<typeof CreateFile> | null>(null);
+const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
+    undefined,
+);
 const ready = ref(false);
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -42,8 +44,8 @@ defineProps<{
 }>();
 
 const createFileAction = (): void => {
-    // @ts-ignore
-    createFileRef.value.createFileAction();
+    if (createFileReference.value === undefined) return;
+    createFileReference.value.createFileAction();
     onDialogOK();
 };
 </script>

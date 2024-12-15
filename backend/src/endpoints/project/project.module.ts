@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import Project from '@common/entities/project/project.entity';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import TagType from '@common/entities/tagType/tagType.entity';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
 
 @Module({
     imports: [

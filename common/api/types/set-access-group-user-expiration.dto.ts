@@ -1,4 +1,4 @@
-import { ApiUUIDProperty } from '../../../backend/src/validation/bodyDecorators';
+import { ApiUUIDProperty } from '../../../backend/src/validation/body-decorators';
 import { IsDate } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 

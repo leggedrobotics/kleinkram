@@ -366,7 +366,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { computed, ref } from 'vue';
-import { formatDate } from '../services/dateFormating';
+import { formatDate } from '../services/date-formating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ArtifactState } from '@common/enum';
 import ROUTES from '../router/routes';

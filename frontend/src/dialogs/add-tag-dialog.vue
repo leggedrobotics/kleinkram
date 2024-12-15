@@ -1,9 +1,9 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Add Tag </template>
+        <template #title> Add Tag</template>
 
         <template #content>
-            <AddTag :mission_uuid="props.mission_uuid" />
+            <AddTag :mission_uuid="mission_uuid" />
         </template>
 
         <template #actions>
@@ -25,7 +25,7 @@ import BaseDialog from './base-dialog.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const props = defineProps<{
+const { mission_uuid } = defineProps<{
     mission_uuid: string;
 }>();
 </script>

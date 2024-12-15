@@ -8,10 +8,10 @@ import { UserRole } from '../../frontend_shared/enum';
 import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
 import Action from '../action/action.entity';
-import ActionTemplate from '../action/actionTemplate.entity';
+import ActionTemplate from '../action/action-template.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
-import GroupMembership from '../auth/group_membership.entity';
+import GroupMembership from '../auth/group-membership.entity';
 import { UserDto } from '../../api/types/user.dto';
 
 @Entity()

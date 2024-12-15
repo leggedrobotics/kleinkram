@@ -2,7 +2,7 @@ import { IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidFileName,
-} from '../../../backend/src/validation/propertyDecorator';
+} from '../../../backend/src/validation/property-decorator';
 
 export class UpdateFile {
     @IsUUID() uuid!: string;

@@ -54,20 +54,8 @@
                     required
                     :type="
                         // TODO: this is ugly, can we improve this?
-                        (DataType_InputType[tagtype.datatype] ?? 'text') as
-                            | 'number'
-                            | 'textarea'
-                            | 'time'
-                            | 'text'
-                            | 'date'
-                            | 'file'
-                            | 'url'
-                            | 'search'
-                            | 'password'
-                            | 'email'
-                            | 'tel'
-                            | 'datetime-local'
-                            | undefined
+                        (DataType_InputType[tagtype.datatype] ??
+                            'text') as InputFieldType
                     "
                     style="width: 100%"
                 />
@@ -118,6 +106,21 @@ import { addTags } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { useAllTags, useMission } from '../hooks/query-hooks';
 import { TagDto } from '@api/types/tags/tags.dto';
+
+type InputFieldType =
+    | 'number'
+    | 'textarea'
+    | 'time'
+    | 'text'
+    | 'date'
+    | 'file'
+    | 'url'
+    | 'search'
+    | 'password'
+    | 'email'
+    | 'tel'
+    | 'datetime-local'
+    | undefined;
 
 const queryClient = useQueryClient();
 

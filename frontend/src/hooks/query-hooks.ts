@@ -436,7 +436,7 @@ export const useActions = (
     skip: number,
     sortBy: string,
     descending: boolean,
-    search?: string = undefined,
+    search: string | undefined = undefined,
     queryKey: string,
 ): UseQueryReturnType<ActionsDto | undefined, Error> => {
     if (missionUuid === undefined) missionUuid = '';

@@ -17,7 +17,7 @@ export async function downloadDriveFile(
     fileId: string,
     destination: string,
 ): Promise<string> {
-    const res = await drive.files.get(
+    const results = await drive.files.get(
         {
             fileId,
             alt: 'media',
@@ -30,7 +30,7 @@ export async function downloadDriveFile(
 
     logger.debug(`Downloading file to ${destination}`);
     return await new Promise((resolve, reject) => {
-        res.data
+        results.data
             .on('end', () => {
                 const fileHash = hash.digest('base64');
                 logger.debug('File downloaded successfully.');
@@ -48,12 +48,12 @@ export async function downloadDriveFile(
 }
 
 export async function getMetadata(fileId: string) {
-    const metadataRes = await drive.files.get({
+    const metadataResults = await drive.files.get({
         fileId: fileId,
         fields: 'name,mimeType',
         supportsAllDrives: true,
     });
-    return metadataRes.data;
+    return metadataResults.data;
 }
 
 export async function listFiles(folderId: string) {

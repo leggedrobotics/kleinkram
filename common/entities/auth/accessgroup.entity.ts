@@ -8,9 +8,9 @@ import {
 } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
-import ProjectAccess from './project_access.entity';
-import MissionAccess from './mission_access.entity';
-import GroupMembership from './group_membership.entity';
+import ProjectAccess from './project-access.entity';
+import MissionAccess from './mission-access.entity';
+import GroupMembership from './group-membership.entity';
 import { AccessGroupType } from '../../frontend_shared/enum';
 
 @Unique('unique_access_group_name', ['name'])

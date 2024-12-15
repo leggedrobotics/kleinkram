@@ -125,7 +125,7 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { Pagination, TableRequest } from '../../services/query-handler';
+import { TableRequest } from '../../services/query-handler';
 import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
@@ -135,10 +135,10 @@ import { missionColumns } from './explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/tags.dto';
 
 import { useProjectUUID } from '../../hooks/router-hooks';
-import MoveMissionDialogOpener from '@components/button-wrapper/MoveMissionDialogOpener.vue';
-import MissionMetadataOpener from '@components/button-wrapper/MissionMetadataOpener.vue';
-import EditMissionDialogOpener from '@components/button-wrapper/EditMissionDialogOpener.vue';
-import DeleteMissionDialogOpener from '@components/button-wrapper/DeleteMissionDialogOpener.vue';
+import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dialog-pener.vue';
+import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';
+import EditMissionDialogOpener from '@components/button-wrapper/edit-mission-dialog-opener.vue';
+import DeleteMissionDialogOpener from '@components/button-wrapper/delete-mission-dialog-opener.vue';
 
 const $emit = defineEmits(['update:selected']);
 
@@ -222,12 +222,12 @@ const onRowClick = async (_: Event, row: any) => {
 const missingTags = (row: MissionWithFilesDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
         const setTypes = row.tags.map((tag) => tag.type);
-        if (!setTypes.find((setType) => setType.uuid === tagType.uuid)) {
+        if (!setTypes.some((setType) => setType.uuid === tagType.uuid)) {
             return tagType;
         }
+        return;
     });
-    // @ts-ignore
-    return mapped.filter((value) => !!value);
+    return mapped?.filter((value): value is TagDto => !!value) ?? [];
 };
 
 const missingTagsText = (row: MissionWithFilesDto): string => {

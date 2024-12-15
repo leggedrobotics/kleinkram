@@ -1,6 +1,6 @@
 import { IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ApiUUIDProperty } from '../../../backend/src/validation/bodyDecorators';
+import { ApiUUIDProperty } from '../../../backend/src/validation/body-decorators';
 import { AccessGroupRights } from '../../frontend_shared/enum';
 
 export class AddUserToProjectDto {

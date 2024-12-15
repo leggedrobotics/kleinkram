@@ -15,14 +15,14 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import Project from '@common/entities/project/project.entity';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
-import GroupMembership from '@common/entities/auth/group_membership.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import logger from '../logger';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AuthHeader } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class AccessService {

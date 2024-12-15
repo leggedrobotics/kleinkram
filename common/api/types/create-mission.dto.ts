@@ -8,7 +8,7 @@ import {
 import {
     IsNoValidUUID,
     IsValidMissionName,
-} from '../../../backend/src/validation/propertyDecorator';
+} from '../../../backend/src/validation/property-decorator';
 
 export class CreateMission {
     @IsString()

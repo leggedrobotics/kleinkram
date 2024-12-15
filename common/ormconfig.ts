@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-module.exports = {
+export default {
     type: 'postgres',
     host: process.env['DB_HOST'],
     port: Number.parseInt(process.env['DB_PORT'] ?? '5432', 10),

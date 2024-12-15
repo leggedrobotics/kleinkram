@@ -1,9 +1,7 @@
 <template>
     <base-dialog ref="dialogRef">
         <template #title>
-            Move File{{
-                props.files.length === 1 ? ' ' + props.files[0].filename : 's'
-            }}
+            Move File{{ files.length === 1 ? ' ' + files[0].filename : 's' }}
         </template>
 
         <template #content>
@@ -107,7 +105,7 @@ import {
 } from '../hooks/query-hooks';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
-const props = defineProps<{
+const { mission, files } = defineProps<{
     mission: MissionWithFilesDto;
     files: FileWithTopicDto[];
 }>();
@@ -125,11 +123,11 @@ const selected = ref<{
     missionName: string;
     missionUUID: string;
 }>({
-    projectName: props.mission.project.name || '',
-    projectUUID: props.mission.project.uuid || '',
+    projectName: mission.project.name || '',
+    projectUUID: mission.project.uuid || '',
     missions: [],
-    missionName: props.mission.name,
-    missionUUID: props.mission.uuid,
+    missionName: mission.name,
+    missionUUID: mission.uuid,
 });
 
 const projectsReturn = useFilteredProjects(500, 0, 'name', true, {});
@@ -150,9 +148,9 @@ watch(
     (newValue) => {
         if (newValue) {
             selected.value.missions = missions.value.map(
-                (mission: FlatMissionDto) => ({
-                    missionName: mission.name,
-                    missionUUID: mission.uuid,
+                (m: FlatMissionDto) => ({
+                    missionName: m.name,
+                    missionUUID: m.uuid,
                 }),
             );
         }
@@ -165,7 +163,7 @@ watch(
 const { mutate: moveFilesMutation } = useMutation({
     mutationFn: () =>
         moveFiles(
-            props.files.map((file) => file.uuid),
+            files.map((f) => f.uuid),
             selected.value.missionUUID,
         ),
     onSuccess: async () => {
@@ -183,13 +181,13 @@ const { mutate: moveFilesMutation } = useMutation({
                 query.queryKey[0] === 'missions',
         });
     },
-    onError(e: unknown) {
-        console.log(e);
+    onError(error: unknown) {
+        console.log(error);
         Notify.create({
             group: false,
             message: `Error moving file: ${
                 (
-                    e as {
+                    error as {
                         response: {
                             data: { message: string };
                         };

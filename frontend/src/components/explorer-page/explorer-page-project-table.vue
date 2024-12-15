@@ -115,7 +115,7 @@ import {
 } from '../../hooks/query-hooks';
 import DeleteProjectDialogOpener from '../button-wrapper/delete-project-dialog-opener.vue';
 import ConfigureTagsDialogOpener from '../button-wrapper/dialog-opener-configure-tags.vue';
-import EditProjectDialogOpener from '../button-wrapper/EditProjectDialogOpener.vue';
+import EditProjectDialogOpener from '../button-wrapper/edit-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from '../button-wrapper/dialog-opener-change-project-rights.vue';
 
 const urlHandler = useHandler();

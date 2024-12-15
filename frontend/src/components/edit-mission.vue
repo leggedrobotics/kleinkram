@@ -85,8 +85,8 @@ const { mutate: removeTagCallback } = useMutation({
             });
         }
     },
-    onError(e) {
-        console.log(e);
+    onError(error: unknown) {
+        console.log(error);
     },
 });
 

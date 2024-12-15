@@ -17,14 +17,7 @@
                 e.stopPropagation();
             }
         "
-        @filter="
-            (val, update) => {
-                groupSearch = val;
-                enableSearch();
-                // @ts-ignore
-                update();
-            }
-        "
+        @filter="handleFilter"
     >
         <template v-if="searchEnabled && searchResults.length > 0" #no-option>
             <q-item>
@@ -254,7 +247,7 @@ import { getAccessRightDescription } from '../../services/generic';
 import { QSelect, QTable } from 'quasar';
 import { computed, ref } from 'vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
-import { accessGroupRightsList } from '../../enums/accessGroupRightsList';
+import { accessGroupRightsList } from '../../enums/access-group-rights-list';
 import { useSearchAccessGroup } from '../../hooks/query-hooks';
 import { AccessGroupDto } from '@api/types/user.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
@@ -348,6 +341,13 @@ const searchResults = computed<AccessGroupDto[]>(() => {
 const enableSearch = (): void => {
     searchEnabled.value = true;
 };
+
+function handleFilter(value, update) {
+    groupSearch.value = value;
+    enableSearch();
+    // @ts-ignore
+    update();
+}
 </script>
 
 <style scoped></style>

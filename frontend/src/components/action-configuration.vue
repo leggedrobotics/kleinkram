@@ -287,7 +287,7 @@ import {
 import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { AccessGroupRights } from '@common/enum';
-import { ActionSubmitResponseDto } from '@api/types/SubmitAction.dto';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
 import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
@@ -384,15 +384,15 @@ const { data: actionTemplatesResult } = useQuery({
 // MUTATING ###################################################################
 // Save the template ----------------------------------------------------------
 async function saveAsTemplate() {
-    let res: undefined | ActionTemplateDto;
+    let result: undefined | ActionTemplateDto;
     if (isModified.value && editingTemplate.value.uuid) {
         // @ts-ignore
-        res = await updateTemplate(true);
+        result = await updateTemplate(true);
     } else {
-        res = await createTemplate(true);
+        result = await createTemplate(true);
     }
-    editingTemplate.value = res;
-    select.value = structuredClone(res);
+    editingTemplate.value = result;
+    select.value = structuredClone(result);
 }
 
 const { mutateAsync: createTemplate } = useMutation({
@@ -504,31 +504,30 @@ async function submitAnalysis() {
     }
 
     // post: the input should be valid now
-    let res = editingTemplate.value;
-    console.log(res);
+    let template = editingTemplate.value;
 
     if (isModified.value && editingTemplate.value.uuid) {
         console.log('updating template');
-        res = await updateTemplate(false);
+        template = await updateTemplate(false);
     } else if (!editingTemplate.value.uuid) {
         console.log('createTemplate template');
 
-        res = await createTemplate(false);
+        template = await createTemplate(false);
     }
 
-    editingTemplate.value = res;
-    select.value = structuredClone(res);
+    editingTemplate.value = template;
+    select.value = structuredClone(template);
 
     let createPromise: Promise<ActionSubmitResponseDto>;
     if (hasMissionUUIDs.value) {
         createPromise = createMultipleAnalysis({
             missionUUIDs: allMissionUUIDs.value,
-            templateUUID: res.uuid,
+            templateUUID: template.uuid,
         });
     } else if (selectedMission.value) {
         createPromise = createAnalysis({
             missionUUID: selectedMission.value.uuid,
-            templateUUID: res.uuid,
+            templateUUID: template.uuid,
         });
     } else {
         Notify.create({

@@ -4,21 +4,20 @@ import Worker from '@common/entities/worker/worker.entity';
 import fs from 'node:fs';
 import Docker from 'dockerode';
 import logger from '../../logger';
-import * as util from 'node:util';
+import { promisify } from 'node:util';
 
 export async function getDiskSpace() {
     const diskData = await si.fsSize();
+    let totalAvailable = 0;
+
+    for (const disk of diskData) {
+        if (disk.type !== 'overlay') {
+            totalAvailable += disk.available;
+        }
+    }
+
     // Convert bytes to GB
-    return Math.round(
-        diskData.reduce(
-            (accumulator, disk) =>
-                disk.type === 'overlay'
-                    ? accumulator
-                    : accumulator + disk.available,
-            0,
-        ) /
-            (1024 * 1024 * 1024),
-    );
+    return Math.round(totalAvailable / (1024 * 1024 * 1024));
 }
 
 export async function createWorker(
@@ -36,14 +35,14 @@ export async function createWorker(
     // Gather GPU information
     const gpuModels = await getGpuModels();
     const hasGPU = gpuModels.length > 0;
-    const gpuModel = (hasGPU && gpuModels[0]) || '';
+    const gpuModel = (hasGPU && gpuModels[0]) ?? '';
     const gpuMemory = hasGPU ? 1000 : -1; // Not available in the current implementation
 
     // Gather Disk storage information
     const storage = await getDiskSpace();
 
     // Gather Hostname (assuming this will be the worker's unique name)
-    const name = (await si.osInfo()).hostname;
+    const { hostname: name } = await si.osInfo();
 
     const docker = new Docker({ socketPath: '/var/run/docker.sock' });
     const info = await docker.info();
@@ -68,8 +67,8 @@ export async function createWorker(
     });
 }
 
-const readdir = util.promisify(fs.readdir);
-const readFile = util.promisify(fs.readFile);
+const readdir = promisify(fs.readdir);
+const readFile = promisify(fs.readFile);
 
 const getGpuModels = async () => {
     const path = '/proc/driver/nvidia/gpus/';

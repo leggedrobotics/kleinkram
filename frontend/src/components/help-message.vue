@@ -2,16 +2,16 @@
     <a
         class="flex items-center flex-no-wrap"
         style="color: grey; text-decoration: none"
-        :href="props.link"
+        :href="link"
     >
         <q-icon name="sym_o_help" style="font-size: 20px" />
         <p class="q-mb-none" style="line-height: 24px; padding-left: 6px">
-            {{ props.text }}
+            {{ text }}
         </p>
     </a>
 </template>
 <script setup lang="ts">
-const props = defineProps<{
+const { link, text } = defineProps<{
     link?: string;
     text?: string;
 }>();

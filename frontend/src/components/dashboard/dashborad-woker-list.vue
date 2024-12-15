@@ -173,13 +173,11 @@ const extendedWorkers = ref({} as Record<string, boolean>);
 watch(
     () => workers.value,
     () => {
-        extendedWorkers.value = workers.value.reduce<Record<string, boolean>>(
-            (accumulator, w) => {
-                accumulator[w.uuid] = !!extendedWorkers.value[w.uuid];
-                return accumulator;
-            },
-            {},
-        );
+        const newExtendedWorkers: Record<string, boolean> = {};
+        for (const w of workers.value) {
+            newExtendedWorkers[w.uuid] = !!extendedWorkers.value[w.uuid];
+        }
+        extendedWorkers.value = newExtendedWorkers;
     },
     { immediate: true },
 );

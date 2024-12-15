@@ -187,7 +187,7 @@
                     overflow: scroll;
                     scrollbar-width: none;
                 "
-                @filter="filterFn"
+                @filter="filterFunction"
             />
             <q-btn-dropdown
                 dense
@@ -320,7 +320,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="() => onRowClick(null, props.row)"
+                                @click="() => onRowClick(undefined, props.row)"
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
@@ -346,12 +346,12 @@ import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 
-import { dateMask, formatDate, parseDate } from 'src/services/dateFormating';
+import { dateMask, formatDate, parseDate } from '../services/date-formating';
 import ROUTES from 'src/router/routes';
-import { formatSize } from 'src/services/generalFormatting';
+import { formatSize } from '../services/general-formatting';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
-import TagFilter from 'src/dialogs/TagFilter.vue';
+import TagFilter from '../dialogs/tag-filter.vue';
 import {
     useFilteredProjects,
     useHandler,
@@ -364,14 +364,14 @@ import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import DeleteFileDialogOpener from '../components/button-wrapper/DeleteFileDialogOpener.vue';
+import DeleteFileDialogOpener from '@components/button-wrapper/delete-file-dialog-opener.vue';
 import TitleSection from '@components/title-section.vue';
-import EditFileDialogOpener from '../components/button-wrapper/EditFileDialogOpener.vue';
+import EditFileDialogOpener from '@components/button-wrapper/edit-file-dialog-opener.vue';
 
 const $router = useRouter();
 
 const $q = useQuasar();
-const tableReference: Ref<QTable | null> = ref(null);
+const tableReference: Ref<QTable | undefined> = ref(undefined);
 
 const handler = useHandler();
 handler.value.sortBy = 'file.createdAt';
@@ -430,8 +430,7 @@ const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
 const and_or = ref(false);
-const tagFilter: Ref<Record<string, { name: string; value: string } | {}>> =
-    ref({});
+const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
 
 end.setHours(23, 59, 59, 999);
 
@@ -486,9 +485,9 @@ const queryKeyFiles = computed(() => [
 
 const tagFilterQuery = computed(() => {
     const query: Record<string, any> = {};
-    Object.keys(tagFilter.value).forEach((key: string) => {
+    for (const key of Object.keys(tagFilter.value)) {
         query[key] = tagFilter.value[key] ?? '';
-    });
+    }
     return query;
 });
 
@@ -628,7 +627,7 @@ function openTagFilterDialog() {
     });
 }
 
-function filterFn(value: string, update: any) {
+function filterFunction(value: string, update: any) {
     if (value === '') {
         update(() => {
             displayedTopics.value = allTopics.value;

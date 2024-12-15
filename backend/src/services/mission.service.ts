@@ -8,12 +8,12 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
-import TagType from '@common/entities/tagType/tagType.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import {
     addTagsToMinioObject,
     externalMinio,
     getBucketFromFileType,
-} from '@common/minio_helper';
+} from '@common/minio-helper';
 import logger from '../logger';
 import {
     FlatMissionDto,
@@ -22,7 +22,7 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { AuthHeader } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class MissionService {

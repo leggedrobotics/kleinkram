@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import Tag from '@common/entities/tag/tag.entity';
-import TagType from '@common/entities/tagType/tagType.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import { DataType } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';

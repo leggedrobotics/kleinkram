@@ -125,7 +125,9 @@ const convertedTagValues = computed(() => {
                 break;
             }
             case DataType.NUMBER: {
-                if (isNaN(Number.parseFloat(tagValues.value[key].value))) {
+                if (
+                    Number.isNaN(Number.parseFloat(tagValues.value[key].value))
+                ) {
                     break;
                 }
                 converted[key] = {

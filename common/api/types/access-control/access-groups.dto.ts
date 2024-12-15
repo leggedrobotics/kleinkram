@@ -4,7 +4,7 @@ import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
-import { AccessGroupDto, GroupMembershipDto } from '../user.dto';
+import { AccessGroupDto } from '../user.dto';
 
 export class AccessGroupsDto implements PaggedResponse<AccessGroupDto> {
     @ApiProperty()
@@ -12,7 +12,7 @@ export class AccessGroupsDto implements PaggedResponse<AccessGroupDto> {
     count!: number;
 
     @ApiProperty({
-        type: GroupMembershipDto,
+        type: AccessGroupDto,
         description: 'List of access groups',
     })
     @ValidateNested()

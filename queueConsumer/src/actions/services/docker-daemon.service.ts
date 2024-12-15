@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 import process from 'node:process';
 import Env from '@common/env';
 import env from '@common/env';
-import { createDriveFolder } from '../helper/driveHelper';
+import { createDriveFolder } from '../helper/drive-helper';
 import fs from 'node:fs';
 import {
     CapDrop,
@@ -16,8 +16,8 @@ import {
     NetworkMode,
     PidsLimit,
     SecurityOpt,
-} from '../helper/ContainerConfigs';
-import * as util from 'node:util';
+} from '../helper/container-configs';
+import { inspect } from 'node:util';
 
 export interface ContainerLimits {
     /**
@@ -212,7 +212,7 @@ export class DockerDaemon {
 
     private errorHandling() {
         return (error: unknown) => {
-            let errorString = util.inspect(error);
+            let errorString = inspect(error);
 
             // cleanup error message
             errorString = errorString.replaceAll(/\(.*?\)/g, '');
@@ -298,8 +298,8 @@ export class DockerDaemon {
                 password: DOCKER_HUB_PASSWORD,
             },
         });
-        return new Promise((res) => {
-            this.docker.modem.followProgress(pullStream, res);
+        return new Promise((result) => {
+            this.docker.modem.followProgress(pullStream, result);
         });
     }
 
@@ -359,7 +359,7 @@ export class DockerDaemon {
 
         // try to remove volume, if in use wait and try again
         await volume.remove().catch(async (error: unknown) => {
-            const errorString = util.inspect(error);
+            const errorString = inspect(error);
             if (errorString.includes('volume is in use')) {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
                 await volume.remove().catch(dockerDaemonErrorHandler);
@@ -380,7 +380,7 @@ export class DockerDaemon {
         line: string,
         sanitizeCallback?: (string_: string) => string,
     ): ContainerLog {
-        const logLevel = line.split('')[0]?.charCodeAt(0) ?? 0;
+        const logLevel = [...line][0]?.charCodeAt(0) ?? 0;
 
         // remove all non-printable characters
         line = line.replace(/[\u0000-\u001F\u007F]/u, '');
@@ -389,7 +389,7 @@ export class DockerDaemon {
         let dateEndIndex = line.indexOf(' ', dateStartIndex);
         dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
 
-        const dateString = line.substring(dateStartIndex, dateEndIndex);
+        const dateString = line.slice(dateStartIndex, dateEndIndex);
         const timestamp = new Date(dateString).toISOString();
 
         let message = line.slice(Math.max(0, dateEndIndex));
@@ -479,11 +479,12 @@ export class DockerDaemon {
         logger.info(`Checking if image ${artifactUploaderImage} exists...`);
         if (!details) {
             logger.info('Image does not exist, pulling image...');
-            const pullRes = await this.pullImage(artifactUploaderImage).catch(
-                this.errorHandling(),
-            );
+            const pullResult = await this.pullImage(
+                artifactUploaderImage,
+            ).catch(this.errorHandling());
 
-            logger.info(`Image pulled: ${pullRes}. Starting container...`);
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            logger.info(`Image pulled: ${pullResult}. Starting container...`);
             image = this.docker.getImage(artifactUploaderImage);
         }
 

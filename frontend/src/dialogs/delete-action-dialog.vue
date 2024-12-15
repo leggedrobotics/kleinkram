@@ -34,16 +34,16 @@ import { ActionDto } from '@api/types/actions/action.dto';
 import DeleteAction from '@components/delete-action.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionReference = ref<InstanceType<typeof DeleteAction> | null>(
-    null,
-);
+const deleteActionReference = ref<
+    InstanceType<typeof DeleteAction> | undefined
+>(undefined);
 
 const { action } = defineProps<{
     action: ActionDto;
 }>();
 
 const deleteActionAction = (): void => {
-    if (deleteActionReference.value === null) return;
+    if (deleteActionReference.value === undefined) return;
     deleteActionReference.value.deleteActionAction();
     onDialogOK();
 };

@@ -7,12 +7,12 @@ import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { AccessGroupFactoryContext } from '../../factories/auth/accessgroup.factory';
 import Project from '../../entities/project/project.entity';
 import Mission from '../../entities/mission/mission.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 import FileEntity from '../../entities/file/file.entity';
 import Topic from '../../entities/topic/topic.entity';
-import ProjectAccess from '../../entities/auth/project_access.entity';
+import ProjectAccess from '../../entities/auth/project-access.entity';
 import { ProjectContext } from '../../factories/project/project.factory';
-import TagType from '../../entities/tagType/tagType.entity';
+import TagType from '../../entities/tagType/tag-type.entity';
 
 export default class CreateUsers implements Seeder {
     // Settings for the Seeder
@@ -127,7 +127,7 @@ export default class CreateUsers implements Seeder {
                     }),
                 );
                 for (const file of files) {
-                    if (file.type == FileType.BAG) continue; // only MCAP files have topics
+                    if (file.type === FileType.BAG) continue; // only MCAP files have topics
                     await factory(Topic)({ file }).createMany(
                         extendedFaker.number.int({ min: 0, max: 20 }),
                     );

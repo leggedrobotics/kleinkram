@@ -5,7 +5,6 @@ import {
     IsDefined,
     IsEnum,
     IsNumber,
-    IsObject,
     IsString,
     IsUUID,
     ValidateNested,

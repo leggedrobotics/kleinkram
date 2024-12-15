@@ -2,7 +2,7 @@
     <q-card-section class="q-pa-md">
         <p>
             Please confirm by entering the Action template name:
-            <b>{{ props.action.template.name }}</b>
+            <b>{{ action.template.name }}</b>
         </p>
         <q-input
             v-model="actionNameCheck"
@@ -24,8 +24,8 @@ const actionNameCheck = ref('');
 const client = useQueryClient();
 
 async function deleteActionAction() {
-    if (actionNameCheck.value === props.action.template.name) {
-        await deleteAction(props.action)
+    if (actionNameCheck.value === action.template.name) {
+        await deleteAction(action)
             .then(async () => {
                 await client.invalidateQueries({
                     predicate: (query) =>
@@ -38,9 +38,10 @@ async function deleteActionAction() {
                     position: 'bottom',
                 });
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 Notify.create({
-                    message: `Error deleting Action: ${error.response.data.message}`,
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                    message: `Error deleting Action: ${(error as any)?.response?.data?.message}`,
                     color: 'negative',
                     position: 'bottom',
                 });
@@ -48,7 +49,7 @@ async function deleteActionAction() {
     }
 }
 
-const props = defineProps<{
+const { action } = defineProps<{
     action: ActionDto;
 }>();
 

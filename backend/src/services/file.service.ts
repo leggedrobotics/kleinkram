@@ -34,7 +34,7 @@ import {
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
-import TagType from '@common/entities/tagType/tagType.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import axios from 'axios';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import Queue from 'bull';
@@ -47,7 +47,7 @@ import {
     getBucketFromFileType,
     getInfoFromMinio,
     internalMinio,
-} from '@common/minio_helper';
+} from '@common/minio-helper';
 import Category from '@common/entities/category/category.entity';
 import { parseMinioMetrics } from '../endpoints/file/utils';
 import Credentials from 'minio/dist/main/Credentials';
@@ -56,12 +56,12 @@ import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
 import { FileWithTopicDto } from '@common/api/types/files/file.dto';
+import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import {
     FileExistsResponseDto,
     TemporaryFileAccessDto,
     TemporaryFileAccessesDto,
-} from '../endpoints/file/file.controller';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+} from '@common/api/types/files/access.dto';
 
 @Injectable()
 export class FileService implements OnModuleInit {
@@ -431,7 +431,7 @@ export class FileService implements OnModuleInit {
         }
 
         const fileIdsArray = fileIds.map((file) => file.uuid);
-        const res = await this.fileRepository
+        const files = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
@@ -442,7 +442,7 @@ export class FileService implements OnModuleInit {
             .getMany();
         return {
             count,
-            data: res.map((file) => file.fileDto),
+            data: files.map((file) => file.fileDto),
             take,
             skip,
         };

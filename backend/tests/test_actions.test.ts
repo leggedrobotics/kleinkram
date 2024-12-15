@@ -12,7 +12,7 @@ import {
 } from './utils/api_calls';
 import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
 
-import { SubmitActionDto } from '@common/api/types/SubmitAction.dto';
+import { SubmitActionDto } from '../../common/api/types/submit-action-response.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {

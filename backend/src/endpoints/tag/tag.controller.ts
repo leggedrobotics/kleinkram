@@ -7,13 +7,13 @@ import {
     CanDeleteTag,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { BodyNotNull, BodyUUID } from '../../validation/bodyDecorators';
+import { BodyNotNull, BodyUUID } from '../../validation/body-decorators';
 import {
     QueryOptionalString,
     QuerySkip,
     QueryTake,
-} from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
+} from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
 import { ApiOkResponse } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';

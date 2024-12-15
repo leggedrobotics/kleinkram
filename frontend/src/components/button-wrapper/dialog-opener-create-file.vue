@@ -14,6 +14,7 @@ const $q = useQuasar();
 const properties = defineProps<{
     mission?: MissionWithFilesDto;
 }>();
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const uploads = inject('uploads')!;
 const createNewTageType = () =>
     $q.dialog({

@@ -25,7 +25,7 @@
                                         {{ option.label }}
                                     </q-item-section>
                                 </q-item>
-                                <q-separator v-if="option.spacer_after" />
+                                <q-separator v-if="option.spacerAfter" />
                             </template>
                         </q-list>
                     </q-btn-dropdown>
@@ -132,7 +132,7 @@
 import { useQuery } from '@tanstack/vue-query';
 
 import { computed, Ref, ref, watch } from 'vue';
-import { formatDate } from 'src/services/dateFormating';
+import { formatDate } from '../services/date-formating';
 
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
@@ -144,14 +144,13 @@ import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import CreateAccessGroupDialogOpener from '@components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
-import DeleteAccessGroup from '@components/button-wrapper/DeleteAccessGroup.vue';
+import DeleteAccessGroup from '@components/button-wrapper/delete-access-group.vue';
 import TitleSection from '@components/title-section.vue';
 
 const $router = useRouter();
 const prefilterOptions = [
-    { label: 'All Groups', value: 'all' },
-    { label: 'Member Of', value: 'member' },
-    { label: 'Groups Created', value: 'created', spacer_after: true },
+    { label: 'Groups', value: 'all', spacerAfter: true },
+    { label: 'Affiliation Groups', value: 'affiliation' },
     { label: 'All Users', value: 'personal' },
 ];
 const prefilter = ref(prefilterOptions[0]);
@@ -173,26 +172,30 @@ const filterOptions: Ref<{
 watch(
     () => prefilter.value,
     (newValue) => {
-        // TODO set filter
-        /*
-        if (newVal.value === 'all') {
-            filterOptions.value.personal = false;
-            filterOptions.value.creator = false;
-            filterOptions.value.member = false;
-        } else if (newVal.value === 'member') {
-            filterOptions.value.member = true;
-            filterOptions.value.creator = false;
-            filterOptions.value.personal = false;
-        } else if (newVal.value === 'created') {
-            filterOptions.value.creator = true;
-            filterOptions.value.member = false;
-            filterOptions.value.personal = false;
-        } else if (newVal.value === 'personal') {
-            filterOptions.value.personal = true;
-            filterOptions.value.creator = false;
-            filterOptions.value.member = false;
+        switch (newValue.value) {
+            case 'all': {
+                filterOptions.value.type = AccessGroupType.CUSTOM;
+                filterOptions.value.creator = false;
+                filterOptions.value.member = false;
+
+                break;
+            }
+            case 'affiliation': {
+                filterOptions.value.creator = true;
+                filterOptions.value.member = false;
+                filterOptions.value.type = AccessGroupType.AFFILIATION;
+
+                break;
+            }
+            case 'personal': {
+                filterOptions.value.type = AccessGroupType.PRIMARY;
+                filterOptions.value.creator = false;
+                filterOptions.value.member = false;
+
+                break;
+            }
+            // No default
         }
-         */
     },
 );
 
@@ -225,8 +228,8 @@ const refetchAccessGroup: (
         to?: any;
         replace?: boolean | undefined;
         returnRouterError?: boolean | undefined;
-    }) => Promise<any>,
-) => void = async () => {
+    }) => Promise<void>,
+) => Promise<void> = async () => {
     await refetch();
 };
 
@@ -257,7 +260,7 @@ const accessGroupsColumns = [
         required: false,
         label: 'Group Creator',
         align: 'center',
-        field: (row: AccessGroupDto): string => row.creator?.name ?? 'N/A',
+        field: (row: AccessGroupDto): string => row.creator?.name ?? '-',
         format: (value: string): string => value,
         sortable: false,
     },
@@ -291,8 +294,7 @@ const accessGroupsColumns = [
         label: 'Nr of Projects',
         align: 'center',
         field: (row: AccessGroupDto): string =>
-            // @ts-ignore
-            row.projectAccesses.flat().length,
+            row.memberships.length.toString(),
         format: (value: number): string => value.toString(),
         sortable: true,
         style: 'width:  10%; max-width: 10%; min-width: 5%;',

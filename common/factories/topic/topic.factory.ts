@@ -1,7 +1,7 @@
 import { define } from 'typeorm-seeding';
 import FileEntity from '../../entities/file/file.entity';
 import Topic from '../../entities/topic/topic.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 
 export interface TopicContext {
     file: FileEntity;

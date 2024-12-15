@@ -33,7 +33,7 @@ import {
     getBucketFromFileType,
     getInfoFromMinio,
     internalMinio,
-} from '@common/minio_helper';
+} from '@common/minio-helper';
 import { redis } from '@common/consts';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Gauge } from 'prom-client';
@@ -265,7 +265,10 @@ export class QueueService implements OnModuleInit {
             .then((fileQueueEntries) =>
                 fileQueueEntries
                     .map((queue: QueueEntity): FileQueueEntryDto | null => {
-                        if (queue.creator === undefined) return null;
+                        if (queue.creator === undefined)
+                            throw new Error('Creator not found');
+                        if (queue.mission === undefined)
+                            throw new Error('Mission not found');
 
                         return {
                             filename: queue.display_name,
@@ -282,6 +285,8 @@ export class QueueService implements OnModuleInit {
                             processingDuration: queue.processingDuration ?? 0,
                             updatedAt: queue.updatedAt,
                             location: queue.location,
+
+                            mission: queue.mission.missionDto,
                         };
                     })
                     .filter(

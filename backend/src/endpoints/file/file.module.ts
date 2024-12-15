@@ -13,7 +13,7 @@ import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { TagService } from '../../services/tag.service';
 import Tag from '@common/entities/tag/tag.entity';
-import TagType from '@common/entities/tagType/tagType.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 
 import QueueEntity from '@common/entities/queue/queue.entity';
 import Category from '@common/entities/category/category.entity';

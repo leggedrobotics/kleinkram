@@ -8,7 +8,7 @@ import {
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/frontend_shared/enum';
-import GroupMembership from '@common/entities/auth/group_membership.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
 
 const dbPort = process.env['DB_PORT'];
 

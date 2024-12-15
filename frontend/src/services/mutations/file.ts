@@ -1,6 +1,7 @@
 import axios from 'src/api/axios';
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { TemporaryFileAccessesDto } from '@api/types/files/access.dto';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
@@ -42,12 +43,12 @@ export const deleteFile = async (file: FileWithTopicDto) => {
 export const generateTemporaryCredentials = async (
     filenames: string[],
     missionUUID: string,
-): Promise<GenerateTemporaryCredentialsResponse> => {
+): Promise<TemporaryFileAccessesDto> => {
     const response = await axios.post('/file/temporaryAccess', {
         filenames,
         missionUUID,
     });
-    return response.data as GenerateTemporaryCredentialsResponse;
+    return response.data as TemporaryFileAccessesDto;
 };
 
 export const cancelUploads = async (

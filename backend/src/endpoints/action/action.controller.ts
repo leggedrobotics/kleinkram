@@ -13,18 +13,18 @@ import {
     QueryOptionalString,
     QuerySkip,
     QueryUUID,
-} from '../../validation/queryDecorators';
+} from '../../validation/query-decorators';
 import {
     CreateTemplateDto,
     UpdateTemplateDto,
-} from '@common/api/types/createTemplate.dto';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
+} from '@common/api/types/create-template.dto';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
-} from '@common/api/types/SubmitAction.dto';
+} from '@common/api/types/submit-action-response.dto';
 import { IsTake } from '@common/validation/take-validation';
 import { IsSkip } from '@common/validation/skip-validation';
 import {
@@ -32,7 +32,7 @@ import {
     ActionTemplatesDto,
 } from '@common/api/types/actions/action-template.dto';
 import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     ActionQuery,
     SubmitActionMulti,

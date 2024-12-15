@@ -105,7 +105,7 @@
                 </q-tab-panel>
                 <q-tab-panel name="categories" style="min-height: 280px">
                     <ConfigureCategories
-                        v-if="data?.mission?.project"
+                        v-if="data?.mission?.project && editableFile"
                         :file="editableFile"
                         @update:selected="
                             ($event) => {
@@ -143,7 +143,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
 import { computed, Ref, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { formatDate, parseDate } from 'src/services/dateFormating';
+import { formatDate, parseDate } from '../services/date-formating';
 import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
@@ -157,8 +157,9 @@ import {
 } from '@api/types/project/base-project.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import ConfigureCategories from '@components/configure-categories.vue';
+import { isAxiosError } from 'axios';
 
-const properties = defineProps<{ fileUuid: string }>();
+const { fileUuid } = defineProps<{ fileUuid: string }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
@@ -169,8 +170,8 @@ const dd_open = ref(false);
 const dd_open_2 = ref(false);
 const selected_project = ref<ProjectDto | null | undefined>(null);
 const { data } = useQuery({
-    queryKey: ['file', properties.file_uuid],
-    queryFn: () => fetchFile(properties.file_uuid),
+    queryKey: ['file', fileUuid],
+    queryFn: () => fetchFile(fileUuid),
 });
 
 const dateTime = ref('');
@@ -248,7 +249,7 @@ const { mutate: updateFileMutation } = useMutation({
                 (query) =>
                     query.queryKey[0] === 'Filtered Files' ||
                     (query.queryKey[0] === 'file' &&
-                        query.queryKey[1] === properties.file_uuid) ||
+                        query.queryKey[1] === fileUuid) ||
                     query.queryKey[0] === 'files',
             );
 
@@ -258,16 +259,42 @@ const { mutate: updateFileMutation } = useMutation({
             ),
         );
     },
-    onError(e: any) {
-        console.log(e);
-        Notify.create({
-            group: false,
-            message: `Error updating file: ${e.response.data.message}`,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 3000,
-        });
+    onError(error: unknown) {
+        console.log(error);
+
+        // Use a type guard to check if the error is an AxiosError
+        if (isAxiosError(error)) {
+            const errorMessage: string =
+                error.response?.data?.message ?? 'Unknown error message';
+            Notify.create({
+                group: false,
+                message: `Error updating file: ${errorMessage}`,
+                color: 'negative',
+                spinner: false,
+                position: 'bottom',
+                timeout: 3000,
+            });
+        } else if (error instanceof Error) {
+            // If it's a generic Error, use the message property
+            Notify.create({
+                group: false,
+                message: `Error updating file: ${error.message}`,
+                color: 'negative',
+                spinner: false,
+                position: 'bottom',
+                timeout: 3000,
+            });
+        } else {
+            // Handle unexpected error structure
+            Notify.create({
+                group: false,
+                message: 'Error updating file: Unknown error occurred',
+                color: 'negative',
+                spinner: false,
+                position: 'bottom',
+                timeout: 3000,
+            });
+        }
     },
 });
 
@@ -276,7 +303,7 @@ function _updateMission() {
     if (
         editableFile.value &&
         convertedDate &&
-        !isNaN(convertedDate.getTime())
+        !Number.isNaN(convertedDate.getTime())
     ) {
         editableFile.value.date = convertedDate;
         const noncircularMission = editableFile.value.mission;

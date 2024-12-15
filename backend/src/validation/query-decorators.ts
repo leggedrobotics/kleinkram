@@ -13,7 +13,7 @@ import {
     StringValidate,
     UUIDValidate,
 } from './validationTypes';
-import { metadataApplier } from './MetadataApplier';
+import { metadataApplier } from './metadata-applier';
 import { AccessGroupType, FileType } from '@common/frontend_shared/enum';
 
 export const QueryUUID = (

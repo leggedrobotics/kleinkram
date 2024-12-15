@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { IsValidName } from '../../../backend/src/validation/propertyDecorator';
+import { IsValidName } from '../../../backend/src/validation/property-decorator';
 
 export class CreateAccessGroupDto {
     @IsString()

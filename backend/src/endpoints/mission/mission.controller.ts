@@ -20,9 +20,9 @@ import {
     QueryStringArray,
     QueryTake,
     QueryUUID,
-} from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
-import { BodyUUID } from '../../validation/bodyDecorators';
+} from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { BodyUUID } from '../../validation/body-decorators';
 import { MISSION_NAME_REGEX } from '../../validation/validationLogic';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import {
@@ -31,7 +31,7 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('mission')
 export class MissionController {

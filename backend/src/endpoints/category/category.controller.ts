@@ -3,7 +3,7 @@ import { CategoryService } from '../../services/category.service';
 import {
     QueryOptionalString,
     QueryUUID,
-} from '../../validation/queryDecorators';
+} from '../../validation/query-decorators';
 import {
     CanCreateInProjectByBody,
     CanReadProject,
@@ -13,10 +13,10 @@ import {
     BodyString,
     BodyUUID,
     BodyUUIDArray,
-} from '../../validation/bodyDecorators';
+} from '../../validation/body-decorators';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { CategoriesDto } from '@common/api/types/category.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('category')
 export class CategoryController {

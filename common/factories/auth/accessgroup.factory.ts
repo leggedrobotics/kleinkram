@@ -1,7 +1,7 @@
 import { define } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 import { faker } from '@faker-js/faker';
 import { AccessGroupType } from '../../frontend_shared/enum';
 

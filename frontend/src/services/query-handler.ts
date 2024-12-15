@@ -41,6 +41,7 @@ export class QueryHandler {
         this.projectUuid = projectUuid;
         this.missionUuid = missionUuid;
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
+        // @ts-ignore TODO: fix this type errro
         this.fileType = fileType !== null || FileType.ALL;
         this.categories = categories ?? [];
         this.rowsNumber = 0;

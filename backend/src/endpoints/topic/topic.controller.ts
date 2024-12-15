@@ -1,10 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { TopicService } from '../../services/topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
-import { QuerySkip, QueryTake } from '../../validation/queryDecorators';
+import { QuerySkip, QueryTake } from '../../validation/query-decorators';
 import { ApiOkResponse } from '../../decarators';
 import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('topic')
 export class TopicController {

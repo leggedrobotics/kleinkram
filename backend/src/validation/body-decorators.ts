@@ -8,7 +8,7 @@ import {
 import { IsUUID, validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { StringValidate, UUIDValidate } from './validationTypes';
-import { metadataApplier } from './MetadataApplier';
+import { metadataApplier } from './metadata-applier';
 import { ApiProperty } from '@nestjs/swagger';
 
 export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {

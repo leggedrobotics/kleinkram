@@ -11,14 +11,14 @@
                 <p style="font-size: 16pt" />
                 <ul>
                     <li
-                        v-for="filename in props.filenames.slice(0, 5)"
+                        v-for="filename in filenames.slice(0, 5)"
                         :key="filename"
                     >
                         {{ filename }}
                     </li>
-                    <li v-if="props.filenames.length > 6">...</li>
-                    <li v-if="props.filenames.length >= 6">
-                        {{ props.filenames.slice(-1)[0] }}
+                    <li v-if="filenames.length > 6">...</li>
+                    <li v-if="filenames.length >= 6">
+                        {{ filenames.slice(-1)[0] }}
                     </li>
                 </ul>
             </div>
@@ -44,7 +44,7 @@ import BaseDialog from './base-dialog.vue';
 
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-const props = defineProps<{
+const { filenames } = defineProps<{
     filenames: string[];
 }>();
 </script>

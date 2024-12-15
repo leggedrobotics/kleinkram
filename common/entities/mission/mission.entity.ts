@@ -6,7 +6,7 @@ import QueueEntity from '../queue/queue.entity';
 import User from '../user/user.entity';
 import Apikey from '../auth/apikey.entity';
 import Tag from '../tag/tag.entity';
-import MissionAccess from '../auth/mission_access.entity';
+import MissionAccess from '../auth/mission-access.entity';
 import Action from '../action/action.entity';
 import {
     FlatMissionDto,

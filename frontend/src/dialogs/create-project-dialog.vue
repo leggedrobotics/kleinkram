@@ -208,7 +208,7 @@ const submitNewProject = async () => {
         })) || [],
         // @ts-ignore
         defaultRights.value?.data
-            .filter((r) => !accessGroups.value.find((a) => a.uuid === r.uuid))
+            .filter((r) => !accessGroups.value.some((a) => a.uuid === r.uuid))
             .map((r) => r.uuid),
     )
         .then(async () => {

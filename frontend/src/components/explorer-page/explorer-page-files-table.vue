@@ -143,9 +143,9 @@ import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { FilesDto } from '@api/types/files/files.dto';
 import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
-import DeleteFileDialogOpener from '../button-wrapper/DeleteFileDialogOpener.vue';
-import EditFileDialogOpener from '../button-wrapper/EditFileDialogOpener.vue';
-import MoveFileDialogOpener from '../button-wrapper/MoveFileDialogOpener.vue';
+import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
+import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
+import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();

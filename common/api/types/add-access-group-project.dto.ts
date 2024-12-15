@@ -1,6 +1,6 @@
 import { IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { RemoveAccessGroupFromProjectDto } from './RemoveAccessGroupFromProject.dto';
+import { RemoveAccessGroupFromProjectDto } from './remove-access-group-project.dto';
 import { AccessGroupRights } from '../../frontend_shared/enum';
 
 export class AddAccessGroupToProjectDto extends RemoveAccessGroupFromProjectDto {

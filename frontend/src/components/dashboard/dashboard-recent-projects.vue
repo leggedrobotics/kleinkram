@@ -84,7 +84,7 @@ const projects: ComputedRef<ResentProjectDto[]> = computed(() =>
     data.value ? data.value.data : [],
 );
 
-const cardWrapper = ref<HTMLElement | null>(null);
+const cardWrapper = ref<HTMLElement | undefined>(undefined);
 
 // Function to scroll left
 const scrollLeft = (): void => {

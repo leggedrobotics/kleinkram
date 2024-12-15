@@ -2,7 +2,7 @@ import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidFileName,
-} from '../../../backend/src/validation/propertyDecorator';
+} from '../../../backend/src/validation/property-decorator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePreSignedURLSDto {

@@ -166,9 +166,9 @@ export function getDetailedFileState(state: QueueState) {
 }
 
 export async function _downloadFile(fileUUID: string, filename: string) {
-    const res = await downloadFile(fileUUID, true);
+    const response = await downloadFile(fileUUID, true);
     const a = document.createElement('a');
-    a.href = res;
+    a.href = response;
     a.download = filename;
     document.body.append(a);
     a.click();
@@ -221,6 +221,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
             const reader = response.body?.getReader();
 
             // Function to pump the stream chunks to the file
+            // eslint-disable-next-line unicorn/consistent-function-scoping
             async function streamToFileSystem() {
                 let done: boolean;
                 let value: Uint8Array;
@@ -389,9 +390,11 @@ const colorPalette = [
 ];
 
 export function hashUUIDtoColor(uuid: string): string {
-    const hash = uuid
-        .split('')
-        .reduce((accumulator, char) => accumulator + char.charCodeAt(0), 0);
+    const hash = [...uuid].reduce(
+        (accumulator, char) => accumulator + (char.codePointAt(0) ?? 0),
+        0,
+    );
+
     const colorIndex = hash % colorPalette.length;
     return colorPalette[colorIndex];
 }

@@ -6,7 +6,7 @@ import {
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { UUIDValidate } from './validationTypes';
-import { metadataApplier } from './MetadataApplier';
+import { metadataApplier } from './metadata-applier';
 
 export const ParamUUID = (
     parameterName: string,

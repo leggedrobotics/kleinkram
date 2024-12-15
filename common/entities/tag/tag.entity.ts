@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
-import TagType from '../tagType/tagType.entity';
+import TagType from '../tagType/tag-type.entity';
 import User from '../user/user.entity';
 import { TagDto } from '../../api/types/tags/tags.dto';
 

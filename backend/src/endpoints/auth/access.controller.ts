@@ -18,14 +18,14 @@ import {
     IsAccessGroupCreator,
     UserOnly,
 } from './roles.decorator';
-import { QueryUUID } from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
+import { QueryUUID } from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 import { AddUserToProjectDto } from '@common/api/types/add-user-project.dto';
 import { AddUserToAccessGroupDto } from '@common/api/types/add-user-access-group.dto';
 import { AddAccessGroupToProjectDto } from '@common/api/types/add-access-group-project.dto';
-import { RemoveAccessGroupFromProjectDto } from '@common/api/types/RemoveAccessGroupFromProject.dto';
-import { SetAccessGroupUserExpirationDto } from '@common/api/types/SetAccessGroupUserExpiration.dto';
+import { RemoveAccessGroupFromProjectDto } from '@common/api/types/remove-access-group-project.dto';
+import { SetAccessGroupUserExpirationDto } from '@common/api/types/set-access-group-user-expiration.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
 import { EntityNotFoundError } from 'typeorm';
@@ -35,7 +35,7 @@ import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AddUser, AuthHeader } from './param-decorator';
+import { AddUser, AuthHeader } from './parameter-decorator';
 import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('access')

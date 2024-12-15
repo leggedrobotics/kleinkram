@@ -3,7 +3,7 @@ import {
     ContainerEnv as ContainerEnvironment,
     DockerDaemon,
     dockerDaemonErrorHandler,
-} from './dockerDaemon.service';
+} from './docker-daemon.service';
 import { tracing } from '../../tracing';
 import logger from '../../logger';
 import {
@@ -16,7 +16,7 @@ import Action, { ContainerLog } from '@common/entities/action/action.entity';
 import { Repository } from 'typeorm';
 import Apikey from '@common/entities/auth/apikey.entity';
 import Dockerode from 'dockerode';
-import { DisposableAPIKey } from '../helper/disposableAPIKey';
+import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import env from '@common/env';
 import si from 'systeminformation';
@@ -357,12 +357,12 @@ export class ActionManagerService {
     async cleanupContainers(): Promise<void> {
         logger.debug('Cleanup containers and dangling actions...');
 
+        const containers = await this.containerDaemon.docker
+            .listContainers({ all: true })
+            .catch(dockerDaemonErrorHandler);
+
         const runningActionContainers: Dockerode.ContainerInfo[] =
-            (
-                await this.containerDaemon.docker
-                    .listContainers({ all: true })
-                    .catch(dockerDaemonErrorHandler)
-            )?.filter((container: Dockerode.ContainerInfo) =>
+            containers?.filter((container: Dockerode.ContainerInfo) =>
                 container.Names[0]?.startsWith(
                     `/${DockerDaemon.CONTAINER_PREFIX}`,
                 ),

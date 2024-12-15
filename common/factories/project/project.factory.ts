@@ -1,10 +1,10 @@
 import { define } from 'typeorm-seeding';
 import Project from '../../entities/project/project.entity';
 import User from '../../entities/user/user.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { faker } from '@faker-js/faker';
-import TagType from '../../entities/tagType/tagType.entity';
+import TagType from '../../entities/tagType/tag-type.entity';
 
 export interface ProjectContext {
     name: string;

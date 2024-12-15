@@ -64,10 +64,7 @@ import { moveMission } from 'src/services/mutations/mission';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 
-import {
-    ProjectDto,
-    ProjectWithCreator,
-} from '@api/types/project/base-project.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
@@ -81,8 +78,8 @@ const { data } = useFilteredProjects(500, 0, 'name', true, {});
 
 const projects = computed(() => (data.value ? data.value.data : []));
 
-const selectedProject = ref<ProjectDto | null>(
-    properties.mission?.project || null,
+const selectedProject = ref<ProjectDto | undefined>(
+    properties.mission?.project ?? undefined,
 );
 
 const dd_open = ref(false);

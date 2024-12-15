@@ -4,7 +4,7 @@ import Mission from '../mission/mission.entity';
 import Apikey from '../auth/apikey.entity';
 import { ActionState, ArtifactState } from '../../frontend_shared/enum';
 import User from '../user/user.entity';
-import ActionTemplate from './actionTemplate.entity';
+import ActionTemplate from './action-template.entity';
 import Worker from '../worker/worker.entity';
 import { RuntimeDescription } from '../../types';
 import { ActionDto } from '../../api/types/actions/action.dto';

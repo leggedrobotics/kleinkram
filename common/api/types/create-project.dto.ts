@@ -2,7 +2,7 @@ import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidName,
-} from '../../../backend/src/validation/propertyDecorator';
+} from '../../../backend/src/validation/property-decorator';
 import { AccessGroupRights } from '../../frontend_shared/enum';
 
 export class CreateProject {

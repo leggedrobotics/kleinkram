@@ -18,16 +18,16 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-} from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
-import { BodyUUIDArray } from '../../validation/bodyDecorators';
+} from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
+import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, ApiResponse } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { DeleteProjectResponseDto } from '@common/api/types/delete-project-response.dto';
 import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
 import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';

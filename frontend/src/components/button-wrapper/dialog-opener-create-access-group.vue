@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { Notify, useQuasar } from 'quasar';
 import { canCreateProject, usePermissionsQuery } from '../../hooks/query-hooks';
-import { computed } from 'vue';
+import { computed, unref } from 'vue';
 import CreateAccessGroupDialog from '../../dialogs/create-access-group-dialog.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { createAccessGroup } from 'src/services/mutations/access';
@@ -27,7 +27,7 @@ const queryClient = useQueryClient();
 
 const $q = useQuasar();
 const { mutate: _createAccessGroup } = useMutation({
-    mutationFn: (name: string) => createAccessGroup(name),
+    mutationFn: (name: string) => createAccessGroup(unref(name)),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => {

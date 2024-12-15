@@ -5,7 +5,7 @@ import {
     QuerySkip,
     QueryString,
     QueryTake,
-} from '../../validation/queryDecorators';
+} from '../../validation/query-decorators';
 import { ApiOperation } from '@nestjs/swagger';
 import {
     CurrentAPIUserDto,
@@ -15,7 +15,7 @@ import {
 import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { ApiOkResponse } from '../../decarators';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('user')
 export class UserController {

@@ -9,7 +9,7 @@ import Mission from '@common/entities/mission/mission.entity';
 import Account from '@common/entities/auth/account.entity';
 import { QueueModule } from '../queue/queue.module';
 import Tag from '@common/entities/tag/tag.entity';
-import ActionTemplate from '@common/entities/action/actionTemplate.entity';
+import ActionTemplate from '@common/entities/action/action-template.entity';
 import { ActionGuardService } from '../auth/action-guard.service';
 
 @Module({

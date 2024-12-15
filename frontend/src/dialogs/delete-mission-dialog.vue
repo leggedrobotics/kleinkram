@@ -4,7 +4,7 @@
         <template #content>
             <delete-mission
                 v-if="mission"
-                ref="deleteMissionRef"
+                ref="deleteMissionReference"
                 :mission="mission"
             />
             <q-skeleton v-else height="250px" />
@@ -14,7 +14,7 @@
             <q-btn
                 flat
                 :disable="
-                    deleteMissionRef?.mission_name_check !== mission?.name
+                    deleteMissionReference?.mission_name_check !== mission?.name
                 "
                 label="Delete Mission"
                 class="bg-button-primary"
@@ -31,7 +31,9 @@ import { useMission } from '../hooks/query-hooks';
 import DeleteMission from '@components/delete-mission.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteMissionRef = ref<InstanceType<typeof DeleteMission> | null>(null);
+const deleteMissionReference = ref<
+    InstanceType<typeof DeleteMission> | undefined
+>(undefined);
 
 const { missionUuid } = defineProps<{
     missionUuid: string;
@@ -40,8 +42,8 @@ const { missionUuid } = defineProps<{
 const { data: mission } = useMission(computed(() => missionUuid));
 
 const deleteMissionAction = (): void => {
-    if (deleteMissionRef.value === null) return;
-    deleteMissionRef.value.deleteMissionAction();
+    if (deleteMissionReference.value === undefined) return;
+    deleteMissionReference.value.deleteMissionAction();
     onDialogOK();
 };
 </script>

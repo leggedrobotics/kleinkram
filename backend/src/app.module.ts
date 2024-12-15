@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileModule } from './endpoints/file/file.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration from '@common/typeorm_config';
+import configuration from '@common/typeorm-config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { MissionModule } from './endpoints/mission/mission.module';

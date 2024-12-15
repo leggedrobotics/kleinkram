@@ -19,7 +19,7 @@ import Apikey from '@common/entities/auth/apikey.entity';
 
 import Queue from '@common/entities/queue/queue.entity';
 
-import ActionTemplate from '@common/entities/action/actionTemplate.entity';
+import ActionTemplate from '@common/entities/action/action-template.entity';
 import Action from '@common/entities/action/action.entity';
 import { ProjectGuardService } from '../../services/project-guard.service';
 import { FileGuardService } from '../../services/file-guard.service';

@@ -14,7 +14,7 @@ export class APIKeyResolverMiddleware implements NestMiddleware {
 
     async use(
         request: Request,
-        _res: Response,
+        _: Response,
         next: NextFunction,
     ): Promise<void> {
         if (request.cookies !== undefined) {

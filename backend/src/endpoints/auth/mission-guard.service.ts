@@ -5,7 +5,7 @@ import User from '@common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import Tag from '@common/entities/tag/tag.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import { isUUID } from 'class-validator';
 import logger from '../../logger';
 import Apikey from '@common/entities/auth/apikey.entity';
@@ -30,7 +30,7 @@ export class MissionGuardService {
     ): Promise<boolean> {
         if (!isUUID(missionUUID)) {
             logger.error(
-                `MissionGuard: missionUUID (${missionUUID}) not provided. Requesting ${rights} access.`,
+                `MissionGuard: missionUUID (${missionUUID}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }

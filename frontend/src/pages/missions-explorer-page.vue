@@ -246,7 +246,7 @@ import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-
 import UploadMissionFolder from '@components/upload-mission-folder.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import ActionConfiguration from '@components/action-configuration.vue';
-import EditProjectDialogOpener from '../components/button-wrapper/EditProjectDialogOpener.vue';
+import EditProjectDialogOpener from '@components/button-wrapper/edit-project-dialog-opener.vue';
 import DeleteProjectDialogOpener from '@components/button-wrapper/delete-project-dialog-opener.vue';
 import ConfigureTagsDialogOpener from '@components/button-wrapper/dialog-opener-configure-tags.vue';
 import TitleSection from '@components/title-section.vue';

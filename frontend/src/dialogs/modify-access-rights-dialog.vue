@@ -38,6 +38,7 @@ import { updateProjectAccess } from 'src/services/mutations/access';
 import { AccessGroupRights } from '@common/enum';
 
 import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
+import { isAxiosError } from 'axios';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -73,9 +74,13 @@ const { mutate: changeAccessRights } = useMutation({
         });
     },
     onError: (error: unknown) => {
-        let errorMessage = '';
-        if (error instanceof Error) {
-            errorMessage = error.response?.data.message;
+        let errorMessage = 'An unknown error occurred';
+
+        if (isAxiosError(error)) {
+            errorMessage =
+                error.response?.data?.message ?? 'No error message provided';
+        } else if (error instanceof Error) {
+            errorMessage = error.message;
         }
 
         Notify.create({

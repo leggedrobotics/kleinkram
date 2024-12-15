@@ -36,10 +36,10 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-} from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
+} from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
 import { FileType } from '@common/frontend_shared/enum';
-import { BodyUUID, BodyUUIDArray } from '../../validation/bodyDecorators';
+import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
 import env from '@common/env';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
@@ -47,88 +47,12 @@ import { NoQueryParamsDto } from '@common/api/types/no-query-params.dto';
 import { IsUploadingDto } from '@common/api/types/files/is-uploading.dto';
 import { FilesDto } from '@common/api/types/files/files.dto';
 import { FileWithTopicDto } from '@common/api/types/files/file.dto';
-import { PaggedResponse } from '@common/api/types/pagged-response';
-import { ApiProperty } from '@nestjs/swagger';
-import {
-    IsBoolean,
-    IsNumber,
-    IsString,
-    IsUUID,
-    ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { IsSkip } from '@common/validation/skip-validation';
-import { IsTake } from '@common/validation/take-validation';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
-
-export class AccessCredentialsDto {
-    @ApiProperty()
-    @IsString()
-    accessKey!: string;
-
-    @ApiProperty()
-    @IsString()
-    secretKey!: string;
-
-    @ApiProperty()
-    @IsString()
-    sessionToken!: string;
-}
-
-export class TemporaryFileAccessDto {
-    @ApiProperty()
-    @IsString()
-    bucket!: string;
-
-    @ApiProperty()
-    @IsUUID()
-    fileUUID!: string;
-
-    @ApiProperty()
-    @IsString()
-    fileName!: string;
-
-    @ApiProperty()
-    @ValidateNested()
-    @Type(() => AccessCredentialsDto)
-    accessCredentials!: AccessCredentialsDto;
-
-    @ApiProperty()
-    @IsString()
-    queueUUID!: string;
-}
-
-export class TemporaryFileAccessesDto
-    implements PaggedResponse<TemporaryFileAccessDto>
-{
-    @ApiProperty()
-    @ValidateNested({ each: true })
-    @Type(() => TemporaryFileAccessDto)
-    data!: TemporaryFileAccessDto[];
-
-    @ApiProperty()
-    @IsNumber()
-    count!: number;
-
-    @ApiProperty()
-    @IsSkip()
-    skip!: number;
-
-    @ApiProperty()
-    @IsTake()
-    take!: number;
-}
-
-export class FileExistsResponseDto {
-    @ApiProperty()
-    @IsBoolean()
-    exists!: boolean;
-
-    @ApiProperty()
-    @IsUUID()
-    uuid!: string;
-}
+import {
+    FileExistsResponseDto,
+    TemporaryFileAccessesDto,
+} from '@common/api/types/files/access.dto';
 
 @Controller('file')
 export class FileController {

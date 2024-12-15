@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Delete Project </template>
+        <template #title> Delete Project</template>
         <template #content>
             <DeleteProject
                 v-if="project"
@@ -29,16 +29,18 @@ import { useProjectQuery } from '../hooks/query-hooks';
 import DeleteProject from '@components/delete-project.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteProject = ref<InstanceType<typeof DeleteProject> | null>(null);
+const deleteProject = ref<InstanceType<typeof DeleteProject> | undefined>(
+    undefined,
+);
 
-const { project_uuid } = defineProps({
-    project_uuid: String,
-});
+const { project_uuid } = defineProps<{
+    project_uuid: string;
+}>();
 
 const { data: project } = useProjectQuery(computed(() => project_uuid));
 
 const deleteProjectAction = (): void => {
-    if (deleteProject.value === null) return;
+    if (deleteProject.value === undefined) return;
     // @ts-ignore
     deleteProject.value.deleteProjectAction();
     onDialogOK();

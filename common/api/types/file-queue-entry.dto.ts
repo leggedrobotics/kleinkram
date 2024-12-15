@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import { PaggedResponse } from './pagged-response';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
+import { MissionDto } from './mission.dto';
 
 export class FileQueueEntryDto {
     @ApiProperty()
@@ -55,6 +56,11 @@ export class FileQueueEntryDto {
     @ApiProperty()
     @IsString()
     filename!: string;
+
+    @ApiProperty()
+    @ValidateNested()
+    @Type(() => MissionDto)
+    mission!: MissionDto;
 }
 
 export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {

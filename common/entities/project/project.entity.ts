@@ -2,8 +2,8 @@ import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import TagType from '../tagType/tagType.entity';
-import ProjectAccess from '../auth/project_access.entity';
+import TagType from '../tagType/tag-type.entity';
+import ProjectAccess from '../auth/project-access.entity';
 import CategoryEntity from '../category/category.entity';
 
 import { ProjectDto } from '../../api/types/project/base-project.dto';

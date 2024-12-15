@@ -11,8 +11,8 @@ import {
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
-import TagType from '@common/entities/tagType/tagType.entity';
-import ProjectAccess from '@common/entities/auth/project_access.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
@@ -21,7 +21,7 @@ import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto'
 import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AuthHeader } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class ProjectService {

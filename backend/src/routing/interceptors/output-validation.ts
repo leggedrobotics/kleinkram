@@ -27,7 +27,7 @@ function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
                     `Response Validation failed: ${errors.length} errors`,
                 );
                 logger.error(`In response: `);
-                logger.error(JSON.stringify(data, null, 2));
+                logger.error(JSON.stringify(data, undefined, 2));
 
                 logger.error(`Against DTO: `);
                 logger.error(dto.name);

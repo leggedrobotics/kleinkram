@@ -9,7 +9,7 @@ import {
     CanReadMission,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { BodyString, BodyUUID } from '../../validation/bodyDecorators';
+import { BodyString, BodyUUID } from '../../validation/body-decorators';
 import {
     QueryDate,
     QueryOptionalString,
@@ -17,11 +17,11 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-} from '../../validation/queryDecorators';
-import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
+} from '../../validation/query-decorators';
+import { ParamUUID as ParameterUID } from '../../validation/param-decorators';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { FileQueueEntriesDto } from '@common/api/types/file-queue-entry.dto';
-import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
 import { BullQueueDto } from '@common/api/types/queue/bull-queue.dto';
 import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';

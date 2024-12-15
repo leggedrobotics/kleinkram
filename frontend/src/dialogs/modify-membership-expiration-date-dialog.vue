@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Membership Expiration </template>
+        <template #title> Membership Expiration</template>
 
         <template #content>
             <q-date
@@ -35,17 +35,17 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { ref } from 'vue';
-import { formatDate, parseDate } from 'src/services/dateFormating';
+import { formatDate, parseDate } from '../services/date-formating';
 import { GroupMembershipDto } from '@api/types/user.dto';
 
 const properties = defineProps<{
     agu: GroupMembershipDto;
 }>();
 
-const expirationDate = ref<string | null>(
+const expirationDate = ref<string | undefined>(
     properties.agu.expirationDate
         ? formatDate(properties.agu.expirationDate)
-        : null,
+        : undefined,
 );
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -59,6 +59,6 @@ function saveExpiration() {
 }
 
 function neverExpire() {
-    onDialogOK(null);
+    onDialogOK();
 }
 </script>

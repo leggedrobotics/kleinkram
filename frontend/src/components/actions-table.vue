@@ -1,6 +1,6 @@
 <template>
     <q-table
-        ref="tableRef"
+        ref="tableReference"
         v-model:pagination="pagination"
         :rows="data"
         :columns="columns as any"
@@ -10,13 +10,7 @@
         flat
         bordered
         binary-state-sort
-        @row-click="
-            (_, row) =>
-                router.push({
-                    name: ROUTES.ANALYSIS_DETAILS.routeName,
-                    params: { id: row.uuid },
-                })
-        "
+        @row-click="handleRowClick"
         @request="setPagination"
     >
         <template #body-cell-state="props">
@@ -92,7 +86,7 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { computed, ref, Ref, watch } from 'vue';
-import { formatDate } from 'src/services/dateFormating';
+import { formatDate } from '../services/date-formating';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from '../services/query-handler';
@@ -100,7 +94,7 @@ import { getActionColor } from 'src/services/generic';
 import { ActionState } from '@common/enum';
 import { useActions } from '../hooks/query-hooks';
 import ActionBadge from './action-badge.vue';
-import DeleteActionDialogOpener from './button-wrapper/DeleteActionDialogOpener.vue';
+import DeleteActionDialogOpener from './button-wrapper/delete-action-dialog-opener.vue';
 import { ActionDto } from '@api/types/actions/action.dto';
 
 const router = useRouter();
@@ -112,11 +106,7 @@ const properties = defineProps<{
 properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
-const {
-    data: rawData,
-    isLoading,
-    error,
-} = useActions(
+const { data: rawData, isLoading } = useActions(
     properties.handler.projectUuid ?? '',
     properties.handler.missionUuid ?? '',
     properties.handler.take,
@@ -127,7 +117,7 @@ const {
     JSON.stringify(properties.handler.queryKey),
 );
 
-const tableRef: Ref<QTable | null> = ref(null);
+const tableReference: Ref<QTable | undefined> = ref(undefined);
 const loading = ref(false);
 
 function setPagination(update: TableRequest) {
@@ -174,8 +164,7 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: false,
-        field: (row: ActionDto) =>
-            row.template.imageName ? row.template.imageName : 'N/A',
+        field: (row: ActionDto) => row.template.imageName ?? 'N/A',
     },
     {
         name: 'mission',
@@ -206,7 +195,7 @@ const columns = [
             'whitespace:nowrap;' +
             'text-overflow: ellipsis',
 
-        field: (row: ActionDto) => (row.stateCause ? row.stateCause : ''),
+        field: (row: ActionDto) => row.stateCause ?? '',
     },
 
     {
@@ -229,7 +218,7 @@ const columns = [
         name: 'user',
         label: 'Submitted By',
         align: 'left',
-        field: (row: ActionDto) => row.creator.name || 'N/A',
+        field: (row: ActionDto) => row.creator.name ?? 'N/A',
         sortable: false,
     },
     {
@@ -240,6 +229,13 @@ const columns = [
         sortable: false,
     },
 ];
+
+const handleRowClick = async (_: MouseEvent, row: any): Promise<void> => {
+    await router.push({
+        name: ROUTES.ANALYSIS_DETAILS.routeName,
+        params: { id: row.uuid },
+    });
+};
 </script>
 
 <style scoped>

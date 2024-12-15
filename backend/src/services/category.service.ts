@@ -5,7 +5,7 @@ import Category from '@common/entities/category/category.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import logger from '../logger';
 import { CategoriesDto } from '@common/api/types/category.dto';
-import { AuthHeader } from '../endpoints/auth/param-decorator';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class CategoryService {

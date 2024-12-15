@@ -13,10 +13,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
 import Action, { SubmittedAction } from '@common/entities/action/action.entity';
-import { ActionManagerService } from './services/actionManager.service';
-import { HardwareDependencyError } from './helper/hardwareDependencyError';
+import { ActionManagerService } from './services/action-manager.service';
+import { HardwareDependencyError } from './helper/hardware-dependency-error';
 import Worker from '@common/entities/worker/worker.entity';
-import { createWorker, getDiskSpace } from './helper/hardwareDetect';
+import { createWorker, getDiskSpace } from './helper/hardware-detect';
 import os from 'node:os';
 import { Cron, CronExpression } from '@nestjs/schedule';
 

@@ -35,19 +35,19 @@ export class ProjectGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const res = await this.projectAccessView.exists({
+        const isExisting = await this.projectAccessView.exists({
             where: {
                 projectUUID,
                 userUUID: user.uuid,
                 rights: MoreThanOrEqual(rights),
             },
         });
-        if (!res) {
+        if (!isExisting) {
             logger.debug(
                 `User ${user.name} (${user.uuid}) does not have access to project ${projectUUID} with rights ${rights.toString()}`,
             );
         }
-        return res;
+        return isExisting;
     }
 
     async canAccessProjectByName(

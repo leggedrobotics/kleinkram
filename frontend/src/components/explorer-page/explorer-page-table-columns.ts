@@ -1,5 +1,5 @@
-import { formatDate } from 'src/services/dateFormating';
-import { formatSize } from 'src/services/generalFormatting';
+import { formatDate } from '../../services/date-formating';
+import { formatSize } from '../../services/general-formatting';
 import { FlatMissionDto } from '@api/types/mission.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 

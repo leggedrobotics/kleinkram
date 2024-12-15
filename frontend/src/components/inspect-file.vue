@@ -199,7 +199,7 @@
         <div style="padding-top: 10px">
             <q-table
                 v-if="displayTopics"
-                ref="tableoniRef"
+                ref="tableReference"
                 v-model:selected="selected"
                 v-model:pagination="pagination"
                 flat
@@ -250,7 +250,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { formatDate } from 'src/services/dateFormating';
+import { formatDate } from '../services/date-formating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
@@ -272,12 +272,12 @@ import {
     useMcapFilesOfMission,
     useQueueForFile,
 } from '../hooks/query-hooks';
-import { formatSize } from 'src/services/generalFormatting';
+import { formatSize } from '../services/general-formatting';
 import { FileState, FileType } from '@common/enum';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { useMissionUUID } from '../hooks/router-hooks';
-import DeleteFileDialogOpener from './button-wrapper/DeleteFileDialogOpener.vue';
+import DeleteFileDialogOpener from './button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from './buttons/button-group.vue';
 import EditFileButton from './buttons/edit-file-button.vue';
 import KleinDownloadFile from './cli-links/klein-download-file.vue';
@@ -292,7 +292,7 @@ const selected = ref([]);
 
 const fileUuid = computed(() => properties.uuid);
 const filterKey = ref<string>('');
-const tableoniRef: Ref<QTable | null> = ref(null);
+const tableReference: Ref<QTable | undefined> = ref(undefined);
 
 const { isLoading, data, error, isLoadingError } = useFile(fileUuid.value);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
@@ -324,8 +324,7 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    // TODO: this is broken!!!
-    filesReturn.value.length > 0 ? filesReturn.value.length : null,
+    filesReturn.value.length > 0 ? filesReturn.value[0] : undefined,
 );
 
 const columns = [

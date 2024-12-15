@@ -21,6 +21,7 @@ const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
 
 const $q = useQuasar();
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const uploads = inject('uploads')!;
 
 const { data: permissions } = usePermissionsQuery();

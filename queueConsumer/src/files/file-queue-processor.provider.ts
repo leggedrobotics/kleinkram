@@ -16,8 +16,8 @@ import {
     downloadDriveFile,
     getMetadata,
     listFiles,
-} from './helper/driveHelper';
-import { downloadMinioFile, uploadLocalFile } from './helper/minioHelper';
+} from './helper/drive-helper';
+import { downloadMinioFile, uploadLocalFile } from './helper/minio-helper';
 import logger from '../logger';
 import { traceWrapper, tracing } from '../tracing';
 import QueueEntity from '@common/entities/queue/queue.entity';
@@ -33,8 +33,8 @@ import {
 } from '@common/frontend_shared/enum';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
-import { calculateFileHash } from './helper/hashHelper';
-import { addTagsToMinioObject } from '@common/minio_helper';
+import { calculateFileHash } from './helper/hash-helper';
+import { addTagsToMinioObject } from '@common/minio-helper';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module
 const fsPromises = require('node:fs').promises;

@@ -110,7 +110,7 @@ module.exports = configure(function (/* ctx */) {
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#sourcefiles
         // sourceFiles: {
-        //   rootComponent: 'src/App.vue',
+        //   rootComponent: 'src/app.vue',
         //   router: 'src/router/index',
         //   store: 'src/store/index',
         //   registerServiceWorker: 'src-pwa/register-service-worker',

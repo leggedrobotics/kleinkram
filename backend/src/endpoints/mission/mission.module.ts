@@ -8,7 +8,7 @@ import { UserService } from '../../services/user.service';
 import Account from '@common/entities/auth/account.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Tag from '@common/entities/tag/tag.entity';
-import TagType from '@common/entities/tagType/tagType.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import { TagService } from '../../services/tag.service';
 
 @Module({

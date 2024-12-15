@@ -24,14 +24,14 @@ import QueueEntity from '@common/entities/queue/queue.entity';
 import User from '@common/entities/user/user.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/ProjectAccessView.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/MissionAccessView.entity';
+import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import logger from '../logger';
 import Redlock from 'redlock';
 import { Redis } from 'ioredis';
 import { redis, systemUser } from '@common/consts';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import env from '@common/env';
-import { getBucketFromFileType, internalMinio } from '@common/minio_helper';
+import { getBucketFromFileType, internalMinio } from '@common/minio-helper';
 import crypto from 'node:crypto';
 import { Tag } from 'minio';
 
@@ -370,9 +370,12 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
         await Promise.all(
             [...missingObjects].map(async (object) => {
-                const tags = (
-                    await internalMinio.getObjectTagging(bucket, object)
-                )[0] as unknown as Tag[];
+                const result = await internalMinio.getObjectTagging(
+                    bucket,
+                    object,
+                );
+                const tags = result[0] as unknown as Tag[];
+
                 const missionUUID = tags.find(
                     (tag: Tag) => tag.Key === 'mission_uuid',
                 )?.Value;

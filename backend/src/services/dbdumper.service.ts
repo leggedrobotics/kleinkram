@@ -5,7 +5,7 @@ import * as fs from 'node:fs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import env from '@common/env';
-import { internalMinio } from '@common/minio_helper';
+import { internalMinio } from '@common/minio-helper';
 import logger from '../logger';
 
 const execAsync = promisify(exec);

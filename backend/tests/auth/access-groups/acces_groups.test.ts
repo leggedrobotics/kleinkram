@@ -7,7 +7,7 @@ import {
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
 } from '../utils';
-import GroupMembership from '@common/entities/auth/group_membership.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
 import { AccessGroupType } from '@common/frontend_shared/enum';
 
 /**

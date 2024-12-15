@@ -119,6 +119,7 @@
                                         </q-item>
                                     </change-project-rights-dialog-opener>
                                     <RemoveProjectDialogOpener
+                                        v-if="accessGroup"
                                         :access-group="accessGroup"
                                         :project-u-u-i-d="props.row.uuid"
                                     >
@@ -272,22 +273,21 @@ import { useRouter } from 'vue-router';
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { Notify, QTable, useQuasar } from 'quasar';
 import AddProjectToAccessGroupDialog from '../dialogs/add-project-access-group-dialog.vue';
-import TitleSection from 'components/TitleSection.vue';
-import ButtonGroup from 'components/ButtonGroup.vue';
 import {
     removeUserFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import ROUTES from 'src/router/routes';
-import RemoveProjectDialogOpener from 'components/buttonWrapper/RemoveProjectDialogOpener.vue';
-import AddUserDialogOpener from 'components/buttonWrapper/AddUserDialogOpener.vue';
-import { formatDate } from 'src/services/dateFormating';
+import { formatDate } from '../services/date-formating';
 import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
-import { explorerPageTableColumns } from '../components/explorer-page/explorer-page-table-columns';
 import { GroupMembershipDto } from '@api/types/user.dto';
 import { useAccessGroup } from '../hooks/query-hooks';
 import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
+import TitleSection from '@components/title-section.vue';
+import ButtonGroup from '@components/buttons/button-group.vue';
+import RemoveProjectDialogOpener from '@components/button-wrapper/remove-project-dialog-opener.vue';
+import { explorerPageTableColumns } from '@components/explorer-page/explorer-page-table-columns';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -395,7 +395,7 @@ const renameColumns = (
     oldLabel: string,
     newLabel: string,
 ): void => {
-    for (const col of cols.filter((col) => col.label === oldLabel)) {
+    for (const col of cols.filter((c) => c.label === oldLabel)) {
         col.label = newLabel;
     }
 };

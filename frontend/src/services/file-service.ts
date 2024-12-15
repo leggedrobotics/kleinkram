@@ -28,7 +28,7 @@ const confirmDialog = (event: BeforeUnloadEvent): void => {
 };
 
 export const createFileAction = async (
-    selectedMission: MissionDto | undefined,
+    selectedMission: FlatMissionDto | undefined,
     selectedProject: ProjectDto | undefined,
     files: File[],
     queryClient: QueryClient,

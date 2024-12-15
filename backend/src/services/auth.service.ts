@@ -16,7 +16,7 @@ import {
 } from '@common/frontend_shared/enum';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
-import GroupMembership from '@common/entities/auth/group_membership.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
 
 @Injectable()
 export class AuthService implements OnModuleInit {

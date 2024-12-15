@@ -4,7 +4,7 @@ import { Redis } from 'ioredis';
 import { redis } from '@common/consts';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import GroupMembership from '@common/entities/auth/group_membership.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
 import { LessThan, Repository } from 'typeorm';
 
 @Injectable()
