@@ -96,7 +96,11 @@ export default class FileEntity extends BaseEntity {
             hash: this.hash ?? '',
             creator: this.creator.userDto,
             mission: this.mission.missionDto,
-            categories: [],
+            categories:
+                this.categories?.map((c) => ({
+                    uuid: c.uuid,
+                    name: c.name,
+                })) ?? [],
         };
     }
 

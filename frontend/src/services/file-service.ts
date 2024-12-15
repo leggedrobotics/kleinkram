@@ -199,70 +199,75 @@ async function _createFileAction(
     const limit = pLimit(5);
 
     await Promise.all(
-        temporaryCredentials.map(async (accessResp: any, index: number) => {
-            const file = validFiles[index];
+        temporaryCredentials.data.map(
+            async (accessResp: any, index: number) => {
+                const file = validFiles[index];
 
-            const accessCredentials = accessResp.accessCredentials;
-            if (accessCredentials === null) {
-                Notify.create({
-                    message: `Upload of File ${file.name} failed: Does the file already exist?`,
-                    color: 'negative',
-                    spinner: false,
-                    timeout: 0,
-                    closeBtn: true,
-                });
-                return;
-            }
-
-            const minioClient = new S3Client({
-                endpoint: minioEndpoint,
-                forcePathStyle: true,
-                region: 'us-east-1',
-                credentials: {
-                    accessKeyId: accessCredentials.accessKey,
-                    secretAccessKey: accessCredentials.secretKey,
-                    sessionToken: accessCredentials.sessionToken,
-                },
-            });
-
-            const newFileUpload = {
-                name: file.name,
-                size: file.size,
-                fileUUID: accessResp.fileUUID,
-                uuid: selectedMission.uuid,
-            } as unknown as FileWithTopicDto;
-            const newFileUploadReference = ref(newFileUpload);
-            injectedFiles.value.push(newFileUploadReference);
-            return limit(async () => {
-                try {
-                    const md5Hash = await uploadFileMultipart(
-                        file,
-                        accessResp.bucket,
-                        accessResp.fileUUID,
-                        minioClient,
-                        newFileUploadReference,
-                    );
-
-                    return await confirmUpload(accessResp.fileUUID, md5Hash);
-                } catch (error: unknown) {
-                    let errorMessage = '';
-                    if (error instanceof Error) {
-                        errorMessage = error.message;
-                    }
-
-                    console.error('err', error);
-                    newFileUploadReference.value.canceled = true;
+                const accessCredentials = accessResp.accessCredentials;
+                if (accessCredentials === null) {
                     Notify.create({
-                        message: `Upload of File ${file.name} failed: ${errorMessage}`,
+                        message: `Upload of File ${file.name} failed: Does the file already exist?`,
                         color: 'negative',
                         spinner: false,
                         timeout: 0,
                         closeBtn: true,
                     });
+                    return;
                 }
-                return;
-            });
-        }),
+
+                const minioClient = new S3Client({
+                    endpoint: minioEndpoint,
+                    forcePathStyle: true,
+                    region: 'us-east-1',
+                    credentials: {
+                        accessKeyId: accessCredentials.accessKey,
+                        secretAccessKey: accessCredentials.secretKey,
+                        sessionToken: accessCredentials.sessionToken,
+                    },
+                });
+
+                const newFileUpload = {
+                    name: file.name,
+                    size: file.size,
+                    fileUUID: accessResp.fileUUID,
+                    uuid: selectedMission.uuid,
+                } as unknown as FileWithTopicDto;
+                const newFileUploadReference = ref(newFileUpload);
+                injectedFiles.value.push(newFileUploadReference);
+                return limit(async () => {
+                    try {
+                        const md5Hash = await uploadFileMultipart(
+                            file,
+                            accessResp.bucket,
+                            accessResp.fileUUID,
+                            minioClient,
+                            newFileUploadReference,
+                        );
+
+                        return await confirmUpload(
+                            accessResp.fileUUID,
+                            md5Hash,
+                        );
+                    } catch (error: unknown) {
+                        let errorMessage = '';
+                        if (error instanceof Error) {
+                            errorMessage = error.message;
+                        }
+
+                        console.error('err', error);
+                        newFileUploadReference.value.canceled = true;
+                        Notify.create({
+                            message: `Upload of File ${file.name} failed: ${errorMessage}`,
+                            color: 'negative',
+                            spinner: false,
+                            timeout: 0,
+                            closeBtn: true,
+                        });
+                    }
+                    return;
+                });
+            },
+        ),
     );
 
     Notify.create({

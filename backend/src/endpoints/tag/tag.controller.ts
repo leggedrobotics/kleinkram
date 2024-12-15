@@ -14,9 +14,11 @@ import {
     QueryTake,
 } from '../../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
+import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
+import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
 
 @Controller('tag')
 export class TagController {
@@ -34,30 +36,36 @@ export class TagController {
 
     @Post('addTag')
     @CanAddTag()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        type: AddTagDto,
+    })
     async addTag(
         @BodyUUID('mission', 'Mission UUID') mission: string,
         @BodyUUID('tagType', 'TagType UUID') tagType: string,
         @BodyNotNull('value', 'TagType value') value: string | number | boolean,
-    ) {
+    ): Promise<AddTagDto> {
         return this.tagService.addTagType(mission, tagType, value);
     }
 
     @Post('addTags')
     @CanAddTag()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        type: AddTagsDto,
+    })
     async addTags(
         @BodyUUID('uuid', 'Mission UUID') uuid: string,
         @BodyNotNull('tags', 'Record Tagtype UUID to Tag value')
         tags: Record<string, string>,
-    ) {
+    ): Promise<AddTagsDto> {
         return this.tagService.addTags(uuid, tags);
     }
 
     @Delete(':uuid')
     @CanDeleteTag()
-    @OutputDto(null) // TODO: type API response
-    async deleteTag(@ParameterUID('uuid') uuid: string) {
+    @ApiOkResponse({
+        type: DeleteTagDto,
+    })
+    async deleteTag(@ParameterUID('uuid') uuid: string): Promise<DeleteTagDto> {
         return this.tagService.deleteTag(uuid);
     }
 

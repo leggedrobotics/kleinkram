@@ -54,7 +54,7 @@ export class UserController {
     async me(
         @Query() _query: NoQueryParamsDto,
         @AddUser() user: AuthHeader,
-    ): Promise<CurrentAPIUserDto | undefined> {
+    ): Promise<CurrentAPIUserDto> {
         return await this.userService.me(user);
     }
 

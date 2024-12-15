@@ -46,7 +46,7 @@ import { ActionWorkersDto } from '@api/types/action-workers.dto';
 import { TagsDto } from '@api/types/tags/tags.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import { MissionsDto, MissionWithFilesDto } from '@api/types/mission.dto';
-import { FileQueueEntriesDto } from '@api/types/FileQueueEntry.dto';
+import { FileQueueEntriesDto } from '@api/types/file-queue-entry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
@@ -204,7 +204,7 @@ export const canDeleteProject = (
 };
 
 export const useProjectQuery = (
-    projectUuid: Ref<string | undefined> | string,
+    projectUuid: Ref<string | undefined> | string | undefined,
 ): UseQueryReturnType<ProjectWithMissionsDto, Error> =>
     useQuery<ProjectWithMissionsDto>({
         queryKey: ['project', projectUuid],

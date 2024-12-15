@@ -58,7 +58,7 @@
                 <q-btn icon="sym_o_more_vert" class="button-border" flat>
                     <q-tooltip> More Actions</q-tooltip>
 
-                    <q-menu auto-close style="width: 320px">
+                    <q-menu v-if="mission" auto-close style="width: 320px">
                         <q-list>
                             <klein-download-mission
                                 v-if="mission"

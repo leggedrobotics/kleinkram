@@ -124,7 +124,7 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { Pagination, TableRequest } from '../../services/query-handler';
+import { Pagination } from '../../services/query-handler';
 import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
@@ -158,7 +158,7 @@ const pagination = computed({
         sortBy: queryHandler.value.sortBy,
         descending: false,
     }),
-    set: (value: TableRequest) => {
+    set: (value: Pagination) => {
         setPagination(value);
     },
 });

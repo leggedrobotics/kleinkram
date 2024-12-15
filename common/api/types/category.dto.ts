@@ -1,15 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaggedResponse } from './pagged-response';
-import { IsNumber, ValidateNested } from 'class-validator';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { IsTake } from '../../validation/take-validation';
 import { IsSkip } from '../../validation/skip-validation';
 import { Type } from 'class-transformer';
 
 export class CategoryDto {
     @ApiProperty()
+    @IsString()
     uuid!: string;
 
     @ApiProperty()
+    @IsString()
     name!: string;
 }
 

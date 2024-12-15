@@ -88,18 +88,28 @@ export class FileService implements OnModuleInit {
         });
     }
 
-    async findAll(userUUID: string, take: number, skip: number) {
+    async findAll(
+        userUUID: string,
+        take: number,
+        skip: number,
+    ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
         if (user.role === UserRole.ADMIN) {
-            return this.fileRepository.find({
+            const [files, count] = await this.fileRepository.findAndCount({
                 relations: ['mission'],
                 skip,
                 take,
             });
+            return {
+                data: files.map((f) => f.fileDto),
+                count,
+                take,
+                skip,
+            };
         }
-        return addAccessConstraints(
+        const [files, count] = await addAccessConstraints(
             this.fileRepository
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
@@ -108,7 +118,14 @@ export class FileService implements OnModuleInit {
                 .skip(skip)
                 .take(take),
             userUUID,
-        ).getMany();
+        ).getManyAndCount();
+
+        return {
+            data: files.map((f) => f.fileDto),
+            count,
+            take,
+            skip,
+        };
     }
 
     async findFilteredByNames(
@@ -119,7 +136,7 @@ export class FileService implements OnModuleInit {
         take: number,
         skip: number,
         tags: Record<string, any>,
-    ) {
+    ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -195,10 +212,15 @@ export class FileService implements OnModuleInit {
         } // Execute the query
         const fileIds = await query.getMany();
         if (fileIds.length === 0) {
-            return [];
+            return {
+                data: [],
+                count: 0,
+                take,
+                skip,
+            };
         }
         const fileIdsArray = fileIds.map((file) => file.uuid);
-        return await this.fileRepository
+        const [files, count] = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
@@ -207,7 +229,14 @@ export class FileService implements OnModuleInit {
 
             .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
             .orderBy('file.filename', 'ASC')
-            .getMany();
+            .getManyAndCount();
+
+        return {
+            data: files.map((f) => f.fileDto),
+            count,
+            take,
+            skip,
+        };
     }
 
     async findFiltered(

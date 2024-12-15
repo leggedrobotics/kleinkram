@@ -2,7 +2,6 @@ import {
     applyDecorators,
     ForbiddenException,
     SetMetadata,
-    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
 import {
@@ -37,7 +36,8 @@ import {
     WriteMissionByBodyGuard,
     WriteProjectGuard,
 } from './roles.guard';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse } from '../../decarators';
+import { UnauthorizedExceptionDto } from '@common/api/types/exceptions/unauthorized-exception.dto';
 
 // Logged-in user route decorator
 export function LoggedIn() {
@@ -46,7 +46,7 @@ export function LoggedIn() {
         UseGuards(LoggedInUserGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description: 'This endpoint requires a logged-in user.',
         }),
     );
@@ -59,7 +59,7 @@ export function UserOnly() {
         UseGuards(UserGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'Not authenticated. API keys are not valid on this endpoint.',
         }),
@@ -73,7 +73,7 @@ export function AdminOnly() {
         UseGuards(AdminOnlyGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description: 'This endpoint requires an admin user. ',
         }),
     );
@@ -85,7 +85,7 @@ export function CanReadProject() {
         UseGuards(ReadProjectGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Read permissions on the specified project.',
         }),
@@ -98,7 +98,7 @@ export function CanReadProjectByName() {
         UseGuards(ReadProjectByNameGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Read permissions on the specified project.',
         }),
@@ -111,7 +111,7 @@ export function CanCreateInProjectByBody() {
         UseGuards(CreateInProjectByBodyGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Create permissions on the specified project. API keys are not valid on this endpoint.',
         }),
@@ -124,7 +124,7 @@ export function CanWriteProject() {
         UseGuards(WriteProjectGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Modify permissions on the specified project. API keys are not valid on this endpoint.',
         }),
@@ -137,7 +137,7 @@ export function CanDeleteProject() {
         UseGuards(DeleteProjectGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Delete permissions on the specified project. API keys are not valid on this endpoint.',
         }),
@@ -150,7 +150,7 @@ export function CanCreate() {
         UseGuards(CreateGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have global create permissions. API keys are not valid on this endpoint.',
         }),
@@ -371,7 +371,7 @@ export function CanAddTag() {
         UseGuards(AddTagGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have AddTag permissions on the specified project.',
         }),
@@ -384,7 +384,7 @@ export function CanDeleteTag() {
         UseGuards(DeleteTagGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have DeleteTag permissions on the specified project.',
         }),
@@ -397,7 +397,7 @@ export function IsAccessGroupCreator() {
         UseGuards(AddUserToAccessGroupGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User is not the creator of the access group. API keys are not valid on this endpoint.',
         }),
@@ -410,7 +410,7 @@ export function CanEditGroup() {
         UseGuards(CanEditGroupByGroupUuid),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Edit permissions on the specified group.',
         }),
@@ -423,7 +423,7 @@ export function CanReadManyMissions() {
         UseGuards(CanReadManyMissionsGuard),
         ApiResponse({
             status: 401,
-            type: UnauthorizedException,
+            type: UnauthorizedExceptionDto,
             description:
                 'User does not have Read permissions on the specified project.',
         }),

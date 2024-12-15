@@ -60,7 +60,7 @@ export class AccessService {
     async createAccessGroup(
         name: string,
         auth: AuthHeader,
-    ): Promise<AccessGroup[]> {
+    ): Promise<AccessGroup> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
@@ -78,7 +78,7 @@ export class AccessService {
 
         return (await this.accessGroupRepository.save(
             newGroup,
-        )) as unknown as AccessGroup[];
+        )) as unknown as AccessGroup;
     }
 
     async hasProjectRights(

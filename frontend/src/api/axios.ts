@@ -17,7 +17,7 @@ const isIsoDateString = (value: unknown): value is string => {
  * @param data any JSON object
  *
  */
-// eslint-disable-next-line complexity
+
 const handleDates = <T extends JSON | null | undefined>(data: T): T | Date => {
     if (isIsoDateString(data)) return parseISO(data);
     if (data === null || typeof data !== 'object') return data;
@@ -58,40 +58,40 @@ type AxiosInterceptorParameters = Parameters<
     typeof axiosInstance.interceptors.response.use
 >;
 
-const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] =
-    // eslint-disable-next-line complexity
-    async (error) => {
-        if (!axios.isAxiosError(error)) throw error as Error;
+const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
+    error,
+) => {
+    if (!axios.isAxiosError(error)) throw error as Error;
 
-        const originalRequest: OriginalRequest | undefined = error.config;
-        if (originalRequest === undefined) throw error as Error;
+    const originalRequest: OriginalRequest | undefined = error.config;
+    if (originalRequest === undefined) throw error as Error;
 
-        // we set the version if the error is a response error
-        if (error.response) {
-            const headers = error.response.headers;
-            setVersion(headers);
-        }
+    // we set the version if the error is a response error
+    if (error.response) {
+        const headers = error.response.headers;
+        setVersion(headers);
+    }
 
-        // if the error is not a 401 error, we throw it
-        // as refreshing the token is not necessary
-        if (error.response?.status !== 401) throw error as Error;
+    // if the error is not a 401 error, we throw it
+    // as refreshing the token is not necessary
+    if (error.response?.status !== 401) throw error as Error;
 
-        // throw if the original request has already been retried
-        if (originalRequest.isRetryWithRefreshedToken === true)
-            throw error as Error;
+    // throw if the original request has already been retried
+    if (originalRequest.isRetryWithRefreshedToken === true)
+        throw error as Error;
 
-        // we set the _retry property to true to avoid an infinite loop,
-        // and we refresh the access token
-        originalRequest.isRetryWithRefreshedToken = true;
-        await axios.post(
-            `${ENV.ENDPOINT}/auth/refresh-token`,
-            {},
-            { withCredentials: true },
-        );
+    // we set the _retry property to true to avoid an infinite loop,
+    // and we refresh the access token
+    originalRequest.isRetryWithRefreshedToken = true;
+    await axios.post(
+        `${ENV.ENDPOINT}/auth/refresh-token`,
+        {},
+        { withCredentials: true },
+    );
 
-        // we retry the original request
-        return axios(originalRequest);
-    };
+    // we retry the original request
+    return axios(originalRequest);
+};
 
 const parseResponse: AxiosInterceptorParameters[0] = (response) => {
     const headers = response.headers;

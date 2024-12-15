@@ -1,6 +1,6 @@
 import { formatDate } from 'src/services/dateFormating';
 import { formatSize } from 'src/services/generalFormatting';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission.dto';
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
@@ -88,7 +88,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: ProjectWithMissionCountDto) => row.name,
+        field: (row: FlatMissionDto) => row.name,
         format: (value: string) => value,
     },
     {
@@ -96,7 +96,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Nr of Files',
         align: 'left',
-        field: (row: ProjectWithMissionCountDto) => row.filesCount,
+        field: (row: FlatMissionDto) => row.filesCount,
         format: (value: number) => value.toString(),
     },
     {
@@ -104,7 +104,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: ProjectWithMissionCountDto) => row.creator.name,
+        field: (row: FlatMissionDto) => row.creator.name,
         format: (value: number) => value.toString(),
         style: 'min-width: 100px',
         sortable: false,
@@ -114,7 +114,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: ProjectWithMissionCountDto) => row.createdAt,
+        field: (row: FlatMissionDto) => row.createdAt,
         format: (value: string) => formatDate(new Date(value)),
     },
     {
@@ -129,7 +129,7 @@ export const missionColumns: ProjectColumnType[] = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: MissionWithFilesDto) => row.size,
+        field: (row: FlatMissionDto) => row.size,
         format: formatSize,
     },
 

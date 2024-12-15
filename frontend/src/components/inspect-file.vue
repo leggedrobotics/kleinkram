@@ -352,7 +352,7 @@ const columns = [
     },
 ];
 
-async function redirectToMcap() {
+async function redirectToMcap(): Promise<void> {
     if (mcap.value) {
         await $router.push({
             name: ROUTES.FILE.routeName,
@@ -365,9 +365,9 @@ async function redirectToMcap() {
     }
 }
 
-async function _copyLink() {
-    const res = await downloadFile(properties.uuid, false);
-    await copyToClipboard(res);
+async function _copyLink(): Promise<void> {
+    const downloadLink = await downloadFile(properties.uuid, false);
+    await copyToClipboard(downloadLink);
     Notify.create({
         group: false,
         message: 'Copied: Link valid for 7 days',

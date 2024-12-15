@@ -21,13 +21,17 @@ import {
 } from '../../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
 import { BodyUUIDArray } from '../../validation/bodyDecorators';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiResponse } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from '../auth/param-decorator';
+import { DeleteProjectResponseDto } from '@common/api/types/delete-project-response.dto';
+import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
+import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
+import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -46,7 +50,7 @@ export class ProjectController {
     })
     async allProjects(
         @AddUser()
-        authRes: AuthHeader,
+        authHeader: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sortBy') sortBy: string,
@@ -55,7 +59,7 @@ export class ProjectController {
         searchParameters: Map<string, string>,
     ): Promise<ProjectsDto> {
         return this.projectService.findAll(
-            authRes.user,
+            authHeader.user,
             skip,
             take,
             sortBy,
@@ -147,41 +151,53 @@ export class ProjectController {
     @ApiResponse({
         description: 'Project deleted',
         status: 204,
+        type: DeleteProjectResponseDto,
     })
-    @OutputDto(null) // TODO: type API response
     async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.projectService.deleteProject(uuid);
     }
 
     @Post('addTagType')
     @CanWriteProject()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: AddTagTypeDto,
+    })
     async addTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ): Promise<void> {
-        return this.projectService.addTagType(uuid, tagTypeUUID);
+    ): Promise<AddTagTypeDto> {
+        await this.projectService.addTagType(uuid, tagTypeUUID);
+        return {};
     }
 
     @Post('removeTagType')
     @CanWriteProject()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        type: RemoveTagTypeDto,
+        description: 'Empty response',
+    })
     async removeTagType(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ): Promise<void> {
-        return this.projectService.removeTagType(uuid, tagTypeUUID);
+    ): Promise<RemoveTagTypeDto> {
+        await this.projectService.removeTagType(uuid, tagTypeUUID);
+        return {};
     }
 
     @Post('updateTagTypes')
     @CanWriteProject()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: UpdateTagTypesDto,
+    })
     async updateTagTypes(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
         @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
         tagTypeUUIDs: string[],
-    ): Promise<void> {
-        return this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+    ): Promise<UpdateTagTypesDto> {
+        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+        return {};
     }
 
     @Get('getDefaultRights')

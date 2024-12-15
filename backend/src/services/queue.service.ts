@@ -41,8 +41,12 @@ import User from '@common/entities/user/user.entity';
 import {
     FileQueueEntriesDto,
     FileQueueEntryDto,
-} from '@common/api/types/FileQueueEntry.dto';
+} from '@common/api/types/file-queue-entry.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
+import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
+import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
+import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -127,12 +131,14 @@ export class QueueService implements OnModuleInit {
         logger.debug('All queues are ready');
     }
 
-    async importFromDrive(driveCreate: DriveCreate, user: User) {
+    async importFromDrive(
+        driveCreate: DriveCreate,
+        user: User,
+    ): Promise<UpdateTagTypeDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
-        // @ts-ignore
-        const creator = await this.userService.findOneByUUID(user.uuid);
+        const creator = await this.userService.findOneByUUID(user.uuid, {}, {});
 
         // get GoogleDrive file id
         const fileId = extractFileIdFromUrl(driveCreate.driveURL);
@@ -153,6 +159,8 @@ export class QueueService implements OnModuleInit {
             .add('processDriveFile', { queueUuid: queueEntry.uuid })
             .catch((error: unknown) => logger.error(error));
         logger.debug('added to queue');
+
+        return {};
     }
 
     async confirmUpload(uuid: string, md5: string): Promise<void> {
@@ -289,7 +297,10 @@ export class QueueService implements OnModuleInit {
         };
     }
 
-    async delete(missionUUID: string, queueUUID: string) {
+    async delete(
+        missionUUID: string,
+        queueUUID: string,
+    ): Promise<DeleteMissionResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
             relations: ['mission', 'mission.project'],
@@ -316,7 +327,7 @@ export class QueueService implements OnModuleInit {
             where: { uuid: queue.identifier, mission: { uuid: missionUUID } },
         });
         if (!file) {
-            return;
+            return {};
         }
         const minioBucket = getBucketFromFileType(file.type);
         try {
@@ -344,6 +355,8 @@ export class QueueService implements OnModuleInit {
                 await this.fileRepository.remove(mcap);
             }
         }
+
+        return {};
     }
 
     async exists(missionUUID: string, queueUUID: string) {
@@ -352,7 +365,10 @@ export class QueueService implements OnModuleInit {
         });
     }
 
-    async cancelProcessing(queueUUID: string, missionUUID: string) {
+    async cancelProcessing(
+        queueUUID: string,
+        missionUUID: string,
+    ): Promise<CancleProgessingResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
             relations: ['mission', 'mission.project'],
@@ -372,6 +388,8 @@ export class QueueService implements OnModuleInit {
         }
         queue.state = QueueState.CANCELED;
         await this.queueRepository.save(queue);
+
+        return {};
     }
 
     async _addActionQueue(
@@ -428,7 +446,7 @@ export class QueueService implements OnModuleInit {
         );
     }
 
-    async stopJob(jobId: string) {
+    async stopJob(jobId: string): Promise<StopJobResponseDto> {
         const action = await this.actionRepository.findOne({
             where: { uuid: jobId },
             relations: ['worker'],
@@ -450,6 +468,8 @@ export class QueueService implements OnModuleInit {
         } catch (error: any) {
             logger.log(error);
         }
+
+        return {};
     }
 
     @Cron(CronExpression.EVERY_30_SECONDS)

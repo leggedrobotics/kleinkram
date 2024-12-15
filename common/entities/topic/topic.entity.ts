@@ -20,6 +20,11 @@ export default class Topic extends BaseEntity {
     })
     nrMessages?: bigint;
 
+    @Column({
+        default: '',
+    })
+    messageEncoding!: string;
+
     @Column('float')
     frequency!: number;
 

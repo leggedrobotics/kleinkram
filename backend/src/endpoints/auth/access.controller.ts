@@ -20,15 +20,14 @@ import {
 } from './roles.decorator';
 import { QueryUUID } from '../../validation/queryDecorators';
 import { ParamUUID as ParameterUID } from '../../validation/paramDecorators';
-import { CreateAccessGroupDto } from '@common/api/types/CreateAccessGroup.dto';
+import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 import { AddUserToProjectDto } from '@common/api/types/add-user-project.dto';
 import { AddUserToAccessGroupDto } from '@common/api/types/add-user-access-group.dto';
 import { AddAccessGroupToProjectDto } from '@common/api/types/add-access-group-project.dto';
 import { RemoveAccessGroupFromProjectDto } from '@common/api/types/RemoveAccessGroupFromProject.dto';
 import { SetAccessGroupUserExpirationDto } from '@common/api/types/SetAccessGroupUserExpiration.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
 import { GroupMembershipDto } from '@common/api/types/user.dto';
@@ -37,6 +36,7 @@ import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from './param-decorator';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('access')
 export class AccessController {
@@ -76,7 +76,7 @@ export class AccessController {
     @CanCreate()
     @ApiOkResponse({
         status: 200,
-        type: AccessGroup, // TODO: this type is wrong
+        type: CreateAccessGroupDto,
         description: 'Returns the created AccessGroup',
     })
     @ApiOperation({
@@ -87,8 +87,14 @@ export class AccessController {
     async createAccessGroup(
         @Body() body: CreateAccessGroupDto,
         @AddUser() user: AuthHeader,
-    ): Promise<AccessGroup[]> {
-        return this.accessService.createAccessGroup(body.name, user);
+    ): Promise<CreateAccessGroupDto> {
+        const accessGroup = await this.accessService.createAccessGroup(
+            body.name,
+            user,
+        );
+        return {
+            name: accessGroup.name,
+        };
     }
 
     @ApiResponse({

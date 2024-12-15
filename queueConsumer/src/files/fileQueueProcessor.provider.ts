@@ -327,9 +327,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             mcapFileEntity = existingFileEntity;
         }
 
-        if (mcapFileEntity === undefined || bagFileEntity === undefined)
-            throw new Error('File entities are undefined');
-
         ////////////////////////////////////////////////////////////////
         // Extract Topics from MCAP file
         ////////////////////////////////////////////////////////////////
@@ -342,6 +339,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 },
             });
             date = existingMCAP.date;
+        } else if (mcapFileEntity === undefined) {
+            throw new Error('MCAP file not found');
         } else {
             date = await this.extractTopics(
                 job,
@@ -354,7 +353,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         ////////////////////////////////////////////////////////////////
         // Update recording date
         ////////////////////////////////////////////////////////////////
-        if (sourceIsBag) {
+        if (sourceIsBag && bagFileEntity !== undefined) {
             bagFileEntity.hash = bagHash;
             bagFileEntity.size = bagSize;
             bagFileEntity.date = date;
@@ -364,7 +363,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             await this.fileRepository.save(bagFileEntity);
         }
 
-        if (!mcapExists) {
+        if (!mcapExists && mcapFileEntity !== undefined) {
             mcapFileEntity.size = mcapSize;
             mcapFileEntity.hash = mcapHash;
             mcapFileEntity.date = date;
@@ -727,7 +726,14 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 `File ${savedFile.filename} is not an mcap file, cannot extract topics`,
             );
 
-        const meta = await mcapMetaInfo(temporaryFileName).catch(
+        const {
+            topics,
+            date,
+        }: {
+            topics: Partial<Topic>[];
+            date: Date;
+            size: number;
+        } = await mcapMetaInfo(temporaryFileName).catch(
             async (error: unknown) => {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
@@ -743,7 +749,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 throw error;
             },
         );
-        const { topics, date } = meta;
         logger.debug(
             `Job {${job.id.toString()}} saved file: ${savedFile.filename}`,
         );
@@ -753,11 +758,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 ...topic,
                 file: savedFile,
             });
-
-            // TODO: why is this needed?
-            if (newTopic.name === undefined) newTopic.name = 'N/A';
-            if (newTopic.nrMessages === undefined) newTopic.nrMessages = 0n;
-            if (newTopic.frequency === null) newTopic.frequency = 0;
 
             await this.topicRepository.save(newTopic);
 

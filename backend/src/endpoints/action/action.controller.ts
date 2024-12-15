@@ -37,6 +37,7 @@ import {
     ActionQuery,
     SubmitActionMulti,
 } from '@common/api/types/submit-action.dto';
+import { DeleteFileResponseDto } from '@common/api/types/files/delete-file-response.dto';
 
 export class RunningActionsQuery {
     @IsSkip()
@@ -75,10 +76,13 @@ export class ActionController {
     @CanDeleteAction()
     @ApiOkResponse({
         description: 'True if the action was deleted',
-        type: Boolean,
+        type: DeleteFileResponseDto,
     })
-    async deleteAction(@ParameterUID('uuid') uuid: string): Promise<boolean> {
-        return this.actionService.delete(uuid);
+    async deleteAction(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<DeleteFileResponseDto> {
+        await this.actionService.delete(uuid);
+        return { success: true };
     }
 
     @Post('multiSubmit')

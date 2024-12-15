@@ -49,8 +49,8 @@
                                     clickable
                                     @click="(e) => onRowClick(e, props.row)"
                                 >
-                                    <q-item-section
-                                        >View Missions
+                                    <q-item-section>
+                                        View Missions
                                     </q-item-section>
                                 </q-item>
                                 <EditProjectDialogOpener

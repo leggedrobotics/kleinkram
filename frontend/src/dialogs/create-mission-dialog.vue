@@ -281,8 +281,7 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
-    // TODO: this is wrong....
-    createFileReference.value.createFileAction();
+    createFileReference.value?.createFileAction();
     onDialogOK();
 };
 

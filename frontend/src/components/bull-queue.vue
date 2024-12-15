@@ -1,7 +1,7 @@
 <template>
     <div>
         <h3>Bull Queue</h3>
-        <q-table v-if="data" :columns="cols as any" :rows="data">
+        <q-table v-if="data" :columns="cols as any" :rows="data" flat bordered>
             <template #body-cell-kill="props">
                 <q-td :props="props">
                     <q-btn

@@ -136,18 +136,24 @@ export class FileController {
 
     @Get('all')
     @UserOnly()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Filtered Files',
+        type: FilesDto,
+    })
     async allFiles(
         @AddUser() auth: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-    ) {
+    ): Promise<FilesDto> {
         return await this.fileService.findAll(auth.user.uuid, take, skip);
     }
 
     @Get('filteredByNames')
     @UserOnly()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Filtered Files',
+        type: FilesDto,
+    })
     async filteredByNames(
         @QueryOptionalString(
             'projectName',
@@ -166,7 +172,7 @@ export class FileController {
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() auth: AuthHeader,
-    ) {
+    ): Promise<FilesDto> {
         return await this.fileService.findFilteredByNames(
             projectName,
             missionName,

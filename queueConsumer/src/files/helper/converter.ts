@@ -7,6 +7,7 @@ import { traceWrapper } from '../../tracing';
 import logger from '../../logger';
 import { open } from 'node:fs/promises';
 import { FileHandleReadable } from '@mcap/nodejs';
+import Topic from '@common/entities/topic/topic.entity';
 
 const execPromisify = promisify(exec);
 
@@ -36,7 +37,7 @@ export const convert = (infile: string, outfile: string): Promise<boolean> =>
 
 export async function mcapMetaInfo(
     mcapTemporaryFileName: string,
-): Promise<{ topics: Record<string, unknown>[]; date: Date; size: number }> {
+): Promise<{ topics: Partial<Topic>[]; date: Date; size: number }> {
     const decompressHandlers = await loadDecompressHandlers();
     const fileHandle = await open(mcapTemporaryFileName, 'r');
 
@@ -48,19 +49,33 @@ export async function mcapMetaInfo(
 
     await fileHandle.close();
 
-    const topics: Record<string, unknown>[] = [];
-    const stats: any = reader.statistics;
-    const duration = BigInt(stats.messageEndTime - stats.messageStartTime);
-    for (const channel of reader.channelsById) {
-        //@ts-ignore
-        const schema: any = reader.schemasById.get(channel.schemaId);
-        //@ts-ignore
+    const topics: Partial<Topic>[] = [];
+    const stats = reader.statistics;
+
+    if (stats === undefined) {
+        logger.debug('No Messages Found');
+        return {
+            topics: [],
+            date: new Date(),
+            size: fileSize,
+        };
+    }
+
+    const duration = stats.messageEndTime - stats.messageStartTime;
+    for (const enumeratedChannel of reader.channelsById) {
+        const channel = enumeratedChannel[1];
+
+        logger.debug(JSON.stringify(channel));
+        const schema = reader.schemasById.get(channel.schemaId);
+
+        if (schema === undefined) continue;
+
         const nrMessages = stats.channelMessageCounts.get(channel.id);
-        const topic = {
-            //@ts-ignore
+        const topic: Partial<Topic> = {
             name: channel.topic,
-            type: schema?.name ?? 'Unknown',
-            nrMessages: nrMessages,
+            type: schema.name,
+            nrMessages: nrMessages ?? 0n,
+            messageEncoding: channel.messageEncoding,
             frequency:
                 Number(nrMessages) / (Number(duration / 1000n) / 1_000_000),
         };

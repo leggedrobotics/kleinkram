@@ -197,13 +197,15 @@ const {
             mission_uuid.value ?? '',
             properties.urlHandler.take,
             properties.urlHandler.skip,
-            // @ts-ignore
             properties.urlHandler.fileType,
             properties.urlHandler.searchParams.name,
             properties.urlHandler.categories,
             properties.urlHandler.sortBy,
             properties.urlHandler.descending,
-            properties.urlHandler.searchParams.health,
+            properties.urlHandler.searchParams.health as
+                | 'Healthy'
+                | 'Unhealthy'
+                | 'Uploading',
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value.data : []));
@@ -220,7 +222,7 @@ watch(
     { immediate: true },
 );
 
-const onRowClick = async (_: Event, row: any) => {
+const onRowClick = async (_: Event, row: any): Promise<void> => {
     await $router.push({
         path: '',
         // @ts-ignore
@@ -233,7 +235,7 @@ const onRowClick = async (_: Event, row: any) => {
     });
 };
 
-function chipClicked(cat: CategoryDto) {
+function chipClicked(cat: CategoryDto): void {
     properties.urlHandler.addCategory(cat.uuid);
 }
 
@@ -244,9 +246,7 @@ watch(
     },
 );
 
-function sortedCats(file: FileWithTopicDto) {
-    // @ts-ignore
-    const cats = [...(file.categories.categories || [])];
-    return cats.sort((a, b) => a.name.localeCompare(b.name));
+function sortedCats(file: FileWithTopicDto): CategoryDto[] {
+    return file.categories.sort((a, b) => a.name.localeCompare(b.name));
 }
 </script>

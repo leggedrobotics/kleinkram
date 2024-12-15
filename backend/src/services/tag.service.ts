@@ -10,6 +10,8 @@ import TagType from '@common/entities/tagType/tagType.entity';
 import { DataType } from '@common/frontend_shared/enum';
 import Mission from '@common/entities/mission/mission.entity';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
+import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
+import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
 
 @Injectable()
 export class TagService {
@@ -50,7 +52,7 @@ export class TagService {
         missionUUID: string,
         tagTypeUUID: string,
         value: string | number | boolean,
-    ): Promise<Tag> {
+    ): Promise<AddTagDto> {
         const tagType = await this.tagTypeRepository.findOneOrFail({
             where: { uuid: tagTypeUUID },
         });
@@ -150,7 +152,8 @@ export class TagService {
             }
         }
 
-        return this.tagRepository.save(tag);
+        await this.tagRepository.save(tag);
+        return {};
     }
 
     async updateTagType(
@@ -242,7 +245,7 @@ export class TagService {
     async addTags(
         missionUUID: string,
         tags: Record<string, string>,
-    ): Promise<Tag[]> {
+    ): Promise<AddTagsDto> {
         return Promise.all(
             Object.entries(tags).map(([tagTypeUUID, value]) =>
                 this.addTagType(missionUUID, tagTypeUUID, value),
@@ -250,8 +253,9 @@ export class TagService {
         );
     }
 
-    async deleteTag(uuid: string): Promise<void> {
+    async deleteTag(uuid: string): Promise<DeleteTagDto> {
         await this.tagRepository.delete({ uuid });
+        return {};
     }
 
     async getAll(skip: number, take: number): Promise<TagTypesDto> {
