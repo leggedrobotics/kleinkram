@@ -7,15 +7,18 @@
     },
     "dependencies": {
         "@faker-js/faker": "^9.2.0",
+        "@nestjs/swagger": "^8.0.7",
         "bull": "^4.16.4",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.1",
+        "minio": "8.0.2",
         "pg": "^8.13.1",
         "ts-node": "^10.9.2",
         "typeorm": "^0.4.0-alpha.1",
-        "typeorm-seeding": "^1.6.1",
-        "minio": "8.0.2"
+        "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
-        "@types/node": "22.9.0",
+        "@types/node": "^22.10.1",
         "typescript": "5.6.3"
     }
 }

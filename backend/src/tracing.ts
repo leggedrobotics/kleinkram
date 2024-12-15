@@ -17,16 +17,17 @@ import logger from './logger';
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
     concurrencyLimit: 10, // an optional limit on pending requests
-    timeoutMillis: 10_00,
+    timeoutMillis: 10_000,
 });
 
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
+        // @ts-ignore
         new BatchSpanProcessor(exporter, {
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
-            scheduledDelayMillis: 5_000,
+            scheduledDelayMillis: 5000,
             maxExportBatchSize: 512,
         }),
     ],
@@ -54,7 +55,9 @@ const sdk = new NodeSDK({
 process.on('SIGTERM', () => {
     sdk.shutdown()
         .then(() => logger.debug('Tracing terminated'))
-        .catch((error) => logger.error('Error terminating tracing', error))
+        .catch((error: unknown) =>
+            logger.error('Error terminating tracing', error),
+        )
         .finally(() => process.exit(0));
 });
 

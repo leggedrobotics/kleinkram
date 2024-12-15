@@ -1,15 +1,15 @@
 import axios from 'src/api/axios';
-import ENV from 'src/env';
+import ENV from '../environment';
 import { getMe } from 'src/services/queries/user';
-import { User } from 'src/types/User';
+import { CurrentAPIUserDto } from '@api/types/user.dto';
 
-let userCache: User | null = null;
+let userCache: CurrentAPIUserDto | null = null;
 let isFetchingUser = false;
-let userFetchPromise: Promise<User | null> | null = null;
+let userFetchPromise: Promise<CurrentAPIUserDto | null> | null = null;
 
-export const getUser = () => {
+export const getUser = async (): Promise<CurrentAPIUserDto | null> => {
     if (userCache !== null) {
-        return Promise.resolve(userCache);
+        return userCache;
     }
     if (isFetchingUser) {
         return userFetchPromise;
@@ -25,10 +25,11 @@ export const getUser = () => {
             isFetchingUser = false;
             return null;
         });
+
     return userFetchPromise;
 };
 
-export const isAuthenticated = async () => {
+export const isAuthenticated = async (): Promise<boolean> => {
     const user = await getUser();
     return user !== null;
 };
@@ -42,12 +43,14 @@ export function logout() {
             .post('/auth/logout')
             .then(() => {
                 // reload the page to clear the cache
-                window.location.reload();
+                globalThis.location.reload();
             })
-            .catch(() => reject(false));
+            .catch(() => {
+                reject(new Error('Failed to logout'));
+            });
     });
 }
 
-export const login = () => {
-    window.location.href = `${ENV.ENDPOINT}/auth/google`;
+export const login = (): void => {
+    globalThis.location.href = `${ENV.ENDPOINT}/auth/google`;
 };

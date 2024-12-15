@@ -1,29 +1,32 @@
 import { define } from 'typeorm-seeding';
 import Project from '../../entities/project/project.entity';
 import User from '../../entities/user/user.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { faker } from '@faker-js/faker';
-import TagType from '../../entities/tagType/tagType.entity';
+import TagType from '../../entities/tagType/tag-type.entity';
 
-export type ProjectContext = {
+export interface ProjectContext {
     name: string;
     creator: User;
     allUsers: User[];
     allAccessGroups: AccessGroup[];
     tagTypes: TagType[];
-};
+}
 
 define(Project, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
-        context.creator || faker.helpers.arrayElement(context.allUsers);
+        context.creator || faker.helpers.arrayElement(context.allUsers ?? []);
     console.assert(creator, 'No creator provided for project');
 
     const project = new Project();
     project.uuid = extendedFaker.string.uuid();
-    project.name = context.name || `${extendedFaker.project.name()}`;
+    project.name = context.name || extendedFaker.project.name();
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
+
+    if (context.tagTypes === undefined)
+        throw new Error('TagTypes are undefined');
 
     project.requiredTags = extendedFaker.helpers.arrayElements(
         context.tagTypes,

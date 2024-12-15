@@ -1,6 +1,6 @@
 import { Column, Entity, OneToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { Providers } from '../../enum';
+import { Providers } from '../../frontend_shared/enum';
 import User from '../user/user.entity';
 
 /**
@@ -11,11 +11,13 @@ import User from '../user/user.entity';
 @Unique('provider_oauthID', ['provider', 'oauthID'])
 export default class Account extends BaseEntity {
     @Column()
-    provider: Providers;
+    provider!: Providers;
 
-    @OneToOne(() => User, (user) => user.account)
-    user: User;
+    @OneToOne(() => User, (user) => user.account, {
+        onDelete: 'CASCADE',
+    })
+    user?: User;
 
     @Column()
-    oauthID: string;
+    oauthID!: string;
 }

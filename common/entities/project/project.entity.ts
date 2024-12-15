@@ -2,9 +2,13 @@ import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import TagType from '../tagType/tagType.entity';
-import ProjectAccess from '../auth/project_access.entity';
+import TagType from '../tagType/tag-type.entity';
+import ProjectAccess from '../auth/project-access.entity';
 import CategoryEntity from '../category/category.entity';
+
+import { ProjectDto } from '../../api/types/project/base-project.dto';
+import { ProjectWithMissionCountDto } from '../../api/types/project/project-with-mission-count.dto';
+import { ProjectWithMissionsDto } from '../../api/types/project/project-with-missions.dto';
 
 @Entity()
 export default class Project extends BaseEntity {
@@ -13,29 +17,63 @@ export default class Project extends BaseEntity {
      * The name must be globally unique.
      */
     @Column({ unique: true })
-    name: string;
+    name!: string;
 
     @OneToMany(() => Mission, (mission) => mission.project)
-    missions: Mission[];
+    missions?: Mission[];
 
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,
     })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    project_accesses: ProjectAccess[];
+    project_accesses?: ProjectAccess[];
 
-    @Column({ nullable: true })
-    description: string;
+    @Column()
+    description!: string;
 
     @ManyToOne(() => User, (user) => user.projects, { nullable: false })
-    creator: User;
+    creator?: User;
 
     @ManyToMany(() => TagType, (tag) => tag.project, {
         onDelete: 'CASCADE',
         nullable: false,
     })
-    requiredTags: TagType[];
+    requiredTags!: TagType[];
 
     @OneToMany(() => CategoryEntity, (category) => category.project)
-    categories: CategoryEntity[];
+    categories?: CategoryEntity[];
+
+    get minimalProjectDto(): ProjectDto {
+        return {
+            uuid: this.uuid,
+            name: this.name,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            description: this.description,
+        };
+    }
+
+    get flatProjectDto(): ProjectWithMissionCountDto {
+        if (this.creator === undefined) {
+            throw new Error('Creator can never be undefined');
+        }
+
+        return {
+            ...this.minimalProjectDto,
+            creator: this.creator.userDto,
+            missionCount: this.missions?.length ?? 0,
+        };
+    }
+
+    get projectDto(): ProjectWithMissionsDto {
+        if (this.creator === undefined) {
+            throw new Error('Creator can never be undefined');
+        }
+
+        return {
+            ...this.minimalProjectDto,
+            creator: this.creator.userDto,
+            requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
+            missions: [],
+        };
+    }
 }
