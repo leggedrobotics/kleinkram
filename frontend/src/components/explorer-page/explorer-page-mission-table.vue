@@ -16,6 +16,7 @@
         separator="none"
         selection="multiple"
         @row-click="onRowClick"
+        @request="setPagination"
     >
         <template #body-selection="props">
             <q-checkbox
@@ -124,7 +125,7 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { Pagination } from '../../services/query-handler';
+import { Pagination, TableRequest } from '../../services/query-handler';
 import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
@@ -143,11 +144,12 @@ const $emit = defineEmits(['update:selected']);
 
 const queryHandler = useHandler();
 
-function setPagination(pagination: Pagination): void {
-    queryHandler.value.setPage(pagination.page);
-    queryHandler.value.setTake(pagination.rowsPerPage);
-    queryHandler.value.setSort(pagination.sortBy);
-    queryHandler.value.setDescending(pagination.descending);
+async function setPagination(update: TableRequest): Promise<void> {
+    queryHandler.value.setPage(update.pagination.page);
+    queryHandler.value.setTake(update.pagination.rowsPerPage);
+    queryHandler.value.setSort(update.pagination.sortBy);
+    queryHandler.value.setDescending(update.pagination.descending);
+    await refetch();
 }
 
 const pagination = computed({
@@ -156,11 +158,14 @@ const pagination = computed({
         rowsPerPage: queryHandler.value.take,
         rowsNumber: queryHandler.value.rowsNumber,
         sortBy: queryHandler.value.sortBy,
-        descending: false,
+        descending: queryHandler.value.descending,
     }),
-    set: (value: Pagination) => {
-        setPagination(value);
-    },
+    set: (value) => ({
+        page: value.page,
+        rowsPerPage: value.rowsPerPage,
+        sortBy: value.sortBy,
+        descending: value.descending,
+    }),
 });
 
 const projectUuid = useProjectUUID();
@@ -173,7 +178,11 @@ const queryKey = computed(() => [
     queryHandler.value.queryKey,
 ]);
 
-const { data: rawData, isLoading } = useQuery({
+const {
+    data: rawData,
+    isLoading,
+    refetch,
+} = useQuery({
     queryKey: queryKey,
     queryFn: () =>
         missionsOfProject(
