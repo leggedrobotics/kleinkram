@@ -11,12 +11,7 @@
         :options="searchResults"
         class="q-pb-md"
         autocomplete="false"
-        @click="
-            (e) => {
-                enableSearch();
-                e.stopPropagation();
-            }
-        "
+        @click="onClick"
         @filter="handleFilter"
     >
         <template v-if="searchEnabled && searchResults.length > 0" #no-option>
@@ -348,6 +343,11 @@ function handleFilter(value: any, update: any) {
     // @ts-ignore
     update();
 }
+
+const onClick = (event: Event) => {
+    enableSearch();
+    event.stopPropagation();
+};
 </script>
 
 <style scoped></style>

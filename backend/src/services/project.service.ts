@@ -112,6 +112,7 @@ export class ProjectService {
                     : baseQuery.andWhere(
                           `project.${key} ILIKE :${index.toString()}`,
                           {
+                              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                               [index]: `%${searchParameters[key].toString()}%`,
                           },
                       );
@@ -549,54 +550,55 @@ export class ProjectService {
         if (creator.memberships === undefined)
             throw new Error('User has no memberships');
 
-        const defaultRights: DefaultRightDto[] = (
-            await Promise.all(
-                creator.memberships
-                    .map((membership) => membership.accessGroup)
-                    .map(async (right) => {
-                        if (right === undefined) return null;
+        const defaultRights: (DefaultRightDto | null)[] = await Promise.all(
+            creator.memberships
+                .map((membership) => membership.accessGroup)
+                .map(async (right) => {
+                    if (right === undefined) return null;
 
-                        const name = right.name;
-                        let memberCount = 1;
-                        let _rights = AccessGroupRights.WRITE;
+                    const name = right.name;
+                    let memberCount = 1;
+                    let _rights = AccessGroupRights.WRITE;
 
-                        switch (right.type) {
-                            case AccessGroupType.AFFILIATION: {
-                                // @ts-ignore
-                                _rights = this.config.access_groups.find(
-                                    (group) => group.uuid === right.uuid,
-                                ).rights;
-                                memberCount =
-                                    await this.userService.getMemberCount(
-                                        right.uuid,
-                                    );
-                                break;
-                            }
-                            case AccessGroupType.PRIMARY: {
-                                _rights = AccessGroupRights.DELETE;
-                                break;
-                            }
-                            case AccessGroupType.CUSTOM: {
-                                return null;
-                            }
+                    switch (right.type) {
+                        case AccessGroupType.AFFILIATION: {
+                            // @ts-ignore
+                            _rights = this.config.access_groups.find(
+                                (group) => group.uuid === right.uuid,
+                            ).rights;
+                            memberCount = await this.userService.getMemberCount(
+                                right.uuid,
+                            );
+                            break;
                         }
+                        case AccessGroupType.PRIMARY: {
+                            _rights = AccessGroupRights.DELETE;
+                            break;
+                        }
+                        case AccessGroupType.CUSTOM: {
+                            return null;
+                        }
+                    }
 
-                        return {
-                            name,
-                            uuid: right.uuid,
-                            memberCount,
-                            rights: _rights,
-                            type: right.type,
-                        } as DefaultRightDto;
-                    }),
-            )
-        ).filter((right) => right !== null);
+                    return {
+                        name,
+                        uuid: right.uuid,
+                        memberCount,
+                        rights: _rights,
+                        type: right.type,
+                    } as DefaultRightDto;
+                }),
+        );
+
+        const defaultRightsFiltered = defaultRights.filter(
+            (right) => right !== null,
+        );
 
         return {
-            data: defaultRights,
-            count: defaultRights.length,
+            data: defaultRightsFiltered,
+            count: defaultRightsFiltered.length,
             skip: 0,
-            take: defaultRights.length,
+            take: defaultRightsFiltered.length,
         };
     }
 }

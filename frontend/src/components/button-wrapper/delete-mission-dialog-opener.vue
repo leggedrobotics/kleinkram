@@ -31,11 +31,7 @@ const { mission } = defineProps<{
 const { data: permissions } = usePermissionsQuery();
 
 const fileCount = computed(() => {
-    if ('filesCount' in mission) {
-        return mission.filesCount;
-    } else {
-        return mission.files.length;
-    }
+    return 'filesCount' in mission ? mission.filesCount : mission.files.length;
 });
 
 const canModify = computed(() => {

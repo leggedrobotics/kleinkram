@@ -9,15 +9,7 @@
             :options="foundUsers?.users ?? []"
             option-label="name"
             class="full-width"
-            @input-value="
-                (val) => {
-                    search = val;
-                    if (val.length > 0) {
-                        // @ts-ignore
-                        $refs?.userSelect?.showPopup(); // Ensure dropdown opens again
-                    }
-                }
-            "
+            @input-value="onInputUpdate"
         >
             <template #no-option>
                 <q-item>
@@ -106,6 +98,14 @@ const { mutate } = useMutation({
         });
     },
 });
+
+const onInputUpdate = (value: string) => {
+    search.value = value;
+    if (value.length > 0) {
+        // @ts-ignore
+        $refs?.userSelect?.showPopup(); // Ensure dropdown opens again
+    }
+};
 
 defineExpose({ mutate });
 </script>

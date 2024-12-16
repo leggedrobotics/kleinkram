@@ -14,11 +14,7 @@
                 input-debounce="100"
                 :options="tags?.data"
                 option-label="name"
-                @input-value="
-                    (val) => {
-                        tagSearch = val;
-                    }
-                "
+                @input-value="onInputUpdate"
             >
                 <template #no-option>
                     <q-item>
@@ -81,6 +77,10 @@ watch(
 );
 
 const { data: tags } = useFilteredTag(tagSearch.value, selectedDataType.value);
+
+const onInputUpdate = (value: string) => {
+    tagSearch.value = value;
+};
 </script>
 
 <style scoped></style>

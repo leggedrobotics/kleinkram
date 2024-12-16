@@ -52,11 +52,8 @@
                                     :key="project.uuid"
                                     clickable
                                     @click="
-                                        () => {
-                                            selected_project = project;
-                                            dd_open = false;
-                                            dd_open_2 = true;
-                                        }
+                                        // eslint-disable-next-line vue/v-on-handler-style
+                                        () => onClick(project)
                                     "
                                 >
                                     <q-item-section>
@@ -107,12 +104,7 @@
                     <ConfigureCategories
                         v-if="data?.mission?.project && editableFile"
                         :file="editableFile"
-                        @update:selected="
-                            ($event) => {
-                                editableFile !== null &&
-                                    (editableFile.categories = $event);
-                            }
-                        "
+                        @update:selected="onSelectionUpdate"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -158,6 +150,7 @@ import {
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import ConfigureCategories from '@components/configure-categories.vue';
 import { isAxiosError } from 'axios';
+import { CategoryDto } from '@api/types/category.dto';
 
 const { fileUuid } = defineProps<{ fileUuid: string }>();
 
@@ -314,6 +307,16 @@ function _updateMission() {
         onDialogOK();
     }
 }
+
+const onClick = (project: ProjectDto) => {
+    selected_project.value = project;
+    dd_open.value = false;
+    dd_open_2.value = true;
+};
+
+const onSelectionUpdate = ($event: CategoryDto[]) => {
+    if (editableFile.value !== null) editableFile.value.categories = $event;
+};
 </script>
 
 <style scoped></style>

@@ -14,6 +14,7 @@ export class WorkerService {
         const workers = await this.workerRepository.find();
 
         // deduplicate workers by hostname get last seen worker
+        // eslint-disable-next-line unicorn/no-array-reduce
         const workerMap = workers.reduce((accumulator, worker) => {
             if (
                 !accumulator[worker.hostname] ||

@@ -162,7 +162,7 @@ if (properties.mission?.project) {
         updatedAt: properties.mission.updatedAt,
         filesCount: properties.mission.files.length,
         size: properties.mission.files.reduce(
-            (acc, file) => acc + file.size,
+            (accumulator, file) => accumulator + file.size,
             0,
         ),
         tags: properties.mission.tags,

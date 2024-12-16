@@ -29,11 +29,7 @@
                     !invalidProjectNames.includes(val) ||
                     'A project with that name already exists!',
             ]"
-            @update:model-value="
-                () => {
-                    hasValidInput = !!projectName && !!projectDescription;
-                }
-            "
+            @update:model-value="onProjectNameUpdate"
         />
 
         <label for="projectDescription">Project Description *</label>
@@ -45,9 +41,7 @@
             outlined
             placeholder="Description..."
             :rules="[(val) => !!val || 'Project Description is required']"
-            @update:model-value="
-                hasValidInput = !!projectName && !!projectDescription
-            "
+            @update:model-value="onProjectNameUpdate"
         />
     </div>
     <div v-else>
@@ -161,5 +155,9 @@ async function save_changes(): Promise<void> {
 defineExpose({
     save_changes,
 });
+
+const onProjectNameUpdate = () => {
+    hasValidInput.value = !!projectName.value && !!projectDescription.value;
+};
 </script>
 <style scoped></style>

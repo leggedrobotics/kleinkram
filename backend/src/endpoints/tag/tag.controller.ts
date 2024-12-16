@@ -13,7 +13,7 @@ import {
     QuerySkip,
     QueryTake,
 } from '../../validation/query-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/param-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { ApiOkResponse } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';

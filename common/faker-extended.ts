@@ -225,6 +225,7 @@ extendedFaker.ros = {
     topicType: () => faker.helpers.arrayElement(rosTopicTypes),
     fileType: () => faker.helpers.arrayElement([FileType.BAG, FileType.MCAP]),
     fileName: (type: FileType) =>
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `${faker.date.past().getTime()}_${faker.helpers.arrayElement(devices)}.${type.toLowerCase()}`,
 };
 
@@ -234,6 +235,7 @@ extendedFaker.mission = {
         const year = faker.date.future().getFullYear();
         const month = faker.date.future().getMonth();
         const day = faker.date.future().getDay();
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `${mission} ${year}-${month}-${day}`
             .replaceAll(' ', '_')
             .toLowerCase();
@@ -285,6 +287,7 @@ extendedFaker.project = {
         const date = faker.date.future().getUTCDate();
 
         // Combine prefix and suffix to create a project name
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `${prefix}${suffix} ${date}`.replaceAll(' ', '_').toLowerCase();
     },
 };

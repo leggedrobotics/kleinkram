@@ -59,6 +59,7 @@ const option = computed(() => {
         tooltip: {
             trigger: 'item',
             formatter: (parameters: any) => {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 return `${parameters.name}: ${parameters.data.formatted}`;
             },
         },

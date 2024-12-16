@@ -53,13 +53,7 @@
                                 v-for="_project in projectsWithCreateWrite"
                                 :key="_project.uuid"
                                 clickable
-                                @click="
-                                    () => {
-                                        // @ts-ignore TODO: fix this
-                                        project_uuid = _project.uuid;
-                                        ddr_open = false;
-                                    }
-                                "
+                                @click="() => onClick(_project)"
                             >
                                 <q-item-section>
                                     <q-item-label>
@@ -164,6 +158,7 @@ import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import CreateFile from '@components/create-file.vue';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
@@ -186,10 +181,12 @@ const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
 );
 
-const { project_uuid, uploads } = defineProps<{
+const { project_uuid: _project_uuid, uploads } = defineProps<{
     project_uuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
+
+const project_uuid = ref(_project_uuid);
 
 const newMission: Ref<MissionWithFilesDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
@@ -296,4 +293,9 @@ function navigateToMetadataTab(): void {
 function clearMissionName(): void {
     missionName.value = '';
 }
+
+const onClick = (_project: ProjectDto) => {
+    project_uuid.value = _project.uuid;
+    ddr_open.value = false;
+};
 </script>

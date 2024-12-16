@@ -8,11 +8,7 @@
             :options="_foundProjects"
             option-label="name"
             style="width: 65%"
-            @input-value="
-                (val) => {
-                    search = val;
-                }
-            "
+            @input-value="onInputUpdate"
         >
             <template #no-option>
                 <q-item>
@@ -107,6 +103,10 @@ const { mutate } = useMutation({
         });
     },
 });
+
+const onInputUpdate = (value: string) => {
+    search.value = value;
+};
 
 defineExpose({ mutate });
 </script>

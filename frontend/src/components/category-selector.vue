@@ -12,7 +12,7 @@
         use-input
         input-debounce="300"
         @clear="clear"
-        @input-value="filter = $event"
+        @input-value="onInputChange"
     >
         <template #selected-item="props">
             <q-chip
@@ -81,6 +81,10 @@ const { data: _categories } = useCategories(
 const categories: Ref<CategoryDto[]> = computed(() =>
     _categories.value ? _categories.value.data || [] : [],
 );
+
+const onInputChange = ($event: any) => {
+    filter.value = $event;
+};
 </script>
 
 <style scoped></style>

@@ -15,7 +15,7 @@
                                 data?.state ?? FileState.LOST,
                             ) !== -1
                         "
-                        @click="download(data)"
+                        @click="download"
                     />
 
                     <q-btn
@@ -48,7 +48,7 @@
                                     v-ripple
                                     clickable
                                     :disable="!data?.hash"
-                                    @click="copy(data)"
+                                    @click="copy"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_encrypted" />
@@ -58,9 +58,7 @@
                                 <q-item
                                     v-ripple
                                     clickable
-                                    @click="
-                                        () => copyToClipboard(data?.uuid ?? '')
-                                    "
+                                    @click="copyDataToClipboard"
                                 >
                                     <q-item-section avatar>
                                         <q-icon name="sym_o_fingerprint" />
@@ -274,8 +272,6 @@ import {
 } from '../hooks/query-hooks';
 import { formatSize } from '../services/general-formatting';
 import { FileState, FileType } from '@common/enum';
-
-import { FileWithTopicDto } from '@api/types/files/file.dto';
 import { useMissionUUID } from '../hooks/router-hooks';
 import DeleteFileDialogOpener from './button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from './buttons/button-group.vue';
@@ -383,10 +379,14 @@ const pagination = ref({
     rowsPerPage: 20,
 });
 
-const copy = async (d: FileWithTopicDto | undefined): Promise<void> => {
-    await copyToClipboard(d?.hash ?? '');
+const copy = async (): Promise<void> => {
+    await copyToClipboard(data.value?.hash ?? '');
 };
-const download = async (d: FileWithTopicDto | undefined): Promise<void> => {
-    await _downloadFile(d?.uuid ?? '', d?.filename ?? '');
+const download = async (): Promise<void> => {
+    await _downloadFile(data.value?.uuid ?? '', data.value?.filename ?? '');
+};
+
+const copyDataToClipboard = async (): Promise<void> => {
+    await copyToClipboard(data.value?.uuid ?? '');
 };
 </script>

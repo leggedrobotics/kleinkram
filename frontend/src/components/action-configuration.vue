@@ -48,8 +48,8 @@
                             clearable
                             class="full-width"
                             @new-value="newValue"
-                            @input-value="filter = $event"
-                            @update:model-value="selectTemplate($event)"
+                            @input-value="filterActionName"
+                            @update:model-value="selectTemplate"
                         >
                             <template #selected>
                                 <div
@@ -90,9 +90,7 @@
                             dense
                             class="q-mb-sm"
                             style="background-color: #f4f4f4"
-                            @update:model-value="
-                                (a) => handler.setProjectUUID(a.uuid)
-                            "
+                            @update:model-value="projectSelected"
                         />
                     </div>
                     <div>
@@ -292,6 +290,7 @@ import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
 const filter = ref('');
@@ -654,6 +653,12 @@ function missionSelected(mission: MissionWithFilesDto) {
         handler.value.setMissionUUID(mission.uuid);
     }
 }
+
+const projectSelected = (a: ProjectDto) => {
+    handler.value.setProjectUUID(a.uuid);
+};
+
+const filterActionName = ($event: any) => (filter.value = $event);
 
 function canRemoveMission(mission_uuid: string) {
     return addedMissions.value.includes(mission_uuid);
