@@ -271,7 +271,7 @@ export const useManyMissions = (
  */
 export const registerNoPermissionErrorHandler = (
     isLoadingError: Ref<false | true>,
-    uuid: ComputedRef<undefined | string>,
+    uuid: ComputedRef<undefined | string> | string,
     resourceName: 'project' | 'mission' | 'file',
     error: Ref<Error, Error> | Ref<null, null>,
 ): void => {
@@ -289,7 +289,7 @@ export const registerNoPermissionErrorHandler = (
                     name: ROUTES.ERROR_403.routeName,
                     query: {
                         message: `You are not authorized to access this ${resourceName}!`,
-                        uuid: uuid.value,
+                        uuid: unref(uuid),
                     },
                 });
         } else {

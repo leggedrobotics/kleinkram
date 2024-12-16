@@ -272,7 +272,7 @@ import {
 } from '../hooks/query-hooks';
 import { formatSize } from '../services/general-formatting';
 import { FileState, FileType } from '@common/enum';
-import { useMissionUUID } from '../hooks/router-hooks';
+import { useFileUUID, useMissionUUID } from '../hooks/router-hooks';
 import DeleteFileDialogOpener from './button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from './buttons/button-group.vue';
 import EditFileButton from './buttons/edit-file-button.vue';
@@ -281,16 +281,13 @@ import TitleSection from './title-section.vue';
 
 const $router = useRouter();
 
-const properties = defineProps<{
-    uuid: string;
-}>();
 const selected = ref([]);
 
-const fileUuid = computed(() => properties.uuid);
 const filterKey = ref<string>('');
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 
-const { isLoading, data, error, isLoadingError } = useFile(fileUuid.value);
+const fileUuid = useFileUUID();
+const { isLoading, data, error, isLoadingError } = useFile(fileUuid);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
 const missionUUID = useMissionUUID();
@@ -349,11 +346,12 @@ const columns = [
 
 async function redirectToMcap(): Promise<void> {
     if (mcap.value) {
+        console.log(`Redirecting to mcap ${mcap.value.mission.project.uuid}`);
         await $router.push({
             name: ROUTES.FILE.routeName,
             params: {
-                mission_uuid: mcap.value.mission.uuid,
                 project_uuid: mcap.value.mission.project.uuid,
+                mission_uuid: mcap.value.mission.uuid,
                 file_uuid: mcap.value.uuid,
             },
         });
