@@ -34,6 +34,12 @@
                         <q-chip>{{ affiliationGroup?.name || 'None' }}</q-chip>
                     </td>
                 </tr>
+                <tr>
+                    <td class="q-table__cell first-column">Primary Group:</td>
+                    <td class="q-table__cell">
+                        <q-chip>{{ primaryGroup?.name || 'None' }}</q-chip>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -56,6 +62,14 @@ const affiliationGroup = computed(
         user.value?.memberships.find(
             (group: GroupMembershipDto) =>
                 group.accessGroup?.type === AccessGroupType.AFFILIATION,
+        )?.accessGroup,
+);
+
+const primaryGroup = computed(
+    () =>
+        user.value?.memberships.find(
+            (group: GroupMembershipDto) =>
+                group.accessGroup?.type === AccessGroupType.PRIMARY,
         )?.accessGroup,
 );
 </script>

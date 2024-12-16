@@ -172,6 +172,9 @@ async function createPrimaryGroup(
     if (exists) {
         const randomSuffix = Math.random().toString(36).slice(7);
         primaryGroupName = `${user.name} ${randomSuffix}`;
+        logger.debug(
+            `Primary group name already exists, using ${primaryGroupName}`,
+        );
     }
 
     const primaryGroup = accessGroupRepository.create({

@@ -102,11 +102,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from '../services/file-service';
-import {
-    FlatMissionDto,
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@api/types/mission.dto';
+import { FlatMissionDto, MissionsDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 import { ProjectDto } from '@api/types/project/base-project.dto';
@@ -147,26 +143,13 @@ watch(
 );
 
 const properties = defineProps<{
-    mission?: MissionWithFilesDto;
+    mission?: FlatMissionDto;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
 if (properties.mission?.project) {
     selectedProject.value = properties.mission.project;
-    selectedMission.value = {
-        uuid: properties.mission.uuid,
-        name: properties.mission.name,
-        creator: properties.mission.creator,
-        project: properties.mission.project,
-        createdAt: properties.mission.createdAt,
-        updatedAt: properties.mission.updatedAt,
-        filesCount: properties.mission.files.length,
-        size: properties.mission.files.reduce(
-            (accumulator, file) => accumulator + file.size,
-            0,
-        ),
-        tags: properties.mission.tags,
-    } as FlatMissionDto;
+    selectedMission.value = properties.mission;
 }
 
 const { data: _missions, refetch } = useQuery<MissionsDto>({

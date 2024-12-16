@@ -40,8 +40,8 @@ export class AccessService {
         private readonly entityManager: EntityManager,
     ) {}
 
-    async getAccessGroup(uuid: string) {
-        return this.accessGroupRepository
+    async getAccessGroup(uuid: string): Promise<AccessGroupDto> {
+        const rawAccessGroup = await this.accessGroupRepository
             .createQueryBuilder('accessGroup')
             .withDeleted()
             .leftJoinAndSelect('accessGroup.memberships', 'memberships')
@@ -55,6 +55,17 @@ export class AccessService {
             .leftJoinAndSelect('accessGroup.creator', 'creator')
             .where('accessGroup.uuid = :uuid', { uuid })
             .getOneOrFail();
+
+        return {
+            createdAt: rawAccessGroup.createdAt,
+            creator: rawAccessGroup.creator?.userDto ?? null,
+            hidden: rawAccessGroup.hidden,
+            memberships: [],
+            name: rawAccessGroup.name,
+            type: rawAccessGroup.type,
+            updatedAt: rawAccessGroup.updatedAt,
+            uuid: rawAccessGroup.uuid,
+        };
     }
 
     async createAccessGroup(

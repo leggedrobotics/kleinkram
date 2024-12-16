@@ -4,39 +4,39 @@
 @import 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
 
 body {
-    overflow-y: scroll;
+  overflow-y: scroll;
 }
 
 .q-layout--standard,
 thead,
 .q-footer {
-    background-color: $layer-01 !important;
+  background-color: $layer-01 !important;
 }
 
 q-page {
-    // that's a bit ugly, but it is necessary to avoid unwanted scrollbars
-    min-height: 0 !important;
+  // that's a bit ugly, but it is necessary to avoid unwanted scrollbars
+  min-height: 0 !important;
 }
 
 @media (max-width: 600px) {
-    .q-page-container {
-        margin-left: 0;
-        margin-right: 0;
-    }
+  .q-page-container {
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 @media (min-width: 600px) {
-    .q-page-container {
-        margin-left: 10px;
-        margin-right: 10px;
-    }
+  .q-page-container {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
 }
 
 @media (min-width: 1000px) {
-    .q-page-container {
-        margin-left: 25px;
-        margin-right: 25px;
-    }
+  .q-page-container {
+    margin-left: 25px;
+    margin-right: 25px;
+  }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -44,89 +44,89 @@ q-page {
 /////////////////////////////////////////////////////////////////
 
 .q-dialog__backdrop {
-    background-color: rgba(32, 33, 36, 0.4);
+  background-color: rgba(32, 33, 36, 0.4);
 }
 
 body:has(.q-dialog__backdrop) .transparent-on-open-dialog {
-    opacity: 0.4;
+  opacity: 0.4;
 }
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
 textarea {
-    resize: none !important;
+  resize: none !important;
 }
 
 .q-btn,
 .q-tab__label {
-    text-transform: none;
+  text-transform: none;
 }
 
 .q-tab .q-ripple,
 .q-tab .q-focus-helper {
-    display: none;
+  display: none;
 }
 
 .q-tab,
 .q-tab__content {
-    padding: 0;
+  padding: 0;
 }
 
 .q-tab-panel {
-    padding-left: 0;
-    padding-right: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .q-tabs__content {
-    display: flex;
-    flex-direction: row;
-    gap: 32px;
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
 }
 
 .q-field {
-    margin: 0;
+  margin: 0;
 }
 
 .q-field--outlined .q-field__control:before {
-    border-color: $border-input;
+  border-color: $border-input;
 }
 
 .q-field--outlined .q-field__control:hover:before {
-    border-color: $border-input-hover;
+  border-color: $border-input-hover;
 }
 
 .q-field--outlined .q-field__control:after {
-    color: $border-interactive;
+  color: $border-interactive;
 }
 
 .q-panel {
-    display: contents;
+  display: contents;
 }
 
 .q-tab-panel {
-    padding: 0;
+  padding: 0;
 }
 
 .q-header .q-tab__label {
-    font-weight: $button-font-weight;
-    font-size: $bar-inner-font-size;
+  font-weight: $button-font-weight;
+  font-size: $bar-inner-font-size;
 }
 
 label {
-    color: $text-secondary;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 16px;
+  color: $text-secondary;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
 }
 
 .q-placeholder:placeholder-shown {
-    color: $text-placeholder;
+  color: $text-placeholder;
 }
 
 .q-separator {
-    background-color: $separator-color;
+  background-color: $separator-color;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -134,51 +134,57 @@ label {
 /////////////////////////////////////////////////////////////////
 
 .q-table {
-    font-size: 14px;
+  font-size: 14px;
 }
 
 .q-table tbody {
-    background-color: $layer-01;
+  background-color: $layer-01;
 }
 
 .table-white tbody {
-    background-color: white;
+  background-color: white;
 }
 
 .q-table thead {
-    background-color: $layer-hover-01 !important;
-    color: $text-secondary;
+  background-color: $layer-hover-01 !important;
+  color: $text-secondary;
 }
 
 .q-table__bottom {
-    background-color: $layer-01;
+  background-color: $layer-01;
 }
 
 .q-table .q-checkbox__inner {
-    font-size: 32px;
+  font-size: 32px;
 }
 
 .q-table .selected {
-    background-color: #e7efff;
+  background-color: #e7efff;
 }
 
 .help-text {
-    color: $text-secondary;
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.16px;
+  color: $text-secondary;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.16px;
 }
 
 .checkbox-with-hitbox {
-    position: relative;
+  position: relative;
 }
 
 .checkbox-with-hitbox::before {
-    content: '';
-    position: absolute;
-    top: -8px; /* Adjust to increase hitbox upwards */
-    bottom: -8px; /* Adjust to increase hitbox downwards */
-    left: -15px; /* Adjust to increase hitbox to the left */
-    right: -20px; /* Adjust to increase hitbox to the right */
-    z-index: 1;
+  content: '';
+  position: absolute;
+  top: -8px; /* Adjust to increase hitbox upwards */
+  bottom: -8px; /* Adjust to increase hitbox downwards */
+  left: -15px; /* Adjust to increase hitbox to the left */
+  right: -20px; /* Adjust to increase hitbox to the right */
+  z-index: 1;
+}
+
+
+// fix color of notification actions
+.q-notification__actions {
+  color: white
 }

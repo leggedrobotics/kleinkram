@@ -30,7 +30,7 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
 import { EntityNotFoundError } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
-import { GroupMembershipDto } from '@common/api/types/user.dto';
+import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
@@ -44,9 +44,8 @@ export class AccessController {
 
     @Get('one')
     @UserOnly()
-    @ApiResponse({
-        status: 200,
-        type: AccessGroup,
+    @ApiOkResponse({
+        type: AccessGroupDto,
         description: 'Returns the AccessGroup',
     })
     @ApiResponse({
@@ -61,7 +60,7 @@ export class AccessController {
     })
     async getAccessGroup(
         @QueryUUID('uuid', 'AccessGroup UUID') uuid: string,
-    ): Promise<AccessGroup> {
+    ): Promise<AccessGroupDto> {
         return await this.accessService
             .getAccessGroup(uuid)
             .catch((error: unknown) => {
@@ -75,7 +74,6 @@ export class AccessController {
     @Post('create')
     @CanCreate()
     @ApiOkResponse({
-        status: 200,
         type: CreateAccessGroupDto,
         description: 'Returns the created AccessGroup',
     })

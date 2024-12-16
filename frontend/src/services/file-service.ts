@@ -88,13 +88,6 @@ async function _createFileAction(
         return;
     }
 
-    Notify.create({
-        message: "Upload started, don't close the tab",
-        color: 'positive',
-        spinner: false,
-        timeout: 2000,
-    });
-
     const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
     const isValidNameFilter = (filename: string): boolean =>
         filenameRegex.test(filename);
@@ -148,17 +141,24 @@ async function _createFileAction(
         fileNames,
         selectedMission.uuid,
     ).catch((error: unknown) => {
+        console.error('error', error);
+
         let errorMessage = '';
 
         if (error instanceof Error) {
             errorMessage = error.message;
         }
 
-        let message = `Upload of Files failed: ${errorMessage}`;
+        let message = `Upload failed: ${errorMessage}`;
 
         // show special error for 403
-        if (error instanceof AxiosError && error.response?.status === 403) {
-            message = `Upload of Files failed: You do not have permission to upload files for Mission ${selectedMission.name}`;
+        if (error instanceof AxiosError) {
+            if (error.response?.status === 403) {
+                message = `Upload failed: You do not have the necessary permissions.`;
+            } else if (error.response?.status === 400) {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                message = `Upload failed: ${error.response.data.message}`;
+            }
         }
 
         // close the notification
@@ -172,14 +172,21 @@ async function _createFileAction(
         });
     });
 
+    if (!temporaryCredentials) {
+        return;
+    }
+
     // reset query key isUploading
     await queryClient.invalidateQueries({
         queryKey: ['isUploading'],
     });
 
-    if (!temporaryCredentials) {
-        return;
-    }
+    Notify.create({
+        message: "Upload started, don't close the tab",
+        color: 'positive',
+        spinner: false,
+        timeout: 2000,
+    });
 
     uploadingFiles.value = fileNames as unknown as Record<
         string,
