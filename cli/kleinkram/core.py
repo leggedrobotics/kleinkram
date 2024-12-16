@@ -11,6 +11,7 @@ TODO:
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Literal
@@ -21,13 +22,17 @@ from typing import overload
 from uuid import UUID
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.resources import FileSpec
+from kleinkram.api.resources import MissionSpec
+from kleinkram.api.resources import ProjectSpec
+from kleinkram.api.resources import check_mission_spec_is_creatable
+from kleinkram.api.resources import get_files
+from kleinkram.api.resources import get_missions
+from kleinkram.api.resources import get_project
+from kleinkram.api.resources import get_projects
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.resources import FileSpec
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.resources import get_files
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
@@ -44,6 +49,23 @@ def _parse_uuid_like(s: IdLike) -> UUID:
 
 def _parse_path_like(s: PathLike) -> Path:
     return Path(s)
+
+
+def _file_desitations(
+    files: Sequence[File], *, dest: Path, allow_nested: bool = False
+) -> Dict[Path, File]:
+    if (
+        len(set([(file.project_id, file.mission_id) for file in files])) > 1
+        and not allow_nested
+    ):
+        raise ValueError("files from multiple missions were selected")
+    elif not allow_nested:
+        return {dest / file.name: file for file in files}
+    else:
+        return {
+            dest / file.project_name / file.mission_name / file.name: file
+            for file in files
+        }
 
 
 def _args_to_project_spec(
@@ -92,16 +114,26 @@ def _args_to_file_spec(
 
 
 def _download(
-    *, spec: FileSpec, dest: Path, nested: bool = False, overwrite: bool = False
+    *,
+    client: AuthenticatedClient,
+    spec: FileSpec,
+    dest: Path,
+    nested: bool = False,
+    overwrite: bool = False,
 ) -> None:
     client = AuthenticatedClient()
-    files = get_files(client, spec)
+    files = list(get_files(client, spec))
+    path_map = _file_desitations(files, dest=dest, allow_nested=nested)
+
+    for path, file in path_map.items():
+        ...
 
     raise NotImplementedError
 
 
 def _upload(
     *,
+    client: AuthenticatedClient,
     spec: MissionSpec,
     files: Sequence[Path],
     create: bool = False,
@@ -112,48 +144,66 @@ def _upload(
     if metadata is None:
         metadata = {}
 
+    if create:
+        name = check_mission_spec_is_creatable(spec)
+        project = get_project(client, spec.project_spec)
+        _create_mission(client, name, project.id)
+
+    if fix_filenames:
+        ...
+
     raise NotImplementedError
 
 
 def _verify(
-    *, spec: MissionSpec, files: Sequence[Path], skip_hash: bool = False
+    *,
+    client: AuthenticatedClient,
+    spec: MissionSpec,
+    files: Sequence[Path],
+    skip_hash: bool = False,
+    fix_filenames: bool = False,
+) -> None:
+
+    if fix_filenames:
+        ...
+
+    raise NotImplementedError
+
+
+# single resource crud
+
+
+def _create_mission(
+    client: AuthenticatedClient, mission_name: str, project_id: UUID
 ) -> None:
     raise NotImplementedError
 
 
-def _list_files(spec: FileSpec) -> List[File]:
+def _create_project(client: AuthenticatedClient, project_name: str) -> None:
     raise NotImplementedError
 
 
-def _list_missions(spec: MissionSpec) -> List[Mission]:
+def _delete_files(client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:
     raise NotImplementedError
 
 
-def _list_projects(spec: ProjectSpec) -> List[Project]:
+def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
     raise NotImplementedError
 
 
-def _create_project() -> None:
+def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
     raise NotImplementedError
 
 
-def _delete_project() -> None:
+def _update_project(
+    client: AuthenticatedClient, project_id: UUID, description: Optional[str] = None
+) -> None:
     raise NotImplementedError
 
 
-def _update_project() -> None:
-    raise NotImplementedError
-
-
-def _create_mission() -> None:
-    raise NotImplementedError
-
-
-def _delete_mission() -> None:
-    raise NotImplementedError
-
-
-def _update_mission(*, spec: MissionSpec, metadata: Dict[str, str]) -> None:
+def _update_mission(
+    *, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
+) -> None:
     raise NotImplementedError
 
 
@@ -183,8 +233,13 @@ def download(
         project_names=project_names,
         project_ids=project_ids,
     )
+    client = AuthenticatedClient()
     _download(
-        spec=spec, dest=_parse_path_like(dest), nested=nested, overwrite=overwrite
+        client=client,
+        spec=spec,
+        dest=_parse_path_like(dest),
+        nested=nested,
+        overwrite=overwrite,
     )
 
 
@@ -205,7 +260,8 @@ def list_files(
         project_names=project_names,
         project_ids=project_ids,
     )
-    return _list_files(spec)
+    client = AuthenticatedClient()
+    return list(get_files(client, spec))
 
 
 def list_missions(
@@ -221,7 +277,8 @@ def list_missions(
         project_names=project_names,
         project_ids=project_ids,
     )
-    return _list_missions(spec)
+    client = AuthenticatedClient()
+    return list(get_missions(client, spec))
 
 
 def list_projects(
@@ -233,7 +290,8 @@ def list_projects(
         project_names=project_names,
         project_ids=project_ids,
     )
-    return _list_projects(spec)
+    client = AuthenticatedClient()
+    return list(get_projects(client, spec))
 
 
 @overload
@@ -292,7 +350,9 @@ def upload(
         project_names=_singleton_list(project_name),
         project_ids=_singleton_list(project_id),
     )
+    client = AuthenticatedClient()
     _upload(
+        client=client,
         spec=spec,
         files=[_parse_path_like(f) for f in files],
         create=create,
@@ -342,23 +402,36 @@ def verify(
         project_names=_singleton_list(project_name),
         project_ids=_singleton_list(project_id),
     )
-    _verify(spec=spec, files=[_parse_path_like(f) for f in files])
+    _verify(
+        client=AuthenticatedClient(),
+        spec=spec,
+        files=[_parse_path_like(f) for f in files],
+    )
 
 
 # update delete
 
 
 def update_file(file_id: IdLike) -> None:
+    """TODO: what should this do?"""
+    _ = file_id
     raise NotImplementedError
 
 
 def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
-    spec = _args_to_mission_spec(mission_ids=_singleton_list(mission_id))
-    _update_mission(spec=spec, metadata=metadata)
+    _update_mission(
+        client=AuthenticatedClient(),
+        mission_id=_parse_uuid_like(mission_id),
+        metadata=metadata,
+    )
 
 
-def update_project(project_id: IdLike) -> None:
-    raise NotImplementedError
+def update_project(project_id: IdLike, description: Optional[str] = None) -> None:
+    _update_project(
+        client=AuthenticatedClient(),
+        project_id=_parse_uuid_like(project_id),
+        description=description,
+    )
 
 
 def delete_file(file_id: IdLike) -> None:

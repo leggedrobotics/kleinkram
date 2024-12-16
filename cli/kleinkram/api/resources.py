@@ -178,27 +178,25 @@ def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
     """\
     get a unique project by specifying a project spec
     """
-    projects = list(get_projects(client, spec))
-
-    if len(projects) == 1:
-        return projects[0]
-    if not projects:
+    if not project_spec_is_unique(spec):
+        raise InvalidProjectSpec(
+            f"Project spec does not uniquely determine project: {spec}"
+        )
+    try:
+        return next(get_projects(client, spec))
+    except StopIteration:
         raise ProjectNotFound(f"Project not found: {spec}")
-    raise InvalidProjectSpec(
-        f"Project spec does not uniquely determine project: {spec}"
-    )
 
 
 def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
     """\
     get a unique mission by specifying a mission spec
     """
-    missions = list(get_missions(client, spec))
-
-    if len(missions) == 1:
-        return missions[0]
-    if not missions:
+    if not mission_spec_is_unique(spec):
+        raise InvalidMissionSpec(
+            f"Mission spec does not uniquely determine mission: {spec}"
+        )
+    try:
+        return next(get_missions(client, spec))
+    except StopIteration:
         raise MissionNotFound(f"Mission not found: {spec}")
-    raise InvalidMissionSpec(
-        f"Mission spec does not uniquely determine mission: {spec}"
-    )
