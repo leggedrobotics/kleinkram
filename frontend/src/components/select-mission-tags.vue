@@ -26,10 +26,7 @@
                 <q-item-section>
                     <q-item-label class="tag-label">
                         <span>{{ tagtype.name }}</span>
-                        <q-icon
-                            :name="icon(tagtype.datatype)"
-                            style="font-size: 18px"
-                        />
+                        <q-chip square>{{ tagtype.datatype }}</q-chip>
                     </q-item-label>
                 </q-item-section>
             </q-item>
@@ -43,10 +40,18 @@
         ] as TagTypeDto[]"
         :key="tagtype.uuid"
     >
-        <div class="row">
-            <div class="col-11">
-                <label>
-                    Tag: {{ tagtype.name }}
+        <div
+            style="
+                display: flex;
+                flex-direction: row;
+                flex-align: bottom;
+                justify-content: left;
+                margin-bottom: 20px;
+            "
+        >
+            <div style="display: flex; width: 200px">
+                <label style="align-self: center">
+                    {{ tagtype.name }}
 
                     <template
                         v-if="requiredTagTypeUUIDs?.includes(tagtype.uuid)"
@@ -54,15 +59,19 @@
                         *
                     </template>
                 </label>
+                <q-chip square style="align-self: center">
+                    {{ tagtype.datatype }}
+                </q-chip>
+            </div>
+            <div style="display: flex; flex-direction: row; flex-grow: 2">
                 <q-input
                     v-if="tagtype.datatype !== DataType.BOOLEAN"
                     v-model="localTagValues[tagtype.uuid]"
                     :placeholder="tagtype.name"
                     outlined
                     dense
-                    clearable
                     required
-                    style="padding-bottom: 20px"
+                    style="flex-grow: 3"
                     :type="
                         // @ts-ignore
                         DataType_InputType[tagtype.datatype] ?? 'text'
@@ -103,16 +112,20 @@
                         ]"
                     />
                 </q-field>
-            </div>
-            <div class="col-1">
+
                 <q-btn
                     icon="sym_o_delete"
+                    :color="tagColor(tagtype)"
                     round
                     flat
-                    style="margin-top: 19px"
-                    :disable="requiredTagTypeUUIDs?.includes(tagtype.uuid)"
+                    style="flex-grow: 1"
+                    :disable="isRequired(tagtype)"
                     @click="() => removeTagType(tagtype.uuid)"
-                />
+                >
+                    <q-tooltip v-if="isRequired(tagtype)"
+                        >Can't delete Tags that are required!
+                    </q-tooltip>
+                </q-btn>
             </div>
         </div>
     </template>
@@ -202,6 +215,23 @@ const DataType_InputType = {
 
 function addTag(tagtype: TagTypeDto) {
     additionalTags.value.push(tagtype);
+}
+
+function tagColor(tagtype: TagTypeDto) {
+    if (isRequired(tagtype)) {
+        return 'grey';
+    } else {
+        return 'black';
+    }
+}
+
+function isRequired(tagtype: TagTypeDto) {
+    if (!requiredTagTypeUUIDs) {
+        return true;
+    } else {
+        const requiredTags = requiredTagTypeUUIDs?.value as string[];
+        return requiredTags.includes(tagtype.uuid);
+    }
 }
 
 const requiredTagTypeUUIDs = computed(() =>
