@@ -25,6 +25,7 @@
                 </template>
                 <template #selected-item="scope">
                     <q-chip
+                        square
                         removable
                         :tabindex="scope.tabindex"
                         :icon="icon(scope.opt.type)"
