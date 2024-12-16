@@ -3,9 +3,6 @@ this file contains the main functionality of kleinkram cli
 
 we expose this functionality as a python package.
 the cli commands use the same functions as the python package
-
-TODO:
-- parsing args, when should args be singular / plural?
 """
 
 from __future__ import annotations
@@ -21,15 +18,21 @@ from typing import TypeVar
 from typing import overload
 from uuid import UUID
 
+import kleinkram.api.resources
+import kleinkram.api.routes
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.resources import FileSpec
 from kleinkram.api.resources import MissionSpec
 from kleinkram.api.resources import ProjectSpec
 from kleinkram.api.resources import check_mission_spec_is_creatable
 from kleinkram.api.resources import get_files
+from kleinkram.api.resources import get_mission
 from kleinkram.api.resources import get_missions
 from kleinkram.api.resources import get_project
 from kleinkram.api.resources import get_projects
+from kleinkram.api.routes import _create_mission
+from kleinkram.api.routes import _create_project
+from kleinkram.errors import MissionNotFound
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -147,7 +150,13 @@ def _upload(
     if create:
         name = check_mission_spec_is_creatable(spec)
         project = get_project(client, spec.project_spec)
-        _create_mission(client, name, project.id)
+        _create_mission(
+            client,
+            project.id,
+            name,
+            metadata=metadata,
+            ignore_missing_tags=ignore_missing_metadata,
+        )
 
     if fix_filenames:
         ...
@@ -163,35 +172,19 @@ def _verify(
     skip_hash: bool = False,
     fix_filenames: bool = False,
 ) -> None:
-
-    if fix_filenames:
-        ...
-
     raise NotImplementedError
 
 
-# single resource crud
+def _update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
+    """\
+    TODO: what should this even do
+    """
+    raise NotImplementedError
 
 
-def _create_mission(
-    client: AuthenticatedClient, mission_name: str, project_id: UUID
+def _update_mission(
+    *, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
 ) -> None:
-    raise NotImplementedError
-
-
-def _create_project(client: AuthenticatedClient, project_name: str) -> None:
-    raise NotImplementedError
-
-
-def _delete_files(client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:
-    raise NotImplementedError
-
-
-def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
-    raise NotImplementedError
-
-
-def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
     raise NotImplementedError
 
 
@@ -201,10 +194,24 @@ def _update_project(
     raise NotImplementedError
 
 
-def _update_mission(
-    *, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
-) -> None:
-    raise NotImplementedError
+def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
+    mspec = MissionSpec(ids=[mission_id])
+    mission = get_mission(client, mspec)
+    files = list(get_files(client, spec=FileSpec(mission_spec=mspec)))
+
+    # delete the files and then the mission
+    kleinkram.api.routes._delete_files(client, [f.id for f in files], mission.id)
+    kleinkram.api.routes._delete_mission(client, mission_id)
+
+
+def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
+    pspec = ProjectSpec(ids=[project_id])
+    _ = get_project(client, pspec)  # check if project exists
+
+    # delete all missions and files
+    missions = list(get_missions(client, spec=MissionSpec(project_spec=pspec)))
+    for mission in missions:
+        _delete_mission(client, mission.id)
 
 
 ##################################################
@@ -409,13 +416,27 @@ def verify(
     )
 
 
-# update delete
+def create_mission(
+    mission_name: str,
+    project_id: IdLike,
+    metadata: Dict[str, str],
+    ignore_missing_metadata: bool = False,
+) -> None:
+    kleinkram.api.routes._create_mission(
+        AuthenticatedClient(),
+        _parse_uuid_like(project_id),
+        mission_name,
+        metadata=metadata,
+        ignore_missing_tags=ignore_missing_metadata,
+    )
+
+
+def create_project(project_name: str) -> None:
+    kleinkram.api.routes._create_project(AuthenticatedClient(), project_name)
 
 
 def update_file(file_id: IdLike) -> None:
-    """TODO: what should this do?"""
-    _ = file_id
-    raise NotImplementedError
+    _update_file(client=AuthenticatedClient(), file_id=_parse_uuid_like(file_id))
 
 
 def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
@@ -435,25 +456,17 @@ def update_project(project_id: IdLike, description: Optional[str] = None) -> Non
 
 
 def delete_file(file_id: IdLike) -> None:
-    raise NotImplementedError
+    file = kleinkram.api.resources.get_file(
+        AuthenticatedClient(), FileSpec(ids=[_parse_uuid_like(file_id)])
+    )
+    kleinkram.api.routes._delete_files(
+        AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id
+    )
 
 
 def delete_mission(mission_id: IdLike) -> None:
-    raise NotImplementedError
+    _delete_mission(AuthenticatedClient(), _parse_uuid_like(mission_id))
 
 
 def delete_project(project_id: IdLike) -> None:
-    raise NotImplementedError
-
-
-# create mission, project
-
-
-def create_mission(
-    mission_name: str, project_id: IdLike, metadata: Dict[str, str]
-) -> None:
-    raise NotImplementedError
-
-
-def create_project(project_name: str) -> None:
-    raise NotImplementedError
+    _delete_project(AuthenticatedClient(), _parse_uuid_like(project_id))

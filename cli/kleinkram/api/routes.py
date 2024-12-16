@@ -29,6 +29,7 @@ __all__ = [
     "_get_missions_by_project",
     "_get_files_by_mission",
     "_create_mission",
+    "_create_project",
     "_update_mission_metadata",
     "_get_api_version",
     "_claim_admin",
@@ -155,6 +156,10 @@ def _create_mission(
     resp.raise_for_status()
 
     return UUID(resp.json()["uuid"], version=4)
+
+
+def _create_project(client: AuthenticatedClient, project_name: str) -> UUID:
+    raise NotImplementedError
 
 
 def _get_tag_type_by_name(

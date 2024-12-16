@@ -17,6 +17,7 @@ from typing import Generator
 from typing import List
 from uuid import UUID
 
+import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _get_files_by_mission
 from kleinkram.api.routes import _get_missions_by_project
@@ -200,3 +201,13 @@ def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
         return next(get_missions(client, spec))
     except StopIteration:
         raise MissionNotFound(f"Mission not found: {spec}")
+
+
+def get_file(client: AuthenticatedClient, spec: FileSpec) -> File:
+    """\
+    get a unique file by specifying a file spec
+    """
+    try:
+        return next(get_files(client, spec))
+    except StopIteration:
+        raise kleinkram.errors.FileNotFound(f"File not found: {spec}")
