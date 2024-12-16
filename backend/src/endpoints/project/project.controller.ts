@@ -198,7 +198,9 @@ export class ProjectController {
         tagTypeUUIDs: string[],
     ): Promise<UpdateTagTypesDto> {
         await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
-        return {};
+        return {
+            success: true,
+        };
     }
 
     @Get('getDefaultRights')
