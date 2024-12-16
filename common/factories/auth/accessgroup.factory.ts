@@ -4,6 +4,7 @@ import AccessGroup from '../../entities/auth/accessgroup.entity';
 import { extendedFaker } from '../../faker-extended';
 import { faker } from '@faker-js/faker';
 import { AccessGroupType } from '../../frontend_shared/enum';
+import GroupMembership from '../../entities/auth/group-membership.entity';
 
 export interface AccessGroupFactoryContext {
     user: User;
@@ -31,6 +32,15 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
         accessGroup.name = `Group: ${extendedFaker.company.name()}`;
         accessGroup.type = AccessGroupType.CUSTOM;
         accessGroup.creator = faker.helpers.arrayElement(context.allUsers);
+
+        // add members to group
+        accessGroup.memberships = context.allUsers.map(
+            (user) =>
+                ({
+                    user,
+                    canEditGroup: user === accessGroup.creator,
+                }) as GroupMembership,
+        );
     }
 
     return accessGroup;

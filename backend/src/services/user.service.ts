@@ -156,10 +156,11 @@ export class UserService implements OnModuleInit {
             select: ['uuid', 'role'],
         });
 
-        if (user?.memberships === undefined)
-            throw new Error('Membership undefined');
         let defaultPermission: AccessGroupRights;
-        if (user) {
+        if (user !== null) {
+            if (user?.memberships === undefined)
+                throw new Error('Membership undefined');
+
             defaultPermission = user.memberships.length > 0 ? 10 : 0;
         } else {
             user = await this.userRepository.findOneOrFail({
