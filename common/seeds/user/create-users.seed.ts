@@ -17,12 +17,12 @@ import TagType from '../../entities/tagType/tag-type.entity';
 export default class CreateUsers implements Seeder {
     // Settings for the Seeder
 
-    private USER_COUNT = 30;
-    private ACCESS_GROUP_COUNT = 20;
-    private PROJECT_COUNT = 40;
-    private GROUP_ACCESS_COUNT = 200;
+    private USER_COUNT = 10;
+    private ACCESS_GROUP_COUNT = 10;
+    private PROJECT_COUNT = 10;
+    private GROUP_ACCESS_COUNT = 5;
     private SEED_ADMINS = false;
-    private TAG_TYPE_COUNT = 15;
+    private TAG_TYPE_COUNT = 10;
 
     public async run(factory: Factory, conn: Connection): Promise<void> {
         // //////////////////////////////////////////
