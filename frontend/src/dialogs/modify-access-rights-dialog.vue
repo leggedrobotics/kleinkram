@@ -61,6 +61,7 @@ const { mutate: changeAccessRights } = useMutation({
     mutationFn: () => {
         return updateProjectAccess(
             project_uuid,
+            // @ts-ignore TODO: fix this
             projectAccess.value?.accessGroup.uuid,
             rights.value.value,
         );

@@ -1100,7 +1100,7 @@ eslint-plugin-prettier@^5.2.1:
 
 eslint-plugin-unicorn@^56.0.1:
   version "56.0.1"
-  resolved "https://registry.npmjs.org/eslint-plugin-unicorn/-/eslint-plugin-unicorn-56.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-unicorn/-/eslint-plugin-unicorn-56.0.1.tgz#d10a3df69ba885939075bdc95a65a0c872e940d4"
   integrity sha512-FwVV0Uwf8XPfVnKSGpMg7NtlZh0G0gBarCaFcMUOoqPxXryxdYxTRRv4kH6B9TFCVIrjRXG+emcxIk2ayZilog==
   dependencies:
     "@babel/helper-validator-identifier" "^7.24.7"

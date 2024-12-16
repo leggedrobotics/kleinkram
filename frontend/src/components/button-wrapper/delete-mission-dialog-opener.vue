@@ -8,10 +8,10 @@
         @click="deleteMission"
     >
         <slot />
-        <q-tooltip v-if="!canModify && mission.filesCount === 0">
+        <q-tooltip v-if="!canModify && fileCount === 0">
             You do not have permission to move this mission
         </q-tooltip>
-        <q-tooltip v-if="!canModify && mission.filesCount > 0">
+        <q-tooltip v-if="!canModify && fileCount > 0">
             You cannot delete a mission with files
         </q-tooltip>
     </div>
@@ -21,14 +21,25 @@
 import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
 import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
-import { FlatMissionDto } from '@api/types/mission.dto';
 
 const $q = useQuasar();
-const { mission } = defineProps<{ mission: FlatMissionDto }>();
+const { mission } = defineProps<{
+    mission: FlatMissionDto | MissionWithFilesDto;
+}>();
 const { data: permissions } = usePermissionsQuery();
+
+const fileCount = computed(() => {
+    if ('filesCount' in mission) {
+        return mission.filesCount;
+    } else {
+        return mission.files.length;
+    }
+});
+
 const canModify = computed(() => {
-    if (mission.filesCount > 0) {
+    if (fileCount.value > 0) {
         return false;
     }
     return canModifyMission(

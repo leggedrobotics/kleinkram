@@ -103,7 +103,7 @@ import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from '../services/file-service';
 import {
-    MissionDto,
+    FlatMissionDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@api/types/mission.dto';
@@ -114,7 +114,7 @@ import { ProjectDto } from '@api/types/project/base-project.dto';
 const emit = defineEmits(['update:ready']);
 
 const selectedProject: Ref<ProjectDto | undefined> = ref(undefined);
-const selectedMission: Ref<MissionDto | undefined> = ref(undefined);
+const selectedMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 
 const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
@@ -153,7 +153,20 @@ const properties = defineProps<{
 
 if (properties.mission?.project) {
     selectedProject.value = properties.mission.project;
-    selectedMission.value = properties.mission;
+    selectedMission.value = {
+        uuid: properties.mission.uuid,
+        name: properties.mission.name,
+        creator: properties.mission.creator,
+        project: properties.mission.project,
+        createdAt: properties.mission.createdAt,
+        updatedAt: properties.mission.updatedAt,
+        filesCount: properties.mission.files.length,
+        size: properties.mission.files.reduce(
+            (acc, file) => acc + file.size,
+            0,
+        ),
+        tags: properties.mission.tags,
+    } as FlatMissionDto;
 }
 
 const { data: _missions, refetch } = useQuery<MissionsDto>({

@@ -239,14 +239,16 @@ const clearSelection = (): void => {
 watch(fileStateFilter, () => {
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
-            (((QueueState[a] as number) > QueueState[b]) as number) ? 1 : -1,
+            // @ts-ignore
+            QueueState[a] > QueueState[b] ? 1 : -1,
         );
     }
 });
 
 const fileStateFilterEnums = computed(() => {
     if (!fileStateFilter.value) return [];
-    return fileStateFilter.value.map((state) => QueueState[state] as number);
+    // @ts-ignore
+    return fileStateFilter.value.map((state) => QueueState[state]);
 });
 
 const { data: queueEntries, isLoading } = useQuery<ProjectWithMissionsDto[]>({

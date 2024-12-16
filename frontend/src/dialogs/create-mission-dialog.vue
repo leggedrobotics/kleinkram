@@ -55,6 +55,7 @@
                                 clickable
                                 @click="
                                     () => {
+                                        // @ts-ignore TODO: fix this
                                         project_uuid = _project.uuid;
                                         ddr_open = false;
                                     }
@@ -158,12 +159,10 @@ import {
     usePermissionsQuery,
     useProjectQuery,
 } from '../hooks/query-hooks';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import { TagDto } from '@api/types/tags/tags.dto';
 import CreateFile from '@components/create-file.vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;
@@ -209,7 +208,7 @@ const { data: all_projects } = useQuery<ProjectsDto>({
 const { data: permissions } = usePermissionsQuery();
 const projectsWithCreateWrite = computed(() => {
     if (!all_projects.value) return [];
-    return all_projects.value.data.filter((_project: ProjectWithMissionsDto) =>
+    return all_projects.value.data.filter((_project) =>
         canCreateMission(_project.uuid, permissions.value),
     );
 });
@@ -217,8 +216,8 @@ const projectsWithCreateWrite = computed(() => {
 const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
-    return project.value.requiredTags.every(
-        (tag: TagDto) =>
+    return project.value?.requiredTags.every(
+        (tag) =>
             tagValues.value[tag.uuid] !== undefined &&
             tagValues.value[tag.uuid] !== '',
     );
