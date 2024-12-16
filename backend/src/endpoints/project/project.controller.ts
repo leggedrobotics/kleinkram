@@ -22,7 +22,7 @@ import {
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse, ApiResponse } from '../../decarators';
+import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
@@ -153,6 +153,7 @@ export class ProjectController {
         status: 204,
         type: DeleteProjectResponseDto,
     })
+    @OutputDto(null) // TODO: add proper output dto
     async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
         return this.projectService.deleteProject(uuid);
     }
