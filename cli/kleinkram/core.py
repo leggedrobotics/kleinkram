@@ -20,6 +20,7 @@ from typing import TypeVar
 from typing import overload
 from uuid import UUID
 
+from kleinkram.api.client import AuthenticatedClient
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -27,7 +28,6 @@ from kleinkram.resources import FileSpec
 from kleinkram.resources import MissionSpec
 from kleinkram.resources import ProjectSpec
 from kleinkram.resources import get_files
-from kleinkram.api.client import AuthenticatedClient
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
@@ -49,17 +49,11 @@ def _parse_path_like(s: PathLike) -> Path:
 def _args_to_project_spec(
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-    spec: Optional[ProjectSpec] = None,
 ) -> ProjectSpec:
-    if (project_names or project_ids) and spec is not None:
-        raise TypeError("`spec` and individual arguments are mutually exclusive")
-
-    if spec is None:
-        spec = ProjectSpec(
-            ids=[_parse_uuid_like(_id) for _id in project_ids or []],
-            patterns=list(project_names or []),
-        )
-    return spec
+    return ProjectSpec(
+        ids=[_parse_uuid_like(_id) for _id in project_ids or []],
+        patterns=list(project_names or []),
+    )
 
 
 def _args_to_mission_spec(
@@ -67,24 +61,14 @@ def _args_to_mission_spec(
     mission_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-    spec: Optional[MissionSpec] = None,
 ) -> MissionSpec:
-
-    if (
-        any([mission_names, mission_ids, project_names, project_ids])
-        and spec is not None
-    ):
-        raise TypeError("`spec` and individual arguments are mutually exclusive")
-
-    if spec is None:
-        spec = MissionSpec(
-            ids=[_parse_uuid_like(_id) for _id in mission_ids or []],
-            patterns=list(mission_names or []),
-            project_spec=_args_to_project_spec(
-                project_names=project_names, project_ids=project_ids
-            ),
-        )
-    return spec
+    return MissionSpec(
+        ids=[_parse_uuid_like(_id) for _id in mission_ids or []],
+        patterns=list(mission_names or []),
+        project_spec=_args_to_project_spec(
+            project_names=project_names, project_ids=project_ids
+        ),
+    )
 
 
 def _args_to_file_spec(
@@ -94,35 +78,17 @@ def _args_to_file_spec(
     mission_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-    spec: Optional[FileSpec] = None,
 ) -> FileSpec:
-    if (
-        any(
-            [
-                file_names,
-                file_ids,
-                mission_names,
-                mission_ids,
-                project_names,
-                project_ids,
-            ]
-        )
-        and spec is not None
-    ):
-        raise TypeError("`spec` and individual arguments are mutually exclusive")
-
-    if spec is None:
-        spec = FileSpec(
-            ids=[_parse_uuid_like(_id) for _id in file_ids or []],
-            patterns=list(file_names or []),
-            mission_spec=_args_to_mission_spec(
-                mission_names=mission_names,
-                mission_ids=mission_ids,
-                project_names=project_names,
-                project_ids=project_ids,
-            ),
-        )
-    return spec
+    return FileSpec(
+        ids=[_parse_uuid_like(_id) for _id in file_ids or []],
+        patterns=list(file_names or []),
+        mission_spec=_args_to_mission_spec(
+            mission_names=mission_names,
+            mission_ids=mission_ids,
+            project_names=project_names,
+            project_ids=project_ids,
+        ),
+    )
 
 
 def _download(
@@ -130,9 +96,6 @@ def _download(
 ) -> None:
     client = AuthenticatedClient()
     files = get_files(client, spec)
-
-
-
 
     raise NotImplementedError
 
@@ -200,36 +163,7 @@ def _update_mission(*, spec: MissionSpec, metadata: Dict[str, str]) -> None:
 ##################################################
 
 
-@overload
 def download(
-    *,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    file_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-    dest: PathLike,
-    nested: bool = False,
-    overwrite: bool = False,
-) -> None: ...
-
-
-@overload
-def download(
-    spec: FileSpec,
-    *,
-    dest: PathLike,
-    nested: bool = False,
-    overwrite: bool = False,
-) -> None:
-    """\
-    download files from kleinkram
-    """
-
-
-def download(
-    spec: Optional[FileSpec] = None,
     *,
     file_ids: Optional[Sequence[IdLike]] = None,
     file_names: Optional[Sequence[str]] = None,
@@ -248,11 +182,58 @@ def download(
         mission_ids=mission_ids,
         project_names=project_names,
         project_ids=project_ids,
-        spec=spec,
     )
     _download(
         spec=spec, dest=_parse_path_like(dest), nested=nested, overwrite=overwrite
     )
+
+
+def list_files(
+    *,
+    file_ids: Optional[Sequence[IdLike]] = None,
+    file_names: Optional[Sequence[str]] = None,
+    mission_ids: Optional[Sequence[IdLike]] = None,
+    mission_names: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[IdLike]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[File]:
+    spec = _args_to_file_spec(
+        file_names=file_names,
+        file_ids=file_ids,
+        mission_names=mission_names,
+        mission_ids=mission_ids,
+        project_names=project_names,
+        project_ids=project_ids,
+    )
+    return _list_files(spec)
+
+
+def list_missions(
+    *,
+    mission_ids: Optional[Sequence[IdLike]] = None,
+    mission_names: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[IdLike]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[Mission]:
+    spec = _args_to_mission_spec(
+        mission_names=mission_names,
+        mission_ids=mission_ids,
+        project_names=project_names,
+        project_ids=project_ids,
+    )
+    return _list_missions(spec)
+
+
+def list_projects(
+    *,
+    project_ids: Optional[Sequence[IdLike]] = None,
+    project_names: Optional[Sequence[str]] = None,
+) -> List[Project]:
+    spec = _args_to_project_spec(
+        project_names=project_names,
+        project_ids=project_ids,
+    )
+    return _list_projects(spec)
 
 
 @overload
@@ -277,20 +258,6 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-) -> None:
-    """\
-    """
-
-
-@overload
-def upload(
-    spec: MissionSpec,
-    *,
-    files: Sequence[PathLike],
-    create: bool = False,
-    fix_filenames: bool = False,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_metadata: bool = False,
 ) -> None: ...
 
 
@@ -308,7 +275,6 @@ def upload(
 
 
 def upload(
-    spec: Optional[MissionSpec] = None,
     *,
     mission_name: Optional[str] = None,
     mission_id: Optional[IdLike] = None,
@@ -325,7 +291,6 @@ def upload(
         mission_ids=_singleton_list(mission_id),
         project_names=_singleton_list(project_name),
         project_ids=_singleton_list(project_id),
-        spec=spec,
     )
     _upload(
         spec=spec,
@@ -349,30 +314,21 @@ def verify(
 @overload
 def verify(
     *,
-    mission_id: IdLike,
-    files: Sequence[PathLike],
-) -> None: ...
-
-
-@overload
-def verify(
-    spec: MissionSpec,
-    *,
-    files: Sequence[PathLike],
-) -> None: ...
-
-
-@overload
-def verify(
-    *,
     mission_name: str,
     project_id: IdLike,
     files: Sequence[PathLike],
 ) -> None: ...
 
 
+@overload
 def verify(
-    spec: Optional[MissionSpec] = None,
+    *,
+    mission_id: IdLike,
+    files: Sequence[PathLike],
+) -> None: ...
+
+
+def verify(
     *,
     mission_name: Optional[str] = None,
     mission_id: Optional[IdLike] = None,
@@ -385,147 +341,46 @@ def verify(
         mission_ids=_singleton_list(mission_id),
         project_names=_singleton_list(project_name),
         project_ids=_singleton_list(project_id),
-        spec=spec,
     )
     _verify(spec=spec, files=[_parse_path_like(f) for f in files])
 
 
-@overload
-def update_mission(spec: MissionSpec, *, metadata: Dict[str, str]) -> None: ...
+# update delete
 
 
-@overload
-def update_mission(
-    *, mission_name: str, project_name: str, metadata: Dict[str, str]
-) -> None: ...
+def update_file(file_id: IdLike) -> None:
+    raise NotImplementedError
 
 
-@overload
-def update_mission(*, mission_id: IdLike, metadata: Dict[str, str]) -> None: ...
-
-
-@overload
-def update_mission(
-    *, mission_name: str, project_id: IdLike, metadata: Dict[str, str]
-) -> None: ...
-
-
-def update_mission(
-    spec: Optional[MissionSpec] = None,
-    *,
-    mission_name: Optional[str] = None,
-    mission_id: Optional[IdLike] = None,
-    project_name: Optional[str] = None,
-    project_id: Optional[IdLike] = None,
-    metadata: Dict[str, str],
-) -> None:
-    spec = _args_to_mission_spec(
-        mission_names=_singleton_list(mission_name),
-        mission_ids=_singleton_list(mission_id),
-        project_names=_singleton_list(project_name),
-        project_ids=_singleton_list(project_id),
-        spec=spec,
-    )
+def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
+    spec = _args_to_mission_spec(mission_ids=_singleton_list(mission_id))
     _update_mission(spec=spec, metadata=metadata)
 
 
-@overload
-def list_files(
-    *,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    file_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[File]: ...
+def update_project(project_id: IdLike) -> None:
+    raise NotImplementedError
 
 
-@overload
-def list_files(
-    spec: FileSpec,
-) -> List[File]: ...
+def delete_file(file_id: IdLike) -> None:
+    raise NotImplementedError
 
 
-def list_files(
-    spec: Optional[FileSpec] = None,
-    *,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    file_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[File]:
-    spec = _args_to_file_spec(
-        file_names=file_names,
-        file_ids=file_ids,
-        mission_names=mission_names,
-        mission_ids=mission_ids,
-        project_names=project_names,
-        project_ids=project_ids,
-        spec=spec,
-    )
-    return _list_files(spec)
+def delete_mission(mission_id: IdLike) -> None:
+    raise NotImplementedError
 
 
-@overload
-def list_missions(
-    *,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Mission]: ...
+def delete_project(project_id: IdLike) -> None:
+    raise NotImplementedError
 
 
-@overload
-def list_missions(
-    spec: MissionSpec,
-) -> List[Mission]: ...
+# create mission, project
 
 
-def list_missions(
-    spec: Optional[MissionSpec] = None,
-    *,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Mission]:
-    spec = _args_to_mission_spec(
-        mission_names=mission_names,
-        mission_ids=mission_ids,
-        project_names=project_names,
-        project_ids=project_ids,
-        spec=spec,
-    )
-    return _list_missions(spec)
+def create_mission(
+    mission_name: str, project_id: IdLike, metadata: Dict[str, str]
+) -> None:
+    raise NotImplementedError
 
 
-@overload
-def list_projects(
-    *,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Project]: ...
-
-
-@overload
-def list_projects(
-    spec: ProjectSpec,
-) -> List[Project]: ...
-
-
-def list_projects(
-    spec: Optional[ProjectSpec] = None,
-    *,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Project]:
-    spec = _args_to_project_spec(
-        project_names=project_names,
-        project_ids=project_ids,
-        spec=spec,
-    )
-    return _list_projects(spec)
+def create_project(project_name: str) -> None:
+    raise NotImplementedError
