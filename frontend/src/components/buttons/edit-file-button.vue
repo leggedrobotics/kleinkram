@@ -19,7 +19,7 @@ import { computed } from 'vue';
 import { FileState } from '@common/enum';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import NewEditFile from '../new-edit-file.vue';
+import NewEditFile from '../edit-file.vue';
 
 const { file } = defineProps<{ file: FileWithTopicDto }>();
 

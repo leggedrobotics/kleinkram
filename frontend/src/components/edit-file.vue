@@ -133,14 +133,13 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from '../services/date-formating';
-import { fetchFile } from 'src/services/queries/file';
 import { filteredProjects } from 'src/services/queries/project';
 import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from '../dialogs/base-dialog.vue';
-import { useMissionsOfProjectMinimal } from '../hooks/query-hooks';
+import { useFile, useMissionsOfProjectMinimal } from '../hooks/query-hooks';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
 import {
@@ -161,11 +160,8 @@ const tab = ref('name');
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected_project = ref<ProjectDto | null | undefined>(null);
-const { data } = useQuery({
-    queryKey: ['file', fileUuid],
-    queryFn: () => fetchFile(fileUuid),
-});
+const selected_project = ref<ProjectDto | undefined>(undefined);
+const { data } = useFile(fileUuid);
 
 const dateTime = ref('');
 const editableFile: Ref<FileWithTopicDto | null> = ref(null);
@@ -176,8 +172,7 @@ watch(
         if (!newValue) return;
         selected_project.value = newValue.mission.project;
         if (newValue.date && data.value) {
-            // TODO: fix
-            editableFile.value = null;
+            editableFile.value = data.value;
             dateTime.value = formatDate(new Date(newValue.date));
         }
     },

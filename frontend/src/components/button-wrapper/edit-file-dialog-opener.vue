@@ -20,7 +20,7 @@ import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import NewEditFile from '../new-edit-file.vue';
+import NewEditFile from '../edit-file.vue';
 
 const $q = useQuasar();
 const { file } = defineProps<{ file: FileWithTopicDto }>();
