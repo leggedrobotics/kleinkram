@@ -132,7 +132,7 @@
             />
             <q-btn
                 v-if="tab_selection === 'upload'"
-                flat
+                flatŋ
                 label="Upload & Exit"
                 class="bg-button-primary"
                 @click="uploadEventHandler"
@@ -153,7 +153,7 @@ import {
     usePermissionsQuery,
     useProjectQuery,
 } from '../hooks/query-hooks';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
@@ -188,7 +188,7 @@ const { project_uuid: _project_uuid, uploads } = defineProps<{
 
 const project_uuid = ref(_project_uuid);
 
-const newMission: Ref<MissionWithFilesDto | undefined> = ref(undefined);
+const newMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
 const { data: project } = useProjectQuery(project_uuid);

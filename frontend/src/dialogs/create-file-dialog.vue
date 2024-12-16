@@ -27,7 +27,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { Ref, ref } from 'vue';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import CreateFile from '@components/create-file.vue';
 
@@ -39,7 +39,7 @@ const ready = ref(false);
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 defineProps<{
-    mission?: MissionWithFilesDto;
+    mission?: FlatMissionDto;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
