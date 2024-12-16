@@ -158,14 +158,15 @@ const {
     computed(() => urlHandler.value.skip),
     computed(() => urlHandler.value.sortBy),
     computed(() => urlHandler.value.descending),
-    computed(() =>
-        myProjects
+    computed(() => ({
+        ...urlHandler.value.searchParams,
+        ...(myProjects
             ? ({ 'creator.uuid': user.value?.uuid ?? '' } as Record<
                   string,
                   string
               >)
-            : {},
-    ),
+            : {}),
+    })),
 );
 
 const data = computed(() => (rawData.value ? rawData.value.data : []));
