@@ -21,13 +21,13 @@
             }
         "
         @filter="
-            (val, update) => {
+            (val) => {
                 filterActionTemplates(val);
                 enableSearch();
-                update();
             }
         "
         class="q-pb-md"
+        autocomplete=""
     >
         <!--    Search Icon at end of field-->
         <template v-slot:append>
@@ -51,8 +51,8 @@
             >
                 <q-item-section>
                     <q-item-label>
-                        <!--                    Rendering templates icon in green if preexisting and yellow if newTemplate-->
-                        <template v-if="props.opt.createdBy === null">
+                        <!-- Rendering templates icon in green if preexisting and yellow if newTemplate -->
+                        <template v-if="props.opt.uuid === ''">
                             <q-icon
                                 name="sym_o_terminal"
                                 class="q-mr-sm"
@@ -88,13 +88,14 @@
 
     <q-table
         class="table-white"
-        :columns="selectionFieldHeader"
+        :columns="selectionFieldHeader as any[]"
         :rows="selectedTemplate ? [selectedTemplate] : []"
         hide-pagination
         flat
         separator="horizontal"
         bordered
         style="margin-top: 6px"
+        binary-state-sort
     >
         <template v-slot:body-cell-name="props">
             <q-td :props="props">
@@ -121,48 +122,29 @@
     </q-table>
 </template>
 <script setup lang="ts">
-import { getAccessRightDescription } from 'src/services/generic';
 import { QSelect, QTable } from 'quasar';
 import { computed, Ref, ref } from 'vue';
-import { AccessRight } from 'src/services/queries/project';
-import {
-    AccessGroupRights,
-    accessGroupRightsList,
-} from 'src/enums/ACCESS_RIGHTS';
-import { useQuery } from '@tanstack/vue-query';
-import { searchAccessGroups } from 'src/services/queries/access';
-import { ActionTemplate } from 'src/types/ActionTemplate';
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import { AccessGroupRights } from '@common/enum';
 
-const DEFAULT_ACTION_TEMPLATE: ActionTemplate = new ActionTemplate(
-    '',
-    null,
-    null,
-    'rslethz/action:simple-dev',
-    null,
-    '',
-    1,
-    '',
-    2,
-    2,
-    -1,
-    2,
-    '',
-    AccessGroupRights.READ,
-);
 //gets passed as input
 const { actionTemplates } = defineProps<{
-    actionTemplates: ActionTemplate[];
+    actionTemplates: ActionTemplateDto[];
 }>();
+
 //template that gets written
-const selectedTemplate = defineModel<ActionTemplate>();
+const selectedTemplate = defineModel<ActionTemplateDto>();
 
 //clone templates to filter
-const filteredActionTemplates: Ref<ActionTemplate[] | []> = ref([]);
+const filteredActionTemplates: Ref<ActionTemplateDto[]> = ref([]);
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 
 //removing newTemplate Option if Name in search field exactly matches existing template
 const options = computed(() => {
-    let suggestedName: string = newActionTemplate.value.name;
+    let suggestedName: string | undefined = newActionTemplate.value?.name;
+    if (suggestedName === undefined) {
+        return [...filteredActionTemplates.value];
+    }
     let filteredNames: string[] = filteredActionTemplates.value.map(
         (x) => x.name,
     );
@@ -176,25 +158,27 @@ const options = computed(() => {
 
 const searchEnabled = ref(false);
 const model = ref(null);
-const newActionTemplate = ref(DEFAULT_ACTION_TEMPLATE);
+const newActionTemplate = ref<ActionTemplateDto>({
+    accessRights: AccessGroupRights.READ,
+    command: '',
+    cpuCores: 1,
+    cpuMemory: 2,
+    entrypoint: '',
+    gpuMemory: -1,
+    imageName: '',
+    maxRuntime: 10,
+    name: '',
+    version: '1',
+    uuid: '',
+});
 
 function filterActionTemplates(val: string) {
-    if (!actionTemplates) {
-        throw new Error('actionTemplates undefined in filterActionTemplates');
-        if (!actionTemplates) {
-            throw new Error(
-                'actionTemplates.value undefined in filterActionTemplates',
-            );
-        }
-    }
-
-    filteredActionTemplates.value =
-        actionTemplates?.filter((temp) => {
-            return temp.name.includes(val);
-        }) || [];
+    filteredActionTemplates.value = actionTemplates.filter((temp) => {
+        return temp.name.includes(val);
+    });
 }
 
-function updateSelectedTemplate(selTempl: ActionTemplate) {
+function updateSelectedTemplate(selTempl: ActionTemplateDto) {
     selectedTemplate.value = selTempl;
 }
 

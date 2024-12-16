@@ -263,7 +263,10 @@ import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import ActionSelector from '@components/ActionSelector.vue';
+import ActionSelector from '@components/action-selector.vue';
+import { AccessGroupRights } from '@common/enum';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
 
 const isNameSelected: Ref<boolean> = ref<boolean>(false);
 
@@ -282,7 +285,7 @@ const saveButtonLable = computed(() => {
     }
 });
 
-const selectedTemplate = ref<ActionTemplate | undefined>(undefined);
+const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
 
 watch(selectedTemplate, () => {
     if (!selectedTemplate.value) {
@@ -387,9 +390,11 @@ const { data: actionTemplatesResult } = useQuery({
     queryKey: actionTemplateKey,
     queryFn: () => listActionTemplates(''),
 });
-const actionTemplates = ref<ActionTemplate[]>(actionTemplatesRes.value || []);
-watch(actionTemplatesRes, () => {
-    actionTemplates.value = actionTemplatesRes.value || [];
+const actionTemplates = ref<ActionTemplateDto[]>(
+    actionTemplatesResult.value?.data ?? [],
+);
+watch(actionTemplatesResult, () => {
+    actionTemplates.value = actionTemplatesResult.value?.data ?? [];
 });
 
 // MUTATING ###################################################################
@@ -526,8 +531,8 @@ async function submitAnalysis() {
 
         template = await createTemplate(false);
     }
-    editingTemplate.value = res;
-    selectedTemplate.value = res.clone();
+    editingTemplate.value = template;
+    selectedTemplate.value = template.clone();
 
     editingTemplate.value = template;
     select.value = structuredClone(template);
@@ -593,22 +598,22 @@ const isModified = computed(() => {
         //should never Happen?
         return true;
     }
-    const sameName =
-        editingTemplate.value.name === selectedTemplate.value.name;
+    const sameName = editingTemplate.value.name === selectedTemplate.value.name;
     const sameImage =
         editingTemplate.value?.imageName === selectedTemplate.value.imageName;
-    const sameCommand = editingTemplate.value?.command === selectedTemplate.value.command;
-    const sameGPU = editingTemplate.value?.gpuMemory === selectedTemplate.value.gpuMemory;
+    const sameCommand =
+        editingTemplate.value?.command === selectedTemplate.value.command;
+    const sameGPU =
+        editingTemplate.value?.gpuMemory === selectedTemplate.value.gpuMemory;
 
     const sameMemory =
         editingTemplate.value?.cpuMemory === selectedTemplate.value.cpuMemory;
-    const sameCores = editingTemplate.value?.cpuCores === selectedTemplate.value.cpuCores;
+    const sameCores =
+        editingTemplate.value?.cpuCores === selectedTemplate.value.cpuCores;
     const sameRuntime =
-        editingTemplate.value?.maxRuntime ===
-        selectedTemplate.value.maxRuntime;
+        editingTemplate.value?.maxRuntime === selectedTemplate.value.maxRuntime;
     const sameEntrypoint =
-        editingTemplate.value?.entrypoint ===
-        selectedTemplate.value.entrypoint;
+        editingTemplate.value?.entrypoint === selectedTemplate.value.entrypoint;
     const sameAccessRights =
         editingTemplate.value?.accessRights ===
         selectedTemplate.value.accessRights;
@@ -637,7 +642,7 @@ function newValue(value: string, done: any) {
     done(editingTemplate);
 }
 
-function selectTemplate(template: ActionTemplate) {
+function selectTemplate(template: ActionTemplateDto) {
     if (!template) {
         editingTemplate.value = undefined;
         selectedTemplate.value = undefined;
