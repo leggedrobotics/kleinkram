@@ -75,7 +75,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         format: (value: number) => value.toString(),
     },
     {
-        name: 'projectAction',
+        name: 'project-action',
         label: '',
         style: 'width: 10px',
         align: 'center',
