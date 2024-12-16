@@ -65,26 +65,7 @@
         </div>
 
         <div style="padding-top: 10px">
-            <Suspense>
-                <template #fallback>
-                    <div style="width: 550px; height: 67px">
-                        <q-skeleton
-                            class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 300px; height: 20px"
-                        />
-                        <q-skeleton
-                            class="q-mr-md"
-                            style="width: 200px; height: 18px"
-                        />
-                    </div>
-                </template>
-            </Suspense>
-        </div>
-
-        <div>
-            <Suspense>
-                <explorer-page-project-table :my-projects="myProjects" />
-            </Suspense>
+            <explorer-page-project-table :my-projects="myProjects" />
         </div>
     </div>
 </template>
