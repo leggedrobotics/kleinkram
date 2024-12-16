@@ -359,7 +359,7 @@ async function redirectToMcap(): Promise<void> {
 }
 
 async function _copyLink(): Promise<void> {
-    const downloadLink = await downloadFile(properties.uuid, false);
+    const downloadLink = await downloadFile(fileUuid.value ?? '', false);
     await copyToClipboard(downloadLink);
     Notify.create({
         group: false,

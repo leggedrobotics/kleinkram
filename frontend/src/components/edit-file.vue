@@ -133,7 +133,7 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from '../services/date-formating';
 import { filteredProjects } from 'src/services/queries/project';
