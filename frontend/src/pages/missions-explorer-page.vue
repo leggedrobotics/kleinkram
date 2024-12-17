@@ -236,7 +236,7 @@ import {
     useProjectQuery,
 } from '../hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
-import { computed, ref, Ref } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
@@ -259,6 +259,9 @@ const handler = useHandler();
 const $q = useQuasar();
 const projectUuid = useProjectUUID();
 const { data: project, isLoadingError, error } = useProjectQuery(projectUuid);
+watch(project, () => {
+    console.log(project.value);
+});
 const createAction = ref(false);
 
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);

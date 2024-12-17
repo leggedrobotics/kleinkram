@@ -73,7 +73,7 @@ export default class Project extends BaseEntity {
             ...this.minimalProjectDto,
             creator: this.creator.userDto,
             requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
-            missions: [],
+            missions: this.missions?.map((m) => m.flatMissionDto) ?? [],
         };
     }
 }

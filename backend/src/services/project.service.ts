@@ -138,6 +138,9 @@ export class ProjectService {
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
             .leftJoinAndSelect('project.missions', 'missions')
+            // TODO: remove the following two joins, there are never used in the frontend...
+            .leftJoinAndSelect('missions.creator', 'mission_creator')
+            .leftJoinAndSelect('missions.project', 'mission_project')
             .leftJoinAndSelect('project.requiredTags', 'requiredTags')
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
