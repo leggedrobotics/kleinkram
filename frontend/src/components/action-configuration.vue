@@ -36,47 +36,13 @@
                 <span class="text-h5">Basic Information</span>
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
-                        <label for="action_name">Action Name</label>
-                        <q-select
-                            v-model="select"
-                            label="Select a Template or name a new one. (Confirm with Enter)"
-                            :options="actionTemplatesResult?.data"
-                            use-input
-                            input-debounce="20"
-                            outlined
-                            dense
-                            clearable
-                            class="full-width"
-                            @new-value="newValue"
-                            @input-value="filterActionName"
-                            @update:model-value="selectTemplate"
-                        >
-                            <template #selected>
-                                <div
-                                    v-if="
-                                        editingTemplate && editingTemplate.name
-                                    "
-                                >
-                                    {{ editingTemplate.name }}&Tab;v{{
-                                        editingTemplate.version
-                                    }}
-                                </div>
-                            </template>
-                            <template #option="scope">
-                                <q-item v-bind="scope.itemProps">
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ scope.opt.name }}
-                                        </q-item-label>
-                                        <q-item-label caption>
-                                            v{{ scope.opt.version }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </template>
-                        </q-select>
+                        <label>Select Action</label>
+                        <ActionSelector
+                            ref="myElement"
+                            v-model="selectedTemplate"
+                            :action-templates="actionTemplates"
+                        />
                     </div>
-
                     <div>
                         <label for="project">Project</label>
                         <q-select
@@ -250,16 +216,28 @@
                     <q-btn
                         flat
                         class="bg-button-secondary text-on-color q-mx-sm"
-                        label="Save as Template"
-                        :disable="!isModified"
+                        :label="saveButtonLable"
+                        :disable="!isModified || !isNameSelected"
                         @click="saveAsTemplate"
-                    />
+                    >
+                        <q-tooltip v-if="!isNameSelected">
+                            Cant save Template without a Name
+                        </q-tooltip>
+                        <q-tooltip v-else-if="!isModified">
+                            Can't save a Template that is unmodified
+                        </q-tooltip>
+                    </q-btn>
                     <q-btn
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
+                        :disable="!isNameSelected"
                         @click="submitAnalysis"
-                    />
+                    >
+                        <q-tooltip v-if="!isNameSelected"
+                            >Cant submit Action without a name
+                        </q-tooltip>
+                    </q-btn>
                 </div>
             </q-form>
         </div>
@@ -284,15 +262,49 @@ import {
 } from '../hooks/query-hooks';
 import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
-import { AccessGroupRights } from '@common/enum';
-import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
-
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import ActionSelector from '@components/action-selector.vue';
+import { AccessGroupRights } from '@common/enum';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
-const select: Ref<undefined | ActionTemplateDto> = ref(undefined);
+const isNameSelected: Ref<boolean> = ref<boolean>(false);
+
+const saveButtonLable = computed(() => {
+    if (isNameSelected.value) {
+        if (selectedTemplate.value?.uuid === '') {
+            //Creating New Template
+            return 'Save New Template';
+        } else if (isNameSelected.value) {
+            //Existing and Modified Template
+            return 'Save New Version';
+        }
+    }
+    //No Template Selected
+    return 'Select Action';
+});
+
+const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
+
+watch(selectedTemplate, () => {
+    if (selectedTemplate.value) {
+        isNameSelected.value = true;
+        if (selectedTemplate.value.uuid === '') {
+            //Got New Template
+            console.log('Handling New template');
+            newValue(selectedTemplate.value.name, () => ({}));
+        } else {
+            //Got Existing Template
+            console.log('handling Existing Template');
+            selectTemplate(selectedTemplate.value);
+        }
+    } else {
+        throw new Error('selectedTemplate undefined in watcher');
+    }
+});
+
 const filter = ref('');
 const selectedAccessRights = ref({
     label: 'Read',
@@ -377,7 +389,13 @@ const selectedMission = computed(() =>
 const actionTemplateKey = computed(() => ['actionTemplates', filter.value]);
 const { data: actionTemplatesResult } = useQuery({
     queryKey: actionTemplateKey,
-    queryFn: () => listActionTemplates(filter.value),
+    queryFn: () => listActionTemplates(''),
+});
+const actionTemplates = ref<ActionTemplateDto[]>(
+    actionTemplatesResult.value?.data ?? [],
+);
+watch(actionTemplatesResult, () => {
+    actionTemplates.value = actionTemplatesResult.value?.data ?? [];
 });
 
 // MUTATING ###################################################################
@@ -392,7 +410,7 @@ async function saveAsTemplate() {
         result = await createTemplate(true);
     }
     editingTemplate.value = result;
-    select.value = structuredClone(result);
+    selectedTemplate.value = JSON.parse(JSON.stringify(result));
 }
 
 const { mutateAsync: createTemplate } = useMutation({
@@ -514,6 +532,8 @@ async function submitAnalysis() {
 
         template = await createTemplate(false);
     }
+    editingTemplate.value = template;
+    selectedTemplate.value = template.clone();
 
     editingTemplate.value = template;
     select.value = structuredClone(template);
@@ -572,25 +592,32 @@ async function submitAnalysis() {
 }
 
 // HELPER FUNCTIONS ############################################################
+// const isModified =
+
 const isModified = computed(() => {
-    if (!select.value) {
+    if (!selectedTemplate.value) {
+        //should never Happen?
         return true;
     }
-    const sameName = editingTemplate.value.name === select.value.name;
+    const sameName = editingTemplate.value.name === selectedTemplate.value.name;
     const sameImage =
-        editingTemplate.value?.imageName === select.value.imageName;
-    const sameCommand = editingTemplate.value?.command === select.value.command;
-    const sameGPU = editingTemplate.value?.gpuMemory === select.value.gpuMemory;
+        editingTemplate.value?.imageName === selectedTemplate.value.imageName;
+    const sameCommand =
+        editingTemplate.value?.command === selectedTemplate.value.command;
+    const sameGPU =
+        editingTemplate.value?.gpuMemory === selectedTemplate.value.gpuMemory;
 
     const sameMemory =
-        editingTemplate.value?.cpuMemory === select.value.cpuMemory;
-    const sameCores = editingTemplate.value?.cpuCores === select.value.cpuCores;
+        editingTemplate.value?.cpuMemory === selectedTemplate.value.cpuMemory;
+    const sameCores =
+        editingTemplate.value?.cpuCores === selectedTemplate.value.cpuCores;
     const sameRuntime =
-        editingTemplate.value?.maxRuntime === select.value.maxRuntime;
+        editingTemplate.value?.maxRuntime === selectedTemplate.value.maxRuntime;
     const sameEntrypoint =
-        editingTemplate.value?.entrypoint === select.value.entrypoint;
+        editingTemplate.value?.entrypoint === selectedTemplate.value.entrypoint;
     const sameAccessRights =
-        editingTemplate.value?.accessRights === select.value.accessRights;
+        editingTemplate.value?.accessRights ===
+        selectedTemplate.value.accessRights;
     return !(
         sameName &&
         sameImage &&
@@ -610,28 +637,16 @@ function newValue(value: string, done: any) {
     );
     if (existingTemplate) {
         editingTemplate.value = existingTemplate.clone();
-        select.value = existingTemplate;
+        selectedTemplate.value = existingTemplate;
     }
     editingTemplate.value.name = value;
     done(editingTemplate);
 }
 
-function selectTemplate(template: ActionTemplateDto | undefined) {
-    if (template === undefined) {
-        editingTemplate.value = {
-            accessRights: AccessGroupRights.READ,
-            command: '',
-            cpuCores: 1,
-            cpuMemory: 2,
-            entrypoint: '',
-            gpuMemory: 2,
-            imageName: '',
-            maxRuntime: -1,
-            name: '',
-            version: '1',
-        } as ActionTemplateDto;
-
-        select.value = undefined;
+function selectTemplate(template: ActionTemplateDto) {
+    if (!template) {
+        editingTemplate.value = undefined;
+        selectedTemplate.value = undefined;
         return;
     }
     if (template.hasOwnProperty('_rawValue')) {
@@ -642,8 +657,7 @@ function selectTemplate(template: ActionTemplateDto | undefined) {
         value: template.accessRights,
     };
 
-    // @ts-ignore
-    editingTemplate.value = template.clone();
+    editingTemplate.value = JSON.parse(JSON.stringify(template));
 }
 
 function missionSelected(mission: MissionWithFilesDto) {
@@ -657,8 +671,6 @@ function missionSelected(mission: MissionWithFilesDto) {
 const projectSelected = (a: ProjectDto) => {
     handler.value.setProjectUUID(a.uuid);
 };
-
-const filterActionName = ($event: any) => (filter.value = $event);
 
 function canRemoveMission(mission_uuid: string) {
     return addedMissions.value.includes(mission_uuid);
