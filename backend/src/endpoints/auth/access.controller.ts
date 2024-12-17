@@ -33,7 +33,10 @@ import Project from '@common/entities/project/project.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
+import {
+    ProjectAccessDto,
+    ProjectAccessListDto,
+} from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from './parameter-decorator';
 import { ApiOperation } from '@nestjs/swagger';
@@ -236,6 +239,7 @@ export class AccessController {
 
     @Post('removeAccessGroupFromProject')
     @CanDeleteProject()
+    @OutputDto(null) // TODO: type API response
     async removeAccessGroupFromProject(
         @Body() body: RemoveAccessGroupFromProjectDto,
         @AddUser() user: AuthHeader,
@@ -256,16 +260,16 @@ export class AccessController {
         return this.accessService.deleteAccessGroup(uuid);
     }
 
-    @Get('projectAccess')
+    @Get('projectAccesses')
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the ProjectAccess',
-        type: ProjectAccessDto,
+        type: ProjectAccessListDto,
     })
     async getProjectAccess(
         @QueryUUID('uuid', 'Project UUID') uuid: string,
-    ): Promise<ProjectAccessDto> {
-        return this.accessService.getProjectAccess(uuid);
+    ): Promise<ProjectAccessListDto> {
+        return this.accessService.getProjectAccesses(uuid);
     }
 
     @Post('updateProjectAccess')

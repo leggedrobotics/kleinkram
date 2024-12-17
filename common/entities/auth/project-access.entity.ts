@@ -22,4 +22,25 @@ export default class ProjectAccess extends BaseEntity {
         nullable: false,
     })
     project?: Project;
+
+    get projectAccessDto() {
+        if (this.accessGroup === undefined) {
+            throw new Error('Access group not found');
+        }
+
+        if (this.accessGroup.memberships === undefined) {
+            throw new Error('Access group has no memberships');
+        }
+
+        return {
+            createdAt: this.createdAt,
+            hidden: false,
+            memberCount: this.accessGroup.memberships.length,
+            type: this.accessGroup.type,
+            updatedAt: this.updatedAt,
+            name: this.accessGroup.name,
+            rights: this.rights,
+            uuid: this.accessGroup.uuid,
+        };
+    }
 }

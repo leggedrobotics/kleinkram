@@ -20,7 +20,7 @@ import GroupMembership from '@common/entities/auth/group-membership.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import logger from '../logger';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import { ProjectAccessDto } from '@common/api/types/access-control/project-access.dto';
+import { ProjectAccessListDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
@@ -416,25 +416,26 @@ export class AccessService {
         return;
     }
 
-    async getProjectAccess(projectUUID: string): Promise<ProjectAccessDto> {
-        const access = await this.projectAccessRepository.findOneOrFail({
-            where: { project: { uuid: projectUUID } },
-            relations: ['project', 'accessGroup'],
-        });
-
-        if (access.accessGroup === undefined) {
-            throw new Error('Access group not found');
-        }
+    async getProjectAccesses(
+        projectUUID: string,
+    ): Promise<ProjectAccessListDto> {
+        const [access, count] = await this.projectAccessRepository.findAndCount(
+            {
+                where: { project: { uuid: projectUUID } },
+                order: { accessGroup: { name: 'ASC' } },
+                relations: [
+                    'project',
+                    'accessGroup',
+                    'accessGroup.memberships',
+                ],
+            },
+        );
 
         return {
-            createdAt: access.createdAt,
-            hidden: false,
-            memberCount: 0,
-            type: access.accessGroup.type,
-            updatedAt: access.updatedAt,
-            name: access.accessGroup.name,
-            rights: access.rights,
-            uuid: access.accessGroup.uuid,
+            data: access.map((a) => a.projectAccessDto),
+            count,
+            take: count,
+            skip: 0,
         };
     }
 

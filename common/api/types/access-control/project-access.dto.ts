@@ -3,7 +3,18 @@ import {
     AccessGroupType,
 } from '../../../frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsDate, IsEnum, IsNumber, IsString } from 'class-validator';
+import {
+    IsBoolean,
+    IsDate,
+    IsEnum,
+    IsNumber,
+    IsString,
+    ValidateNested,
+} from 'class-validator';
+import { PaggedResponse } from '../pagged-response';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
+import { Type } from 'class-transformer';
 
 export class ProjectAccessDto {
     @ApiProperty()
@@ -45,4 +56,26 @@ export class ProjectAccessDto {
     })
     @IsEnum(AccessGroupRights)
     rights!: AccessGroupRights;
+}
+
+export class ProjectAccessListDto implements PaggedResponse<ProjectAccessDto> {
+    @ApiProperty({
+        type: ProjectAccessDto,
+        isArray: true,
+    })
+    @ValidateNested()
+    @Type(() => ProjectAccessDto)
+    data!: ProjectAccessDto[];
+
+    @ApiProperty()
+    @IsNumber()
+    count!: number;
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
 }

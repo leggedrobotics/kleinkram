@@ -139,16 +139,20 @@
     <q-table
         class="table-white"
         :columns="accessRightsColumns as any"
-        :rows="sortedAccessRights"
+        :rows="accessRights"
         hide-pagination
         flat
         separator="horizontal"
         bordered
-        style="margin-top: 6px"
+        style="margin-top: 6px; max-height: 360px"
         binary-state-sort
+        :rows-per-page-options="[50]"
     >
         <template #body-cell-name="props">
-            <q-td :props="props">
+            <q-td
+                :props="props"
+                style="display: flex; flex-direction: row; height: auto"
+            >
                 <q-icon
                     v-if="props.row.type !== AccessGroupType.PRIMARY"
                     name="sym_o_group"
@@ -169,14 +173,20 @@
                         border-radius: 50%;
                     "
                 />
-                {{ props.row.name }}
-                <span
+                <div
                     v-if="props.row.type !== AccessGroupType.PRIMARY"
-                    class="help-text"
+                    style="display: grid"
                 >
-                    ({{ props.row.memberCount }}
-                    {{ props.row.memberCount === 1 ? 'member' : 'members' }})
-                </span>
+                    <span>{{ props.row.name }}</span>
+                    <span class="help-text">
+                        {{ props.row.memberCount }}
+                        {{ props.row.memberCount === 1 ? 'member' : 'members' }}
+                    </span>
+                </div>
+
+                <span v-else style="line-height: 36px">{{
+                    props.row.name
+                }}</span>
             </q-td>
         </template>
 
@@ -250,13 +260,8 @@ import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 const { minAccessRights } = defineProps<{
     minAccessRights: DefaultRightDto[];
 }>();
-const accessRights = defineModel<DefaultRightDto[]>();
 
-const sortedAccessRights = computed(() =>
-    [...(accessRights.value ?? [])].sort((a, b) =>
-        b.name.localeCompare(a.name),
-    ),
-);
+const accessRights = defineModel<DefaultRightDto[]>();
 
 const groupSearch = ref('');
 const searchEnabled = ref(false);
@@ -268,7 +273,7 @@ const accessRightsColumns = [
         required: true,
         label: 'Name',
         align: 'left',
-        sortable: true,
+        sortable: false,
     },
     {
         name: 'rights',
@@ -300,7 +305,7 @@ const updateRights = (
                 return { ...g, rights: right };
             }
             return g;
-        }) && [];
+        }) ?? [];
 };
 
 const removeGroup = (group: AccessGroupDto): void => {
@@ -327,7 +332,10 @@ const isBelowMinRights = (
 
 const searchResults = computed<AccessGroupDto[]>(() => {
     if (foundAccessGroups.value !== undefined) {
-        return foundAccessGroups.value.data;
+        return foundAccessGroups.value.data.map((r) => ({
+            ...r,
+            memberCount: r.memberships.length,
+        }));
     }
 
     return [] as AccessGroupDto[];

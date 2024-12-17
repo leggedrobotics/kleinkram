@@ -3,18 +3,10 @@
         <template #title> Change Access Rights</template>
 
         <template #content>
-            <q-form class="row flex" @submit="onDialogOK">
-                <b v-if="projectAccess" style="align-content: center">{{
-                    projectAccess.name
-                }}</b>
-                <q-select
-                    v-if="projectAccess"
-                    v-model="rights"
-                    :options="options"
-                    label="Select Access Rights"
-                    style="width: 50%; margin-left: 20%"
-                />
-            </q-form>
+            <configure-access-rights
+                v-model="modifiableAccessRights"
+                :min-access-rights="minAccessRights"
+            />
         </template>
 
         <template #actions>
@@ -30,42 +22,64 @@
 <script setup lang="ts">
 import BaseDialog from './base-dialog.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { accessGroupRightsMap } from 'src/services/generic';
 import { getProjectAccess } from 'src/services/queries/access';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { ref, watch } from 'vue';
-import { updateProjectAccess } from 'src/services/mutations/access';
-import { AccessGroupRights } from '@common/enum';
+import { computed, ref, watch } from 'vue';
+import {
+    removeAccessGroupFromProject,
+    updateProjectAccess,
+} from 'src/services/mutations/access';
+import { AccessGroupType } from '@common/enum';
 
 import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 import { isAxiosError } from 'axios';
+import ConfigureAccessRights from '@components/configure-access-rights/configure-access-rights.vue';
+import { useProjectDefaultAccess } from '../hooks/query-hooks';
+import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+const { data: defaultRights } = useProjectDefaultAccess();
+
+const minAccessRights = computed<DefaultRightDto>(() =>
+    defaultRights.value
+        ? defaultRights.value.data.filter(
+              (r) => r.type === AccessGroupType.PRIMARY,
+          )
+        : [],
+);
 
 const { project_uuid, project_access_uuid } = defineProps<{
     project_uuid: string;
     project_access_uuid: string;
 }>();
 
-const rights = ref({ label: 'None', value: AccessGroupRights.READ });
-const queryClient = useQueryClient();
-
 const { data: projectAccess } = useQuery<ProjectAccessDto>({
     queryKey: ['projectAccess', project_access_uuid],
     queryFn: () => getProjectAccess(project_uuid, project_access_uuid),
 });
 
-console.log(projectAccess.value);
-
-const { mutate: changeAccessRights } = useMutation({
-    mutationFn: () => {
-        return updateProjectAccess(
-            project_uuid,
-            // @ts-ignore TODO: fix this
-            projectAccess.value?.accessGroup.uuid,
-            rights.value.value,
-        );
+const modifiableAccessRights = ref([]);
+watch(
+    projectAccess,
+    () => {
+        modifiableAccessRights.value = projectAccess.value?.data ?? [];
     },
+    { immediate: true },
+);
+
+const queryClient = useQueryClient();
+const { mutate: changeAccessRights } = useMutation({
+    mutationFn: () =>
+        Promise.all([
+            ...modifiableAccessRights.value.map((a) =>
+                updateProjectAccess(project_uuid, a.uuid, a.rights),
+            ),
+            ...projectAccess.value?.data
+                .filter((a) => !modifiableAccessRights.value.includes(a))
+                .map((a) => removeAccessGroupFromProject(project_uuid, a.uuid)),
+        ]),
+
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'projectAccess',
@@ -91,32 +105,6 @@ const { mutate: changeAccessRights } = useMutation({
         });
     },
 });
-watch(
-    projectAccess,
-    () => {
-        rights.value = {
-            label: accessGroupRightsMap[
-                projectAccess.value?.rights ?? AccessGroupRights.READ
-            ],
-            value: projectAccess.value?.rights ?? AccessGroupRights.READ,
-        };
-    },
-    {
-        immediate: true,
-    },
-);
-
-const options = Object.keys(accessGroupRightsMap)
-    .map((key) => ({
-        label: accessGroupRightsMap[
-            Number.parseInt(key, 10) as AccessGroupRights
-        ],
-        value: Number.parseInt(key, 10),
-    }))
-
-    // TODO: fix typing here
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
-    .filter((option) => option.value !== AccessGroupRights.READ);
 
 function confirmAction(): void {
     changeAccessRights();
