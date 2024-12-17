@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -18,6 +19,7 @@ from tqdm import tqdm
 import kleinkram.api.file_transfer
 import kleinkram.api.resources
 import kleinkram.api.routes
+import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.resources import FileSpec
 from kleinkram.api.resources import MissionSpec
@@ -63,7 +65,7 @@ def _file_desitations(
         }
 
 
-def _download(
+def download(
     *,
     client: AuthenticatedClient,
     spec: FileSpec,
@@ -87,7 +89,6 @@ def _download(
         raise ValueError(f"Destination {base_dir.absolute()} is not a directory")
 
     # retrive files and get the destination paths
-    client = AuthenticatedClient()
     files = list(get_files(client, spec))
     paths = _file_desitations(files, dest=base_dir, allow_nested=nested)
 
@@ -100,7 +101,7 @@ def _download(
     )
 
 
-def _upload(
+def upload(
     *,
     client: AuthenticatedClient,
     spec: MissionSpec,
@@ -147,7 +148,7 @@ def _upload(
     )
 
 
-def _verify(
+def verify(
     *,
     client: AuthenticatedClient,
     spec: MissionSpec,
@@ -194,26 +195,57 @@ def _verify(
     return file_status
 
 
-def _update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
+def update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
     """\
     TODO: what should this even do
     """
+    _ = client, file_id
     raise NotImplementedError("if you have an idea what this should do, open an issue")
 
 
-def _update_mission(
+def update_mission(
     *, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
 ) -> None:
-    raise NotImplementedError
+    # TODO: this funciton will do more than just overwirte the metadata in the future
+    kleinkram.api.routes._update_mission_metadata(client, mission_id, metadata=metadata)
 
 
-def _update_project(
+def update_project(
     *, client: AuthenticatedClient, project_id: UUID, description: Optional[str] = None
 ) -> None:
-    raise NotImplementedError
+    """\
+    TODO: what should this do?
+    """
+    _ = client, project_id, description
+    raise NotImplementedError("if you have an idea what this should do, open an issue")
 
 
-def _delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
+def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:
+    """\
+    deletes multiple files accross multiple missions
+    """
+    files = kleinkram.api.resources.get_files(client, FileSpec(ids=list(file_ids)))
+    found_ids = [f.id for f in files]
+    for file_id in file_ids:
+        if file_id not in found_ids:
+            raise kleinkram.errors.FileNotFound(
+                f"file {file_id} not found, did not delete any files"
+            )
+
+    # we can only batch delete files within the same mission
+    missions_to_files: Dict[UUID, List[UUID]] = {}
+    for file in files:
+        if file.mission_id not in missions_to_files:
+            missions_to_files[file.mission_id] = []
+        missions_to_files[file.mission_id].append(file.id)
+
+    for mission_id, file_ids in missions_to_files.items():
+        kleinkram.api.routes._delete_files(
+            client, file_ids=file_ids, mission_id=mission_id
+        )
+
+
+def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mspec = MissionSpec(ids=[mission_id])
     mission = get_mission(client, mspec)
     files = list(get_files(client, spec=FileSpec(mission_spec=mspec)))
@@ -223,11 +255,11 @@ def _delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     kleinkram.api.routes._delete_mission(client, mission_id)
 
 
-def _delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
+def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     pspec = ProjectSpec(ids=[project_id])
     _ = get_project(client, pspec)  # check if project exists
 
     # delete all missions and files
     missions = list(get_missions(client, spec=MissionSpec(project_spec=pspec)))
     for mission in missions:
-        _delete_mission(client, mission.id)
+        delete_mission(client=client, mission_id=mission.id)

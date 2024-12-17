@@ -1,11 +1,14 @@
 """\
-this file contains wrappers around core funcitons in core
+this file contains wrappers around core functionality
 
-these functions are meant to be exposed to the user
+these functions are meant to be exposed to the user, they
+accept a more diverse set of arguments and handle the
+conversion to the internal representation
 """
 
 from __future__ import annotations
 
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Literal
@@ -15,18 +18,13 @@ from typing import overload
 
 import kleinkram.api.resources
 import kleinkram.api.routes
+import kleinkram.core
+import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.resources import FileSpec
 from kleinkram.api.resources import MissionSpec
 from kleinkram.api.resources import ProjectSpec
-from kleinkram.core import _delete_mission
-from kleinkram.core import _delete_project
-from kleinkram.core import _download
-from kleinkram.core import _update_file
-from kleinkram.core import _update_mission
-from kleinkram.core import _update_project
-from kleinkram.core import _upload
-from kleinkram.core import _verify
+from kleinkram.errors import FileNameNotSupported
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -93,6 +91,7 @@ def download(
     dest: PathLike,
     nested: bool = False,
     overwrite: bool = False,
+    verbose: bool = False,
 ) -> None:
     spec = _args_to_file_spec(
         file_names=file_names,
@@ -103,12 +102,13 @@ def download(
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    _download(
+    kleinkram.core.download(
         client=client,
         spec=spec,
-        dest=parse_path_like(dest),
+        base_dir=parse_path_like(dest),
         nested=nested,
         overwrite=overwrite,
+        verbose=verbose,
     )
 
 
@@ -173,6 +173,7 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -183,6 +184,7 @@ def upload(
     files: Sequence[PathLike],
     create: Literal[False] = False,
     fix_filenames: bool = False,
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -196,6 +198,7 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -210,7 +213,17 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
+    verbose: bool = False,
 ) -> None:
+    parsed_file_paths = [parse_path_like(f) for f in files]
+    if not fix_filenames:
+        for file in parsed_file_paths:
+            if not kleinkram.utils.check_filename_is_sanatized(file.name):
+                raise FileNameNotSupported(
+                    f"only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
+                    f"allowed in filenames and at most 50 chars: {file}"
+                )
+
     spec = _args_to_mission_spec(
         mission_names=singleton_list(mission_name),
         mission_ids=singleton_list(mission_id),
@@ -218,14 +231,14 @@ def upload(
         project_ids=singleton_list(project_id),
     )
     client = AuthenticatedClient()
-    _upload(
+    kleinkram.core.upload(
         client=client,
         spec=spec,
-        files=[parse_path_like(f) for f in files],
+        file_paths=parsed_file_paths,
         create=create,
-        ignore_missing_metadata=ignore_missing_metadata,
-        fix_filenames=fix_filenames,
         metadata=metadata,
+        ignore_missing_metadata=ignore_missing_metadata,
+        verbose=verbose,
     )
 
 
@@ -235,6 +248,7 @@ def verify(
     mission_name: str,
     project_name: str,
     files: Sequence[PathLike],
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -244,6 +258,7 @@ def verify(
     mission_name: str,
     project_id: IdLike,
     files: Sequence[PathLike],
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -252,6 +267,7 @@ def verify(
     *,
     mission_id: IdLike,
     files: Sequence[PathLike],
+    verbose: bool = False,
 ) -> None: ...
 
 
@@ -262,6 +278,8 @@ def verify(
     project_name: Optional[str] = None,
     project_id: Optional[IdLike] = None,
     files: Sequence[PathLike],
+    skip_hash: bool = False,
+    verbose: bool = False,
 ) -> None:
     spec = _args_to_mission_spec(
         mission_names=singleton_list(mission_name),
@@ -269,10 +287,12 @@ def verify(
         project_names=singleton_list(project_name),
         project_ids=singleton_list(project_id),
     )
-    _verify(
+    kleinkram.core.verify(
         client=AuthenticatedClient(),
         spec=spec,
-        files=[parse_path_like(f) for f in files],
+        file_paths=[parse_path_like(f) for f in files],
+        skip_hash=skip_hash,
+        verbose=verbose,
     )
 
 
@@ -296,11 +316,13 @@ def create_project(project_name: str) -> None:
 
 
 def update_file(file_id: IdLike) -> None:
-    _update_file(client=AuthenticatedClient(), file_id=parse_uuid_like(file_id))
+    kleinkram.core.update_file(
+        client=AuthenticatedClient(), file_id=parse_uuid_like(file_id)
+    )
 
 
 def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
-    _update_mission(
+    kleinkram.core.update_mission(
         client=AuthenticatedClient(),
         mission_id=parse_uuid_like(mission_id),
         metadata=metadata,
@@ -308,14 +330,27 @@ def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
 
 
 def update_project(project_id: IdLike, description: Optional[str] = None) -> None:
-    _update_project(
+    kleinkram.core.update_project(
         client=AuthenticatedClient(),
         project_id=parse_uuid_like(project_id),
         description=description,
     )
 
 
+def delete_files(file_ids: Collection[IdLike]) -> None:
+    """\
+    delete multiple files by their ids
+    """
+    kleinkram.core.delete_files(
+        client=AuthenticatedClient(),
+        file_ids=[parse_uuid_like(_id) for _id in file_ids],
+    )
+
+
 def delete_file(file_id: IdLike) -> None:
+    """\
+    delete a single file by id
+    """
     file = kleinkram.api.resources.get_file(
         AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
     )
@@ -325,8 +360,39 @@ def delete_file(file_id: IdLike) -> None:
 
 
 def delete_mission(mission_id: IdLike) -> None:
-    _delete_mission(AuthenticatedClient(), parse_uuid_like(mission_id))
+    kleinkram.core.delete_mission(
+        client=AuthenticatedClient(), mission_id=parse_uuid_like(mission_id)
+    )
 
 
 def delete_project(project_id: IdLike) -> None:
-    _delete_project(AuthenticatedClient(), parse_uuid_like(project_id))
+    kleinkram.core.delete_project(
+        client=AuthenticatedClient(), project_id=parse_uuid_like(project_id)
+    )
+
+
+def get_file(file_id: IdLike) -> File:
+    """\
+    get a file by its id
+    """
+    return kleinkram.api.resources.get_file(
+        AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
+    )
+
+
+def get_mission(mission_id: IdLike) -> Mission:
+    """\
+    get a mission by its id
+    """
+    return kleinkram.api.resources.get_mission(
+        AuthenticatedClient(), MissionSpec(ids=[parse_uuid_like(mission_id)])
+    )
+
+
+def get_project(project_id: IdLike) -> Project:
+    """\
+    get a project by its id
+    """
+    return kleinkram.api.resources.get_project(
+        AuthenticatedClient(), ProjectSpec(ids=[parse_uuid_like(project_id)])
+    )

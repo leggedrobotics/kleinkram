@@ -4,6 +4,7 @@ from kleinkram._version import __version__
 from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
 from kleinkram.wrappers import delete_file
+from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
 from kleinkram.wrappers import download
@@ -27,6 +28,7 @@ __all__ = [
     "update_file",
     "update_mission",
     "update_project",
+    "delete_files",
     "delete_file",
     "delete_mission",
     "delete_project",
