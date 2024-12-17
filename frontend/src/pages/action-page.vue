@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
@@ -144,12 +144,6 @@ const showBullQueue = computed(
 );
 
 const { data: permissions } = usePermissionsQuery();
-const selectedProject = computed(() =>
-    projects.value.find(
-        (project: ProjectWithMissionCountDto) =>
-            project.uuid === handler.value.projectUuid,
-    ),
-);
 
 // Fetch projects
 const projectsReturn = useQuery<ProjectsDto>({
@@ -174,11 +168,31 @@ const missions = computed(() =>
     _missions.value === undefined ? [] : _missions.value.data,
 );
 
+const selectedProject = computed(() =>
+    projects.value.find(
+        (project: ProjectWithMissionCountDto) =>
+            project.uuid === handler.value.projectUuid,
+    ),
+);
+
 const selectedMission = computed(() =>
     missions.value.find(
         (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
     ),
 );
+
+watch(selectedMission, async () => {
+    await queryClient.invalidateQueries({
+        queryKey: ['action_mission'],
+    });
+});
+
+watch(selectedProject, async () => {
+    await queryClient.invalidateQueries({
+        queryKey: ['action_mission'],
+    });
+});
+
 const search = computed({
     get: () => handler.value.searchParams.name,
     set: (value) => {

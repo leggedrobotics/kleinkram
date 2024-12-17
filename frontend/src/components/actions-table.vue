@@ -107,8 +107,8 @@ properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
 const { data: rawData, isLoading } = useActions(
-    properties.handler.projectUuid ?? '',
-    properties.handler.missionUuid ?? '',
+    computed(() => properties.handler.projectUuid ?? ''),
+    computed(() => properties.handler.missionUuid ?? ''),
     properties.handler.take,
     properties.handler.skip,
     properties.handler.sortBy,

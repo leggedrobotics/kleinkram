@@ -430,8 +430,8 @@ export const useAllTags = (): UseQueryReturnType<
 };
 
 export const useActions = (
-    projectUuid: string,
-    missionUuid: string | undefined = undefined,
+    projectUuid: Ref<string> | string,
+    missionUuid: Ref<string | undefined> | string | undefined = undefined,
     take: number,
     skip: number,
     sortBy: string,
@@ -451,8 +451,8 @@ export const useActions = (
         ]),
         queryFn: () =>
             getActions(
-                projectUuid,
-                missionUuid,
+                unref(projectUuid),
+                unref(missionUuid),
                 take,
                 skip,
                 sortBy,
