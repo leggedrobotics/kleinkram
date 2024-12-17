@@ -12,7 +12,7 @@ export const filteredProjects = async (
     descending = false,
     searchParameters?: Record<string, string>,
 ): Promise<ProjectsDto> => {
-    const parameters: Record<string, any> = {
+    const parameters: Record<string, string> = {
         take,
         skip,
         sortBy,
