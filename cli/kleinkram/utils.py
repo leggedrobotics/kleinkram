@@ -21,6 +21,7 @@ import yaml
 from rich.console import Console
 
 from kleinkram._version import __version__
+from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
@@ -51,7 +52,8 @@ def check_file_paths(files: Sequence[Path]) -> None:
     """\
     checks that files exist, are files and have a supported file suffix
 
-    NOTE: kleinkram treats filesuffixes as filetypes and limits the supported suffixes
+    NOTE: kleinkram treats filesuffixes as filetypes and limits
+    the supported suffixes
     """
     for file in files:
         check_file_path(file)
@@ -65,6 +67,11 @@ def check_file_path(file: Path) -> None:
     if file.suffix not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(
             f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
+        )
+    if not check_filename_is_sanatized(file.stem):
+        raise FileNameNotSupported(
+            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
+            f"allowed in filenames and at most 50chars: {file}"
         )
 
 
@@ -107,6 +114,14 @@ def is_valid_uuid4(uuid: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def check_filename_is_sanatized(filename: str) -> bool:
+    if len(filename) > 50:
+        return False
+    if not all(char in INTERNAL_ALLOWED_CHARS for char in filename):
+        return False
+    return True
 
 
 def get_filename(path: Path) -> str:

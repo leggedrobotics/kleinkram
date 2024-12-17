@@ -4,6 +4,7 @@ this file contains the main functionality of kleinkram cli
 
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
 from typing import Dict
 from typing import List
@@ -12,6 +13,7 @@ from typing import Sequence
 from uuid import UUID
 
 from rich.console import Console
+from tqdm import tqdm
 
 import kleinkram.api.file_transfer
 import kleinkram.api.resources
@@ -28,9 +30,20 @@ from kleinkram.api.resources import get_project
 from kleinkram.api.routes import _create_mission
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import File
+from kleinkram.models import FileState
 from kleinkram.models import files_to_table
+from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import get_filename_map
+
+
+class FileVerificationStatus(str, Enum):
+    UPLAODED = "uploaded"
+    UPLOADING = "uploading"
+    COMPUTING_HASH = "computing hash"
+    MISSING = "missing"
+    MISMATCHED_HASH = "hash mismatch"
+    UNKNOWN = "unknown"
 
 
 def _file_desitations(
@@ -91,7 +104,7 @@ def _upload(
     *,
     client: AuthenticatedClient,
     spec: MissionSpec,
-    files: Sequence[Path],
+    file_paths: Sequence[Path],
     create: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
@@ -104,7 +117,7 @@ def _upload(
     in that case you can also specify `metadata` and `ignore_missing_metadata`
     """
     # check that file paths are for valid files and have valid suffixes
-    check_file_paths(files)
+    check_file_paths(file_paths)
 
     try:
         mission = get_mission(client, spec)
@@ -128,9 +141,9 @@ def _upload(
 
     assert mission is not None, "unreachable"
 
-    files_map = get_filename_map(files)
+    filename_map = get_filename_map(file_paths)
     kleinkram.api.file_transfer.upload_files(
-        client, files_map, mission.id, verbose=verbose
+        client, filename_map, mission.id, verbose=verbose
     )
 
 
@@ -138,18 +151,54 @@ def _verify(
     *,
     client: AuthenticatedClient,
     spec: MissionSpec,
-    files: Sequence[Path],
+    file_paths: Sequence[Path],
     skip_hash: bool = False,
-    fix_filenames: bool = False,
-) -> None:
-    raise NotImplementedError
+    verbose: bool = False,
+) -> Dict[Path, FileVerificationStatus]:
+    # check that file paths are for valid files and have valid suffixes
+    check_file_paths(file_paths)
+
+    # check that the mission exists
+    _ = get_mission(client, spec)
+
+    remote_files = {
+        f.name: f for f in get_files(client, spec=FileSpec(mission_spec=spec))
+    }
+    filename_map = get_filename_map(file_paths)
+
+    # verify files
+    file_status: Dict[Path, FileVerificationStatus] = {}
+    for name, file in tqdm(
+        filename_map.items(),
+        desc="verifying files",
+        unit="file",
+        disable=not verbose,
+    ):
+        if name not in remote_files:
+            file_status[file] = FileVerificationStatus.MISSING
+            continue
+
+        remote_file = remote_files[name]
+
+        if remote_file.state == FileState.UPLOADING:
+            file_status[file] = FileVerificationStatus.UPLOADING
+        elif remote_file.state == FileState.OK:
+            if remote_file.hash is None:
+                file_status[file] = FileVerificationStatus.COMPUTING_HASH
+            elif skip_hash or remote_file.hash == b64_md5(file):
+                file_status[file] = FileVerificationStatus.UPLAODED
+            else:
+                file_status[file] = FileVerificationStatus.MISMATCHED_HASH
+        else:
+            file_status[file] = FileVerificationStatus.UNKNOWN
+    return file_status
 
 
 def _update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
     """\
     TODO: what should this even do
     """
-    raise NotImplementedError
+    raise NotImplementedError("if you have an idea what this should do, open an issue")
 
 
 def _update_mission(

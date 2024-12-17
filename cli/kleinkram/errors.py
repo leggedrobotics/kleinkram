@@ -49,6 +49,9 @@ class InvalidCLIVersion(Exception): ...
 class FileTypeNotSupported(Exception): ...
 
 
+class FileNameNotSupported(Exception): ...
+
+
 ExceptionHandler = Callable[[Exception], int]
 
 
