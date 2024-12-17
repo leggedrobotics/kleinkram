@@ -202,7 +202,7 @@ const createActionEvent = (): void => {
 
 const refetchData = async (): Promise<void> => {
     await queryClient.invalidateQueries({
-        queryKey: ['missions', handler.value.projectUuid],
+        queryKey: ['action_mission'],
     });
 };
 
