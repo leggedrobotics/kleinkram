@@ -6,16 +6,13 @@ from typing import List
 from typing import Optional
 
 import typer
-from rich.console import Console
 
+import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.file_transfer import download_files
+from kleinkram.api.resources import FileSpec
+from kleinkram.api.resources import MissionSpec
+from kleinkram.api.resources import ProjectSpec
 from kleinkram.config import get_shared_state
-from kleinkram.models import files_to_table
-from kleinkram.resources import FileSpec
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.resources import get_files
 from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
@@ -70,34 +67,11 @@ def download(
         patterns=file_patterns, ids=file_ids, mission_spec=mission_spec
     )
 
-    client = AuthenticatedClient()
-    parsed_files = get_files(client, file_spec)
-
-    if get_shared_state().verbose:
-        table = files_to_table(parsed_files, title="downloading files...")
-        Console().print(table)
-
-    # get paths to files map
-    if (
-        len(set([(file.project_id, file.mission_id) for file in parsed_files])) > 1
-        and not nested
-    ):
-        raise ValueError(
-            "files from multiple missions were selected, consider using `--nested`"
-        )
-    elif not nested:
-        # flat structure
-        paths_to_files = {dest_dir / file.name: file for file in parsed_files}
-    else:
-        # allow for nested directories
-        paths_to_files = {}
-        for file in parsed_files:
-            paths_to_files[
-                dest_dir / file.project_name / file.mission_name / file.name
-            ] = file
-
-    # download files
-    logger.info(f"downloading {paths_to_files} files to {dest_dir}")
-    download_files(
-        client, paths_to_files, verbose=get_shared_state().verbose, overwrite=overwrite
+    kleinkram.core.download(
+        client=AuthenticatedClient(),
+        spec=file_spec,
+        base_dir=dest_dir,
+        nested=nested,
+        overwrite=overwrite,
+        verbose=get_shared_state().verbose,
     )

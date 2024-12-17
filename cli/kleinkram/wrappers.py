@@ -8,6 +8,7 @@ conversion to the internal representation
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Collection
 from typing import Dict
 from typing import List
@@ -249,7 +250,7 @@ def verify(
     project_name: str,
     files: Sequence[PathLike],
     verbose: bool = False,
-) -> None: ...
+) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
 @overload
@@ -259,7 +260,7 @@ def verify(
     project_id: IdLike,
     files: Sequence[PathLike],
     verbose: bool = False,
-) -> None: ...
+) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
 @overload
@@ -268,7 +269,7 @@ def verify(
     mission_id: IdLike,
     files: Sequence[PathLike],
     verbose: bool = False,
-) -> None: ...
+) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
 def verify(
@@ -280,14 +281,14 @@ def verify(
     files: Sequence[PathLike],
     skip_hash: bool = False,
     verbose: bool = False,
-) -> None:
+) -> Dict[Path, kleinkram.core.FileVerificationStatus]:
     spec = _args_to_mission_spec(
         mission_names=singleton_list(mission_name),
         mission_ids=singleton_list(mission_id),
         project_names=singleton_list(project_name),
         project_ids=singleton_list(project_id),
     )
-    kleinkram.core.verify(
+    return kleinkram.core.verify(
         client=AuthenticatedClient(),
         spec=spec,
         file_paths=[parse_path_like(f) for f in files],

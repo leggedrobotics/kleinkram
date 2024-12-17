@@ -6,28 +6,56 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+import kleinkram.api.routes
+import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import _update_mission_metadata
-from kleinkram.errors import MissionNotFound
+from kleinkram.api.resources import MissionSpec
+from kleinkram.api.resources import ProjectSpec
+from kleinkram.api.resources import get_mission
+from kleinkram.api.resources import get_project
 from kleinkram.models import mission_info_table
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.resources import get_mission
-from kleinkram.resources import get_missions
-from kleinkram.resources import mission_spec_is_unique
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
+
+CREATE_HELP = "create a mission"
+UPDATE_HELP = "update a mission"
+DELETE_HELP = "delete a mission"
+INFO_HELP = "get information about a mission"
+NOT_IMPLEMENTED_YET = """\
+Not implemented yet, open an issue if you want specific functionality
+"""
 
 mission_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-UPDATE_HELP = """\
-Update a mission.
-"""
+@mission_typer.command(help=CREATE_HELP)
+def create(
+    project: str = typer.Option(..., "--project", "-p", help="project id or name"),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission name"),
+    metadata: Optional[str] = typer.Option(
+        None, help="path to metadata file (json or yaml)"
+    ),
+    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
+) -> None:
+    project_ids, project_patterns = split_args([project] if project else [])
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
 
-NOT_IMPLEMENTED_YET = "Not implemented yet"
+    metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
+
+    client = AuthenticatedClient()
+    project_id = get_project(client, project_spec).id
+    mission_id = kleinkram.api.routes._create_mission(
+        client,
+        project_id,
+        mission,
+        metadata=metadata_dct,
+        ignore_missing_tags=ignore_missing_tags,
+    )
+
+    # TODO: perhaps print the mission info (we still need to implement this)
+    print(mission_id)
 
 
 @mission_typer.command(help=UPDATE_HELP)
@@ -48,82 +76,50 @@ def update(
         project_spec=project_spec,
     )
 
-    if not mission_spec_is_unique(mission_spec):
-        raise ValueError(f"mission spec is not unique: {mission_spec}")
+    metadata_dct = load_metadata(Path(metadata))
 
     client = AuthenticatedClient()
-    missions = get_missions(client, mission_spec)
-
-    if not missions:
-        raise MissionNotFound(f"Mission {mission} does not exist")
-    elif len(missions) > 1:
-        raise RuntimeError(f"Multiple missions found: {missions}")  # unreachable
-
-    metadata_dct = load_metadata(Path(metadata))
-    _update_mission_metadata(client, missions[0].id, metadata=metadata_dct)
-
-
-@mission_typer.command(help=NOT_IMPLEMENTED_YET)
-def create(
-    project: str = typer.Option(..., "--project", "-p", help="project id or name"),
-    mission: str = typer.Option(..., "--mission", "-m", help="mission name"),
-    metadata: Optional[str] = typer.Option(
-        None, help="path to metadata file (json or yaml)"
-    ),
-) -> None:
-    mission_ids, mission_patterns = split_args([mission])
-    project_ids, project_patterns = split_args([project] if project else [])
-
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(  # noqa
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_spec=project_spec,
+    mission_id = get_mission(client, mission_spec).id
+    kleinkram.core.update_mission(
+        client=client, mission_id=mission_id, metadata=metadata_dct
     )
 
-    metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
 
-    raise NotImplementedError("Not implemented yet")
-
-
-@mission_typer.command(help=NOT_IMPLEMENTED_YET)
+@mission_typer.command(help=DELETE_HELP)
 def delete(
     project: Optional[str] = typer.Option(
         None, "--project", "-p", help="project id or name"
     ),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-    confirm: bool = typer.Option(False, "--confirm", "-y", help="confirm deletion"),
+    confirm: bool = typer.Option(
+        False, "--confirm", "-y", "--yes", help="confirm deletion"
+    ),
 ) -> None:
     if not confirm:
         typer.confirm(f"delete {project} {mission}", abort=True)
 
-    raise NotImplementedError("Not implemented yet")
+    project_ids, project_patterns = split_args([project] if project else [])
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+
+    mission_ids, mission_patterns = split_args([mission])
+    mission_spec = MissionSpec(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_spec=project_spec,
+    )
+
+    client = AuthenticatedClient()
+    mission_parsed = get_mission(client, mission_spec)
+    kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
 
 
-@mission_typer.command(help=NOT_IMPLEMENTED_YET)
-def prune(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
-    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-) -> None:
-    """\
-    delete files with bad file states, e.g. missing not uploaded corrupted etc.
-    """
-
-    raise NotImplementedError("Not implemented yet")
-
-
-@mission_typer.command(help=NOT_IMPLEMENTED_YET)
+@mission_typer.command(help=INFO_HELP)
 def info(
     project: Optional[str] = typer.Option(
         None, "--project", "-p", help="project id or name"
     ),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
 ) -> None:
-    """\
-    show mission info
-    """
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
 
@@ -136,4 +132,20 @@ def info(
 
     client = AuthenticatedClient()
     mission_parsed = get_mission(client, mission_spec)
+    # TODO: non-verbose json output, for jq piping
     Console().print(mission_info_table(mission_parsed))
+
+
+@mission_typer.command(help=NOT_IMPLEMENTED_YET)
+def prune(
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="project id or name"
+    ),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+) -> None:
+    """\
+    delete files with bad file states, e.g. missing not uploaded corrupted etc.
+    TODO: open for suggestions what this should do
+    """
+
+    raise NotImplementedError("Not implemented yet")

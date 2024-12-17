@@ -7,16 +7,16 @@ import typer
 from rich.console import Console
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.resources import FileSpec
+from kleinkram.api.resources import MissionSpec
+from kleinkram.api.resources import ProjectSpec
+from kleinkram.api.resources import get_files
+from kleinkram.api.resources import get_missions
+from kleinkram.api.resources import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.models import files_to_table
 from kleinkram.models import missions_to_table
 from kleinkram.models import projects_to_table
-from kleinkram.resources import FileSpec
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.resources import get_files
-from kleinkram.resources import get_missions
-from kleinkram.resources import get_projects
 from kleinkram.utils import split_args
 
 HELP = """\
@@ -57,7 +57,7 @@ def files(
     )
 
     client = AuthenticatedClient()
-    parsed_files = get_files(client, file_spec)
+    parsed_files = list(get_files(client, file_spec))
 
     if get_shared_state().verbose:
         Console().print(files_to_table(parsed_files))
@@ -84,7 +84,7 @@ def missions(
     )
 
     client = AuthenticatedClient()
-    parsed_missions = get_missions(client, mission_spec)
+    parsed_missions = list(get_missions(client, mission_spec))
 
     if get_shared_state().verbose:
         Console().print(missions_to_table(parsed_missions))
@@ -98,7 +98,7 @@ def projects(
     project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
 
     client = AuthenticatedClient()
-    parsed_projects = get_projects(client, project_spec)
+    parsed_projects = list(get_projects(client, project_spec))
 
     if get_shared_state().verbose:
         Console().print(projects_to_table(parsed_projects))

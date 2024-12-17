@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from dataclasses import field
 from enum import Enum
 from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 from uuid import UUID
@@ -92,7 +92,7 @@ def delimiter_row(
     return ret
 
 
-def projects_to_table(projects: List[Project]) -> Table:
+def projects_to_table(projects: Sequence[Project]) -> Table:
     table = Table(title="projects")
     table.add_column("id")
     table.add_column("name")
@@ -104,7 +104,7 @@ def projects_to_table(projects: List[Project]) -> Table:
     return table
 
 
-def missions_to_table(missions: List[Mission]) -> Table:
+def missions_to_table(missions: Sequence[Mission]) -> Table:
     table = Table(title="missions")
     table.add_column("project")
     table.add_column("name")
@@ -131,7 +131,7 @@ def missions_to_table(missions: List[Mission]) -> Table:
 
 
 def files_to_table(
-    files: List[File], *, title: str = "files", delimiters: bool = True
+    files: Sequence[File], *, title: str = "files", delimiters: bool = True
 ) -> Table:
     table = Table(title=title)
     table.add_column("project")
