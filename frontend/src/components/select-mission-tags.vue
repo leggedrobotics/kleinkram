@@ -133,9 +133,8 @@
 
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
-import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
-import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { TagDto, TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags, useProjectQuery } from '../hooks/query-hooks';
 
 const properties = defineProps<{
@@ -177,13 +176,11 @@ watch(
                         ?.map((_tagTypeUUID) => _tagTypeUUID.uuid)
                         .includes(tagTypeUUID)
                 ) {
-                    additionalTags.value.push(
-                        // @ts-ignore
-                        newTagTypes.find(
-                            (tagType: TagTypeDto) =>
-                                tagType.uuid === tagTypeUUID,
-                        ) as TagTypeDto,
+                    const newTag: TagDto | undefined = newTagTypes.data.find(
+                        (tagType: TagTypeDto) => tagType.uuid === tagTypeUUID,
                     );
+                    if (newTag === undefined) continue;
+                    additionalTags.value.push(newTag);
                 }
             }
         }
@@ -197,8 +194,8 @@ const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
     if (project.value) {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
-    const addedTagUUIDs = new Set(additionalTags.value.map((tag) => tag.uuid));
     if (tagTypes.value.data === undefined) return [];
+    const addedTagUUIDs = new Set(additionalTags.value.map((tag) => tag.uuid));
     return tagTypes.value.data.filter(
         (tagtype: TagTypeDto) =>
             !usedTagUUIDs.includes(tagtype.uuid) &&
@@ -218,19 +215,15 @@ function addTag(tagtype: TagTypeDto) {
 }
 
 function tagColor(tagtype: TagTypeDto) {
-    if (isRequired(tagtype)) {
-        return 'grey';
-    } else {
-        return 'black';
-    }
+    return isRequired(tagtype) ? 'grey' : 'black';
 }
 
 function isRequired(tagtype: TagTypeDto) {
-    if (!requiredTagTypeUUIDs) {
-        return true;
-    } else {
-        const requiredTags = requiredTagTypeUUIDs?.value as string[];
+    if (requiredTagTypeUUIDs.value) {
+        const requiredTags = requiredTagTypeUUIDs.value;
         return requiredTags.includes(tagtype.uuid);
+    } else {
+        return true;
     }
 }
 

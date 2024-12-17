@@ -44,12 +44,10 @@ watch(
         if (newMission) {
             tagValues.value = {};
             for (const tag of newMission.tags) {
-                if (tag.type.datatype === DataType.BOOLEAN) {
-                    // @ts-ignore
-                    tagValues.value[tag.type.datatype] = TagType.BOOLEAN;
-                } else {
-                    tagValues.value[tag.type.uuid] = tag.valueAsString;
-                }
+                tagValues.value[tag.type.uuid] =
+                    tag.type.datatype === DataType.BOOLEAN
+                        ? tag.value
+                        : tag.valueAsString;
             }
         }
     },
