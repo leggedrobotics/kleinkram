@@ -56,6 +56,10 @@ class FileSpec:
 
 
 def check_mission_spec_is_creatable(spec: MissionSpec) -> str:
+    """\
+    check if a spec is unique and can be used to create a mission
+    returns: the mission name
+    """
     if not mission_spec_is_unique(spec):
         raise InvalidMissionSpec(f"Mission spec is not unique: {spec}")
     # cant create a missing by id

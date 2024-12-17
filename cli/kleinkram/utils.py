@@ -26,9 +26,17 @@ from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
+SUPPORT_FILE_TYPES = [
+    ".bag",
+    ".mcap",
+]
 
 
-def split_args(args: List[str]) -> Tuple[List[UUID], List[str]]:
+def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
+    """\
+    split a sequece of strings into a list of UUIDs and a list of names
+    depending on whether the string is a valid UUID or not
+    """
     uuids = []
     names = []
     for arg in args:
@@ -40,20 +48,24 @@ def split_args(args: List[str]) -> Tuple[List[UUID], List[str]]:
 
 
 def check_file_paths(files: Sequence[Path]) -> None:
+    """\
+    checks that files exist, are files and have a supported file suffix
+
+    NOTE: kleinkram treats filesuffixes as filetypes and limits the supported suffixes
+    """
     for file in files:
-        if file.is_dir():
-            raise FileNotFoundError(f"{file} is a directory and not a file")
-        if not file.exists():
-            raise FileNotFoundError(f"{file} does not exist")
-        if file.suffix not in (".bag", ".mcap"):
-            raise FileTypeNotSupported(
-                f"only `.bag` or `.mcap` files are supported: {file}"
-            )
+        check_file_path(file)
 
 
-def noop(*args: Any, **kwargs: Any) -> None:
-    _ = args, kwargs  # suppress unused variable warning
-    return
+def check_file_path(file: Path) -> None:
+    if file.is_dir():
+        raise FileNotFoundError(f"{file} is a directory and not a file")
+    if not file.exists():
+        raise FileNotFoundError(f"{file} does not exist")
+    if file.suffix not in SUPPORT_FILE_TYPES:
+        raise FileTypeNotSupported(
+            f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
+        )
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:

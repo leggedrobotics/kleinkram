@@ -6,10 +6,14 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from uuid import UUID
 
+from rich.console import Console
+
+import kleinkram.api.file_transfer
 import kleinkram.api.resources
 import kleinkram.api.routes
 from kleinkram.api.client import AuthenticatedClient
@@ -22,7 +26,11 @@ from kleinkram.api.resources import get_mission
 from kleinkram.api.resources import get_missions
 from kleinkram.api.resources import get_project
 from kleinkram.api.routes import _create_mission
+from kleinkram.errors import MissionNotFound
 from kleinkram.models import File
+from kleinkram.models import files_to_table
+from kleinkram.utils import check_file_paths
+from kleinkram.utils import get_filename_map
 
 
 def _file_desitations(
@@ -46,18 +54,37 @@ def _download(
     *,
     client: AuthenticatedClient,
     spec: FileSpec,
-    dest: Path,
+    base_dir: Path,
     nested: bool = False,
     overwrite: bool = False,
+    verbose: bool = False,
 ) -> None:
+    """\
+    downloads files, asserts that the destition dir exists
+    returns the files that were downloaded
+
+    TODO: the above is a lie, at the moment we just return all files that were found
+    this might include some files that were skipped or not downloaded for some reason
+    we would need to modify the `download_files` function to return this in the future
+    """
+
+    if not base_dir.exists():
+        raise ValueError(f"Destination {base_dir.absolute()} does not exist")
+    if not base_dir.is_dir():
+        raise ValueError(f"Destination {base_dir.absolute()} is not a directory")
+
+    # retrive files and get the destination paths
     client = AuthenticatedClient()
     files = list(get_files(client, spec))
-    path_map = _file_desitations(files, dest=dest, allow_nested=nested)
+    paths = _file_desitations(files, dest=base_dir, allow_nested=nested)
 
-    for path, file in path_map.items():
-        ...
+    if verbose:
+        table = files_to_table(files, title="downloading files...")
+        Console().print(table)
 
-    raise NotImplementedError
+    kleinkram.api.file_transfer.download_files(
+        client, paths, verbose=verbose, overwrite=overwrite
+    )
 
 
 def _upload(
@@ -66,28 +93,45 @@ def _upload(
     spec: MissionSpec,
     files: Sequence[Path],
     create: bool = False,
-    fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
+    verbose: bool = False,
 ) -> None:
-    if metadata is None:
-        metadata = {}
+    """\
+    uploads files to a mission
 
-    if create:
-        name = check_mission_spec_is_creatable(spec)
-        project = get_project(client, spec.project_spec)
+    create a mission if it does not exist if `create` is True
+    in that case you can also specify `metadata` and `ignore_missing_metadata`
+    """
+    # check that file paths are for valid files and have valid suffixes
+    check_file_paths(files)
+
+    try:
+        mission = get_mission(client, spec)
+    except MissionNotFound:
+        if not create:
+            raise
+        mission = None
+
+    if create and mission is None:
+        # check if project exists and get its id at the same time
+        project_id = get_project(client, spec.project_spec).id
+        mission_name = check_mission_spec_is_creatable(spec)
         _create_mission(
             client,
-            project.id,
-            name,
-            metadata=metadata,
+            project_id,
+            mission_name,
+            metadata=metadata or {},
             ignore_missing_tags=ignore_missing_metadata,
         )
+        mission = get_mission(client, spec)
 
-    if fix_filenames:
-        ...
+    assert mission is not None, "unreachable"
 
-    raise NotImplementedError
+    files_map = get_filename_map(files)
+    kleinkram.api.file_transfer.upload_files(
+        client, files_map, mission.id, verbose=verbose
+    )
 
 
 def _verify(
