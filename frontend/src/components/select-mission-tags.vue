@@ -63,6 +63,7 @@
                     {{ tagtype.datatype }}
                 </q-chip>
             </div>
+
             <div style="display: flex; flex-direction: row; flex-grow: 2">
                 <q-input
                     v-if="tagtype.datatype !== DataType.BOOLEAN"
@@ -89,13 +90,14 @@
                     color="black"
                     dense
                     outlined
-                    style="padding-bottom: 20px"
+                    hide-bottom-space
+                    style="flex-grow: 8; align-self: center"
                 >
                     <q-toggle
                         v-model="localTagValues[tagtype.uuid]"
                         :label="
                             localTagValues[tagtype.uuid] === undefined
-                                ? '-'
+                                ? 'Click toggle to define value'
                                 : localTagValues[tagtype.uuid]
                                   ? 'True'
                                   : 'False'
@@ -104,7 +106,7 @@
                         dense
                         required
                         flat
-                        style="padding-bottom: 30px"
+                        style=""
                         :type="DataType_InputType[tagtype.datatype] || 'text'"
                         :options="[
                             { label: 'True', value: true },
