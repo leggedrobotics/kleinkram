@@ -22,7 +22,7 @@ import { computed } from 'vue';
 import { FileState } from '@common/enum';
 
 import { FileWithTopicDto } from '@api/types/files/file.dto';
-import NewEditFile from '../edit-file.vue';
+import EditFile from '../edit-file.vue';
 
 const { file } = defineProps<{ file: FileWithTopicDto }>();
 
@@ -44,7 +44,7 @@ const editFile = (): void => {
     if (!isEnabled.value) return;
 
     $q.dialog({
-        component: NewEditFile,
+        component: EditFile,
         componentProps: {
             fileUuid: file.uuid,
         },
