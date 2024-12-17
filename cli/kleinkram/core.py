@@ -1,21 +1,13 @@
 """
 this file contains the main functionality of kleinkram cli
-
-we expose this functionality as a python package.
-the cli commands use the same functions as the python package
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Collection
 from typing import Dict
-from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Sequence
-from typing import TypeVar
-from typing import overload
 from uuid import UUID
 
 import kleinkram.api.resources
@@ -29,29 +21,8 @@ from kleinkram.api.resources import get_files
 from kleinkram.api.resources import get_mission
 from kleinkram.api.resources import get_missions
 from kleinkram.api.resources import get_project
-from kleinkram.api.resources import get_projects
 from kleinkram.api.routes import _create_mission
-from kleinkram.api.routes import _create_project
-from kleinkram.errors import MissionNotFound
 from kleinkram.models import File
-from kleinkram.models import Mission
-from kleinkram.models import Project
-from kleinkram.types import IdLike
-from kleinkram.types import PathLike
-
-T = TypeVar("T")
-
-
-def _singleton_list(x: Optional[T]) -> List[T]:
-    return [] if x is None else [x]
-
-
-def _parse_uuid_like(s: IdLike) -> UUID:
-    return UUID(str(s))
-
-
-def _parse_path_like(s: PathLike) -> Path:
-    return Path(s)
 
 
 def _file_desitations(
@@ -69,51 +40,6 @@ def _file_desitations(
             dest / file.project_name / file.mission_name / file.name: file
             for file in files
         }
-
-
-def _args_to_project_spec(
-    project_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-) -> ProjectSpec:
-    return ProjectSpec(
-        ids=[_parse_uuid_like(_id) for _id in project_ids or []],
-        patterns=list(project_names or []),
-    )
-
-
-def _args_to_mission_spec(
-    mission_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-) -> MissionSpec:
-    return MissionSpec(
-        ids=[_parse_uuid_like(_id) for _id in mission_ids or []],
-        patterns=list(mission_names or []),
-        project_spec=_args_to_project_spec(
-            project_names=project_names, project_ids=project_ids
-        ),
-    )
-
-
-def _args_to_file_spec(
-    file_names: Optional[Sequence[str]] = None,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-) -> FileSpec:
-    return FileSpec(
-        ids=[_parse_uuid_like(_id) for _id in file_ids or []],
-        patterns=list(file_names or []),
-        mission_spec=_args_to_mission_spec(
-            mission_names=mission_names,
-            mission_ids=mission_ids,
-            project_names=project_names,
-            project_ids=project_ids,
-        ),
-    )
 
 
 def _download(
@@ -189,12 +115,12 @@ def _update_mission(
 
 
 def _update_project(
-    client: AuthenticatedClient, project_id: UUID, description: Optional[str] = None
+    *, client: AuthenticatedClient, project_id: UUID, description: Optional[str] = None
 ) -> None:
     raise NotImplementedError
 
 
-def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
+def _delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mspec = MissionSpec(ids=[mission_id])
     mission = get_mission(client, mspec)
     files = list(get_files(client, spec=FileSpec(mission_spec=mspec)))
@@ -204,7 +130,7 @@ def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
     kleinkram.api.routes._delete_mission(client, mission_id)
 
 
-def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
+def _delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     pspec = ProjectSpec(ids=[project_id])
     _ = get_project(client, pspec)  # check if project exists
 
@@ -212,261 +138,3 @@ def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
     missions = list(get_missions(client, spec=MissionSpec(project_spec=pspec)))
     for mission in missions:
         _delete_mission(client, mission.id)
-
-
-##################################################
-# everything below is part of the public api
-# TODO: move different parts into separate files
-##################################################
-
-
-def download(
-    *,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    file_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-    dest: PathLike,
-    nested: bool = False,
-    overwrite: bool = False,
-) -> None:
-    spec = _args_to_file_spec(
-        file_names=file_names,
-        file_ids=file_ids,
-        mission_names=mission_names,
-        mission_ids=mission_ids,
-        project_names=project_names,
-        project_ids=project_ids,
-    )
-    client = AuthenticatedClient()
-    _download(
-        client=client,
-        spec=spec,
-        dest=_parse_path_like(dest),
-        nested=nested,
-        overwrite=overwrite,
-    )
-
-
-def list_files(
-    *,
-    file_ids: Optional[Sequence[IdLike]] = None,
-    file_names: Optional[Sequence[str]] = None,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[File]:
-    spec = _args_to_file_spec(
-        file_names=file_names,
-        file_ids=file_ids,
-        mission_names=mission_names,
-        mission_ids=mission_ids,
-        project_names=project_names,
-        project_ids=project_ids,
-    )
-    client = AuthenticatedClient()
-    return list(get_files(client, spec))
-
-
-def list_missions(
-    *,
-    mission_ids: Optional[Sequence[IdLike]] = None,
-    mission_names: Optional[Sequence[str]] = None,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Mission]:
-    spec = _args_to_mission_spec(
-        mission_names=mission_names,
-        mission_ids=mission_ids,
-        project_names=project_names,
-        project_ids=project_ids,
-    )
-    client = AuthenticatedClient()
-    return list(get_missions(client, spec))
-
-
-def list_projects(
-    *,
-    project_ids: Optional[Sequence[IdLike]] = None,
-    project_names: Optional[Sequence[str]] = None,
-) -> List[Project]:
-    spec = _args_to_project_spec(
-        project_names=project_names,
-        project_ids=project_ids,
-    )
-    client = AuthenticatedClient()
-    return list(get_projects(client, spec))
-
-
-@overload
-def upload(
-    *,
-    mission_name: str,
-    project_name: str,
-    files: Sequence[PathLike],
-    create: bool = False,
-    fix_filenames: bool = False,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_metadata: bool = False,
-) -> None: ...
-
-
-@overload
-def upload(
-    *,
-    mission_id: IdLike,
-    files: Sequence[PathLike],
-    create: Literal[False] = False,
-    fix_filenames: bool = False,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_metadata: bool = False,
-) -> None: ...
-
-
-@overload
-def upload(
-    *,
-    mission_name: str,
-    project_id: IdLike,
-    files: Sequence[PathLike],
-    create: bool = False,
-    fix_filenames: bool = False,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_metadata: bool = False,
-) -> None: ...
-
-
-def upload(
-    *,
-    mission_name: Optional[str] = None,
-    mission_id: Optional[IdLike] = None,
-    project_name: Optional[str] = None,
-    project_id: Optional[IdLike] = None,
-    files: Sequence[PathLike],
-    create: bool = False,
-    fix_filenames: bool = False,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_metadata: bool = False,
-) -> None:
-    spec = _args_to_mission_spec(
-        mission_names=_singleton_list(mission_name),
-        mission_ids=_singleton_list(mission_id),
-        project_names=_singleton_list(project_name),
-        project_ids=_singleton_list(project_id),
-    )
-    client = AuthenticatedClient()
-    _upload(
-        client=client,
-        spec=spec,
-        files=[_parse_path_like(f) for f in files],
-        create=create,
-        ignore_missing_metadata=ignore_missing_metadata,
-        fix_filenames=fix_filenames,
-        metadata=metadata,
-    )
-
-
-@overload
-def verify(
-    *,
-    mission_name: str,
-    project_name: str,
-    files: Sequence[PathLike],
-) -> None: ...
-
-
-@overload
-def verify(
-    *,
-    mission_name: str,
-    project_id: IdLike,
-    files: Sequence[PathLike],
-) -> None: ...
-
-
-@overload
-def verify(
-    *,
-    mission_id: IdLike,
-    files: Sequence[PathLike],
-) -> None: ...
-
-
-def verify(
-    *,
-    mission_name: Optional[str] = None,
-    mission_id: Optional[IdLike] = None,
-    project_name: Optional[str] = None,
-    project_id: Optional[IdLike] = None,
-    files: Sequence[PathLike],
-) -> None:
-    spec = _args_to_mission_spec(
-        mission_names=_singleton_list(mission_name),
-        mission_ids=_singleton_list(mission_id),
-        project_names=_singleton_list(project_name),
-        project_ids=_singleton_list(project_id),
-    )
-    _verify(
-        client=AuthenticatedClient(),
-        spec=spec,
-        files=[_parse_path_like(f) for f in files],
-    )
-
-
-def create_mission(
-    mission_name: str,
-    project_id: IdLike,
-    metadata: Dict[str, str],
-    ignore_missing_metadata: bool = False,
-) -> None:
-    kleinkram.api.routes._create_mission(
-        AuthenticatedClient(),
-        _parse_uuid_like(project_id),
-        mission_name,
-        metadata=metadata,
-        ignore_missing_tags=ignore_missing_metadata,
-    )
-
-
-def create_project(project_name: str) -> None:
-    kleinkram.api.routes._create_project(AuthenticatedClient(), project_name)
-
-
-def update_file(file_id: IdLike) -> None:
-    _update_file(client=AuthenticatedClient(), file_id=_parse_uuid_like(file_id))
-
-
-def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
-    _update_mission(
-        client=AuthenticatedClient(),
-        mission_id=_parse_uuid_like(mission_id),
-        metadata=metadata,
-    )
-
-
-def update_project(project_id: IdLike, description: Optional[str] = None) -> None:
-    _update_project(
-        client=AuthenticatedClient(),
-        project_id=_parse_uuid_like(project_id),
-        description=description,
-    )
-
-
-def delete_file(file_id: IdLike) -> None:
-    file = kleinkram.api.resources.get_file(
-        AuthenticatedClient(), FileSpec(ids=[_parse_uuid_like(file_id)])
-    )
-    kleinkram.api.routes._delete_files(
-        AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id
-    )
-
-
-def delete_mission(mission_id: IdLike) -> None:
-    _delete_mission(AuthenticatedClient(), _parse_uuid_like(mission_id))
-
-
-def delete_project(project_id: IdLike) -> None:
-    _delete_project(AuthenticatedClient(), _parse_uuid_like(project_id))

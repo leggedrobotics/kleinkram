@@ -13,6 +13,9 @@ from kleinkram.utils import filtered_by_patterns
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import parse_path_like
+from kleinkram.utils import parse_uuid_like
+from kleinkram.utils import singleton_list
 from kleinkram.utils import split_args
 from kleinkram.utils import to_name_or_uuid
 
@@ -126,3 +129,27 @@ def test_to_name_or_uuid():
 
     assert to_name_or_uuid(str(id_)) == id_
     assert to_name_or_uuid(not_id) == not_id
+
+
+def test_singleton_list() -> None:
+    assert [] == singleton_list(None)
+    assert [1] == singleton_list(1)
+    assert [[1]] == singleton_list([1])
+    assert [True] == singleton_list(True)
+
+    ob = object()
+    assert [ob] == singleton_list(ob)
+
+
+def test_parse_uuid_like() -> None:
+    _id = uuid4()
+    assert parse_uuid_like(str(_id)) == _id
+    assert parse_uuid_like(_id) == _id
+
+    with pytest.raises(ValueError):
+        parse_uuid_like("invalid")
+
+
+def test_parse_path_like() -> None:
+    assert parse_path_like("test") == Path("test")
+    assert parse_path_like(Path("test")) == Path("test")

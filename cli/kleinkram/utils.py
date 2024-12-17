@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TypeVar
 from typing import Union
 from uuid import UUID
 
@@ -20,6 +22,8 @@ from rich.console import Console
 
 from kleinkram._version import __version__
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.types import IdLike
+from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 
@@ -165,3 +169,18 @@ def load_metadata(path: Path) -> Dict[str, str]:
 def get_supported_api_version() -> Tuple[int, int, int]:
     vers = __version__.split(".")
     return tuple(map(int, vers[:3]))  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def singleton_list(x: Optional[T]) -> List[T]:
+    return [] if x is None else [x]
+
+
+def parse_uuid_like(s: IdLike) -> UUID:
+    return UUID(str(s))
+
+
+def parse_path_like(s: PathLike) -> Path:
+    return Path(s)
