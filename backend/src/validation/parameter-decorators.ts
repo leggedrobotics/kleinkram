@@ -1,0 +1,34 @@
+import {
+    BadRequestException,
+    createParamDecorator,
+    ExecutionContext,
+} from '@nestjs/common';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { UUIDValidate } from './validation-types';
+import { metadataApplier } from './metadata-applier';
+
+export const ParameterUuid = (
+    parameterName: string,
+    parameterDescription?: string,
+) =>
+    createParamDecorator(
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
+            const value = request.params[data];
+            const object = plainToInstance(UUIDValidate, { value });
+            await validateOrReject(object).catch(() => {
+                throw new BadRequestException('Parameter is not a valid UUID!');
+            });
+
+            return value;
+        },
+        metadataApplier(
+            parameterName,
+            parameterDescription || 'UUID',
+            'path',
+            'string',
+            true,
+            'uuid',
+        ),
+    )(parameterName);

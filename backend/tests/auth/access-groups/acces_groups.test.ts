@@ -7,7 +7,8 @@ import {
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
 } from '../utils';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+import { AccessGroupType } from '@common/frontend_shared/enum';
 
 /**
  * This test suite tests the access control of the application.
@@ -32,8 +33,8 @@ describe('Verify Access Groups', () => {
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
 
-        const personalGroup = getAccessGroupForEmail(mockEmail, accessGroups);
-        expect(personalGroup).toBeDefined();
+        const primaryGroup = getAccessGroupForEmail(mockEmail, accessGroups);
+        expect(primaryGroup).toBeDefined();
 
         // one access group should have the default uuid
         const defaultGroup = accessGroups.filter(
@@ -44,22 +45,22 @@ describe('Verify Access Groups', () => {
         const userRepository = db.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
             select: ['uuid', 'email'],
         });
         expect(user.email).toBe(mockEmail);
 
         // check if the user with a non default email is not added to the default group
-        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
+        user.memberships.forEach((accessGroup: GroupMembership) => {
             expect(
                 DEFAULT_GROUP_UUIDS.includes(accessGroup.accessGroup.uuid),
             ).toBe(false);
         });
 
-        // user is only part of the personal group
-        expect(user.accessGroupUsers.length).toBe(1);
-        user.accessGroupUsers.forEach((accessGroup: AccessGroupUser) => {
-            expect(accessGroup.accessGroup.personal).toBe(true);
+        // user is only part of the primary group
+        expect(user.memberships.length).toBe(1);
+        user.memberships.forEach((accessGroup: GroupMembership) => {
+            expect(accessGroup.accessGroup.type).toBe(AccessGroupType.PRIMARY);
         });
     });
 
@@ -72,7 +73,7 @@ describe('Verify Access Groups', () => {
 
         // one access group should be personal
         const personalGroup = accessGroups.filter(
-            (group: AccessGroup) => group.personal === true,
+            (group: AccessGroup) => group.type === AccessGroupType.PRIMARY,
         );
         expect(personalGroup.length).toBe(1);
 
@@ -91,37 +92,37 @@ describe('Verify Access Groups', () => {
         expect(user.email).toBe('internal-user@leggedrobotics.com');
     });
 
-    test('if external user cannot list access groups he is not part of', async () => {
+    test('if external user cannot list access groups he is not part of', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if personal group cannot be deleted', async () => {
+    test('if primary group cannot be deleted', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if admin cannot delete personal group of any user', async () => {
+    test('if admin cannot delete primary group of any user', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if member of personal group cannot delete personal group ', async () => {
+    test('if member of primary group cannot delete primary group ', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if member of default group can list all access groups', async () => {
+    test('if member of default group can list all access groups', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if a single access group can be linked to multiple users', async () => {
+    test('if a single access group can be linked to multiple users', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if a single access group can be linked to multiple projects', async () => {
+    test('if a single access group can be linked to multiple projects', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

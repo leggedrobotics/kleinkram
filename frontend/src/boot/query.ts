@@ -10,6 +10,7 @@ const queryClient = new QueryClient({
     },
 });
 
-export default ({ app }) => {
+const query = ({ app }: any): void => {
     app.use(VueQueryPlugin, { queryClient });
 };
+export default query;

@@ -1,24 +1,23 @@
-import { CreateProject } from '../../src/project/entities/create-project.dto';
 import { getJwtToken } from './database_utils';
 import User from '@common/entities/user/user.entity';
-import { CreateMission } from '../../src/mission/entities/create-mission.dto';
+import { CreateMission } from '@common/api/types/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { QueueState } from '@common/enum';
+import { QueueState } from '@common/frontend_shared/enum';
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import { CreateProject } from '@common/api/types/create-project.dto';
 
 export const createProjectUsingPost = async (
     project: CreateProject,
-    user?: User,
+    user: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/project/create`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await getJwtToken(user)}`,
+            cookie: `authtoken=${getJwtToken(user)}`,
         },
         body: JSON.stringify(project),
         credentials: 'include',
@@ -31,14 +30,13 @@ export const createProjectUsingPost = async (
 
 export const createMissionUsingPost = async (
     mission: CreateMission,
-    user?: User,
+    user: User,
 ): Promise<string> => {
     const res = await fetch(`http://localhost:3000/mission/create`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
-            cookie: `authtoken=${await getJwtToken(user)}`,
+            cookie: `authtoken=${getJwtToken(user)}`,
         },
         body: JSON.stringify({
             name: mission.name,
@@ -74,7 +72,6 @@ export async function uploadFile(
     const res = await fetch(`http://localhost:3000/file/temporaryAccess`, {
         method: 'POST',
         headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
         },
@@ -91,8 +88,8 @@ export async function uploadFile(
     const fileResponse = json[0];
 
     expect(fileResponse).toBeDefined();
-    expect(fileResponse['bucket']).toBe('bags');
-    expect(fileResponse['fileUUID']).toBeDefined();
+    expect(fileResponse.bucket).toBe('bags');
+    expect(fileResponse.fileUUID).toBeDefined();
 
     // open file from fixtures
     const file = fs.readFileSync(`./tests/fixtures/${filename}`);
@@ -117,8 +114,8 @@ export async function uploadFile(
 
     const resi = await uploadFileMultipart(
         fileFile,
-        fileResponse['bucket'],
-        fileResponse['fileUUID'],
+        fileResponse.bucket,
+        fileResponse.fileUUID,
         minioClient,
     );
     expect(resi).toBeDefined();
@@ -130,12 +127,11 @@ export async function uploadFile(
         {
             method: 'POST',
             headers: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Content-Type': 'application/json',
                 cookie: `authtoken=${await getJwtToken(user)}`,
             },
             body: JSON.stringify({
-                uuid: fileResponse['fileUUID'],
+                uuid: fileResponse.fileUUID,
                 md5: hash.digest('base64'),
             }),
         },
@@ -155,7 +151,7 @@ export async function uploadFile(
         if (
             active.find(
                 (x: QueueEntity) =>
-                    x.uuid === fileResponse['queueUUID'] &&
+                    x.uuid === fileResponse.queueUUID &&
                     x.state === QueueState.COMPLETED,
             )
         ) {

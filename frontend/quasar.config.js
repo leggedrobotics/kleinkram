@@ -9,6 +9,7 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 const { configure } = require('quasar/wrappers');
+const path = require('path');
 
 module.exports = configure(function (/* ctx */) {
     return {
@@ -38,6 +39,13 @@ module.exports = configure(function (/* ctx */) {
 
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
         build: {
+            // remember to also add the paths to the tsconfig.json file
+            // and to the Dockerfiles
+            alias: {
+                '@common': path.resolve(__dirname, 'common/frontend_shared'),
+                '@components': path.resolve(__dirname, 'src/components'),
+            },
+
             target: {
                 browser: [
                     'es2019',
@@ -101,16 +109,16 @@ module.exports = configure(function (/* ctx */) {
         animations: [],
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#sourcefiles
-        // sourceFiles: {
-        //   rootComponent: 'src/App.vue',
-        //   router: 'src/router/index',
-        //   store: 'src/store/index',
-        //   registerServiceWorker: 'src-pwa/register-service-worker',
-        //   serviceWorker: 'src-pwa/custom-service-worker',
-        //   pwaManifestFile: 'src-pwa/manifest.json',
-        //   electronMain: 'src-electron/electron-main',
-        //   electronPreload: 'src-electron/electron-preload'
-        // },
+        sourceFiles: {
+            rootComponent: 'src/app.vue',
+            //   router: 'src/router/index',
+            //   store: 'src/store/index',
+            //   registerServiceWorker: 'src-pwa/register-service-worker',
+            //   serviceWorker: 'src-pwa/custom-service-worker',
+            //   pwaManifestFile: 'src-pwa/manifest.json',
+            //   electronMain: 'src-electron/electron-main',
+            //   electronPreload: 'src-electron/electron-preload'
+        },
 
         // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
         ssr: {

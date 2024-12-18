@@ -89,6 +89,6 @@ You can now submit the action to Kleinkram. You can do this via the web interfac
 
 ## Limitations
 
--   Actions can only run for a limited time
--   Actions can only use a limited amount of memory
--   Actions can request GPU support via Nvidia docker (requested on submission)
+- Actions can only run for a limited time
+- Actions can only use a limited amount of memory
+- Actions can request GPU support via Nvidia docker (requested on submission)

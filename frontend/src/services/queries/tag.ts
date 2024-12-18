@@ -1,44 +1,31 @@
 import axios from 'src/api/axios';
-import { TagType } from 'src/types/TagType';
-import { DataType } from 'src/enums/TAG_TYPES';
+import { DataType } from '@common/enum';
+import { TagsDto } from '@api/types/tags/tags.dto';
+import { AxiosResponse } from 'axios';
 
-export const getTagTypes = async () => {
-    const response = await axios.get('/tag/all');
-    return response.data.map((tag: any) => {
-        return new TagType(
-            tag.uuid,
-            tag.name,
-            tag.datatype,
-            new Date(tag.createdAt),
-            new Date(tag.updatedAt),
-        );
-    });
+export const getTagTypes = async (): Promise<TagsDto> => {
+    const response: AxiosResponse<TagsDto> = await axios.get('/tag/all');
+    return response.data;
 };
 
 export const getFilteredTagTypes = async (
     name?: string,
     type?: DataType,
-): Promise<TagType[]> => {
-    let response;
-    if (!name && !type) {
-        response = await axios.get('/tag/all');
+): Promise<TagsDto> => {
+    let response: AxiosResponse<TagsDto>;
+    if (!name && type === null) {
+        response = await axios.get<TagsDto>('/tag/all');
     } else {
-        const params: Record<string, string | DataType> = {};
+        const parameters: Record<string, string | DataType> = {};
         if (name) {
-            params['name'] = name;
+            parameters.name = name;
         }
-        if (type && type !== DataType.ANY) {
-            params['type'] = type;
+        if (type !== null) {
+            parameters.type = type ?? '';
         }
-        response = await axios.get(`/tag/filtered`, { params });
+        response = await axios.get<TagsDto>(`/tag/filtered`, {
+            params: parameters,
+        });
     }
-    return response.data.map((tag: any) => {
-        return new TagType(
-            tag.uuid,
-            tag.name,
-            tag.datatype,
-            new Date(tag.createdAt),
-            new Date(tag.updatedAt),
-        );
-    });
+    return response.data;
 };
