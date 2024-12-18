@@ -13,7 +13,8 @@ from kleinkram.api.resources import MissionSpec
 from kleinkram.api.resources import ProjectSpec
 from kleinkram.api.resources import get_mission
 from kleinkram.api.resources import get_project
-from kleinkram.models import mission_info_table
+from kleinkram.config import get_shared_state
+from kleinkram.printing import print_mission_info
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 
@@ -54,8 +55,30 @@ def create(
         ignore_missing_tags=ignore_missing_tags,
     )
 
-    # TODO: perhaps print the mission info (we still need to implement this)
-    print(mission_id)
+    mission_parsed = get_mission(client, MissionSpec(ids=[mission_id]))
+    print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
+
+
+@mission_typer.command(help=INFO_HELP)
+def info(
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="project id or name"
+    ),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+) -> None:
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
+
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    mission_spec = MissionSpec(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_spec=project_spec,
+    )
+
+    client = AuthenticatedClient()
+    mission_parsed = get_mission(client, mission_spec)
+    print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
 
 
 @mission_typer.command(help=UPDATE_HELP)
@@ -84,6 +107,9 @@ def update(
         client=client, mission_id=mission_id, metadata=metadata_dct
     )
 
+    mission_parsed = get_mission(client, mission_spec)
+    print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
+
 
 @mission_typer.command(help=DELETE_HELP)
 def delete(
@@ -111,29 +137,6 @@ def delete(
     client = AuthenticatedClient()
     mission_parsed = get_mission(client, mission_spec)
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
-
-
-@mission_typer.command(help=INFO_HELP)
-def info(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
-    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-) -> None:
-    mission_ids, mission_patterns = split_args([mission])
-    project_ids, project_patterns = split_args([project] if project else [])
-
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_spec=project_spec,
-    )
-
-    client = AuthenticatedClient()
-    mission_parsed = get_mission(client, mission_spec)
-    # TODO: non-verbose json output, for jq piping
-    Console().print(mission_info_table(mission_parsed))
 
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)

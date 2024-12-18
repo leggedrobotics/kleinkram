@@ -15,13 +15,12 @@ from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import InvalidMissionMetadata
 from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
-from kleinkram.models import DataType
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import TagType
 from kleinkram.utils import is_valid_uuid4
 
 __all__ = [
@@ -162,9 +161,9 @@ def _create_project(client: AuthenticatedClient, project_name: str) -> UUID:
     raise NotImplementedError
 
 
-def _get_tag_type_by_name(
+def _get_metadata_type_id_by_name(
     client: AuthenticatedClient, tag_name: str
-) -> Optional[TagType]:
+) -> Optional[UUID]:
     resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
 
     if resp.status_code in (403, 404):
@@ -173,29 +172,20 @@ def _get_tag_type_by_name(
     resp.raise_for_status()
 
     data = resp.json()[0]
-    tag_type = TagType(
-        name=data["name"],
-        id=UUID(data["uuid"], version=4),
-        data_type=DataType(data["datatype"]),
-        description=data["description"],
-    )
-    return tag_type
+    return UUID(data["uuid"], version=4)
 
 
 def _get_tags_map(
     client: AuthenticatedClient, metadata: Dict[str, str]
 ) -> Dict[UUID, str]:
     # TODO: this needs a better endpoint
+    # why are we using metadata type ids as keys???
     ret = {}
     for key, val in metadata.items():
-        tag_type = _get_tag_type_by_name(client, key)
-
-        if tag_type is None:
-            print(f"tag: {key} not found")
-            continue
-
-        ret[tag_type.id] = val
-
+        metadata_type_id = _get_metadata_type_id_by_name(client, key)
+        if metadata_type_id is None:
+            raise InvalidMissionMetadata(f"metadata field: {key} does not exist")
+        ret[metadata_type_id] = val
     return ret
 
 

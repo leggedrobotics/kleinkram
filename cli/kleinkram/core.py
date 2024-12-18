@@ -1,10 +1,19 @@
 """
 this file contains the main functionality of kleinkram cli
+
+- download
+- upload
+- verify
+- update_file
+- update_mission
+- update_project
+- delete_files
+- delete_mission
+- delete_project
 """
 
 from __future__ import annotations
 
-from enum import Enum
 from pathlib import Path
 from typing import Collection
 from typing import Dict
@@ -31,38 +40,13 @@ from kleinkram.api.resources import get_missions
 from kleinkram.api.resources import get_project
 from kleinkram.api.routes import _create_mission
 from kleinkram.errors import MissionNotFound
-from kleinkram.models import File
 from kleinkram.models import FileState
-from kleinkram.models import files_to_table
+from kleinkram.models import FileVerificationStatus
+from kleinkram.printing import files_to_table
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
+from kleinkram.utils import file_paths_from_files
 from kleinkram.utils import get_filename_map
-
-
-class FileVerificationStatus(str, Enum):
-    UPLAODED = "uploaded"
-    UPLOADING = "uploading"
-    COMPUTING_HASH = "computing hash"
-    MISSING = "missing"
-    MISMATCHED_HASH = "hash mismatch"
-    UNKNOWN = "unknown"
-
-
-def _file_desitations(
-    files: Sequence[File], *, dest: Path, allow_nested: bool = False
-) -> Dict[Path, File]:
-    if (
-        len(set([(file.project_id, file.mission_id) for file in files])) > 1
-        and not allow_nested
-    ):
-        raise ValueError("files from multiple missions were selected")
-    elif not allow_nested:
-        return {dest / file.name: file for file in files}
-    else:
-        return {
-            dest / file.project_name / file.mission_name / file.name: file
-            for file in files
-        }
 
 
 def download(
@@ -90,7 +74,7 @@ def download(
 
     # retrive files and get the destination paths
     files = list(get_files(client, spec))
-    paths = _file_desitations(files, dest=base_dir, allow_nested=nested)
+    paths = file_paths_from_files(files, dest=base_dir, allow_nested=nested)
 
     if verbose:
         table = files_to_table(files, title="downloading files...")

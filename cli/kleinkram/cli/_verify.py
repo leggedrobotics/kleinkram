@@ -1,37 +1,21 @@
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
-from typing import Dict
 from typing import List
 from typing import Optional
 
 import typer
-from rich.console import Console
-from rich.table import Table
-from rich.text import Text
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.resources import MissionSpec
 from kleinkram.api.resources import ProjectSpec
 from kleinkram.config import get_shared_state
-from kleinkram.core import FileVerificationStatus
-from kleinkram.utils import check_file_paths
+from kleinkram.printing import print_file_verification_status
 from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
-
-
-FILE_STATUS_STYLES = {
-    FileVerificationStatus.UPLAODED: "green",
-    FileVerificationStatus.UPLOADING: "yellow",
-    FileVerificationStatus.MISSING: "yellow",
-    FileVerificationStatus.MISMATCHED_HASH: "red",
-    FileVerificationStatus.UNKNOWN: "gray",
-    FileVerificationStatus.COMPUTING_HASH: "purple",
-}
 
 
 HELP = """\
@@ -39,29 +23,6 @@ Verify if files were uploaded correctly.
 """
 
 verify_typer = typer.Typer(name="verify", invoke_without_command=True, help=HELP)
-
-
-# TODO: where should this funciton live?
-def _file_status_table(file_status: Dict[Path, FileVerificationStatus]) -> Table:
-    table = Table(title="file status")
-    table.add_column("filename", style="cyan")
-    table.add_column("status", style="green")
-    for path, status in file_status.items():
-        table.add_row(str(path), Text(status, style=FILE_STATUS_STYLES[status]))
-    return table
-
-
-def _print_file_status(
-    file_status: Dict[Path, FileVerificationStatus], verbose: bool
-) -> None:
-    if verbose:
-        Console().print(_file_status_table(file_status))
-    else:
-        for path, status in file_status.items():
-            stream = (
-                sys.stdout if status == FileVerificationStatus.UPLAODED else sys.stderr
-            )
-            print(path, file=stream)
 
 
 @verify_typer.callback()
@@ -84,12 +45,12 @@ def verify(
         ids=mission_ids, patterns=mission_patterns, project_spec=project_spec
     )
 
+    verbose = get_shared_state().verbose
     file_status = kleinkram.core.verify(
         client=AuthenticatedClient(),
         spec=mission_spec,
         file_paths=file_paths,
         skip_hash=skip_hash,
-        verbose=get_shared_state().verbose,
+        verbose=verbose,
     )
-
-    _print_file_status(file_status, get_shared_state().verbose)
+    print_file_verification_status(file_status, pprint=verbose)

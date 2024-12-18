@@ -23,6 +23,7 @@ from rich.console import Console
 from kleinkram._version import __version__
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.models import File
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
@@ -31,6 +32,27 @@ SUPPORT_FILE_TYPES = [
     ".bag",
     ".mcap",
 ]
+
+
+def file_paths_from_files(
+    files: Sequence[File], *, dest: Path, allow_nested: bool = False
+) -> Dict[Path, File]:
+    """\
+    determines the destinations for a sequence of `File` objects,
+    possibly nested by project and mission
+    """
+    if (
+        len(set([(file.project_id, file.mission_id) for file in files])) > 1
+        and not allow_nested
+    ):
+        raise ValueError("files from multiple missions were selected")
+    elif not allow_nested:
+        return {dest / file.name: file for file in files}
+    else:
+        return {
+            dest / file.project_name / file.mission_name / file.name: file
+            for file in files
+        }
 
 
 def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:

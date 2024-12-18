@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import NewType
 from typing import Optional
+from typing import TypedDict
 from uuid import UUID
 
 from kleinkram.errors import ParsingError
@@ -18,22 +21,55 @@ __all__ = [
 ]
 
 
-def _parse_project(project: Dict[str, Any]) -> Project:
-    try:
-        project_id = UUID(project["uuid"], version=4)
-        project_name = project["name"]
-        project_description = project["description"]
+ProjectObject = NewType("ProjectObject", Dict[str, Any])
+MissionObject = NewType("MissionObject", Dict[str, Any])
+FileObject = NewType("FileObject", Dict[str, Any])
 
-        parsed = Project(
-            id=project_id, name=project_name, description=project_description
-        )
+PROJECT_OBJECT_KEYS = []
+MISSION_OBJECT_KEYS = []
+
+
+class FileObjectKeys(str, Enum):
+    UUID = "uuid"
+    FILENAME = "filename"
+    DATE = "date"
+    CREATED_AT = "createdAt"
+    UPDATED_AT = "updatedAt"
+    STATE = "state"
+    HASH = "hash"
+    TAGS = "categories"
+    TOPICS = "topics"
+
+
+class MissionObjectKeys(str, Enum):
+    UUID = "uuid"
+    NAME = "name"
+    DESCRIPTION = "description"
+    CREATED_AT = "createdAt"
+    UPDATED_AT = "updatedAt"
+    PROJECT = "project"
+
+
+class ProjectObjectKeys(str, Enum):
+    UUID = "uuid"
+    NAME = "name"
+    DESCRIPTION = "description"
+    CREATED_AT = "createdAt"
+    UPDATED_AT = "updatedAt"
+
+
+def _parse_project(project_object: ProjectObject) -> Project:
+    try:
+        project_id = UUID(project_object["uuid"], version=4)
+        project_name = project_object["name"]
+        project_description = project_object["description"]
     except Exception:
-        raise ParsingError(f"error parsing project: {project}")
-    return parsed
+        raise ParsingError(f"error parsing project: {project_object}")
+    return Project(id=project_id, name=project_name, description=project_description)
 
 
 def _parse_mission(
-    mission: Dict[str, Any], project: Optional[Project] = None
+    mission: MissionObject, project: Optional[ProjectObject] = None
 ) -> Mission:
     try:
         mission_id = UUID(mission["uuid"], version=4)
@@ -55,7 +91,7 @@ def _parse_mission(
     return parsed
 
 
-def _parse_file(file: Dict[str, Any], mission: Optional[Mission] = None) -> File:
+def _parse_file(file: FileObject, mission: Optional[MissionObject] = None) -> File:
     try:
         filename = file["filename"]
         file_id = UUID(file["uuid"], version=4)

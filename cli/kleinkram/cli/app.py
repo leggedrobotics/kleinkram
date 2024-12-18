@@ -26,12 +26,12 @@ from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
+from kleinkram.cli.error_handling import ErrorHandledTyper
 from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.config import save_config
-from kleinkram.cli.error_handling import ErrorHandledTyper
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version

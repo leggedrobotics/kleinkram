@@ -5,20 +5,15 @@ from typing import List
 from typing import Optional
 
 import typer
-from rich.console import Console
 
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.file_transfer import upload_files
 from kleinkram.api.resources import MissionSpec
 from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.routes import _create_mission as _create_mission_api
 from kleinkram.config import get_shared_state
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import MissionNotFound
-from kleinkram.errors import ProjectNotFound
-from kleinkram.models import Mission
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 

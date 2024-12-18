@@ -8,7 +8,8 @@ import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.resources import ProjectSpec
 from kleinkram.api.resources import get_project
-from kleinkram.models import project_info_table
+from kleinkram.config import get_shared_state
+from kleinkram.printing import print_project_info
 from kleinkram.utils import split_args
 
 project_typer = typer.Typer(
@@ -29,7 +30,23 @@ INFO_HELP = "get information about a project"
 def create(
     project: str = typer.Option(..., "--project", "-p", help="project name")
 ) -> None:
-    kleinkram.api.routes._create_project(AuthenticatedClient(), project)
+    client = AuthenticatedClient()
+    project_id = kleinkram.api.routes._create_project(client, project)
+
+    project_parsed = get_project(client, ProjectSpec(ids=[project_id]))
+    print_project_info(project_parsed, pprint=get_shared_state().verbose)
+
+
+@project_typer.command(help=INFO_HELP)
+def info(
+    project: str = typer.Option(..., "--project", "-p", help="project id or name")
+) -> None:
+    project_ids, project_patterns = split_args([project])
+    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+
+    client = AuthenticatedClient()
+    project_parsed = get_project(client=client, spec=project_spec)
+    print_project_info(project_parsed, pprint=get_shared_state().verbose)
 
 
 @project_typer.command(help=NOT_IMPLEMENTED_YET)
@@ -47,19 +64,6 @@ def delete(
     client = AuthenticatedClient()
     project_id = get_project(client=client, spec=project_spec).id
     kleinkram.core.delete_project(client=client, project_id=project_id)
-
-
-@project_typer.command(help=INFO_HELP)
-def info(
-    project: str = typer.Option(..., "--project", "-p", help="project id or name")
-) -> None:
-    project_ids, project_patterns = split_args([project])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-
-    client = AuthenticatedClient()
-    project_parsed = get_project(client=client, spec=project_spec)
-    # TODO: non-verbose json output, for jq piping
-    Console().print(project_info_table(project_parsed))
 
 
 @project_typer.command(help=NOT_IMPLEMENTED_YET)

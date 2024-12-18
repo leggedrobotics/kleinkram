@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 LOGIN_MESSAGE = "Please login using `klein login`."
 
 
@@ -43,3 +42,6 @@ class FileTypeNotSupported(Exception): ...
 
 
 class FileNameNotSupported(Exception): ...
+
+
+class InvalidMissionMetadata(Exception): ...

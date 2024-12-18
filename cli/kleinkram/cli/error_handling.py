@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import typer
-
 from collections import OrderedDict
-from typing import Any, Callable, Type
+from typing import Any
+from typing import Callable
+from typing import Type
 
+import typer
 
 ExceptionHandler = Callable[[Exception], int]
 
