@@ -29,7 +29,7 @@ __all__ = [
     "_get_files_by_mission",
     "_create_mission",
     "_create_project",
-    "_update_mission_metadata",
+    "_update_mission",
     "_get_api_version",
     "_claim_admin",
     "_delete_files",
@@ -45,10 +45,12 @@ PROJECT_ALL = "/project/filtered"
 MISSIONS_BY_PROJECT = "/mission/filtered"
 MISSION_BY_NAME = "/mission/byName"
 MISSION_CREATE = "/mission/create"
-MISSION_UPDATE_METADATA = "/mission/tags"
 FILE_OF_MISSION = "/file/ofMission"
 TAG_TYPE_BY_NAME = "/tag/filtered"
 GET_STATUS = "/user/me"
+
+UPDATE_PROJECT = "/project"
+MISSION_UPDATE_METADATA = "/mission/tags"
 
 
 def _get_projects(client: AuthenticatedClient) -> list[Project]:
@@ -158,6 +160,7 @@ def _create_mission(
 
 
 def _create_project(client: AuthenticatedClient, project_name: str) -> UUID:
+
     raise NotImplementedError
 
 
@@ -189,7 +192,7 @@ def _get_tags_map(
     return ret
 
 
-def _update_mission_metadata(
+def _update_mission(
     client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[str, str]
 ) -> None:
     tags_dct = _get_tags_map(client, metadata)
@@ -204,6 +207,25 @@ def _update_mission_metadata(
     if resp.status_code == 403:
         raise AccessDenied(f"cannot update mission: {mission_id}")
 
+    resp.raise_for_status()
+
+
+def _update_project(
+    client: AuthenticatedClient,
+    project_id: UUID,
+    *,
+    description: Optional[str] = None,
+    new_name: Optional[str] = None,
+) -> None:
+    if description is None and new_name is None:
+        raise ValueError("either description or new_name must be provided")
+
+    body = {}
+    if description is not None:
+        body["description"] = description
+    if new_name is not None:
+        body["name"] = new_name
+    resp = client.put(f"{UPDATE_PROJECT}/{project_id}", json=body)
     resp.raise_for_status()
 
 

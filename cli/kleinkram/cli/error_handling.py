@@ -5,6 +5,8 @@ from typing import Any
 from typing import Callable
 from typing import Type
 
+from click import ClickException
+
 import typer
 
 ExceptionHandler = Callable[[Exception], int]
@@ -34,6 +36,8 @@ class ErrorHandledTyper(typer.Typer):
         try:
             return super().__call__(*args, **kwargs)
         except Exception as e:
+            if isinstance(e, ClickException):
+                raise
             for tp, handler in reversed(self._error_handlers.items()):
                 if isinstance(e, tp):
                     exit_code = handler(e)

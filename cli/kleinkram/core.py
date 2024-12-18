@@ -191,17 +191,20 @@ def update_mission(
     *, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]
 ) -> None:
     # TODO: this funciton will do more than just overwirte the metadata in the future
-    kleinkram.api.routes._update_mission_metadata(client, mission_id, metadata=metadata)
+    kleinkram.api.routes._update_mission(client, mission_id, metadata=metadata)
 
 
 def update_project(
-    *, client: AuthenticatedClient, project_id: UUID, description: Optional[str] = None
+    *,
+    client: AuthenticatedClient,
+    project_id: UUID,
+    description: Optional[str] = None,
+    new_name: Optional[str] = None,
 ) -> None:
-    """\
-    TODO: what should this do?
-    """
-    _ = client, project_id, description
-    raise NotImplementedError("if you have an idea what this should do, open an issue")
+    # TODO: this function should do more in the future
+    kleinkram.api.routes._update_project(
+        client, project_id, description=description, new_name=new_name
+    )
 
 
 def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:
