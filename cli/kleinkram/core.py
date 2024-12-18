@@ -38,7 +38,6 @@ from kleinkram.api.resources import get_files
 from kleinkram.api.resources import get_mission
 from kleinkram.api.resources import get_missions
 from kleinkram.api.resources import get_project
-from kleinkram.api.routes import _create_mission
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -115,7 +114,7 @@ def upload(
         # check if project exists and get its id at the same time
         project_id = get_project(client, spec.project_spec).id
         mission_name = check_mission_spec_is_creatable(spec)
-        _create_mission(
+        kleinkram.api.routes._create_mission(
             client,
             project_id,
             mission_name,

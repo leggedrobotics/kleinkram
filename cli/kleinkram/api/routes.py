@@ -44,13 +44,16 @@ CLAIM_ADMIN = "/user/claimAdmin"
 PROJECT_ALL = "/project/filtered"
 MISSIONS_BY_PROJECT = "/mission/filtered"
 MISSION_BY_NAME = "/mission/byName"
-MISSION_CREATE = "/mission/create"
 FILE_OF_MISSION = "/file/ofMission"
 TAG_TYPE_BY_NAME = "/tag/filtered"
 GET_STATUS = "/user/me"
 
 UPDATE_PROJECT = "/project"
 MISSION_UPDATE_METADATA = "/mission/tags"
+
+
+MISSION_CREATE = "/mission/create"
+CREATE_PROJECT = "/project/create"
 
 
 def _get_projects(client: AuthenticatedClient) -> list[Project]:
@@ -159,9 +162,15 @@ def _create_mission(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def _create_project(client: AuthenticatedClient, project_name: str) -> UUID:
+def _create_project(
+    client: AuthenticatedClient, project_name: str, description: str
+) -> UUID:
+    # TODO: check name and description are valid
+    payload = {"name": project_name, "description": description}
+    resp = client.post(CREATE_PROJECT, json=payload)
+    resp.raise_for_status()
 
-    raise NotImplementedError
+    return UUID(resp.json()["uuid"], version=4)
 
 
 def _get_metadata_type_id_by_name(

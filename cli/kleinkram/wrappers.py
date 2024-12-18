@@ -312,8 +312,10 @@ def create_mission(
     )
 
 
-def create_project(project_name: str) -> None:
-    kleinkram.api.routes._create_project(AuthenticatedClient(), project_name)
+def create_project(project_name: str, description: str) -> None:
+    kleinkram.api.routes._create_project(
+        AuthenticatedClient(), project_name, description
+    )
 
 
 def update_file(file_id: IdLike) -> None:

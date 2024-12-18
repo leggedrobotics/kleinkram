@@ -30,10 +30,13 @@ DELETE_HELP = "delete a project"
 
 @project_typer.command(help=CREATE_HELP)
 def create(
-    project: str = typer.Option(..., "--project", "-p", help="project name")
+    project: str = typer.Option(..., "--project", "-p", help="project name"),
+    description: str = typer.Option(
+        ..., "--description", "-d", help="project description"
+    ),
 ) -> None:
     client = AuthenticatedClient()
-    project_id = kleinkram.api.routes._create_project(client, project)
+    project_id = kleinkram.api.routes._create_project(client, project, description)
 
     project_parsed = get_project(client, ProjectSpec(ids=[project_id]))
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
