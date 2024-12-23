@@ -61,15 +61,16 @@ export const getActions = async (
             res.template.maxRuntime,
             res.template.entrypoint,
             res.template.accessRights,
+            res.template.projectLevelAccess,
         );
 
         const mission = new Mission(
             res.mission.uuid,
             res.mission.name,
-            undefined,
+            null,
             [],
             [],
-            undefined,
+            null,
             new Date(res.mission.createdAt),
             new Date(res.mission.updatedAt),
         );
@@ -143,6 +144,7 @@ export const actionDetails = async (actionUuid: string) => {
         response.data.template.maxRuntime,
         response.data.template.entrypoint,
         response.data.template.accessRights,
+        response.data.template.projectLevelAccess,
     );
     try {
         let worker = null;
@@ -221,6 +223,7 @@ export const listActionTemplates = async (search: string) => {
             res.maxRuntime,
             res.entrypoint,
             res.accessRights,
+            res.projectLevelAccess,
         );
     });
 };
@@ -256,14 +259,15 @@ export const getRunningActions = async () => {
             res.template.maxRuntime,
             res.template.entrypoint,
             res.template.accessRights,
+            res.template.projectLevelAccess,
         );
         const mission = new Mission(
             res.mission.uuid,
             res.mission.name,
-            undefined,
+            null,
             [],
             [],
-            undefined,
+            null,
             new Date(res.mission.createdAt),
             new Date(res.mission.updatedAt),
         );

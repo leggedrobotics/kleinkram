@@ -14,6 +14,7 @@ export class ActionTemplate extends BaseEntity {
     command: string;
     entrypoint: string;
     accessRights: AccessGroupRights;
+    projectLevelAccess: boolean;
 
     constructor(
         uuid: string,
@@ -30,6 +31,7 @@ export class ActionTemplate extends BaseEntity {
         maxRuntime: number,
         entrypoint: string,
         accessRights: AccessGroupRights,
+        projectLevelAccess: boolean
     ) {
         super(uuid, createdAt, updatedAt);
         this.imageName = imageName;
@@ -43,6 +45,7 @@ export class ActionTemplate extends BaseEntity {
         this.maxRuntime = maxRuntime;
         this.entrypoint = entrypoint;
         this.accessRights = accessRights;
+        this.projectLevelAccess = projectLevelAccess;
     }
 
     clone(): ActionTemplate {
@@ -61,6 +64,7 @@ export class ActionTemplate extends BaseEntity {
             this.maxRuntime,
             this.entrypoint,
             this.accessRights,
+            this.projectLevelAccess
         );
     }
 
@@ -83,6 +87,7 @@ export class ActionTemplate extends BaseEntity {
             response.maxRuntime,
             response.entrypoint,
             response.accessRights,
+            response.projectLevelAccess
         );
     }
 }

@@ -181,13 +181,19 @@
                             v-if="editingTemplate"
                         />
                     </div>
-                    <div>
+                    <div class="row">
                         <q-select
                             v-model="selectedAccessRights"
                             :options="options"
                             label="Select Access Rights"
                             map-options
                             style=""
+                            class="col-7"
+                        />
+                      <q-toggle
+                          v-model="editingTemplate.projectLevelAccess"
+                          :label="'Within ' +( editingTemplate.projectLevelAccess ? 'Project' : 'Mission')"
+                          class="col-5"
                         />
                     </div>
                 </div>
@@ -332,6 +338,7 @@ const editingTemplate: Ref<ActionTemplate> = ref(
         2,
         '',
         AccessGroupRights.READ,
+        false
     ),
 );
 // QUERYING ####################################################################
@@ -370,7 +377,7 @@ watch(
     (newValue) => {
         editingTemplate.value.accessRights = newValue.value;
     },
-);
+)
 
 // Fetch mission based on selected project -------------------------------------
 const queryKeyMissions = computed(() => [
@@ -424,6 +431,7 @@ const { mutateAsync: createTemplate } = useMutation({
             searchable,
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
+            projectLevelAccess: editingTemplate.value.projectLevelAccess
         }),
     onSuccess: () => {
         queryClient.invalidateQueries({
@@ -465,6 +473,7 @@ const { mutateAsync: updateTemplate } = useMutation({
             searchable,
             entrypoint: editingTemplate.value.entrypoint,
             accessRights: editingTemplate.value.accessRights,
+            projectLevelAccess: editingTemplate.value.projectLevelAccess
         }),
     onSuccess: (newVal) => {
         queryClient.invalidateQueries({
@@ -607,6 +616,8 @@ const isModified = computed(() => {
         editingTemplate.value?.entrypoint === select.value?.entrypoint;
     const sameAccessRights =
         editingTemplate.value?.accessRights === select.value?.accessRights;
+    const sameScope =
+        editingTemplate.value?.projectLevelAccess === select.value?.projectLevelAccess;
     return !(
         sameName &&
         sameImage &&
@@ -616,7 +627,8 @@ const isModified = computed(() => {
         sameCores &&
         sameRuntime &&
         sameEntrypoint &&
-        sameAccessRights
+        sameAccessRights &&
+        sameScope
     );
 });
 
@@ -649,6 +661,7 @@ function selectTemplate(template: ActionTemplate) {
             2,
             '',
             AccessGroupRights.READ,
+            false,
         );
         select.value = undefined;
         return;

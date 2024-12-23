@@ -563,7 +563,7 @@ const columns = [
     {
         name: 'file.date',
         required: true,
-        label: 'Recoring Date',
+        label: 'Recording Date',
         align: 'left',
         field: (row: FileEntity) => row.date,
         format: (val: string) => formatDate(new Date(val)),

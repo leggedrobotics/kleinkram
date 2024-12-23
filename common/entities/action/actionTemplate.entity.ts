@@ -46,4 +46,7 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column()
     accessRights: AccessGroupRights;
+
+    @Column({default: false})
+    projectLevelAccess: boolean;
 }

@@ -30,6 +30,7 @@ export const createActionTemplate = async (template: {
     searchable: boolean;
     entrypoint: string;
     accessRights: AccessGroupRights;
+    projectLevelAccess: boolean;
 }) => {
     const response = await axios.post('/action/createTemplate', {
         name: template.name,
@@ -42,6 +43,7 @@ export const createActionTemplate = async (template: {
         searchable: template.searchable,
         entrypoint: template.entrypoint,
         accessRights: template.accessRights,
+        projectLevelAccess: template.projectLevelAccess,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -59,6 +61,7 @@ export const createActionTemplate = async (template: {
         res.maxRuntime,
         res.entrypoint,
         res.accessRights,
+        res.projectLevelAccess
     );
 };
 
@@ -74,6 +77,7 @@ export const createNewActionTemplateVersion = async (template: {
     searchable: boolean;
     entrypoint: string;
     accessRights: AccessGroupRights;
+    projectLevelAccess: boolean;
 }) => {
     const response = await axios.post('/action/createNewVersion', {
         uuid: template.uuid,
@@ -87,6 +91,7 @@ export const createNewActionTemplateVersion = async (template: {
         searchable: template.searchable,
         entrypoint: template.entrypoint,
         accessRights: template.accessRights,
+        projectLevelAccess: template.projectLevelAccess,
     });
     const res = response.data;
     return new ActionTemplate(
@@ -104,6 +109,7 @@ export const createNewActionTemplateVersion = async (template: {
         res.maxRuntime,
         res.entrypoint,
         res.accessRights,
+        res.projectLevelAccess
     );
 };
 

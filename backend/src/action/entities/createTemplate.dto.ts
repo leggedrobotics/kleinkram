@@ -43,6 +43,9 @@ export class CreateTemplateDto {
 
     @IsEnum(AccessGroupRights)
     accessRights: AccessGroupRights;
+
+    @IsBoolean()
+    projectLevelAccess: boolean;
 }
 
 export class UpdateTemplateDto extends CreateTemplateDto {
