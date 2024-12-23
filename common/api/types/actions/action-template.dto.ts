@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    IsBoolean,
     IsEnum,
     IsNumber,
     IsString,
@@ -56,6 +57,10 @@ export class ActionTemplateDto {
     @ApiProperty()
     @IsNumber()
     maxRuntime!: number;
+
+    @ApiProperty()
+    @IsBoolean()
+    projectLevelAccess!: boolean;
 }
 
 export class ActionTemplatesDto implements PaggedResponse<ActionTemplateDto> {

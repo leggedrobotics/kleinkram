@@ -49,6 +49,9 @@ export default class ActionTemplate extends BaseEntity {
     @Column()
     accessRights!: AccessGroupRights;
 
+    @Column({default: false})
+    projectLevelAccess!: boolean;
+
     get actionTemplateDto(): ActionTemplateDto {
         return {
             uuid: this.uuid,
@@ -62,6 +65,7 @@ export default class ActionTemplate extends BaseEntity {
             maxRuntime: this.maxRuntime,
             name: this.name,
             version: this.version.toString(),
+            projectLevelAccess: this.projectLevelAccess,
         };
     }
 }
