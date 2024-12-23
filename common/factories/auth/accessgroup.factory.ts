@@ -1,15 +1,18 @@
 import { define } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
-import { extendedFaker } from '../../faker_extended';
+import { extendedFaker } from '../../faker-extended';
 import { faker } from '@faker-js/faker';
+import { AccessGroupType } from '../../frontend_shared/enum';
+import GroupMembership from '../../entities/auth/group-membership.entity';
 
-export type AccessGroupFactoryContext = {
+export interface AccessGroupFactoryContext {
     user: User;
     allUsers: User[];
     isPersonal: boolean;
-};
+}
 
+// @ts-expect-error
 define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
     const accessGroup = new AccessGroup();
 
@@ -18,24 +21,26 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
             context.user,
             'No user provided for personal access group',
         );
-        accessGroup.name = 'Personal: ' + context.user.name;
-        accessGroup.personal = true;
-        accessGroup.inheriting = false;
-        accessGroup.users = [context.user];
+        accessGroup.name = context.user.name;
+        accessGroup.type = AccessGroupType.PRIMARY;
         accessGroup.creator = context.user;
     } else {
         console.assert(
             context.allUsers.length > 0,
             'No users provided for access group',
         );
-        accessGroup.name = 'Group: ' + extendedFaker.company.name();
-        accessGroup.personal = false;
-        accessGroup.inheriting = false;
-        accessGroup.users = faker.helpers.arrayElements(context.allUsers, {
-            min: 0,
-            max: context.allUsers.length,
-        });
+        accessGroup.name = `Group: ${extendedFaker.company.name()}`;
+        accessGroup.type = AccessGroupType.CUSTOM;
         accessGroup.creator = faker.helpers.arrayElement(context.allUsers);
+
+        // add members to group
+        accessGroup.memberships = context.allUsers.map(
+            (user) =>
+                ({
+                    user,
+                    canEditGroup: user === accessGroup.creator,
+                }) as GroupMembership,
+        );
     }
 
     return accessGroup;

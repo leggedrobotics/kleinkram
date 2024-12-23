@@ -1,67 +1,31 @@
-import { User } from 'src/types/User';
 import axios from 'src/api/axios';
-import { AccessGroup } from 'src/types/AccessGroup';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { CurrentAPIUserDto, UsersDto } from '@api/types/user.dto';
+import { AxiosResponse } from 'axios';
+import { PermissionsDto } from '@api/types/permissions.dto';
 
-export const searchUsers = async (search: string): Promise<User[]> => {
-    if (!search) {
-        return [];
+export const searchUsers = async (search: string): Promise<UsersDto> => {
+    if (search === '') {
+        return {
+            users: [],
+            count: 0,
+        };
     }
-    const response = await axios.get('/user/search', { params: { search } });
-    return response.data.map((user: any) => {
-        return new User(
-            user.uuid,
-            user.name,
-            user.email,
-            user.role,
-            user.avatarUrl,
-            [],
-            [],
-            new Date(user.createdAt),
-            new Date(user.updatedAt),
-        );
-    });
-};
-
-export const getMe = async (): Promise<User> => {
-    const response = await axios.get('/user/me');
-    const user = response.data;
-    const accessGroupUsers = user.accessGroupUsers.map((agu: any) => {
-        const accessGroup = new AccessGroup(
-            agu.accessGroup.uuid,
-            agu.accessGroup.name,
-            [],
-            [],
-            [],
-            agu.accessGroup.personal,
-            agu.accessGroup.inheriting,
-            undefined,
-            new Date(agu.accessGroup.createdAt),
-            new Date(agu.accessGroup.updatedAt),
-        );
-        return new AccessGroupUser(
-            agu.uuid,
-            new Date(agu.createdAt),
-            new Date(agu.updatedAt),
-            null,
-            accessGroup,
-            agu.expirationDate ? new Date(agu.expirationDate) : null,
-        );
-    });
-    return new User(
-        user.uuid,
-        user.name,
-        user.email,
-        user.role,
-        user.avatarUrl,
-        [],
-        accessGroupUsers,
-        new Date(user.createdAt),
-        new Date(user.updatedAt),
+    const response: AxiosResponse<UsersDto> = await axios.get<UsersDto>(
+        '/user/search',
+        { params: { search } },
     );
+    return response.data;
 };
 
-export const getPermissions = async () => {
-    const response = await axios.get('/user/permissions');
+export const getMe = async (): Promise<CurrentAPIUserDto> => {
+    const response = await axios.get<CurrentAPIUserDto>('/user/me');
+    const user = response.data;
+    if (!user) throw new Error('User not found');
+    return user;
+};
+
+export const getPermissions = async (): Promise<PermissionsDto> => {
+    const response: AxiosResponse<PermissionsDto> =
+        await axios.get('/user/permissions');
     return response.data;
 };

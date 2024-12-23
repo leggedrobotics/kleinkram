@@ -1,7 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
-import { routeWithLayout } from 'src/router/routesUtils';
-
-/* eslint-disable @typescript-eslint/naming-convention */
+import { routeWithLayout } from './routes-utils';
 
 /**
  *
@@ -15,31 +13,31 @@ const ROUTES = {
     DASHBOARD: routeWithLayout({
         name: 'DashboardPage',
         path: '/dashboard',
-        component: () => import('pages/DashboardPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/dashboard-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     LOGIN: routeWithLayout({
         name: 'LoginPage',
         path: '/login',
-        component: () => import('pages/LoginPage.vue'),
-        layout: () => import('layouts/NoTopNavLayout.vue'),
+        component: () => import('pages/login-page.vue'),
+        layout: () => import('layouts/no-top-nav-layout.vue'),
     }),
 
     DATATABLE: routeWithLayout({
         name: 'DataTablePage',
         path: '/datatable',
         breadcrumbs: [{ displayName: 'All Data', to: undefined }],
-        component: () => import('pages/DataTablePage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/data-table-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     UPLOAD: routeWithLayout({
         name: 'UploadPage',
         path: '/upload',
         breadcrumbs: [{ displayName: 'All Uploads', to: undefined }],
-        component: () => import('pages/UploadPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/upload-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     ACTION: routeWithLayout({
@@ -56,8 +54,8 @@ const ROUTES = {
                 to: '/project/:project_uuid/mission/:mission_uuid/files',
             },
         ],
-        component: () => import('pages/ActionPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/action-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     ANALYSIS_DETAILS: routeWithLayout({
@@ -67,23 +65,23 @@ const ROUTES = {
             { displayName: 'All Actions', to: '/actions' },
             { displayName: 'Action Details', to: undefined },
         ],
-        component: () => import('pages/ActionDetailsPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/action-details-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     LANDING: routeWithLayout({
         name: 'LandingPage',
         path: '/landing',
-        component: () => import('pages/LandingPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/landing-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     PROJECTS: routeWithLayout({
         name: 'ProjectsPage',
         path: '/projects',
         breadcrumbs: [{ displayName: 'All Projects', to: '/projects' }],
-        component: () => import('pages/ProjectsExplorer.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/projects-explorer-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     MISSIONS: routeWithLayout({
@@ -93,8 +91,8 @@ const ROUTES = {
             { displayName: ':project_name', to: undefined },
         ],
         path: '/project/:project_uuid/missions',
-        component: () => import('pages/MissionsExplorer.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/missions-explorer-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     FILES: routeWithLayout({
@@ -108,8 +106,8 @@ const ROUTES = {
             { displayName: ':mission_name', to: undefined },
         ],
         path: '/project/:project_uuid/mission/:mission_uuid/files',
-        component: () => import('pages/FilesExplorer.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/files-explorer-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     FILE: routeWithLayout({
@@ -127,30 +125,30 @@ const ROUTES = {
             { displayName: ':file_name', to: undefined },
         ],
         path: '/project/:project_uuid/mission/:mission_uuid/file/:file_uuid',
-        component: () => import('pages/FileInfo.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/file-info-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     ERROR_404: routeWithLayout({
         name: 'Error404Page',
         path: '/:catchAll(.*)',
-        component: () => import('pages/Error404Page.vue'),
-        layout: () => import('layouts/NoTopNavLayout.vue'),
+        component: () => import('pages/error-404-page.vue'),
+        layout: () => import('layouts/no-top-nav-layout.vue'),
     }),
 
     ERROR_403: routeWithLayout({
         name: 'Error403Page',
         path: '/error-403',
-        component: () => import('pages/Error403Page.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/error-403-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     USER_PROFILE: routeWithLayout({
         name: 'UserProfilePage',
         path: '/user-profile',
         breadcrumbs: [{ displayName: 'Profile', to: undefined }],
-        component: () => import('pages/UserProfilePage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/user-profile-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     ACCESS_GROUPS: routeWithLayout({
@@ -159,8 +157,8 @@ const ROUTES = {
         ],
         name: 'AccessGroupsPage',
         path: '/access-groups',
-        component: () => import('pages/AccessGroupsPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/access-groups-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
     ACCESS_GROUP: routeWithLayout({
@@ -173,14 +171,14 @@ const ROUTES = {
         ],
         name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',
-        component: () => import('pages/AccessGroupPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/access-group-details-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
     HOME: routeWithLayout({
         name: 'HomePage',
         path: '/',
-        component: () => import('pages/IndexPage.vue'),
-        layout: () => import('layouts/MainLayout.vue'),
+        component: () => import('pages/index-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 };
 

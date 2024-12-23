@@ -5,35 +5,35 @@ import Action from '../action/action.entity';
 @Entity()
 export default class Worker extends BaseEntity {
     @Column({ unique: true })
-    identifier: string;
+    identifier!: string;
 
     @Column()
-    hostname: string;
+    hostname!: string;
 
     @Column()
-    cpuMemory: number;
+    cpuMemory!: number;
 
     @Column({ nullable: true })
-    gpuModel: string;
+    gpuModel?: string;
 
     @Column({ default: -1 })
-    gpuMemory: number;
+    gpuMemory!: number;
 
     @Column()
-    cpuCores: number;
+    cpuCores!: number;
 
     @Column()
-    cpuModel: string;
+    cpuModel!: string;
 
     @Column()
-    storage: number;
+    storage!: number;
 
     @Column()
-    lastSeen: Date;
+    lastSeen!: Date;
 
     @Column()
-    reachable: boolean;
+    reachable!: boolean;
 
     @OneToMany(() => Action, (action) => action.worker)
-    actions: Action[];
+    actions?: Action[];
 }

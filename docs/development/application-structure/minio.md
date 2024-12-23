@@ -6,8 +6,8 @@ directly uploaded to & downloaded from Minio.
 
 In minio are three buckets:
 
--   one for `.bag` files,
--   one for `.mcap` files
--   one for `.dump` files for database backups.
+- one for `.bag` files,
+- one for `.mcap` files
+- one for `.dump` files for database backups.
 
 The files are grouped by their `project` and `mission`.

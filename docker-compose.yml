@@ -9,7 +9,6 @@ services:
         volumes:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
-            - /usr/src/app/node_modules
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -103,7 +102,19 @@ services:
             watch:
                 - action: sync
                   path: ./frontend
-                  target: /app
+                  target: /app/frontend
+                  ignore:
+                      - node_modules/
+                      - dist/
+                - action: sync
+                  path: ./common
+                  target: /app/common
+                  ignore:
+                      - node_modules/
+                      - dist/
+                - action: sync
+                  path: ./common/frontend_shared
+                  target: /app/frontend/frontend_shared
 
         depends_on:
             - api-server

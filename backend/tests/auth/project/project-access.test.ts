@@ -6,7 +6,7 @@ import {
     getUserFromDb,
     mockDbUser,
 } from '../../utils/database_utils';
-import { AccessGroupRights, UserRole } from '@common/enum';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import { createProjectUsingPost } from '../../utils/api_calls';
 
 /**
@@ -287,7 +287,6 @@ describe('Verify Project Level Access', () => {
             {
                 method: 'PUT',
                 headers: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                     cookie: `authtoken=${token}`,
                 },
@@ -338,7 +337,7 @@ describe('Verify Project Level Access', () => {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
+
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -391,7 +390,7 @@ describe('Verify Project Level Access', () => {
         const userRepository = db.getRepository(User);
         const externalUser = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['accessGroupUsers', 'accessGroupUsers.accessGroup'],
+            relations: ['memberships', 'memberships.accessGroup'],
         });
 
         const projectRepository = db.getRepository('Project');
@@ -419,7 +418,7 @@ describe('Verify Project Level Access', () => {
         project.project_accesses = [
             {
                 rights: AccessGroupRights.DELETE,
-                accessGroup: externalUser.accessGroupUsers.find(
+                accessGroup: externalUser.memberships.find(
                     (group) => group.accessGroup.personal,
                 )?.accessGroup.uuid,
             },
@@ -459,22 +458,22 @@ describe('Verify Project Level Access', () => {
         expect(project.name).toBe('test_project');
     });
 
-    test('if viewer of a project cannot add any tag types', async () => {
+    test('if viewer of a project cannot add any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if editor of a project can add any tag types', async () => {
+    test('if editor of a project can add any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if viewer of a project cannot delete any tag types', async () => {
+    test('if viewer of a project cannot delete any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if editor of a project can delete any tag types', async () => {
+    test('if editor of a project can delete any tag types', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

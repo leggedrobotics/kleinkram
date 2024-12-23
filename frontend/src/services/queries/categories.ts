@@ -1,23 +1,23 @@
 import axios from 'src/api/axios';
-import { Category } from 'src/types/Category';
+import { AxiosResponse } from 'axios';
+import { CategoriesDto } from '@api/types/category.dto';
 
-export const getCategories = async (projectUUID: string, filter?: string) => {
-    const params = { uuid: projectUUID };
+export const getCategories = async (
+    projectUUID: string,
+    filter?: string,
+): Promise<CategoriesDto> => {
+    const parameters: {
+        uuid: string;
+        filter?: string;
+    } = { uuid: projectUUID };
     if (filter) {
-        params['filter'] = filter;
+        parameters.filter = filter;
     }
-    const response = await axios.get('/category/all', {
-        params,
-    });
-    const cats = response.data[0].map((res: any) => {
-        return new Category(
-            res.uuid,
-            res.createdAt,
-            res.updatedAt,
-            res.name,
-            undefined,
-            [],
-        );
-    });
-    return [cats, response.data[1]];
+    const response: AxiosResponse<CategoriesDto> = await axios.get(
+        '/category/all',
+        {
+            params: parameters,
+        },
+    );
+    return response.data;
 };

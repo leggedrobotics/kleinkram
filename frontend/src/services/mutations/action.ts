@@ -1,13 +1,17 @@
 import axios from 'src/api/axios';
-import { ActionTemplate } from 'src/types/ActionTemplate';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { Action } from 'src/types/Action';
+import { AccessGroupRights } from '@common/enum';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
     templateUUID: string;
-}) => {
-    const response = await axios.post('/action/submit', action);
+}): Promise<ActionSubmitResponseDto> => {
+    const response = await axios.post<ActionSubmitResponseDto>(
+        '/action/submit',
+        action,
+    );
     return response.data;
 };
 
@@ -45,24 +49,7 @@ export const createActionTemplate = async (template: {
         accessRights: template.accessRights,
         projectLevelAccess: template.projectLevelAccess,
     });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-        res.projectLevelAccess
-    );
+    return response.data;
 };
 
 export const createNewActionTemplateVersion = async (template: {
@@ -93,26 +80,9 @@ export const createNewActionTemplateVersion = async (template: {
         accessRights: template.accessRights,
         projectLevelAccess: template.projectLevelAccess,
     });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-        res.projectLevelAccess
-    );
+    return response.data;
 };
 
-export async function deleteAction(action: Action) {
-    return await axios.delete('/action/' + action.uuid);
+export async function deleteAction(action: ActionDto) {
+    return await axios.delete(`/action/${action.uuid}`);
 }

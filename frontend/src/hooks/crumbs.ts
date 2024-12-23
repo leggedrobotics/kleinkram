@@ -1,7 +1,7 @@
-import { computed } from 'vue';
+import { computed, ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { PageBreadCrumb } from 'src/router/routesUtils';
+import { PageBreadCrumb } from '../router/routes-utils';
 
 /**
  * Returns the breadcrumbs for the current route.
@@ -12,15 +12,15 @@ import { PageBreadCrumb } from 'src/router/routesUtils';
  * an empty array is returned.
  *
  */
-export const useCrumbs = () => {
+export const useCrumbs = (): ComputedRef<PageBreadCrumb[]> => {
     const route = useRoute();
     return computed(() => {
-        const nameWithPostfix = (route.name as string) + 'Layout';
+        const nameWithPostfix = `${route.name as string}Layout`;
         const routeDefinition = Object.values(ROUTES).find(
             (r) => r.name === nameWithPostfix,
         );
-        return (
-            routeDefinition ? routeDefinition.breadcrumbs : []
-        ) as PageBreadCrumb[];
+        return routeDefinition?.breadcrumbs === undefined
+            ? []
+            : routeDefinition.breadcrumbs;
     });
 };

@@ -1,17 +1,20 @@
 <template>
     <div class="endpoint">
-        <h4>{{ endpoint }}</h4>
-        <p><strong>Method:</strong> {{ getHttpMethod(spec) }}</p>
+        <div style="margin-bottom: 16px; margin-top: 8px">
+            <span>{{ getHttpMethod(spec).toUpperCase() }}</span>
+            <span style="font-weight: 700; margin-left: 10px">{{
+                endpoint
+            }}</span>
+        </div>
         <p v-if="methodSpec?.summary">
-            <strong>Summary:</strong> {{ methodSpec.summary }}
+            {{ methodSpec.summary }}
         </p>
         <p v-if="methodSpec?.description">
-            <strong>Description:</strong>
             {{ methodSpec?.description }}
         </p>
 
         <div v-if="hasParams">
-            <h4>Parameters</h4>
+            <h4 style="margin-bottom: 12px">Parameters</h4>
             <table>
                 <thead>
                     <tr>
@@ -43,23 +46,35 @@
                             }}
                         </td>
                     </tr>
-                    <tr v-for="bodyParam in bodyParams">
-                        <td>{{ bodyParam.name }}</td>
-                        <td><Paramtype paramtype="body" /></td>
-                        <td>
-                            <Paramdatatype
-                                :datatype="bodyParam.format || bodyParam.type"
-                                :required="bodyParam.required"
-                            />
-                        </td>
-                        <td>{{ bodyParam.description }}</td>
-                    </tr>
                 </tbody>
             </table>
         </div>
 
+        <div v-if="methodSpec.requestBody">
+            <h4 style="margin-bottom: 12px; margin-top: 16px">RequestBody</h4>
+
+            <div :class="{ collapsed }" @click="toggleCollapse">
+                <div
+                    style="
+                        background-color: white;
+                        padding: 12px;
+                        border: 1px solid #ddd;
+                        margin-top: 2px;
+                        font-size: 10px;
+                        line-height: 12px;
+                    "
+                >
+                    <vue-json-pretty
+                        :deep="2"
+                        :showDoubleQuotes="false"
+                        :data="resolveSchemaRefs(methodSpec.requestBody)"
+                    />
+                </div>
+            </div>
+        </div>
+
         <div v-if="methodSpec.responses">
-            <h4>Responses</h4>
+            <h4 style="margin-bottom: 12px; margin-top: 16px">Responses</h4>
             <table>
                 <thead>
                     <tr>
@@ -81,19 +96,91 @@
                     </tr>
                 </tbody>
             </table>
+
+            <h4
+                style="margin-bottom: 12px; margin-top: 16px"
+                v-if="responses.map((r) => r.type).filter(Boolean).length"
+            >
+                Types
+            </h4>
+
+            <div
+                :class="{ collapsed }"
+                @click="toggleCollapse"
+                v-for="response in responses"
+                :key="response.code"
+            >
+                <span>{{ response.type }}</span>
+                <div
+                    style="
+                        background-color: white;
+                        padding: 12px;
+                        border: 1px solid #ddd;
+                        margin-top: 2px;
+                        font-size: 10px;
+                        line-height: 12px;
+                    "
+                    v-if="schema[response.type]"
+                >
+                    <vue-json-pretty
+                        :showDoubleQuotes="false"
+                        :deep="2"
+                        :data="resolveSchemaRefs(schema[response.type])"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Paramtype from './Paramtype.vue';
 import Paramdatatype from './Paramdatatype.vue';
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
+
+// Reactive state to control collapse/expand behavior
+const collapsed = ref(true);
+
+// Method to toggle the collapsed state
+const toggleCollapse = () => {
+    collapsed.value = !collapsed.value;
+};
+
 const props = defineProps<{
     endpoint: string;
     spec: unknown;
     schema: Record<string, unknown>;
 }>();
+
+function resolveSchemaRefs(schema: Record<string, any>): any {
+    if (!schema || typeof schema !== 'object') return schema;
+
+    if (schema.$ref) {
+        // Extract the reference name from the $ref string
+        const ref = schema.$ref.split('/').pop();
+        if (props.schema[ref]) {
+            // Recursively resolve the reference
+            return resolveSchemaRefs(props.schema[ref]);
+        }
+
+        return 'No schema found';
+    }
+
+    if (Array.isArray(schema)) {
+        // Recursively resolve each item in the array
+        return schema.map((item) => resolveSchemaRefs(item));
+    }
+
+    // Recursively resolve properties in an object
+    const resolvedSchema: any = {};
+    for (const key in schema) {
+        resolvedSchema[key] = resolveSchemaRefs(schema[key]);
+    }
+
+    return resolvedSchema;
+}
 
 // Helper function to get the first HTTP method available in the spec
 function getHttpMethod(spec: any) {
@@ -193,16 +280,14 @@ const responses = computed(() => {
     return [];
 });
 
-const hasParams = computed(
-    () => params.value.length > 0 || bodyParams.value.length > 0,
-);
+const hasParams = computed(() => params.value.length > 0);
 </script>
 
 <style scoped>
 .endpoint {
     border: 1px solid #ddd;
     padding: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     background-color: #f9f9f9;
     border-radius: 8px;
 }
@@ -240,6 +325,7 @@ h4 {
 .param-col-1 {
     width: 10%;
 }
+
 .param-col-2 {
     width: 8%;
 }
@@ -251,9 +337,11 @@ h4 {
 .res-col-1 {
     width: 10%;
 }
+
 .res-col-2 {
     width: 20%;
 }
+
 .res-col-3 {
     width: 70%;
 }

@@ -4,14 +4,14 @@
 This scenario shows how access rights can be granted to individuals and groups.
 The chapter illustrate:
 
--   Organizational Units
--   Individual Access Rights
--   Groups
--   Admins
+- Affiliation Groups
+- Individual Access Rights
+- Groups
+- Admins
 
 :::
 
-## Organizational Units
+## Affiliation Groups
 
 The PhD student Hans is part of the RSL and has a @leggedrobotics.com email. Thus he is part of the Organizational Unit RSL.
 For his research about Coffee enhanced Robots, he creates a new project called "**AnyCoffee**" in the RSL Organizational Unit.

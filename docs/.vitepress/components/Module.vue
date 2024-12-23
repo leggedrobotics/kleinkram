@@ -1,5 +1,5 @@
 <template>
-    <div v-if="filteredSpec">
+    <div v-if="filteredSpec" style="margin-top: 25px">
         <div v-for="[path, spec] in Object.entries(filteredSpec.paths)">
             <Endpoint :endpoint="path" :spec="spec" :schema="schema" />
         </div>

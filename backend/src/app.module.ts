@@ -1,77 +1,33 @@
-import {
-    Injectable,
-    MiddlewareConsumer,
-    Module,
-    NestMiddleware,
-} from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FileModule } from './file/file.module';
-import { ProjectModule } from './project/project.module';
+import { FileModule } from './endpoints/file/file.module';
+import { ProjectModule } from './endpoints/project/project.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration from '@common/typeorm_config';
+import configuration from '@common/typeorm-config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import { TopicModule } from './topic/topic.module';
-import { MissionModule } from './mission/mission.module';
-import { QueueModule } from './queue/queue.module';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
+import { TopicModule } from './endpoints/topic/topic.module';
+import { MissionModule } from './endpoints/mission/mission.module';
+import { QueueModule } from './endpoints/queue/queue.module';
+import { UserModule } from './endpoints/user/user.module';
+import { AuthModule } from './endpoints/auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
-import { ActionModule } from './action/actionModule';
-import env from '@common/env';
-import { TagModule } from './tag/tag.module';
+import env from '@common/environment';
+import { TagModule } from './endpoints/tag/tag.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import accessConfig from '../access_config.json';
-import { DBDumper } from './dbdumper/dbdumper.service';
-import { UserResolverMiddleware } from './UserResolverMiddleware';
-import { WorkerModule } from './worker/worker.module';
-import { NextFunction, Request, Response } from 'express';
-import logger from './logger';
-import { CookieNames } from '@common/enum';
-import { ActionService } from './action/action.service';
-import { CategoryModule } from './category/category.module';
+import { DBDumper } from './services/dbdumper.service';
+import { APIKeyResolverMiddleware } from './routing/middlewares/api-key-resolver-middleware.service';
+import { WorkerModule } from './endpoints/worker/worker.module';
+import { CategoryModule } from './endpoints/category/category.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import fs from 'node:fs';
+import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
+import { appVersion } from './app-version';
+import { ActionModule } from './endpoints/action/action.module';
 
-/**
- *
- * Logger middleware for audit logging.
- * Logs every authenticated request made to the application.*
- *
- */
-@Injectable()
-export class AuditLoggerMiddleware implements NestMiddleware {
-    constructor(private actionService: ActionService) {}
-
-    use(req: Request, _: Response, next: NextFunction) {
-        if (!req || !req.cookies) {
-            next();
-            return;
-        }
-
-        const key = req.cookies[CookieNames.CLI_KEY];
-        if (!key) {
-            next();
-            return;
-        }
-
-        const auditLog = {
-            method: req.method,
-            url: req.originalUrl,
-        };
-
-        logger.debug(
-            `AuditLoggerMiddleware: ${JSON.stringify(auditLog, null, 2)}`,
-        );
-
-        this.actionService.writeAuditLog(key, auditLog).then(() => {});
-        next();
-    }
+export interface AccessGroupConfig {
+    emails: [{ email: string; access_groups: string[] }];
+    access_groups: [{ name: string; uuid: string; rights: number }];
 }
-
-const packageJson = JSON.parse(
-    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
-);
-export const appVersion = packageJson.version;
 
 @Module({
     imports: [
@@ -83,7 +39,12 @@ export const appVersion = packageJson.version;
         }),
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [configuration, () => ({ accessConfig: accessConfig })],
+            load: [
+                configuration,
+                (): {
+                    accessConfig: AccessGroupConfig;
+                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+            ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -120,17 +81,19 @@ export const appVersion = packageJson.version;
     ],
     providers: [DBDumper],
 })
-export class AppModule {
-    configure(consumer: MiddlewareConsumer) {
-        consumer
-            .apply(UserResolverMiddleware, AuditLoggerMiddleware)
+export class AppModule implements NestModule {
+    /**
+     * Apply middleware to all routes.
+     * Middleware is a function which is called before the route handler.
+     *
+     * The middleware function has access to the request and response objects
+     * and is used find the user by the API key or JWT token.
+     *
+     * @param consumer
+     */
+    configure(consumer: MiddlewareConsumer): void {
+        consumer // enable default middleware for all routes
+            .apply(APIKeyResolverMiddleware, AuditLoggerMiddleware)
             .forRoutes('*');
     }
 }
-
-export type AccessGroupConfig = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    emails: [{ email: string; access_groups: string[] }];
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    access_groups: [{ name: string; uuid: string; rights: number }];
-};

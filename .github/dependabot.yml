@@ -1,16 +1,10 @@
 version: 2
 updates:
-    - package-ecosystem: 'pip'
-      directory: '/CLI'
-      schedule:
-          interval: 'weekly'
-      target-branch: 'dev'
-
     - package-ecosystem: 'npm'
       directory: '/backend'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'
 
       groups:
           open-telemetry:
@@ -22,19 +16,19 @@ updates:
       directory: '/common'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'
 
     - package-ecosystem: 'npm'
       directory: '/docs'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'
 
     - package-ecosystem: 'npm'
       directory: '/queueConsumer'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'
 
       groups:
           open-telemetry:
@@ -46,10 +40,10 @@ updates:
       directory: '/frontend'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'
 
     - package-ecosystem: 'github-actions'
       directory: '/'
       schedule:
           interval: 'weekly'
-      target-branch: 'dev'
+      target-branch: 'staging'

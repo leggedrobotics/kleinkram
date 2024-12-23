@@ -8,14 +8,14 @@ import User from '../user/user.entity';
 @Unique('unique_category_name_per_project', ['name', 'project'])
 export default class Category extends BaseEntity {
     @Column()
-    name: string;
+    name!: string;
 
     @ManyToOne(() => Project, (project) => project.categories)
-    project: Project;
+    project?: Project;
 
     @ManyToMany(() => FileEntity, (file) => file.categories)
-    files: FileEntity[];
+    files?: FileEntity[];
 
     @ManyToOne(() => User, (user) => user.categories)
-    creator: User;
+    creator?: User;
 }

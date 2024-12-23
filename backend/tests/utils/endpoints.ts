@@ -2,6 +2,7 @@ import assert from 'node:assert';
 
 export const getEndpoints = () => {
     // load endpoints from __generated__endpoints.json
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
     assert.ok(
         fs.existsSync('.endpoints/__generated__endpoints.json'),

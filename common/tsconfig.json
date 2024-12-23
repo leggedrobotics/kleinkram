@@ -1,6 +1,12 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        "strict": true,
+        "exactOptionalPropertyTypes": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "strictPropertyInitialization": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
         "declaration": true,
         "esModuleInterop": true,
         "removeComments": true,
@@ -12,11 +18,10 @@
         "outDir": "./dist",
         "baseUrl": "./",
         "incremental": true,
-        "skipLibCheck": true,
-        "strictNullChecks": false,
+        "strictNullChecks": true,
         "noImplicitAny": false,
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
-        "noFallthroughCasesInSwitch": false
+        "noFallthroughCasesInSwitch": false,
     }
 }

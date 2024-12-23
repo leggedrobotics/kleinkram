@@ -12,6 +12,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
@@ -22,10 +23,11 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
+        // @ts-ignore
         new BatchSpanProcessor(exporter, {
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
-            scheduledDelayMillis: 5_000,
+            scheduledDelayMillis: 5000,
             maxExportBatchSize: 512,
         }),
     ],
@@ -48,8 +50,10 @@ const sdk = new NodeSDK({
 // gracefully shut down the SDK on process exit
 process.on('SIGTERM', () => {
     sdk.shutdown()
-        .then(() => console.log('Tracing terminated'))
-        .catch((error) => console.log('Error terminating tracing', error))
+        .then(() => logger.debug('Tracing terminated'))
+        .catch((error: unknown) =>
+            logger.debug('Error terminating tracing', error),
+        )
         .finally(() => process.exit(0));
 });
 
@@ -69,48 +73,61 @@ const tracer = trace.getTracer('graphQL-backend');
  */
 export const traceWrapper =
     <T extends unknown[], U>(
-        fn: (..._: T) => U,
-        fnName?: string,
+        function_: (..._: T) => U,
+        functionName?: string,
     ): ((...__: T) => U) =>
-    (...args: T): U =>
-        tracer.startActiveSpan(fnName || fn.name || 'traceWrapper', (span) => {
-            let result: U | Promise<any>;
+    (...arguments_: T): U =>
+        tracer.startActiveSpan(
+            functionName || function_.name || 'traceWrapper',
+            (span) => {
+                let result: U | Promise<any>;
 
-            // capture some metadata about the function call
-            args.forEach((arg: any) => {
-                // check if arg is of type Job or QueueEntity and add metadata
-                if (arg?.constructor?.name === 'Job' && !!arg?.id) {
-                    span.setAttribute('queue_processor_job_id', arg?.id);
-                } else if (
-                    arg?.constructor?.name === 'QueueEntity' &&
-                    !!arg?.uuid
-                ) {
-                    span.setAttribute('queue_uuid', arg?.uuid);
+                // capture some metadata about the function call
+                // eslint-disable-next-line unicorn/no-array-for-each
+                arguments_.forEach((argument: any) => {
+                    // check if arg is of type Job or QueueEntity and add metadata
+                    if (
+                        argument?.constructor?.name === 'Job' &&
+                        !!argument?.id
+                    ) {
+                        span.setAttribute(
+                            'queue_processor_job_id',
+                            argument?.id,
+                        );
+                    } else if (
+                        argument?.constructor?.name === 'QueueEntity' &&
+                        !!argument?.uuid
+                    ) {
+                        span.setAttribute('queue_uuid', argument?.uuid);
+                    }
+                });
+
+                try {
+                    result = function_(...arguments_);
+
+                    // if the result is a promise, we need to catch any
+                    // exceptions and record them before ending the span
+                    if (result instanceof Promise)
+                        result
+                            .catch((error: unknown) => {
+                                span.recordException(error as Exception);
+                                span.setAttribute('error', true);
+                            })
+                            .finally(() => {
+                                span.end();
+                            });
+                } catch (error) {
+                    span.recordException(error as Exception);
+                    span.setAttribute('error', true);
+                    throw error;
+                } finally {
+                    // @ts-ignore
+                    if (!(result instanceof Promise)) span.end();
                 }
-            });
 
-            try {
-                result = fn(...args);
-
-                // if the result is a promise, we need to catch any
-                // exceptions and record them before ending the span
-                if (result instanceof Promise)
-                    result
-                        .catch((e) => {
-                            span.recordException(e);
-                            span.setAttribute('error', true);
-                        })
-                        .finally(() => span.end());
-            } catch (e) {
-                span.recordException(e as Exception);
-                span.setAttribute('error', true);
-                throw e;
-            } finally {
-                if (!(result instanceof Promise)) span.end();
-            }
-
-            return result;
-        });
+                return result;
+            },
+        );
 
 /**
  *
@@ -119,53 +136,56 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function tracing<A extends unknown[], C>(
-    traceName: string = undefined,
+    traceName = '',
 ):
     | (MethodDecorator & ClassDecorator)
     | ((
           target: Record<string | symbol, any>,
           propertyKey?: string | symbol,
-          descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
+          descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
       ) => void) {
+    // @ts-ignore
     return function (
-        target: new (...args: A) => C,
+        target: new (...arguments_: A) => C,
         propertyKey?: string | symbol,
-        descriptor?: TypedPropertyDescriptor<(...args: A) => C>,
-    ):
-        | void
-        | (new (...args: A) => C)
-        | TypedPropertyDescriptor<(...args: A) => C> {
+        descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
+    ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    | void
+        | (new (...arguments_: A) => C)
+        | TypedPropertyDescriptor<(...arguments_: A) => C> {
         const applyWrap = (
             methodName: string | symbol,
-            originalMethod: (...args: A) => C,
-        ): ((...args: A) => C) => {
-            return function (...args: A): C {
+            originalMethod: (...arguments_: A) => C,
+            // eslint-disable-next-line unicorn/consistent-function-scoping
+        ): ((...arguments_: A) => C) => {
+            return function (...arguments_: A): C {
                 return traceWrapper(
+                    // @ts-ignore
                     originalMethod.bind(this),
                     traceName,
-                )(...args) as C;
+                )(...arguments_) as C;
             };
         };
 
-        if (typeof propertyKey === 'undefined') {
+        if (propertyKey === undefined) {
             // Decorator is applied to all methods of a class
-            Reflect.ownKeys(target.prototype).forEach(
-                (methodName: string | symbol): void => {
-                    const originalMethod: (...args: A) => C =
-                        target.prototype[methodName];
-                    if (typeof originalMethod === 'function') {
-                        target.prototype[methodName] = applyWrap(
-                            methodName,
-                            originalMethod,
-                        );
-                    }
-                },
-            );
+            for (const methodName of Reflect.ownKeys(target.prototype)) {
+                const originalMethod: (...arguments_: A) => C =
+                    target.prototype[methodName];
+                if (typeof originalMethod === 'function') {
+                    target.prototype[methodName] = applyWrap(
+                        methodName,
+                        originalMethod,
+                    );
+                }
+            }
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method
-            const originalMethod: (...args: A) => C = descriptor.value;
+            // @ts-ignore
+            const originalMethod: (...arguments_: A) => C = descriptor.value;
             if (typeof originalMethod === 'function') {
                 descriptor.value = applyWrap(propertyKey, originalMethod);
             }

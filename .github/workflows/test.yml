@@ -2,6 +2,9 @@ name: Test The Application
 
 on:
     pull_request:
+        branches:
+            - main
+            - dev
 
 jobs:
     test_API:
