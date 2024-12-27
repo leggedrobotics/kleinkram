@@ -189,9 +189,8 @@ const projects = computed(() =>
         ? projectsReturn.data.value.data
         : ([] as ProjectWithCreator[]),
 );
-
 const { data: _missions, refetch } = useMissionsOfProjectMinimal(
-    selected_project.value?.uuid ?? '',
+    computed(() => selected_project.value?.uuid),
     100,
     0,
 );

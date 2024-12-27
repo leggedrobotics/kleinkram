@@ -382,13 +382,13 @@ export const useFilteredProjects = (
 };
 
 export const useMissionsOfProjectMinimal = (
-    projectUuid: string,
+    projectUuid: Ref<string | undefined>,
     take: number,
     skip: number,
 ): UseQueryReturnType<MissionsDto | undefined, Error> => {
     return useQuery<MissionsDto>({
-        queryKey: computed(() => ['missions', projectUuid]),
-        queryFn: () => missionsOfProjectMinimal(projectUuid, take, skip),
+        queryKey: computed(() => ['missions', projectUuid.value]),
+        queryFn: () => missionsOfProjectMinimal(projectUuid.value, take, skip),
     });
 };
 

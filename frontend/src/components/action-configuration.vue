@@ -85,9 +85,7 @@
                         </q-chip>
                     </div>
                 </div>
-                <span class="text-h5" style="margin-top: 32px"
-                    >Define the Action</span
-                >
+                <span class="text-h5" style="margin-top: 32px">Define the Action</span>
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
                         <label for="dockerImage">Define the Action</label>
@@ -240,8 +238,8 @@
                         :disable="!isNameSelected"
                         @click="submitAnalysis"
                     >
-                        <q-tooltip v-if="!isNameSelected"
-                            >Cant submit Action without a name
+                        <q-tooltip v-if="!isNameSelected">
+Cant submit Action without a name
                         </q-tooltip>
                     </q-btn>
                 </div>
@@ -297,7 +295,8 @@ const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
 watch(selectedTemplate, () => {
     if (selectedTemplate.value) {
         isNameSelected.value = true;
-        if (selectedTemplate.value.uuid === '') {
+        console.log(selectedTemplate.value.uuid);
+        if (!selectedTemplate.value.uuid) {
             //Got New Template
             console.log('Handling New template');
             newValue(selectedTemplate.value.name, () => ({}));
@@ -374,12 +373,11 @@ watch(
     (_newValue) => {
         editingTemplate.value.accessRights = _newValue.value;
     },
-)
+);
 
 // Fetch mission based on selected project -------------------------------------
-
 const { data: _missions } = useMissionsOfProjectMinimal(
-    handler.value.projectUuid || '',
+    computed(() => handler.value.projectUuid),
     500,
     0,
 );
@@ -542,10 +540,7 @@ async function submitAnalysis() {
         template = await createTemplate(false);
     }
     editingTemplate.value = template;
-    selectedTemplate.value = template.clone();
-
-    editingTemplate.value = template;
-    select.value = structuredClone(template);
+    selectedTemplate.value = template;
 
     let createPromise: Promise<ActionSubmitResponseDto>;
     if (hasMissionUUIDs.value) {
@@ -628,7 +623,7 @@ const isModified = computed(() => {
         editingTemplate.value?.accessRights ===
         selectedTemplate.value.accessRights;
     const sameScope =
-        editingTemplate.value?.projectLevelAccess === select.value?.projectLevelAccess;
+        editingTemplate.value?.projectLevelAccess === selectedTemplate.value?.projectLevelAccess;
     return !(
         sameName &&
         sameImage &&
@@ -652,6 +647,7 @@ function newValue(value: string, done: any) {
         selectedTemplate.value = existingTemplate;
     }
     editingTemplate.value.name = value;
+    editingTemplate.value.projectLevelAccess = false;
     done(editingTemplate);
 }
 

@@ -137,7 +137,7 @@ const projects = computed(() =>
 );
 
 const { data: _missions } = useMissionsOfProjectMinimal(
-    selected.value.projectUUID,
+    computed(() => selected.value.projectUUID),
     100,
     0,
 );

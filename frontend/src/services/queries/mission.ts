@@ -13,7 +13,7 @@ export const getMission = async (
 };
 
 export const missionsOfProjectMinimal = async (
-    projectUUID: string,
+    projectUUID: string | undefined,
     take = 100,
     skip = 0,
     sortBy = 'createdAt',

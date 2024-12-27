@@ -144,6 +144,7 @@ export class ActionService {
             maxRuntime: createdTemplate.maxRuntime,
             name: createdTemplate.name,
             version: createdTemplate.version.toString(),
+            projectLevelAccess: createdTemplate.projectLevelAccess,
         };
     }
 

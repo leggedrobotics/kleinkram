@@ -74,7 +74,6 @@ export default tseslint.config(
             'vue/require-explicit-emits': 'error',
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
-            'unicorn/no-null': 'warn',
 
             // used as we have disabled prettier for the local dev setup
             'vue/html-indent': 'off',

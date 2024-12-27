@@ -75,11 +75,12 @@ export class UserService implements OnModuleInit {
     }
 
     async me(auth: AuthHeader): Promise<CurrentAPIUserDto> {
-        return (await this.userRepository.findOneOrFail({
+        const res = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
             relations: ['memberships', 'memberships.accessGroup'],
-        })) as unknown as CurrentAPIUserDto;
+        });
+        return res as unknown as CurrentAPIUserDto;
     }
 
     async findAll(skip: number, take: number): Promise<UsersDto> {

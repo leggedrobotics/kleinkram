@@ -85,23 +85,23 @@
     </q-select>
 
     <q-list
-        v-if="selectedTemplate && selectedTemplate.createdBy == null"
+        v-if="selectedTemplate"
         class="bg-orange rounded-borders"
     >
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
-                <q-item-label lines="1"
-                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                <q-item-label lines="1">
+{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
                 </q-item-label>
                 <q-item-label caption> new Template</q-item-label>
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -112,20 +112,20 @@
     >
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
-                <q-item-label lines="1"
-                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                <q-item-label lines="1">
+{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
                 </q-item-label>
-                <q-item-label caption>
-                    created: {{ selectedTemplate.createdAt }}
-                </q-item-label>
+<!--                <q-item-label caption>-->
+<!--                    created: {{ selectedTemplate.createdAt }}-->
+<!--                </q-item-label>-->
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -133,16 +133,16 @@
     <q-list v-else class="bg-red-2 rounded-borders">
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
                 <q-item-label lines="1">An action needs a name</q-item-label>
-                <q-item-label caption></q-item-label>
+                <q-item-label caption />
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -156,7 +156,7 @@ const DEFAULT_ACTION_TEMPLATE: ActionTemplateDto = {};
 
 //gets passed as input
 const { actionTemplates } = defineProps<{
-    actionTemplates: ActionTemplate[];
+    actionTemplates: ActionTemplateDto[];
 }>();
 //template that gets written
 const selectedTemplate = defineModel<ActionTemplateDto>();
@@ -192,7 +192,7 @@ function filterActionTemplates(value: string) {
         }) || [];
 }
 
-function updateSelectedTemplate(selTempl: ActionTemplate) {
+function updateSelectedTemplate(selTempl: ActionTemplateDto) {
     selectedTemplate.value = selTempl;
 }
 
