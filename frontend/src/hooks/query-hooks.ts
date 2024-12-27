@@ -441,12 +441,12 @@ export const useActions = (
 ): UseQueryReturnType<ActionsDto | undefined, Error> => {
     if (missionUuid === undefined) missionUuid = '';
     if (search === undefined) search = '';
-
+    console.log('useActions', unref(projectUuid), unref(missionUuid));
     return useQuery<ActionsDto>({
         queryKey: computed(() => [
             'action_mission',
-            projectUuid,
-            missionUuid,
+            unref(projectUuid),
+            unref(missionUuid),
             queryKey,
         ]),
         queryFn: () =>

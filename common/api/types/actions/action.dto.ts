@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
     IsDate,
     IsEnum,
-    IsNumber,
+    IsNumber, IsOptional,
     IsString,
     IsUUID,
     ValidateNested,
@@ -80,10 +80,11 @@ export class ActionDto {
     @Type(() => UserDto)
     creator!: UserDto;
 
-    @ApiProperty()
+    @ApiProperty({nullable: true})
     @ValidateNested()
+    @IsOptional()
     @Type(() => ActionWorkerDto)
-    worker!: ActionWorkerDto;
+    worker?: ActionWorkerDto;
 }
 
 export class ActionsDto implements PaggedResponse<ActionDto> {

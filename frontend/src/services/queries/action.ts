@@ -26,7 +26,6 @@ export const getActions = async (
     const response: AxiosResponse<ActionsDto> = await axios.get<ActionsDto>(
         '/action/listActions',
         { params: parameters },
-            res.template.projectLevelAccess,
         );
 
     return response.data;
