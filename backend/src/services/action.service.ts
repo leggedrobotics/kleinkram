@@ -160,6 +160,7 @@ export class ActionService {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: data.uuid },
         });
+
         if (
             !template.searchable &&
             data.searchable &&
@@ -183,28 +184,30 @@ export class ActionService {
         });
         const direction = data.searchable ? 'DESC' : 'ASC';
         const change = data.searchable ? 1 : -1;
-        const previousVersions =
+        const previousVersion =
             await this.actionTemplateRepository.findOneOrFail({
                 where: { name: data.name },
                 order: { version: direction },
             });
-        template.name = data.name;
-        template.cpuCores = data.cpuCores;
-        template.cpuMemory = data.cpuMemory;
-        template.gpuMemory = data.gpuMemory;
-        template.image_name = data.image;
-        template.createdBy = dbuser;
-        template.command = data.command ?? '';
-        template.version = previousVersions[0].version ?? 0 + change;
-        template.uuid = '';
-        template.searchable = data.searchable;
-        template.maxRuntime = data.maxRuntime;
-        template.entrypoint = data.entrypoint ?? '';
-        template.accessRights = data.accessRights;
-        template.projectLevelAccess = data.projectLevelAccess;
+        const nextVersionNumber = (previousVersion.version ?? 0) + change;
+        const nextVersion = this.actionTemplateRepository.create({
+            name: data.name,
+            cpuCores: data.cpuCores,
+            cpuMemory: data.cpuMemory,
+            gpuMemory: data.gpuMemory,
+            image_name: data.image,
+            createdBy: dbuser,
+            command: data.command ?? '',
+            version: nextVersionNumber,
+            searchable: data.searchable,
+            maxRuntime: data.maxRuntime,
+            entrypoint: data.entrypoint ?? '',
+            accessRights: data.accessRights,
+            projectLevelAccess: data.projectLevelAccess,
+        });
 
         const savedTemplate =
-            await this.actionTemplateRepository.save(template);
+            await this.actionTemplateRepository.save(nextVersion);
         return savedTemplate.actionTemplateDto;
     }
 
