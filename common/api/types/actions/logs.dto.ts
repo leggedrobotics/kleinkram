@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsString } from 'class-validator';
 
 export class LogsDto {
-    @ApiProperty()
-    @IsDate()
+    @ApiProperty({ type: 'string' })
+    @IsString()
     timestamp!: Date;
 
     @ApiProperty()
