@@ -4,12 +4,16 @@ import { AccessGroupRights, KeyTypes } from '../../frontend_shared/enum';
 import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
 import User from '../user/user.entity';
+import {IsBoolean} from "class-validator";
 
 @Entity()
 export default class Apikey extends BaseEntity {
     @Column({ unique: true })
     @Generated('uuid')
     apikey!: string;
+
+    @Column({default: false})
+    projectLevelAccess!: boolean;
 
     @Column()
     key_type!: KeyTypes;

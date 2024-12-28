@@ -10,10 +10,13 @@ import { isUUID } from 'class-validator';
 import logger from '../../logger';
 import Apikey from '@common/entities/auth/apikey.entity';
 import { ProjectGuardService } from '../../services/project-guard.service';
+import Project from "@common/entities/project/project.entity";
 
 @Injectable()
 export class MissionGuardService {
     constructor(
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
         private projectGuardService: ProjectGuardService,
@@ -193,5 +196,36 @@ export class MissionGuardService {
 
         if (!mission) return false;
         return this.canKeyAccessMission(apikey, mission.uuid, rights);
+    }
+
+    async canKeyAccessProject(
+        apikey: Apikey,
+        missionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ): Promise<boolean> {
+        const requestedMission = await this.missionRepository.findOne({
+            where: { uuid: missionUUID },
+            relations: ['project'],
+        });
+        const apikeyMission = await this.missionRepository.findOne({
+            where: { uuid: apikey.mission.uuid },
+            relations: ['project'],
+        });
+        return apikeyMission?.project?.uuid=== requestedMission?.project?.uuid && apikey.rights >= rights;
+    }
+
+    async canAccessProject(
+        user: User,
+        missionUUID: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
+    ): Promise<boolean> {
+        const requestedMission = await this.missionRepository.findOne({
+            where: { uuid: missionUUID },
+            relations: ['project'],
+        });
+        if (!requestedMission || !requestedMission.project) {
+            return false;
+        }
+        return this.projectGuardService.canAccessProject(user, requestedMission.project.uuid, rights);
     }
 }

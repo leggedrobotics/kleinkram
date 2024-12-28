@@ -95,7 +95,6 @@ async function bootstrap(): Promise<void> {
     logger.debug('Endpoints saved');
 }
 
-// eslint-disable-next-line unicorn/prefer-top-level-await
 bootstrap().catch((error: unknown) => {
     logger.error('Failed to start application');
     logger.error(error);

@@ -27,6 +27,7 @@ import { MissionGuardService } from './mission-guard.service';
 import { ActionGuardService } from './action-guard.service';
 import { AuthGuardService } from './auth-guard.service';
 import { UserService } from '../../services/user.service';
+import User from "@common/entities/user/user.entity";
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -41,7 +42,7 @@ export class BaseGuard extends AuthGuard('jwt') {
         if (!request.user) {
             await super.canActivate(context); // Ensure the user is authenticated first by reading JWT
         }
-        const { user, apiKey } = request.user;
+        const { user, apiKey } = request.user as {user: User, apiKey: Apikey};
         if (!user) {
             throw new UnauthorizedException('User not logged in');
         }
@@ -703,14 +704,23 @@ export class CreateActionGuard extends BaseGuard {
             });
 
         if (apiKey) {
+            if(actionTemplate.projectLevelAccess){
+                if(!apiKey.projectLevelAccess){
+                    throw new UnauthorizedException('API Key does not have project level access required for actions with project level access');
+                }
+                return await this.missionGuardService.canKeyAccessProject(apiKey, missionUUID, actionTemplate.accessRights);
+            }
             return this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 actionTemplate.accessRights,
             );
         }
+        if(actionTemplate.projectLevelAccess){
+            return this.missionGuardService.canAccessProject(user, missionUUID, actionTemplate.accessRights);
+        }
         return this.missionGuardService.canAccessMission(
-            user.uuid,
+            user,
             missionUUID,
             actionTemplate.accessRights,
         );
@@ -804,7 +814,7 @@ export class CreateActionsGuard extends BaseGuard {
         const allCanAccess = await Promise.all(
             missionUUIDs.map((missionUUID) =>
                 this.missionGuardService.canAccessMission(
-                    user.uuid,
+                    user,
                     missionUUID,
                     actionTemplate.accessRights,
                 ),
