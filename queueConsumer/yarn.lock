@@ -351,14 +351,14 @@
     webpack "5.96.1"
     webpack-node-externals "3.0.0"
 
-"@nestjs/common@10.4.7":
-  version "10.4.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-10.4.7.tgz#076cb77c06149805cb1e193d8cdc69bbe8446c75"
-  integrity sha512-gIOpjD3Mx8gfYGxYm/RHPcJzqdknNNFCyY+AxzBT3gc5Xvvik1Dn5OxaMGw5EbVfhZgJKVP0n83giUOAlZQe7w==
+"@nestjs/common@10.4.15":
+  version "10.4.15"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-10.4.15.tgz#27c291466d9100eb86fdbe6f7bbb4d1a6ad55f70"
+  integrity sha512-vaLg1ZgwhG29BuLDxPA9OAcIlgqzp9/N8iG0wGapyUNTf4IY4O6zAHgN6QalwLhFxq7nOI021vdRojR1oF3bqg==
   dependencies:
     uid "2.0.2"
     iterare "1.2.1"
-    tslib "2.7.0"
+    tslib "2.8.1"
 
 "@nestjs/config@^3.3.0":
   version "3.3.0"
