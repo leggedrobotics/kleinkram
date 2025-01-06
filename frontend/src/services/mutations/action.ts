@@ -63,19 +63,7 @@ export const createNewActionTemplateVersion = async (template: {
     entrypoint: string;
     accessRights: AccessGroupRights;
 }) => {
-    const response = await axios.post('/action/createNewVersion', {
-        uuid: template.uuid,
-        name: template.name,
-        command: template.command,
-        image: template.dockerImage,
-        cpuCores: template.cpuCores,
-        cpuMemory: template.cpuMemory,
-        gpuMemory: template.gpuMemory,
-        maxRuntime: template.maxRuntime,
-        searchable: template.searchable,
-        entrypoint: template.entrypoint,
-        accessRights: template.accessRights,
-    });
+    const response = await axios.post('/action/createNewVersion', template);
     return response.data;
 };
 

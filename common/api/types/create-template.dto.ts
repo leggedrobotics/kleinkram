@@ -20,7 +20,7 @@ export class CreateTemplateDto {
 
     @IsString()
     @IsNotEmpty()
-    image!: string;
+    dockerImage!: string;
 
     @IsNumber()
     cpuCores!: number;
