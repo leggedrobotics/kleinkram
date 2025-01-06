@@ -65,6 +65,7 @@ const properties = defineProps<{
 }>();
 const queryClient = useQueryClient();
 
+const userSelect = ref();
 const search = ref('');
 const selected: Ref<UserDto[]> = ref([]);
 const { data: foundUsers } = useUserSearch(search);
@@ -102,8 +103,7 @@ const { mutate } = useMutation({
 const onInputUpdate = (value: string) => {
     search.value = value;
     if (value.length > 0) {
-        // @ts-ignore
-        $refs?.userSelect?.showPopup(); // Ensure dropdown opens again
+        userSelect.value?.showPopup(); // Ensure dropdown opens again
     }
 };
 

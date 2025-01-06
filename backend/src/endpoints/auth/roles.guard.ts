@@ -815,28 +815,6 @@ export class CreateActionsGuard extends BaseGuard {
 }
 
 @Injectable()
-export class AddUserToAccessGroupGuard extends BaseGuard {
-    constructor(private authGuardService: AuthGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-        const accessGroupUUID = request.body.uuid || request.params.uuid;
-
-        if (apiKey) {
-            throw new UnauthorizedException(
-                'CLI Keys cannot add users to access groups',
-            );
-        }
-        return this.authGuardService.canAddUserToAccessGroup(
-            user,
-            accessGroupUUID,
-        );
-    }
-}
-
-@Injectable()
 export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
     constructor(
         private reflector: Reflector,
@@ -880,7 +858,7 @@ export class CanEditGroupByGroupUuid extends BaseGuard {
             );
         }
 
-        const aguUUID = request.body.aguUUID || request.params.aguUUID;
+        const aguUUID = request.body.uuid || request.params.uuid;
         return this.authGuardService.canEditAccessGroupByGroupUuid(
             user,
             aguUUID,
