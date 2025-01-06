@@ -4,8 +4,8 @@ from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import NewType
-from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import File
@@ -31,13 +31,14 @@ MISSION_OBJECT_KEYS = []
 class FileObjectKeys(str, Enum):
     UUID = "uuid"
     FILENAME = "filename"
-    DATE = "date"
+    DATE = "date"  # at some point this will become a metadata
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
     STATE = "state"
+    SIZE = "size"
     HASH = "hash"
+    TYPE = "type"
     TAGS = "categories"
-    TOPICS = "topics"
 
 
 class MissionObjectKeys(str, Enum):
@@ -57,65 +58,89 @@ class ProjectObjectKeys(str, Enum):
     UPDATED_AT = "updatedAt"
 
 
+def _parse_datetime(date: str) -> datetime:
+    try:
+        return datetime.fromisoformat(date)
+    except ValueError as e:
+        raise ParsingError(f"error parsing date: {date}") from e
+
+
+def _parse_file_state(state: str) -> FileState:
+    try:
+        return FileState(state)
+    except ValueError as e:
+        raise ParsingError(f"error parsing file state: {state}") from e
+
+
 def _parse_project(project_object: ProjectObject) -> Project:
     try:
-        project_id = UUID(project_object["uuid"], version=4)
-        project_name = project_object["name"]
-        project_description = project_object["description"]
-    except Exception:
-        raise ParsingError(f"error parsing project: {project_object}")
-    return Project(id=project_id, name=project_name, description=project_description)
+        id_ = UUID(project_object[ProjectObjectKeys.UUID], version=4)
+        name = project_object[ProjectObjectKeys.NAME]
+        description = project_object[ProjectObjectKeys.DESCRIPTION]
+        created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
+        updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
+    except Exception as e:
+        raise ParsingError(f"error parsing project: {project_object}") from e
+    return Project(
+        id=id_,
+        name=name,
+        description=description,
+        created_at=created_at,
+        updated_at=updated_at,
+    )
 
 
-def _parse_mission(
-    mission: MissionObject, project: Optional[ProjectObject] = None
-) -> Mission:
+def _parse_mission(mission: MissionObject, project: Project) -> Mission:
     try:
-        mission_id = UUID(mission["uuid"], version=4)
-        mission_name = mission["name"]
-
-        project_id = (
-            project.id if project else UUID(mission["project"]["uuid"], version=4)
-        )
-        project_name = project.name if project else mission["project"]["name"]
+        id_ = UUID(mission[MissionObjectKeys.UUID], version=4)
+        name = mission[MissionObjectKeys.NAME]
+        created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
+        updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
+        metadata = {}  # TODO: this crap is really bad to parse
 
         parsed = Mission(
-            id=mission_id,
-            name=mission_name,
-            project_id=project_id,
-            project_name=project_name,
+            id=id_,
+            name=name,
+            created_at=created_at,
+            updated_at=updated_at,
+            metadata=metadata,
+            project_id=project.id,
+            project_name=project.name,
         )
-    except Exception:
-        raise ParsingError(f"error parsing mission: {mission}")
+    except Exception as e:
+        raise ParsingError(f"error parsing mission: {mission}") from e
     return parsed
 
 
-def _parse_file(file: FileObject, mission: Optional[MissionObject] = None) -> File:
+def _parse_file(file: FileObject, mission: Mission) -> File:
     try:
-        filename = file["filename"]
-        file_id = UUID(file["uuid"], version=4)
-        file_size = file["size"]
-        file_hash = file["hash"]
-
-        project_id = (
-            mission.project_id if mission else UUID(file["project"]["uuid"], version=4)
-        )
-        project_name = mission.project_name if mission else file["project"]["name"]
-
-        mission_id = mission.id if mission else UUID(file["mission"]["uuid"], version=4)
-        mission_name = mission.name if mission else file["mission"]["name"]
+        name = file[FileObjectKeys.FILENAME]
+        id_ = UUID(file[FileObjectKeys.UUID], version=4)
+        fsize = file[FileObjectKeys.SIZE]
+        fhash = file[FileObjectKeys.HASH]
+        ftype = file[FileObjectKeys.TYPE].split(".")[-1]
+        fdate = file[FileObjectKeys.DATE]
+        created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
+        updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
+        state = _parse_file_state(file[FileObjectKeys.STATE])
+        tags = file[FileObjectKeys.TAGS]
 
         parsed = File(
-            id=file_id,
-            name=filename,
-            size=file_size,
-            hash=file_hash,
-            project_id=project_id,
-            project_name=project_name,
-            mission_id=mission_id,
-            mission_name=mission_name,
-            state=FileState(file["state"]),
+            id=id_,
+            name=name,
+            hash=fhash,
+            size=fsize,
+            type_=ftype,
+            date=fdate,
+            tags=tags,
+            state=state,
+            created_at=created_at,
+            updated_at=updated_at,
+            mission_id=mission.id,
+            mission_name=mission.name,
+            project_id=mission.project_id,
+            project_name=mission.project_name,
         )
-    except Exception:
-        raise ParsingError(f"error parsing file: {file}")
+    except Exception as e:
+        raise ParsingError(f"error parsing file: {file}") from e
     return parsed
