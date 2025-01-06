@@ -22,15 +22,15 @@ from within the backend folder. This will create a new migration script in the m
 This migration script can then be run by running the following command:
 
 ```
-yarn run typeorm migration:run -- -d migration/dev/migration.config.ts
-yarn run typeorm migration:run -- -d migration/local/migration.config.ts
-yarn run typeorm migration:run -- -d migration/prod/migration.config.ts
+yarn run typeorm migration:run -t -- -d migration/dev/migration.config.ts
+yarn run typeorm migration:run -t -- -d migration/local/migration.config.ts
+yarn run typeorm migration:run -t -- -d migration/prod/migration.config.ts
 ```
 
 or reverted by running:
 
 ```
-yarn run typeorm migration:revert -- -d migration/dev/migration.config.ts
-yarn run typeorm migration:revert -- -d migration/local/migration.config.ts
-yarn run typeorm migration:revert -- -d migration/prod/migration.config.ts
+yarn run typeorm migration:revert -t -- -d migration/dev/migration.config.ts
+yarn run typeorm migration:revert -t -- -d migration/local/migration.config.ts
+yarn run typeorm migration:revert -t -- -d migration/prod/migration.config.ts
 ```
