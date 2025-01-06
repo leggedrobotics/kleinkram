@@ -14,7 +14,7 @@ import {
 } from '@common/api/types/user.dto';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('user')
@@ -80,10 +80,7 @@ export class UserController {
 
     @Get('search')
     @LoggedIn()
-    @ApiOkResponse({
-        description: 'Search results',
-        type: UsersDto,
-    })
+    @OutputDto(null) // TODO: Add type
     async search(
         @QueryString('search', 'Searchkey on name or email') search: string,
         @QuerySkip('skip') skip: number,

@@ -407,7 +407,7 @@ export const useUserSearch = (
     search: Ref<string>,
 ): UseQueryReturnType<UsersDto | undefined, Error> => {
     return useQuery<UsersDto>({
-        queryKey: ['userSearch', search.value],
+        queryKey: ['userSearch', search],
         queryFn: () => {
             if (search.value === '')
                 return {
