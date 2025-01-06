@@ -26,18 +26,18 @@ from rich.console import Console
 from tqdm import tqdm
 
 import kleinkram.api.file_transfer
-import kleinkram.api.resources
+import kleinkram.api.query
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.resources import FileSpec
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.resources import check_mission_spec_is_creatable
-from kleinkram.api.resources import get_files
-from kleinkram.api.resources import get_mission
-from kleinkram.api.resources import get_missions
-from kleinkram.api.resources import get_project
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import check_mission_spec_is_creatable
+from kleinkram.api.query import get_files
+from kleinkram.api.query import get_mission
+from kleinkram.api.query import get_missions
+from kleinkram.api.query import get_project
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -210,7 +210,7 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
     """\
     deletes multiple files accross multiple missions
     """
-    files = kleinkram.api.resources.get_files(client, FileSpec(ids=list(file_ids)))
+    files = kleinkram.api.query.get_files(client, FileSpec(ids=list(file_ids)))
     found_ids = [f.id for f in files]
     for file_id in file_ids:
         if file_id not in found_ids:

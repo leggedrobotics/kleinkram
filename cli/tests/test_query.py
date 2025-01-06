@@ -4,14 +4,14 @@ from uuid import uuid4
 
 import pytest
 
-from kleinkram.api.resources import InvalidMissionSpec
-from kleinkram.api.resources import InvalidProjectSpec
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.resources import check_mission_spec_is_creatable
-from kleinkram.api.resources import check_project_spec_is_creatable
-from kleinkram.api.resources import mission_spec_is_unique
-from kleinkram.api.resources import project_spec_is_unique
+from kleinkram.api.query import InvalidMissionSpec
+from kleinkram.api.query import InvalidProjectSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import check_mission_spec_is_creatable
+from kleinkram.api.query import check_project_spec_is_creatable
+from kleinkram.api.query import mission_spec_is_unique
+from kleinkram.api.query import project_spec_is_unique
 
 
 @pytest.mark.parametrize(

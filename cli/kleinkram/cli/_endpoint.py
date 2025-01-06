@@ -1,3 +1,9 @@
+"""
+at the moment the endpoint command lets you specify the api and s3 endpoints
+eventually it will be sufficient to just specify the api endpoint and the s3 endpoint will
+be provided by the api
+"""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -44,7 +50,9 @@ def endpoint(
             console.print(f"Endpoint {name} not found.\n", style="red")
             console.print(endpoint_table(config))
     elif not (name and api and s3):
-        raise typer.BadParameter("to add a new endpoint, all arguments are required")
+        raise typer.BadParameter(
+            "to add a new endpoint you must specify the api and s3 endpoints"
+        )
     else:
         new_endpoint = Endpoint(name, api, s3)
         add_endpoint(config, new_endpoint)

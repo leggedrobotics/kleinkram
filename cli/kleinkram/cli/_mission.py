@@ -8,10 +8,10 @@ import typer
 import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.resources import get_mission
-from kleinkram.api.resources import get_project
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import get_mission
+from kleinkram.api.query import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_mission_info
 from kleinkram.utils import load_metadata

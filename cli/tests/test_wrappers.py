@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from kleinkram.api.resources import FileSpec
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
 from kleinkram.wrappers import _args_to_file_spec
 from kleinkram.wrappers import _args_to_mission_spec
 from kleinkram.wrappers import _args_to_project_spec

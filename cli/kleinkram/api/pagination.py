@@ -16,9 +16,9 @@ from kleinkram.api.deser import _parse_project
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.resources import FileSpec
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
 
 PAGE_SIZE = 100
 

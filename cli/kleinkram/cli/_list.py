@@ -6,12 +6,12 @@ from typing import Optional
 import typer
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.resources import FileSpec
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.resources import get_files
-from kleinkram.api.resources import get_missions
-from kleinkram.api.resources import get_projects
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import get_files
+from kleinkram.api.query import get_missions
+from kleinkram.api.query import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_files
 from kleinkram.printing import print_missions

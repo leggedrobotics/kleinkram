@@ -5,8 +5,8 @@ import typer
 import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.resources import ProjectSpec
-from kleinkram.api.resources import get_project
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_project_info
 from kleinkram.utils import split_args

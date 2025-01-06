@@ -5,7 +5,6 @@ from typing import Any
 from typing import Dict
 from typing import NewType
 from typing import Optional
-from typing import TypedDict
 from uuid import UUID
 
 from kleinkram.errors import ParsingError

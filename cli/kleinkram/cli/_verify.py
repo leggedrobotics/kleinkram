@@ -9,8 +9,8 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.resources import MissionSpec
-from kleinkram.api.resources import ProjectSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_file_verification_status
 from kleinkram.utils import split_args
