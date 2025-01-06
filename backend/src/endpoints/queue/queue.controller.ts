@@ -65,9 +65,7 @@ export class QueueController {
 
     @Get('active')
     @LoggedIn()
-    @ApiOkResponse({
-        type: QueueActiveDto,
-    })
+    @OutputDto(null)
     async active(
         @QueryDate('startDate', 'Start of time range to filter queue by')
         startDate: string,
