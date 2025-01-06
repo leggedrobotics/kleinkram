@@ -1,6 +1,6 @@
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import { AccessGroupRights, KeyTypes } from '../../enum';
+import { AccessGroupRights, KeyTypes } from '../../frontend_shared/enum';
 import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
 import User from '../user/user.entity';
@@ -9,29 +9,28 @@ import User from '../user/user.entity';
 export default class Apikey extends BaseEntity {
     @Column({ unique: true })
     @Generated('uuid')
-    apikey: string;
+    apikey!: string;
 
     @Column()
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    key_type: KeyTypes;
+    key_type!: KeyTypes;
 
     @ManyToOne(() => Mission, (mission) => mission.api_keys, {
         onDelete: 'CASCADE',
         eager: true,
     })
-    mission: Mission;
+    mission!: Mission;
 
     @OneToOne(() => Action, (action) => action.key, {
         onDelete: 'CASCADE',
         nullable: true,
     })
-    action: Action | null;
+    action?: Action;
 
     @ManyToOne(() => User, (user) => user.api_keys, {
         onDelete: 'CASCADE',
     })
-    user: User;
+    user?: User;
 
     @Column()
-    rights: AccessGroupRights;
+    rights!: AccessGroupRights;
 }

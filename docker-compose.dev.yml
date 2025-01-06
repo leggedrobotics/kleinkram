@@ -23,7 +23,6 @@ services:
             - privatenet
 
         environment:
-            SEED: 'false'
             DEVBUILD: 'false'
 
         depends_on:

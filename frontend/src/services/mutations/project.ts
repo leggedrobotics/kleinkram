@@ -1,6 +1,5 @@
 import axios from 'src/api/axios';
-import { Project } from 'src/types/Project';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AccessGroupRights } from '@common/enum';
 
 export const createProject = async (
     name: string,
@@ -31,7 +30,7 @@ export const updateProject = async (
         name,
         description,
     });
-    return response.data as Project;
+    return response.data;
 };
 
 export const deleteProject = async (projectUUID: string) => {

@@ -1,6 +1,10 @@
 {
-    "extends": ["tslint:recommended"],
     "compilerOptions": {
+        "strict": true,
+        "exactOptionalPropertyTypes": true,
+        "strictNullChecks": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
         "declaration": true,
         "esModuleInterop": true,
         "removeComments": true,
@@ -12,7 +16,6 @@
         "baseUrl": "./",
         "incremental": true,
         "skipLibCheck": true,
-        "strictNullChecks": false,
         "noImplicitAny": false,
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,

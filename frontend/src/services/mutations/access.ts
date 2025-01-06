@@ -1,6 +1,5 @@
 import axios from 'src/api/axios';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { AccessGroupUser } from 'src/types/AccessGroupUser';
+import { AccessGroupRights } from '@common/enum';
 
 export const addUsersToProject = async (
     userUUId: string,
@@ -87,19 +86,12 @@ export const updateProjectAccess = async (
 };
 
 export const setAccessGroupExpiry = async (
-    aguUUID: string,
+    uuid: string,
     expiryDate: Date | null,
 ) => {
     const response = await axios.post('/access/setExpireDate', {
-        aguUUID,
-        expireDate: expiryDate,
+        uuid,
+        expireDate: expiryDate ?? 'never',
     });
-    return new AccessGroupUser(
-        response.data.uuid,
-        new Date(response.data.createdAt),
-        new Date(response.data.updatedAt),
-        null,
-        null,
-        response.data.expireDate ? new Date(response.data.expireDate) : null,
-    );
+    return response.data;
 };

@@ -10,8 +10,9 @@ import {
     createProjectUsingPost,
     uploadFile,
 } from './utils/api_calls';
-import { AccessGroupRights, ActionState } from '@common/enum';
-import { SubmitAction } from '../src/action/entities/submit_action.dto';
+import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
+
+import { SubmitActionDto } from '../../common/api/types/submit-action-response.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {
@@ -59,8 +60,7 @@ describe('Verify Action', () => {
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    cookie: `authtoken=${getJwtToken(user)}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -87,14 +87,13 @@ describe('Verify Action', () => {
             {
                 method: 'POST',
                 headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    cookie: `authtoken=${getJwtToken(user)}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     missionUUID: missionUuid,
                     templateUUID: uuid,
-                } as SubmitAction),
+                } as SubmitActionDto),
             },
         );
 
@@ -103,9 +102,9 @@ describe('Verify Action', () => {
 
         // get action uuid
         const action = await actionSubmission.json();
-        const actionUuid = action.uuid;
+        const actionUuid: string = action.uuid;
         expect(actionUuid).toBeDefined();
-        let logs = null;
+        let logs: any[] = [];
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         while (true) {
@@ -114,7 +113,7 @@ describe('Verify Action', () => {
                 {
                     method: 'GET',
                     headers: {
-                        cookie: `authtoken=${await getJwtToken(user)}`,
+                        cookie: `authtoken=${getJwtToken(user)}`,
                     },
                 },
             );
@@ -136,7 +135,7 @@ describe('Verify Action', () => {
         console.log(fileHashStr);
 
         expect(logs).toBeDefined();
-        const messages = logs?.map((log) => log.message) ?? [];
+        const messages = logs.map((log) => log.message) ?? [];
         console.log(messages);
         const containsFile = messages.some((message) =>
             message.includes(fileHashStr),
@@ -146,7 +145,7 @@ describe('Verify Action', () => {
         // submit a new action
     }, 30_000);
 
-    test('if you can upload a file within an action', async () => {
+    test('if you can upload a file within an action', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

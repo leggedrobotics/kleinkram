@@ -1,20 +1,25 @@
 import { DataSource } from 'typeorm';
 import process from 'node:process';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { createAccessGroups, createNewUser } from '../../src/auth/auth.service';
+import {
+    createAccessGroups,
+    createNewUser,
+} from '../../src/services/auth.service';
 import User from '@common/entities/user/user.entity';
 import Account from '@common/entities/auth/account.entity';
-import { Providers, UserRole } from '@common/enum';
-import AccessGroupUser from '@common/entities/auth/accessgroup_user.entity';
+import { Providers, UserRole } from '@common/frontend_shared/enum';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+
+const dbPort = process.env['DB_PORT'];
 
 export const db = new DataSource({
     type: 'postgres',
     host: 'localhost',
-    port: parseInt(process.env.DB_PORT, 10),
-    ssl: process.env.DB_SSL === 'true',
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+    port: parseInt(dbPort ?? '5432', 10),
+    ssl: process.env['DB_SSL'] === 'true',
+    username: process.env['DB_USER'] ?? '',
+    password: process.env['DB_PASSWORD'] ?? '',
+    database: process.env['DB_DATABASE'] ?? '',
     synchronize: false,
     entities: [
         '../common/entities/**/*.entity{.ts,.js}',
@@ -36,27 +41,29 @@ export const clearAllData = async () => {
             .join(', ');
 
         await db.query(`TRUNCATE ${tablesToClear} CASCADE;`);
-    } catch (error) {
-        throw new Error(`ERROR: Cleaning test database: ${error}`);
+    } catch (error: any) {
+        throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
     }
 };
 
 export const mockDbUser = async (
     email: string,
-    username: string = 'Test User',
-    role: UserRole = undefined,
+    username = 'Test User',
+    role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = db.getRepository(AccessGroup);
-    const accessGroupUserRepository = db.getRepository(AccessGroupUser);
+    const groupMembershipRepository = db.getRepository(GroupMembership);
     await createAccessGroups(accessGroupRepository, config);
 
     const userRepository = db.getRepository(User);
     const accountRepository = db.getRepository(Account);
 
     // hash the email to create a unique oauthID
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(email);
@@ -67,7 +74,7 @@ export const mockDbUser = async (
         userRepository,
         accountRepository,
         accessGroupRepository,
-        accessGroupUserRepository,
+        groupMembershipRepository,
         {
             oauthID,
             provider: Providers.GOOGLE,
@@ -78,17 +85,22 @@ export const mockDbUser = async (
     );
 
     if (role) {
-        const user = await userRepository.findOne({ where: { email: email } });
+        const user = await userRepository.findOneOrFail({
+            where: { email: email },
+        });
+
         user.role = role;
         await userRepository.save(user);
     }
 
-    return (await userRepository.findOne({ where: { email: email } })).uuid;
+    return (await userRepository.findOneOrFail({ where: { email: email } }))
+        .uuid;
 };
 
-export const getJwtToken = async (user: User) => {
+export const getJwtToken = (user: User): string => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jwt = require('jsonwebtoken');
-    return jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET);
+    return jwt.sign({ uuid: user.uuid }, process.env['JWT_SECRET']);
 };
 
 export const getUserFromDb = async (uuid: string) => {

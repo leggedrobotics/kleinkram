@@ -1,5 +1,7 @@
-import { FileEntity } from 'src/types/FileEntity';
 import axios from 'src/api/axios';
+import { CategoryDto } from '@api/types/category.dto';
+import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { TemporaryFileAccessesDto } from '@api/types/files/access.dto';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
@@ -12,14 +14,15 @@ export type GenerateTemporaryCredentialsResponse = {
     } | null;
 }[];
 
-export const updateFile = async ({ file }: { file: FileEntity }) => {
+export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
+        mission_uuid: file.mission_uuid,
         filename: file.filename,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        mission_uuid: file.mission?.uuid,
         date: file.date,
-        categories: file.categories.map((category) => category.uuid),
+        categories: file.categories.map(
+            (category: CategoryDto) => category.uuid,
+        ),
     });
     return response.data;
 };
@@ -32,7 +35,7 @@ export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
     return response.data;
 };
 
-export const deleteFile = async (file: FileEntity) => {
+export const deleteFile = async (file: FileWithTopicDto) => {
     const response = await axios.delete(`/file/${file.uuid}`);
     return response.data;
 };
@@ -40,12 +43,12 @@ export const deleteFile = async (file: FileEntity) => {
 export const generateTemporaryCredentials = async (
     filenames: string[],
     missionUUID: string,
-): Promise<GenerateTemporaryCredentialsResponse> => {
+): Promise<TemporaryFileAccessesDto> => {
     const response = await axios.post('/file/temporaryAccess', {
         filenames,
         missionUUID,
     });
-    return response.data as GenerateTemporaryCredentialsResponse;
+    return response.data as TemporaryFileAccessesDto;
 };
 
 export const cancelUploads = async (
