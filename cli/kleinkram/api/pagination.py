@@ -12,7 +12,7 @@ from typing import cast
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
-from kleinkram.api.deser import _parse_project
+from kleinkram.api.deser import _parse_project, ProjectObject, MissionObject, FileObject
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -20,7 +20,12 @@ from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
 
-PAGE_SIZE = 100
+PAGE_SIZE = 128
+
+SKIP = "skip"
+TAKE = "take"
+
+Entry = Dict[str, Any]
 
 
 def paginated_request(
@@ -28,26 +33,32 @@ def paginated_request(
     endpoint: str,
     max_entries: Optional[int] = None,
     params: Optional[Mapping[str, str]] = None,
-) -> Generator[Dict[Any, Any], None, None]:
-    count = 0
+) -> Generator[Entry, None, None]:
+    total_entries_count = 0
 
     params = dict(params or {})
-    params["take"] = str(PAGE_SIZE)
-    params["skip"] = str(0)
+    params[TAKE] = str(PAGE_SIZE)
+    params[SKIP] = str(0)
 
     while True:
         resp = client.get(endpoint, params=params)
         resp.raise_for_status()
-        block, more = cast(Tuple[List[Dict[Any, Any]], int], resp.json())
+        responses_block, entries_left = cast(Tuple[List[Entry], int], resp.json())
 
-        for entry in block:
-            count += 1
+        for entry in responses_block:
+            total_entries_count += 1
             yield entry
-            if max_entries is not None and max_entries <= count:
+
+            if max_entries is not None and max_entries <= total_entries_count:
                 return
-        if not more:
+
+        if not entries_left:
             return
-        params["skip"] = str(count)
+
+        params[SKIP] = str(total_entries_count)
+
+
+# TODO: move the stuff below somewhere else
 
 
 def _project_spec_to_params(
@@ -79,46 +90,52 @@ def _file_spec_to_params(file_spec: FileSpec) -> Dict[str, str]:
     return params
 
 
-FILE_ENDPOINT = "/TODO"
-MISSION_ENDPOINT = "/TODO"
-PROJECT_ENDPOINT = "/TODO"
+FILE_ENDPOINT = "/file/many"
+MISSION_ENDPOINT = "/mission/many"
+PROJECT_ENDPOINT = "/project/many"
 
 
-def _get_files(
-    client: AuthenticatedClient, file_spec: FileSpec, max_entries: Optional[int] = None
+def _get_files_paginated(
+    client: AuthenticatedClient,
+    file_spec: FileSpec,
+    mission: Mission,
+    max_entries: Optional[int] = None,
 ) -> Generator[File, None, None]:
     params = _file_spec_to_params(file_spec)
+    response_stream = paginated_request(
+        client, FILE_ENDPOINT, params=params, max_entries=max_entries
+    )
+
     yield from map(
-        _parse_file,
-        paginated_request(
-            client, FILE_ENDPOINT, params=params, max_entries=max_entries
-        ),
+        lambda f: _parse_file(FileObject(f), mission),
+        response_stream,
     )
 
 
-def _get_missions(
+def _get_missions_paginated(
     client: AuthenticatedClient,
     mission_spec: MissionSpec,
+    project: Project,
     max_entries: Optional[int] = None,
 ) -> Generator[Mission, None, None]:
     params = _mission_spec_to_params(mission_spec)
+    response_stream = paginated_request(
+        client, MISSION_ENDPOINT, params=params, max_entries=max_entries
+    )
+
     yield from map(
-        _parse_mission,
-        paginated_request(
-            client, MISSION_ENDPOINT, params=params, max_entries=max_entries
-        ),
+        lambda m: _parse_mission(MissionObject(m), project),
+        response_stream,
     )
 
 
-def _get_projects(
+def _get_projects_paginated(
     client: AuthenticatedClient,
     project_spec: ProjectSpec,
     max_entries: Optional[int] = None,
 ) -> Generator[Project, None, None]:
     params = _project_spec_to_params(project_spec)
-    yield from map(
-        _parse_project,
-        paginated_request(
-            client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
-        ),
+    _response_stream = paginated_request(
+        client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
     )
+    yield from map(lambda p: _parse_project(ProjectObject(p)), _response_stream)
