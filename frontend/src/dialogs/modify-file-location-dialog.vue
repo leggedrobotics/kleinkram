@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref, reactive, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { moveFiles } from 'src/services/mutations/file';
 import BaseDialog from './base-dialog.vue';
@@ -116,7 +116,7 @@ const queryClient = useQueryClient();
 
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
-const selected = ref<{
+const selected = reactive<{
     projectName: string;
     projectUUID: string;
     missions: { missionName: string; missionUUID: string }[];
@@ -137,7 +137,7 @@ const projects = computed(() =>
 );
 
 const { data: _missions } = useMissionsOfProjectMinimal(
-    selected.value.projectUUID,
+    computed(() => selected.projectUUID),
     100,
     0,
 );
@@ -147,12 +147,10 @@ watch(
     () => missions.value,
     (newValue) => {
         if (newValue) {
-            selected.value.missions = missions.value.map(
-                (m: FlatMissionDto) => ({
-                    missionName: m.name,
-                    missionUUID: m.uuid,
-                }),
-            );
+            selected.missions = missions.value.map((m: FlatMissionDto) => ({
+                missionName: m.name,
+                missionUUID: m.uuid,
+            }));
         }
     },
     {
@@ -164,7 +162,7 @@ const { mutate: moveFilesMutation } = useMutation({
     mutationFn: () =>
         moveFiles(
             files.map((f) => f.uuid),
-            selected.value.missionUUID,
+            selected.missionUUID,
         ),
     onSuccess: async () => {
         Notify.create({
