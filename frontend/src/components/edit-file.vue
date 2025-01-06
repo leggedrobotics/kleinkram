@@ -133,7 +133,7 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, Reactive, reactive, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from '../services/date-formating';
 import { filteredProjects } from 'src/services/queries/project';
@@ -161,25 +161,26 @@ const tab = ref('name');
 const dd_open = ref(false);
 const dd_open_2 = ref(false);
 const selected_project = ref<ProjectDto | undefined>(undefined);
-const { data } = useFile(fileUuid);
+const { data: queryData } = useFile(fileUuid);
 
 const dateTime = ref('');
-const editableFile: Ref<FileWithTopicDto | null> = ref(null);
+const editableFile: Reactive<FileWithTopicDto | object> = reactive({});
 // Watch for changes in data.value and update dateTime accordingly
 watch(
-    () => data.value,
+    () => queryData.value,
     (newValue) => {
         if (!newValue) return;
+
         selected_project.value = newValue.mission.project;
-        if (newValue.date && data.value) {
-            editableFile.value = data.value;
+
+        if (newValue !== null && newValue !== undefined) {
+            Object.assign(editableFile, newValue); // Update the reactive object
             dateTime.value = formatDate(new Date(newValue.date));
         }
     },
-    {
-        immediate: true, // Mission the watcher immediately on component mount
-    },
+    { immediate: true }, // Trigger immediately on component mount
 );
+
 const projectsReturn = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
@@ -203,13 +204,13 @@ watch(
         if (newValue) {
             await refetch().then(() => {
                 if (
-                    editableFile.value &&
+                    editableFile &&
                     missions.value.length !== undefined &&
                     missions.value.length > 0 &&
-                    editableFile.value.mission.project.uuid !==
+                    editableFile.mission.project.uuid !==
                         selected_project.value?.uuid
                 ) {
-                    editableFile.value.mission = missions.value[0];
+                    editableFile.mission = missions.value[0];
                 }
             });
         }
@@ -289,16 +290,16 @@ const { mutate: updateFileMutation } = useMutation({
 function _updateMission() {
     const convertedDate = parseDate(dateTime.value);
     if (
-        editableFile.value &&
+        editableFile &&
         convertedDate &&
         !Number.isNaN(convertedDate.getTime())
     ) {
-        editableFile.value.date = convertedDate;
-        const noncircularMission = editableFile.value.mission;
+        editableFile.date = convertedDate;
+        const noncircularMission = editableFile.mission;
         // @ts-ignore
         noncircularMission.project = undefined;
-        editableFile.value.mission = noncircularMission;
-        updateFileMutation(editableFile.value);
+        editableFile.mission = noncircularMission;
+        updateFileMutation(editableFile);
         onDialogOK();
     }
 }
@@ -310,7 +311,7 @@ const onClick = (project: ProjectDto) => {
 };
 
 const onSelectionUpdate = ($event: CategoryDto[]) => {
-    if (editableFile.value !== null) editableFile.value.categories = $event;
+    if (editableFile !== null) editableFile.categories = $event;
 };
 </script>
 
