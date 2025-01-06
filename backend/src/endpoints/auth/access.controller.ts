@@ -33,10 +33,7 @@ import Project from '@common/entities/project/project.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import {
-    ProjectAccessDto,
-    ProjectAccessListDto,
-} from '@common/api/types/access-control/project-access.dto';
+import { ProjectAccessListDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from './parameter-decorator';
 import { ApiOperation } from '@nestjs/swagger';
