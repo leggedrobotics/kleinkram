@@ -52,6 +52,8 @@ class Mission:
     project_id: UUID
     project_name: str
     metadata: Dict[str, MetadataValue] = field(default_factory=dict)
+    number_of_files: int = 0
+    size: int = 0
 
 
 @dataclass(frozen=True)
