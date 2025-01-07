@@ -49,17 +49,11 @@ export default class Mission extends BaseEntity {
     tags?: Tag[];
 
     get missionDto(): MissionDto {
-        if (!this.project) {
-            throw new Error('Mission project is not set');
-        }
-
         return {
+            ...this.minimumMissionDto,
             createdAt: this.createdAt,
-            project: this.project.minimalProjectDto,
             tags: this.tags?.map((tag) => tag.tagDto) || [],
             updatedAt: this.updatedAt,
-            uuid: this.uuid,
-            name: this.name,
         };
     }
 
@@ -103,7 +97,12 @@ export default class Mission extends BaseEntity {
     }
 
     get minimumMissionDto(): MinimumMissionDto {
+        if (!this.project) {
+            throw new Error('Mission project is not set');
+        }
+
         return {
+            project: this.project.minimalProjectDto,
             name: this.name,
             uuid: this.uuid,
         };
