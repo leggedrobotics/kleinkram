@@ -70,7 +70,7 @@ class File:
     mission_name: str
     project_id: UUID
     project_name: str
-    tags: List[str] = field(default_factory=list)
+    categories: List[str] = field(default_factory=list)
     topics: List[str] = field(default_factory=list)
     state: FileState = FileState.OK
 
