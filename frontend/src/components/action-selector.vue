@@ -85,7 +85,7 @@
     </q-select>
 
     <q-list
-        v-if="selectedTemplate && selectedTemplate.createdBy == null"
+        v-if="selectedTemplate && selectedTemplate.uuid == undefined"
         class="bg-orange rounded-borders"
     >
         <q-item v-ripple clickable>
@@ -158,8 +158,10 @@ const DEFAULT_ACTION_TEMPLATE: ActionTemplateDto = {};
 const { actionTemplates } = defineProps<{
     actionTemplates: ActionTemplate[];
 }>();
+
 //template that gets written
 const selectedTemplate = defineModel<ActionTemplateDto>();
+
 //clone templates to filter
 const filteredActionTemplates: Ref<ActionTemplateDto[] | []> = ref([]);
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
@@ -192,7 +194,7 @@ function filterActionTemplates(value: string) {
         }) || [];
 }
 
-function updateSelectedTemplate(selTempl: ActionTemplate) {
+function updateSelectedTemplate(selTempl: ActionTemplateDto) {
     selectedTemplate.value = selTempl;
 }
 

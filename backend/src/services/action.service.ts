@@ -98,7 +98,7 @@ export class ActionService {
         data: CreateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        if (!data.image.startsWith('rslethz/')) {
+        if (!data.dockerImage.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
             );
@@ -121,7 +121,7 @@ export class ActionService {
             cpuMemory: data.cpuMemory,
             gpuMemory: data.gpuMemory,
             maxRuntime: data.maxRuntime,
-            image_name: data.image,
+            image_name: data.dockerImage,
             command: data.command ?? '',
             searchable: data.searchable,
             entrypoint: data.entrypoint ?? '',
@@ -131,26 +131,14 @@ export class ActionService {
         const createdTemplate =
             await this.actionTemplateRepository.save(template);
 
-        return {
-            uuid: createdTemplate.uuid,
-            accessRights: createdTemplate.accessRights,
-            command: createdTemplate.command ?? '',
-            cpuCores: createdTemplate.cpuCores,
-            cpuMemory: createdTemplate.cpuMemory,
-            entrypoint: createdTemplate.entrypoint ?? '',
-            gpuMemory: createdTemplate.gpuMemory,
-            imageName: createdTemplate.image_name,
-            maxRuntime: createdTemplate.maxRuntime,
-            name: createdTemplate.name,
-            version: createdTemplate.version.toString(),
-        };
+        return createdTemplate.actionTemplateDto;
     }
 
     async createNewVersion(
         data: UpdateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        if (!data.image.startsWith('rslethz/')) {
+        if (!data.dockerImage.startsWith('rslethz/')) {
             throw new ConflictException(
                 'Only images from the rslethz namespace are allowed',
             );
@@ -161,7 +149,7 @@ export class ActionService {
         if (
             !template.searchable &&
             data.searchable &&
-            template.image_name === data.image &&
+            template.image_name === data.dockerImage &&
             template.command === data.command &&
             template.cpuCores === data.cpuCores &&
             template.cpuMemory === data.cpuMemory &&
@@ -189,10 +177,10 @@ export class ActionService {
         template.cpuCores = data.cpuCores;
         template.cpuMemory = data.cpuMemory;
         template.gpuMemory = data.gpuMemory;
-        template.image_name = data.image;
+        template.image_name = data.dockerImage;
         template.createdBy = dbuser;
         template.command = data.command ?? '';
-        template.version = previousVersions[0].version ?? 0 + change;
+        template.version = previousVersions[0]?.version ?? 0 + change;
         template.uuid = '';
         template.searchable = data.searchable;
         template.maxRuntime = data.maxRuntime;

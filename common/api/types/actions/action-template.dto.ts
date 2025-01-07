@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    IsDate,
     IsEnum,
     IsNumber,
     IsString,
@@ -16,6 +17,10 @@ export class ActionTemplateDto {
     @ApiProperty()
     @IsUUID()
     uuid!: string;
+
+    @ApiProperty()
+    @IsDate()
+    createdAt!: Date;
 
     @ApiProperty()
     @IsString()
