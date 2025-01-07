@@ -29,6 +29,7 @@ import {
     QueryOptionalRecord,
     QueryOptionalString,
     QueryOptionalStringArray,
+    QueryOptionalUUIDArray,
     QueryOptionalUUID,
     QuerySkip,
     QuerySortBy,
@@ -56,7 +57,7 @@ import {
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(private readonly fileService: FileService) { }
 
     @Get('all')
     @UserOnly()
@@ -105,6 +106,39 @@ export class FileController {
             take,
             skip,
             tags,
+        );
+    }
+
+    @Get('many')
+    @LoggedIn()
+    @ApiOkResponse(
+        {
+            description: 'Many Files',
+            type: FilesDto,
+        },
+    )
+    async getMany(
+        @QueryOptionalUUIDArray('fileUuids', 'List of File UUIDs to fetch') fileUuids: string[],
+        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs to fetch') missionUuids: string[],
+        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs to fetch') projectUuids: string[],
+        @QueryOptionalStringArray('filenames', 'List of Filenames or patterns to fetch') filesnames: string[],
+        @QueryOptionalStringArray('missionNames', 'List of Mission names or patterns to fetch') missionNames: string[],
+        @QueryOptionalStringArray('projectNames', 'List of Project names or patterns to fetch') projectNames: string[],
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @AddUser() auth: AuthHeader,
+    ) {
+        // TODO: implement add more filters
+        return await this.fileService.findMany(
+            fileUuids,
+            missionUuids,
+            projectUuids,
+            filesnames,
+            missionNames,
+            projectNames,
+            take,
+            skip,
+            auth.user.uuid,
         );
     }
 
