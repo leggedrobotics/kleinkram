@@ -19,13 +19,16 @@ from kleinkram.models import Project
 from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
+from enum import Enum
+
+Entry = Dict[str, Any]
+
 
 PAGE_SIZE = 128
 
+
 SKIP = "skip"
 TAKE = "take"
-
-Entry = Dict[str, Any]
 
 
 def paginated_request(
@@ -61,32 +64,41 @@ def paginated_request(
 # TODO: move the stuff below somewhere else
 
 
+class Params(str, Enum):
+    FILE_PATTERNS = "filePatterns"
+    FILE_IDS = "fileUuids"
+    MISSION_PATTERNS = "missionPatterns"
+    MISSION_IDS = "missionUuids"
+    PROJECT_PATTERNS = "projectPatterns"
+    PROJECT_IDS = "projectUuids"
+
+
 def _project_spec_to_params(
     project_spec: ProjectSpec,
 ) -> Dict[str, Any]:
     params = {}
     if project_spec.patterns is not None:
-        params["projectPatterns"] = project_spec.patterns
+        params[Params.PROJECT_PATTERNS] = project_spec.patterns
     if project_spec.ids is not None:
-        params["projectUUIDs"] = list(map(str, project_spec.ids))
+        params[Params.PROJECT_IDS] = list(map(str, project_spec.ids))
     return params
 
 
 def _mission_spec_to_params(mission_spec: MissionSpec) -> Dict[str, Any]:
     params = _project_spec_to_params(mission_spec.project_spec)
     if mission_spec.patterns is not None:
-        params["missionPatterns"] = mission_spec.patterns
+        params[Params.MISSION_PATTERNS] = mission_spec.patterns
     if mission_spec.ids is not None:
-        params["missionUUIDs"] = list(map(str, mission_spec.ids))
+        params[Params.MISSION_IDS] = list(map(str, mission_spec.ids))
     return params
 
 
 def _file_spec_to_params(file_spec: FileSpec) -> Dict[str, str]:
     params = _mission_spec_to_params(file_spec.mission_spec)
     if file_spec.patterns is not None:
-        params["filePatterns"] = file_spec.patterns
+        params[Params.FILE_PATTERNS] = file_spec.patterns
     if file_spec.ids is not None:
-        params["fileUUIDs"] = list(map(str, file_spec.ids))
+        params[Params.FILE_IDS] = list(map(str, file_spec.ids))
     return params
 
 

@@ -6,17 +6,22 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict
 from typing import List
-from typing import Tuple
 from uuid import UUID
 
 
-class DataType(str, Enum):
+class MetadataValueType(str, Enum):
     LOCATION = "LOCATION"
     STRING = "STRING"
     LINK = "LINK"
     BOOLEAN = "BOOLEAN"
     NUMBER = "NUMBER"
     DATE = "DATE"
+
+
+@dataclass(frozen=True)
+class MetadataValue:
+    value: str
+    type_: MetadataValueType
 
 
 class FileState(str, Enum):
@@ -46,7 +51,7 @@ class Mission:
     updated_at: datetime
     project_id: UUID
     project_name: str
-    metadata: Dict[str, Tuple[str, DataType]] = field(default_factory=dict)
+    metadata: Dict[str, MetadataValue] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
