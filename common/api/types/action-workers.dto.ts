@@ -67,7 +67,10 @@ export class ActionWorkerDto {
 }
 
 export class ActionWorkersDto implements PaggedResponse<ActionWorkerDto> {
-    @ApiProperty()
+    @ApiProperty({
+        type: [ActionWorkerDto],
+        description: 'List of action workers',
+    })
     @ValidateNested({ each: true })
     @Type(() => ActionWorkerDto)
     data!: ActionWorkerDto[];

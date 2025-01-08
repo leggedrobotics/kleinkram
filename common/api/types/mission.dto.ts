@@ -74,8 +74,8 @@ export class FlatMissionDto extends MissionWithCreatorDto {
 
 export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
-        description: 'List of files',
         type: FileDto,
+        description: 'List of files',
     })
     @ValidateNested()
     @Type(() => FileDto)
