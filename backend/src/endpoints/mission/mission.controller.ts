@@ -36,7 +36,7 @@ import { QueryOptionalStringArray } from '../../validation/query-decorators';
 
 @Controller('mission')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) {}
+    constructor(private readonly missionService: MissionService) { }
 
     @Post('create')
     @CanCreateInProjectByBody()

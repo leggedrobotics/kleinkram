@@ -37,7 +37,7 @@ import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
 
 @Controller('project')
 export class ProjectController {
-    constructor(private readonly projectService: ProjectService) {}
+    constructor(private readonly projectService: ProjectService) { }
 
     @Get('filtered')
     @UserOnly()
@@ -77,13 +77,8 @@ export class ProjectController {
         type: ProjectsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs')
-        projectUuids: string[],
-        @QueryOptionalStringArray(
-            'projectPatterns',
-            'List of project names or patterns',
-        )
-        projectPatterns: string[],
+        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs') projectUuids: string[],
+        @QueryOptionalStringArray('projectPatterns', 'List of project names or patterns') projectPatterns: string[],
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() user: AuthHeader,
@@ -94,7 +89,7 @@ export class ProjectController {
             skip,
             take,
             user.user.uuid,
-        );
+        )
     }
 
     @Get('recent')

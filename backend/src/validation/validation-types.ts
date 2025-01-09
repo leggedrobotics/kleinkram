@@ -43,6 +43,7 @@ export class UUIDArrayValidate {
     value!: string[];
 }
 
+
 export class BooleanValidate {
     @Type(() => Boolean)
     value!: boolean;
