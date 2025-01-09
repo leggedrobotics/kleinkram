@@ -272,6 +272,7 @@ export class QueueService implements OnModuleInit {
                             throw new Error('Mission not found');
 
                         return {
+                            filename: queue.display_name,
                             state: queue.state,
                             uuid: queue.uuid,
                             creator: {

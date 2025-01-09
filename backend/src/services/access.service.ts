@@ -6,7 +6,6 @@ import {
     FindOptionsWhere,
     ILike,
     InsertResult,
-    Not,
     Repository,
 } from 'typeorm';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
@@ -61,10 +60,7 @@ export class AccessService {
             createdAt: rawAccessGroup.createdAt,
             creator: rawAccessGroup.creator?.userDto ?? null,
             hidden: rawAccessGroup.hidden,
-            memberships:
-                rawAccessGroup.memberships?.map(
-                    (membership) => membership.groupMembershipDto,
-                ) ?? [],
+            memberships: [],
             name: rawAccessGroup.name,
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
@@ -86,7 +82,6 @@ export class AccessService {
             memberships: [
                 {
                     user: { uuid: user.uuid },
-                    canEditGroup: true, // the creator can always edit the group
                 },
             ],
             creator: user,
@@ -255,21 +250,6 @@ export class AccessService {
         accessGroupUUID: string,
         userUUID: string,
     ): Promise<AccessGroup> {
-        const usersWithEditRights = await this.groupMembershipRepository.count({
-            where: {
-                accessGroup: { uuid: accessGroupUUID },
-                // where user is NOT matching userUUID
-                user: { uuid: Not(userUUID) },
-                canEditGroup: true,
-            },
-        });
-
-        if (usersWithEditRights === 0) {
-            throw new ConflictException(
-                'Cannot remove the last user with edit rights',
-            );
-        }
-
         await this.groupMembershipRepository.delete({
             accessGroup: { uuid: accessGroupUUID },
             user: { uuid: userUUID },
@@ -490,16 +470,16 @@ export class AccessService {
 
     async setExpireDate(
         uuid: string,
-        expireDate: Date | 'never',
+        expireDate: Date | null,
     ): Promise<GroupMembershipDto> {
         const agu = await this.groupMembershipRepository.findOneOrFail({
-            where: {
-                accessGroup: { uuid },
-            },
+            where: { uuid },
         });
-        // TODO: check how to properly set the expireDate to null in a type-safe way
-        // @ts-ignore
-        agu.expirationDate = expireDate === 'never' ? null : expireDate;
+        if (expireDate === null) {
+            delete agu.expirationDate;
+        } else {
+            agu.expirationDate = expireDate;
+        }
         return (await this.groupMembershipRepository.save(
             agu,
         )) as unknown as GroupMembershipDto;

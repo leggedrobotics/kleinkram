@@ -15,6 +15,7 @@ import {
     CanEditGroup,
     CanReadProject,
     CanWriteProject,
+    IsAccessGroupCreator,
     UserOnly,
 } from './roles.decorator';
 import { QueryUUID } from '../../validation/query-decorators';
@@ -157,7 +158,7 @@ export class AccessController {
         description: 'Access Group not found.',
     })
     @Post('addUserToAccessGroup')
-    @CanEditGroup()
+    @IsAccessGroupCreator()
     @OutputDto(null) // TODO: type API response
     async addUserToAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return await this.accessService
@@ -179,7 +180,7 @@ export class AccessController {
         description: 'The Access Group the user was removed from.',
     })
     @Post('removeUserFromAccessGroup')
-    @CanEditGroup()
+    @IsAccessGroupCreator()
     @OutputDto(null) // TODO: type API response
     async removeUserFromAccessGroup(@Body() body: AddUserToAccessGroupDto) {
         return this.accessService.removeUserFromAccessGroup(
@@ -248,7 +249,7 @@ export class AccessController {
     }
 
     @Delete(':uuid')
-    @CanEditGroup()
+    @IsAccessGroupCreator()
     @OutputDto(null) // TODO: type API response
     async deleteAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
@@ -285,10 +286,9 @@ export class AccessController {
 
     @Post('setExpireDate')
     @CanEditGroup()
-    @OutputDto(null) // TODO: type API response
     async setExpireDate(
         @Body() body: SetAccessGroupUserExpirationDto,
     ): Promise<GroupMembershipDto> {
-        return this.accessService.setExpireDate(body.uuid, body.expireDate);
+        return this.accessService.setExpireDate(body.aguUUID, body.expireDate);
     }
 }
