@@ -124,11 +124,7 @@ def get_files(
     response_stream = paginated_request(
         client, FILE_ENDPOINT, params=params, max_entries=max_entries
     )
-
-    yield from map(
-        lambda f: _parse_file(FileObject(f)),
-        response_stream,
-    )
+    yield from map(lambda f: _parse_file(FileObject(f)), response_stream)
 
 
 def get_missions(
@@ -140,11 +136,7 @@ def get_missions(
     response_stream = paginated_request(
         client, MISSION_ENDPOINT, params=params, max_entries=max_entries
     )
-
-    yield from map(
-        lambda m: _parse_mission(MissionObject(m)),
-        response_stream,
-    )
+    yield from map(lambda m: _parse_mission(MissionObject(m)), response_stream)
 
 
 def get_projects(

@@ -12,6 +12,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import dateutil.parser
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -103,7 +104,7 @@ def parse_metadata_value(value: MetadataValue) -> Union[str, float, bool, dateti
     if value.type_ == MetadataValueType.BOOLEAN:
         return value.value == "true"
     if value.type_ == MetadataValueType.DATE:
-        return datetime.fromisoformat(value.value)
+        return dateutil.parser.isoparse(value.value)
     assert False, "unreachable"
 
 
