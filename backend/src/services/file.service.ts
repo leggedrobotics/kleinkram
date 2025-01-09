@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { convertGlobToLikePattern } from './utils';
 import {
     Brackets,
     DataSource,
@@ -148,14 +147,17 @@ export class FileService implements OnModuleInit {
     ): Promise<FilesDto> {
 
         // we dont support bracket expressions at the moment.
+        const convertPatternToLike = (pattern: string) =>
+            pattern.replace('%', '\\%').replace('_', '\\_').replace('*', '%').replace('?', '_');
+
         const projectNamesLikePatterns = projectNames.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+            (pattern) => convertPatternToLike(pattern),
         );
         const missionNamesLikePatterns = missionNames.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+            (pattern) => convertPatternToLike(pattern),
         );
         const filenamesLikePatterns = filenames.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+            (pattern) => convertPatternToLike(pattern),
         );
 
         let query = this.fileRepository

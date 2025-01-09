@@ -9,7 +9,6 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { Brackets } from 'typeorm';
 import {
     addTagsToMinioObject,
     externalMinio,
@@ -130,58 +129,8 @@ export class MissionService {
         return mission.missionWithFilesDto;
     }
 
-    async findManyNew(
-        projectUuids: string[],
-        projectPatterns: string[],
-        missionUuids: string[],
-        missionPatterns: string[],
-        skip: number,
-        take: number,
-        userUuid: string,
-    ): Promise<MissionsDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
-
-        let query = this.missionRepository.createQueryBuilder('mission').leftJoinAndSelect('mission.project', 'project')
-
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
-        }
-
-        // query by project affiliation
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', { projectUuids });
-                }
-                if (projectPatterns.length > 0) {
-                    qb.orWhere('project.name ILIKE ANY (array[:...projectPatterns])', { projectPatterns });
-                }
-            })
-        )
-
-        // query missions directly
-        query.andWhere(
-            new Brackets((qb) => {
-                if (missionUuids.length > 0) {
-                    qb.orWhere('mission.uuid IN (:...missionUuids)', { missionUuids });
-                }
-                if (missionPatterns.length > 0) {
-                    qb.orWhere('mission.name ILIKE ANY (array[:...missionPatterns])', { missionPatterns });
-                }
-            })
-        )
-
-        query.take(take).skip(skip);
-        const [missions, count] = await query.getManyAndCount();
-
-        return {
-            data: missions.map((m) => m.flatMissionDto),
-            count,
-            skip,
-            take,
-        };
+    async findManyNew(): Promise<MissionsDto> {
+        throw new Error('Not implemented');
     }
 
     async findMissionByProjectMinimal(

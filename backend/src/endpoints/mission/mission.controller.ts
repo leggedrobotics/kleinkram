@@ -20,7 +20,6 @@ import {
     QueryStringArray,
     QueryTake,
     QueryUUID,
-    QueryOptionalUUIDArray,
 } from '../../validation/query-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUID } from '../../validation/body-decorators';
@@ -33,7 +32,6 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { QueryOptionalStringArray } from 'dist/backend/src/validation/query-decorators';
 
 @Controller('mission')
 export class MissionController {
@@ -74,18 +72,11 @@ export class MissionController {
         type: MissionsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs') missionUuids: string[],
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs') projectUuids: string[],
-        @QueryOptionalStringArray('missionPatterns', 'List of Mission Names') missionNames: string[],
-        @QueryOptionalStringArray('projectPatterns', 'List of Project Names') projectNames: string[],
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
+        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
     ): Promise<MissionsDto> {
-        return await this.missionService.findManyNew(
-            projectUuids, projectNames, missionUuids, missionNames, skip, take, user.user.uuid
-        );
+        return await this.missionService.findManyNew();
     }
+
 
     @Get('filteredMinimal')
     @UserOnly()
