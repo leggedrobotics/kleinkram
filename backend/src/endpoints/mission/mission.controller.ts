@@ -17,6 +17,7 @@ import {
     QuerySortBy,
     QuerySortDirection,
     QueryString,
+    QueryStringArray,
     QueryTake,
     QueryUUID,
     QueryOptionalUUIDArray,
@@ -73,32 +74,16 @@ export class MissionController {
         type: MissionsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs')
-        missionUuids: string[],
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs')
-        projectUuids: string[],
-        @QueryOptionalStringArray(
-            'missionPatterns',
-            'List of mission names and patterns',
-        )
-        missionNames: string[],
-        @QueryOptionalStringArray(
-            'projectPatterns',
-            'List of project names and patterns',
-        )
-        projectNames: string[],
+        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs') missionUuids: string[],
+        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs') projectUuids: string[],
+        @QueryOptionalStringArray('missionPatterns', 'List of mission names and patterns') missionNames: string[],
+        @QueryOptionalStringArray('projectPatterns', 'List of project names and patterns') projectNames: string[],
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {
         return await this.missionService.findMany(
-            projectUuids,
-            projectNames,
-            missionUuids,
-            missionNames,
-            skip,
-            take,
-            user.user.uuid,
+            projectUuids, projectNames, missionUuids, missionNames, skip, take, user.user.uuid
         );
     }
 

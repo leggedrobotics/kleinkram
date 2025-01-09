@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import Mission from '@common/entities/mission/mission.entity';
-import { ILike, Not, Repository } from 'typeorm';
+import { ILike, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from '@common/api/types/create-mission.dto';
 import Project from '@common/entities/project/project.entity';
@@ -10,7 +10,6 @@ import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import { Brackets } from 'typeorm';
-import { convertGlobToLikePattern } from './utils';
 import {
     addTagsToMinioObject,
     externalMinio,
@@ -36,7 +35,7 @@ export class MissionService {
         @InjectRepository(User) private userRepository: Repository<User>,
         private userService: UserService,
         private tagService: TagService,
-    ) {}
+    ) { }
 
     async create(
         createMission: CreateMission,
@@ -63,8 +62,7 @@ export class MissionService {
                     .map((tagType: TagType) => tagType.name)
                     .join(', ');
                 throw new ConflictException(
-                    `All required tags must be provided for the mission. Missing tags: ${
-                        missingTagNames
+                    `All required tags must be provided for the mission. Missing tags: ${missingTagNames
                     }`,
                 );
             } else {
@@ -141,22 +139,11 @@ export class MissionService {
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
-        const missionLikePatterns = missionPatterns.map(
-            convertGlobToLikePattern,
-        );
-
-        const projectLikePatterns = projectPatterns.map(
-            convertGlobToLikePattern,
-        );
-
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUuid },
         });
 
-        let query = this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'user');
+        let query = this.missionRepository.createQueryBuilder('mission').leftJoinAndSelect('mission.project', 'project')
 
         if (user.role !== UserRole.ADMIN) {
             query = addAccessConstraints(query, userUuid);
@@ -166,35 +153,25 @@ export class MissionService {
         query.andWhere(
             new Brackets((qb) => {
                 if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', {
-                        projectUuids,
-                    });
+                    qb.orWhere('project.uuid IN (:...projectUuids)', { projectUuids });
                 }
                 if (projectPatterns.length > 0) {
-                    qb.orWhere(
-                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
-                        { projectPatterns: projectLikePatterns },
-                    );
+                    qb.orWhere('project.name ILIKE ANY (array[:...projectPatterns])', { projectPatterns });
                 }
-            }),
-        );
+            })
+        )
 
         // query missions directly
         query.andWhere(
             new Brackets((qb) => {
                 if (missionUuids.length > 0) {
-                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
-                        missionUuids,
-                    });
+                    qb.orWhere('mission.uuid IN (:...missionUuids)', { missionUuids });
                 }
                 if (missionPatterns.length > 0) {
-                    qb.orWhere(
-                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
-                        { missionPatterns: missionLikePatterns },
-                    );
+                    qb.orWhere('mission.name ILIKE ANY (array[:...missionPatterns])', { missionPatterns });
                 }
-            }),
-        );
+            })
+        )
 
         query.take(take).skip(skip);
         const [missions, count] = await query.getManyAndCount();
