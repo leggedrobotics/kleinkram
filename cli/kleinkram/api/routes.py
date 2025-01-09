@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -9,24 +11,37 @@ from uuid import UUID
 
 import httpx
 
+import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.deser import FileObject
+from kleinkram.api.deser import MissionObject
+from kleinkram.api.deser import ProjectObject
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
+from kleinkram.api.pagination import paginated_request
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import file_spec_is_unique
+from kleinkram.api.query import mission_spec_is_unique
+from kleinkram.api.query import project_spec_is_unique
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import InvalidFileSpec
 from kleinkram.errors import InvalidMissionMetadata
+from kleinkram.errors import InvalidMissionSpec
+from kleinkram.errors import InvalidProjectSpec
 from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
+from kleinkram.errors import ProjectExists
+from kleinkram.errors import ProjectNotFound
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.utils import is_valid_uuid4
 
 __all__ = [
-    "_get_projects",
-    "_get_missions_by_project",
-    "_get_files_by_mission",
     "_create_mission",
     "_create_project",
     "_update_mission",
@@ -35,89 +50,174 @@ __all__ = [
     "_delete_files",
     "_delete_mission",
     "_delete_project",
+    "get_files",
+    "get_missions",
+    "get_projects",
+    "get_project",
+    "get_mission",
+    "get_file",
 ]
 
 
-MAX_PAGINATION = 10_000
-
 CLAIM_ADMIN = "/user/claimAdmin"
-PROJECT_ALL = "/project/filtered"
-MISSIONS_BY_PROJECT = "/mission/filtered"
-MISSION_BY_NAME = "/mission/byName"
-FILE_OF_MISSION = "/file/ofMission"
-TAG_TYPE_BY_NAME = "/tag/filtered"
 GET_STATUS = "/user/me"
 
 UPDATE_PROJECT = "/project"
-MISSION_UPDATE_METADATA = "/mission/tags"
-
-
-MISSION_CREATE = "/mission/create"
+UPDATE_MISSION = "/mission/tags"  # TODO: just metadata for now
+CREATE_MISSION = "/mission/create"
 CREATE_PROJECT = "/project/create"
 
 
-def _get_projects(client: AuthenticatedClient) -> list[Project]:
-    resp = client.get(PROJECT_ALL)
-    if resp.status_code in (403, 404):
-        return []
-    resp.raise_for_status()
+FILE_ENDPOINT = "/file/many"
+MISSION_ENDPOINT = "/mission/many"
+PROJECT_ENDPOINT = "/project/many"
 
-    ret = []
-    for pr in resp.json()[0]:
-        ret.append(_parse_project(pr))
-    return ret
+MISSION_BY_NAME = "/mission/byName"
+TAG_TYPE_BY_NAME = "/tag/filtered"
 
 
-def _get_missions_by_project(
-    client: AuthenticatedClient, project: Project
-) -> List[Mission]:
-    params = {"uuid": str(project.id), "take": MAX_PAGINATION}
-    resp = client.get(MISSIONS_BY_PROJECT, params=params)
-    if resp.status_code in (403, 404):
-        return []
-    resp.raise_for_status()
-
-    data = resp.json()
-    missions = []
-    for mission in data[0]:
-        missions.append(_parse_mission(mission, project))
-    return missions
+class Params(str, Enum):
+    FILE_PATTERNS = "filePatterns"
+    FILE_IDS = "fileUuids"
+    MISSION_PATTERNS = "missionPatterns"
+    MISSION_IDS = "missionUuids"
+    PROJECT_PATTERNS = "projectPatterns"
+    PROJECT_IDS = "projectUuids"
 
 
-def _get_files_by_mission(client: AuthenticatedClient, mission: Mission) -> List[File]:
-    params = {"uuid": str(mission.id), "take": MAX_PAGINATION}
-
-    resp = client.get(FILE_OF_MISSION, params=params)
-
-    if resp.status_code in (403, 404):
-        return []
-
-    resp.raise_for_status()
-
-    data = resp.json()
-
-    files = []
-    for file in data[0]:
-        files.append(_parse_file(file, mission))
-
-    return files
+def _project_spec_to_params(
+    project_spec: ProjectSpec,
+) -> Dict[str, List[str]]:
+    params = {}
+    if project_spec.patterns is not None:
+        params[Params.PROJECT_PATTERNS] = project_spec.patterns
+    if project_spec.ids is not None:
+        params[Params.PROJECT_IDS] = list(map(str, project_spec.ids))
+    return params
 
 
-def _get_mission_id_by_name(
-    client: AuthenticatedClient, mission_name, project_id: UUID
-) -> Optional[UUID]:
-    params = {"name": mission_name, "projectUUID": str(project_id)}
-    resp = client.get(MISSION_BY_NAME, params=params)
+def _mission_spec_to_params(mission_spec: MissionSpec) -> Dict[str, List[str]]:
+    params = _project_spec_to_params(mission_spec.project_spec)
+    if mission_spec.patterns is not None:
+        params[Params.MISSION_PATTERNS] = mission_spec.patterns
+    if mission_spec.ids is not None:
+        params[Params.MISSION_IDS] = list(map(str, mission_spec.ids))
+    return params
 
-    if resp.status_code in (403, 404):
-        return None
 
-    # TODO: handle other status codes
-    resp.raise_for_status()
+def _file_spec_to_params(file_spec: FileSpec) -> Dict[str, List[str]]:
+    params = _mission_spec_to_params(file_spec.mission_spec)
+    if file_spec.patterns is not None:
+        params[Params.FILE_PATTERNS] = list(file_spec.patterns)
+    if file_spec.ids is not None:
+        params[Params.FILE_IDS] = list(map(str, file_spec.ids))
+    return params
 
-    data = resp.json()
 
-    return UUID(data["uuid"], version=4)
+def get_files(
+    client: AuthenticatedClient,
+    file_spec: FileSpec,
+    max_entries: Optional[int] = None,
+) -> Generator[File, None, None]:
+    params = _file_spec_to_params(file_spec)
+    response_stream = paginated_request(
+        client, FILE_ENDPOINT, params=params, max_entries=max_entries
+    )
+
+    yield from map(
+        lambda f: _parse_file(FileObject(f)),
+        response_stream,
+    )
+
+
+def get_missions(
+    client: AuthenticatedClient,
+    mission_spec: MissionSpec,
+    max_entries: Optional[int] = None,
+) -> Generator[Mission, None, None]:
+    params = _mission_spec_to_params(mission_spec)
+    response_stream = paginated_request(
+        client, MISSION_ENDPOINT, params=params, max_entries=max_entries
+    )
+
+    yield from map(
+        lambda m: _parse_mission(MissionObject(m)),
+        response_stream,
+    )
+
+
+def get_projects(
+    client: AuthenticatedClient,
+    project_spec: ProjectSpec,
+    max_entries: Optional[int] = None,
+) -> Generator[Project, None, None]:
+    params = _project_spec_to_params(project_spec)
+    _response_stream = paginated_request(
+        client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
+    )
+    yield from map(lambda p: _parse_project(ProjectObject(p)), _response_stream)
+
+
+def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
+    """\
+    get a unique project by specifying a project spec
+    """
+    if not project_spec_is_unique(spec):
+        raise InvalidProjectSpec(
+            f"Project spec does not uniquely determine project: {spec}"
+        )
+    try:
+        return next(get_projects(client, spec))
+    except StopIteration:
+        raise ProjectNotFound(f"Project not found: {spec}")
+
+
+def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
+    """\
+    get a unique mission by specifying a mission spec
+    """
+    if not mission_spec_is_unique(spec):
+        raise InvalidMissionSpec(
+            f"Mission spec does not uniquely determine mission: {spec}"
+        )
+    try:
+        return next(get_missions(client, spec))
+    except StopIteration:
+        raise MissionNotFound(f"Mission not found: {spec}")
+
+
+def get_file(client: AuthenticatedClient, spec: FileSpec) -> File:
+    """\
+    get a unique file by specifying a file spec
+    """
+    if not file_spec_is_unique(spec):
+        raise InvalidFileSpec(f"File spec does not uniquely determine file: {spec}")
+    try:
+        return next(get_files(client, spec))
+    except StopIteration:
+        raise kleinkram.errors.FileNotFound(f"File not found: {spec}")
+
+
+def _mission_name_is_available(
+    client: AuthenticatedClient, mission_name: str, project_id: UUID
+) -> bool:
+    mission_spec = MissionSpec(
+        patterns=[mission_name], project_spec=ProjectSpec(ids=[project_id])
+    )
+    try:
+        _ = get_mission(client, mission_spec)
+    except MissionNotFound:
+        return True
+    return False
+
+
+def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
+    project_spec = ProjectSpec(patterns=[project_name])
+    try:
+        _ = get_project(client, project_spec)
+    except ProjectNotFound:
+        return True
+    return False
 
 
 def _create_mission(
@@ -137,8 +237,11 @@ def _create_mission(
     if metadata is None:
         metadata = {}
 
-    if _get_mission_id_by_name(client, mission_name, project_id) is not None:
-        raise MissionExists(f"Mission with name: `{mission_name}` already exists")
+    if not _mission_name_is_available(client, mission_name, project_id):
+        raise MissionExists(
+            f"Mission with name: `{mission_name}` already exists"
+            f" in project: {project_id}"
+        )
 
     if is_valid_uuid4(mission_name):
         raise ValueError(
@@ -156,7 +259,7 @@ def _create_mission(
         "ignoreTags": ignore_missing_tags,
     }
 
-    resp = client.post(MISSION_CREATE, json=payload)
+    resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
 
     return UUID(resp.json()["uuid"], version=4)
@@ -165,6 +268,9 @@ def _create_mission(
 def _create_project(
     client: AuthenticatedClient, project_name: str, description: str
 ) -> UUID:
+    if not _project_name_is_available(client, project_name):
+        raise ProjectExists(f"Project with name: `{project_name}` already exists")
+
     # TODO: check name and description are valid
     payload = {"name": project_name, "description": description}
     resp = client.post(CREATE_PROJECT, json=payload)
@@ -209,7 +315,7 @@ def _update_mission(
         "missionUUID": str(mission_id),
         "tags": {str(k): v for k, v in tags_dct.items()},
     }
-    resp = client.post(MISSION_UPDATE_METADATA, json=payload)
+    resp = client.post(UPDATE_MISSION, json=payload)
 
     if resp.status_code == 404:
         raise MissionNotFound

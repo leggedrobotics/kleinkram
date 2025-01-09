@@ -9,9 +9,9 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
-from kleinkram.api.query import get_files
-from kleinkram.api.query import get_missions
-from kleinkram.api.query import get_projects
+from kleinkram.api.routes import get_files
+from kleinkram.api.routes import get_missions
+from kleinkram.api.routes import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_files
 from kleinkram.printing import print_missions
@@ -56,7 +56,7 @@ def files(
     )
 
     client = AuthenticatedClient()
-    parsed_files = list(get_files(client, file_spec))
+    parsed_files = list(get_files(client, file_spec=file_spec))
     print_files(parsed_files, pprint=get_shared_state().verbose)
 
 
@@ -78,7 +78,7 @@ def missions(
     )
 
     client = AuthenticatedClient()
-    parsed_missions = list(get_missions(client, mission_spec))
+    parsed_missions = list(get_missions(client, mission_spec=mission_spec))
     print_missions(parsed_missions, pprint=get_shared_state().verbose)
 
 
@@ -90,5 +90,5 @@ def projects(
     project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
 
     client = AuthenticatedClient()
-    parsed_projects = list(get_projects(client, project_spec))
+    parsed_projects = list(get_projects(client, project_spec=project_spec))
     print_projects(parsed_projects, pprint=get_shared_state().verbose)

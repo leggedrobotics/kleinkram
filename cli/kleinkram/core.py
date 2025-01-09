@@ -26,7 +26,6 @@ from rich.console import Console
 from tqdm import tqdm
 
 import kleinkram.api.file_transfer
-import kleinkram.api.query
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
@@ -34,10 +33,6 @@ from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
 from kleinkram.api.query import check_mission_spec_is_creatable
-from kleinkram.api.query import get_files
-from kleinkram.api.query import get_mission
-from kleinkram.api.query import get_missions
-from kleinkram.api.query import get_project
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -72,7 +67,7 @@ def download(
         raise ValueError(f"Destination {base_dir.absolute()} is not a directory")
 
     # retrive files and get the destination paths
-    files = list(get_files(client, spec))
+    files = list(kleinkram.api.routes.get_files(client, file_spec=spec))
     paths = file_paths_from_files(files, dest=base_dir, allow_nested=nested)
 
     if verbose:
@@ -104,7 +99,7 @@ def upload(
     check_file_paths(file_paths)
 
     try:
-        mission = get_mission(client, spec)
+        mission = kleinkram.api.routes.get_mission(client, spec=spec)
     except MissionNotFound:
         if not create:
             raise
@@ -112,7 +107,7 @@ def upload(
 
     if create and mission is None:
         # check if project exists and get its id at the same time
-        project_id = get_project(client, spec.project_spec).id
+        project_id = kleinkram.api.routes.get_project(client, spec=spec.project_spec).id
         mission_name = check_mission_spec_is_creatable(spec)
         kleinkram.api.routes._create_mission(
             client,
@@ -121,7 +116,7 @@ def upload(
             metadata=metadata or {},
             ignore_missing_tags=ignore_missing_metadata,
         )
-        mission = get_mission(client, spec)
+        mission = kleinkram.api.routes.get_mission(client, spec)
 
     assert mission is not None, "unreachable"
 
@@ -143,10 +138,13 @@ def verify(
     check_file_paths(file_paths)
 
     # check that the mission exists
-    _ = get_mission(client, spec)
+    _ = kleinkram.api.routes.get_mission(client, spec)
 
     remote_files = {
-        f.name: f for f in get_files(client, spec=FileSpec(mission_spec=spec))
+        f.name: f
+        for f in kleinkram.api.routes.get_files(
+            client, file_spec=FileSpec(mission_spec=spec)
+        )
     }
     filename_map = get_filename_map(file_paths)
 
@@ -210,7 +208,7 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
     """\
     deletes multiple files accross multiple missions
     """
-    files = kleinkram.api.query.get_files(client, FileSpec(ids=list(file_ids)))
+    files = kleinkram.api.routes.get_files(client, FileSpec(ids=list(file_ids)))
     found_ids = [f.id for f in files]
     for file_id in file_ids:
         if file_id not in found_ids:
@@ -233,8 +231,10 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
 
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mspec = MissionSpec(ids=[mission_id])
-    mission = get_mission(client, mspec)
-    files = list(get_files(client, spec=FileSpec(mission_spec=mspec)))
+    mission = kleinkram.api.routes.get_mission(client, mspec)
+    files = list(
+        kleinkram.api.routes.get_files(client, file_spec=FileSpec(mission_spec=mspec))
+    )
 
     # delete the files and then the mission
     kleinkram.api.routes._delete_files(client, [f.id for f in files], mission.id)
@@ -243,9 +243,13 @@ def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
 
 def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     pspec = ProjectSpec(ids=[project_id])
-    _ = get_project(client, pspec)  # check if project exists
+    _ = kleinkram.api.routes.get_project(client, pspec)  # check if project exists
 
     # delete all missions and files
-    missions = list(get_missions(client, spec=MissionSpec(project_spec=pspec)))
+    missions = list(
+        kleinkram.api.routes.get_missions(
+            client, mission_spec=MissionSpec(project_spec=pspec)
+        )
+    )
     for mission in missions:
         delete_mission(client=client, mission_id=mission.id)

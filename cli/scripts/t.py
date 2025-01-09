@@ -4,17 +4,27 @@ from uuid import UUID
 from uuid import uuid4
 
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.routes import _delete_mission
-from kleinkram.core import delete_mission
-from kleinkram.core import delete_project
+from kleinkram.api.pagination import _get_files_paginated
+from kleinkram.api.pagination import _get_missions_paginated
+from kleinkram.api.pagination import _get_projects_paginated
+from kleinkram.api.query import FileSpec
+from kleinkram.api.query import MissionSpec
+from kleinkram.api.query import ProjectSpec
 
-MISSION_ID = "fc24d9d5-d46b-435b-9d91-2ee549233fc2"
-MISSION_ID = "aa57e695-6e46-4d5f-9b70-f3a6923cf4bb"
+ps = ProjectSpec()
+ms = MissionSpec()
+fs = FileSpec()
 
-MISSION_ID = "2a029617-085d-4b06-b351-a33217a36968"
-MISSION_ID = "6d5f8184-165a-4251-8adf-040a1e232adf"
+client = AuthenticatedClient()
 
-PROJECT_ID = "b5367a14-7f2e-4997-9ef1-6c0a96300710"
 
-# delete_mission(MISSION_ID)
-delete_project(PROJECT_ID)
+for project in _get_projects_paginated(client, ps):
+    print(project)
+
+
+for mission in _get_missions_paginated(client, ms):
+    print(mission)
+
+
+for file in _get_files_paginated(client, fs):
+    print(file)

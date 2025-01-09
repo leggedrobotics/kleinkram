@@ -6,7 +6,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
-from kleinkram.api.query import get_files
+from kleinkram.api.routes import get_files
 from kleinkram.printing import files_to_table
 
 

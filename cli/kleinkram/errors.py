@@ -6,6 +6,9 @@ LOGIN_MESSAGE = "Please login using `klein login`."
 class ParsingError(Exception): ...
 
 
+class InvalidFileSpec(Exception): ...
+
+
 class InvalidMissionSpec(Exception): ...
 
 

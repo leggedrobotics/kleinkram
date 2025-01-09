@@ -4,8 +4,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Literal
 from typing import NewType
+from typing import Tuple
 from uuid import UUID
+
+import dateutil.parser
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import File
@@ -27,6 +31,9 @@ FileObject = NewType("FileObject", Dict[str, Any])
 PROJECT_OBJECT_KEYS = []
 MISSION_OBJECT_KEYS = []
 
+MISSION = "mission"
+PROJECT = "project"
+
 
 class FileObjectKeys(str, Enum):
     UUID = "uuid"
@@ -38,7 +45,7 @@ class FileObjectKeys(str, Enum):
     SIZE = "size"
     HASH = "hash"
     TYPE = "type"
-    TAGS = "categories"
+    CATEGORIES = "categories"
 
 
 class MissionObjectKeys(str, Enum):
@@ -47,7 +54,6 @@ class MissionObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
-    PROJECT = "project"
 
 
 class ProjectObjectKeys(str, Enum):
@@ -58,9 +64,17 @@ class ProjectObjectKeys(str, Enum):
     UPDATED_AT = "updatedAt"
 
 
+def _get_nested_info(data, key: Literal["mission", "project"]) -> Tuple[UUID, str]:
+    nested_data = data[key]
+    return (
+        UUID(nested_data[ProjectObjectKeys.UUID], version=4),
+        nested_data[ProjectObjectKeys.NAME],
+    )
+
+
 def _parse_datetime(date: str) -> datetime:
     try:
-        return datetime.fromisoformat(date)
+        return dateutil.parser.isoparse(date)
     except ValueError as e:
         raise ParsingError(f"error parsing date: {date}") from e
 
@@ -90,7 +104,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
     )
 
 
-def _parse_mission(mission: MissionObject, project: Project) -> Mission:
+def _parse_mission(mission: MissionObject) -> Mission:
     try:
         id_ = UUID(mission[MissionObjectKeys.UUID], version=4)
         name = mission[MissionObjectKeys.NAME]
@@ -98,21 +112,23 @@ def _parse_mission(mission: MissionObject, project: Project) -> Mission:
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
         metadata = {}  # TODO: this crap is really bad to parse
 
+        project_id, project_name = _get_nested_info(mission, PROJECT)
+
         parsed = Mission(
             id=id_,
             name=name,
             created_at=created_at,
             updated_at=updated_at,
             metadata=metadata,
-            project_id=project.id,
-            project_name=project.name,
+            project_id=project_id,
+            project_name=project_name,
         )
     except Exception as e:
         raise ParsingError(f"error parsing mission: {mission}") from e
     return parsed
 
 
-def _parse_file(file: FileObject, mission: Mission) -> File:
+def _parse_file(file: FileObject) -> File:
     try:
         name = file[FileObjectKeys.FILENAME]
         id_ = UUID(file[FileObjectKeys.UUID], version=4)
@@ -123,7 +139,10 @@ def _parse_file(file: FileObject, mission: Mission) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
-        tags = file[FileObjectKeys.TAGS]
+        categories = file[FileObjectKeys.CATEGORIES]
+
+        mission_id, mission_name = _get_nested_info(file, MISSION)
+        project_id, project_name = _get_nested_info(file[MISSION], PROJECT)
 
         parsed = File(
             id=id_,
@@ -132,14 +151,14 @@ def _parse_file(file: FileObject, mission: Mission) -> File:
             size=fsize,
             type_=ftype,
             date=fdate,
-            tags=tags,
+            categories=categories,
             state=state,
             created_at=created_at,
             updated_at=updated_at,
-            mission_id=mission.id,
-            mission_name=mission.name,
-            project_id=mission.project_id,
-            project_name=mission.project_name,
+            mission_id=mission_id,
+            mission_name=mission_name,
+            project_id=project_id,
+            project_name=project_name,
         )
     except Exception as e:
         raise ParsingError(f"error parsing file: {file}") from e

@@ -10,8 +10,8 @@ import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
-from kleinkram.api.query import get_mission
-from kleinkram.api.query import get_project
+from kleinkram.api.routes import get_mission
+from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_mission_info
 from kleinkram.utils import load_metadata
@@ -33,7 +33,7 @@ mission_typer = typer.Typer(
 @mission_typer.command(help=CREATE_HELP)
 def create(
     project: str = typer.Option(..., "--project", "-p", help="project id or name"),
-    mission: str = typer.Option(..., "--mission", "-m", help="mission name"),
+    mission_name: str = typer.Option(..., "--mission", "-m", help="mission name"),
     metadata: Optional[str] = typer.Option(
         None, help="path to metadata file (json or yaml)"
     ),
@@ -49,7 +49,7 @@ def create(
     mission_id = kleinkram.api.routes._create_mission(
         client,
         project_id,
-        mission,
+        mission_name,
         metadata=metadata_dct,
         ignore_missing_tags=ignore_missing_tags,
     )

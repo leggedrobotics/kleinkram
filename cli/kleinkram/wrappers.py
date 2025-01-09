@@ -17,7 +17,6 @@ from typing import Optional
 from typing import Sequence
 from typing import overload
 
-import kleinkram.api.query
 import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
@@ -131,7 +130,7 @@ def list_files(
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.query.get_files(client, spec))
+    return list(kleinkram.api.routes.get_files(client, spec))
 
 
 def list_missions(
@@ -148,7 +147,7 @@ def list_missions(
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.query.get_missions(client, spec))
+    return list(kleinkram.api.routes.get_missions(client, spec))
 
 
 def list_projects(
@@ -161,7 +160,7 @@ def list_projects(
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.query.get_projects(client, spec))
+    return list(kleinkram.api.routes.get_projects(client, spec))
 
 
 @overload
@@ -354,7 +353,7 @@ def delete_file(file_id: IdLike) -> None:
     """\
     delete a single file by id
     """
-    file = kleinkram.api.query.get_file(
+    file = kleinkram.api.routes.get_file(
         AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
     )
     kleinkram.api.routes._delete_files(
@@ -378,7 +377,7 @@ def get_file(file_id: IdLike) -> File:
     """\
     get a file by its id
     """
-    return kleinkram.api.query.get_file(
+    return kleinkram.api.routes.get_file(
         AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
     )
 
@@ -387,7 +386,7 @@ def get_mission(mission_id: IdLike) -> Mission:
     """\
     get a mission by its id
     """
-    return kleinkram.api.query.get_mission(
+    return kleinkram.api.routes.get_mission(
         AuthenticatedClient(), MissionSpec(ids=[parse_uuid_like(mission_id)])
     )
 
@@ -396,6 +395,6 @@ def get_project(project_id: IdLike) -> Project:
     """\
     get a project by its id
     """
-    return kleinkram.api.query.get_project(
+    return kleinkram.api.routes.get_project(
         AuthenticatedClient(), ProjectSpec(ids=[parse_uuid_like(project_id)])
     )
