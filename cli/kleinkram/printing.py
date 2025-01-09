@@ -13,7 +13,6 @@ from typing import Tuple
 from typing import Union
 
 from rich.console import Console
-from rich.layout import Layout
 from rich.table import Table
 from rich.text import Text
 
@@ -59,6 +58,36 @@ def file_verification_status_to_text(
     )
 
 
+def format_bytes(size: int) -> str:
+    """
+    Converts a size in bytes to a human-readable string (e.g., KB, MB, GB, TB).
+
+    Args:
+        size (int): The size in bytes.
+
+    Returns:
+        str: A formatted string representing the size in appropriate units.
+    """
+
+    if size < 0:
+        raise ValueError("Size must be a non-negative integer")
+
+    # Define units and their thresholds
+    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
+    index = 0
+
+    fsize: float = size
+    while fsize >= 1024 and index < len(units) - 1:
+        fsize /= 1024.0
+        index += 1
+
+    # Format to 2 decimal places if needed
+    if index == 0:  # Bytes don't need decimals
+        return f"{int(fsize)} {units[index]}"
+    else:
+        return f"{fsize:.2f} {units[index]}"
+
+
 MetadataValueInternalType = Union[str, float, bool, datetime]
 
 
@@ -94,6 +123,8 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
     table.add_column("project")
     table.add_column("name")
     table.add_column("id")
+    table.add_column("files")
+    table.add_column("size")
 
     # order by project, name
     missions_tp: List[Tuple[str, str, Mission]] = []
@@ -109,7 +140,14 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
         if last_project is not None and last_project != project:
             table.add_row()
         last_project = project
-        table.add_row(mission.project_name, mission.name, str(mission.id))
+
+        table.add_row(
+            mission.project_name,
+            mission.name,
+            str(mission.id),
+            str(mission.number_of_files),
+            format_bytes(mission.size),
+        )
     return table
 
 
@@ -146,7 +184,7 @@ def files_to_table(
             file.name,
             Text(str(file.id), style="green"),
             file_state_to_text(file.state),
-            str(file.size),
+            format_bytes(file.size),
             ", ".join(file.categories),
         )
     return table
@@ -158,13 +196,13 @@ def mission_info_table(
     table = Table("k", "v", title=f"mission info: {mission.name}", show_header=False)
 
     # TODO: add more fields as we store more information in the Mission object
-    table.add_row("id", Text(str(mission.id), style="green"))
     table.add_row("name", mission.name)
+    table.add_row("id", Text(str(mission.id), style="green"))
     table.add_row("project", mission.project_name)
     table.add_row("project id", Text(str(mission.project_id), style="green"))
     table.add_row("created", str(mission.created_at))
     table.add_row("updated", str(mission.updated_at))
-    table.add_row("size", str(mission.size))
+    table.add_row("size", format_bytes(mission.size))
     table.add_row("files", str(mission.number_of_files))
 
     if not print_metadata:
