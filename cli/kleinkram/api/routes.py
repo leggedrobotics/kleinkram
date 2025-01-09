@@ -42,11 +42,12 @@ from kleinkram.models import Project
 from kleinkram.utils import is_valid_uuid4
 
 __all__ = [
+    "_get_api_version",
+    "_claim_admin",
     "_create_mission",
     "_create_project",
     "_update_mission",
-    "_get_api_version",
-    "_claim_admin",
+    "_update_project",
     "_delete_files",
     "_delete_mission",
     "_delete_project",
