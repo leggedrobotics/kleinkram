@@ -24,7 +24,9 @@ export class MinimumMissionDto {
     @ApiProperty()
     @IsString()
     name!: string;
+}
 
+export class MissionDto extends MinimumMissionDto {
     @ApiProperty({
         description: 'The project the mission belongs to',
         type: ProjectDto,
@@ -32,9 +34,7 @@ export class MinimumMissionDto {
     @ValidateNested()
     @Type(() => ProjectDto)
     project!: ProjectDto;
-}
 
-export class MissionDto extends MinimumMissionDto {
     @ApiProperty()
     @IsDate()
     createdAt!: Date;

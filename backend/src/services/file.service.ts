@@ -87,7 +87,7 @@ export class FileService implements OnModuleInit {
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
-    ) { }
+    ) {}
 
     onModuleInit(): any {
         this.fileCleanupQueue = new Queue('file-cleanup', {
@@ -120,12 +120,15 @@ export class FileService implements OnModuleInit {
             this.fileRepository
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
-                .leftJoin('mission.project', 'project')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('file.creator', 'user')
                 .orderBy('file.filename', 'ASC')
                 .skip(skip)
                 .take(take),
             userUUID,
         ).getManyAndCount();
+
+        console.log(files);
 
         return {
             data: files.map((f) => f.fileDto),
@@ -146,22 +149,22 @@ export class FileService implements OnModuleInit {
         skip: number,
         userUuid: string,
     ): Promise<FilesDto> {
-
         // we dont support bracket expressions at the moment.
-        const projectLikePatterns = projectPatterns.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+        const projectLikePatterns = projectPatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
         );
-        const missionLikePatterns = missionPatterns.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+        const missionLikePatterns = missionPatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
         );
-        const fileLikePatterns = filePatterns.map(
-            (pattern) => convertGlobToLikePattern(pattern),
+        const fileLikePatterns = filePatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
         );
 
         let query = this.fileRepository
             .createQueryBuilder('file')
-            .leftJoin('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
+            .leftJoinAndSelect('file.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('file.creator', 'user');
 
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUuid },
@@ -175,40 +178,63 @@ export class FileService implements OnModuleInit {
         query.andWhere(
             new Brackets((qb) => {
                 if (projectUuids.length > 0) {
-                    qb.where('project.uuid IN (:...projectUuids)', { projectUuids });
+                    qb.orWhere('project.uuid IN (:...projectUuids)', {
+                        projectUuids,
+                    });
                 }
                 if (projectLikePatterns.length > 0) {
-                    qb.orWhere('project.name LIKE ANY(:...projectNamesLikePatterns)', { projectLikePatterns });
+                    qb.orWhere(
+                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
+                        {
+                            projectPatterns: projectLikePatterns,
+                        },
+                    );
                 }
-            })
+            }),
         );
 
         // mission query
         query.andWhere(
             new Brackets((qb) => {
                 if (missionUuids.length > 0) {
-                    qb.where('mission.uuid IN (:...missionUuids)', { missionUuids });
+                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
+                        missionUuids,
+                    });
                 }
                 if (missionLikePatterns.length > 0) {
-                    qb.orWhere('mission.name LIKE ANY(:...missionNamesLikePatterns)', { missionLikePatterns });
+                    qb.orWhere(
+                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
+                        {
+                            missionPatterns: missionLikePatterns,
+                        },
+                    );
                 }
-            })
+            }),
         );
 
         // file query
         query.andWhere(
             new Brackets((qb) => {
                 if (fileUuids.length > 0) {
-                    qb.where('file.uuid IN (:...fileUuids)', { fileUuids });
+                    qb.orWhere('file.uuid IN (:...fileUuids)', { fileUuids });
                 }
                 if (fileLikePatterns.length > 0) {
-                    qb.orWhere('file.filename LIKE ANY(:...filenamesLikePatterns)', { fileLikePatterns });
+                    qb.orWhere(
+                        'file.filename LIKE ANY(ARRAY[:...filePatterns])',
+                        {
+                            filePatterns: fileLikePatterns,
+                        },
+                    );
                 }
-            })
+            }),
         );
 
+        console.log(query.getSql());
 
-        const [files, count] = await query.take(take).skip(skip).getManyAndCount();
+        const [files, count] = await query
+            .take(take)
+            .skip(skip)
+            .getManyAndCount();
 
         return {
             data: files.map((f) => f.fileDto),
