@@ -12,6 +12,7 @@ import {
     StringArrayValidate,
     StringValidate,
     UUIDValidate,
+    UUIDArrayValidate,
 } from './validation-types';
 import { metadataApplier } from './metadata-applier';
 import { AccessGroupType } from '@common/frontend_shared/enum';
@@ -21,7 +22,7 @@ export const QueryUUID = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<string> => {
             const request = context.switchToHttp().getRequest();
             const value = request.query[data];
             const object = plainToInstance(UUIDValidate, { value });
@@ -48,6 +49,7 @@ export const QueryOptionalUUID = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
+        // TODO: what type should this be? string | undefined or string
         async (data: string, context: ExecutionContext) => {
             const request = context.switchToHttp().getRequest();
             const value = request.query[data];
@@ -79,7 +81,7 @@ export const QueryString = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<string> => {
             const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
@@ -137,9 +139,22 @@ export const QueryStringArray = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<string[]> => {
             const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
+            const raw_value = request.query[data];
+
+            if (raw_value === undefined) {
+                return [];
+            }
+
+            try {
+                var value = JSON.parse(raw_value);
+            } catch (error) {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid JSON String Array`,
+                );
+            }
+
             const object = plainToInstance(StringArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -163,12 +178,22 @@ export const QueryOptionalStringArray = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<string[]> => {
             const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
-            if (value === undefined) {
-                return;
+            const raw_value = request.query[data];
+
+            if (raw_value === undefined) {
+                return [];
             }
+
+            try {
+                var value = JSON.parse(raw_value);
+            } catch (error) {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid JSON String Array`,
+                );
+            }
+
             const object = plainToInstance(StringArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -184,6 +209,84 @@ export const QueryOptionalStringArray = (
             'query',
             'string[]',
             false,
+        ),
+    )(parameterName);
+
+export const QueryOptionalUUIDArray = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
+    createParamDecorator(
+        async (data: string, context: ExecutionContext): Promise<string[]> => {
+            const request = context.switchToHttp().getRequest();
+            const raw_value = request.query[data];
+
+            if (raw_value === undefined) {
+                return [];
+            }
+
+            try {
+                var value = JSON.parse(raw_value);
+            } catch (error) {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid UUID Array`,
+                );
+            }
+
+            const object = plainToInstance(UUIDArrayValidate, { value });
+            await validateOrReject(object).catch(() => {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid UUID Array`,
+                );
+            });
+
+            return value;
+        },
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'uuid[]',
+            false,
+        ),
+    )(parameterName);
+
+export const QueryUUIDArray = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
+    createParamDecorator(
+        async (data: string, context: ExecutionContext): Promise<string[]> => {
+            const request = context.switchToHttp().getRequest();
+            const raw_value = request.query[data];
+
+            if (raw_value === undefined) {
+                return [];
+            }
+
+            try {
+                var value = JSON.parse(raw_value);
+            } catch (error) {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid UUID Array`,
+                );
+            }
+
+            const object = plainToInstance(UUIDArrayValidate, { value });
+            await validateOrReject(object).catch(() => {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid UUID Array`,
+                );
+            });
+
+            return value;
+        },
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'query',
+            'uuid[]',
+            true,
         ),
     )(parameterName);
 

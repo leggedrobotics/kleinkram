@@ -34,7 +34,7 @@ export class FileQueueEntryDto {
 
     @ApiProperty()
     @IsString()
-    displayName!: string;
+    display_name!: string;
 
     @ApiProperty()
     @IsEnum(FileLocation)
@@ -54,17 +54,16 @@ export class FileQueueEntryDto {
     state!: QueueState;
 
     @ApiProperty()
-    @IsString()
-    filename!: string;
-
-    @ApiProperty()
     @ValidateNested()
     @Type(() => MissionDto)
     mission!: MissionDto;
 }
 
 export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {
-    @ApiProperty()
+    @ApiProperty({
+        type: [FileQueueEntryDto],
+        description: 'List of file queue entries',
+    })
     @ValidateNested()
     @Type(() => FileQueueEntryDto)
     data!: FileQueueEntryDto[];

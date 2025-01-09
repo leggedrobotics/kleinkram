@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import {
     AddTagGuard,
-    AddUserToAccessGroupGuard,
     AdminOnlyGuard,
     CanDeleteMissionGuard,
     CanEditGroupByGroupUuid,
@@ -387,19 +386,6 @@ export function CanDeleteTag() {
             type: UnauthorizedExceptionDto,
             description:
                 'User does not have DeleteTag permissions on the specified project.',
-        }),
-    );
-}
-
-export function IsAccessGroupCreator() {
-    return applyDecorators(
-        SetMetadata('IsAccessGroupCreator', true),
-        UseGuards(AddUserToAccessGroupGuard),
-        ApiResponse({
-            status: 401,
-            type: UnauthorizedExceptionDto,
-            description:
-                'User is not the creator of the access group. API keys are not valid on this endpoint.',
         }),
     );
 }

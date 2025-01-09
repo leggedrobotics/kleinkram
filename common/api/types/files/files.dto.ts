@@ -11,7 +11,10 @@ export class FilesDto implements PaggedResponse<FileDto> {
     @IsNumber()
     count!: number;
 
-    @ApiProperty()
+    @ApiProperty({
+        type: [FileDto],
+        description: 'List of files',
+    })
     @ValidateNested()
     @Type(() => FileDto)
     data!: FileDto[];

@@ -47,6 +47,7 @@ import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-respo
 import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
 import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
 import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
+import { QueueActiveDto } from '@common/api/types/queue-active.dto';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -271,7 +272,6 @@ export class QueueService implements OnModuleInit {
                             throw new Error('Mission not found');
 
                         return {
-                            filename: queue.display_name,
                             state: queue.state,
                             uuid: queue.uuid,
                             creator: {
@@ -280,7 +280,7 @@ export class QueueService implements OnModuleInit {
                                 avatarUrl: queue.creator.avatarUrl ?? '',
                             },
                             createdAt: queue.createdAt,
-                            displayName: queue.display_name,
+                            display_name: queue.display_name,
                             identifier: queue.identifier,
                             processingDuration: queue.processingDuration ?? 0,
                             updatedAt: queue.updatedAt,
