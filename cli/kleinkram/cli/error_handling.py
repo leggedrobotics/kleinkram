@@ -5,9 +5,8 @@ from typing import Any
 from typing import Callable
 from typing import Type
 
-from click import ClickException
-
 import typer
+from click import ClickException
 
 ExceptionHandler = Callable[[Exception], int]
 

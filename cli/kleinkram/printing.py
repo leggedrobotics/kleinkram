@@ -3,24 +3,27 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 from typing import List
-from typing import Mapping, Union
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from datetime import datetime
+from typing import Union
 
 from rich.console import Console
+from rich.layout import Layout
 from rich.table import Table
 from rich.text import Text
-from rich.layout import Layout
 
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import File
 from kleinkram.models import FileState
+from kleinkram.models import MetadataValue
+from kleinkram.models import MetadataValueType
 from kleinkram.models import Mission
-from kleinkram.models import Project, MetadataValue, MetadataValueType
+from kleinkram.models import Project
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",

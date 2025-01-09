@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import NewType
 from uuid import UUID
-from datetime import datetime
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import File

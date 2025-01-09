@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import Generator
@@ -10,16 +11,18 @@ from typing import Tuple
 from typing import cast
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.deser import FileObject
+from kleinkram.api.deser import MissionObject
+from kleinkram.api.deser import ProjectObject
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
-from kleinkram.api.deser import _parse_project, ProjectObject, MissionObject, FileObject
-from kleinkram.models import File
-from kleinkram.models import Mission
-from kleinkram.models import Project
+from kleinkram.api.deser import _parse_project
 from kleinkram.api.query import FileSpec
 from kleinkram.api.query import MissionSpec
 from kleinkram.api.query import ProjectSpec
-from enum import Enum
+from kleinkram.models import File
+from kleinkram.models import Mission
+from kleinkram.models import Project
 
 Entry = Dict[str, Any]
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import typer
 
 import kleinkram.api.routes
@@ -10,8 +12,6 @@ from kleinkram.api.query import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_project_info
 from kleinkram.utils import split_args
-
-from typing import Optional
 
 project_typer = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
