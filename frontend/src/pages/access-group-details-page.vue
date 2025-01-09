@@ -186,8 +186,6 @@
                 row-key="uuid"
                 :filter="search"
                 binary-state-sort
-                flat
-                bordered
             >
                 <template #body-selection="props">
                     <q-checkbox
@@ -372,15 +370,15 @@ watch(
 );
 
 const projectRows = computed(() => {
-    return (
-        accessGroup.value?.projectAccesses?.map((project: ProjectAccess) => {
-            return {
-                ...project.project,
-                rights: project.rights,
-                project_access_uuid: project.uuid,
-            };
-        }) ?? []
-    );
+    console.log(accessGroup.value);
+    // @ts-ignore
+    return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
+        return {
+            ...project.project,
+            rights: project.rights,
+            project_access_uuid: project.uuid,
+        };
+    });
 });
 
 const openAddProject = (): void => {

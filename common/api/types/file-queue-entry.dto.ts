@@ -34,7 +34,7 @@ export class FileQueueEntryDto {
 
     @ApiProperty()
     @IsString()
-    display_name!: string;
+    displayName!: string;
 
     @ApiProperty()
     @IsEnum(FileLocation)
@@ -52,6 +52,10 @@ export class FileQueueEntryDto {
     @ApiProperty()
     @IsEnum(QueueState)
     state!: QueueState;
+
+    @ApiProperty()
+    @IsString()
+    filename!: string;
 
     @ApiProperty()
     @ValidateNested()

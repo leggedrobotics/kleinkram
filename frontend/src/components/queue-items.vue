@@ -319,7 +319,7 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     $q.dialog({
         component: ConfirmDeleteFile,
         componentProps: {
-            filename: queueEntry.display_name,
+            filename: queueEntry.filename,
         },
     }).onOk(() => {
         removeFile(queueEntry);
@@ -328,10 +328,10 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
 
 async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
     const isFile =
-        row.display_name.endsWith('.bag') || row.display_name.endsWith('.mcap');
+        row.filename.endsWith('.bag') || row.filename.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
-        await findOneByNameAndMission(row.display_name, row.mission.uuid).then(
+        await findOneByNameAndMission(row.filename, row.mission.uuid).then(
             async (file: FileWithTopicDto) => {
                 await $router.push({
                     name: ROUTES.FILE.routeName,
@@ -359,9 +359,9 @@ function canDelete(row: FileQueueEntryDto): boolean {
 }
 
 async function downloadFile(row: FileQueueEntryDto): Promise<void> {
-    await findOneByNameAndMission(row.display_name, row.mission.uuid).then(
+    await findOneByNameAndMission(row.filename, row.mission.uuid).then(
         async (file: FileWithTopicDto) => {
-            await _downloadFile(file.uuid, file.displayName);
+            await _downloadFile(file.uuid, file.filename);
         },
     );
 }
@@ -396,11 +396,11 @@ const columns = [
         align: 'left',
         field: (row: FileQueueEntryDto): string => {
             if (
-                row.display_name === row.identifier &&
+                row.filename === row.identifier &&
                 row.location === FileLocation.DRIVE
             )
                 return 'Not available';
-            return row.display_name;
+            return row.displayName;
         },
     },
     {

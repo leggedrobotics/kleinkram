@@ -38,7 +38,7 @@ export const createActionTemplate = async (template: {
     const response = await axios.post('/action/createTemplate', {
         name: template.name,
         command: template.command,
-        dockerImage: template.dockerImage,
+        image: template.dockerImage,
         cpuCores: template.cpuCores,
         cpuMemory: template.cpuMemory,
         gpuMemory: template.gpuMemory,
