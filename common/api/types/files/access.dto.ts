@@ -49,7 +49,8 @@ export class TemporaryFileAccessDto {
 }
 
 export class TemporaryFileAccessesDto
-    implements PaggedResponse<TemporaryFileAccessDto> {
+    implements PaggedResponse<TemporaryFileAccessDto>
+{
     @ApiProperty({
         type: [TemporaryFileAccessDto],
         description: 'List of temporary file accesses',
