@@ -5,20 +5,22 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 from typing import List
-from typing import Mapping
+from typing import Mapping, Union
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from datetime import datetime
 
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+from rich.layout import Layout
 
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.models import Mission
-from kleinkram.models import Project
+from kleinkram.models import Project, MetadataValue, MetadataValueType
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",
@@ -52,6 +54,25 @@ def file_verification_status_to_text(
         file_verification_status.value,
         style=FILE_VERIFICATION_STATUS_STYLES[file_verification_status],
     )
+
+
+MetadataValueInternalType = Union[str, float, bool, datetime]
+
+
+def parse_metadata_value(value: MetadataValue) -> Union[str, float, bool, datetime]:
+    if value.type_ in [
+        MetadataValueType.STRING,
+        MetadataValueType.LINK,
+        MetadataValueType.LOCATION,
+    ]:
+        return value.value
+    if value.type_ == MetadataValueType.NUMBER:
+        return float(value.value)
+    if value.type_ == MetadataValueType.BOOLEAN:
+        return value.value == "true"
+    if value.type_ == MetadataValueType.DATE:
+        return datetime.fromisoformat(value.value)
+    assert False, "unreachable"
 
 
 def projects_to_table(projects: Sequence[Project]) -> Table:
@@ -98,6 +119,8 @@ def files_to_table(
     table.add_column("name")
     table.add_column("id")
     table.add_column("state")
+    table.add_column("size")
+    table.add_column("categories")
 
     # order by project, mission, name
     files_tp: List[Tuple[str, str, str, File]] = []
@@ -120,11 +143,15 @@ def files_to_table(
             file.name,
             Text(str(file.id), style="green"),
             file_state_to_text(file.state),
+            str(file.size),
+            ", ".join(file.categories),
         )
     return table
 
 
-def mission_info_table(mission: Mission) -> Table:
+def mission_info_table(
+    mission: Mission, print_metadata: bool = False
+) -> Tuple[Table, ...]:
     table = Table("k", "v", title=f"mission info: {mission.name}", show_header=False)
 
     # TODO: add more fields as we store more information in the Mission object
@@ -132,8 +159,22 @@ def mission_info_table(mission: Mission) -> Table:
     table.add_row("name", mission.name)
     table.add_row("project", mission.project_name)
     table.add_row("project id", Text(str(mission.project_id), style="green"))
+    table.add_row("created", str(mission.created_at))
+    table.add_row("updated", str(mission.updated_at))
+    table.add_row("size", str(mission.size))
+    table.add_row("files", str(mission.number_of_files))
 
-    return table
+    if not print_metadata:
+        return (table,)
+
+    metadata_table = Table("k", "v", title="mission metadata", show_header=False)
+    kv_pairs_sorted = sorted(
+        [(k, v) for k, v in mission.metadata.items()], key=lambda x: x[0]
+    )
+    for k, v in kv_pairs_sorted:
+        metadata_table.add_row(k, str(parse_metadata_value(v)))
+
+    return table, metadata_table
 
 
 def project_info_table(project: Project) -> Table:
@@ -143,6 +184,9 @@ def project_info_table(project: Project) -> Table:
     table.add_row("id", Text(str(project.id), style="green"))
     table.add_row("name", project.name)
     table.add_row("description", project.description)
+    table.add_row("created", str(project.created_at))
+    table.add_row("updated", str(project.updated_at))
+
     return table
 
 
@@ -217,7 +261,7 @@ def print_mission_info(mission: Mission, *, pprint: bool) -> None:
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(mission_info_table(mission))
+        Console().print(*mission_info_table(mission, print_metadata=True))
     else:
         mission_dct = asdict(mission)
         for key in mission_dct:

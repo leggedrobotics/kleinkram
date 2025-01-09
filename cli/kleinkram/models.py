@@ -10,12 +10,12 @@ from uuid import UUID
 
 
 class MetadataValueType(str, Enum):
-    LOCATION = "LOCATION"
-    STRING = "STRING"
-    LINK = "LINK"
-    BOOLEAN = "BOOLEAN"
-    NUMBER = "NUMBER"
-    DATE = "DATE"
+    LOCATION = "LOCATION"  # string
+    STRING = "STRING"  # string
+    LINK = "LINK"  # string
+    BOOLEAN = "BOOLEAN"  # bool
+    NUMBER = "NUMBER"  # float
+    DATE = "DATE"  # datetime
 
 
 @dataclass(frozen=True)
