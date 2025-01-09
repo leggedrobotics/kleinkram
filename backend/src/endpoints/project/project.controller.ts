@@ -12,8 +12,6 @@ import {
 } from '../auth/roles.decorator';
 import {
     QueryProjectSearchParameters as QueryProjectSearchParameter,
-    QueryOptionalUUIDArray,
-    QueryOptionalStringArray,
     QuerySkip,
     QuerySortBy,
     QuerySortDirection,
@@ -77,19 +75,8 @@ export class ProjectController {
         type: ProjectsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs') projectUuids: string[],
-        @QueryOptionalStringArray('projectPatterns', 'List of project names or patterns') projectPatterns: string[],
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
     ): Promise<ProjectsDto> {
-        return await this.projectService.findMany(
-            projectUuids,
-            projectPatterns,
-            skip,
-            take,
-            user.user.uuid,
-        )
+        return this.projectService.findMany();
     }
 
     @Get('recent')

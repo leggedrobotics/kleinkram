@@ -76,8 +76,8 @@ export class MissionController {
     async getMany(
         @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs') missionUuids: string[],
         @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs') projectUuids: string[],
-        @QueryOptionalStringArray('missionPatterns', 'List of mission names and patterns') missionNames: string[],
-        @QueryOptionalStringArray('projectPatterns', 'List of project names and patterns') projectNames: string[],
+        @QueryOptionalStringArray('missionPatterns', 'List of Mission Names') missionNames: string[],
+        @QueryOptionalStringArray('projectPatterns', 'List of Project Names') projectNames: string[],
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @AddUser() user: AuthHeader,

@@ -137,24 +137,24 @@ export class FileService implements OnModuleInit {
 
     async findMany(
         projectUuids: string[],
-        projectPatterns: string[],
         missionUuids: string[],
-        missionPatterns: string[],
         fileUuids: string[],
-        filePatterns: string[],
+        projectNames: string[],
+        missionNames: string[],
+        filenames: string[],
         take: number,
         skip: number,
         userUuid: string,
     ): Promise<FilesDto> {
 
         // we dont support bracket expressions at the moment.
-        const projectLikePatterns = projectPatterns.map(
+        const projectNamesLikePatterns = projectNames.map(
             (pattern) => convertGlobToLikePattern(pattern),
         );
-        const missionLikePatterns = missionPatterns.map(
+        const missionNamesLikePatterns = missionNames.map(
             (pattern) => convertGlobToLikePattern(pattern),
         );
-        const fileLikePatterns = filePatterns.map(
+        const filenamesLikePatterns = filenames.map(
             (pattern) => convertGlobToLikePattern(pattern),
         );
 
@@ -177,8 +177,8 @@ export class FileService implements OnModuleInit {
                 if (projectUuids.length > 0) {
                     qb.where('project.uuid IN (:...projectUuids)', { projectUuids });
                 }
-                if (projectLikePatterns.length > 0) {
-                    qb.orWhere('project.name LIKE ANY(:...projectNamesLikePatterns)', { projectLikePatterns });
+                if (projectNames.length > 0) {
+                    qb.orWhere('project.name LIKE ANY(:...projectNamesLikePatterns)', { projectNamesLikePatterns });
                 }
             })
         );
@@ -189,8 +189,8 @@ export class FileService implements OnModuleInit {
                 if (missionUuids.length > 0) {
                     qb.where('mission.uuid IN (:...missionUuids)', { missionUuids });
                 }
-                if (missionLikePatterns.length > 0) {
-                    qb.orWhere('mission.name LIKE ANY(:...missionNamesLikePatterns)', { missionLikePatterns });
+                if (missionNames.length > 0) {
+                    qb.orWhere('mission.name LIKE ANY(:...missionNamesLikePatterns)', { missionNamesLikePatterns });
                 }
             })
         );
@@ -201,8 +201,8 @@ export class FileService implements OnModuleInit {
                 if (fileUuids.length > 0) {
                     qb.where('file.uuid IN (:...fileUuids)', { fileUuids });
                 }
-                if (fileLikePatterns.length > 0) {
-                    qb.orWhere('file.filename LIKE ANY(:...filenamesLikePatterns)', { fileLikePatterns });
+                if (filenames.length > 0) {
+                    qb.orWhere('file.filename LIKE ANY(:...filenamesLikePatterns)', { filenamesLikePatterns });
                 }
             })
         );
