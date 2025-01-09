@@ -104,18 +104,18 @@ export class ProjectService {
                 }
                 baseQuery = key.toLowerCase().includes('uuid')
                     ? baseQuery.andWhere(
-                        `project.${key} = :${index.toString()}`,
-                        {
-                            [index]: searchParameters[key],
-                        },
-                    )
+                          `project.${key} = :${index.toString()}`,
+                          {
+                              [index]: searchParameters[key],
+                          },
+                      )
                     : baseQuery.andWhere(
-                        `project.${key} ILIKE :${index.toString()}`,
-                        {
-                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                            [index]: `%${searchParameters[key].toString()}%`,
-                        },
-                    );
+                          `project.${key} ILIKE :${index.toString()}`,
+                          {
+                              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                              [index]: `%${searchParameters[key].toString()}%`,
+                          },
+                      );
             }
         }
 
@@ -130,10 +130,6 @@ export class ProjectService {
             skip,
             take,
         };
-    }
-
-    async findMany(): Promise<ProjectsDto> {
-        throw new Error('Not implemented');
     }
 
     async findOne(uuid: string): Promise<ProjectWithMissionsDto> {
@@ -173,50 +169,50 @@ export class ProjectService {
             // This is implemented in SQL as TypeORM does not support sorting by a computed field...
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
-                '    "project"."uuid" AS "project_uuid",\n' +
-                '    "project"."createdAt" AS "project_createdAt",\n' +
-                '    "project"."updatedAt" AS "project_updatedAt",\n' +
-                '    "project"."name" AS "project_name",\n' +
-                '    "project"."description" AS "project_description",\n' +
-                '    "project"."creatorUuid" AS "project_creatorUuid",\n' +
-                '    (\n' +
-                '        SELECT\n' +
-                '            GREATEST(  MAX("project2"."updatedAt"),  MAX("missions2"."updatedAt"),  MAX("files2"."updatedAt")  ) AS "latestUpdate"\n' +
-                '        FROM\n' +
-                '            "project" "project2"\n' +
-                '                LEFT JOIN\n' +
-                '            "mission" "missions2"\n' +
-                '            ON "missions2"."projectUuid" = "project2"."uuid"\n' +
-                '                AND\n' +
-                '               (\n' +
-                '                   "missions2"."deletedAt" IS NULL\n' +
-                '                   )\n' +
-                '                LEFT JOIN\n' +
-                '            "file_entity" "files2"\n' +
-                '            ON "files2"."missionUuid" = "missions2"."uuid"\n' +
-                '                AND\n' +
-                '               (\n' +
-                '                   "files2"."deletedAt" IS NULL\n' +
-                '                   )\n' +
-                '        WHERE\n' +
-                '            (\n' +
-                '                "project2"."uuid" = "project"."uuid"\n' +
-                '                )\n' +
-                '          AND\n' +
-                '            (\n' +
-                '                "project2"."deletedAt" IS NULL\n' +
-                '                )\n' +
-                '    )\n' +
-                '        AS "latestUpdate"\n' +
-                'FROM\n' +
-                '    "project" "project"\n' +
-                '        WHERE\n' +
-                '    (\n' +
-                '        "project"."deletedAt" IS NULL\n' +
-                '        )\n' +
-                'ORDER BY\n' +
-                '    "latestUpdate" DESC\n' +
-                'LIMIT $1',
+                    '    "project"."uuid" AS "project_uuid",\n' +
+                    '    "project"."createdAt" AS "project_createdAt",\n' +
+                    '    "project"."updatedAt" AS "project_updatedAt",\n' +
+                    '    "project"."name" AS "project_name",\n' +
+                    '    "project"."description" AS "project_description",\n' +
+                    '    "project"."creatorUuid" AS "project_creatorUuid",\n' +
+                    '    (\n' +
+                    '        SELECT\n' +
+                    '            GREATEST(  MAX("project2"."updatedAt"),  MAX("missions2"."updatedAt"),  MAX("files2"."updatedAt")  ) AS "latestUpdate"\n' +
+                    '        FROM\n' +
+                    '            "project" "project2"\n' +
+                    '                LEFT JOIN\n' +
+                    '            "mission" "missions2"\n' +
+                    '            ON "missions2"."projectUuid" = "project2"."uuid"\n' +
+                    '                AND\n' +
+                    '               (\n' +
+                    '                   "missions2"."deletedAt" IS NULL\n' +
+                    '                   )\n' +
+                    '                LEFT JOIN\n' +
+                    '            "file_entity" "files2"\n' +
+                    '            ON "files2"."missionUuid" = "missions2"."uuid"\n' +
+                    '                AND\n' +
+                    '               (\n' +
+                    '                   "files2"."deletedAt" IS NULL\n' +
+                    '                   )\n' +
+                    '        WHERE\n' +
+                    '            (\n' +
+                    '                "project2"."uuid" = "project"."uuid"\n' +
+                    '                )\n' +
+                    '          AND\n' +
+                    '            (\n' +
+                    '                "project2"."deletedAt" IS NULL\n' +
+                    '                )\n' +
+                    '    )\n' +
+                    '        AS "latestUpdate"\n' +
+                    'FROM\n' +
+                    '    "project" "project"\n' +
+                    '        WHERE\n' +
+                    '    (\n' +
+                    '        "project"."deletedAt" IS NULL\n' +
+                    '        )\n' +
+                    'ORDER BY\n' +
+                    '    "latestUpdate" DESC\n' +
+                    'LIMIT $1',
                 [take],
             );
         }
@@ -224,54 +220,54 @@ export class ProjectService {
         if (user.role !== UserRole.ADMIN) {
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
-                '   "project"."uuid" AS "project_uuid",\n' +
-                '   "project"."createdAt" AS "project_createdAt",\n' +
-                '   "project"."updatedAt" AS "project_updatedAt",\n' +
-                '   "project"."name" AS "project_name",\n' +
-                '   "project"."description" AS "project_description",\n' +
-                '   "project"."creatorUuid" AS "project_creatorUuid",\n' +
-                '   (\n' +
-                '      SELECT\n' +
-                '         GREATEST( MAX("project2"."updatedAt"), MAX("missions2"."updatedAt"), MAX("files2"."updatedAt") ) AS "latestUpdate" \n' +
-                '      FROM\n' +
-                '         "project" "project2" \n' +
-                '         LEFT JOIN\n' +
-                '            "mission" "missions2" \n' +
-                '            ON "missions2"."projectUuid" = "project2"."uuid" \n' +
-                '            AND \n' +
-                '            (\n' +
-                '               "missions2"."deletedAt" IS NULL\n' +
-                '            )\n' +
-                '         LEFT JOIN\n' +
-                '            "file_entity" "files2" \n' +
-                '            ON "files2"."missionUuid" = "missions2"."uuid" \n' +
-                '            AND \n' +
-                '            (\n' +
-                '               "files2"."deletedAt" IS NULL\n' +
-                '            )\n' +
-                '      WHERE\n' +
-                '         (\n' +
-                '            "project2"."uuid" = "project"."uuid" \n' +
-                '         )\n' +
-                '         AND \n' +
-                '         (\n' +
-                '            "project2"."deletedAt" IS NULL \n' +
-                '         )\n' +
-                '   )\n' +
-                '   AS "latestUpdate" \n' +
-                'FROM\n' +
-                '   "project" "project" \n' +
-                '   LEFT JOIN\n' +
-                '      "project_access_view_entity" "projectAccessView" \n' +
-                '      ON "projectAccessView"."projectuuid" = "project"."uuid" \n' +
-                'WHERE\n' +
-                '   (\n' +
-                '      "projectAccessView"."rights" >= $1 \n' +
-                '      AND "projectAccessView"."useruuid" = $2 \n' +
-                '   )\n' +
-                'ORDER BY\n' +
-                '   "latestUpdate" DESC \n' +
-                'LIMIT $3',
+                    '   "project"."uuid" AS "project_uuid",\n' +
+                    '   "project"."createdAt" AS "project_createdAt",\n' +
+                    '   "project"."updatedAt" AS "project_updatedAt",\n' +
+                    '   "project"."name" AS "project_name",\n' +
+                    '   "project"."description" AS "project_description",\n' +
+                    '   "project"."creatorUuid" AS "project_creatorUuid",\n' +
+                    '   (\n' +
+                    '      SELECT\n' +
+                    '         GREATEST( MAX("project2"."updatedAt"), MAX("missions2"."updatedAt"), MAX("files2"."updatedAt") ) AS "latestUpdate" \n' +
+                    '      FROM\n' +
+                    '         "project" "project2" \n' +
+                    '         LEFT JOIN\n' +
+                    '            "mission" "missions2" \n' +
+                    '            ON "missions2"."projectUuid" = "project2"."uuid" \n' +
+                    '            AND \n' +
+                    '            (\n' +
+                    '               "missions2"."deletedAt" IS NULL\n' +
+                    '            )\n' +
+                    '         LEFT JOIN\n' +
+                    '            "file_entity" "files2" \n' +
+                    '            ON "files2"."missionUuid" = "missions2"."uuid" \n' +
+                    '            AND \n' +
+                    '            (\n' +
+                    '               "files2"."deletedAt" IS NULL\n' +
+                    '            )\n' +
+                    '      WHERE\n' +
+                    '         (\n' +
+                    '            "project2"."uuid" = "project"."uuid" \n' +
+                    '         )\n' +
+                    '         AND \n' +
+                    '         (\n' +
+                    '            "project2"."deletedAt" IS NULL \n' +
+                    '         )\n' +
+                    '   )\n' +
+                    '   AS "latestUpdate" \n' +
+                    'FROM\n' +
+                    '   "project" "project" \n' +
+                    '   LEFT JOIN\n' +
+                    '      "project_access_view_entity" "projectAccessView" \n' +
+                    '      ON "projectAccessView"."projectuuid" = "project"."uuid" \n' +
+                    'WHERE\n' +
+                    '   (\n' +
+                    '      "projectAccessView"."rights" >= $1 \n' +
+                    '      AND "projectAccessView"."useruuid" = $2 \n' +
+                    '   )\n' +
+                    'ORDER BY\n' +
+                    '   "latestUpdate" DESC \n' +
+                    'LIMIT $3',
                 [AccessGroupRights.READ, user.uuid, take],
             );
         }

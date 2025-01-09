@@ -34,7 +34,7 @@ export class MissionService {
         @InjectRepository(User) private userRepository: Repository<User>,
         private userService: UserService,
         private tagService: TagService,
-    ) { }
+    ) {}
 
     async create(
         createMission: CreateMission,
@@ -61,7 +61,8 @@ export class MissionService {
                     .map((tagType: TagType) => tagType.name)
                     .join(', ');
                 throw new ConflictException(
-                    `All required tags must be provided for the mission. Missing tags: ${missingTagNames
+                    `All required tags must be provided for the mission. Missing tags: ${
+                        missingTagNames
                     }`,
                 );
             } else {
@@ -127,10 +128,6 @@ export class MissionService {
         });
 
         return mission.missionWithFilesDto;
-    }
-
-    async findManyNew(): Promise<MissionsDto> {
-        throw new Error('Not implemented');
     }
 
     async findMissionByProjectMinimal(

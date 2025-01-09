@@ -65,19 +65,6 @@ export class MissionController {
         return this.missionService.updateName(missionUUID, name);
     }
 
-    @Get('many')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions',
-        type: MissionsDto,
-    })
-    async getMany(
-        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
-    ): Promise<MissionsDto> {
-        return await this.missionService.findManyNew();
-    }
-
-
     @Get('filteredMinimal')
     @UserOnly()
     @ApiOkResponse({

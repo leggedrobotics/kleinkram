@@ -35,7 +35,7 @@ import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
 
 @Controller('project')
 export class ProjectController {
-    constructor(private readonly projectService: ProjectService) { }
+    constructor(private readonly projectService: ProjectService) {}
 
     @Get('filtered')
     @UserOnly()
@@ -66,17 +66,6 @@ export class ProjectController {
             sortDirection,
             searchParameters,
         );
-    }
-
-    @Get('many')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns projects',
-        type: ProjectsDto,
-    })
-    async getMany(
-    ): Promise<ProjectsDto> {
-        return this.projectService.findMany();
     }
 
     @Get('recent')
