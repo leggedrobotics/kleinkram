@@ -130,7 +130,7 @@ export class MissionService {
         return mission.missionWithFilesDto;
     }
 
-    async findMany(
+    async findManyNew(
         projectUuids: string[],
         projectPatterns: string[],
         missionUuids: string[],
@@ -456,6 +456,13 @@ export class MissionService {
                 );
             }),
         );
+    }
+
+    async findMany(uuids: string[]): Promise<Mission[]> {
+        return this.missionRepository.find({
+            where: { uuid: In(uuids) },
+            relations: ['project', 'creator'],
+        });
     }
 
     async download(missionUUID: string) {

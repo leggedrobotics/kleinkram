@@ -96,5 +96,5 @@ export class FileWithTopicDto extends FileDto {
     // TODO: extract them in a subclass
     uploaded?: number;
     canceled?: boolean;
-    missionUUID?: string;
+    missionUuid?: string;
 }

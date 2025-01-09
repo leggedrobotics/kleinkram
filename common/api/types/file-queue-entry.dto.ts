@@ -60,10 +60,7 @@ export class FileQueueEntryDto {
 }
 
 export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {
-    @ApiProperty({
-        type: [FileQueueEntryDto],
-        description: 'List of file queue entries',
-    })
+    @ApiProperty()
     @ValidateNested()
     @Type(() => FileQueueEntryDto)
     data!: FileQueueEntryDto[];

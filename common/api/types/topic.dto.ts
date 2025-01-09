@@ -24,10 +24,7 @@ export class TopicDto {
 }
 
 export class TopicsDto implements PaggedResponse<TopicDto> {
-    @ApiProperty({
-        type: [TopicDto],
-        description: 'List of topics',
-    })
+    @ApiProperty()
     @ValidateNested()
     @Type(() => TopicDto)
     data!: TopicDto[];
@@ -50,10 +47,7 @@ export class TopicNamesDto implements PaggedResponse<string> {
     @IsNumber()
     count!: number;
 
-    @ApiProperty({
-        type: [String],
-        description: 'List of topic names',
-    })
+    @ApiProperty()
     @ValidateNested()
     @Type(() => String)
     data!: string[];

@@ -20,10 +20,7 @@ export class CategoriesDto implements PaggedResponse<CategoryDto> {
     @IsNumber()
     count!: number;
 
-    @ApiProperty({
-        type: [CategoryDto],
-        description: 'List of categories',
-    })
+    @ApiProperty()
     @ValidateNested()
     @Type(() => CategoryDto)
     data!: CategoryDto[];

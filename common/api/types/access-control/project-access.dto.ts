@@ -60,7 +60,7 @@ export class ProjectAccessDto {
 
 export class ProjectAccessListDto implements PaggedResponse<ProjectAccessDto> {
     @ApiProperty({
-        type: [ProjectAccessDto],
+        type: ProjectAccessDto,
         isArray: true,
     })
     @ValidateNested()

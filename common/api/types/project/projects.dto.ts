@@ -7,10 +7,7 @@ import { IsTake } from '../../../validation/take-validation';
 import { ProjectWithMissionCountDto } from './project-with-mission-count.dto';
 
 export class ProjectsDto implements PaggedResponse<ProjectWithMissionCountDto> {
-    @ApiProperty({
-        type: [ProjectWithMissionCountDto],
-        description: 'List of projects',
-    })
+    @ApiProperty()
     @ValidateNested()
     @Type(() => ProjectWithMissionCountDto)
     data!: ProjectWithMissionCountDto[];

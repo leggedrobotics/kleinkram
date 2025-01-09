@@ -33,7 +33,7 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { QueryOptionalStringArray } from '../../validation/query-decorators';
+import { QueryOptionalStringArray } from 'dist/backend/src/validation/query-decorators';
 
 @Controller('mission')
 export class MissionController {
@@ -82,7 +82,7 @@ export class MissionController {
         @QueryTake('take') take: number,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {
-        return await this.missionService.findMany(
+        return await this.missionService.findManyNew(
             projectUuids, projectNames, missionUuids, missionNames, skip, take, user.user.uuid
         );
     }
@@ -228,5 +228,14 @@ export class MissionController {
         @Body('tags') tags: Record<string, string>,
     ): Promise<void> {
         await this.missionService.updateTags(missionUUID, tags);
+    }
+
+    @Get('many')
+    @CanReadManyMissions()
+    @OutputDto(null) // TODO: type API response
+    async getManyMissions(
+        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
+    ) {
+        return this.missionService.findMany(uuids);
     }
 }
