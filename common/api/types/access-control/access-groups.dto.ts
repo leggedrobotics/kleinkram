@@ -12,7 +12,7 @@ export class AccessGroupsDto implements PaggedResponse<AccessGroupDto> {
     count!: number;
 
     @ApiProperty({
-        type: AccessGroupDto,
+        type: [AccessGroupDto],
         description: 'List of access groups',
     })
     @ValidateNested()

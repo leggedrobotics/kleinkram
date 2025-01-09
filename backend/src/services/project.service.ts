@@ -6,12 +6,15 @@ import { CreateProject } from '@common/api/types/create-project.dto';
 import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
 
+import { convertGlobToLikePattern } from './utils';
+
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
 import TagType from '@common/entities/tagType/tag-type.entity';
+import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
@@ -37,6 +40,8 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
@@ -123,6 +128,48 @@ export class ProjectService {
             .skip(skip)
             .take(take)
             .getManyAndCount();
+
+        return {
+            data: projects.map((p) => p.flatProjectDto),
+            count,
+            skip,
+            take,
+        };
+    }
+
+    async findMany(
+        projectUuids: string[],
+        projectPatterns: string[],
+        skip: number,
+        take: number,
+        userUuid: string,
+    ): Promise<ProjectsDto> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        let query = this.projectRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project');
+
+        if (user.role !== UserRole.ADMIN) {
+            query = addAccessConstraints(query, userUuid);
+        }
+
+        if (projectUuids.length > 0) {
+            query.orWhere('project.uuid IN (:...projectUuids)', {
+                projectUuids,
+            });
+        }
+
+        if (projectPatterns.length > 0) {
+            query.orWhere('project.name ILIKE ANY(ARRAY[:...patterns])', {
+                patterns: projectPatterns.map(convertGlobToLikePattern),
+            });
+        }
+
+        query.skip(skip).take(take);
+        const [projects, count] = await query.getManyAndCount();
 
         return {
             data: projects.map((p) => p.flatProjectDto),
