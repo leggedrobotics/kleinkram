@@ -163,7 +163,7 @@
                         <q-tooltip> Refetch the Data</q-tooltip>
                     </q-btn>
 
-                    <DialogOpenerAddUser
+                    <AddUserDialogOpener
                         v-if="accessGroup"
                         :access-group="accessGroup"
                     >
@@ -173,7 +173,7 @@
                             label="Add User"
                             icon="sym_o_add"
                         />
-                    </DialogOpenerAddUser>
+                    </AddUserDialogOpener>
                 </button-group>
             </div>
             <q-table
@@ -186,8 +186,6 @@
                 row-key="uuid"
                 :filter="search"
                 binary-state-sort
-                flat
-                bordered
             >
                 <template #body-selection="props">
                     <q-checkbox
@@ -290,7 +288,6 @@ import TitleSection from '@components/title-section.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import RemoveProjectDialogOpener from '@components/button-wrapper/remove-project-dialog-opener.vue';
 import { explorerPageTableColumns } from '@components/explorer-page/explorer-page-table-columns';
-import DialogOpenerAddUser from '@components/button-wrapper/dialog-opener-add-user.vue';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -373,15 +370,15 @@ watch(
 );
 
 const projectRows = computed(() => {
-    return (
-        accessGroup.value?.projectAccesses?.map((project: ProjectAccess) => {
-            return {
-                ...project.project,
-                rights: project.rights,
-                project_access_uuid: project.uuid,
-            };
-        }) ?? []
-    );
+    console.log(accessGroup.value);
+    // @ts-ignore
+    return accessGroup.value?.projectAccesses.map((project: ProjectAccess) => {
+        return {
+            ...project.project,
+            rights: project.rights,
+            project_access_uuid: project.uuid,
+        };
+    });
 });
 
 const openAddProject = (): void => {
@@ -408,8 +405,8 @@ const dropColumns = (cols: any[], label: string) => {
 };
 
 const { mutate: setAccessGroup } = useMutation({
-    mutationFn: (data: { uuid: string; expirationDate: Date | null }) => {
-        return setAccessGroupExpiry(data.uuid, data.expirationDate);
+    mutationFn: (data: { aguUUID: string; expirationDate: Date | null }) => {
+        return setAccessGroupExpiry(data.aguUUID, data.expirationDate);
     },
     onSuccess: async () => {
         await queryClient.invalidateQueries({
@@ -443,7 +440,7 @@ const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
         },
     }).onOk((expirationDate: Date | null) => {
         setAccessGroup({
-            uuid: accessGroup.value?.uuid,
+            aguUUID: agu.uuid,
             expirationDate,
         });
     });
@@ -484,14 +481,6 @@ const userCols = [
         required: true,
         label: 'Expiration',
         align: 'left',
-    },
-    {
-        name: 'canEdit',
-        required: true,
-        label: 'Can Edit Group',
-        align: 'right',
-        field: (row: GroupMembershipDto): boolean =>
-            row.canEditGroup ? 'Yes' : 'No',
     },
     {
         name: 'actions',

@@ -5,16 +5,36 @@ import { Repository } from 'typeorm';
 import { UserRole } from '@common/frontend_shared/enum';
 import User from '@common/entities/user/user.entity';
 import logger from '../../logger';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
 
 @Injectable()
 export class AuthGuardService {
     constructor(
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(GroupMembership)
-        private groupMembership: Repository<GroupMembership>,
     ) {}
+
+    async canAddUserToAccessGroup(
+        user: User,
+        accessGroupUUID: string,
+    ): Promise<boolean> {
+        if (!user || !accessGroupUUID) {
+            logger.error(
+                `AuthGuard: accessGroupUUID (${accessGroupUUID}) or User (${user.uuid}) not provided.`,
+            );
+            return false;
+        }
+        if (!user) {
+            return false;
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        return await this.accessGroupRepository.exists({
+            where: { uuid: accessGroupUUID, creator: { uuid: user.uuid } },
+            relations: ['members', 'members.user'],
+        });
+    }
 
     async canEditAccessGroupByProjectUuid(
         user: User,
@@ -39,23 +59,20 @@ export class AuthGuardService {
 
     async canEditAccessGroupByGroupUuid(
         user: User,
-        uuid: string,
+        aguUUID: string,
     ): Promise<boolean> {
-        if (!user || !uuid) {
+        if (!user || !aguUUID) {
             logger.error(
-                `AuthGuard: aguUUID (${uuid}) or User (${user.uuid}) not provided.`,
+                `AuthGuard: aguUUID (${aguUUID}) or User (${user.uuid}) not provided.`,
             );
             return false;
         }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-
-        return await this.groupMembership.exists({
+        return await this.accessGroupRepository.exists({
             where: {
-                accessGroup: { uuid },
-                user: { uuid: user.uuid },
-                canEditGroup: true,
+                memberships: { uuid: aguUUID, canEditGroup: true },
             },
         });
     }

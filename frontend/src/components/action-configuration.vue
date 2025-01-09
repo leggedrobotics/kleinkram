@@ -343,8 +343,9 @@ const editingTemplate: Ref = ref({
 const hasMissionUUIDs = computed(
     () => !!properties.mission_uuids && properties.mission_uuids.length > 0,
 );
+const selectedMissionsKey = computed(() => ['missions', allMissionUUIDs.value]);
 const { data: selectedMissions } = useManyMissions(
-    ['missions', allMissionUUIDs],
+    selectedMissionsKey,
     allMissionUUIDs,
     hasMissionUUIDs,
 );
@@ -371,7 +372,7 @@ watch(
 // Fetch mission based on selected project -------------------------------------
 
 const { data: _missions } = useMissionsOfProjectMinimal(
-    computed(() => handler.value.projectUuid ?? ''),
+    handler.value.projectUuid || '',
     500,
     0,
 );
@@ -668,7 +669,6 @@ function missionSelected(mission: MissionWithFilesDto) {
 }
 
 const projectSelected = (a: ProjectDto) => {
-    console.log('projectSelected', a);
     handler.value.setProjectUUID(a.uuid);
 };
 

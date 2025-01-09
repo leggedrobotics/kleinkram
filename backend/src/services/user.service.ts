@@ -118,8 +118,8 @@ export class UserService implements OnModuleInit {
         skip: number,
         take: number,
     ): Promise<UsersDto> {
-        // Ensure the search string is not empty or null or less than 3 characters
-        if (search === null || search === '' || search.length < 3) {
+        // Ensure the search string is not empty or null
+        if (!search) {
             return {
                 users: [],
                 count: 0,
@@ -164,7 +164,7 @@ export class UserService implements OnModuleInit {
             });
             defaultPermission = 0;
         } else {
-            if (user.memberships === undefined)
+            if (user?.memberships === undefined)
                 throw new Error('Membership undefined');
 
             defaultPermission = user.memberships.length > 0 ? 10 : 0;

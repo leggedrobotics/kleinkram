@@ -235,7 +235,7 @@
                 This file has not yet completed uploading or processing.
                 <q-separator style="margin-top: 6px; margin-bottom: 6px" />
                 <div v-for="queue in queues?.data" :key="queue.uuid">
-                    {{ queue.display_name }} -
+                    {{ queue.displayName }} -
                     <q-badge :color="getColor(queue.state)">
                         <q-tooltip>
                             {{ getDetailedFileState(queue.state) }}

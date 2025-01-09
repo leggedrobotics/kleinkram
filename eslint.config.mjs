@@ -106,7 +106,7 @@ export default tseslint.config(
             '**/*.cjs',
             '**/*.mjs',
             '**/environment.d.ts',
-            '**/backend/tests/**',
+            '**/backend/tests/**'
         ],
     },
 );

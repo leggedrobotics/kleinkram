@@ -86,12 +86,12 @@ export const updateProjectAccess = async (
 };
 
 export const setAccessGroupExpiry = async (
-    uuid: string,
+    aguUUID: string,
     expiryDate: Date | null,
 ) => {
     const response = await axios.post('/access/setExpireDate', {
-        uuid,
-        expireDate: expiryDate ?? 'never',
+        aguUUID,
+        expireDate: expiryDate,
     });
     return response.data;
 };

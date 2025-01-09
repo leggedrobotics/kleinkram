@@ -54,11 +54,12 @@ export default class Mission extends BaseEntity {
         }
 
         return {
-            ...this.minimumMissionDto,
-            project: this.project.minimalProjectDto,
             createdAt: this.createdAt,
+            project: this.project.minimalProjectDto,
             tags: this.tags?.map((tag) => tag.tagDto) || [],
             updatedAt: this.updatedAt,
+            uuid: this.uuid,
+            name: this.name,
         };
     }
 
