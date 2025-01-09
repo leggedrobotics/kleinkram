@@ -12,7 +12,6 @@ import {
     StringArrayValidate,
     StringValidate,
     UUIDValidate,
-    UUIDArrayValidate,
 } from './validation-types';
 import { metadataApplier } from './metadata-applier';
 import { AccessGroupType } from '@common/frontend_shared/enum';
@@ -185,62 +184,6 @@ export const QueryOptionalStringArray = (
             'query',
             'string[]',
             false,
-        ),
-    )(parameterName);
-
-export const QueryOptionalUUIDArray = (
-    parameterName: string,
-    parameterDescription: string,
-) =>
-    createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
-            const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
-            if (value === undefined) {
-                return;
-            }
-            const object = plainToInstance(UUIDArrayValidate, { value });
-            await validateOrReject(object).catch(() => {
-                throw new BadRequestException(
-                    `Parameter ${data} is not a valid UUID Array`,
-                );
-            });
-
-            return value;
-        },
-        metadataApplier(
-            parameterName,
-            parameterDescription,
-            'query',
-            'uuid[]',
-            false,
-        ),
-    )(parameterName);
-
-
-export const QueryUUIDArray = (
-    parameterName: string,
-    parameterDescription: string,
-) =>
-    createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
-            const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
-            const object = plainToInstance(UUIDArrayValidate, { value });
-            await validateOrReject(object).catch(() => {
-                throw new BadRequestException(
-                    `Parameter ${data} is not a valid UUID Array`,
-                );
-            });
-
-            return value;
-        },
-        metadataApplier(
-            parameterName,
-            parameterDescription,
-            'query',
-            'uuid[]',
-            true,
         ),
     )(parameterName);
 

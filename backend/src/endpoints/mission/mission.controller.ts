@@ -35,7 +35,7 @@ import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
 @Controller('mission')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) { }
+    constructor(private readonly missionService: MissionService) {}
 
     @Post('create')
     @CanCreateInProjectByBody()

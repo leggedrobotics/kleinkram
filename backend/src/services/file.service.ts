@@ -14,7 +14,6 @@ import {
     FindOptionsWhere,
     ILike,
     In,
-    Like,
     MoreThan,
     Repository,
 } from 'typeorm';
@@ -86,7 +85,7 @@ export class FileService implements OnModuleInit {
         private queueRepository: Repository<QueueEntity>,
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
-    ) { }
+    ) {}
 
     onModuleInit(): any {
         this.fileCleanupQueue = new Queue('file-cleanup', {
@@ -125,92 +124,6 @@ export class FileService implements OnModuleInit {
                 .take(take),
             userUUID,
         ).getManyAndCount();
-
-        return {
-            data: files.map((f) => f.fileDto),
-            count,
-            take,
-            skip,
-        };
-    }
-
-    async findMany(
-        projectUuids: string[],
-        missionUuids: string[],
-        fileUuids: string[],
-        projectNames: string[],
-        missionNames: string[],
-        filenames: string[],
-        take: number,
-        skip: number,
-        userUuid: string,
-    ): Promise<FilesDto> {
-
-        // we dont support bracket expressions at the moment.
-        const convertPatternToLike = (pattern: string) =>
-            pattern.replace('%', '\\%').replace('_', '\\_').replace('*', '%').replace('?', '_');
-
-        const projectNamesLikePatterns = projectNames.map(
-            (pattern) => convertPatternToLike(pattern),
-        );
-        const missionNamesLikePatterns = missionNames.map(
-            (pattern) => convertPatternToLike(pattern),
-        );
-        const filenamesLikePatterns = filenames.map(
-            (pattern) => convertPatternToLike(pattern),
-        );
-
-        let query = this.fileRepository
-            .createQueryBuilder('file')
-            .leftJoin('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
-
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
-
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
-        }
-
-        // project query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.where('project.uuid IN (:...projectUuids)', { projectUuids });
-                }
-                if (projectNames.length > 0) {
-                    qb.orWhere('project.name LIKE ANY(:...projectNamesLikePatterns)', { projectNamesLikePatterns });
-                }
-            })
-        );
-
-        // mission query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (missionUuids.length > 0) {
-                    qb.where('mission.uuid IN (:...missionUuids)', { missionUuids });
-                }
-                if (missionNames.length > 0) {
-                    qb.orWhere('mission.name LIKE ANY(:...missionNamesLikePatterns)', { missionNamesLikePatterns });
-                }
-            })
-        );
-
-        // file query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (fileUuids.length > 0) {
-                    qb.where('file.uuid IN (:...fileUuids)', { fileUuids });
-                }
-                if (filenames.length > 0) {
-                    qb.orWhere('file.filename LIKE ANY(:...filenamesLikePatterns)', { filenamesLikePatterns });
-                }
-            })
-        );
-
-
-        const [files, count] = await query.take(take).skip(skip).getManyAndCount();
 
         return {
             data: files.map((f) => f.fileDto),
