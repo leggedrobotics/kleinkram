@@ -635,12 +635,20 @@ export const QuerySkip = (
     parameterDescription?: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<number> => {
             const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
+            const value_raw = request.query[data] as string | undefined;
 
-            if (value === undefined) {
+            if (value_raw === undefined) {
                 return 0;
+            }
+
+            try {
+                var value = parseInt(value_raw);
+            } catch (error) {
+                throw new BadRequestException(
+                    'QuerySkip is not a valid Number',
+                );
             }
 
             if (value < 0) {
@@ -665,20 +673,31 @@ export const QuerySkip = (
         ),
     )(parameterName);
 
+const MAX_TAKE = 10_000;
+const DEFAULT_TAKE = 100;
+
 export const QueryTake = (
     parameterName: string,
     parameterDescription?: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        async (data: string, context: ExecutionContext): Promise<number> => {
             const request = context.switchToHttp().getRequest();
-            const value = request.query[data];
+            const raw_value = request.query[data] as string | undefined;
 
-            if (value === undefined) {
-                return 100; // default value
+            if (raw_value === undefined) {
+                return DEFAULT_TAKE; // default value
             }
 
-            if (value > 10_000) {
+            try {
+                var value = parseInt(raw_value);
+            } catch (error) {
+                throw new BadRequestException(
+                    'QueryTake is not a valid Number',
+                );
+            }
+
+            if (value > MAX_TAKE) {
                 throw new BadRequestException('QueryTake is too large');
             } else if (value < 1) {
                 throw new BadRequestException('QueryTake is too small');
