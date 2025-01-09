@@ -149,11 +149,24 @@ export class ProjectService {
         });
 
         let query = this.projectRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project');
+            .createQueryBuilder('project')
+            .leftJoinAndSelect('project.creator', 'creator');
 
+        // if not admin, only show projects that the user has access to
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
+            query
+                .leftJoin('project.project_accesses', 'projectAccesses')
+                .leftJoin('projectAccesses.accessGroup', 'accessGroup')
+                .innerJoin(
+                    'accessGroup.memberships',
+                    'memberships',
+                    'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
+                )
+                .leftJoin('memberships.user', 'user')
+                .where('projectAccesses.rights >= :rights', {
+                    rights: AccessGroupRights.READ,
+                })
+                .andWhere('user.uuid = :uuid', { uuid: user.uuid });
         }
 
         if (projectUuids.length > 0) {
