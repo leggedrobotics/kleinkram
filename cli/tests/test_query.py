@@ -4,135 +4,135 @@ from uuid import uuid4
 
 import pytest
 
-from kleinkram.api.query import InvalidMissionSpec
-from kleinkram.api.query import InvalidProjectSpec
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
-from kleinkram.api.query import check_mission_spec_is_creatable
-from kleinkram.api.query import check_project_spec_is_creatable
-from kleinkram.api.query import mission_spec_is_unique
-from kleinkram.api.query import project_spec_is_unique
+from kleinkram.api.query import InvalidMissionQuery
+from kleinkram.api.query import InvalidProjectQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import check_mission_query_is_creatable
+from kleinkram.api.query import check_project_query_is_creatable
+from kleinkram.api.query import mission_query_is_unique
+from kleinkram.api.query import project_query_is_unique
 
 
 @pytest.mark.parametrize(
-    "spec, expected",
+    "query, expected",
     [
-        pytest.param(MissionSpec(), False, id="match all"),
-        pytest.param(MissionSpec(patterns=["*"]), False, id="mission name match all"),
+        pytest.param(MissionQuery(), False, id="match all"),
+        pytest.param(MissionQuery(patterns=["*"]), False, id="mission name match all"),
         pytest.param(
-            MissionSpec(patterns=["test"]),
+            MissionQuery(patterns=["test"]),
             False,
             id="mission name without project",
         ),
         pytest.param(
-            MissionSpec(patterns=["test"], project_spec=ProjectSpec()),
+            MissionQuery(patterns=["test"], project_query=ProjectQuery()),
             False,
             id="mission name with non-unique project",
         ),
         pytest.param(
-            MissionSpec(
+            MissionQuery(
                 patterns=["test"],
-                project_spec=ProjectSpec(ids=[uuid4()]),
+                project_query=ProjectQuery(ids=[uuid4()]),
             ),
             True,
             id="mission name with unique project",
         ),
         pytest.param(
-            MissionSpec(ids=[uuid4()]),
+            MissionQuery(ids=[uuid4()]),
             True,
             id="mission by id",
         ),
         pytest.param(
-            MissionSpec(ids=[uuid4(), uuid4()]),
+            MissionQuery(ids=[uuid4(), uuid4()]),
             False,
             id="multiple mission ids",
         ),
     ],
 )
-def test_mission_spec_is_unique(spec, expected):
-    assert mission_spec_is_unique(spec) == expected
+def test_mission_query_is_unique(query, expected):
+    assert mission_query_is_unique(query) == expected
 
 
 @pytest.mark.parametrize(
-    "spec, expected",
+    "query, expected",
     [
-        pytest.param(ProjectSpec(), False, id="match all"),
-        pytest.param(ProjectSpec(patterns=["*"]), False, id="project name match all"),
+        pytest.param(ProjectQuery(), False, id="match all"),
+        pytest.param(ProjectQuery(patterns=["*"]), False, id="project name match all"),
         pytest.param(
-            ProjectSpec(patterns=["test"]),
+            ProjectQuery(patterns=["test"]),
             True,
             id="project name",
         ),
         pytest.param(
-            ProjectSpec(ids=[uuid4()]),
+            ProjectQuery(ids=[uuid4()]),
             True,
             id="project by id",
         ),
         pytest.param(
-            ProjectSpec(ids=[uuid4(), uuid4()]),
+            ProjectQuery(ids=[uuid4(), uuid4()]),
             False,
             id="multiple project ids",
         ),
     ],
 )
-def test_project_spec_is_unique(spec, expected):
-    assert project_spec_is_unique(spec) == expected
+def test_project_query_is_unique(query, expected):
+    assert project_query_is_unique(query) == expected
 
 
 @pytest.mark.parametrize(
-    "spec, valid",
+    "query, valid",
     [
         pytest.param(
-            MissionSpec(patterns=["test"], project_spec=ProjectSpec()),
+            MissionQuery(patterns=["test"], project_query=ProjectQuery()),
             False,
             id="non-unique project",
         ),
         pytest.param(
-            MissionSpec(
+            MissionQuery(
                 patterns=["test"],
-                project_spec=ProjectSpec(ids=[uuid4()]),
+                project_query=ProjectQuery(ids=[uuid4()]),
             ),
             True,
-            id="valid spec",
+            id="valid query",
         ),
         pytest.param(
-            MissionSpec(ids=[uuid4()]),
+            MissionQuery(ids=[uuid4()]),
             False,
             id="mission by id",
         ),
     ],
 )
-def test_check_mission_spec_is_createable(spec, valid):
+def test_check_mission_query_is_createable(query, valid):
     if not valid:
-        with pytest.raises(InvalidMissionSpec):
-            check_mission_spec_is_creatable(spec)
+        with pytest.raises(InvalidMissionQuery):
+            check_mission_query_is_creatable(query)
     else:
-        check_mission_spec_is_creatable(spec)
+        check_mission_query_is_creatable(query)
 
 
 @pytest.mark.parametrize(
-    "spec, valid",
+    "query, valid",
     [
         pytest.param(
-            ProjectSpec(patterns=["test"]),
+            ProjectQuery(patterns=["test"]),
             True,
             id="project name",
         ),
         pytest.param(
-            ProjectSpec(ids=[uuid4()]),
+            ProjectQuery(ids=[uuid4()]),
             False,
             id="project by id",
         ),
         pytest.param(
-            ProjectSpec(ids=[uuid4(), uuid4()]),
+            ProjectQuery(ids=[uuid4(), uuid4()]),
             False,
             id="multiple project ids",
         ),
     ],
 )
-def test_check_project_spec_is_creatable(spec, valid):
+def test_check_project_query_is_creatable(query, valid):
     if not valid:
-        with pytest.raises(InvalidProjectSpec):
-            check_project_spec_is_creatable(spec)
+        with pytest.raises(InvalidProjectQuery):
+            check_project_query_is_creatable(query)
     else:
-        check_project_spec_is_creatable(spec)
+        check_project_query_is_creatable(query)

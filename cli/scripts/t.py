@@ -7,13 +7,13 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.pagination import _get_files_paginated
 from kleinkram.api.pagination import _get_missions_paginated
 from kleinkram.api.pagination import _get_projects_paginated
-from kleinkram.api.query import FileSpec
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import FileQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 
-ps = ProjectSpec()
-ms = MissionSpec()
-fs = FileSpec()
+ps = ProjectQuery()
+ms = MissionQuery()
+fs = FileQuery()
 
 client = AuthenticatedClient()
 

@@ -9,9 +9,9 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import FileSpec
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import FileQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.utils import split_args
 
@@ -52,24 +52,24 @@ def download(
         typer.confirm(f"Destination {dest_dir} does not exist. Create it?", abort=True)
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    # get file spec
+    # get file query
     file_ids, file_patterns = split_args(files or [])
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
-    mission_spec = MissionSpec(
+    project_query = ProjectQuery(patterns=project_patterns, ids=project_ids)
+    mission_query = MissionQuery(
         patterns=mission_patterns,
         ids=mission_ids,
-        project_spec=project_spec,
+        project_query=project_query,
     )
-    file_spec = FileSpec(
-        patterns=file_patterns, ids=file_ids, mission_spec=mission_spec
+    file_query = FileQuery(
+        patterns=file_patterns, ids=file_ids, mission_query=mission_query
     )
 
     kleinkram.core.download(
         client=AuthenticatedClient(),
-        spec=file_spec,
+        query=file_query,
         base_dir=dest_dir,
         nested=nested,
         overwrite=overwrite,

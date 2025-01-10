@@ -20,18 +20,18 @@ from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
 from kleinkram.api.pagination import paginated_request
-from kleinkram.api.query import FileSpec
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
-from kleinkram.api.query import file_spec_is_unique
-from kleinkram.api.query import mission_spec_is_unique
-from kleinkram.api.query import project_spec_is_unique
+from kleinkram.api.query import FileQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import file_query_is_unique
+from kleinkram.api.query import mission_query_is_unique
+from kleinkram.api.query import project_query_is_unique
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
-from kleinkram.errors import InvalidFileSpec
+from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import InvalidMissionMetadata
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.errors import InvalidProjectSpec
+from kleinkram.errors import InvalidMissionQuery
+from kleinkram.errors import InvalidProjectQuery
 from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import ProjectExists
@@ -86,41 +86,41 @@ class Params(str, Enum):
     PROJECT_IDS = "projectUuids"
 
 
-def _project_spec_to_params(
-    project_spec: ProjectSpec,
+def _project_query_to_params(
+    project_query: ProjectQuery,
 ) -> Dict[str, List[str]]:
     params = {}
-    if project_spec.patterns is not None:
-        params[Params.PROJECT_PATTERNS] = project_spec.patterns
-    if project_spec.ids is not None:
-        params[Params.PROJECT_IDS] = list(map(str, project_spec.ids))
+    if project_query.patterns is not None:
+        params[Params.PROJECT_PATTERNS] = project_query.patterns
+    if project_query.ids is not None:
+        params[Params.PROJECT_IDS] = list(map(str, project_query.ids))
     return params
 
 
-def _mission_spec_to_params(mission_spec: MissionSpec) -> Dict[str, List[str]]:
-    params = _project_spec_to_params(mission_spec.project_spec)
-    if mission_spec.patterns is not None:
-        params[Params.MISSION_PATTERNS] = mission_spec.patterns
-    if mission_spec.ids is not None:
-        params[Params.MISSION_IDS] = list(map(str, mission_spec.ids))
+def _mission_query_to_params(mission_query: MissionQuery) -> Dict[str, List[str]]:
+    params = _project_query_to_params(mission_query.project_query)
+    if mission_query.patterns is not None:
+        params[Params.MISSION_PATTERNS] = mission_query.patterns
+    if mission_query.ids is not None:
+        params[Params.MISSION_IDS] = list(map(str, mission_query.ids))
     return params
 
 
-def _file_spec_to_params(file_spec: FileSpec) -> Dict[str, List[str]]:
-    params = _mission_spec_to_params(file_spec.mission_spec)
-    if file_spec.patterns is not None:
-        params[Params.FILE_PATTERNS] = list(file_spec.patterns)
-    if file_spec.ids is not None:
-        params[Params.FILE_IDS] = list(map(str, file_spec.ids))
+def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
+    params = _mission_query_to_params(file_query.mission_query)
+    if file_query.patterns is not None:
+        params[Params.FILE_PATTERNS] = list(file_query.patterns)
+    if file_query.ids is not None:
+        params[Params.FILE_IDS] = list(map(str, file_query.ids))
     return params
 
 
 def get_files(
     client: AuthenticatedClient,
-    file_spec: FileSpec,
+    file_query: FileQuery,
     max_entries: Optional[int] = None,
 ) -> Generator[File, None, None]:
-    params = _file_spec_to_params(file_spec)
+    params = _file_query_to_params(file_query)
     response_stream = paginated_request(
         client, FILE_ENDPOINT, params=params, max_entries=max_entries
     )
@@ -129,10 +129,10 @@ def get_files(
 
 def get_missions(
     client: AuthenticatedClient,
-    mission_spec: MissionSpec,
+    mission_query: MissionQuery,
     max_entries: Optional[int] = None,
 ) -> Generator[Mission, None, None]:
-    params = _mission_spec_to_params(mission_spec)
+    params = _mission_query_to_params(mission_query)
     response_stream = paginated_request(
         client, MISSION_ENDPOINT, params=params, max_entries=max_entries
     )
@@ -141,73 +141,73 @@ def get_missions(
 
 def get_projects(
     client: AuthenticatedClient,
-    project_spec: ProjectSpec,
+    project_query: ProjectQuery,
     max_entries: Optional[int] = None,
 ) -> Generator[Project, None, None]:
-    params = _project_spec_to_params(project_spec)
+    params = _project_query_to_params(project_query)
     _response_stream = paginated_request(
         client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
     )
     yield from map(lambda p: _parse_project(ProjectObject(p)), _response_stream)
 
 
-def get_project(client: AuthenticatedClient, spec: ProjectSpec) -> Project:
+def get_project(client: AuthenticatedClient, query: ProjectQuery) -> Project:
     """\
     get a unique project by specifying a project spec
     """
-    if not project_spec_is_unique(spec):
-        raise InvalidProjectSpec(
-            f"Project spec does not uniquely determine project: {spec}"
+    if not project_query_is_unique(query):
+        raise InvalidProjectQuery(
+            f"Project query does not uniquely determine project: {query}"
         )
     try:
-        return next(get_projects(client, spec))
+        return next(get_projects(client, query))
     except StopIteration:
-        raise ProjectNotFound(f"Project not found: {spec}")
+        raise ProjectNotFound(f"Project not found: {query}")
 
 
-def get_mission(client: AuthenticatedClient, spec: MissionSpec) -> Mission:
+def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
     """\
-    get a unique mission by specifying a mission spec
+    get a unique mission by specifying a mission query
     """
-    if not mission_spec_is_unique(spec):
-        raise InvalidMissionSpec(
-            f"Mission spec does not uniquely determine mission: {spec}"
+    if not mission_query_is_unique(query):
+        raise InvalidMissionQuery(
+            f"Mission query does not uniquely determine mission: {query}"
         )
     try:
-        return next(get_missions(client, spec))
+        return next(get_missions(client, query))
     except StopIteration:
-        raise MissionNotFound(f"Mission not found: {spec}")
+        raise MissionNotFound(f"Mission not found: {query}")
 
 
-def get_file(client: AuthenticatedClient, spec: FileSpec) -> File:
+def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     """\
-    get a unique file by specifying a file spec
+    get a unique file by specifying a file query
     """
-    if not file_spec_is_unique(spec):
-        raise InvalidFileSpec(f"File spec does not uniquely determine file: {spec}")
+    if not file_query_is_unique(query):
+        raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
     try:
-        return next(get_files(client, spec))
+        return next(get_files(client, query))
     except StopIteration:
-        raise kleinkram.errors.FileNotFound(f"File not found: {spec}")
+        raise kleinkram.errors.FileNotFound(f"File not found: {query}")
 
 
 def _mission_name_is_available(
     client: AuthenticatedClient, mission_name: str, project_id: UUID
 ) -> bool:
-    mission_spec = MissionSpec(
-        patterns=[mission_name], project_spec=ProjectSpec(ids=[project_id])
+    mission_query = MissionQuery(
+        patterns=[mission_name], project_query=ProjectQuery(ids=[project_id])
     )
     try:
-        _ = get_mission(client, mission_spec)
+        _ = get_mission(client, mission_query)
     except MissionNotFound:
         return True
     return False
 
 
 def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
-    project_spec = ProjectSpec(patterns=[project_name])
+    project_query = ProjectQuery(patterns=[project_name])
     try:
-        _ = get_project(client, project_spec)
+        _ = get_project(client, project_query)
     except ProjectNotFound:
         return True
     return False

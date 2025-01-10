@@ -8,8 +8,8 @@ import typer
 import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_mission
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
@@ -40,12 +40,12 @@ def create(
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     project_ids, project_patterns = split_args([project] if project else [])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
 
     client = AuthenticatedClient()
-    project_id = get_project(client, project_spec).id
+    project_id = get_project(client, project_query).id
     mission_id = kleinkram.api.routes._create_mission(
         client,
         project_id,
@@ -54,7 +54,7 @@ def create(
         ignore_missing_tags=ignore_missing_tags,
     )
 
-    mission_parsed = get_mission(client, MissionSpec(ids=[mission_id]))
+    mission_parsed = get_mission(client, MissionQuery(ids=[mission_id]))
     print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
 
 
@@ -68,15 +68,15 @@ def info(
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
 
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
         ids=mission_ids,
         patterns=mission_patterns,
-        project_spec=project_spec,
+        project_query=project_query,
     )
 
     client = AuthenticatedClient()
-    mission_parsed = get_mission(client, mission_spec)
+    mission_parsed = get_mission(client, mission_query)
     print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
 
 
@@ -91,22 +91,22 @@ def update(
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
 
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
         ids=mission_ids,
         patterns=mission_patterns,
-        project_spec=project_spec,
+        project_query=project_query,
     )
 
     metadata_dct = load_metadata(Path(metadata))
 
     client = AuthenticatedClient()
-    mission_id = get_mission(client, mission_spec).id
+    mission_id = get_mission(client, mission_query).id
     kleinkram.core.update_mission(
         client=client, mission_id=mission_id, metadata=metadata_dct
     )
 
-    mission_parsed = get_mission(client, mission_spec)
+    mission_parsed = get_mission(client, mission_query)
     print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
 
 
@@ -124,17 +124,17 @@ def delete(
         typer.confirm(f"delete {project} {mission}", abort=True)
 
     project_ids, project_patterns = split_args([project] if project else [])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     mission_ids, mission_patterns = split_args([mission])
-    mission_spec = MissionSpec(
+    mission_query = MissionQuery(
         ids=mission_ids,
         patterns=mission_patterns,
-        project_spec=project_spec,
+        project_query=project_query,
     )
 
     client = AuthenticatedClient()
-    mission_parsed = get_mission(client, mission_spec)
+    mission_parsed = get_mission(client, mission_query)
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
 
 

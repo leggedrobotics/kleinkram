@@ -7,7 +7,7 @@ import typer
 import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_project_info
@@ -38,7 +38,7 @@ def create(
     client = AuthenticatedClient()
     project_id = kleinkram.api.routes._create_project(client, project, description)
 
-    project_parsed = get_project(client, ProjectSpec(ids=[project_id]))
+    project_parsed = get_project(client, ProjectQuery(ids=[project_id]))
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
 
 
@@ -47,10 +47,10 @@ def info(
     project: str = typer.Option(..., "--project", "-p", help="project id or name")
 ) -> None:
     project_ids, project_patterns = split_args([project])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
-    project_parsed = get_project(client=client, spec=project_spec)
+    project_parsed = get_project(client=client, query=project_query)
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
 
 
@@ -70,15 +70,15 @@ def update(
         )
 
     project_ids, project_patterns = split_args([project])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
-    project_id = get_project(client=client, spec=project_spec).id
+    project_id = get_project(client=client, query=project_query).id
     kleinkram.core.update_project(
         client=client, project_id=project_id, description=description, new_name=new_name
     )
 
-    project_parsed = get_project(client, ProjectSpec(ids=[project_id]))
+    project_parsed = get_project(client, ProjectQuery(ids=[project_id]))
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
 
 
@@ -87,10 +87,10 @@ def delete(
     project: str = typer.Option(..., "--project", "-p", help="project id or name")
 ) -> None:
     project_ids, project_patterns = split_args([project])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
-    project_id = get_project(client=client, spec=project_spec).id
+    project_id = get_project(client=client, query=project_query).id
     kleinkram.core.delete_project(client=client, project_id=project_id)
 
 

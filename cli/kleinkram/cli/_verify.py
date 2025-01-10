@@ -9,8 +9,8 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_file_verification_status
 from kleinkram.utils import split_args
@@ -37,18 +37,18 @@ def verify(
     # get all filepaths
     file_paths = [Path(file) for file in files]
 
-    # get mission spec
+    # get mission query
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
-        ids=mission_ids, patterns=mission_patterns, project_spec=project_spec
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
+        ids=mission_ids, patterns=mission_patterns, project_query=project_query
     )
 
     verbose = get_shared_state().verbose
     file_status = kleinkram.core.verify(
         client=AuthenticatedClient(),
-        spec=mission_spec,
+        query=mission_query,
         file_paths=file_paths,
         skip_hash=skip_hash,
         verbose=verbose,

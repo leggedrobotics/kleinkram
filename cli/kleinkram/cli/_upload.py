@@ -9,8 +9,8 @@ import typer
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import MissionNotFound
@@ -52,11 +52,11 @@ def upload(
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
 
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
         ids=mission_ids,
         patterns=mission_patterns,
-        project_spec=project_spec,
+        project_query=project_query,
     )
 
     if not fix_filenames:
@@ -71,7 +71,7 @@ def upload(
     try:
         kleinkram.core.upload(
             client=AuthenticatedClient(),
-            spec=mission_spec,
+            query=mission_query,
             file_paths=file_paths,
             create=create,
             metadata=load_metadata(Path(metadata)) if metadata else None,

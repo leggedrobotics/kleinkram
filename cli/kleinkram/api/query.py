@@ -19,8 +19,8 @@ from uuid import UUID
 
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.errors import InvalidProjectSpec
+from kleinkram.errors import InvalidMissionQuery
+from kleinkram.errors import InvalidProjectQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import ProjectNotFound
 from kleinkram.models import File
@@ -33,45 +33,45 @@ SPECIAL_PATTERN_CHARS = ["*", "?", "[", "]"]
 
 
 @dataclass
-class ProjectSpec:
+class ProjectQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
 
 
 @dataclass
-class MissionSpec:
+class MissionQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
-    project_spec: ProjectSpec = field(default=ProjectSpec())
+    project_query: ProjectQuery = field(default=ProjectQuery())
 
 
 @dataclass
-class FileSpec:
+class FileQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
-    mission_spec: MissionSpec = field(default=MissionSpec())
+    mission_query: MissionQuery = field(default=MissionQuery())
 
 
-def check_mission_spec_is_creatable(spec: MissionSpec) -> str:
+def check_mission_query_is_creatable(query: MissionQuery) -> str:
     """\
-    check if a spec is unique and can be used to create a mission
+    check if a query is unique and can be used to create a mission
     returns: the mission name
     """
-    if not mission_spec_is_unique(spec):
-        raise InvalidMissionSpec(f"Mission spec is not unique: {spec}")
+    if not mission_query_is_unique(query):
+        raise InvalidMissionQuery(f"Mission query is not unique: {query}")
     # cant create a missing by id
-    if spec.ids:
-        raise InvalidMissionSpec(f"cant create mission by id: {spec}")
-    return spec.patterns[0]
+    if query.ids:
+        raise InvalidMissionQuery(f"cant create mission by id: {query}")
+    return query.patterns[0]
 
 
-def check_project_spec_is_creatable(spec: ProjectSpec) -> str:
-    if not project_spec_is_unique(spec):
-        raise InvalidProjectSpec(f"Project spec is not unique: {spec}")
+def check_project_query_is_creatable(query: ProjectQuery) -> str:
+    if not project_query_is_unique(query):
+        raise InvalidProjectQuery(f"Project query is not unique: {query}")
     # cant create a missing by id
-    if spec.ids:
-        raise InvalidProjectSpec(f"cant create project by id: {spec}")
-    return spec.patterns[0]
+    if query.ids:
+        raise InvalidProjectQuery(f"cant create project by id: {query}")
+    return query.patterns[0]
 
 
 def _pattern_is_unique(pattern: str) -> bool:
@@ -81,42 +81,42 @@ def _pattern_is_unique(pattern: str) -> bool:
     return True
 
 
-def project_spec_is_unique(spec: ProjectSpec) -> bool:
+def project_query_is_unique(query: ProjectQuery) -> bool:
     # a single project id is specified
-    if len(spec.ids) == 1 and not spec.patterns:
+    if len(query.ids) == 1 and not query.patterns:
         return True
 
     # a single project name is specified
-    if len(spec.patterns) == 1 and _pattern_is_unique(spec.patterns[0]):
+    if len(query.patterns) == 1 and _pattern_is_unique(query.patterns[0]):
         return True
     return False
 
 
-def mission_spec_is_unique(spec: MissionSpec) -> bool:
+def mission_query_is_unique(query: MissionQuery) -> bool:
     # a single mission id is specified
-    if len(spec.ids) == 1 and not spec.patterns:
+    if len(query.ids) == 1 and not query.patterns:
         return True
 
     # a single mission name a unique project spec are specified
     if (
-        project_spec_is_unique(spec.project_spec)
-        and len(spec.patterns) == 1
-        and _pattern_is_unique(spec.patterns[0])
+        project_query_is_unique(query.project_query)
+        and len(query.patterns) == 1
+        and _pattern_is_unique(query.patterns[0])
     ):
         return True
     return False
 
 
-def file_spec_is_unique(spec: FileSpec) -> bool:
+def file_query_is_unique(query: FileQuery) -> bool:
     # a single file id is specified
-    if len(spec.ids) == 1 and not spec.patterns:
+    if len(query.ids) == 1 and not query.patterns:
         return True
 
     # a single file name a unique mission spec are specified
     if (
-        mission_spec_is_unique(spec.mission_spec)
-        and len(spec.patterns) == 1
-        and _pattern_is_unique(spec.patterns[0])
+        mission_query_is_unique(query.mission_query)
+        and len(query.patterns) == 1
+        and _pattern_is_unique(query.patterns[0])
     ):
         return True
     return False

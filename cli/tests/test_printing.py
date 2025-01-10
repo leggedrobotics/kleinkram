@@ -4,12 +4,8 @@ import datetime
 
 import pytest
 
-from kleinkram.models import FileState
-from kleinkram.models import FileVerificationStatus
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
-from kleinkram.printing import file_state_to_text
-from kleinkram.printing import file_verification_status_to_text
 from kleinkram.printing import format_bytes
 from kleinkram.printing import parse_metadata_value
 

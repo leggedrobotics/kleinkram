@@ -21,9 +21,9 @@ import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import FileSpec
-from kleinkram.api.query import MissionSpec
-from kleinkram.api.query import ProjectSpec
+from kleinkram.api.query import FileQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.models import File
 from kleinkram.models import Mission
@@ -35,43 +35,43 @@ from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
 
 
-def _args_to_project_spec(
+def _args_to_project_query(
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-) -> ProjectSpec:
-    return ProjectSpec(
+) -> ProjectQuery:
+    return ProjectQuery(
         ids=[parse_uuid_like(_id) for _id in project_ids or []],
         patterns=list(project_names or []),
     )
 
 
-def _args_to_mission_spec(
+def _args_to_mission_query(
     mission_names: Optional[Sequence[str]] = None,
     mission_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-) -> MissionSpec:
-    return MissionSpec(
+) -> MissionQuery:
+    return MissionQuery(
         ids=[parse_uuid_like(_id) for _id in mission_ids or []],
         patterns=list(mission_names or []),
-        project_spec=_args_to_project_spec(
+        project_query=_args_to_project_query(
             project_names=project_names, project_ids=project_ids
         ),
     )
 
 
-def _args_to_file_spec(
+def _args_to_file_query(
     file_names: Optional[Sequence[str]] = None,
     file_ids: Optional[Sequence[IdLike]] = None,
     mission_names: Optional[Sequence[str]] = None,
     mission_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
-) -> FileSpec:
-    return FileSpec(
+) -> FileQuery:
+    return FileQuery(
         ids=[parse_uuid_like(_id) for _id in file_ids or []],
         patterns=list(file_names or []),
-        mission_spec=_args_to_mission_spec(
+        mission_query=_args_to_mission_query(
             mission_names=mission_names,
             mission_ids=mission_ids,
             project_names=project_names,
@@ -93,7 +93,7 @@ def download(
     overwrite: bool = False,
     verbose: bool = False,
 ) -> None:
-    spec = _args_to_file_spec(
+    query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
         mission_names=mission_names,
@@ -104,7 +104,7 @@ def download(
     client = AuthenticatedClient()
     kleinkram.core.download(
         client=client,
-        spec=spec,
+        query=query,
         base_dir=parse_path_like(dest),
         nested=nested,
         overwrite=overwrite,
@@ -121,7 +121,7 @@ def list_files(
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
 ) -> List[File]:
-    spec = _args_to_file_spec(
+    query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
         mission_names=mission_names,
@@ -130,7 +130,7 @@ def list_files(
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.routes.get_files(client, spec))
+    return list(kleinkram.api.routes.get_files(client, query))
 
 
 def list_missions(
@@ -140,14 +140,14 @@ def list_missions(
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
 ) -> List[Mission]:
-    spec = _args_to_mission_spec(
+    query = _args_to_mission_query(
         mission_names=mission_names,
         mission_ids=mission_ids,
         project_names=project_names,
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.routes.get_missions(client, spec))
+    return list(kleinkram.api.routes.get_missions(client, query))
 
 
 def list_projects(
@@ -155,12 +155,12 @@ def list_projects(
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
 ) -> List[Project]:
-    spec = _args_to_project_spec(
+    query = _args_to_project_query(
         project_names=project_names,
         project_ids=project_ids,
     )
     client = AuthenticatedClient()
-    return list(kleinkram.api.routes.get_projects(client, spec))
+    return list(kleinkram.api.routes.get_projects(client, query))
 
 
 @overload
@@ -224,7 +224,7 @@ def upload(
                     f"allowed in filenames and at most 50 chars: {file}"
                 )
 
-    spec = _args_to_mission_spec(
+    query = _args_to_mission_query(
         mission_names=singleton_list(mission_name),
         mission_ids=singleton_list(mission_id),
         project_names=singleton_list(project_name),
@@ -233,7 +233,7 @@ def upload(
     client = AuthenticatedClient()
     kleinkram.core.upload(
         client=client,
-        spec=spec,
+        query=query,
         file_paths=parsed_file_paths,
         create=create,
         metadata=metadata,
@@ -281,7 +281,7 @@ def verify(
     skip_hash: bool = False,
     verbose: bool = False,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]:
-    spec = _args_to_mission_spec(
+    query = _args_to_mission_query(
         mission_names=singleton_list(mission_name),
         mission_ids=singleton_list(mission_id),
         project_names=singleton_list(project_name),
@@ -289,7 +289,7 @@ def verify(
     )
     return kleinkram.core.verify(
         client=AuthenticatedClient(),
-        spec=spec,
+        query=query,
         file_paths=[parse_path_like(f) for f in files],
         skip_hash=skip_hash,
         verbose=verbose,
@@ -354,7 +354,7 @@ def delete_file(file_id: IdLike) -> None:
     delete a single file by id
     """
     file = kleinkram.api.routes.get_file(
-        AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
+        AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)])
     )
     kleinkram.api.routes._delete_files(
         AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id
@@ -378,7 +378,7 @@ def get_file(file_id: IdLike) -> File:
     get a file by its id
     """
     return kleinkram.api.routes.get_file(
-        AuthenticatedClient(), FileSpec(ids=[parse_uuid_like(file_id)])
+        AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)])
     )
 
 
@@ -387,7 +387,7 @@ def get_mission(mission_id: IdLike) -> Mission:
     get a mission by its id
     """
     return kleinkram.api.routes.get_mission(
-        AuthenticatedClient(), MissionSpec(ids=[parse_uuid_like(mission_id)])
+        AuthenticatedClient(), MissionQuery(ids=[parse_uuid_like(mission_id)])
     )
 
 
@@ -396,5 +396,5 @@ def get_project(project_id: IdLike) -> Project:
     get a project by its id
     """
     return kleinkram.api.routes.get_project(
-        AuthenticatedClient(), ProjectSpec(ids=[parse_uuid_like(project_id)])
+        AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)])
     )
