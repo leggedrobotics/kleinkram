@@ -14,7 +14,7 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import { Brackets } from 'typeorm';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
@@ -169,17 +169,20 @@ export class ProjectService {
                 .andWhere('user.uuid = :uuid', { uuid: user.uuid });
         }
 
-        if (projectUuids.length > 0) {
-            query.orWhere('project.uuid IN (:...projectUuids)', {
-                projectUuids,
-            });
-        }
-
-        if (projectPatterns.length > 0) {
-            query.orWhere('project.name ILIKE ANY(ARRAY[:...patterns])', {
-                patterns: projectPatterns.map(convertGlobToLikePattern),
-            });
-        }
+        query.andWhere(
+            new Brackets((qb) => {
+                if (projectUuids.length > 0) {
+                    qb.orWhere('project.uuid IN (:...projectUuids)', {
+                        projectUuids,
+                    });
+                }
+                if (projectPatterns.length > 0) {
+                    qb.orWhere('project.name ILIKE ANY(ARRAY[:...patterns])', {
+                        patterns: projectPatterns.map(convertGlobToLikePattern),
+                    });
+                }
+            }),
+        );
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
