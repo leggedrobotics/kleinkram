@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from enum import Enum
+from typing import Any
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -86,32 +88,48 @@ class Params(str, Enum):
     PROJECT_IDS = "projectUuids"
 
 
+def _handle_list_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    json dumps lists
+    """
+    new_params = {}
+    for k, v in params.items():
+        if not isinstance(v, list):
+            new_params[k] = v
+        else:
+            new_params[k] = json.dumps(v)
+    return new_params
+
+
 def _project_query_to_params(
     project_query: ProjectQuery,
 ) -> Dict[str, List[str]]:
     params = {}
-    if project_query.patterns is not None:
-        params[Params.PROJECT_PATTERNS] = project_query.patterns
-    if project_query.ids is not None:
-        params[Params.PROJECT_IDS] = list(map(str, project_query.ids))
+    if project_query.patterns:
+        params[Params.PROJECT_PATTERNS.value] = project_query.patterns
+    if project_query.ids:
+        params[Params.PROJECT_IDS.value] = list(map(str, project_query.ids))
+    params = _handle_list_params(params)
     return params
 
 
 def _mission_query_to_params(mission_query: MissionQuery) -> Dict[str, List[str]]:
     params = _project_query_to_params(mission_query.project_query)
-    if mission_query.patterns is not None:
-        params[Params.MISSION_PATTERNS] = mission_query.patterns
-    if mission_query.ids is not None:
-        params[Params.MISSION_IDS] = list(map(str, mission_query.ids))
+    if mission_query.patterns:
+        params[Params.MISSION_PATTERNS.value] = mission_query.patterns
+    if mission_query.ids:
+        params[Params.MISSION_IDS.value] = list(map(str, mission_query.ids))
+    params = _handle_list_params(params)
     return params
 
 
 def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
     params = _mission_query_to_params(file_query.mission_query)
-    if file_query.patterns is not None:
-        params[Params.FILE_PATTERNS] = list(file_query.patterns)
-    if file_query.ids is not None:
-        params[Params.FILE_IDS] = list(map(str, file_query.ids))
+    if file_query.patterns:
+        params[Params.FILE_PATTERNS.value] = list(file_query.patterns)
+    if file_query.ids:
+        params[Params.FILE_IDS.value] = list(map(str, file_query.ids))
+    params = _handle_list_params(params)
     return params
 
 
@@ -145,10 +163,10 @@ def get_projects(
     max_entries: Optional[int] = None,
 ) -> Generator[Project, None, None]:
     params = _project_query_to_params(project_query)
-    _response_stream = paginated_request(
+    response_stream = paginated_request(
         client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
     )
-    yield from map(lambda p: _parse_project(ProjectObject(p)), _response_stream)
+    yield from map(lambda p: _parse_project(ProjectObject(p)), response_stream)
 
 
 def get_project(client: AuthenticatedClient, query: ProjectQuery) -> Project:

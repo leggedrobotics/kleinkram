@@ -51,10 +51,6 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
-def _get_s3_endpoint() -> str:
-    return get_config().endpoint.s3
-
-
 def _confirm_file_upload(
     client: AuthenticatedClient, file_id: UUID, file_hash: str
 ) -> None:
@@ -99,7 +95,7 @@ def _get_upload_creditials(
     resp = client.post(UPLOAD_CREDS, json=dct)
     resp.raise_for_status()
 
-    data = resp.json()[0]
+    data = resp.json()["data"][0]
 
     if data.get("error") == FILE_EXISTS_ERROR:
         return None
@@ -193,7 +189,6 @@ def upload_file(
             logger.error(format_traceback(e))
             _cancel_file_upload(client, creds.file_id, mission_id)
             return UploadState.CANCELED
-
         else:
             _confirm_file_upload(client, creds.file_id, b64_md5(path))
             return UploadState.UPLOADED

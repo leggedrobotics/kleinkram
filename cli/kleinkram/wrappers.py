@@ -218,7 +218,8 @@ def upload(
     parsed_file_paths = [parse_path_like(f) for f in files]
     if not fix_filenames:
         for file in parsed_file_paths:
-            if not kleinkram.utils.check_filename_is_sanatized(file.name):
+            if not kleinkram.utils.check_filename_is_sanatized(file.stem):
+                print(file.name)
                 raise FileNameNotSupported(
                     f"only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
                     f"allowed in filenames and at most 50 chars: {file}"

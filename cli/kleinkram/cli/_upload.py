@@ -61,7 +61,7 @@ def upload(
 
     if not fix_filenames:
         for file in file_paths:
-            if not kleinkram.utils.check_filename_is_sanatized(file.name):
+            if not kleinkram.utils.check_filename_is_sanatized(file.stem):
                 raise FileNameNotSupported(
                     f"Only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
                     f"allowed in filenames and at most 50 chars: {file}. "

@@ -210,7 +210,9 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
     """\
     deletes multiple files accross multiple missions
     """
-    files = kleinkram.api.routes.get_files(client, FileQuery(ids=list(file_ids)))
+    files = list(kleinkram.api.routes.get_files(client, FileQuery(ids=list(file_ids))))
+
+    # check if all file_ids were actually found
     found_ids = [f.id for f in files]
     for file_id in file_ids:
         if file_id not in found_ids:
@@ -225,10 +227,8 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
             missions_to_files[file.mission_id] = []
         missions_to_files[file.mission_id].append(file.id)
 
-    for mission_id, file_ids in missions_to_files.items():
-        kleinkram.api.routes._delete_files(
-            client, file_ids=file_ids, mission_id=mission_id
-        )
+    for mission_id, ids_ in missions_to_files.items():
+        kleinkram.api.routes._delete_files(client, file_ids=ids_, mission_id=mission_id)
 
 
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
@@ -257,3 +257,6 @@ def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     )
     for mission in missions:
         delete_mission(client=client, mission_id=mission.id)
+
+    # delete the project
+    kleinkram.api.routes._delete_project(client, project_id)
