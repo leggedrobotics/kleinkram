@@ -9,7 +9,7 @@ import pytest
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
-from kleinkram.utils import filtered_by_patterns
+from kleinkram.utils import check_filename_is_sanatized
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
 from kleinkram.utils import is_valid_uuid4
@@ -17,7 +17,6 @@ from kleinkram.utils import parse_path_like
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
 from kleinkram.utils import split_args
-from kleinkram.utils import to_name_or_uuid
 
 
 def test_split_args():
@@ -57,23 +56,14 @@ def test_check_file_paths():
         assert check_file_paths([exists_bag, exits_mcap]) is None
 
 
-@pytest.mark.parametrize(
-    "names, patterns, expected",
-    [
-        pytest.param(["a.bag", "b.mcap"], ["*.bag"], ["a.bag"], id="one pattern"),
-        pytest.param(["a", "b", "c"], ["*"], ["a", "b", "c"], id="match all"),
-        pytest.param(["a", "b", "c"], ["*.bag"], [], id="no match"),
-        pytest.param(
-            ["a.bag", "b.mcap"],
-            ["*.bag", "*.mcap"],
-            ["a.bag", "b.mcap"],
-            id="all match",
-        ),
-        pytest.param(["a", "b", "c"], ["a", "b"], ["a", "b"], id="full name match"),
-    ],
-)
-def test_filtered_by_patterns(names, patterns, expected):
-    assert filtered_by_patterns(names, patterns) == expected
+def test_check_filename_is_sanatized():
+    valid = "t_-est"
+    invalid = "test%"
+    too_long = "a" * 100
+
+    assert check_filename_is_sanatized(valid)
+    assert not check_filename_is_sanatized(invalid)
+    assert not check_filename_is_sanatized(too_long)
 
 
 def test_is_valid_uuid4():
@@ -121,14 +111,6 @@ def test_b64_md5():
         file.write_text("hello world")
 
         assert b64_md5(file) == "XrY7u+Ae7tCTyyK7j1rNww=="
-
-
-def test_to_name_or_uuid():
-    id_ = uuid4()
-    not_id = "not an id"
-
-    assert to_name_or_uuid(str(id_)) == id_
-    assert to_name_or_uuid(not_id) == not_id
 
 
 def test_singleton_list() -> None:

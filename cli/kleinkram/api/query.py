@@ -9,24 +9,13 @@ resources (TODO: move this part to another file)
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
-from itertools import chain
-from typing import Generator
 from typing import List
 from uuid import UUID
 
-import kleinkram.errors
-from kleinkram.api.client import AuthenticatedClient
 from kleinkram.errors import InvalidMissionQuery
 from kleinkram.errors import InvalidProjectQuery
-from kleinkram.errors import MissionNotFound
-from kleinkram.errors import ProjectNotFound
-from kleinkram.models import File
-from kleinkram.models import Mission
-from kleinkram.models import Project
-from kleinkram.utils import filtered_by_patterns
 
 MAX_PARALLEL_REQUESTS = 32
 SPECIAL_PATTERN_CHARS = ["*", "?", "[", "]"]

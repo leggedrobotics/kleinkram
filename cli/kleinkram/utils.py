@@ -111,14 +111,6 @@ def format_traceback(exc: Exception) -> str:
     )
 
 
-def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
-    filtered = []
-    for name in names:
-        if any(fnmatch.fnmatch(name, p) for p in patterns):
-            filtered.append(name)
-    return filtered
-
-
 def styled_string(*objects: Any, **kwargs: Any) -> str:
     """\
     accepts any object that Console.print can print
@@ -197,12 +189,6 @@ def b64_md5(file: Path) -> str:
             hash_md5.update(chunk)
     binary_digest = hash_md5.digest()
     return base64.b64encode(binary_digest).decode("utf-8")
-
-
-def to_name_or_uuid(s: str) -> Union[UUID, str]:
-    if is_valid_uuid4(s):
-        return UUID(s)
-    return s
 
 
 def load_metadata(path: Path) -> Dict[str, str]:
