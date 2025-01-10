@@ -356,10 +356,7 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    @ApiOkResponse({
-        description: 'Temporary access granted',
-        type: TemporaryFileAccessesDto,
-    })
+    @OutputDto(null) // TODO: type API response
     async getTemporaryAccess(
         @AddUser() auth: AuthHeader,
         @Body() body: CreatePreSignedURLSDto,
