@@ -1,18 +1,31 @@
+"""
+this file contains a global config and a global state object
+
+to get the config use `get_config()`
+"""
+
 from __future__ import annotations
 
 import json
+import logging
 import os
 import tempfile
 from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from pathlib import Path
+from typing import Any
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from rich.table import Table
+from rich.text import Text
+
 from kleinkram._version import __local__
 from kleinkram._version import __version__
-from kleinkram.errors import InvalidConfigFile
+
+logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
 
@@ -23,13 +36,33 @@ class Environment(Enum):
     PROD = "prod"
 
 
-DEFAULT_API = {
-    Environment.LOCAL: "http://localhost:3000",
-    Environment.DEV: "https://api.datasets.dev.leggedrobotics.com",
-    Environment.PROD: "https://api.datasets.leggedrobotics.com",
-}
+class Endpoint(NamedTuple):
+    name: str
+    api: str
+    s3: str
 
-LOCAL_S3 = "http://localhost:9000"
+
+class Credentials(NamedTuple):
+    auth_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    cli_key: Optional[str] = None
+
+
+DEFAULT_LOCAL_API = "http://localhost:3000"
+DEFAULT_LOCAL_S3 = "http://localhost:9000"
+
+DEFAULT_DEV_API = "https://api.datasets.dev.leggedrobotics.com"
+DEFAULT_DEV_S3 = "https://s3.datasets.dev.leggedrobotics.com"
+
+DEFAULT_PROD_API = "https://api.datasets.leggedrobotics.com"
+DEFAULT_PROD_S3 = "https://s3.datasets.leggedrobotics.com"
+
+
+DEFAULT_ENDPOINTS = {
+    "local": Endpoint("local", DEFAULT_LOCAL_API, DEFAULT_LOCAL_S3),
+    "dev": Endpoint("dev", DEFAULT_DEV_API, DEFAULT_DEV_S3),
+    "prod": Endpoint("prod", DEFAULT_PROD_API, DEFAULT_PROD_S3),
+}
 
 
 def get_env() -> Environment:
@@ -40,131 +73,132 @@ def get_env() -> Environment:
     return Environment.PROD
 
 
-def get_default_endpoints() -> str:
-    env = get_env()
-    return DEFAULT_API[env]
-
-
-class Credentials(NamedTuple):
-    auth_token: Optional[str] = None
-    refresh_token: Optional[str] = None
-    cli_key: Optional[str] = None
-
-
-JSON_ENDPOINT_KEY = "endpoint"
-JSON_CREDENTIALS_KEY = "credentials"
-
-
+@dataclass
 class Config:
-    endpoint: str
-    credentials: Dict[str, Credentials]
-
-    def __init__(self, overwrite: bool = False) -> None:
-        default_endpoint = get_default_endpoints()
-
-        self.credentials = {}
-        self.endpoint = default_endpoint
-
-        if not CONFIG_PATH.exists():
-            self.save()
-
-        try:
-            self._read_config()
-        except InvalidConfigFile:
-            if not overwrite:
-                self.credentials = {}
-                self.endpoint = default_endpoint
-                self.save()
-            else:
-                raise
-
-    def _read_config(self) -> None:
-        with open(CONFIG_PATH, "r") as file:
-            try:
-                content = json.load(file)
-            except Exception:
-                raise InvalidConfigFile
-
-        endpoint = content.get(JSON_ENDPOINT_KEY, None)
-        if not isinstance(endpoint, str):
-            raise InvalidConfigFile
-
-        credentials = content.get(JSON_CREDENTIALS_KEY, None)
-        if not isinstance(credentials, dict):
-            raise InvalidConfigFile
-
-        try:
-            parsed_creds = {}
-            for ep, creds in credentials.items():
-                parsed_creds[ep] = Credentials(**creds)
-        except Exception:
-            raise InvalidConfigFile
-
-        self.endpoint = endpoint
-        self.credentials = parsed_creds
+    version: str = __version__
+    selected_endpoint: str = field(default_factory=lambda: get_env().value)
+    endpoints: Dict[str, Endpoint] = field(
+        default_factory=lambda: DEFAULT_ENDPOINTS.copy()
+    )
+    endpoint_credentials: Dict[str, Credentials] = field(default_factory=dict)
 
     @property
-    def has_cli_key(self) -> bool:
-        if self.endpoint not in self.credentials:
-            return False
-        return self.credentials[self.endpoint].cli_key is not None
+    def endpoint(self) -> Endpoint:
+        return self.endpoints[self.selected_endpoint]
+
+    @endpoint.setter
+    def endpoint(self, value: Endpoint) -> None:
+        self.endpoints[self.selected_endpoint] = value
 
     @property
-    def has_refresh_token(self) -> bool:
-        if self.endpoint not in self.credentials:
-            return False
-        return self.credentials[self.endpoint].refresh_token is not None
+    def credentials(self) -> Optional[Credentials]:
+        return self.endpoint_credentials.get(self.selected_endpoint)
 
-    @property
-    def auth_token(self) -> Optional[str]:
-        return self.credentials[self.endpoint].auth_token
+    @credentials.setter
+    def credentials(self, value: Credentials) -> None:
+        self.endpoint_credentials[self.selected_endpoint] = value
 
-    @property
-    def refresh_token(self) -> Optional[str]:
-        return self.credentials[self.endpoint].refresh_token
 
-    @property
-    def cli_key(self) -> Optional[str]:
-        return self.credentials[self.endpoint].cli_key
+def _config_to_dict(config: Config) -> Dict[str, Any]:
+    return {
+        "version": config.version,
+        "endpoints": {key: value._asdict() for key, value in config.endpoints.items()},
+        "endpoint_credentials": {
+            key: value._asdict() for key, value in config.endpoint_credentials.items()
+        },
+        "selected_endpoint": config.endpoint.name,
+    }
 
-    def save(self) -> None:
-        serialized_tokens = {}
-        for endpoint, auth in self.credentials.items():
-            serialized_tokens[endpoint] = auth._asdict()
 
-        data = {
-            JSON_ENDPOINT_KEY: self.endpoint,
-            JSON_CREDENTIALS_KEY: serialized_tokens,
-        }
+def _config_from_dict(dct: Dict[str, Any]) -> Config:
+    return Config(
+        dct["version"],
+        dct["selected_endpoint"],
+        {key: Endpoint(**value) for key, value in dct["endpoints"].items()},
+        {
+            key: Credentials(**value)
+            for key, value in dct["endpoint_credentials"].items()
+        },
+    )
 
-        # atomically write to file
-        fd, tmp_path = tempfile.mkstemp()
-        with open(fd, "w") as file:
-            json.dump(data, file)
 
-        os.replace(tmp_path, CONFIG_PATH)
+def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
+    fd, temp_path = tempfile.mkstemp()
+    with os.fdopen(fd, "w") as f:
+        json.dump(_config_to_dict(config), f)
+    os.replace(temp_path, path)
 
-    def clear_credentials(self, all: bool = False) -> None:
-        if all:
-            self.credentials = {}
-        elif self.endpoint in self.credentials:
-            del self.credentials[self.endpoint]
-        self.save()
 
-    def save_credentials(self, creds: Credentials) -> None:
-        self.credentials[self.endpoint] = creds
-        self.save()
+def _load_config(*, path: Path = CONFIG_PATH) -> Config:
+    if not path.exists():
+        return Config()
+    with open(path, "r") as f:
+        return _config_from_dict(json.load(f))
+
+
+LOADED_CONFIGS: Dict[Path, Config] = {}
+
+
+def get_config(path: Path = CONFIG_PATH) -> Config:
+    if path not in LOADED_CONFIGS:
+        LOADED_CONFIGS[path] = _load_config(path=path)
+    return LOADED_CONFIGS[path]
+
+
+def select_endpoint(config: Config, name: str, path: Path = CONFIG_PATH) -> None:
+    if name not in config.endpoints:
+        raise ValueError(f"Endpoint {name} not found.")
+    config.selected_endpoint = name
+    save_config(config, path)
+
+
+def add_endpoint(config: Config, endpoint: Endpoint, path: Path = CONFIG_PATH) -> None:
+    config.endpoints[endpoint.name] = endpoint
+    config.selected_endpoint = endpoint.name
+    save_config(config, path)
+
+
+def check_config_compatibility(path: Path = CONFIG_PATH) -> bool:
+    """\
+    returns `False` if config file exists but is not compatible with the current version
+
+    TODO: add more sophisticated version checking
+    """
+    if not path.exists():
+        return True
+    try:
+        _ = _load_config(path=path)
+    except Exception as e:
+        logger.info(f"Error loading config: {e}")
+        return False
+    return True
+
+
+def endpoint_table(config: Config) -> Table:
+    table = Table(title="Available Endpoints")
+    table.add_column("Name", style="cyan")
+    table.add_column("API", style="cyan")
+    table.add_column("S3", style="cyan")
+
+    for name, endpoint in config.endpoints.items():
+        display_name = (
+            Text(name, style="bold yellow")
+            if name == config.selected_endpoint
+            else Text(name)
+        )
+        table.add_row(display_name, endpoint.api, endpoint.s3)
+    return table
 
 
 @dataclass
-class _SharedState:
+class SharedState:
     log_file: Optional[Path] = None
     verbose: bool = True
     debug: bool = False
 
 
-SHARED_STATE = _SharedState()
+SHARED_STATE = SharedState()
 
 
-def get_shared_state() -> _SharedState:
+def get_shared_state() -> SharedState:
     return SHARED_STATE

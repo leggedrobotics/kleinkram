@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import sys
-from concurrent.futures import as_completed
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from enum import Enum
 from pathlib import Path
 from time import monotonic
@@ -17,9 +17,11 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from rich.console import Console
+from tqdm import tqdm
+
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.config import Config
-from kleinkram.config import LOCAL_S3
+from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -27,9 +29,6 @@ from kleinkram.utils import b64_md5
 from kleinkram.utils import format_error
 from kleinkram.utils import format_traceback
 from kleinkram.utils import styled_string
-from rich.console import Console
-from tqdm import tqdm
-
 
 logger = logging.getLogger(__name__)
 
@@ -50,16 +49,6 @@ class UploadCredentials(NamedTuple):
     session_token: str
     file_id: UUID
     bucket: str
-
-
-def _get_s3_endpoint() -> str:
-    config = Config()
-    endpoint = config.endpoint
-
-    if "localhost" in endpoint:
-        return LOCAL_S3
-    else:
-        return endpoint.replace("api", "minio")
 
 
 def _confirm_file_upload(
@@ -106,7 +95,7 @@ def _get_upload_creditials(
     resp = client.post(UPLOAD_CREDS, json=dct)
     resp.raise_for_status()
 
-    data = resp.json()[0]
+    data = resp.json()["data"][0]
 
     if data.get("error") == FILE_EXISTS_ERROR:
         return None
@@ -170,10 +159,13 @@ def upload_file(
     filename: str,
     path: Path,
     verbose: bool = False,
+    s3_endpoint: Optional[str] = None,
 ) -> UploadState:
     """\
     returns bytes uploaded
     """
+    if s3_endpoint is None:
+        s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
     with tqdm(
@@ -184,8 +176,6 @@ def upload_file(
         leave=False,
         disable=not verbose,
     ) as pbar:
-        endpoint = _get_s3_endpoint()
-
         # get per file upload credentials
         creds = _get_upload_creditials(
             client, internal_filename=filename, mission_id=mission_id
@@ -194,12 +184,11 @@ def upload_file(
             return UploadState.EXISTS
 
         try:
-            _s3_upload(path, endpoint=endpoint, credentials=creds, pbar=pbar)
+            _s3_upload(path, endpoint=s3_endpoint, credentials=creds, pbar=pbar)
         except Exception as e:
             logger.error(format_traceback(e))
             _cancel_file_upload(client, creds.file_id, mission_id)
             return UploadState.CANCELED
-
         else:
             _confirm_file_upload(client, creds.file_id, b64_md5(path))
             return UploadState.UPLOADED
@@ -379,14 +368,14 @@ def _download_handler(
 
 def upload_files(
     client: AuthenticatedClient,
-    files_map: Dict[str, Path],
+    files: Dict[str, Path],
     mission_id: UUID,
     *,
     verbose: bool = False,
     n_workers: int = 2,
 ) -> None:
     with tqdm(
-        total=len(files_map),
+        total=len(files),
         unit="files",
         desc="uploading files",
         disable=not verbose,
@@ -395,7 +384,7 @@ def upload_files(
         start = monotonic()
         futures: Dict[Future[UploadState], Path] = {}
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
-            for name, path in files_map.items():
+            for name, path in files.items():
                 future = executor.submit(
                     upload_file,
                     client=client,
