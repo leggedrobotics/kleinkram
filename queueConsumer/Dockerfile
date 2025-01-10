@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:24-alpine
 
 COPY ./queueConsumer/package.json /usr/src/queueConsumer/
 COPY ./queueConsumer/yarn.lock /usr/src/queueConsumer/

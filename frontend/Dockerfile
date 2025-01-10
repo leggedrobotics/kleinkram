@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine AS build-stage
+FROM node:24-alpine AS build-stage
 
 ARG QUASAR_ENDPOINT
 ENV VITE_QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
