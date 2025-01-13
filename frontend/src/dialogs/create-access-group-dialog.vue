@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> New Access Rights</template>
+        <template #title> Create Access Group </template>
 
         <template #content>
             <label for="name">Group Name</label>
