@@ -109,7 +109,6 @@ def _project_query_to_params(
         params[Params.PROJECT_PATTERNS.value] = project_query.patterns
     if project_query.ids:
         params[Params.PROJECT_IDS.value] = list(map(str, project_query.ids))
-    params = _handle_list_params(params)
     return params
 
 
@@ -119,7 +118,6 @@ def _mission_query_to_params(mission_query: MissionQuery) -> Dict[str, List[str]
         params[Params.MISSION_PATTERNS.value] = mission_query.patterns
     if mission_query.ids:
         params[Params.MISSION_IDS.value] = list(map(str, mission_query.ids))
-    params = _handle_list_params(params)
     return params
 
 
@@ -129,7 +127,6 @@ def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
         params[Params.FILE_PATTERNS.value] = list(file_query.patterns)
     if file_query.ids:
         params[Params.FILE_IDS.value] = list(map(str, file_query.ids))
-    params = _handle_list_params(params)
     return params
 
 

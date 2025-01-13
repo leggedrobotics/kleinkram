@@ -10,6 +10,7 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
+import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
 import {
     QueryProjectSearchParameters as QueryProjectSearchParameter,
     QueryOptionalUUIDArray,
@@ -21,6 +22,8 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
+
+import { Query } from '@nestjs/common';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
@@ -77,22 +80,14 @@ export class ProjectController {
         type: ProjectsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs')
-        projectUuids: string[],
-        @QueryOptionalStringArray(
-            'projectPatterns',
-            'List of project names or patterns',
-        )
-        projectPatterns: string[],
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: ProjectQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<ProjectsDto> {
         return await this.projectService.findMany(
-            projectUuids,
-            projectPatterns,
-            skip,
-            take,
+            query.projectUuids ?? [],
+            query.projectPatterns ?? [],
+            query.skip,
+            query.take,
             user.user.uuid,
         );
     }

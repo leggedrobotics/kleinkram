@@ -5,7 +5,6 @@ import {
     CanCreateInProjectByBody,
     CanDeleteMission,
     CanMoveMission,
-    CanReadManyMissions,
     CanReadMission,
     CanReadMissionByName,
     CanWriteMissionByBody,
@@ -21,6 +20,7 @@ import {
     QueryUUID,
     QueryOptionalUUIDArray,
 } from '../../validation/query-decorators';
+import { Query } from '@nestjs/common';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUID } from '../../validation/body-decorators';
 import { MISSION_NAME_REGEX } from '../../validation/validation-logic';
@@ -31,6 +31,9 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
+
+import { MissionQueryDto } from '@common/api/types/mission-query.dto';
+
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { QueryOptionalStringArray } from '../../validation/query-decorators';
 
@@ -73,31 +76,16 @@ export class MissionController {
         type: MissionsDto,
     })
     async getMany(
-        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs')
-        missionUuids: string[],
-        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs')
-        projectUuids: string[],
-        @QueryOptionalStringArray(
-            'missionPatterns',
-            'List of mission names and patterns',
-        )
-        missionNames: string[],
-        @QueryOptionalStringArray(
-            'projectPatterns',
-            'List of project names and patterns',
-        )
-        projectNames: string[],
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: MissionQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {
         return await this.missionService.findMany(
-            projectUuids,
-            projectNames,
-            missionUuids,
-            missionNames,
-            skip,
-            take,
+            query.projectUuids ?? [],
+            query.projectPatterns ?? [],
+            query.missionUuids ?? [],
+            query.missionPatterns ?? [],
+            query.skip,
+            query.take,
             user.user.uuid,
         );
     }

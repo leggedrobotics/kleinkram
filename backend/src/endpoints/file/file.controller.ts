@@ -55,6 +55,8 @@ import {
     TemporaryFileAccessesDto,
 } from '@common/api/types/files/access.dto';
 
+import { FileQueryDto } from '@common/api/types/files/file-query.dto';
+
 @Controller('file')
 export class FileController {
     constructor(private readonly fileService: FileService) {}
@@ -115,47 +117,16 @@ export class FileController {
         description: 'Many Files',
         type: FilesDto,
     })
-    async getMany(
-        @QueryOptionalUUIDArray('fileUuids', 'List of File UUIDs to fetch')
-        fileUuids: string[],
-        @QueryOptionalUUIDArray(
-            'missionUuids',
-            'List of Mission UUIDs to fetch',
-        )
-        missionUuids: string[],
-        @QueryOptionalUUIDArray(
-            'projectUuids',
-            'List of Project UUIDs to fetch',
-        )
-        projectUuids: string[],
-        @QueryOptionalStringArray(
-            'filePatterns',
-            'List of filenames or patterns to fetch',
-        )
-        filePatterns: string[],
-        @QueryOptionalStringArray(
-            'missionPatterns',
-            'List of mission names or patterns to fetch',
-        )
-        missionPatterns: string[],
-        @QueryOptionalStringArray(
-            'projectPatterns',
-            'List of project names or patterns to fetch',
-        )
-        projectPatterns: string[],
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() auth: AuthHeader,
-    ) {
+    async getMany(@Query() query: FileQueryDto, @AddUser() auth: AuthHeader) {
         return await this.fileService.findMany(
-            projectUuids,
-            projectPatterns,
-            missionUuids,
-            missionPatterns,
-            fileUuids,
-            filePatterns,
-            take,
-            skip,
+            query.projectUuids ?? [],
+            query.projectPatterns ?? [],
+            query.missionUuids ?? [],
+            query.missionPatterns ?? [],
+            query.fileUuids ?? [],
+            query.filePatterns ?? [],
+            query.take,
+            query.skip,
             auth.user.uuid,
         );
     }
