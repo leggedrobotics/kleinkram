@@ -13,7 +13,7 @@ import { Type } from 'class-transformer';
 import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
-import { MissionDto } from '../mission.dto';
+import { MissionDto } from '../mission/mission.dto';
 
 export class FileQueueEntryDto {
     @ApiProperty()

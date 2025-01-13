@@ -11,7 +11,7 @@ import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
 import { Type } from 'class-transformer';
 import { AuditLogDto } from './audit-log.dto';
 import { LogsDto } from './logs.dto';
-import { MissionDto } from '../mission.dto';
+import { MissionDto } from '../mission/mission.dto';
 import { DockerImageDto } from './docker-image.dto';
 import { UserDto } from '../user.dto';
 import { ActionWorkerDto } from '../action-workers.dto';

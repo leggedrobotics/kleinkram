@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const { missions } = defineProps<{
     missions: MissionWithFilesDto[];

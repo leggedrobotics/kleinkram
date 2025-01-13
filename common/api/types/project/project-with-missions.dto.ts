@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TagTypeDto } from '../tags/tags.dto';
-import { FlatMissionDto } from '../mission.dto';
+import { FlatMissionDto } from '../mission/mission.dto';
 import { ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProjectWithCreator } from './base-project.dto';

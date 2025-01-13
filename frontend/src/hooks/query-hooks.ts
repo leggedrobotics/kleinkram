@@ -45,7 +45,7 @@ import { allWorkers } from '../services/queries/worker';
 import { ActionWorkersDto } from '@api/types/action-workers.dto';
 import { TagsDto } from '@api/types/tags/tags.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
-import { MissionsDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionsDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
 import { getQueueForFile } from '../services/queries/queue';
 import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';

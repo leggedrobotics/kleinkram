@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserDto } from './user.dto';
-import { TagDto } from './tags/tags.dto';
+import { UserDto } from '../user.dto';
+import { TagDto } from '../tags/tags.dto';
 import {
     IsDate,
     IsInt,
@@ -10,11 +10,11 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProjectDto } from './project/base-project.dto';
-import { FileDto } from './file/file.dto';
-import { Paginated } from './pagination';
-import { IsSkip } from '../../validation/skip-validation';
-import { IsTake } from '../../validation/take-validation';
+import { ProjectDto } from '../project/base-project.dto';
+import { FileDto } from '../file/file.dto';
+import { Paginated } from '../pagination';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
 
 export class MinimumMissionDto {
     @ApiProperty()

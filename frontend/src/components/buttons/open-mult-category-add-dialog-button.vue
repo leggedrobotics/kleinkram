@@ -18,7 +18,7 @@ import { computed } from 'vue';
 import AddMultiCategory from '../../dialogs/add-multi-category.vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const $q = useQuasar();
 const { mission, files } = defineProps<{

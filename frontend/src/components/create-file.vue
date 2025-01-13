@@ -102,7 +102,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
 import { createFileAction, driveUpload } from '../services/file-service';
-import { FlatMissionDto, MissionsDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 import { ProjectDto } from '@api/types/project/base-project.dto';

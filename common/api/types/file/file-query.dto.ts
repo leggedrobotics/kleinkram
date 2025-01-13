@@ -1,4 +1,4 @@
-import { MissionQueryDto } from '../mission-query.dto';
+import { MissionQueryDto } from '../mission/mission-query.dto';
 import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 

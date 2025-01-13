@@ -21,7 +21,7 @@ import { computed } from 'vue';
 import MoveFiles from '../../dialogs/modify-file-location-dialog.vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { MissionDto } from '@api/types/mission.dto';
+import { MissionDto } from '@api/types/mission/mission.dto';
 
 const $q = useQuasar();
 const { mission, files } = defineProps<{

@@ -114,7 +114,7 @@ import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQueryClient } from '@tanstack/vue-query';
 import { createMission } from 'src/services/mutations/mission';
 import { createFileAction } from '../services/file-service';
-import { FlatMissionDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import { useProjectQuery } from '../hooks/query-hooks';
 import SelectMissionTags from '@components/select-mission-tags.vue';

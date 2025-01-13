@@ -30,9 +30,9 @@ import {
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@common/api/types/mission.dto';
+} from '@common/api/types/mission/mission.dto';
 
-import { MissionQueryDto } from '@common/api/types/mission-query.dto';
+import { MissionQueryDto } from '@common/api/types/mission/mission-query.dto';
 
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { QueryOptionalStringArray } from '../../validation/query-decorators';

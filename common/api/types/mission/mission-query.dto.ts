@@ -1,4 +1,4 @@
-import { ProjectQueryDto } from './project/project-query.dto';
+import { ProjectQueryDto } from '../project/project-query.dto';
 import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 

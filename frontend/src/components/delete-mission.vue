@@ -19,7 +19,7 @@ import { Notify } from 'quasar';
 import { deleteMission } from 'src/services/mutations/mission';
 import ROUTES from 'src/router/routes';
 import { useRoute, useRouter } from 'vue-router';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const missionNameCheck = ref('');
 const client = useQueryClient();

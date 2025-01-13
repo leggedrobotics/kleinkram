@@ -33,7 +33,7 @@ import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { DeleteProjectResponseDto } from '@common/api/types/delete-project-response.dto';
+import { DeleteProjectResponseDto } from '@common/api/types/project/delete-project-response.dto';
 import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
 import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
 import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
