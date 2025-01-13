@@ -27,6 +27,7 @@ from kleinkram.cli._project import project_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
+from kleinkram.cli.error_handling import display_error
 from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
@@ -109,9 +110,12 @@ app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
 # attach error handler to app
 @app.error_handler(Exception)
 def base_handler(exc: Exception) -> int:
-    if not get_shared_state().debug:
-        Console(file=sys.stderr).print(f"{type(exc).__name__}: {exc}", style="red")
-        logger.error(format_traceback(exc))
+    shared_state = get_shared_state()
+
+    display_error(exc=exc, verbose=shared_state.verbose)
+    logger.error(format_traceback(exc))
+
+    if not shared_state.debug:
         return 1
     raise exc
 

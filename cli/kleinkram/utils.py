@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import base64
-import fnmatch
 import hashlib
+import re
 import string
 import traceback
 from hashlib import md5
@@ -14,7 +14,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
-from typing import Union
 from uuid import UUID
 
 import yaml
@@ -53,6 +52,11 @@ def file_paths_from_files(
             dest / file.project_name / file.mission_name / file.name: file
             for file in files
         }
+
+
+def upper_camel_case_to_words(s: str) -> List[str]:
+    """split `s` given upper camel case to words"""
+    return re.sub("([a-z])([A-Z])", r"\1 \2", s).split()
 
 
 def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
