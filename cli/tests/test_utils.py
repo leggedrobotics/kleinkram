@@ -17,6 +17,7 @@ from kleinkram.utils import parse_path_like
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
 from kleinkram.utils import split_args
+from kleinkram.utils import upper_camel_case_to_words
 
 
 def test_split_args():
@@ -135,3 +136,14 @@ def test_parse_uuid_like() -> None:
 def test_parse_path_like() -> None:
     assert parse_path_like("test") == Path("test")
     assert parse_path_like(Path("test")) == Path("test")
+
+
+def test_upper_camel_case_to_words() -> None:
+    assert upper_camel_case_to_words("HelloWorld") == ["Hello", "World"]
+    assert upper_camel_case_to_words("HelloWorldAgain") == ["Hello", "World", "Again"]
+    assert upper_camel_case_to_words("Hello") == ["Hello"]
+    assert upper_camel_case_to_words("hello") == ["hello"]
+    assert upper_camel_case_to_words("") == []
+    assert upper_camel_case_to_words("not_camel_case") == ["not_camel_case"]
+    assert upper_camel_case_to_words("*#?-_") == ["*#?-_"]
+    assert upper_camel_case_to_words("helloWorld") == ["hello", "World"]

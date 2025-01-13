@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from collections import OrderedDict
 from typing import Any
 from typing import Callable
@@ -7,6 +8,10 @@ from typing import Type
 
 import typer
 from click import ClickException
+from rich.console import Console
+from rich.panel import Panel
+
+from kleinkram.utils import upper_camel_case_to_words
 
 ExceptionHandler = Callable[[Exception], int]
 
@@ -42,3 +47,21 @@ class ErrorHandledTyper(typer.Typer):
                     exit_code = handler(e)
                     raise SystemExit(exit_code)
             raise
+
+
+def display_error(*, exc: Exception, verbose: bool) -> None:
+    split_exc_name = upper_camel_case_to_words(type(exc).__name__)
+
+    if verbose:
+        panel = Panel(
+            str(exc),  # get the error message
+            title=" ".join(split_exc_name),
+            style="red",
+            border_style="bold",
+        )
+        Console(file=sys.stderr).print(panel)
+    else:
+        text = f"{type(exc).__name__}"
+        if str(exc):
+            text += f": {exc}"
+        print(text, file=sys.stderr)

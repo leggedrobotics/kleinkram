@@ -8,9 +8,7 @@ import pytest
 
 from kleinkram import create_mission
 from kleinkram import create_project
-from kleinkram import delete_mission
 from kleinkram import delete_project
-from kleinkram import list_files
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
