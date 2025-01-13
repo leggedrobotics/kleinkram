@@ -212,6 +212,7 @@
                                     ? 'negative'
                                     : 'primary'
                             "
+                            :disable="!currentUserCanEdit"
                             @click="() => openSetExpirationDialog(props.row)"
                         />
                     </td>
@@ -253,6 +254,7 @@
                                     <q-item
                                         v-ripple
                                         clickable
+                                        :disable="!currentUserCanEdit"
                                         @click="
                                             () =>
                                                 removeUser(props.row.user.uuid)
@@ -284,7 +286,7 @@ import { formatDate } from '../services/date-formating';
 import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { GroupMembershipDto } from '@api/types/user.dto';
-import { useAccessGroup } from '../hooks/query-hooks';
+import { useAccessGroup, useUser } from '../hooks/query-hooks';
 import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
 import TitleSection from '@components/title-section.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
@@ -318,6 +320,7 @@ const pagination2 = ref({
 });
 
 const queryClient = useQueryClient();
+const user = useUser();
 
 const refetchOnClick: (
     event_: Event,
@@ -467,6 +470,14 @@ const projectCols = computed(() => {
         });
         return defaultCols;
     }
+});
+
+const currentUserCanEdit = computed(() => {
+    return (
+        accessGroup.value?.memberships.some(
+            (m) => m.user.uuid === user.data.value?.uuid && m.canEditGroup,
+        ) ?? false
+    );
 });
 
 const userCols = [

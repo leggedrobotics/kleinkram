@@ -2,7 +2,7 @@
     <div :class="classObject" @click="openAddUser">
         <slot />
         <q-tooltip v-if="!canModify">
-            Only the creator can add User. You are not the creator.
+            You don't have permission to modify this group.
         </q-tooltip>
     </div>
 </template>
@@ -25,7 +25,9 @@ const canModify = computed(() => {
     if (user.value.role === UserRole.ADMIN) {
         return true;
     }
-    return accessGroup.creator?.uuid === user.value.uuid;
+    return accessGroup.memberships.some(
+        (m) => m.user.uuid === user.value.uuid && m.canEditGroup,
+    );
 });
 
 const classObject = reactive({
