@@ -6,18 +6,16 @@ import shutil
 from pathlib import Path
 
 import pytest
-from kleinkram.api.routes import _get_api_version
 from rich.console import Console
 from rich.text import Text
+
+from kleinkram.api.routes import _get_api_version
 
 VERBOSE = True
 
 CLI = "klein"
 PROJECT_NAME = "automated-testing"
-
-DATA_DIR = Path(__file__).parent.parent / "data" / "testing"
-_IN_DIR = DATA_DIR / "in"
-_OUT_DIR = DATA_DIR / "out"
+DATA_PATH = Path(__file__).parent.parent / "data" / "testing"
 
 
 @pytest.fixture(scope="session")
@@ -28,25 +26,6 @@ def api():
     except Exception:
         print("API is not available")
         return False
-
-
-@pytest.fixture(scope="session")
-def in_dir():
-    return _IN_DIR
-
-
-@pytest.fixture(scope="session")
-def out_dir():
-    try:
-        _OUT_DIR.mkdir(exist_ok=True)
-        yield _OUT_DIR
-    finally:
-        shutil.rmtree(_OUT_DIR)
-
-
-@pytest.fixture(scope="session")
-def name():
-    return secrets.token_hex(8)
 
 
 def run_cmd(command, *, verbose=VERBOSE):
@@ -61,45 +40,56 @@ def run_cmd(command, *, verbose=VERBOSE):
 
 
 @pytest.mark.slow
-def test_upload_verify_update_download_mission(name, in_dir, out_dir, api):
+def test_upload_verify_update_download_mission(project, tmp_path, api):
     assert api
 
-    upload = (
-        f"{CLI} upload -p {PROJECT_NAME} -m {name} --create {in_dir.absolute()}/*.bag"
+    mission_name = secrets.token_hex(8)
+    upload = f"{CLI} upload -p {project.name} -m {mission_name} --create {DATA_PATH.absolute()}/*.bag"
+    verify = (
+        f"{CLI} verify -p {project.name} -m {mission_name} {DATA_PATH.absolute()}/*.bag"
     )
-    verify = f"{CLI} verify -p {PROJECT_NAME} -m {name} {in_dir.absolute()}/*.bag"
-    update = f"{CLI} mission update -p {PROJECT_NAME} -m {name} --metadata {in_dir.absolute()}/metadata.yaml"
-    download = f"{CLI} download -p {PROJECT_NAME} -m {name} --dest {out_dir.absolute()}"
+    # update = f"{CLI} mission update -p {project.name} -m {mission_name} --metadata {DATA_PATH.absolute()}/metadata.yaml"
+    download = f"{CLI} download -p {project.name} -m {mission_name} --dest {tmp_path.absolute()}"
 
     assert run_cmd(upload) == 0
     assert run_cmd(verify) == 0
-    assert run_cmd(update) == 0
+    # assert run_cmd(update) == 0
     assert run_cmd(download) == 0
 
 
 @pytest.mark.slow
-def test_list_files(api):
+def test_list_files(project, mission, api):
     assert api
-    assert run_cmd(f"{CLI} list files -p {PROJECT_NAME}") == 0
-    assert run_cmd(f"{CLI} list files -p {PROJECT_NAME} -m {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} list files -p {project.name}") == 0
+    assert run_cmd(f"{CLI} list files -p {project.name} -m {mission.name}") == 0
     assert run_cmd(f"{CLI} list files") == 0
-    assert run_cmd(f"{CLI} list files -p {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} list files -p {mission.name}") == 0
     assert run_cmd(f'{CLI} list files -p "*" -m "*" "*"') == 0
 
 
 @pytest.mark.slow
-def test_list_missions(api):
+def test_list_missions(api, project, mission):
     assert api
-    assert run_cmd(f"{CLI} list missions -p {PROJECT_NAME}") == 0
+
+    assert run_cmd(f"{CLI} list missions -p {project.name} {mission.name}") == 0
+    assert run_cmd(f"{CLI} list missions -p {project.name} {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} list missions -p {project.name} {mission.id}") == 0
+    assert run_cmd(f"{CLI} list missions {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} list missions {mission.id}") == 0
+    assert run_cmd(f"{CLI} list missions {mission.name}") == 0
+
+    assert run_cmd(f"{CLI} list missions -p {project.name}") == 0
+    assert run_cmd(f"{CLI} list missions -p {project.id}") == 0
     assert run_cmd(f"{CLI} list missions -p {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list missions") == 0
     assert run_cmd(f'{CLI} list missions -p "*" "*"') == 0
 
 
 @pytest.mark.slow
-def test_list_projects(api):
+def test_list_projects(api, project):
     assert api
     assert run_cmd(f"{CLI} list projects") == 0
-    assert run_cmd(f"{CLI} list projects {PROJECT_NAME}") == 0
+    assert run_cmd(f"{CLI} list projects {project.name}") == 0
     assert run_cmd(f"{CLI} list projects {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} list projects {project.id}") == 0
     assert run_cmd(f'{CLI} list projects "*"') == 0

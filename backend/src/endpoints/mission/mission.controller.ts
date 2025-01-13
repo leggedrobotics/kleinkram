@@ -17,9 +17,9 @@ import {
     QuerySortBy,
     QuerySortDirection,
     QueryString,
-    QueryStringArray,
     QueryTake,
     QueryUUID,
+    QueryOptionalUUIDArray,
 } from '../../validation/query-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUID } from '../../validation/body-decorators';
@@ -32,6 +32,7 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
+import { QueryOptionalStringArray } from '../../validation/query-decorators';
 
 @Controller('mission')
 export class MissionController {
@@ -63,6 +64,42 @@ export class MissionController {
         }
 
         return this.missionService.updateName(missionUUID, name);
+    }
+
+    @Get('many')
+    @UserOnly()
+    @ApiOkResponse({
+        description: 'Returns all missions',
+        type: MissionsDto,
+    })
+    async getMany(
+        @QueryOptionalUUIDArray('missionUuids', 'List of Mission UUIDs')
+        missionUuids: string[],
+        @QueryOptionalUUIDArray('projectUuids', 'List of Project UUIDs')
+        projectUuids: string[],
+        @QueryOptionalStringArray(
+            'missionPatterns',
+            'List of mission names and patterns',
+        )
+        missionNames: string[],
+        @QueryOptionalStringArray(
+            'projectPatterns',
+            'List of project names and patterns',
+        )
+        projectNames: string[],
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<MissionsDto> {
+        return await this.missionService.findMany(
+            projectUuids,
+            projectNames,
+            missionUuids,
+            missionNames,
+            skip,
+            take,
+            user.user.uuid,
+        );
     }
 
     @Get('filteredMinimal')
@@ -206,14 +243,5 @@ export class MissionController {
         @Body('tags') tags: Record<string, string>,
     ): Promise<void> {
         await this.missionService.updateTags(missionUUID, tags);
-    }
-
-    @Get('many')
-    @CanReadManyMissions()
-    @OutputDto(null) // TODO: type API response
-    async getManyMissions(
-        @QueryStringArray('uuids', 'List of Mission UUIDs') uuids: string[],
-    ) {
-        return this.missionService.findMany(uuids);
     }
 }

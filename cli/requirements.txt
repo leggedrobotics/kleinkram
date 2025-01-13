@@ -1,6 +1,7 @@
 boto3
 botocore
 httpx
+python-dateutil
 pyyaml
 rich
 tqdm

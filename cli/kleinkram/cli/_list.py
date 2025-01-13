@@ -4,20 +4,19 @@ from typing import List
 from typing import Optional
 
 import typer
-from kleinkram.api.client import AuthenticatedClient
-from kleinkram.config import get_shared_state
-from kleinkram.models import files_to_table
-from kleinkram.models import missions_to_table
-from kleinkram.models import projects_to_table
-from kleinkram.resources import FileSpec
-from kleinkram.resources import get_files_by_spec
-from kleinkram.resources import get_missions_by_spec
-from kleinkram.resources import get_projects_by_spec
-from kleinkram.resources import MissionSpec
-from kleinkram.resources import ProjectSpec
-from kleinkram.utils import split_args
-from rich.console import Console
 
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.query import FileQuery
+from kleinkram.api.query import MissionQuery
+from kleinkram.api.query import ProjectQuery
+from kleinkram.api.routes import get_files
+from kleinkram.api.routes import get_missions
+from kleinkram.api.routes import get_projects
+from kleinkram.config import get_shared_state
+from kleinkram.printing import print_files
+from kleinkram.printing import print_missions
+from kleinkram.printing import print_projects
+from kleinkram.utils import split_args
 
 HELP = """\
 List projects, missions, or files.
@@ -46,24 +45,19 @@ def files(
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
-    mission_spec = MissionSpec(
-        project_spec=project_spec,
+    project_query = ProjectQuery(patterns=project_patterns, ids=project_ids)
+    mission_query = MissionQuery(
+        project_query=project_query,
         ids=mission_ids,
         patterns=mission_patterns,
     )
-    file_spec = FileSpec(
-        mission_spec=mission_spec, patterns=file_patterns, ids=file_ids
+    file_query = FileQuery(
+        mission_query=mission_query, patterns=file_patterns, ids=file_ids
     )
 
     client = AuthenticatedClient()
-    parsed_files = get_files_by_spec(client, file_spec)
-
-    if get_shared_state().verbose:
-        Console().print(files_to_table(parsed_files))
-    else:
-        for file in parsed_files:
-            print(file.id)
+    parsed_files = list(get_files(client, file_query=file_query))
+    print_files(parsed_files, pprint=get_shared_state().verbose)
 
 
 @list_typer.command()
@@ -76,18 +70,16 @@ def missions(
     mission_ids, mission_patterns = split_args(missions or [])
     project_ids, project_patterns = split_args(projects or [])
 
-    project_spec = ProjectSpec(ids=project_ids, patterns=project_patterns)
-    mission_spec = MissionSpec(
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
         ids=mission_ids,
         patterns=mission_patterns,
-        project_spec=project_spec,
+        project_query=project_query,
     )
 
     client = AuthenticatedClient()
-    parsed_missions = get_missions_by_spec(client, mission_spec)
-
-    if get_shared_state().verbose:
-        Console().print(missions_to_table(parsed_missions))
+    parsed_missions = list(get_missions(client, mission_query=mission_query))
+    print_missions(parsed_missions, pprint=get_shared_state().verbose)
 
 
 @list_typer.command()
@@ -95,13 +87,8 @@ def projects(
     projects: Optional[List[str]] = typer.Argument(None, help="project names"),
 ) -> None:
     project_ids, project_patterns = split_args(projects or [])
-    project_spec = ProjectSpec(patterns=project_patterns, ids=project_ids)
+    project_query = ProjectQuery(patterns=project_patterns, ids=project_ids)
 
     client = AuthenticatedClient()
-    parsed_projects = get_projects_by_spec(client, project_spec)
-
-    if get_shared_state().verbose:
-        Console().print(projects_to_table(parsed_projects))
-    else:
-        for project in parsed_projects:
-            print(project.id)
+    parsed_projects = list(get_projects(client, project_query=project_query))
+    print_projects(parsed_projects, pprint=get_shared_state().verbose)

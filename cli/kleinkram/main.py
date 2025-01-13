@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from kleinkram.app import app
+from kleinkram.cli.app import app
 
 
 def main() -> int:

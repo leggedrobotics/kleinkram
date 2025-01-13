@@ -10,20 +10,56 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TypeVar
 from typing import Union
 from uuid import UUID
 
 import yaml
-from kleinkram._version import __version__
-from kleinkram.errors import FileTypeNotSupported
 from rich.console import Console
 
+from kleinkram._version import __version__
+from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import FileTypeNotSupported
+from kleinkram.models import File
+from kleinkram.types import IdLike
+from kleinkram.types import PathLike
+
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
+SUPPORT_FILE_TYPES = [
+    ".bag",
+    ".mcap",
+]
 
 
-def split_args(args: List[str]) -> Tuple[List[UUID], List[str]]:
+def file_paths_from_files(
+    files: Sequence[File], *, dest: Path, allow_nested: bool = False
+) -> Dict[Path, File]:
+    """\
+    determines the destinations for a sequence of `File` objects,
+    possibly nested by project and mission
+    """
+    if (
+        len(set([(file.project_id, file.mission_id) for file in files])) > 1
+        and not allow_nested
+    ):
+        raise ValueError("files from multiple missions were selected")
+    elif not allow_nested:
+        return {dest / file.name: file for file in files}
+    else:
+        return {
+            dest / file.project_name / file.mission_name / file.name: file
+            for file in files
+        }
+
+
+def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
+    """\
+    split a sequece of strings into a list of UUIDs and a list of names
+    depending on whether the string is a valid UUID or not
+    """
     uuids = []
     names = []
     for arg in args:
@@ -35,20 +71,30 @@ def split_args(args: List[str]) -> Tuple[List[UUID], List[str]]:
 
 
 def check_file_paths(files: Sequence[Path]) -> None:
+    """\
+    checks that files exist, are files and have a supported file suffix
+
+    NOTE: kleinkram treats filesuffixes as filetypes and limits
+    the supported suffixes
+    """
     for file in files:
-        if file.is_dir():
-            raise FileNotFoundError(f"{file} is a directory and not a file")
-        if not file.exists():
-            raise FileNotFoundError(f"{file} does not exist")
-        if file.suffix not in (".bag", ".mcap"):
-            raise FileTypeNotSupported(
-                f"only `.bag` or `.mcap` files are supported: {file}"
-            )
+        check_file_path(file)
 
 
-def noop(*args: Any, **kwargs: Any) -> None:
-    _ = args, kwargs  # suppress unused variable warning
-    return
+def check_file_path(file: Path) -> None:
+    if file.is_dir():
+        raise FileNotFoundError(f"{file} is a directory and not a file")
+    if not file.exists():
+        raise FileNotFoundError(f"{file} does not exist")
+    if file.suffix not in SUPPORT_FILE_TYPES:
+        raise FileTypeNotSupported(
+            f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
+        )
+    if not check_filename_is_sanatized(file.stem):
+        raise FileNameNotSupported(
+            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
+            f"allowed in filenames and at most 50chars: {file}"
+        )
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
@@ -63,14 +109,6 @@ def format_traceback(exc: Exception) -> str:
     return "".join(
         traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
     )
-
-
-def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
-    filtered = []
-    for name in names:
-        if any(fnmatch.fnmatch(name, p) for p in patterns):
-            filtered.append(name)
-    return filtered
 
 
 def styled_string(*objects: Any, **kwargs: Any) -> str:
@@ -90,6 +128,14 @@ def is_valid_uuid4(uuid: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def check_filename_is_sanatized(filename: str) -> bool:
+    if len(filename) > 50:
+        return False
+    if not all(char in INTERNAL_ALLOWED_CHARS for char in filename):
+        return False
+    return True
 
 
 def get_filename(path: Path) -> str:
@@ -145,12 +191,6 @@ def b64_md5(file: Path) -> str:
     return base64.b64encode(binary_digest).decode("utf-8")
 
 
-def to_name_or_uuid(s: str) -> Union[UUID, str]:
-    if is_valid_uuid4(s):
-        return UUID(s)
-    return s
-
-
 def load_metadata(path: Path) -> Dict[str, str]:
     if not path.exists():
         raise FileNotFoundError(f"metadata file not found: {path}")
@@ -164,3 +204,18 @@ def load_metadata(path: Path) -> Dict[str, str]:
 def get_supported_api_version() -> Tuple[int, int, int]:
     vers = __version__.split(".")
     return tuple(map(int, vers[:3]))  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def singleton_list(x: Optional[T]) -> List[T]:
+    return [] if x is None else [x]
+
+
+def parse_uuid_like(s: IdLike) -> UUID:
+    return UUID(str(s))
+
+
+def parse_path_like(s: PathLike) -> Path:
+    return Path(s)

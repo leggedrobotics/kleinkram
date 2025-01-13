@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
+import { convertGlobToLikePattern } from './utils';
 import {
     Brackets,
     DataSource,
@@ -14,6 +15,7 @@ import {
     FindOptionsWhere,
     ILike,
     In,
+    Like,
     MoreThan,
     Repository,
 } from 'typeorm';
@@ -118,12 +120,121 @@ export class FileService implements OnModuleInit {
             this.fileRepository
                 .createQueryBuilder('file')
                 .leftJoinAndSelect('file.mission', 'mission')
-                .leftJoin('mission.project', 'project')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('file.creator', 'user')
                 .orderBy('file.filename', 'ASC')
                 .skip(skip)
                 .take(take),
             userUUID,
         ).getManyAndCount();
+
+        console.log(files);
+
+        return {
+            data: files.map((f) => f.fileDto),
+            count,
+            take,
+            skip,
+        };
+    }
+
+    async findMany(
+        projectUuids: string[],
+        projectPatterns: string[],
+        missionUuids: string[],
+        missionPatterns: string[],
+        fileUuids: string[],
+        filePatterns: string[],
+        take: number,
+        skip: number,
+        userUuid: string,
+    ): Promise<FilesDto> {
+        // we dont support bracket expressions at the moment.
+        const projectLikePatterns = projectPatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
+        );
+        const missionLikePatterns = missionPatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
+        );
+        const fileLikePatterns = filePatterns.map((pattern) =>
+            convertGlobToLikePattern(pattern),
+        );
+
+        let query = this.fileRepository
+            .createQueryBuilder('file')
+            .leftJoinAndSelect('file.mission', 'mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('file.creator', 'user');
+
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        if (user.role !== UserRole.ADMIN) {
+            query = addAccessConstraints(query, userUuid);
+        }
+
+        // project query
+        query.andWhere(
+            new Brackets((qb) => {
+                if (projectUuids.length > 0) {
+                    qb.orWhere('project.uuid IN (:...projectUuids)', {
+                        projectUuids,
+                    });
+                }
+                if (projectLikePatterns.length > 0) {
+                    qb.orWhere(
+                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
+                        {
+                            projectPatterns: projectLikePatterns,
+                        },
+                    );
+                }
+            }),
+        );
+
+        // mission query
+        query.andWhere(
+            new Brackets((qb) => {
+                if (missionUuids.length > 0) {
+                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
+                        missionUuids,
+                    });
+                }
+                if (missionLikePatterns.length > 0) {
+                    qb.orWhere(
+                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
+                        {
+                            missionPatterns: missionLikePatterns,
+                        },
+                    );
+                }
+            }),
+        );
+
+        // file query
+        query.andWhere(
+            new Brackets((qb) => {
+                if (fileUuids.length > 0) {
+                    qb.orWhere('file.uuid IN (:...fileUuids)', { fileUuids });
+                }
+                if (fileLikePatterns.length > 0) {
+                    qb.orWhere(
+                        'file.filename LIKE ANY(ARRAY[:...filePatterns])',
+                        {
+                            filePatterns: fileLikePatterns,
+                        },
+                    );
+                }
+            }),
+        );
+
+        console.log(query.getSql());
+
+        const [files, count] = await query
+            .take(take)
+            .skip(skip)
+            .getManyAndCount();
 
         return {
             data: files.map((f) => f.fileDto),

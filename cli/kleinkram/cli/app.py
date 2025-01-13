@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import time
 from enum import Enum
@@ -10,28 +11,39 @@ from typing import Optional
 
 import typer
 from click import Context
+from rich.console import Console
+from typer.core import TyperGroup
+
 from kleinkram._version import __version__
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
-from kleinkram.commands.download import download_typer
-from kleinkram.commands.endpoint import endpoint_typer
-from kleinkram.commands.list import list_typer
-from kleinkram.commands.mission import mission_typer
-from kleinkram.commands.project import project_typer
-from kleinkram.commands.upload import upload_typer
-from kleinkram.commands.verify import verify_typer
+from kleinkram.cli._download import download_typer
+from kleinkram.cli._endpoint import endpoint_typer
+from kleinkram.cli._list import list_typer
+from kleinkram.cli._mission import mission_typer
+from kleinkram.cli._project import project_typer
+from kleinkram.cli._upload import upload_typer
+from kleinkram.cli._verify import verify_typer
+from kleinkram.cli.error_handling import ErrorHandledTyper
 from kleinkram.config import Config
+from kleinkram.config import check_config_compatibility
+from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
-from kleinkram.errors import ErrorHandledTyper
+from kleinkram.config import save_config
 from kleinkram.errors import InvalidCLIVersion
 from kleinkram.utils import format_traceback
 from kleinkram.utils import get_supported_api_version
-from rich.console import Console
-from typer.core import TyperGroup
 
-LOG_DIR = Path() / "logs"
+# slightly cursed lambdas so that linters don't complain about unreachable code
+if (lambda: os.name)() == "posix":
+    LOG_DIR = Path().home() / ".local" / "state" / "kleinkram"
+elif (lambda: os.name)() == "nt":
+    LOG_DIR = Path().home() / "AppData" / "Local" / "kleinkram"
+else:
+    raise OSError(f"Unsupported OS {os.name}")
+
 LOG_FILE = LOG_DIR / f"{time.time_ns()}.log"
 LOG_FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 
@@ -55,6 +67,15 @@ class LogLevel(str, Enum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+LOG_LEVEL_MAP = {
+    LogLevel.DEBUG: logging.DEBUG,
+    LogLevel.INFO: logging.INFO,
+    LogLevel.WARNING: logging.WARNING,
+    LogLevel.ERROR: logging.ERROR,
+    LogLevel.CRITICAL: logging.CRITICAL,
+}
 
 
 class CommandTypes(str, Enum):
@@ -105,8 +126,12 @@ def login(
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def logout(all: bool = typer.Option(False, help="logout on all enpoints")) -> None:
-    config = Config()
-    config.clear_credentials(all=all)
+    config = get_config()
+    if all:
+        config.endpoint_credentials.clear()
+    else:
+        config.endpoint_credentials.pop(config.selected_endpoint, None)
+    save_config(config)
 
 
 @app.command(hidden=True)
@@ -147,21 +172,24 @@ def cli(
     ),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
 ):
+    if not check_config_compatibility():
+        typer.confirm("found incompatible config file, overwrite?", abort=True)
+        save_config(Config())
+
     _ = version  # suppress unused variable warning
     shared_state = get_shared_state()
     shared_state.verbose = verbose
     shared_state.debug = debug
 
-    if shared_state.debug:
+    if shared_state.debug and log_level is None:
         log_level = LogLevel.DEBUG
+    if log_level is None:
+        log_level = LogLevel.WARNING
 
-    if log_level is not None:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        level = logging.getLevelName(log_level)
-        logging.basicConfig(level=level, filename=LOG_FILE, format=LOG_FORMAT)
-    else:
-        logging.disable(logging.CRITICAL)
-
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=LOG_LEVEL_MAP[log_level], filename=LOG_FILE, format=LOG_FORMAT
+    )
     logger.info(f"CLI version: {__version__}")
 
     try:
@@ -170,7 +198,7 @@ def cli(
         logger.error(format_traceback(e))
         raise
     except Exception:
-        err = ("failed to check version compatibility",)
+        err = "failed to check version compatibility"
         Console(file=sys.stderr).print(
             err, style="yellow" if shared_state.verbose else None
         )

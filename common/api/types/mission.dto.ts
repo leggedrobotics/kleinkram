@@ -27,14 +27,6 @@ export class MinimumMissionDto {
 }
 
 export class MissionDto extends MinimumMissionDto {
-    @ApiProperty()
-    @IsDate()
-    createdAt!: Date;
-
-    @ApiProperty()
-    @IsDate()
-    updatedAt!: Date;
-
     @ApiProperty({
         description: 'The project the mission belongs to',
         type: ProjectDto,
@@ -42,6 +34,14 @@ export class MissionDto extends MinimumMissionDto {
     @ValidateNested()
     @Type(() => ProjectDto)
     project!: ProjectDto;
+
+    @ApiProperty()
+    @IsDate()
+    createdAt!: Date;
+
+    @ApiProperty()
+    @IsDate()
+    updatedAt!: Date;
 
     @ApiProperty({
         description: 'List of tags',
@@ -74,8 +74,8 @@ export class FlatMissionDto extends MissionWithCreatorDto {
 
 export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
-        description: 'List of files',
         type: FileDto,
+        description: 'List of files',
     })
     @ValidateNested()
     @Type(() => FileDto)

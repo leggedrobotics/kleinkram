@@ -36,6 +36,13 @@ export class StringArrayValidate {
     value!: string[];
 }
 
+export class UUIDArrayValidate {
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsUUID(undefined, { each: true })
+    value!: string[];
+}
+
 export class BooleanValidate {
     @Type(() => Boolean)
     value!: boolean;
