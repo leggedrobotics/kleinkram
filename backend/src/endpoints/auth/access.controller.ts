@@ -285,10 +285,21 @@ export class AccessController {
 
     @Post('setExpireDate')
     @CanEditGroup()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Returns the updated GroupMembership',
+        type: GroupMembershipDto,
+    })
+    @ApiOperation({
+        summary: 'Set expiration date for user in AccessGroup',
+        description: 'Sets the expiration date for the user in the AccessGroup',
+    })
     async setExpireDate(
         @Body() body: SetAccessGroupUserExpirationDto,
     ): Promise<GroupMembershipDto> {
-        return this.accessService.setExpireDate(body.uuid, body.expireDate);
+        return this.accessService.setExpireDate(
+            body.uuid,
+            body.userUuid,
+            body.expireDate,
+        );
     }
 }

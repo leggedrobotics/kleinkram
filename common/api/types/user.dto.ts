@@ -9,6 +9,7 @@ import {
     IsString,
     IsUUID,
     registerDecorator,
+    ValidateIf,
     ValidateNested,
     ValidationOptions,
 } from 'class-validator';
@@ -96,13 +97,19 @@ export class GroupMembershipDto {
     @IsDate()
     createdAt!: Date;
 
+    @ValidateIf((_, value) => {
+        console.log(value, typeof value);
+        return true;
+    })
     @ApiProperty()
     @IsDate()
     updatedAt!: Date;
 
+    @ValidateIf((_, value) => {
+        console.log(value, typeof value);
+        return value !== null;
+    })
     @ApiProperty()
-    @IsNotUndefined()
-    @IsOptional()
     @IsDate()
     expirationDate!: Date | null;
 

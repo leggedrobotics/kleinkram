@@ -411,8 +411,16 @@ const dropColumns = (cols: any[], label: string) => {
 };
 
 const { mutate: setAccessGroup } = useMutation({
-    mutationFn: (data: { uuid: string; expirationDate: Date | null }) => {
-        return setAccessGroupExpiry(data.uuid, data.expirationDate);
+    mutationFn: (data: {
+        uuid: string;
+        userUuid: string;
+        expirationDate: Date | null;
+    }) => {
+        return setAccessGroupExpiry(
+            data.uuid,
+            data.userUuid,
+            data.expirationDate,
+        );
     },
     onSuccess: async () => {
         await queryClient.invalidateQueries({
@@ -447,6 +455,7 @@ const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
     }).onOk((expirationDate: Date | null) => {
         setAccessGroup({
             uuid: accessGroup.value?.uuid,
+            userUuid: agu.user.uuid,
             expirationDate,
         });
     });

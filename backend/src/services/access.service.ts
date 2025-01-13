@@ -490,18 +490,27 @@ export class AccessService {
 
     async setExpireDate(
         uuid: string,
+        userUuid: string,
         expireDate: Date | 'never',
     ): Promise<GroupMembershipDto> {
         const agu = await this.groupMembershipRepository.findOneOrFail({
             where: {
                 accessGroup: { uuid },
+                user: { uuid: userUuid },
             },
         });
         // TODO: check how to properly set the expireDate to null in a type-safe way
         // @ts-ignore
         agu.expirationDate = expireDate === 'never' ? null : expireDate;
-        return (await this.groupMembershipRepository.save(
-            agu,
-        )) as unknown as GroupMembershipDto;
+        const { uuid: membershipUuid } =
+            await this.groupMembershipRepository.save(agu);
+
+        // fetch the saved membership to get the updated expirationDate
+        const savedMembership =
+            await this.groupMembershipRepository.findOneOrFail({
+                where: { uuid: membershipUuid },
+                relations: ['user'],
+            });
+        return savedMembership.groupMembershipDto;
     }
 }

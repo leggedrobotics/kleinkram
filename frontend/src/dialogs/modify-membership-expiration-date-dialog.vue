@@ -3,14 +3,16 @@
         <template #title> Membership Expiration</template>
 
         <template #content>
-            <q-date
-                v-model="expirationDate"
-                label="Expiration Date"
-                mask="DD.MM.YYYY HH:mm"
-                color="light-green"
-                flat
-                bordered
-            />
+            <div class="flex justify-center">
+                <q-date
+                    v-model="expirationDate"
+                    label="Expiration Date"
+                    mask="DD.MM.YYYY HH:mm"
+                    color="light-green"
+                    flat
+                    bordered
+                />
+            </div>
         </template>
 
         <template #actions>
