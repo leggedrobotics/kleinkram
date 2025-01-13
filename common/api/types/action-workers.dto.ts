@@ -8,7 +8,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaggedResponse } from './pagged-response';
+import { Paginated } from './pagination';
 import { IsTake } from '../../validation/take-validation';
 import { IsSkip } from '../../validation/skip-validation';
 
@@ -66,7 +66,7 @@ export class ActionWorkerDto {
     reachable!: boolean;
 }
 
-export class ActionWorkersDto implements PaggedResponse<ActionWorkerDto> {
+export class ActionWorkersDto implements Paginated<ActionWorkerDto> {
     @ApiProperty({
         type: [ActionWorkerDto],
         description: 'List of action workers',

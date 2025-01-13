@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import {
@@ -33,7 +33,7 @@ export class ResentProjectDto {
     updatedAt!: Date;
 }
 
-export class ResentProjectsDto implements PaggedResponse<ResentProjectDto> {
+export class ResentProjectsDto implements Paginated<ResentProjectDto> {
     @ApiProperty({
         name: 'data',
         description: 'List of resent projects',

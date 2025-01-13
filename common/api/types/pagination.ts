@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 const MAX_TAKE = 10_000;
 const DEFAULT_TAKE = 100;
 
-export class PagedQuery {
+export class PaginatedQueryDto {
     @IsOptional()
     @IsInt()
     @Min(0)
@@ -17,4 +17,11 @@ export class PagedQuery {
     @Max(MAX_TAKE)
     @Type(() => Number)
     take: number = DEFAULT_TAKE;
+}
+
+export interface Paginated<T> {
+    data: T[];
+    count: number;
+    skip: number;
+    take: number;
 }

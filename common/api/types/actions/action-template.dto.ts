@@ -8,7 +8,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { AccessGroupRights } from '../../../frontend_shared/enum';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { Type } from 'class-transformer';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
@@ -63,7 +63,7 @@ export class ActionTemplateDto {
     maxRuntime!: number;
 }
 
-export class ActionTemplatesDto implements PaggedResponse<ActionTemplateDto> {
+export class ActionTemplatesDto implements Paginated<ActionTemplateDto> {
     @ApiProperty()
     @IsNumber()
     count!: number;

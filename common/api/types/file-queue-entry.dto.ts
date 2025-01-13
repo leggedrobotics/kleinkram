@@ -10,7 +10,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaggedResponse } from './pagged-response';
+import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
 import { MissionDto } from './mission.dto';
@@ -59,7 +59,7 @@ export class FileQueueEntryDto {
     mission!: MissionDto;
 }
 
-export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {
+export class FileQueueEntriesDto implements Paginated<FileQueueEntryDto> {
     @ApiProperty({
         type: [FileQueueEntryDto],
         description: 'List of file queue entries',

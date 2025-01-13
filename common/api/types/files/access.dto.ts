@@ -7,7 +7,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 
@@ -49,7 +49,7 @@ export class TemporaryFileAccessDto {
 }
 
 export class TemporaryFileAccessesDto
-    implements PaggedResponse<TemporaryFileAccessDto>
+    implements Paginated<TemporaryFileAccessDto>
 {
     @ApiProperty({
         type: [TemporaryFileAccessDto],

@@ -9,7 +9,7 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { Type } from 'class-transformer';
@@ -108,7 +108,7 @@ export class TagsDto {
     take!: number;
 }
 
-export class TagTypesDto implements PaggedResponse<TagTypeDto> {
+export class TagTypesDto implements Paginated<TagTypeDto> {
     @ApiProperty({
         description: 'List of tag types',
         type: [TagTypeDto],

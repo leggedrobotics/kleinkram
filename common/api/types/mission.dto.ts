@@ -12,7 +12,7 @@ import {
 import { Type } from 'class-transformer';
 import { ProjectDto } from './project/base-project.dto';
 import { FileDto } from './files/file.dto';
-import { PaggedResponse } from './pagged-response';
+import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
 
@@ -82,7 +82,7 @@ export class MissionWithFilesDto extends MissionWithCreatorDto {
     files!: FileDto[];
 }
 
-export class MissionsDto implements PaggedResponse<FlatMissionDto> {
+export class MissionsDto implements Paginated<FlatMissionDto> {
     @ApiProperty()
     @IsNumber()
     count!: number;
@@ -104,7 +104,7 @@ export class MissionsDto implements PaggedResponse<FlatMissionDto> {
     take!: number;
 }
 
-export class MinimumMissionsDto implements PaggedResponse<MinimumMissionDto> {
+export class MinimumMissionsDto implements Paginated<MinimumMissionDto> {
     @ApiProperty()
     @IsNumber()
     count!: number;
