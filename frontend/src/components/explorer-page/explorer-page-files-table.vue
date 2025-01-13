@@ -140,8 +140,8 @@ import {
 import { useRouter } from 'vue-router';
 import { fileColumns } from './explorer-page-table-columns';
 import { CategoryDto } from '@api/types/category.dto';
-import { FileWithTopicDto } from '@api/types/files/file.dto';
-import { FilesDto } from '@api/types/files/files.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FilesDto } from '@api/types/file/files.dto';
 import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';

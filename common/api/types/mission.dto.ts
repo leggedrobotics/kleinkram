@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProjectDto } from './project/base-project.dto';
-import { FileDto } from './files/file.dto';
+import { FileDto } from './file/file.dto';
 import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';

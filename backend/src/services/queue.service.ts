@@ -41,7 +41,7 @@ import User from '@common/entities/user/user.entity';
 import {
     FileQueueEntriesDto,
     FileQueueEntryDto,
-} from '@common/api/types/file-queue-entry.dto';
+} from '@common/api/types/file/file-queue-entry.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
 import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';

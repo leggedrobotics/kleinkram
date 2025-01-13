@@ -11,7 +11,7 @@ import { ref, watch } from 'vue';
 
 import { CategoryDto } from '@api/types/category.dto';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import CategorySelector from '@components/category-selector.vue';
 import CategoryCreator from '@components/category-creator.vue';
 

@@ -103,7 +103,7 @@ import {
     useFilteredProjects,
     useMissionsOfProjectMinimal,
 } from '../hooks/query-hooks';
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 
 const { mission, files } = defineProps<{
     mission: MissionWithFilesDto;

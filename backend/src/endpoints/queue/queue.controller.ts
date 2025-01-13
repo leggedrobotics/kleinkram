@@ -20,7 +20,7 @@ import {
 } from '../../validation/query-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { ApiOkResponse, OutputDto } from '../../decarators';
-import { FileQueueEntriesDto } from '@common/api/types/file-queue-entry.dto';
+import { FileQueueEntriesDto } from '@common/api/types/file/file-queue-entry.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
 import { BullQueueDto } from '@common/api/types/queue/bull-queue.dto';

@@ -17,7 +17,7 @@ import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
 import AddMultiCategory from '../../dialogs/add-multi-category.vue';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
 
 const $q = useQuasar();

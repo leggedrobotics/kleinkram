@@ -19,7 +19,7 @@ import { Notify } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();

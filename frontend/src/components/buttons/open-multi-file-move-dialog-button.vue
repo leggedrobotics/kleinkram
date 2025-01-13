@@ -19,7 +19,7 @@ import { computed } from 'vue';
 import MoveFiles from '../../dialogs/modify-file-location-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/mission.dto';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 
 const $q = useQuasar();
 
