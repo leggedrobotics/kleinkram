@@ -12,10 +12,19 @@ import {
     UserDto,
     UsersDto,
 } from '@common/api/types/user.dto';
+import { IsString } from 'class-validator';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
 import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
+import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
+import { ApiProperty } from '@nestjs/swagger';
+
+class SearchUserDto {
+    @IsString()
+    @ApiProperty()
+    search!: string;
+}
 
 @Controller('user')
 export class UserController {
@@ -37,11 +46,8 @@ export class UserController {
         description: 'All users',
         type: UsersDto,
     })
-    async allUsers(
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<UsersDto> {
-        return this.userService.findAll(skip, take);
+    async allUsers(@Query() query: PaginatedQueryDto): Promise<UsersDto> {
+        return this.userService.findAll(query.skip, query.take);
     }
 
     @Get('me')
@@ -82,11 +88,9 @@ export class UserController {
     @LoggedIn()
     @OutputDto(null) // TODO: Add type
     async search(
-        @QueryString('search', 'Searchkey on name or email') search: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: SearchUserDto & PaginatedQueryDto,
     ): Promise<UsersDto> {
-        return this.userService.search(search, skip, take);
+        return this.userService.search(query.search, query.skip, query.take);
     }
 
     @Get('permissions')

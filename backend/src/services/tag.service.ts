@@ -282,13 +282,13 @@ export class TagService {
     }
 
     async getFiltered(
-        name: string,
+        name: string | undefined,
         type: DataType | undefined,
         skip: number,
         take: number,
     ): Promise<TagTypesDto> {
         const where: FindOptionsWhere<TagType> = {};
-        if (name !== '') {
+        if (name !== '' && name !== undefined) {
             where.name = ILike(`%${name}%`);
         }
         if (type !== undefined && type !== DataType.ANY) {

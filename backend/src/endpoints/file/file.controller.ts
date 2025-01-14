@@ -23,6 +23,7 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
+import { PaginatedQueryDto } from '@common/api/types/pagination.dto':
 import {
     QueryBoolean,
     QueryOptionalDate,
@@ -54,12 +55,46 @@ import {
     FileExistsResponseDto,
     TemporaryFileAccessesDto,
 } from '@common/api/types/file/access.dto';
+import { IsEnum, IsString, IsUUID, IsOptional, IsArray } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+class OneByNameFileDto {
+    @IsUUID()
+    @ApiProperty()
+    uuid!: string;
+
+    @IsString()
+    @ApiProperty()
+    filename!: string;
+}
+
+class OfMissionFileDto {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    filename?: string;
+
+    @IsOptional()
+    @IsEnum(FileType)
+    @ApiProperty()
+    filetype: FileType = FileType.ALL;
+
+    @IsUUID()
+    @ApiProperty()
+    uuid!: string; // mission uuid
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    @ApiProperty()
+    categories?: string[];
+}
 
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(private readonly fileService: FileService) { }
 
     @Get('all')
     @UserOnly()
@@ -237,28 +272,18 @@ export class FileController {
         type: FilesDto,
     })
     async getFilesOfMission(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QueryOptionalString('filename', 'Filename filter') filename: string,
-        @QueryOptionalString('fileType', 'Filetype filter') fileType: string,
-        @QueryOptionalStringArray(
-            'categories',
-            'Categories to filter by (logical OR)',
-        )
-        categories: string[],
+        @Query() query: PaginatedQueryDto & OfMissionFileDto,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
         @QueryOptionalString('health', 'File health') health: string,
     ): Promise<FilesDto> {
         return this.fileService.findByMission(
-            uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            filename,
-            // TODO: fix the following, it's ugly
-            fileType === '' ? FileType.ALL : (fileType as FileType),
-            categories,
+            query.uuid,
+            query.take,
+            query.skip,
+            query.filename,
+            query.filetype,
+            query.categories,
             sort,
             sortDirection,
             health,
@@ -286,11 +311,8 @@ export class FileController {
     @Get('oneByName')
     @CanReadMission()
     @OutputDto(null) // TODO: type API response
-    async getOneFileByName(
-        @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
-        @QueryString('filename', 'Filename searched for') name: string,
-    ) {
-        return this.fileService.findOneByName(uuid, name);
+    async getOneFileByName(@Query() query: OneByNameFileDto) {
+        return this.fileService.findOneByName(query.uuid, query.filename);
     }
 
     @Delete(':uuid')

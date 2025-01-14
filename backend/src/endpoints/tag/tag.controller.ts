@@ -9,11 +9,7 @@ import {
     LoggedIn,
 } from '../auth/roles.decorator';
 import { BodyNotNull, BodyUUID } from '../../validation/body-decorators';
-import {
-    QueryOptionalString,
-    QuerySkip,
-    QueryTake,
-} from '../../validation/query-decorators';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { ApiOkResponse } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
@@ -21,6 +17,19 @@ import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
 import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
 import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
+import { ApiProperty } from '@nestjs/swagger';
+
+class FilteredTagQueryDto {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    name?: string;
+
+    @IsOptional()
+    @IsEnum(DataType)
+    @ApiProperty()
+    type?: DataType;
+}
 
 @Controller('tag')
 export class TagController {
@@ -88,12 +97,13 @@ export class TagController {
         type: TagTypesDto,
     })
     async getFiltered(
-        @QueryOptionalString('name', 'Filter by TagType name') name: string,
-        @QueryOptionalString('type', 'Filter by TagType datatype')
-        type: DataType,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: FilteredTagQueryDto & PaginatedQueryDto,
     ): Promise<TagTypesDto> {
-        return this.tagService.getFiltered(name, type, skip, take);
+        return this.tagService.getFiltered(
+            query.name,
+            query.type,
+            query.skip,
+            query.take,
+        );
     }
 }
