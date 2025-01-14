@@ -130,7 +130,7 @@ import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
 import { useHandler, useProjectQuery } from '../../hooks/query-hooks';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { missionColumns } from './explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/tags.dto';
 

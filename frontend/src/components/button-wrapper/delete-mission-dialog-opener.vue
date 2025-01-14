@@ -21,7 +21,7 @@
 import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
 import { computed } from 'vue';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
 
 const $q = useQuasar();

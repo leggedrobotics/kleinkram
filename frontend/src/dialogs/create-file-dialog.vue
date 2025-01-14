@@ -27,7 +27,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from './base-dialog.vue';
 import { Ref, ref } from 'vue';
-import { FlatMissionDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import CreateFile from '@components/create-file.vue';
 

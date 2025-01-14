@@ -359,9 +359,9 @@ import {
 } from '../hooks/query-hooks';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { useRouter } from 'vue-router';
-import { FlatMissionDto } from '@api/types/mission.dto';
-import { FileWithTopicDto } from '@api/types/files/file.dto';
-import { FilesDto } from '@api/types/files/files.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FilesDto } from '@api/types/file/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import DeleteFileDialogOpener from '@components/button-wrapper/delete-file-dialog-opener.vue';

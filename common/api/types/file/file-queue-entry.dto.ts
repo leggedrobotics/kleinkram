@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { FileLocation, QueueState } from '../../frontend_shared/enum';
-import { UserDto } from './user.dto';
+import { FileLocation, QueueState } from '../../../frontend_shared/enum';
+import { UserDto } from '../user.dto';
 import {
     IsDate,
     IsEnum,
@@ -10,10 +10,10 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaggedResponse } from './pagged-response';
-import { IsSkip } from '../../validation/skip-validation';
-import { IsTake } from '../../validation/take-validation';
-import { MissionDto } from './mission.dto';
+import { Paginated } from '../pagination';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
+import { MissionDto } from '../mission/mission.dto';
 
 export class FileQueueEntryDto {
     @ApiProperty()
@@ -59,7 +59,7 @@ export class FileQueueEntryDto {
     mission!: MissionDto;
 }
 
-export class FileQueueEntriesDto implements PaggedResponse<FileQueueEntryDto> {
+export class FileQueueEntriesDto implements Paginated<FileQueueEntryDto> {
     @ApiProperty({
         type: [FileQueueEntryDto],
         description: 'List of file queue entries',

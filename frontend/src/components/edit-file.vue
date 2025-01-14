@@ -141,7 +141,7 @@ import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from '../dialogs/base-dialog.vue';
 import { useFile, useMissionsOfProjectMinimal } from '../hooks/query-hooks';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import {
     ProjectDto,
     ProjectWithCreator,

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
-import { PaggedResponse } from './pagged-response';
+import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
 import { Type } from 'class-transformer';
@@ -23,7 +23,7 @@ export class TopicDto {
     frequency!: number;
 }
 
-export class TopicsDto implements PaggedResponse<TopicDto> {
+export class TopicsDto implements Paginated<TopicDto> {
     @ApiProperty({
         type: [TopicDto],
         description: 'List of topics',
@@ -45,7 +45,7 @@ export class TopicsDto implements PaggedResponse<TopicDto> {
     count!: number;
 }
 
-export class TopicNamesDto implements PaggedResponse<string> {
+export class TopicNamesDto implements Paginated<string> {
     @ApiProperty()
     @IsNumber()
     count!: number;

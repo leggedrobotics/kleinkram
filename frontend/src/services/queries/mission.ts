@@ -1,6 +1,7 @@
 import axios from 'src/api/axios';
-import { MissionsDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionsDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { AxiosResponse } from 'axios';
+import qs from 'qs';
 
 export const getMission = async (
     uuid: string | undefined,
@@ -89,7 +90,14 @@ export const missionsOfProject = async (
 export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
         '/mission/many',
-        { params: { missionUuids: uuids } },
+        {
+            params: { missionUuids: uuids },
+            paramsSerializer: (params) => {
+                return qs.stringify(params, {
+                    arrayFormat: 'repeat',
+                });
+            },
+        },
     );
     return response.data;
 };

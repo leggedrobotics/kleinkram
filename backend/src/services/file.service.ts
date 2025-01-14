@@ -56,14 +56,14 @@ import Credentials from 'minio/dist/main/Credentials';
 import { BucketItem } from 'minio';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { FilesDto } from '@common/api/types/files/files.dto';
-import { FileWithTopicDto } from '@common/api/types/files/file.dto';
+import { FilesDto } from '@common/api/types/file/files.dto';
+import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import {
     FileExistsResponseDto,
     TemporaryFileAccessDto,
     TemporaryFileAccessesDto,
-} from '@common/api/types/files/access.dto';
+} from '@common/api/types/file/access.dto';
 
 // Type guard function to check if the error has a 'code' property
 function isErrorWithCode(error: unknown): error is { code: string } {

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MissionDto } from '../mission.dto';
+import { MissionDto } from '../mission/mission.dto';
 import { CategoryDto } from '../category.dto';
 import { FileState, FileType } from '../../../frontend_shared/enum';
 import { UserDto } from '../user.dto';

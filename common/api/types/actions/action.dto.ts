@@ -11,13 +11,13 @@ import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
 import { Type } from 'class-transformer';
 import { AuditLogDto } from './audit-log.dto';
 import { LogsDto } from './logs.dto';
-import { MissionDto } from '../mission.dto';
+import { MissionDto } from '../mission/mission.dto';
 import { DockerImageDto } from './docker-image.dto';
 import { UserDto } from '../user.dto';
 import { ActionWorkerDto } from '../action-workers.dto';
 
 import { ActionTemplateDto } from './action-template.dto';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 
@@ -86,7 +86,7 @@ export class ActionDto {
     worker!: ActionWorkerDto;
 }
 
-export class ActionsDto implements PaggedResponse<ActionDto> {
+export class ActionsDto implements Paginated<ActionDto> {
     @ApiProperty()
     @IsNumber()
     count!: number;

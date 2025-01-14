@@ -2,9 +2,9 @@ import axios from 'src/api/axios';
 import { FileType } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { AxiosResponse } from 'axios';
-import { FileWithTopicDto } from '@api/types/files/file.dto';
-import { FilesDto } from '@api/types/files/files.dto';
-import { IsUploadingDto } from '@api/types/files/is-uploading.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FilesDto } from '@api/types/file/files.dto';
+import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
 
 export const fetchOverview = async (
     filename: string,

@@ -8,7 +8,7 @@
 import { useQuasar } from 'quasar';
 import CreateFileDialog from '../../dialogs/create-file-dialog.vue';
 import { inject } from 'vue';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const $q = useQuasar();
 const properties = defineProps<{

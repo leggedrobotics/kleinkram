@@ -367,7 +367,7 @@ import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/tags/tags.dto';
 import { CategoryDto } from '@api/types/category.dto';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';

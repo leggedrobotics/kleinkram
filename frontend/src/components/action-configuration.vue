@@ -266,7 +266,7 @@ import { ProjectWithMissionCountDto } from '@api/types/project/project-with-miss
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionSelector from '@components/action-selector.vue';
 import { AccessGroupRights } from '@common/enum';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 

@@ -118,7 +118,7 @@ import {
     useHandler,
     usePermissionsQuery,
 } from '../hooks/query-hooks';
-import { FlatMissionDto, MissionsDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';

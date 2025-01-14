@@ -22,7 +22,7 @@ import {
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@common/api/types/mission.dto';
+} from '@common/api/types/mission/mission.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 

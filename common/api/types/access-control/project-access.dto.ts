@@ -11,7 +11,7 @@ import {
     IsString,
     ValidateNested,
 } from 'class-validator';
-import { PaggedResponse } from '../pagged-response';
+import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { Type } from 'class-transformer';
@@ -58,7 +58,7 @@ export class ProjectAccessDto {
     rights!: AccessGroupRights;
 }
 
-export class ProjectAccessListDto implements PaggedResponse<ProjectAccessDto> {
+export class ProjectAccessListDto implements Paginated<ProjectAccessDto> {
     @ApiProperty({
         type: [ProjectAccessDto],
         isArray: true,

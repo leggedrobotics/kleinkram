@@ -61,7 +61,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { moveMission } from 'src/services/mutations/mission';
-import { MissionWithFilesDto } from '@api/types/mission.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { useFilteredProjects } from '../hooks/query-hooks';
 
 import { ProjectDto } from '@api/types/project/base-project.dto';

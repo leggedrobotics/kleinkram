@@ -17,9 +17,9 @@ import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { QueryClient } from '@tanstack/vue-query';
 import SparkMD5 from 'spark-md5';
-import { FlatMissionDto, MissionDto } from '@api/types/mission.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
 import { AxiosError } from 'axios';
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const confirmDialog = (event: BeforeUnloadEvent): void => {

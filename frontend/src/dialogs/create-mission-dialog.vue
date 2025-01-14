@@ -153,7 +153,7 @@ import {
     usePermissionsQuery,
     useProjectQuery,
 } from '../hooks/query-hooks';
-import { FlatMissionDto } from '@api/types/mission.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import SelectMissionTags from '@components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';

@@ -1,6 +1,6 @@
 import axios from 'src/api/axios';
 
-import { FileWithTopicDto } from '@api/types/files/file.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 
 export const confirmUpload = async (uuid: string, md5: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid, md5 });
