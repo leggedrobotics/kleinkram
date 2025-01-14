@@ -21,6 +21,7 @@ import {
     QueryOptionalUUIDArray,
 } from '../../validation/query-decorators';
 import { Query } from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUID } from '../../validation/body-decorators';
 import { MISSION_NAME_REGEX } from '../../validation/validation-logic';
@@ -76,6 +77,7 @@ export class MissionController {
         type: MissionsDto,
     })
     async getMany(
+        @Query('foo') foo: string[],
         @Query() query: MissionQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {

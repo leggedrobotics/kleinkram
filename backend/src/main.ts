@@ -84,8 +84,14 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
+        yamlDocumentUrl: 'swagger/yaml',
         swaggerUiEnabled: false,
     });
+
+    if (environment.DEV) {
+        logger.debug('Enabling Swagger UI');
+        SwaggerModule.setup('swagger/ui', app, document);
+    }
 
     await app.listen(3000);
     logger.debug('Listening on port 3000');

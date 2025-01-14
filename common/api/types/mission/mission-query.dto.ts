@@ -8,6 +8,8 @@ import {
     IsString,
     IsUUID,
 } from 'class-validator';
+
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class MissionQueryDto extends ProjectQueryDto {
@@ -16,6 +18,7 @@ export class MissionQueryDto extends ProjectQueryDto {
     @IsArray()
     @ArrayNotEmpty()
     @IsUUID('4', { each: true })
+    @ApiProperty()
     missionUuids?: string[];
 
     @IsOptional()
@@ -23,10 +26,12 @@ export class MissionQueryDto extends ProjectQueryDto {
     @IsArray()
     @ArrayNotEmpty()
     @IsString({ each: true })
+    @ApiProperty()
     missionPatterns?: string[];
 
     @IsOptional()
     @IsNotEmptyObject()
     @IsRecordStringString()
+    @ApiProperty()
     metadata?: Record<string, string>;
 }

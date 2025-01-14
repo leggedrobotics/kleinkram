@@ -1,5 +1,6 @@
 import { IsInt, IsOptional, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 const MAX_TAKE = 10_000;
 const DEFAULT_TAKE = 100;
@@ -9,6 +10,7 @@ export class PaginatedQueryDto {
     @IsInt()
     @Min(0)
     @Type(() => Number)
+    @ApiProperty()
     skip: number = 0;
 
     @IsOptional()
@@ -16,6 +18,7 @@ export class PaginatedQueryDto {
     @Min(0)
     @Max(MAX_TAKE)
     @Type(() => Number)
+    @ApiProperty()
     take: number = DEFAULT_TAKE;
 }
 
