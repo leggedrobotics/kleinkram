@@ -1,5 +1,5 @@
 import { IsArray, IsString, IsOptional, IsUUID } from 'class-validator';
-import { PaginatedQueryDto } from '../pagination';
+import { PaginatedQueryDto } from '../pagination.dto';
 import { Transform } from 'class-transformer';
 
 export class ProjectQueryDto extends PaginatedQueryDto {

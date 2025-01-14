@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { TagService } from '../../services/tag.service';
 import { DataType } from '@common/frontend_shared/enum';
+import { Query } from '@nestjs/common';
 import {
     CanAddTag,
     CanCreate,
@@ -19,6 +20,7 @@ import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
 import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
+import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
 
 @Controller('tag')
 export class TagController {
@@ -75,11 +77,8 @@ export class TagController {
         description: 'Returns all TagTypes',
         type: TagTypesDto,
     })
-    async getAll(
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<TagTypesDto> {
-        return this.tagService.getAll(skip, take);
+    async getAll(@Query() query: PaginatedQueryDto): Promise<TagTypesDto> {
+        return this.tagService.getAll(query.skip, query.take);
     }
 
     @Get('filtered')

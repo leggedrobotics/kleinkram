@@ -8,7 +8,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { AccessGroupRights } from '../../../frontend_shared/enum';
-import { Paginated } from '../pagination';
+import { Paginated } from '../pagination.dto';
 import { Type } from 'class-transformer';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';

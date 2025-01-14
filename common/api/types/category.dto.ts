@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Paginated } from './pagination';
+import { Paginated } from './pagination.dto';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { IsTake } from '../../validation/take-validation';
 import { IsSkip } from '../../validation/skip-validation';

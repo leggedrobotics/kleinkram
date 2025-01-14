@@ -10,7 +10,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Paginated } from '../pagination';
+import { Paginated } from '../pagination.dto';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { MissionDto } from '../mission/mission.dto';

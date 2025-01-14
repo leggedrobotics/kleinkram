@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FileDto } from './file.dto';
-import { Paginated } from '../pagination';
+import { Paginated } from '../pagination.dto';
 import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsTake } from '../../../validation/take-validation';

@@ -1,4 +1,4 @@
-import { Paginated } from '../pagination';
+import { Paginated } from '../pagination.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';

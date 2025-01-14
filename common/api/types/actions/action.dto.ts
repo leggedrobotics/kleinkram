@@ -17,7 +17,7 @@ import { UserDto } from '../user.dto';
 import { ActionWorkerDto } from '../action-workers.dto';
 
 import { ActionTemplateDto } from './action-template.dto';
-import { Paginated } from '../pagination';
+import { Paginated } from '../pagination.dto';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 
