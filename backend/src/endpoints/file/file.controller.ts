@@ -23,14 +23,12 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
-import { PaginatedQueryDto } from '@common/api/types/pagination.dto':
+import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
 import {
     QueryBoolean,
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
-    QueryOptionalStringArray,
-    QueryOptionalUUIDArray,
     QueryOptionalUUID,
     QuerySkip,
     QuerySortBy,
@@ -94,7 +92,7 @@ import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) { }
+    constructor(private readonly fileService: FileService) {}
 
     @Get('all')
     @UserOnly()
