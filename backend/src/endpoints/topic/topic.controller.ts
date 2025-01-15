@@ -1,7 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { TopicService } from '../../services/topic.service';
 import { LoggedIn } from '../auth/roles.decorator';
-import { QuerySkip, QueryTake } from '../../validation/query-decorators';
+import { Query } from '@nestjs/common';
+import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
 import { ApiOkResponse } from '../../decarators';
 import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
@@ -18,8 +19,7 @@ export class TopicController {
     })
     async allTopics(
         @AddUser() user: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() { skip, take }: PaginatedQueryDto,
     ): Promise<TopicsDto> {
         return await this.topicService.findAll(user.user.uuid, skip, take);
     }
