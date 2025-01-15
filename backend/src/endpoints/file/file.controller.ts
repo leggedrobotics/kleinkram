@@ -17,27 +17,12 @@ import {
     CanDeleteMission,
     CanMoveFiles,
     CanReadFile,
-    CanReadFileByName,
     CanReadMission,
     CanWriteFile,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
 import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
-import {
-    QueryBoolean,
-    QueryOptionalDate,
-    QueryOptionalRecord,
-    QueryOptionalString,
-    QueryOptionalUUID,
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryString,
-    QueryTake,
-    QueryUUID,
-} from '../../validation/query-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
 import env from '@common/environment';
@@ -53,8 +38,24 @@ import {
     FileExistsResponseDto,
     TemporaryFileAccessesDto,
 } from '@common/api/types/file/access.dto';
-import { IsEnum, IsString, IsUUID, IsOptional, IsArray } from 'class-validator';
+import {
+    IsEnum,
+    IsString,
+    IsUUID,
+    IsOptional,
+    IsArray,
+    IsDate,
+    IsIn,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
+
+import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+class OnlyUuidParams {
+    @IsUUID()
+    @ApiProperty()
+    uuid!: string;
+}
 
 class OneByNameFileDto {
     @IsUUID()
@@ -88,7 +89,106 @@ class OfMissionFileDto {
     categories?: string[];
 }
 
-import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+class SortParams {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    sort: string = 'uuid';
+
+    @IsOptional()
+    @IsIn(['ASC', 'DESC'])
+    @ApiProperty()
+    sortDirection: 'ASC' | 'DESC' = 'ASC';
+}
+
+class FilteredParams {
+    @IsString()
+    @ApiProperty()
+    fileName!: string;
+
+    @IsUUID()
+    @ApiProperty()
+    projectUUID!: string;
+
+    @IsUUID()
+    @ApiProperty()
+    missionUUID!: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    @ApiProperty()
+    topics?: string[];
+}
+
+class ExistsParams {
+    @IsUUID()
+    @ApiProperty()
+    uuid!: string;
+}
+
+class DateRangeParams {
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    @ApiProperty()
+    startDate?: Date;
+
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    @ApiProperty()
+    endDate?: Date;
+}
+
+class AndOrParam {
+    @IsIn(['true', 'false'])
+    @Transform(({ value }) => value === 'true')
+    @ApiProperty()
+    andOr!: boolean;
+}
+
+class FilteredFilesDto {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    projectName: string = '';
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    missionName: string = '';
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    topics: string = '';
+}
+
+class FileTypeParam {
+    @IsOptional()
+    @IsIn(['bag', 'mcap', 'bag,mcap'])
+    @ApiProperty()
+    fileTypes: string = '';
+}
+
+class DownloadParams {
+    @IsUUID()
+    @ApiProperty()
+    uuid!: string;
+
+    @IsIn(['true', 'false'])
+    @Transform(({ value }) => value === 'true')
+    @ApiProperty()
+    expires!: boolean;
+}
+
+class HealthParam {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    health: string = '';
+}
 
 @Controller('file')
 export class FileController {
@@ -101,13 +201,13 @@ export class FileController {
         type: FilesDto,
     })
     async allFiles(
+        @Query() { take, skip }: PaginatedQueryDto,
         @AddUser() auth: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
     ): Promise<FilesDto> {
         return await this.fileService.findAll(auth.user.uuid, take, skip);
     }
 
+    // TODO: remove this endpoint, it is not used anywhere
     @Get('filteredByNames')
     @UserOnly()
     @ApiOkResponse({
@@ -115,31 +215,18 @@ export class FileController {
         type: FilesDto,
     })
     async filteredByNames(
-        @QueryOptionalString(
-            'projectName',
-            'Name of a Project (or part there of)',
-        )
-        projectName: string,
-        @QueryOptionalString(
-            'missionName',
-            'Name of a Mission (or part there of)',
-        )
-        missionName: string,
-        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
-        topics: string,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
-        tags: Record<string, any>,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: PaginatedQueryDto & FilteredFilesDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
+        const tags = {}; // TODO allow for querying by tags
+
         return await this.fileService.findFilteredByNames(
-            projectName,
-            missionName,
-            topics,
+            query.projectName,
+            query.missionName,
+            query.topics,
             auth.user.uuid,
-            take,
-            skip,
+            query.take,
+            query.skip,
             tags,
         );
     }
@@ -171,75 +258,39 @@ export class FileController {
         type: FilesDto,
     })
     async filteredFiles(
-        @QueryOptionalString('fileName', 'Filter for Filename')
-        fileName: string,
-        @QueryOptionalUUID('projectUUID', 'UUID of Project to filter by')
-        projectUUID: string,
-        @QueryOptionalUUID('missionUUID', 'UUID of Mission to filter by')
-        missionUUID: string,
-        @QueryOptionalDate(
-            'startDate',
-            'Date specifying the start of the filtered time range',
-        )
-        startDate: Date | undefined,
-        @QueryOptionalDate(
-            'endDate',
-            'Date specifying the end of the filtered time range',
-        )
-        endDate: Date | undefined,
-        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
-        topics: string,
-        @QueryOptionalString(
-            'fileTypes',
-            "Filetypes: 'bag' | 'mcap' | 'bag,mcap' ",
-        )
-        fileTypes: string,
-        @QueryBoolean(
-            'andOr',
-            'Returned File needs all specified topics (true) or any specified topics (false)',
-        )
-        andOr: boolean,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
-        tags: Record<string, any>,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @Query()
+        query: PaginatedQueryDto &
+            SortParams &
+            DateRangeParams &
+            AndOrParam &
+            FileTypeParam &
+            FilteredParams,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
-        let _missionUUID = missionUUID;
-        if (auth.apikey) {
-            _missionUUID = auth.apikey.mission.uuid;
-        }
+        const tags = {}; // TODO allow for querying by tags
+
         return await this.fileService.findFiltered(
-            fileName,
-            projectUUID,
-            _missionUUID,
-            startDate,
-            endDate,
-            topics,
-            andOr,
-            fileTypes,
+            query.fileName,
+            query.projectUUID,
+            query.missionUUID,
+            query.startDate,
+            query.endDate,
+            '', // query.topics,
+            query.andOr,
+            query.fileTypes,
             tags, // todo check if this is correct
             auth.user.uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            sort,
-            sortDirection,
+            query.take,
+            query.skip,
+            query.sort,
+            query.sortDirection,
         );
     }
 
     @Get('download')
     @CanReadFile()
     @OutputDto(null) // TODO: type API response
-    async download(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
-        @QueryBoolean(
-            'expires',
-            'Whether the download link should stay valid for on week (false) or 4h (true)',
-        )
-        expires: boolean,
-    ) {
+    async download(@Query() { uuid, expires }: DownloadParams) {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
         return this.fileService.generateDownload(uuid, expires);
     }
@@ -251,16 +302,9 @@ export class FileController {
         type: FileWithTopicDto,
     })
     async getFileById(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
+        @Query() { uuid }: OnlyUuidParams,
     ): Promise<FileWithTopicDto> {
         return this.fileService.findOne(uuid);
-    }
-
-    @Get('byName')
-    @CanReadFileByName()
-    @OutputDto(null) // TODO: type API response
-    async getFileByName(@QueryString('name', 'Filename') name: string) {
-        return this.fileService.findByFilename(name);
     }
 
     @Get('ofMission')
@@ -270,10 +314,8 @@ export class FileController {
         type: FilesDto,
     })
     async getFilesOfMission(
-        @Query() query: PaginatedQueryDto & OfMissionFileDto,
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: string,
+        @Query()
+        query: PaginatedQueryDto & OfMissionFileDto & SortParams & HealthParam,
     ): Promise<FilesDto> {
         return this.fileService.findByMission(
             query.uuid,
@@ -282,17 +324,17 @@ export class FileController {
             query.filename,
             query.filetype,
             query.categories,
-            sort,
-            sortDirection,
-            health,
+            query.sort,
+            query.sortDirection,
+            query.health,
         );
     }
 
     @Put(':uuid')
     @CanWriteFile()
     @OutputDto(null) // TODO: type API response
-    async update(@ParameterUID('uuid') uuid: string, @Body() dto: UpdateFile) {
-        return this.fileService.update(uuid, dto);
+    async update(@Query() query: OnlyUuidParams, @Body() dto: UpdateFile) {
+        return this.fileService.update(query.uuid, dto);
     }
 
     @Post('moveFiles')
@@ -316,8 +358,8 @@ export class FileController {
     @Delete(':uuid')
     @CanDeleteFile()
     @OutputDto(null) // TODO: type API response
-    async deleteFile(@ParameterUID('uuid') uuid: string): Promise<void> {
-        await this.fileService.deleteFile(uuid);
+    async deleteFile(@Query() query: OnlyUuidParams): Promise<void> {
+        await this.fileService.deleteFile(query.uuid);
     }
 
     @Get('storage')
@@ -396,10 +438,8 @@ export class FileController {
         description: 'File exists',
         type: FileExistsResponseDto,
     })
-    async exists(
-        @QueryUUID('uuid', 'FileUUID searched') uuid: string,
-    ): Promise<FileExistsResponseDto> {
-        return this.fileService.exists(uuid);
+    async exists(@Query() query: ExistsParams): Promise<FileExistsResponseDto> {
+        return this.fileService.exists(query.uuid);
     }
 
     @Post('resetMinioTags')
