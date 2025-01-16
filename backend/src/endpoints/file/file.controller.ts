@@ -6,6 +6,7 @@ import {
     Post,
     Put,
     Query,
+    Param,
 } from '@nestjs/common';
 import { FileService } from '../../services/file.service';
 import { UpdateFile } from '@common/api/types/update-file.dto';
@@ -22,7 +23,6 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
-import { PaginatedQueryDto } from '@common/api/types/pagination.dto';
 import { FileType } from '@common/frontend_shared/enum';
 import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
 import env from '@common/environment';
@@ -30,7 +30,6 @@ import { ApiOkResponse, OutputDto } from '../../decarators';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
 import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
@@ -194,50 +193,31 @@ class HealthParam {
 export class FileController {
     constructor(private readonly fileService: FileService) {}
 
-    @Get('all')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async allFiles(
-        @Query() { take, skip }: PaginatedQueryDto,
+    @Post('') // create file
+    async getTemporaryAccess(
         @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        return await this.fileService.findAll(auth.user.uuid, take, skip);
+        @Body() body: CreatePreSignedURLSDto,
+    ): Promise<TemporaryFileAccessesDto> {
+        throw new Error('Not implemented');
     }
 
-    // TODO: remove this endpoint, it is not used anywhere
-    @Get('filteredByNames')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async filteredByNames(
-        @Query() query: PaginatedQueryDto & FilteredFilesDto,
-        @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        const tags = {}; // TODO allow for querying by tags
-
-        return await this.fileService.findFilteredByNames(
-            query.projectName,
-            query.missionName,
-            query.topics,
-            auth.user.uuid,
-            query.take,
-            query.skip,
-            tags,
-        );
+    @Get(':uuid')
+    async getFileById(@Param('uuid') uuid: string): Promise<FileWithTopicDto> {
+        throw new Error('Not implemented');
     }
 
-    @Get('many')
-    @LoggedIn()
-    @ApiOkResponse({
-        description: 'Many Files',
-        type: FilesDto,
-    })
-    async getMany(@Query() query: FileQueryDto, @AddUser() auth: AuthHeader) {
+    @Put(':uuid')
+    async update(@Param('uuid') uuid: string, @Body() dto: UpdateFile) {
+        throw new Error('Not implemented');
+    }
+
+    @Delete(':uuid')
+    async deleteFile(@Param('uuid') uuid: string): Promise<void> {
+        throw new Error('Not implemented');
+    }
+
+    @Get('')
+    async getFiles(@Query() query: FileQueryDto, @AddUser() auth: AuthHeader) {
         return await this.fileService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -251,195 +231,30 @@ export class FileController {
         );
     }
 
-    @Get('filtered')
-    @LoggedIn()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async filteredFiles(
-        @Query()
-        query: PaginatedQueryDto &
-            SortParams &
-            DateRangeParams &
-            AndOrParam &
-            FileTypeParam &
-            FilteredParams,
-        @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        const tags = {}; // TODO allow for querying by tags
-
-        return await this.fileService.findFiltered(
-            query.fileName,
-            query.projectUUID,
-            query.missionUUID,
-            query.startDate,
-            query.endDate,
-            '', // query.topics,
-            query.andOr,
-            query.fileTypes,
-            tags, // todo check if this is correct
-            auth.user.uuid,
-            query.take,
-            query.skip,
-            query.sort,
-            query.sortDirection,
-        );
+    @Delete('')
+    async deleteMultiple(): Promise<void> {
+        throw new Error('Not implemented');
     }
 
-    @Get('download')
-    @CanReadFile()
-    @OutputDto(null) // TODO: type API response
-    async download(@Query() { uuid, expires }: DownloadParams) {
-        logger.debug(`download ${uuid}: expires=${expires.toString()}`);
-        return this.fileService.generateDownload(uuid, expires);
+    @Post(':uuid/download')
+    async download(@Param('uuid') uuid: string) {
+        throw new Error('Not implemented');
     }
 
-    @Get('one')
-    @CanReadFile()
-    @ApiOkResponse({
-        description: 'File',
-        type: FileWithTopicDto,
-    })
-    async getFileById(
-        @Query() { uuid }: OnlyUuidParams,
-    ): Promise<FileWithTopicDto> {
-        return this.fileService.findOne(uuid);
+    @Get('uploads')
+    async isUploading(): Promise<IsUploadingDto> {
+        throw new Error('Not implemented');
     }
 
-    @Get('ofMission')
-    @CanReadMission()
-    @ApiOkResponse({
-        description: 'Files of a Mission',
-        type: FilesDto,
-    })
-    async getFilesOfMission(
-        @Query()
-        query: PaginatedQueryDto & OfMissionFileDto & SortParams & HealthParam,
-    ): Promise<FilesDto> {
-        return this.fileService.findByMission(
-            query.uuid,
-            query.take,
-            query.skip,
-            query.filename,
-            query.filetype,
-            query.categories,
-            query.sort,
-            query.sortDirection,
-            query.health,
-        );
-    }
-
-    @Put(':uuid')
-    @CanWriteFile()
-    @OutputDto(null) // TODO: type API response
-    async update(@Query() query: OnlyUuidParams, @Body() dto: UpdateFile) {
-        return this.fileService.update(query.uuid, dto);
-    }
-
-    @Post('moveFiles')
-    @CanMoveFiles()
-    @OutputDto(null) // TODO: type API response
-    async moveFiles(
-        @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
-        fileUUIDs: string[],
-        @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
-    ) {
-        return this.fileService.moveFiles(fileUUIDs, missionUUID);
-    }
-
-    @Get('oneByName')
-    @CanReadMission()
-    @OutputDto(null) // TODO: type API response
-    async getOneFileByName(@Query() query: OneByNameFileDto) {
-        return this.fileService.findOneByName(query.uuid, query.filename);
-    }
-
-    @Delete(':uuid')
-    @CanDeleteFile()
-    @OutputDto(null) // TODO: type API response
-    async deleteFile(@Query() query: OnlyUuidParams): Promise<void> {
-        await this.fileService.deleteFile(query.uuid);
+    @Delete('uploads/:uuid')
+    async cancelUpload(@Param('uuid') uuid: string): Promise<void> {
+        throw new Error('Not implemented');
     }
 
     @Get('storage')
-    @ApiOkResponse({
-        description: 'Storage information',
-        type: StorageOverviewDto,
-    })
     @LoggedIn()
     async getStorage(): Promise<StorageOverviewDto> {
         return this.fileService.getStorage();
-    }
-
-    @Get('isUploading')
-    @LoggedIn()
-    @ApiOkResponse({
-        description: 'Indicates if the current API user is uplaoding any files',
-        type: IsUploadingDto,
-    })
-    async isUploading(
-        @Query() _query: NoQueryParametersDto,
-        @AddUser() auth: AuthHeader,
-    ): Promise<IsUploadingDto> {
-        return {
-            isUploading: await this.fileService.isUploading(auth.user.uuid),
-        };
-    }
-
-    @Post('temporaryAccess')
-    @CanCreateInMissionByBody()
-    @OutputDto(null) // TODO: type API response
-    async getTemporaryAccess(
-        @AddUser() auth: AuthHeader,
-        @Body() body: CreatePreSignedURLSDto,
-    ): Promise<TemporaryFileAccessesDto> {
-        return await this.fileService.getTemporaryAccess(
-            body.filenames,
-            body.missionUUID,
-            auth.user.uuid,
-        );
-    }
-
-    @Post('cancelUpload')
-    @UserOnly() //Push back authentication to the queue to accelerate the request
-    // TODO: type API response
-    async cancelUpload(
-        @BodyUUIDArray(
-            'uuids',
-            "File UUIDs who, if they aren't 'OK', are deleted",
-        )
-        uuids: string[],
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @AddUser() auth: AuthHeader,
-    ) {
-        logger.debug(`cancelUpload ${uuids.toString()}`);
-        return this.fileService.cancelUpload(
-            uuids,
-            missionUUID,
-            auth.user.uuid,
-        );
-    }
-
-    @Post('deleteMultiple')
-    @CanDeleteMission()
-    @OutputDto(null) // TODO: type API response
-    async deleteMultiple(
-        @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
-        uuids: string[],
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-    ): Promise<void> {
-        return this.fileService.deleteMultiple(uuids, missionUUID);
-    }
-
-    @Get('exists')
-    @CanReadFile()
-    @ApiOkResponse({
-        description: 'File exists',
-        type: FileExistsResponseDto,
-    })
-    async exists(@Query() query: ExistsParams): Promise<FileExistsResponseDto> {
-        return this.fileService.exists(query.uuid);
     }
 
     @Post('resetMinioTags')
