@@ -158,17 +158,6 @@ export class MissionController {
         return this.missionService.findOne(uuid);
     }
 
-    @Get('all')
-    @UserOnly()
-    @OutputDto(null) // TODO: type API response
-    async allMissions(
-        @AddUser() user: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ) {
-        return this.missionService.findAll(user.user.uuid, skip, take);
-    }
-
     @Get('byName')
     @CanReadMissionByName()
     @OutputDto(null) // TODO: type API response
@@ -184,26 +173,6 @@ export class MissionController {
     @OutputDto(null) // TODO: type API response
     async downloadWithToken(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
         return this.missionService.download(uuid);
-    }
-
-    @Get('filteredByProjectName')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions filtered by project name',
-        type: MissionsDto,
-    })
-    async filteredByProjectName(
-        @QueryString('projectName', 'Project Name') projectName: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
-    ): Promise<MissionsDto> {
-        return this.missionService.filteredByProjectName(
-            projectName,
-            user.user.uuid,
-            skip,
-            take,
-        );
     }
 
     @Post('move')
