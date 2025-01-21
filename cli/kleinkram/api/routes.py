@@ -75,7 +75,6 @@ FILE_ENDPOINT = "/file/many"
 MISSION_ENDPOINT = "/mission/many"
 PROJECT_ENDPOINT = "/project/many"
 
-MISSION_BY_NAME = "/mission/byName"
 TAG_TYPE_BY_NAME = "/tag/filtered"
 
 
