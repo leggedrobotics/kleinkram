@@ -579,13 +579,6 @@ export class FileService implements OnModuleInit {
         return fileWithTopicDto;
     }
 
-    async findByFilename(filename: string) {
-        return this.fileRepository.findOne({
-            where: { filename },
-            relations: ['mission', 'topics', 'mission.project'],
-        });
-    }
-
     /**
      * Updates a file with the given uuid.
      * @param uuid

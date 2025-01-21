@@ -54,7 +54,7 @@ describe('Verify File Handling', () => {
 
         // get file uuid by calling /file/oneByName
         const resOneByName = await fetch(
-            `http://localhost:3000/file/byName?name=${filename}`,
+            `http://localhost:3000/file/oneByName?filename=${filename}&uuid=${missionUuid}`,
             {
                 method: 'GET',
                 headers: {

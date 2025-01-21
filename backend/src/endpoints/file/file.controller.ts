@@ -61,56 +61,6 @@ import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 export class FileController {
     constructor(private readonly fileService: FileService) {}
 
-    @Get('all')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async allFiles(
-        @AddUser() auth: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<FilesDto> {
-        return await this.fileService.findAll(auth.user.uuid, take, skip);
-    }
-
-    @Get('filteredByNames')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async filteredByNames(
-        @QueryOptionalString(
-            'projectName',
-            'Name of a Project (or part there of)',
-        )
-        projectName: string,
-        @QueryOptionalString(
-            'missionName',
-            'Name of a Mission (or part there of)',
-        )
-        missionName: string,
-        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
-        topics: string,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
-        tags: Record<string, any>,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        return await this.fileService.findFilteredByNames(
-            projectName,
-            missionName,
-            topics,
-            auth.user.uuid,
-            take,
-            skip,
-            tags,
-        );
-    }
-
     @Get('many')
     @LoggedIn()
     @ApiOkResponse({
@@ -211,6 +161,7 @@ export class FileController {
         return this.fileService.generateDownload(uuid, expires);
     }
 
+    // TODO: replace this with /file/:uuid
     @Get('one')
     @CanReadFile()
     @ApiOkResponse({
@@ -221,13 +172,6 @@ export class FileController {
         @QueryUUID('uuid', 'File UUID') uuid: string,
     ): Promise<FileWithTopicDto> {
         return this.fileService.findOne(uuid);
-    }
-
-    @Get('byName')
-    @CanReadFileByName()
-    @OutputDto(null) // TODO: type API response
-    async getFileByName(@QueryString('name', 'Filename') name: string) {
-        return this.fileService.findByFilename(name);
     }
 
     @Get('ofMission')
