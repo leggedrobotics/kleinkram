@@ -158,16 +158,6 @@ export class MissionController {
         return this.missionService.findOne(uuid);
     }
 
-    @Get('byName')
-    @CanReadMissionByName()
-    @OutputDto(null) // TODO: type API response
-    async getMissionByName(
-        @QueryString('name', 'Mission Name') name: string,
-        @QueryUUID('projectUUID', 'Project UUID') projectUuid: string,
-    ) {
-        return await this.missionService.findOneByName(name, projectUuid);
-    }
-
     @Get('download')
     @CanReadMission()
     @OutputDto(null) // TODO: type API response

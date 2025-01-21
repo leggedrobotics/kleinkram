@@ -347,20 +347,6 @@ export class MissionService {
         );
     }
 
-    async findOneByName(
-        name: string,
-        projectUuid: string,
-    ): Promise<Mission | null> {
-        return this.missionRepository.findOne({
-            where: {
-                name,
-                project: {
-                    uuid: projectUuid,
-                },
-            },
-        });
-    }
-
     async deleteMission(uuid: string): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
