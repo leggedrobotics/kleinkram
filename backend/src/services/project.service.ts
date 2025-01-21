@@ -214,13 +214,6 @@ export class ProjectService {
         return projectDto;
     }
 
-    async findOneByName(name: string): Promise<ProjectWithMissionsDto> {
-        return (await this.projectRepository.findOneOrFail({
-            where: { name },
-            relations: ['requiredTags'],
-        })) as unknown as ProjectWithMissionsDto;
-    }
-
     async getRecentProjects(
         take: number,
         user: User,

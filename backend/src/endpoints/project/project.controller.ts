@@ -158,18 +158,6 @@ export class ProjectController {
         return this.projectService.create(dto, user);
     }
 
-    @Get('byName')
-    @CanReadProjectByName()
-    @ApiOkResponse({
-        description: 'Returns the project',
-        type: ProjectWithMissionsDto,
-    })
-    async getProjectByName(
-        @QueryString('name', 'Project Name') name: string,
-    ): Promise<ProjectWithMissionsDto> {
-        return await this.projectService.findOneByName(name);
-    }
-
     @Delete(':uuid')
     @CanDeleteProject()
     @ApiResponse({
