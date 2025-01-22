@@ -82,7 +82,8 @@
                                             <p v-if="!upload.value.canceled">
                                                 {{
                                                     Math.round(
-                                                        upload.value.getProgress() *
+                                                        (upload.value.uploaded /
+                                                            upload.value.size) *
                                                             100,
                                                     )
                                                 }}%
@@ -162,7 +163,9 @@ watch(isUploading, () =>
 const uploads: any = inject('uploads');
 
 const uploadsWithoutCompleted = computed(() =>
-    uploads.value.filter((upload: any) => upload.value.getProgress() < 1),
+    uploads.value.filter((upload: any) => {
+        return upload.value.uploaded / upload.value.size < 1;
+    }),
 );
 
 const uncompletedUploads = computed(() =>
@@ -210,6 +213,7 @@ const timeEstimated = computed(() => {
     if (remainingSize === 0) return '0 min';
     if (averageUploadSpeed.value === 0) return 'Calculating...';
     const remainingTime = remainingSize / averageUploadSpeed.value;
+    if (Number.isNaN(remainingTime)) return 'Calculating...';
     const ave = Math.round(remainingTime / 60);
     return `${ave.toString()} min`;
 });
