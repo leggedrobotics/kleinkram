@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from '@common/api/types/create-project.dto';
 import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
+import { SelectQueryBuilder } from 'typeorm';
 
 import { convertGlobToLikePattern } from './utils';
 
@@ -144,17 +145,20 @@ export class ProjectService {
         take: number,
         userUuid: string,
     ): Promise<ProjectsDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
+        // maybe we can reuse this at some point
+        const addProjectAccessConstraints = async (
+            query: SelectQueryBuilder<Project>,
+            userId: string,
+        ): Promise<SelectQueryBuilder<Project>> => {
+            const user = await this.userRepository.findOneOrFail({
+                where: { uuid: userId },
+            });
 
-        const query = this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoinAndSelect('project.creator', 'creator');
+            if (user.role === UserRole.ADMIN) {
+                return query;
+            }
 
-        // if not admin, only show projects that the user has access to
-        if (user.role !== UserRole.ADMIN) {
-            query
+            return query
                 .leftJoin('project.project_accesses', 'projectAccesses')
                 .leftJoin('projectAccesses.accessGroup', 'accessGroup')
                 .innerJoin(
@@ -167,7 +171,13 @@ export class ProjectService {
                     rights: AccessGroupRights.READ,
                 })
                 .andWhere('user.uuid = :uuid', { uuid: user.uuid });
-        }
+        };
+
+        let query = this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoinAndSelect('project.creator', 'creator');
+
+        query = await addProjectAccessConstraints(query, userUuid);
 
         query.andWhere(
             new Brackets((qb) => {
