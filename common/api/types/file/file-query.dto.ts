@@ -1,5 +1,11 @@
 import { MissionQueryDto } from '../mission/mission-query.dto';
-import { IsArray, IsOptional, IsString, IsUUID, ArrayNotEmpty } from 'class-validator';
+import {
+    IsArray,
+    IsOptional,
+    IsString,
+    IsUUID,
+    ArrayNotEmpty,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class FileQueryDto extends MissionQueryDto {
@@ -17,14 +23,12 @@ export class FileQueryDto extends MissionQueryDto {
     @IsString({ each: true })
     filePatterns?: string[];
 
-
     @IsOptional()
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
     @IsString({ each: true })
     fileExtensions?: string[];
-
 
     @IsOptional()
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
@@ -33,7 +37,6 @@ export class FileQueryDto extends MissionQueryDto {
     @IsString({ each: true })
     topicPatterns?: string[];
 
-
     @IsOptional()
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
@@ -41,4 +44,3 @@ export class FileQueryDto extends MissionQueryDto {
     @IsString({ each: true })
     categoryPatterns?: string[];
 }
-

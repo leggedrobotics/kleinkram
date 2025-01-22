@@ -46,7 +46,7 @@ export class CategoryController {
     ) {
         return this.categoryService.create(name, projectUUID, user);
     }
-    
+
     // this should be moved to the file controller
     @Post('addMany')
     @CanWriteMissionByBody()

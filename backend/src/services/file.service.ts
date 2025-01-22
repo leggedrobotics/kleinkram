@@ -15,7 +15,6 @@ import {
     FindOptionsWhere,
     ILike,
     In,
-    Like,
     MoreThan,
     Repository,
 } from 'typeorm';

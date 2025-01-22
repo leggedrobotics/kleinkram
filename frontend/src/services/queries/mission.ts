@@ -1,5 +1,8 @@
 import axios from 'src/api/axios';
-import { MissionsDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import {
+    MissionsDto,
+    MissionWithFilesDto,
+} from '@api/types/mission/mission.dto';
 import { AxiosResponse } from 'axios';
 import qs from 'qs';
 
