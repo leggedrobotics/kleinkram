@@ -1,7 +1,7 @@
 export const convertGlobToLikePattern = (glob: string) => {
     return glob
-        .replaceAll('%', '\\%')
-        .replaceAll('_', '\\_')
+        .replaceAll('%', String.raw`\%`)
+        .replaceAll('_', String.raw`\_`)
         .replaceAll('*', '%')
         .replaceAll('?', '_');
 };

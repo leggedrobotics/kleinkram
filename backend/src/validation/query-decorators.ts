@@ -149,7 +149,7 @@ export const QueryStringArray = (
 
             try {
                 var value = JSON.parse(raw_value);
-            } catch (error) {
+            } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid JSON String Array`,
                 );
@@ -188,7 +188,7 @@ export const QueryOptionalStringArray = (
 
             try {
                 var value = JSON.parse(raw_value);
-            } catch (error) {
+            } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid JSON String Array`,
                 );
@@ -227,7 +227,7 @@ export const QueryOptionalUUIDArray = (
 
             try {
                 var value = JSON.parse(raw_value);
-            } catch (error) {
+            } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid UUID Array`,
                 );
@@ -266,7 +266,7 @@ export const QueryUUIDArray = (
 
             try {
                 var value = JSON.parse(raw_value);
-            } catch (error) {
+            } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid UUID Array`,
                 );
@@ -644,8 +644,8 @@ export const QuerySkip = (
             }
 
             try {
-                var value = parseInt(value_raw);
-            } catch (error) {
+                var value = Number.parseInt(value_raw);
+            } catch {
                 throw new BadRequestException(
                     'QuerySkip is not a valid Number',
                 );
@@ -690,8 +690,8 @@ export const QueryTake = (
             }
 
             try {
-                var value = parseInt(raw_value);
-            } catch (error) {
+                var value = Number.parseInt(raw_value);
+            } catch {
                 throw new BadRequestException(
                     'QueryTake is not a valid Number',
                 );

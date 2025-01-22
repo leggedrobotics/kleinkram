@@ -7,7 +7,8 @@ export function isRecordStringString(value: unknown): boolean {
         return false;
     }
     return Object.entries(value).every(
-        ([key, val]) => typeof key === 'string' && typeof val === 'string',
+        ([key, value_]) =>
+            typeof key === 'string' && typeof value_ === 'string',
     );
 }
 
@@ -22,8 +23,9 @@ export function IsRecordStringString(
                 isRecordStringString(value),
             defaultMessage: buildMessage(
                 (eachPrefix) =>
-                    eachPrefix +
-                    '$property must be a record of string key-value pairs',
+                    `${
+                        eachPrefix
+                    }$property must be a record of string key-value pairs`,
                 validationOptions,
             ),
         },

@@ -9,7 +9,7 @@ export class PaginatedQueryDto {
     @IsInt()
     @Min(0)
     @Type(() => Number)
-    skip: number = 0;
+    skip = 0;
 
     @IsOptional()
     @IsInt()

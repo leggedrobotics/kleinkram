@@ -148,7 +148,7 @@ export class ProjectService {
             where: { uuid: userUuid },
         });
 
-        let query = this.projectRepository
+        const query = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator');
 

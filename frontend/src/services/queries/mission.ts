@@ -95,8 +95,8 @@ export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
         '/mission/many',
         {
             params: { missionUuids: uuids },
-            paramsSerializer: (params) => {
-                return qs.stringify(params, {
+            paramsSerializer: (parameters) => {
+                return qs.stringify(parameters, {
                     arrayFormat: 'repeat',
                 });
             },
