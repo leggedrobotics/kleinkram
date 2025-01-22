@@ -5,7 +5,6 @@ import {
     CanCreate,
     CanDeleteProject,
     CanReadProject,
-    CanReadProjectByName,
     CanWriteProject,
     LoggedIn,
     UserOnly,
@@ -13,12 +12,9 @@ import {
 import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
 import {
     QueryProjectSearchParameters as QueryProjectSearchParameter,
-    QueryOptionalUUIDArray,
-    QueryOptionalStringArray,
     QuerySkip,
     QuerySortBy,
     QuerySortDirection,
-    QueryString,
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';

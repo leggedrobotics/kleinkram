@@ -6,7 +6,6 @@ import {
     CanDeleteMission,
     CanMoveMission,
     CanReadMission,
-    CanReadMissionByName,
     CanWriteMissionByBody,
     UserOnly,
 } from '../auth/roles.decorator';
@@ -15,10 +14,8 @@ import {
     QuerySkip,
     QuerySortBy,
     QuerySortDirection,
-    QueryString,
     QueryTake,
     QueryUUID,
-    QueryOptionalUUIDArray,
 } from '../../validation/query-decorators';
 import { Query } from '@nestjs/common';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
@@ -35,7 +32,6 @@ import {
 import { MissionQueryDto } from '@common/api/types/mission/mission-query.dto';
 
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { QueryOptionalStringArray } from '../../validation/query-decorators';
 
 @Controller('mission')
 export class MissionController {
