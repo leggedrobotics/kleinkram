@@ -186,8 +186,6 @@ export class FileService implements OnModuleInit {
             }),
         );
 
-        console.log(query.getSql());
-
         const [files, count] = await query
             .take(take)
             .skip(skip)
