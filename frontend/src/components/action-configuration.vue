@@ -266,7 +266,10 @@ import { ProjectWithMissionCountDto } from '@api/types/project/project-with-miss
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionSelector from '@components/action-selector.vue';
 import { AccessGroupRights } from '@common/enum';
-import { FlatMissionDto, MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import {
+    FlatMissionDto,
+    MissionWithFilesDto,
+} from '@api/types/mission/mission.dto';
 import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
@@ -532,10 +535,7 @@ async function submitAnalysis() {
         template = await createTemplate(false);
     }
     editingTemplate.value = template;
-    selectedTemplate.value = template.clone();
-
-    editingTemplate.value = template;
-    select.value = structuredClone(template);
+    selectedTemplate.value = JSON.parse(JSON.stringify(template));
 
     let createPromise: Promise<ActionSubmitResponseDto>;
     if (hasMissionUUIDs.value) {
@@ -635,7 +635,7 @@ function newValue(value: string, done: any) {
         (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {
-        editingTemplate.value = existingTemplate.clone();
+        editingTemplate.value = JSON.parse(JSON.stringify(template));
         selectedTemplate.value = existingTemplate;
     }
     editingTemplate.value.name = value;
