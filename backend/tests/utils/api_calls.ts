@@ -13,7 +13,7 @@ export const createProjectUsingPost = async (
     project: CreateProject,
     user: User,
 ): Promise<string> => {
-    const res = await fetch(`http://localhost:3000/project/create`, {
+    const res = await fetch(`http://localhost:3000/project`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

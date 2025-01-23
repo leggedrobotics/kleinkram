@@ -11,7 +11,7 @@ export const createProject = async (
     )[],
     removedDefaultGroups: string[],
 ) => {
-    const response = await axios.post('/project/create', {
+    const response = await axios.post('/projects', {
         name,
         description,
         requiredTags,
@@ -26,7 +26,7 @@ export const updateProject = async (
     name: string,
     description: string,
 ) => {
-    const response = await axios.put(`/project/${projectUUID}`, {
+    const response = await axios.put(`/projects/${projectUUID}`, {
         name,
         description,
     });
@@ -34,7 +34,7 @@ export const updateProject = async (
 };
 
 export const deleteProject = async (projectUUID: string) => {
-    const response = await axios.delete(`/project/${projectUUID}`);
+    const response = await axios.delete(`/projects/${projectUUID}`);
     return response.data;
 };
 
@@ -43,7 +43,7 @@ export const updateTagTypes = async (
     tagTypeUUIDs: string[],
 ) => {
     const response = await axios.post(
-        '/project/updateTagTypes',
+        '/projects/updateTagTypes',
         { tagTypeUUIDs },
         {
             params: { uuid: projectUUID },

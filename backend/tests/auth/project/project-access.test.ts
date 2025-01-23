@@ -95,7 +95,7 @@ describe('Verify Project Level Access', () => {
 
         const token = await getJwtToken(user);
         const res = await fetch(
-            `http://localhost:3000/project/filtered?take=11&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/projects/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {
@@ -134,7 +134,7 @@ describe('Verify Project Level Access', () => {
 
         // delete the project using the API
         const token = await getJwtToken(user);
-        const url = `http://localhost:3000/project/${projectUuid}`;
+        const url = `http://localhost:3000/projects/${projectUuid}`;
         const res = await fetch(url, {
             method: 'DELETE',
             headers: {
@@ -178,7 +178,7 @@ describe('Verify Project Level Access', () => {
         const thirdPartyToken = await getJwtToken(thirdPartyUser);
 
         const res = await fetch(
-            `http://localhost:3000/project/${projectUuid}`,
+            `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -219,7 +219,7 @@ describe('Verify Project Level Access', () => {
 
         // check single project view access
         const res2 = await fetch(
-            `http://localhost:3000/project/one?uuid=${projectUuid}`,
+            `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'GET',
                 headers: {
@@ -231,7 +231,7 @@ describe('Verify Project Level Access', () => {
 
         // check list of projects view access
         const res = await fetch(
-            `http://localhost:3000/project/filtered?take=10&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/projects/filtered?take=10&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {
@@ -269,7 +269,7 @@ describe('Verify Project Level Access', () => {
         // check view access
         const token = await getJwtToken(secondUser);
         const res = await fetch(
-            `http://localhost:3000/project/one?uuid=${projectIuid}`,
+            `http://localhost:3000/projects/${projectIuid}`,
             {
                 method: 'GET',
                 headers: {
@@ -283,7 +283,7 @@ describe('Verify Project Level Access', () => {
 
         // check denied modification access
         const res2 = await fetch(
-            `http://localhost:3000/project/update?uuid=${projectIuid}`,
+            `http://localhost:3000/projects/update?uuid=${projectIuid}`,
             {
                 method: 'PUT',
                 headers: {
@@ -301,7 +301,7 @@ describe('Verify Project Level Access', () => {
 
         // check denied delete access
         const res3 = await fetch(
-            `http://localhost:3000/project/delete?uuid=${projectIuid}`,
+            `http://localhost:3000/projects/delete?uuid=${projectIuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -333,7 +333,7 @@ describe('Verify Project Level Access', () => {
         project.description = 'This is a test project';
 
         const token = await getJwtToken(user);
-        const res = await fetch(`http://localhost:3000/project/create`, {
+        const res = await fetch(`http://localhost:3000/projects`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
@@ -369,7 +369,7 @@ describe('Verify Project Level Access', () => {
 
         const token = await getJwtToken(user);
         const res = await fetch(
-            `http://localhost:3000/project/${projectRes.uuid}`,
+            `http://localhost:3000/projects/${projectRes.uuid}`,
             {
                 method: 'DELETE',
                 headers: {
@@ -410,7 +410,7 @@ describe('Verify Project Level Access', () => {
         };
 
         const res = await fetch(
-            `http://localhost:3000/project/${projectRes.uuid}`,
+            `http://localhost:3000/projects/${projectRes.uuid}`,
             deleteRequest,
         );
         expect(res.status).toBe(403);
@@ -426,7 +426,7 @@ describe('Verify Project Level Access', () => {
         await projectRepository.save(project);
 
         const res2 = await fetch(
-            `http://localhost:3000/project/${projectRes.uuid}`,
+            `http://localhost:3000/projects/${projectRes.uuid}`,
             deleteRequest,
         );
         expect(res2.status).toBe(200);

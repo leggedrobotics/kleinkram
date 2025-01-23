@@ -34,9 +34,78 @@ import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
 import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
 import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
 
-@Controller('project')
+@Controller(['project', 'projects']) // TODO: over time we will migrate to 'projects'
 export class ProjectController {
     constructor(private readonly projectService: ProjectService) {}
+
+    @Post()
+    @CanCreate()
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectWithMissionsDto,
+    })
+    async createProject(
+        @Body() dto: CreateProject,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.create(dto, user);
+    }
+
+    @Get(':uuid')
+    @CanReadProject()
+    @ApiOkResponse({
+        description: 'Returns the project',
+        type: ProjectWithMissionsDto,
+    })
+    async getProjectById(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.findOne(uuid);
+    }
+
+    @Put(':uuid')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectWithMissionsDto,
+    })
+    async updateProject(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: CreateProject,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.update(uuid, dto);
+    }
+
+    @Delete(':uuid')
+    @CanDeleteProject()
+    @ApiResponse({
+        description: 'Project deleted',
+        status: 204,
+        type: DeleteProjectResponseDto,
+    })
+    @OutputDto(null) // TODO: add proper output dto
+    async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
+        return this.projectService.deleteProject(uuid);
+    }
+
+    @Get()
+    @UserOnly()
+    @ApiOkResponse({
+        description: 'Returns projects',
+        type: ProjectsDto,
+    })
+    async getMany(
+        @Query() query: ProjectQueryDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectsDto> {
+        return await this.projectService.findMany(
+            query.projectUuids ?? [],
+            query.projectPatterns ?? [],
+            query.skip,
+            query.take,
+            user.user.uuid,
+        );
+    }
 
     @Get('filtered')
     @UserOnly()
@@ -69,25 +138,6 @@ export class ProjectController {
         );
     }
 
-    @Get()
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns projects',
-        type: ProjectsDto,
-    })
-    async getMany(
-        @Query() query: ProjectQueryDto,
-        @AddUser() user: AuthHeader,
-    ): Promise<ProjectsDto> {
-        return await this.projectService.findMany(
-            query.projectUuids ?? [],
-            query.projectPatterns ?? [],
-            query.skip,
-            query.take,
-            user.user.uuid,
-        );
-    }
-
     @Get('recent')
     @UserOnly()
     @ApiOperation({
@@ -114,56 +164,6 @@ export class ProjectController {
             skip: 0,
             take: projects.length,
         };
-    }
-
-    @Get('one')
-    @CanReadProject()
-    @ApiOkResponse({
-        description: 'Returns the project',
-        type: ProjectWithMissionsDto,
-    })
-    async getProjectById(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-    ): Promise<ProjectWithMissionsDto> {
-        return this.projectService.findOne(uuid);
-    }
-
-    @Put(':uuid')
-    @CanWriteProject()
-    @ApiOkResponse({
-        description: 'Returns the updated project',
-        type: ProjectWithMissionsDto,
-    })
-    async updateProject(
-        @ParameterUID('uuid') uuid: string,
-        @Body() dto: CreateProject,
-    ): Promise<ProjectWithMissionsDto> {
-        return this.projectService.update(uuid, dto);
-    }
-
-    @Post('create')
-    @CanCreate()
-    @ApiOkResponse({
-        description: 'Returns the updated project',
-        type: ProjectWithMissionsDto,
-    })
-    async createProject(
-        @Body() dto: CreateProject,
-        @AddUser() user: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
-        return this.projectService.create(dto, user);
-    }
-
-    @Delete(':uuid')
-    @CanDeleteProject()
-    @ApiResponse({
-        description: 'Project deleted',
-        status: 204,
-        type: DeleteProjectResponseDto,
-    })
-    @OutputDto(null) // TODO: add proper output dto
-    async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
-        return this.projectService.deleteProject(uuid);
     }
 
     @Post('addTagType')
