@@ -80,6 +80,7 @@ export class MissionController {
             query.projectPatterns ?? [],
             query.missionUuids ?? [],
             query.missionPatterns ?? [],
+            {},
             query.skip,
             query.take,
             user.user.uuid,
