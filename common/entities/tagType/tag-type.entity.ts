@@ -34,3 +34,15 @@ export default class TagType extends BaseEntity {
         };
     }
 }
+
+
+export const tagTypeEntityToDto = (tagType: TagType): TagTypeDto => {
+    return {
+        uuid: tagType.uuid,
+        createdAt: tagType.createdAt,
+        updatedAt: tagType.updatedAt,
+        name: tagType.name,
+        description: tagType.description ?? '',
+        datatype: tagType.datatype,
+    };
+}

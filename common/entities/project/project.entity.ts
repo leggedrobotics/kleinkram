@@ -42,7 +42,7 @@ export default class Project extends BaseEntity {
     @OneToMany(() => CategoryEntity, (category) => category.project)
     categories?: CategoryEntity[];
 
-    get minimalProjectDto(): ProjectDto {
+    get projectDto(): ProjectDto {
         return {
             uuid: this.uuid,
             name: this.name,
@@ -52,28 +52,67 @@ export default class Project extends BaseEntity {
         };
     }
 
-    get flatProjectDto(): ProjectWithMissionCountDto {
+    get projectWithMissionCountDto(): ProjectWithMissionCountDto {
         if (this.creator === undefined) {
             throw new Error('Creator can never be undefined');
         }
 
         return {
-            ...this.minimalProjectDto,
+            ...this.projectDto,
             creator: this.creator.userDto,
             missionCount: this.missions?.length ?? 0,
         };
     }
 
-    get projectDto(): ProjectWithMissionsDto {
+    get projectWithMissionsDto(): ProjectWithMissionsDto {
         if (this.creator === undefined) {
             throw new Error('Creator can never be undefined');
         }
 
         return {
-            ...this.minimalProjectDto,
+            ...this.projectDto,
             creator: this.creator.userDto,
             requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
             missions: this.missions?.map((m) => m.flatMissionDto) ?? [],
         };
     }
 }
+
+export const projectEntityToDto = (project: Project): ProjectDto => {
+    return {
+        uuid: project.uuid,
+        name: project.name,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        description: project.description,
+    };
+};
+
+export const projectEntityToDtoWithMissionCount = (
+    project: Project,
+): ProjectWithMissionCountDto => {
+    if (project.creator === undefined) {
+        throw new Error('Creator can never be undefined');
+    }
+
+    return {
+        ...projectEntityToDto(project),
+        creator: project.creator.userDto,
+        missionCount: project.missions?.length ?? 0,
+    };
+};
+
+export const projectEntityToDtoWithMissions = (
+    project: Project,
+): ProjectWithMissionsDto => {
+    if (project.creator === undefined) {
+        throw new Error('Creator can never be undefined');
+    }
+
+    return {
+        ...projectEntityToDto(project),
+        creator: project.creator.userDto,
+        requiredTags: project.requiredTags.map((t) => t.tagTypeDto),
+        missions: project.missions?.map((m) => m.flatMissionDto) ?? [],
+    };
+};

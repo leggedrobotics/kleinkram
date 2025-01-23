@@ -119,3 +119,11 @@ export default class User extends BaseEntity {
         };
     }
 }
+
+export const userDto = (user: User): UserDto => {
+    return {
+        uuid: user.uuid,
+        name: user.name,
+        avatarUrl: user.avatarUrl ?? null,
+    };
+};

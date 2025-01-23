@@ -55,7 +55,7 @@ export default class Mission extends BaseEntity {
 
         return {
             ...this.minimumMissionDto,
-            project: this.project.minimalProjectDto,
+            project: this.project.projectDto,
             createdAt: this.createdAt,
             tags: this.tags?.map((tag) => tag.tagDto) || [],
             updatedAt: this.updatedAt,
@@ -108,3 +108,69 @@ export default class Mission extends BaseEntity {
         };
     }
 }
+
+export const missionEntityToDto = (mission: Mission): MissionDto => {
+    if (!mission.project) {
+        throw new Error('Mission project is not set');
+    }
+
+    return {
+        ...mission.minimumMissionDto,
+        project: mission.project.projectDto,
+        createdAt: mission.createdAt,
+        tags: mission.tags?.map((tag) => tag.tagDto) || [],
+        updatedAt: mission.updatedAt,
+    };
+};
+
+export const missionEntityToDtoWithCreator = (
+    mission: Mission,
+): MissionWithCreatorDto => {
+    if (!mission.creator) {
+        throw new Error('Mission creator is not set');
+    }
+
+    return {
+        ...missionEntityToDto(mission),
+        creator: mission.creator.userDto,
+    };
+};
+
+export const missionEntityToFlatDto = (mission: Mission): FlatMissionDto => {
+    return {
+        ...missionEntityToDtoWithCreator(mission),
+        filesCount: mission.files?.length || 0,
+        size:
+            mission.files?.reduce(
+                (accumulator, file) => accumulator + (file.size ?? 0),
+                0,
+            ) || 0,
+    };
+};
+
+export const missionEntityToDtoWithFiles = (
+    mission: Mission,
+): MissionWithFilesDto => {
+    if (!mission.files) {
+        throw new Error('Mission files are not set');
+    }
+
+    if (!mission.tags) {
+        throw new Error('Mission creator is not set');
+    }
+
+    return {
+        ...missionEntityToDtoWithCreator(mission),
+        files: mission.files.map((file) => file.fileDto),
+        tags: mission.tags.map((tag) => tag.tagDto),
+    };
+};
+
+export const missionEntityToMinimumDto = (
+    mission: Mission,
+): MinimumMissionDto => {
+    return {
+        name: mission.name,
+        uuid: mission.uuid,
+    };
+};

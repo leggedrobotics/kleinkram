@@ -54,3 +54,21 @@ export default class GroupMembership extends BaseEntity {
         };
     }
 }
+
+export const groupMembershipEntityToDto = (
+    groupMembership: GroupMembership,
+): GroupMembershipDto => {
+    if (groupMembership.user === undefined) {
+        throw new Error('Member can never be undefined');
+    }
+
+    return {
+        uuid: groupMembership.uuid,
+        canEditGroup: groupMembership.canEditGroup,
+        accessGroup: null, // we don't want to return the access group
+        createdAt: groupMembership.createdAt,
+        updatedAt: groupMembership.updatedAt,
+        expirationDate: groupMembership.expirationDate ?? null,
+        user: groupMembership.user.userDto,
+    };
+};

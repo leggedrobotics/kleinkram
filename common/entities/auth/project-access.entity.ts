@@ -44,3 +44,24 @@ export default class ProjectAccess extends BaseEntity {
         };
     }
 }
+
+export const projectAccessEntityToDto = (projectAccess: ProjectAccess) => {
+    if (projectAccess.accessGroup === undefined) {
+        throw new Error('Access group not found');
+    }
+
+    if (projectAccess.accessGroup.memberships === undefined) {
+        throw new Error('Access group has no memberships');
+    }
+
+    return {
+        createdAt: projectAccess.createdAt,
+        hidden: false,
+        memberCount: projectAccess.accessGroup.memberships.length,
+        type: projectAccess.accessGroup.type,
+        updatedAt: projectAccess.updatedAt,
+        name: projectAccess.accessGroup.name,
+        rights: projectAccess.rights,
+        uuid: projectAccess.accessGroup.uuid,
+    };
+};

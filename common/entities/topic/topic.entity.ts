@@ -40,3 +40,13 @@ export default class Topic extends BaseEntity {
         };
     }
 }
+
+
+export const topicEntityToDto = (topic: Topic): TopicDto => {
+    return {
+        name: topic.name,
+        type: topic.type,
+        nrMessages: topic.nrMessages ?? 0n,
+        frequency: Number.isNaN(topic.frequency) ? 0 : topic.frequency,
+    };
+}

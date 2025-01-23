@@ -131,7 +131,7 @@ export class ProjectService {
             .getManyAndCount();
 
         return {
-            data: projects.map((p) => p.flatProjectDto),
+            data: projects.map((p) => p.projectWithMissionCountDto),
             count,
             skip,
             take,
@@ -198,7 +198,7 @@ export class ProjectService {
         const [projects, count] = await query.getManyAndCount();
 
         return {
-            data: projects.map((p) => p.flatProjectDto),
+            data: projects.map((p) => p.projectWithMissionCountDto),
             count,
             skip,
             take,
@@ -206,7 +206,7 @@ export class ProjectService {
     }
 
     async findOne(uuid: string): Promise<ProjectWithMissionsDto> {
-        const { projectDto } = await this.projectRepository
+        const { projectWithMissionsDto } = await this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
@@ -221,7 +221,7 @@ export class ProjectService {
             .leftJoinAndSelect('memberships.user', 'user')
             .getOneOrFail();
 
-        return projectDto;
+        return projectWithMissionsDto;
     }
 
     async getRecentProjects(
