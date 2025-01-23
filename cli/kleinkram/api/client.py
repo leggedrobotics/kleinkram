@@ -20,9 +20,6 @@ COOKIE_REFRESH_TOKEN = "refreshtoken"
 COOKIE_CLI_KEY = "clikey"
 
 
-class NotLoggedInException(Exception): ...
-
-
 class AuthenticatedClient(httpx.Client):
     _config: Config
     _config_lock: Lock

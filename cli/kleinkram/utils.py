@@ -10,13 +10,16 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
+from typing import Union
 from uuid import UUID
 
 import yaml
+from httpx._types import PrimitiveData
 from rich.console import Console
 
 from kleinkram._version import __version__
@@ -31,6 +34,28 @@ SUPPORT_FILE_TYPES = [
     ".bag",
     ".mcap",
 ]
+
+
+def is_primitive_data(value: Any) -> bool:
+    return isinstance(value, (str, int, float, bool)) or value is None
+
+
+def convert_nested_primtive_data(
+    key: str, value: Mapping[str, PrimitiveData]
+) -> Dict[str, PrimitiveData]:
+    return {f"{key}[{k}]": v for k, v in value.items()}
+
+
+def flatten_nested_query_params(
+    params: Dict[str, Union[PrimitiveData, Mapping[str, PrimitiveData]]]
+) -> Dict[str, PrimitiveData]:
+    ret: Dict[str, PrimitiveData] = {k: v for k, v in params.items() if is_primitive_data(v)}  # type: ignore
+
+    nested_params = {k: v for k, v in params.items() if isinstance(v, dict)}
+    for key, value in nested_params.items():
+        ret.update(convert_nested_primtive_data(key, value))
+
+    return ret
 
 
 def file_paths_from_files(
