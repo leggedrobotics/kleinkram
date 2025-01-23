@@ -9,7 +9,9 @@ import {
     Not,
     Repository,
 } from 'typeorm';
+import { groupMembershipEntityToDto } from '../serialization';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { projectAccessEntityToDto, userEntityToDto } from '../serialization';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -59,12 +61,13 @@ export class AccessService {
 
         return {
             createdAt: rawAccessGroup.createdAt,
-            creator: rawAccessGroup.creator?.userDto ?? null,
+            creator: rawAccessGroup.creator
+                ? userEntityToDto(rawAccessGroup.creator)
+                : null,
             hidden: rawAccessGroup.hidden,
             memberships:
-                rawAccessGroup.memberships?.map(
-                    (membership) => membership.groupMembershipDto,
-                ) ?? [],
+                rawAccessGroup.memberships?.map(groupMembershipEntityToDto) ??
+                [],
             name: rawAccessGroup.name,
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
@@ -321,10 +324,12 @@ export class AccessService {
             (accessGroup: AccessGroup): AccessGroupDto => {
                 return {
                     // eslint-disable-next-line unicorn/no-null
-                    creator: accessGroup.creator?.userDto ?? null,
+                    creator: accessGroup.creator
+                        ? userEntityToDto(accessGroup.creator)
+                        : null,
                     memberships:
                         accessGroup.memberships?.map(
-                            (m) => m.groupMembershipDto,
+                            groupMembershipEntityToDto,
                         ) ?? [],
                     createdAt: accessGroup.createdAt,
                     updatedAt: accessGroup.updatedAt,
@@ -452,7 +457,7 @@ export class AccessService {
         );
 
         return {
-            data: access.map((a) => a.projectAccessDto),
+            data: access.map(projectAccessEntityToDto),
             count,
             take: count,
             skip: 0,
@@ -511,6 +516,6 @@ export class AccessService {
                 where: { uuid: membershipUuid },
                 relations: ['user'],
             });
-        return savedMembership.groupMembershipDto;
+        return groupMembershipEntityToDto(savedMembership);
     }
 }

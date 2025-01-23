@@ -32,33 +32,4 @@ export default class Tag extends BaseEntity {
 
     @ManyToOne(() => User, (user) => user.tags)
     creator?: User;
-
-    get tagDto(): TagDto {
-        return tagTypeEntityToDto(this);
-    }
 }
-
-export const tagTypeEntityToDto = (tag: Tag): TagDto => {
-    if (!tag.tagType) {
-        throw new Error('TagType is not set');
-    }
-
-    return {
-        get valueAsString(): string {
-            return this.value.toString();
-        },
-        type: tag.tagType.tagTypeDto,
-        value:
-            tag.STRING ??
-            tag.NUMBER ??
-            tag.BOOLEAN ??
-            tag.DATE ??
-            tag.LOCATION ??
-            '',
-        createdAt: tag.createdAt,
-        datatype: tag.tagType.datatype,
-        name: tag.tagType.name,
-        updatedAt: tag.updatedAt,
-        uuid: tag.uuid,
-    };
-};

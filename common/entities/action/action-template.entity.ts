@@ -48,27 +48,5 @@ export default class ActionTemplate extends BaseEntity {
 
     @Column()
     accessRights!: AccessGroupRights;
-
-    get actionTemplateDto(): ActionTemplateDto {
-        return ActionTemplateEntityToDto(this);
-    }
 }
 
-export const ActionTemplateEntityToDto = (
-    actionTemplate: ActionTemplate,
-): ActionTemplateDto => {
-    return {
-        uuid: actionTemplate.uuid,
-        accessRights: actionTemplate.accessRights,
-        command: actionTemplate.command ?? '',
-        cpuCores: actionTemplate.cpuCores,
-        cpuMemory: actionTemplate.cpuMemory,
-        entrypoint: actionTemplate.entrypoint ?? '',
-        gpuMemory: actionTemplate.gpuMemory,
-        imageName: actionTemplate.image_name,
-        maxRuntime: actionTemplate.maxRuntime,
-        createdAt: actionTemplate.createdAt,
-        name: actionTemplate.name,
-        version: actionTemplate.version.toString(),
-    };
-};

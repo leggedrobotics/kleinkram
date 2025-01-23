@@ -30,18 +30,4 @@ export default class Topic extends BaseEntity {
 
     @ManyToOne(() => FileEntity, (file) => file.topics, { onDelete: 'CASCADE' })
     file?: FileEntity;
-
-    get topicDto(): TopicDto {
-        return topicEntityToDto(this);
-    }
-}
-
-
-export const topicEntityToDto = (topic: Topic): TopicDto => {
-    return {
-        name: topic.name,
-        type: topic.type,
-        nrMessages: topic.nrMessages ?? 0n,
-        frequency: Number.isNaN(topic.frequency) ? 0 : topic.frequency,
-    };
 }
