@@ -43,38 +43,15 @@ export default class Project extends BaseEntity {
     categories?: CategoryEntity[];
 
     get projectDto(): ProjectDto {
-        return {
-            uuid: this.uuid,
-            name: this.name,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            description: this.description,
-        };
+        return projectEntityToDto(this);
     }
 
     get projectWithMissionCountDto(): ProjectWithMissionCountDto {
-        if (this.creator === undefined) {
-            throw new Error('Creator can never be undefined');
-        }
-
-        return {
-            ...this.projectDto,
-            creator: this.creator.userDto,
-            missionCount: this.missions?.length ?? 0,
-        };
+        return projectEntityToDtoWithMissionCount(this);
     }
 
     get projectWithMissionsDto(): ProjectWithMissionsDto {
-        if (this.creator === undefined) {
-            throw new Error('Creator can never be undefined');
-        }
-
-        return {
-            ...this.projectDto,
-            creator: this.creator.userDto,
-            requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
-            missions: this.missions?.map((m) => m.flatMissionDto) ?? [],
-        };
+        return projectEntityToDtoWithMissions(this);
     }
 }
 

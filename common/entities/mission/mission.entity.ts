@@ -49,63 +49,24 @@ export default class Mission extends BaseEntity {
     tags?: Tag[];
 
     get missionDto(): MissionDto {
-        if (!this.project) {
-            throw new Error('Mission project is not set');
-        }
-
-        return {
-            ...this.minimumMissionDto,
-            project: this.project.projectDto,
-            createdAt: this.createdAt,
-            tags: this.tags?.map((tag) => tag.tagDto) || [],
-            updatedAt: this.updatedAt,
-        };
+        return missionEntityToDto(this);
+        
     }
 
     get missionWithCreatorDto(): MissionWithCreatorDto {
-        if (!this.creator) {
-            throw new Error('Mission creator is not set');
-        }
-
-        return {
-            ...this.missionDto,
-            creator: this.creator.userDto,
-        };
+        return missionEntityToDtoWithCreator(this);
     }
 
     get flatMissionDto(): FlatMissionDto {
-        return {
-            ...this.missionWithCreatorDto,
-            filesCount: this.files?.length || 0,
-            size:
-                this.files?.reduce(
-                    (accumulator, file) => accumulator + (file.size ?? 0),
-                    0,
-                ) || 0,
-        };
+        return missionEntityToFlatDto(this);
     }
 
     get missionWithFilesDto(): MissionWithFilesDto {
-        if (!this.files) {
-            throw new Error('Mission files are not set');
-        }
-
-        if (!this.tags) {
-            throw new Error('Mission creator is not set');
-        }
-
-        return {
-            ...this.missionWithCreatorDto,
-            files: this.files.map((file) => file.fileDto),
-            tags: this.tags.map((tag) => tag.tagDto),
-        };
+        return missionEntityToDtoWithFiles(this);
     }
 
     get minimumMissionDto(): MinimumMissionDto {
-        return {
-            name: this.name,
-            uuid: this.uuid,
-        };
+        return missionEntityToMinimumDto(this);
     }
 }
 

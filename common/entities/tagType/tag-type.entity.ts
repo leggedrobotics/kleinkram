@@ -24,14 +24,7 @@ export default class TagType extends BaseEntity {
     tags?: Tag[];
 
     get tagTypeDto(): TagTypeDto {
-        return {
-            uuid: this.uuid,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            name: this.name,
-            description: this.description ?? '',
-            datatype: this.datatype,
-        };
+        return tagTypeEntityToDto(this);
     }
 }
 
