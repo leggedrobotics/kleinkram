@@ -9,6 +9,7 @@ import {
     MoreThan,
     Repository,
 } from 'typeorm';
+import { missionEntityToDto } from '../serialization';
 import { DriveCreate } from '@common/api/types/drive-create.dto';
 import Mission from '@common/entities/mission/mission.entity';
 import Worker from '@common/entities/worker/worker.entity';
@@ -285,8 +286,7 @@ export class QueueService implements OnModuleInit {
                             processingDuration: queue.processingDuration ?? 0,
                             updatedAt: queue.updatedAt,
                             location: queue.location,
-
-                            mission: queue.mission.missionDto,
+                            mission: missionEntityToDto(queue.mission),
                         };
                     })
                     .filter(

@@ -8,6 +8,7 @@ import {
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { convertGlobToLikePattern } from './utils';
+import { fileEntitiyToDtoWithTopic } from '../serialization';
 import {
     Brackets,
     DataSource,
@@ -18,6 +19,7 @@ import {
     MoreThan,
     Repository,
 } from 'typeorm';
+import { fileEntityToDto } from '../serialization';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from '@common/api/types/update-file.dto';
 import env from '@common/environment';
@@ -191,7 +193,7 @@ export class FileService implements OnModuleInit {
             .getManyAndCount();
 
         return {
-            data: files.map((f) => f.fileDto),
+            data: files.map(fileEntityToDto),
             count,
             take,
             skip,
@@ -401,14 +403,14 @@ export class FileService implements OnModuleInit {
             .getMany();
         return {
             count,
-            data: files.map((file) => file.fileDto),
+            data: files.map(fileEntityToDto),
             take,
             skip,
         };
     }
 
     async findOne(uuid: string): Promise<FileWithTopicDto> {
-        const { fileWithTopicDto } = await this.fileRepository.findOneOrFail({
+        const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
             relations: [
                 'mission',
@@ -419,7 +421,7 @@ export class FileService implements OnModuleInit {
             ],
         });
 
-        return fileWithTopicDto;
+        return fileEntitiyToDtoWithTopic(file);
     }
 
     /**
@@ -631,7 +633,7 @@ export class FileService implements OnModuleInit {
         });
         return {
             count,
-            data: files.map((file) => file.fileDto),
+            data: files.map(fileEntityToDto),
             take,
             skip,
         };

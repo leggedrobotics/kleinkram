@@ -110,12 +110,4 @@ export default class User extends BaseEntity {
 
     @OneToMany(() => Category, (category) => category.creator)
     categories?: Category[];
-
-    get userDto(): UserDto {
-        return {
-            uuid: this.uuid,
-            name: this.name,
-            avatarUrl: this.avatarUrl ?? null,
-        };
-    }
 }

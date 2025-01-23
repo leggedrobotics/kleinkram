@@ -6,6 +6,7 @@ import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import { topicEntityToDto } from '../serialization';
 
 @Injectable()
 export class TopicService {
@@ -34,7 +35,7 @@ export class TopicService {
 
         return {
             count,
-            data: topics.map((t) => t.name),
+            data: topics.map(topicEntityToDto),
             take: count,
             skip: 0,
         };
@@ -54,7 +55,7 @@ export class TopicService {
                 take,
             });
             return {
-                data: topics.map((t) => t.topicDto),
+                data: topics.map(topicEntityToDto),
                 count,
                 take,
                 skip,
@@ -72,7 +73,7 @@ export class TopicService {
         ).getManyAndCount();
 
         return {
-            data: topics.map((t) => t.topicDto),
+            data: topics.map(topicEntityToDto),
             count,
             take,
             skip,

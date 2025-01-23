@@ -74,43 +74,4 @@ export default class FileEntity extends BaseEntity {
 
     @Column({ nullable: true })
     origin?: FileOrigin;
-
-    get fileDto(): FileDto {
-        if (!this.creator) {
-            throw new Error('File creator is not set');
-        }
-
-        if (!this.mission) {
-            throw new Error('File mission is not set');
-        }
-
-        return {
-            uuid: this.uuid,
-            state: this.state,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            date: this.date,
-            filename: this.filename,
-            type: this.type,
-            size: this.size ?? 0,
-            hash: this.hash ?? '',
-            creator: this.creator.userDto,
-            mission: this.mission.missionDto,
-            categories:
-                this.categories?.map((c) => ({
-                    uuid: c.uuid,
-                    name: c.name,
-                })) ?? [],
-        };
-    }
-
-    get fileWithTopicDto(): FileWithTopicDto {
-        if (!this.topics) {
-            throw new Error('File topics are not set');
-        }
-        return {
-            ...this.fileDto,
-            topics: this.topics.map((topic) => topic.topicDto),
-        };
-    }
 }

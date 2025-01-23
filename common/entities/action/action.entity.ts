@@ -94,35 +94,4 @@ export default class Action extends BaseEntity {
 
     @ManyToOne(() => Worker, (worker) => worker.actions, { nullable: true })
     worker?: Worker;
-
-    get actionDto(): ActionDto {
-        if (this.createdBy === undefined) {
-            throw new Error('Action must have a creator');
-        }
-
-        if (this.mission === undefined) {
-            throw new Error('Action must have a mission');
-        }
-
-        if (this.template === undefined) {
-            throw new Error('Action must have a template');
-        }
-
-        return {
-            artifactUrl: this.artifact_url ?? '',
-            artifacts: this.artifacts,
-            auditLogs: (this.auditLogs as unknown as AuditLogDto[]) ?? [],
-            createdAt: this.createdAt,
-            creator: this.createdBy.userDto,
-            image: (this.image as DockerImageDto) ?? { repoDigests: [] },
-            logs: (this.logs as unknown as LogsDto[]) ?? [],
-            mission: this.mission.missionDto,
-            state: this.state,
-            stateCause: this.state_cause ?? '',
-            template: this.template.actionTemplateDto,
-            updatedAt: this.updatedAt,
-            uuid: this.uuid,
-            worker: this.worker as ActionWorkerDto,
-        };
-    }
 }

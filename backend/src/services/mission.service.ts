@@ -11,6 +11,8 @@ import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import { Brackets } from 'typeorm';
 import { convertGlobToLikePattern } from './utils';
+import { missionEntityToDtoWithCreator } from '../serialization';
+import { missionEntityToDtoWithFiles } from '../serialization';
 import {
     addTagsToMinioObject,
     externalMinio,
@@ -25,6 +27,10 @@ import {
 } from '@common/api/types/mission/mission.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import {
+    missionEntityToFlatDto,
+    missionEntityToMinimumDto,
+} from '../serialization';
 
 @Injectable()
 export class MissionService {
@@ -109,7 +115,7 @@ export class MissionService {
                 where: { uuid: newMission.uuid },
                 relations: ['project', 'creator'],
             })
-            .then((m) => m.flatMissionDto);
+            .then((m) => missionEntityToFlatDto(m));
     }
 
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
@@ -129,7 +135,7 @@ export class MissionService {
             ],
         });
 
-        return mission.missionWithFilesDto;
+        return missionEntityToDtoWithFiles(mission);
     }
 
     async findMany(
@@ -200,7 +206,7 @@ export class MissionService {
         const [missions, count] = await query.getManyAndCount();
 
         return {
-            data: missions.map((m) => m.flatMissionDto),
+            data: missions.map(missionEntityToFlatDto),
             count,
             skip,
             take,
@@ -242,7 +248,7 @@ export class MissionService {
         const [missions, count] = await query.getManyAndCount();
 
         return {
-            data: missions.map((m) => m.minimumMissionDto),
+            data: missions.map(missionEntityToMinimumDto),
             count,
             skip,
             take,
@@ -296,7 +302,7 @@ export class MissionService {
 
         return {
             data: entities.map((m, index) => ({
-                ...m.missionWithCreatorDto,
+                ...missionEntityToDtoWithCreator(m),
                 filesCount: raw[index].fileCount,
                 size: Number.parseInt(raw[index].totalSize),
             })),

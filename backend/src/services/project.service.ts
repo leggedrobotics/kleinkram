@@ -14,6 +14,10 @@ import {
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
+import {
+    projectEntityToDtoWithMissions,
+    projectEntityToDtoWithMissionCount,
+} from '../serialization';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import { Brackets } from 'typeorm';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
@@ -131,7 +135,7 @@ export class ProjectService {
             .getManyAndCount();
 
         return {
-            data: projects.map((p) => p.flatProjectDto),
+            data: projects.map(projectEntityToDtoWithMissionCount),
             count,
             skip,
             take,
@@ -198,7 +202,7 @@ export class ProjectService {
         const [projects, count] = await query.getManyAndCount();
 
         return {
-            data: projects.map((p) => p.flatProjectDto),
+            data: projects.map(projectEntityToDtoWithMissionCount),
             count,
             skip,
             take,
@@ -206,7 +210,7 @@ export class ProjectService {
     }
 
     async findOne(uuid: string): Promise<ProjectWithMissionsDto> {
-        const { projectDto } = await this.projectRepository
+        const mission = await this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
@@ -221,7 +225,7 @@ export class ProjectService {
             .leftJoinAndSelect('memberships.user', 'user')
             .getOneOrFail();
 
-        return projectDto;
+        return projectEntityToDtoWithMissions(mission);
     }
 
     async getRecentProjects(
