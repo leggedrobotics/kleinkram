@@ -71,9 +71,9 @@ CREATE_MISSION = "/mission/create"
 CREATE_PROJECT = "/project/create"
 
 
-FILE_ENDPOINT = "/file/many"
-MISSION_ENDPOINT = "/mission/many"
-PROJECT_ENDPOINT = "/project/many"
+FILE_ENDPOINT = "/file"
+MISSION_ENDPOINT = "/mission"
+PROJECT_ENDPOINT = "/project"
 
 TAG_TYPE_BY_NAME = "/tag/filtered"
 

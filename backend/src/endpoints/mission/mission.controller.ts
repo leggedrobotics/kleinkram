@@ -65,7 +65,7 @@ export class MissionController {
         return this.missionService.updateName(missionUUID, name);
     }
 
-    @Get('many')
+    @Get()
     @UserOnly()
     @ApiOkResponse({
         description: 'Returns all missions',

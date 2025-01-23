@@ -69,7 +69,7 @@ export class ProjectController {
         );
     }
 
-    @Get('many')
+    @Get()
     @UserOnly()
     @ApiOkResponse({
         description: 'Returns projects',

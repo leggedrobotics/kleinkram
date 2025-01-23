@@ -59,7 +59,7 @@ import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 export class FileController {
     constructor(private readonly fileService: FileService) {}
 
-    @Get('many')
+    @Get()
     @LoggedIn()
     @ApiOkResponse({
         description: 'Many Files',
