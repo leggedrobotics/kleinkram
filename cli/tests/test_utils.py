@@ -10,55 +10,14 @@ from kleinkram.errors import FileTypeNotSupported
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import check_filename_is_sanatized
-from kleinkram.utils import convert_nested_primtive_data
-from kleinkram.utils import flatten_nested_query_params
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
-from kleinkram.utils import is_primitive_data
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import parse_path_like
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
 from kleinkram.utils import split_args
 from kleinkram.utils import upper_camel_case_to_words
-
-
-def test_is_primitive_data():
-    assert is_primitive_data("string")
-    assert is_primitive_data(1)
-    assert is_primitive_data(1.0)
-    assert is_primitive_data(True)
-    assert is_primitive_data(None)
-    assert not is_primitive_data([])
-    assert not is_primitive_data({})
-    assert not is_primitive_data(object())
-
-
-def test_convert_nested_to_primitive_data():
-    key = "foo"
-    nested = {"a": 1, "b": 2}
-
-    assert convert_nested_primtive_data(key, nested) == {
-        "foo[a]": 1,
-        "foo[b]": 2,
-    }
-
-
-def test_flatten_nested_query_params():
-    query = {
-        "foo": 1,
-        "bar": 2,
-        "nested": {
-            "a": 1,
-            "b": 2,
-        },
-    }
-    assert flatten_nested_query_params(query) == {
-        "foo": 1,
-        "bar": 2,
-        "nested[a]": 1,
-        "nested[b]": 2,
-    }
 
 
 def test_split_args():
