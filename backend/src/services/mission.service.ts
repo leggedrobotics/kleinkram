@@ -45,7 +45,7 @@ export class MissionService {
         @InjectRepository(User) private userRepository: Repository<User>,
         private userService: UserService,
         private tagService: TagService,
-    ) {}
+    ) { }
 
     async create(
         createMission: CreateMission,
@@ -72,8 +72,7 @@ export class MissionService {
                     .map((tagType: TagType) => tagType.name)
                     .join(', ');
                 throw new ConflictException(
-                    `All required tags must be provided for the mission. Missing tags: ${
-                        missingTagNames
+                    `All required tags must be provided for the mission. Missing tags: ${missingTagNames
                     }`,
                 );
             } else {
@@ -158,8 +157,7 @@ export class MissionService {
         let query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'user')
-            .where('1=1');
+            .leftJoinAndSelect('mission.creator', 'user');
 
         if (user.role !== UserRole.ADMIN) {
             query = addAccessConstraints(query, userUuid);
@@ -173,27 +171,43 @@ export class MissionService {
             convertGlobToLikePattern,
         );
 
-        const projectIdSubQuery = getFilteredProjectIdSubQuery(
-            this.projectRepository,
-            projectUuids,
-            projectLikePatterns,
-        );
-        const missionIdSubQuery = getFilteredMissionIdSubQuery(
-            this.missionRepository,
-            missionUuids,
-            missionLikePatterns,
-            missionMetadata,
-        );
+        if (projectUuids.length > 0 || projectLikePatterns.length > 0) {
+            const projectIdSubQuery = getFilteredProjectIdSubQuery(
+                this.projectRepository,
+                projectUuids,
+                projectLikePatterns,
+            );
 
-        query
-            .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
-            .setParameters(projectIdSubQuery.getParameters());
+            console.log(projectIdSubQuery.getQuery());
 
-        query
-            .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
-            .setParameters(missionIdSubQuery.getParameters());
+            query
+                .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
+                .setParameters(projectIdSubQuery.getParameters());
+        }
+
+        if (
+            missionUuids.length > 0 ||
+            missionLikePatterns.length > 0 ||
+            Object.keys(missionMetadata).length > 0
+        ) {
+            const missionIdSubQuery = getFilteredMissionIdSubQuery(
+                this.missionRepository,
+                missionUuids,
+                missionLikePatterns,
+                missionMetadata,
+            );
+
+            console.log(missionIdSubQuery.getQuery());
+
+            query
+                .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
+                .setParameters(missionIdSubQuery.getParameters());
+        }
 
         query.take(take).skip(skip);
+
+        console.log(query.getQuery());
+
         const [missions, count] = await query.getManyAndCount();
 
         return {

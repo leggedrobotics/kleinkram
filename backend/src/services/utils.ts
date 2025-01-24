@@ -17,8 +17,7 @@ export const getFilteredProjectIdSubQuery = (
 ): SelectQueryBuilder<{ uuid: string }> => {
     const query = projectRepository
         .createQueryBuilder('project')
-        .select('project.uuid', 'uuid')
-        .where('1=1');
+        .select('project.uuid', 'uuid');
 
     if (projectIds.length > 0) {
         query.orWhere('project.uuid IN (:...projectIds)', {
@@ -54,8 +53,7 @@ export const getFilteredMissionIdSubQuery = (
 ): SelectQueryBuilder<{ uuid: string }> => {
     const query = missionRepository
         .createQueryBuilder('mission')
-        .select('mission.uuid', 'uuid')
-        .where('1=1');
+        .select('mission.uuid', 'uuid');
 
     if (missionIds.length > 0) {
         query.orWhere('mission.uuid IN (:...missionIds)', {
