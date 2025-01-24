@@ -9,8 +9,11 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { Brackets } from 'typeorm';
-import { convertGlobToLikePattern } from './utils';
+import {
+    convertGlobToLikePattern,
+    getFilteredProjectIdSubQuery,
+    getFilteredMissionIdSubQuery,
+} from './utils';
 import { missionEntityToDtoWithCreator } from '../serialization';
 import { missionEntityToDtoWithFiles } from '../serialization';
 import {
@@ -148,6 +151,20 @@ export class MissionService {
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        let query = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'user')
+            .where('1=1');
+
+        if (user.role !== UserRole.ADMIN) {
+            query = addAccessConstraints(query, userUuid);
+        }
+
         const missionLikePatterns = missionPatterns.map(
             convertGlobToLikePattern,
         );
@@ -156,83 +173,25 @@ export class MissionService {
             convertGlobToLikePattern,
         );
 
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
-
-        let query = this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'user');
-
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
-        }
-
-        // query by project affiliation
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', {
-                        projectUuids,
-                    });
-                }
-                if (projectPatterns.length > 0) {
-                    qb.orWhere(
-                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
-                        { projectPatterns: projectLikePatterns },
-                    );
-                }
-            }),
+        const projectIdSubQuery = getFilteredProjectIdSubQuery(
+            this.projectRepository,
+            projectUuids,
+            projectLikePatterns,
+        );
+        const missionIdSubQuery = getFilteredMissionIdSubQuery(
+            this.missionRepository,
+            missionUuids,
+            missionLikePatterns,
+            missionMetadata,
         );
 
-        // query missions directly
-        query.andWhere(
-            new Brackets((qb) => {
-                if (missionUuids.length > 0) {
-                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
-                        missionUuids,
-                    });
-                }
-                if (missionPatterns.length > 0) {
-                    qb.orWhere(
-                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
-                        { missionPatterns: missionLikePatterns },
-                    );
-                }
-            }),
-        );
+        query
+            .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
+            .setParameters(projectIdSubQuery.getParameters());
 
-        const matchesValue = (value: string) => {
-            return new Brackets((qb) => {
-                qb.where('tags.STRING = :value', { value });
-                qb.orWhere('tags.NUMBER = :value', { value: Number(value) });
-                qb.orWhere('tags.BOOLEAN = :value', { value: Boolean(value) });
-                qb.orWhere('tags.DATE = :value', { value: new Date(value) });
-                qb.orWhere('tags.LOCATION = :value', { value });
-            });
-        };
-
-        const matchesKeyValuePair = (key: string, value: string) => {
-            return new Brackets((qb) => {
-                qb.where('tags.STRING = :value', { value: key });
-                qb.andWhere(matchesValue(value));
-            });
-        };
-
-        if (Object.keys(missionMetadata).length > 0) {
-            query
-                .leftJoin('mission.tags', 'tags')
-                .leftJoin('tags.tagType', 'tagType');
-
-            for (const [key, value] of Object.entries(missionMetadata)) {
-                query.orWhere(matchesKeyValuePair(key, value));
-            }
-        }
-
-        if (Object.keys(missionMetadata).length > 0) {
-            throw new Error('Not implemented');
-        }
+        query
+            .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
+            .setParameters(missionIdSubQuery.getParameters());
 
         query.take(take).skip(skip);
         const [missions, count] = await query.getManyAndCount();
