@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProjectService } from '../../services/project.service';
-import { ProjectController } from './project.controller';
+import { ProjectController, OldProjectController } from './project.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import Project from '@common/entities/project/project.entity';
 import Account from '@common/entities/auth/account.entity';
@@ -20,6 +20,6 @@ import ProjectAccess from '@common/entities/auth/project-access.entity';
     ],
     providers: [ProjectService],
     exports: [ProjectService],
-    controllers: [ProjectController],
+    controllers: [ProjectController, OldProjectController],
 })
 export class ProjectModule {}

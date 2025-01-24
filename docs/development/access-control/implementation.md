@@ -20,7 +20,7 @@ Common guards are:
 - @CanReadProject() - Checks if the user has read rights to the project
 - ...
 
-Endpoints that list data, like /projects/filtered are often guarded by @UserOnly() and
+Endpoints that list data, like /oldProject/filtered are often guarded by @UserOnly() and
 handle the filtering of the data based on the user rights internally. They will only return the data the user has access to.
 For this, the helper function [`addAccessConstraints`](/development/access-control/addAccessConstraints) is used.
 

@@ -95,7 +95,7 @@ describe('Verify Project Level Access', () => {
 
         const token = await getJwtToken(user);
         const res = await fetch(
-            `http://localhost:3000/projects/filtered?take=11&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {
@@ -231,7 +231,7 @@ describe('Verify Project Level Access', () => {
 
         // check list of projects view access
         const res = await fetch(
-            `http://localhost:3000/projects/filtered?take=10&skip=0&sortBy=name&descending=false`,
+            `http://localhost:3000/oldProject/filtered?take=10&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: {
