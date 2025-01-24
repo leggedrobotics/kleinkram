@@ -4,7 +4,7 @@ import Mission from '@common/entities/mission/mission.entity';
 import { parseISO, isValid } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-const stringToBoolean = (value: string): boolean | undefined => {
+export const stringToBoolean = (value: string): boolean | undefined => {
     value = value.toLowerCase();
     switch (value) {
         case 'true':
@@ -14,21 +14,25 @@ const stringToBoolean = (value: string): boolean | undefined => {
     }
 };
 
-const stringToNumber = (value: string): number | undefined => {
+export const stringToNumber = (value: string): number | undefined => {
+    if (value === '') {
+        return;
+    }
+
     const number = Number(value);
     if (!Number.isNaN(number)) {
         return number;
     }
 };
 
-const stringToDate = (value: string): Date | undefined => {
+export const stringToDate = (value: string): Date | undefined => {
     const date = parseISO(value);
     if (isValid(date)) {
         return date;
     }
 };
 
-const stringToLocation = (value: string): string | undefined => {
+export const stringToLocation = (value: string): string | undefined => {
     return value;
 };
 
