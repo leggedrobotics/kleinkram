@@ -45,7 +45,7 @@ export class MissionService {
         @InjectRepository(User) private userRepository: Repository<User>,
         private userService: UserService,
         private tagService: TagService,
-    ) { }
+    ) {}
 
     async create(
         createMission: CreateMission,
@@ -72,7 +72,8 @@ export class MissionService {
                     .map((tagType: TagType) => tagType.name)
                     .join(', ');
                 throw new ConflictException(
-                    `All required tags must be provided for the mission. Missing tags: ${missingTagNames
+                    `All required tags must be provided for the mission. Missing tags: ${
+                        missingTagNames
                     }`,
                 );
             } else {
@@ -178,8 +179,6 @@ export class MissionService {
                 projectLikePatterns,
             );
 
-            console.log(projectIdSubQuery.getQuery());
-
             query
                 .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
                 .setParameters(projectIdSubQuery.getParameters());
@@ -205,9 +204,6 @@ export class MissionService {
         }
 
         query.take(take).skip(skip);
-
-        console.log(query.getQuery());
-
         const [missions, count] = await query.getManyAndCount();
 
         return {
