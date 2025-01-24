@@ -22,7 +22,7 @@ export const filteredProjects = async (
         parameters.searchParams = searchParameters;
     }
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
-        '/projects/filtered',
+        '/oldProject/filtered',
         {
             params: parameters,
         },
@@ -40,7 +40,7 @@ export const getProject = async (
 
 export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
     const response: AxiosResponse<DefaultRights> = await axios.get(
-        '/projects/getDefaultRights',
+        '/oldProject/getDefaultRights',
     );
     return response.data;
 };
@@ -48,7 +48,7 @@ export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
 export const recentProjects = async (
     take: number,
 ): Promise<ResentProjectsDto> => {
-    const response = await axios.get<ResentProjectsDto>('/projects/recent', {
+    const response = await axios.get<ResentProjectsDto>('/oldProject/recent', {
         params: { take },
     });
     return response.data;

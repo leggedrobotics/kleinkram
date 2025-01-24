@@ -51,6 +51,7 @@ export class ProjectController {
         return this.projectService.create(dto, user);
     }
 
+    // dont match filtered, recent, and getDefaultRights, TODO: fix this at some point
     @Get(':uuid')
     @CanReadProject()
     @ApiOkResponse({
@@ -106,6 +107,60 @@ export class ProjectController {
             user.user.uuid,
         );
     }
+
+    @Post(':uuid/addTagType')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: AddTagTypeDto,
+    })
+    async addTagType(
+        @ParameterUID('uuid') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+    ): Promise<AddTagTypeDto> {
+        await this.projectService.addTagType(uuid, tagTypeUUID);
+        return {};
+    }
+
+    @Post(':uuid/removeTagType')
+    @CanWriteProject()
+    @ApiOkResponse({
+        type: RemoveTagTypeDto,
+        description: 'Empty response',
+    })
+    async removeTagType(
+        @ParameterUID('uuid') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+    ): Promise<RemoveTagTypeDto> {
+        await this.projectService.removeTagType(uuid, tagTypeUUID);
+        return {};
+    }
+
+    @Post(':uuid/updateTagTypes')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: UpdateTagTypesDto,
+    })
+    async updateTagTypes(
+        @ParameterUID('uuid') uuid: string,
+        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
+        tagTypeUUIDs: string[],
+    ): Promise<UpdateTagTypesDto> {
+        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+        return {
+            success: true,
+        };
+    }
+}
+
+// TODO: this controller should get removed at some point,
+// filtered and recent will effectively be replaced by `GET /projects`
+// for the getDefaultRights endpoint we should make a seperate controller that
+// does all the access control stuff
+@Controller('oldProject')
+export class OldProjectController {
+    constructor(private readonly projectService: ProjectService) {}
 
     @Get('filtered')
     @UserOnly()
@@ -163,51 +218,6 @@ export class ProjectController {
             count: projects.length,
             skip: 0,
             take: projects.length,
-        };
-    }
-
-    @Post('addTagType')
-    @CanWriteProject()
-    @ApiOkResponse({
-        description: 'Empty response',
-        type: AddTagTypeDto,
-    })
-    async addTagType(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ): Promise<AddTagTypeDto> {
-        await this.projectService.addTagType(uuid, tagTypeUUID);
-        return {};
-    }
-
-    @Post('removeTagType')
-    @CanWriteProject()
-    @ApiOkResponse({
-        type: RemoveTagTypeDto,
-        description: 'Empty response',
-    })
-    async removeTagType(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ): Promise<RemoveTagTypeDto> {
-        await this.projectService.removeTagType(uuid, tagTypeUUID);
-        return {};
-    }
-
-    @Post('updateTagTypes')
-    @CanWriteProject()
-    @ApiOkResponse({
-        description: 'Empty response',
-        type: UpdateTagTypesDto,
-    })
-    async updateTagTypes(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
-        tagTypeUUIDs: string[],
-    ): Promise<UpdateTagTypesDto> {
-        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
-        return {
-            success: true,
         };
     }
 

@@ -43,11 +43,8 @@ export const updateTagTypes = async (
     tagTypeUUIDs: string[],
 ) => {
     const response = await axios.post(
-        '/projects/updateTagTypes',
+        `/projects/${projectUUID}/updateTagTypes`,
         { tagTypeUUIDs },
-        {
-            params: { uuid: projectUUID },
-        },
     );
     return response.data;
 };
