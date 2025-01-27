@@ -68,7 +68,7 @@
         "winston-loki": "^6.0.7"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "^3.637.0",
+        "@aws-sdk/client-s3": "^3.735.0",
         "@jest/globals": "^29.7.0",
         "@nestjs/cli": "^10.4.4",
         "@nestjs/schematics": "^10.0.0",
