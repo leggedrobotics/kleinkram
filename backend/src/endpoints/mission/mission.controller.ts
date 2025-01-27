@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { MissionService } from '../../services/mission.service';
 import { CreateMission } from '@common/api/types/create-mission.dto';
+import { Request } from 'express';
+import { Req } from '@nestjs/common';
 import {
     CanCreateInProjectByBody,
     CanDeleteMission,
@@ -80,7 +82,7 @@ export class MissionController {
             query.projectPatterns ?? [],
             query.missionUuids ?? [],
             query.missionPatterns ?? [],
-            {},
+            query.metadata ?? {},
             query.skip,
             query.take,
             user.user.uuid,

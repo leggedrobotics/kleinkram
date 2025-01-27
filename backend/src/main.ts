@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import environment from '@common/environment';
 import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import logger, { NestLoggerWrapper } from './logger';
@@ -11,7 +12,6 @@ import { AddVersionInterceptor } from './routing/interceptors/version-injector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { GlobalErrorFilter } from './routing/filters/global-error-filter';
-import { DelayPipe } from './routing/pipes/artificial-delay';
 import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
 
 function saveEndpointsAsJson(app: INestApplication, filename: string): void {
@@ -29,7 +29,7 @@ function saveEndpointsAsJson(app: INestApplication, filename: string): void {
 async function bootstrap(): Promise<void> {
     tracer.start();
 
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         logger: new NestLoggerWrapper(),
     });
 
@@ -56,7 +56,11 @@ async function bootstrap(): Promise<void> {
     });
 
     app.useGlobalFilters(new GlobalErrorFilter());
-    app.useGlobalPipes(new DelayPipe(0));
+
+    /**
+     * replaces query string parser with qs
+     */
+    app.set('query parser', 'extended');
 
     /**
      * Applies the global response validation interceptor to the application.
@@ -84,7 +88,8 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
-        swaggerUiEnabled: true,
+        yamlDocumentUrl: 'swagger/yaml',
+        swaggerUiEnabled: environment.DEV,
     });
 
     await app.listen(3000);

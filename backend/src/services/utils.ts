@@ -27,6 +27,8 @@ export const stringToNumber = (value: string): number | undefined => {
 
 export const stringToDate = (value: string): Date | undefined => {
     const date = parseISO(value);
+    console.log(date);
+
     if (isValid(date)) {
         return date;
     }
@@ -72,7 +74,7 @@ const metadataMatchesKeyValuePair = (
     key: string,
     value: string,
     tok: string | undefined = undefined,
-) => {
+): Brackets => {
     /*
      * we need to add a random token to the typeorm params as
      * in general we will add this bracket multiple times
@@ -83,35 +85,40 @@ const metadataMatchesKeyValuePair = (
         tok = uuidv4().replace(/-/g, '');
     }
 
-    return new Brackets((qb) => {
-        qb.orWhere(`tags.STRING = :stringValue${tok}`, {
-            [`stringValue${tok}`]: value,
+    const valueBracket = new Brackets((qb) => {
+        qb.orWhere(`tags.STRING = :stringValue_${tok}`, {
+            [`stringValue_${tok}`]: value,
         });
         const numberValue = stringToNumber(value);
         if (numberValue !== undefined) {
-            qb.orWhere(`tags.NUMBER = :numberValue${tok}`, {
-                [`numberValue${tok}`]: numberValue,
+            qb.orWhere(`tags.NUMBER = :numberValue_${tok}`, {
+                [`numberValue_${tok}`]: numberValue,
             });
         }
         const booleanValue = stringToBoolean(value);
         if (booleanValue !== undefined) {
-            qb.orWhere(`tags.BOOLEAN = :booleanValue${tok}`, {
-                [`booleanValue${tok}`]: booleanValue,
+            qb.orWhere(`tags.BOOLEAN = :booleanValue_${tok}`, {
+                [`booleanValue_${tok}`]: booleanValue,
             });
         }
         const dateValue = stringToDate(value);
         if (dateValue !== undefined) {
-            qb.orWhere(`tags.DATE = :dateValue${tok}`, {
-                [`dateValue${tok}`]: dateValue,
+            qb.orWhere(`tags.DATE = :dateValue_${tok}`, {
+                [`dateValue_${tok}`]: dateValue,
             });
         }
         const locationValue = stringToLocation(value);
         if (locationValue !== undefined) {
-            qb.orWhere(`tags.LOCATION = :locationValue${tok}`, {
-                [`locationValue${tok}`]: locationValue,
+            qb.orWhere(`tags.LOCATION = :locationValue_${tok}`, {
+                [`locationValue_${tok}`]: locationValue,
             });
         }
-        qb.andWhere(`tagType.name = :key${tok}`, { [`key${tok}`]: key });
+    });
+
+    return new Brackets((qb) => {
+        qb.andWhere(`tagType.name = :key_${tok}`, {
+            [`key_${tok}`]: key,
+        }).andWhere(valueBracket);
     });
 };
 
