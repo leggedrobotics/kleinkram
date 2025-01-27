@@ -867,10 +867,10 @@ minimatch@^5.0.1:
   dependencies:
     brace-expansion "^2.0.1"
 
-minio@8.0.2:
-  version "8.0.2"
-  resolved "https://registry.yarnpkg.com/minio/-/minio-8.0.2.tgz#ea1703ff52dcf610ba6d4e2ece8c5627f664d581"
-  integrity sha512-7ipWbtgzzboctf+McK+2cXwCrNOhuboTA/O1g9iWa0gH8R4GkeyFWwk12aVDEHdzjPiG8wxnjwfHS7pgraKuHw==
+minio@8.0.4:
+  version "8.0.4"
+  resolved "https://registry.yarnpkg.com/minio/-/minio-8.0.4.tgz#7d350bedc0d82387ed04d523eef4774e58843f1f"
+  integrity sha512-GVW7y2PNbzjjFJ9opVMGKvDNuRkyz3bMt1q7UrHs7bsKFWLXbSvMPffjE/HkVYWUjlD8kQwMaeqiHhhvZJJOfQ==
   dependencies:
     async "^3.2.4"
     block-stream2 "^2.1.0"
