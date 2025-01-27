@@ -13,7 +13,7 @@ export class ParseNotUUIDPipe implements PipeTransform {
         metadata: ArgumentMetadata,
     ): Promise<number> {
         try {
-            await new ParseUUIDPipe().transform(value, metadata);
+            await (new ParseUUIDPipe().transform(value, metadata));
         } catch {
             return new Promise(() => value);
         }
