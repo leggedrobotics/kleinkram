@@ -19,7 +19,7 @@ import { Notify, QInput } from 'quasar';
 import { deleteProject } from 'src/services/mutations/project';
 import { useHandler } from '../hooks/query-hooks';
 
-import { ProjectWithCreator } from '@api/types/project/base-project.dto';
+import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
 
 const projectNameCheck = ref('');
 const client = useQueryClient();

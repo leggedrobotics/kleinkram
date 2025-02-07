@@ -3,23 +3,7 @@ import { AccessGroupDto } from '@api/types/user.dto';
 import { AxiosResponse } from 'axios';
 import { AccessGroupType } from '@common/enum';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import {
-    ProjectAccessDto,
-    ProjectAccessListDto,
-} from '@api/types/access-control/project-access.dto';
-
-export const canAddAccessGroup = async (
-    projectUuid: string,
-): Promise<boolean> => {
-    if (projectUuid === '') {
-        return false;
-    }
-    const response = await axios.get('/access/canAddAccessGroupToProject', {
-        params: { uuid: projectUuid },
-    });
-
-    return response.data;
-};
+import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
 
 export const searchAccessGroups = async (
     search: string,

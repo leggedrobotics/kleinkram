@@ -142,14 +142,12 @@ import BaseDialog from '../dialogs/base-dialog.vue';
 import { useFile, useMissionsOfProjectMinimal } from '../hooks/query-hooks';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import {
-    ProjectDto,
-    ProjectWithCreator,
-} from '@api/types/project/base-project.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import ConfigureCategories from '@components/configure-categories.vue';
 import { isAxiosError } from 'axios';
 import { CategoryDto } from '@api/types/category.dto';
+import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
 
 const { fileUuid } = defineProps<{ fileUuid: string }>();
 

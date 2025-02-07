@@ -52,7 +52,6 @@ export class AccessService {
                 'project_accesses',
             )
             .leftJoinAndSelect('project_accesses.project', 'project')
-            .leftJoinAndSelect('project.creator', 'projectCreator')
             .leftJoinAndSelect('accessGroup.creator', 'creator')
             .where('accessGroup.uuid = :uuid', { uuid })
             .getOneOrFail();
@@ -69,6 +68,10 @@ export class AccessService {
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
             uuid: rawAccessGroup.uuid,
+            projectAccesses:
+                rawAccessGroup.project_accesses?.map(
+                    (value) => value.projectsOfGroup,
+                ) ?? [],
         };
     }
 
@@ -332,6 +335,7 @@ export class AccessService {
                     name: accessGroup.name,
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
+                    projectAccesses: [],
                 };
             },
         );
@@ -386,7 +390,6 @@ export class AccessService {
             await this.projectAccessRepository.save(existingAccess);
             return this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
-                relations: ['project_accesses', 'project_accesses.accessGroup'],
             }) as unknown as ProjectWithMissionsDto;
         }
 

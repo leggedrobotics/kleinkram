@@ -14,6 +14,7 @@ import {
     ValidationOptions,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProjectWithAccessRightsDto } from './project/project-access.dto';
 
 const IsNotUndefined = (validationOptions?: ValidationOptions) => {
     return function (object: object, propertyName: string): void {
@@ -86,6 +87,11 @@ export class AccessGroupDto {
     @ValidateNested({ each: true })
     @Type(() => GroupMembershipDto)
     memberships!: GroupMembershipDto[];
+
+    @ApiProperty()
+    @ValidateNested({ each: true })
+    @Type(() => ProjectWithAccessRightsDto)
+    projectAccesses!: ProjectWithAccessRightsDto[];
 }
 
 export class GroupMembershipDto {

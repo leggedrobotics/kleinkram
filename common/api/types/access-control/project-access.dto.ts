@@ -3,14 +3,7 @@ import {
     AccessGroupType,
 } from '../../../frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-    IsBoolean,
-    IsDate,
-    IsEnum,
-    IsNumber,
-    IsString,
-    ValidateNested,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
@@ -34,20 +27,8 @@ export class ProjectAccessDto {
     type!: AccessGroupType;
 
     @ApiProperty()
-    @IsBoolean()
-    hidden!: boolean;
-
-    @ApiProperty()
     @IsNumber()
     memberCount!: number;
-
-    @ApiProperty()
-    @IsDate()
-    updatedAt!: Date;
-
-    @ApiProperty()
-    @IsDate()
-    createdAt!: Date;
 
     @ApiProperty({
         description: 'Rights of the user in the access group',

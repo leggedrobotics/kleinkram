@@ -291,7 +291,7 @@ import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-o
 import TitleSection from '@components/title-section.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import RemoveProjectDialogOpener from '@components/button-wrapper/remove-project-dialog-opener.vue';
-import { explorerPageTableColumns } from '@components/explorer-page/explorer-page-table-columns';
+import { projectAccessColumns } from '@components/explorer-page/explorer-page-table-columns';
 import DialogOpenerAddUser from '@components/button-wrapper/dialog-opener-add-user.vue';
 
 const $q = useQuasar();
@@ -376,15 +376,7 @@ watch(
 );
 
 const projectRows = computed(() => {
-    return (
-        accessGroup.value?.projectAccesses?.map((project: ProjectAccess) => {
-            return {
-                ...project.project,
-                rights: project.rights,
-                project_access_uuid: project.uuid,
-            };
-        }) ?? []
-    );
+    return accessGroup.value?.projectAccesses ?? [];
 });
 
 const openAddProject = (): void => {
@@ -463,7 +455,7 @@ const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
 
 const projectCols = computed(() => {
     {
-        let defaultCols = [...explorerPageTableColumns];
+        let defaultCols = [...projectAccessColumns];
         renameColumns(defaultCols, 'Creator', 'Project Creator');
         renameColumns(defaultCols, 'Description', 'Project Description');
         defaultCols = dropColumns(defaultCols, 'Created');

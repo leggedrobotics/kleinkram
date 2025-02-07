@@ -4,6 +4,7 @@ import AccessGroup from './accessgroup.entity';
 import Project from '../project/project.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
+import { ProjectWithAccessRightsDto } from '../../api/types/project/project-access.dto';
 
 @Unique('no_duplicated_access_groups_per_project', ['accessGroup', 'project'])
 @Entity()
@@ -22,6 +23,21 @@ export default class ProjectAccess extends BaseEntity {
         nullable: false,
     })
     project?: Project;
+
+    get projectsOfGroup(): ProjectWithAccessRightsDto {
+        if (this.project === undefined) {
+            throw new Error('Project not found');
+        }
+
+        return {
+            uuid: this.project.uuid,
+            name: this.project.name,
+            description: this.project.description,
+            createdAt: this.project.createdAt,
+            updatedAt: this.project.updatedAt,
+            rights: this.rights,
+        };
+    }
 
     get projectAccessDto() {
         if (this.accessGroup === undefined) {

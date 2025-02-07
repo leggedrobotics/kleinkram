@@ -4,6 +4,7 @@ import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { ProjectWithAccessRightsDto } from '@api/types/project/project-access.dto';
 
 export interface ProjectColumnType {
     name: string;
@@ -11,9 +12,10 @@ export interface ProjectColumnType {
     label: string;
     align: string;
     field?:
-        | ((row: ProjectWithMissionCountDto) => any)
-        | ((row: FlatMissionDto) => any)
-        | ((row: FileWithTopicDto) => any);
+        | ((row: ProjectWithMissionCountDto) => string)
+        | ((row: ProjectWithAccessRightsDto) => string)
+        | ((row: FlatMissionDto) => string)
+        | ((row: FileWithTopicDto) => string);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;
     style?: string;
@@ -73,6 +75,43 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         style: 'min-width: 100px',
         field: (row: ProjectWithMissionCountDto) => row.missionCount,
         format: (value: number) => value.toString(),
+    },
+    {
+        name: 'project-action',
+        label: '',
+        style: 'width: 10px',
+        align: 'center',
+    },
+];
+
+export const projectAccessColumns: ProjectColumnType[] = [
+    {
+        name: 'name',
+        required: true,
+        label: 'Project Name',
+        align: 'left',
+        field: (row: ProjectWithAccessRightsDto) => row.name,
+        format: (value: string) => value,
+        sortable: true,
+        style: 'width: 140px',
+    },
+    {
+        name: 'description',
+        required: true,
+        label: 'Description',
+        align: 'left',
+        field: (row: ProjectWithAccessRightsDto) => row.description,
+        format: (value: string) => value,
+        sortable: true,
+    },
+    {
+        name: 'createdAt',
+        required: true,
+        label: 'Created',
+        align: 'left',
+        field: (row: ProjectWithAccessRightsDto) => row.createdAt,
+        format: (value: string) => formatDate(new Date(value)),
+        sortable: true,
     },
     {
         name: 'project-action',

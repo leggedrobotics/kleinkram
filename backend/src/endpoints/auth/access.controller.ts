@@ -94,26 +94,6 @@ export class AccessController {
         };
     }
 
-    @ApiResponse({
-        status: 200,
-        type: Boolean,
-        description: 'User can add AccessGroup to Project',
-    })
-    @ApiOperation({
-        summary: 'Can add an AccessGroup to a Project',
-        description:
-            'Checks if the user has the rights to add an AccessGroup to a Project',
-    })
-    @Get('canAddAccessGroupToProject')
-    @UserOnly()
-    @OutputDto(null) // TODO: type API response
-    async canAddAccessGroup(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @AddUser() user: AuthHeader,
-    ) {
-        return this.accessService.hasProjectRights(uuid, user);
-    }
-
     @ApiOperation({
         summary: 'Add User to Project',
         description: 'Adds a user to a project with the given rights.',
