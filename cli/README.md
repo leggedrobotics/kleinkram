@@ -82,10 +82,15 @@ klein --help
 ```
 
 ### Run Tests
+to run unit tests:
 ```bash
-pytest .
+pytest -m "not slow"
 ```
-or if you want to skip slow tests...
+to run all tests (including e2e and integration tests):
 ```bash
-pytest -m "not slow" .
+pytest
 ```
+For the latter you need to have an instance of the backend running locally.
+See instructions in the root of the repository for this.
+On top of that these tests require particular files to be present in the `cli/data/testing` directory.
+To see the exact files that are required, see `cli/testing/backend_fixtures.py`.
