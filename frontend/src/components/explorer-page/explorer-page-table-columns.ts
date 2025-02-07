@@ -12,10 +12,10 @@ export interface ProjectColumnType {
     label: string;
     align: string;
     field?:
-        | ((row: ProjectWithMissionCountDto) => string)
-        | ((row: ProjectWithAccessRightsDto) => string)
-        | ((row: FlatMissionDto) => string)
-        | ((row: FileWithTopicDto) => string);
+        | ((row: ProjectWithMissionCountDto) => any)
+        | ((row: ProjectWithAccessRightsDto) => any)
+        | ((row: FlatMissionDto) => any)
+        | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;
     style?: string;
