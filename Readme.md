@@ -6,10 +6,10 @@ Kleinkram is being developed by the [Robotic Systems Lab (RSL) at ETH Zurich](ht
 
 ## Features
 
--   **Simple**: Kleinkram is designed to be simple to use and easy to understand.
--   **Efficient**: Kleinkram is designed to be efficient in terms of storage and retrieval.
--   **Structured**: Kleinkram is designed to be structured in terms of storage and retrieval.
--   **ROS1 and ROS2**: Kleinkram is designed to work with both ROS1 and ROS2.
+- **Simple**: Kleinkram is designed to be simple to use and easy to understand.
+- **Efficient**: Kleinkram is designed to be efficient in terms of storage and retrieval.
+- **Structured**: Kleinkram is designed to be structured in terms of storage and retrieval.
+- **ROS1 and ROS2**: Kleinkram is designed to work with both ROS1 and ROS2.
 
 ## Getting Started
 
