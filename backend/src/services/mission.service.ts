@@ -48,7 +48,7 @@ const FIND_MANY_ALLOWED_SORT_KEYS = [
 const SORT_KEY_MAP = {
     missionName: 'mission.name',
     projectName: 'project.name',
-    creatorName: 'creator.name',
+    creatorName: 'user.name',
     createdAt: 'mission.createdAt',
     updatedAt: 'mission.updatedAt',
 };
@@ -184,21 +184,15 @@ export class MissionService {
             query = addAccessConstraints(query, userUuid);
         }
 
-        const missionLikePatterns = missionPatterns.map(
-            convertGlobToLikePattern,
-        );
-
-        const projectLikePatterns = projectPatterns.map(
-            convertGlobToLikePattern,
-        );
-
-        if (projectUuids.length > 0 || projectLikePatterns.length > 0) {
+        if (projectUuids.length > 0 || projectPatterns.length > 0) {
+            const projectLikePatterns = projectPatterns.map(
+                convertGlobToLikePattern,
+            );
             const projectIdSubQuery = getFilteredProjectIdSubQuery(
                 this.projectRepository,
                 projectUuids,
                 projectLikePatterns,
             );
-
             query
                 .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
                 .setParameters(projectIdSubQuery.getParameters());
@@ -206,9 +200,13 @@ export class MissionService {
 
         if (
             missionUuids.length > 0 ||
-            missionLikePatterns.length > 0 ||
+            missionPatterns.length > 0 ||
             Object.keys(missionMetadata).length > 0
         ) {
+            const missionLikePatterns = missionPatterns.map(
+                convertGlobToLikePattern,
+            );
+
             const missionIdSubQuery = getFilteredMissionIdSubQuery(
                 this.missionRepository,
                 missionUuids,
