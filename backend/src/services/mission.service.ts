@@ -35,6 +35,24 @@ import {
     missionEntityToMinimumDto,
 } from '../serialization';
 
+import { SortOrder } from '@common/api/types/pagination';
+
+const FIND_MANY_ALLOWED_SORT_KEYS = [
+    'missionName',
+    'projectName',
+    'creatorName',
+    'createdAt',
+    'updatedAt',
+];
+
+const SORT_KEY_MAP = {
+    missionName: 'mission.name',
+    projectName: 'project.name',
+    creatorName: 'creator.name',
+    createdAt: 'mission.createdAt',
+    updatedAt: 'mission.updatedAt',
+};
+
 @Injectable()
 export class MissionService {
     constructor(
@@ -147,6 +165,8 @@ export class MissionService {
         missionUuids: string[],
         missionPatterns: string[],
         missionMetadata: Record<string, string>,
+        sortBy: string | undefined,
+        sortOrder: SortOrder | undefined,
         skip: number,
         take: number,
         userUuid: string,
@@ -196,11 +216,19 @@ export class MissionService {
                 missionMetadata,
             );
 
-            console.log(missionIdSubQuery.getQuery());
-
             query
                 .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
                 .setParameters(missionIdSubQuery.getParameters());
+        }
+
+        if (sortBy !== undefined) {
+            if (!FIND_MANY_ALLOWED_SORT_KEYS.includes(sortBy)) {
+                throw new ConflictException(`Invalid sortBy key: ${sortBy}`);
+            }
+
+            const sortOrderSQL = sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+            const sortKeySQL = SORT_KEY_MAP[sortBy];
+            query.orderBy(sortKeySQL, sortOrderSQL);
         }
 
         query.take(take).skip(skip);
