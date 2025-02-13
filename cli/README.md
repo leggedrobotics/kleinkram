@@ -94,3 +94,5 @@ For the latter you need to have an instance of the backend running locally.
 See instructions in the root of the repository for this.
 On top of that these tests require particular files to be present in the `cli/data/testing` directory.
 To see the exact files that are required, see `cli/testing/backend_fixtures.py`.
+
+You also need to make sure to be logged in with the cli with `klein login`.
