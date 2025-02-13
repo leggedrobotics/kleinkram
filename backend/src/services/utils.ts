@@ -4,7 +4,7 @@ import Mission from '@common/entities/mission/mission.entity';
 import { parseISO, isValid } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import File from '@common/entities/file/file.entity';
-import { ConflictException } from '@nestjs/common';
+import { MethodNotAllowedException } from '@nestjs/common';
 import { SortOrder } from '@common/api/types/pagination';
 
 export const stringToBoolean = (value: string): boolean | undefined => {
@@ -270,7 +270,7 @@ export const addSort = (
     sortOrder: SortOrder,
 ): SelectQueryBuilder<any> => {
     if (!(sortBy in allowedSortKeyMap)) {
-        throw new ConflictException(`Invalid sortBy key: ${sortBy}`);
+        throw new MethodNotAllowedException(`Invalid sortBy key: ${sortBy}`);
     }
 
     query.orderBy(

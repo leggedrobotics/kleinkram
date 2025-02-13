@@ -85,7 +85,7 @@ const FIND_MANY_SORT_KEYS = {
     filename: 'file.filename',
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
-    creator: 'user.username',
+    creator: 'user.name',
 };
 
 @Injectable()
