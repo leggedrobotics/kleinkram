@@ -9,11 +9,7 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import {
-    convertGlobToLikePattern,
-    getFilteredProjectIdSubQuery,
-    getFilteredMissionIdSubQuery,
-} from './utils';
+import { addProjectFilters, addMissionFilters } from './utils';
 import { missionEntityToDtoWithCreator } from '../serialization';
 import { missionEntityToDtoWithFiles } from '../serialization';
 import {
@@ -181,40 +177,20 @@ export class MissionService {
 
         query = addAccessConstraintsToMissionQuery(query, userUuid);
 
-        if (projectUuids.length > 0 || projectPatterns.length > 0) {
-            const projectLikePatterns = projectPatterns.map(
-                convertGlobToLikePattern,
-            );
-            const projectIdSubQuery = getFilteredProjectIdSubQuery(
-                this.projectRepository,
-                projectUuids,
-                projectLikePatterns,
-            );
-            query
-                .andWhere(`project.uuid IN (${projectIdSubQuery.getQuery()})`)
-                .setParameters(projectIdSubQuery.getParameters());
-        }
+        query = addProjectFilters(
+            query,
+            this.projectRepository,
+            projectUuids,
+            projectPatterns,
+        );
 
-        if (
-            missionUuids.length > 0 ||
-            missionPatterns.length > 0 ||
-            Object.keys(missionMetadata).length > 0
-        ) {
-            const missionLikePatterns = missionPatterns.map(
-                convertGlobToLikePattern,
-            );
-
-            const missionIdSubQuery = getFilteredMissionIdSubQuery(
-                this.missionRepository,
-                missionUuids,
-                missionLikePatterns,
-                missionMetadata,
-            );
-
-            query
-                .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
-                .setParameters(missionIdSubQuery.getParameters());
-        }
+        query = addMissionFilters(
+            query,
+            this.missionRepository,
+            missionUuids,
+            missionPatterns,
+            missionMetadata,
+        );
 
         if (sortBy !== undefined) {
             if (!FIND_MANY_ALLOWED_SORT_KEYS.includes(sortBy)) {

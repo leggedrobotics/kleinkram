@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { convertGlobToLikePattern } from './utils';
 import { fileEntitiyToDtoWithTopic } from '../serialization';
 import {
     Brackets,
@@ -34,6 +33,8 @@ import {
     QueueState,
     UserRole,
 } from '@common/frontend_shared/enum';
+import { addFileFilters, addMissionFilters, addProjectFilters } from './utils';
+
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
 import Tag from '@common/entities/tag/tag.entity';
@@ -59,7 +60,10 @@ import { TaggingOpts } from 'minio/dist/main/internal/type';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { FilesDto } from '@common/api/types/file/files.dto';
 import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import {
+    addAccessConstraints,
+    addAccessConstraintsToFileQuery,
+} from '../endpoints/auth/auth-helper';
 import {
     FileExistsResponseDto,
     TemporaryFileAccessDto,
@@ -80,6 +84,8 @@ export class FileService implements OnModuleInit {
         private fileRepository: Repository<FileEntity>,
         @InjectRepository(Mission)
         private missionRepository: Repository<Mission>,
+        @InjectRepository(Project)
+        private projectRepository: Repository<Project>,
         @InjectRepository(User) private userRepository: Repository<User>,
         private readonly dataSource: DataSource,
         @InjectRepository(TagType)
@@ -103,88 +109,39 @@ export class FileService implements OnModuleInit {
         missionPatterns: string[],
         fileUuids: string[],
         filePatterns: string[],
+        missionMetadata: Record<string, string>,
         take: number,
         skip: number,
         userUuid: string,
     ): Promise<FilesDto> {
-        // we dont support bracket expressions at the moment.
-        const projectLikePatterns = projectPatterns.map((pattern) =>
-            convertGlobToLikePattern(pattern),
-        );
-        const missionLikePatterns = missionPatterns.map((pattern) =>
-            convertGlobToLikePattern(pattern),
-        );
-        const fileLikePatterns = filePatterns.map((pattern) =>
-            convertGlobToLikePattern(pattern),
-        );
-
         let query = this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.creator', 'user');
 
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
+        query = addAccessConstraintsToFileQuery(query, userUuid);
 
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
-        }
-
-        // project query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', {
-                        projectUuids,
-                    });
-                }
-                if (projectLikePatterns.length > 0) {
-                    qb.orWhere(
-                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
-                        {
-                            projectPatterns: projectLikePatterns,
-                        },
-                    );
-                }
-            }),
+        query = addProjectFilters(
+            query,
+            this.projectRepository,
+            projectUuids,
+            projectPatterns,
         );
 
-        // mission query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (missionUuids.length > 0) {
-                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
-                        missionUuids,
-                    });
-                }
-                if (missionLikePatterns.length > 0) {
-                    qb.orWhere(
-                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
-                        {
-                            missionPatterns: missionLikePatterns,
-                        },
-                    );
-                }
-            }),
+        query = addMissionFilters(
+            query,
+            this.missionRepository,
+            missionUuids,
+            missionPatterns,
+            missionMetadata,
         );
 
-        // file query
-        query.andWhere(
-            new Brackets((qb) => {
-                if (fileUuids.length > 0) {
-                    qb.orWhere('file.uuid IN (:...fileUuids)', { fileUuids });
-                }
-                if (fileLikePatterns.length > 0) {
-                    qb.orWhere(
-                        'file.filename LIKE ANY(ARRAY[:...filePatterns])',
-                        {
-                            filePatterns: fileLikePatterns,
-                        },
-                    );
-                }
-            }),
+        query = addFileFilters(
+            query,
+            this.fileRepository,
+            fileUuids,
+            filePatterns,
         );
 
         const [files, count] = await query

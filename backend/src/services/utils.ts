@@ -3,6 +3,7 @@ import Project from '@common/entities/project/project.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import { parseISO, isValid } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import File from '@common/entities/file/file.entity';
 
 export const stringToBoolean = (value: string): boolean | undefined => {
     value = value.toLowerCase();
@@ -152,6 +153,109 @@ export const getFilteredMissionIdSubQuery = (
         for (const [key, value] of Object.entries(missionMetadata)) {
             query.orWhere(metadataMatchesKeyValuePair(key, value));
         }
+    }
+
+    return query;
+};
+
+export const getFilteredFileIdSubQuery = (
+    fileRepository: Repository<File>,
+    fileIds: string[],
+    filePatterns: string[],
+): SelectQueryBuilder<{ uuid: string }> => {
+    const query = fileRepository
+        .createQueryBuilder('file')
+        .select('file.uuid', 'uuid');
+
+    if (fileIds.length > 0) {
+        query.orWhere('file.uuid IN (:...fileIds)', {
+            fileIds,
+        });
+    }
+
+    if (filePatterns.length > 0) {
+        query.orWhere('file.name LIKE ANY(ARRAY[:...filePatterns])', {
+            filePatterns,
+        });
+    }
+
+    return query;
+};
+
+export const addProjectFilters = (
+    query: SelectQueryBuilder<any>,
+    projectRepository: Repository<Project>,
+    projectIds: string[],
+    projectPatterns: string[],
+): SelectQueryBuilder<any> => {
+    if (projectIds.length > 0 || projectPatterns.length > 0) {
+        const projectLikePatterns = projectPatterns.map(
+            convertGlobToLikePattern,
+        );
+
+        const projectUUIDQuery = getFilteredProjectIdSubQuery(
+            projectRepository,
+            projectIds,
+            projectLikePatterns,
+        );
+
+        query
+            .andWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`)
+            .setParameters(projectUUIDQuery.getParameters());
+    }
+
+    return query;
+};
+
+export const addMissionFilters = (
+    query: SelectQueryBuilder<any>,
+    missionRepository: Repository<Mission>,
+    missionIds: string[],
+    missionPatterns: string[],
+    missionMetadata: Record<string, string>,
+): SelectQueryBuilder<any> => {
+    if (
+        missionIds.length > 0 ||
+        missionPatterns.length > 0 ||
+        Object.keys(missionMetadata).length > 0
+    ) {
+        const missionLikePatterns = missionPatterns.map(
+            convertGlobToLikePattern,
+        );
+
+        const missionIdSubQuery = getFilteredMissionIdSubQuery(
+            missionRepository,
+            missionIds,
+            missionLikePatterns,
+            missionMetadata,
+        );
+
+        query
+            .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
+            .setParameters(missionIdSubQuery.getParameters());
+    }
+
+    return query;
+};
+
+export const addFileFilters = (
+    query: SelectQueryBuilder<any>,
+    fileRepository: Repository<File>,
+    fileIds: string[],
+    filePatterns: string[],
+): SelectQueryBuilder<any> => {
+    if (fileIds.length > 0 || filePatterns.length > 0) {
+        const fileLikePatterns = filePatterns.map(convertGlobToLikePattern);
+
+        const fileIdSubQuery = getFilteredFileIdSubQuery(
+            fileRepository,
+            fileIds,
+            fileLikePatterns,
+        );
+
+        query
+            .andWhere(`file.uuid IN (${fileIdSubQuery.getQuery()})`)
+            .setParameters(fileIdSubQuery.getParameters());
     }
 
     return query;

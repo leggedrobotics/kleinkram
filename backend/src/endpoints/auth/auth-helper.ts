@@ -4,6 +4,7 @@ import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-vie
 import Mission from '@common/entities/mission/mission.entity';
 import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import { v4 as uuidv4 } from 'uuid';
+import File from '@common/entities/file/file.entity';
 
 export const projectAccessUUIDQuery = (
     query: SelectQueryBuilder<any>,
@@ -39,6 +40,26 @@ export const missionAccessUUIDQuery = (
         });
 };
 
+export const addAccessConstraintsToProjectQuery = (
+    query: SelectQueryBuilder<Project>,
+    userUUID: string,
+): SelectQueryBuilder<Project> => {
+    const projectUUIDQuery = projectAccessUUIDQuery(query, userUUID);
+
+    query.where(
+        new Brackets((qb) => {
+            qb.where(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
+            qb.orWhere('creator.role = :adminRole', {
+                adminRole: 'ADMIN',
+            });
+        }),
+    );
+
+    query.setParameters(projectUUIDQuery.getParameters());
+
+    return query;
+};
+
 export const addAccessConstraintsToMissionQuery = (
     query: SelectQueryBuilder<Mission>,
     userUUID: string,
@@ -64,21 +85,26 @@ export const addAccessConstraintsToMissionQuery = (
     return query;
 };
 
-export const addAccessConstraintsToProjectQuery = (
-    query: SelectQueryBuilder<Project>,
+export const addAccessConstraintsToFileQuery = (
+    query: SelectQueryBuilder<File>,
     userUUID: string,
-): SelectQueryBuilder<Project> => {
+): SelectQueryBuilder<File> => {
+    const missionUUIDQuery = missionAccessUUIDQuery(query, userUUID);
     const projectUUIDQuery = projectAccessUUIDQuery(query, userUUID);
 
-    query.where(
+    const accessBracket = new Brackets((qb) => {
+        qb.where(`mission.uuid IN (${missionUUIDQuery.getQuery()})`);
+        qb.orWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
+    });
+
+    query.andWhere(
         new Brackets((qb) => {
-            qb.where(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
-            qb.orWhere('project.creator.role = :adminRole', {
-                adminRole: 'ADMIN',
-            });
+            qb.where(accessBracket);
+            qb.orWhere('user.role = :adminRole', { adminRole: 'ADMIN' });
         }),
     );
 
+    query.setParameters(missionUUIDQuery.getParameters());
     query.setParameters(projectUUIDQuery.getParameters());
 
     return query;

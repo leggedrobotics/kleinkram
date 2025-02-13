@@ -73,6 +73,7 @@ export class FileController {
             query.missionPatterns ?? [],
             query.fileUuids ?? [],
             query.filePatterns ?? [],
+            query.metadata ?? {},
             query.take,
             query.skip,
             auth.user.uuid,
