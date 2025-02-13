@@ -9,7 +9,7 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { addProjectFilters, addMissionFilters } from './utils';
+import { addProjectFilters, addMissionFilters, addSort } from './utils';
 import { missionEntityToDtoWithCreator } from '../serialization';
 import { missionEntityToDtoWithFiles } from '../serialization';
 import {
@@ -36,15 +36,7 @@ import {
 
 import { SortOrder } from '@common/api/types/pagination';
 
-const FIND_MANY_ALLOWED_SORT_KEYS = [
-    'missionName',
-    'projectName',
-    'creatorName',
-    'createdAt',
-    'updatedAt',
-];
-
-const SORT_KEY_MAP = {
+const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',
     projectName: 'project.name',
     creatorName: 'user.name',
@@ -165,7 +157,7 @@ export class MissionService {
         missionPatterns: string[],
         missionMetadata: Record<string, string>,
         sortBy: string | undefined,
-        sortOrder: SortOrder | undefined,
+        sortOrder: SortOrder,
         skip: number,
         take: number,
         userUuid: string,
@@ -193,13 +185,7 @@ export class MissionService {
         );
 
         if (sortBy !== undefined) {
-            if (!FIND_MANY_ALLOWED_SORT_KEYS.includes(sortBy)) {
-                throw new ConflictException(`Invalid sortBy key: ${sortBy}`);
-            }
-
-            const sortOrderSQL = sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-            const sortKeySQL = SORT_KEY_MAP[sortBy];
-            query.orderBy(sortKeySQL, sortOrderSQL);
+            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
 
         query.take(take).skip(skip);

@@ -8,6 +8,7 @@ import {
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { fileEntitiyToDtoWithTopic } from '../serialization';
+import { SortOrder } from '@common/api/types/pagination';
 import {
     Brackets,
     DataSource,
@@ -33,7 +34,12 @@ import {
     QueueState,
     UserRole,
 } from '@common/frontend_shared/enum';
-import { addFileFilters, addMissionFilters, addProjectFilters } from './utils';
+import {
+    addSort,
+    addFileFilters,
+    addMissionFilters,
+    addProjectFilters,
+} from './utils';
 
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
@@ -75,6 +81,13 @@ function isErrorWithCode(error: unknown): error is { code: string } {
     return typeof error === 'object' && error !== null && 'code' in error;
 }
 
+const FIND_MANY_SORT_KEYS = {
+    filename: 'file.filename',
+    createdAt: 'file.createdAt',
+    updatedAt: 'file.updatedAt',
+    creator: 'user.username',
+};
+
 @Injectable()
 export class FileService implements OnModuleInit {
     private fileCleanupQueue!: Queue.Queue;
@@ -110,6 +123,8 @@ export class FileService implements OnModuleInit {
         fileUuids: string[],
         filePatterns: string[],
         missionMetadata: Record<string, string>,
+        sortBy: string | undefined,
+        sortOrder: SortOrder,
         take: number,
         skip: number,
         userUuid: string,
@@ -143,6 +158,10 @@ export class FileService implements OnModuleInit {
             fileUuids,
             filePatterns,
         );
+
+        if (sortBy !== undefined) {
+            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+        }
 
         const [files, count] = await query
             .take(take)

@@ -4,6 +4,8 @@ import Mission from '@common/entities/mission/mission.entity';
 import { parseISO, isValid } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import File from '@common/entities/file/file.entity';
+import { ConflictException } from '@nestjs/common';
+import { SortOrder } from '@common/api/types/pagination';
 
 export const stringToBoolean = (value: string): boolean | undefined => {
     value = value.toLowerCase();
@@ -258,5 +260,22 @@ export const addFileFilters = (
             .setParameters(fileIdSubQuery.getParameters());
     }
 
+    return query;
+};
+
+export const addSort = (
+    query: SelectQueryBuilder<any>,
+    allowedSortKeyMap: Record<string, string>,
+    sortBy: string,
+    sortOrder: SortOrder,
+): SelectQueryBuilder<any> => {
+    if (!(sortBy in allowedSortKeyMap)) {
+        throw new ConflictException(`Invalid sortBy key: ${sortBy}`);
+    }
+
+    query.orderBy(
+        allowedSortKeyMap[sortBy] as string,
+        sortOrder === SortOrder.ASC ? 'ASC' : 'DESC',
+    );
     return query;
 };

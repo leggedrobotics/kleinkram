@@ -74,6 +74,8 @@ export class FileController {
             query.fileUuids ?? [],
             query.filePatterns ?? [],
             query.metadata ?? {},
+            query.sortBy,
+            query.sortOrder,
             query.take,
             query.skip,
             auth.user.uuid,

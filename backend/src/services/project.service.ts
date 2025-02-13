@@ -7,7 +7,7 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 
-import { addProjectFilters } from './utils';
+import { addProjectFilters, addSort } from './utils';
 
 import {
     AccessGroupRights,
@@ -29,6 +29,15 @@ import { DefaultRightDto } from '@common/api/types/access-control/default-right.
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import { SortOrder } from '@common/api/types/pagination';
+
+const FIND_MANY_SORT_KEYS = {
+    projectName: 'project.name',
+    name: 'project.name',
+    createdAt: 'project.createdAt',
+    updatedAt: 'project.updatedAt',
+    creator: 'creator.name',
+};
 
 @Injectable()
 export class ProjectService {
@@ -142,6 +151,8 @@ export class ProjectService {
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
+        sortBy: string | undefined,
+        sortOrder: SortOrder,
         skip: number,
         take: number,
         userUuid: string,
@@ -158,6 +169,10 @@ export class ProjectService {
             projectUuids,
             projectPatterns,
         );
+
+        if (sortBy !== undefined) {
+            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+        }
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
