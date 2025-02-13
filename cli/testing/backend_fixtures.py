@@ -33,7 +33,6 @@ WAIT_BEOFORE_DELETION = 5
 def project():
     project_name = token_hex(8)
 
-    print("here")
     create_project(project_name, description="This is a test project")
 
     project = list_projects(project_names=[project_name])[0]
