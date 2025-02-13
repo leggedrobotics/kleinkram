@@ -44,7 +44,6 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(User)
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
