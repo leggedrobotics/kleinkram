@@ -28,7 +28,10 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission/mission.dto';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import {
+    addAccessConstraintsToMissionQuery,
+    addAccessConstraints,
+} from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
     missionEntityToFlatDto,
@@ -171,18 +174,12 @@ export class MissionService {
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
-
         let query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'user');
 
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
-        }
+        query = addAccessConstraintsToMissionQuery(query, userUuid);
 
         if (projectUuids.length > 0 || projectPatterns.length > 0) {
             const projectLikePatterns = projectPatterns.map(
