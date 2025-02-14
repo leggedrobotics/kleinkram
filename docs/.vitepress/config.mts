@@ -91,11 +91,11 @@ export default withMermaid({
                 },
 
                 {
-                    text: 'Kleinkram CLI',
+                    text: 'Kleinkram CLI & Python Package',
                     items: [
                         {
                             text: 'Getting Started',
-                            link: '/usage/cli/cli-getting-started.md',
+                            link: '/usage/python/getting-started.md',
                         },
                     ],
                     collapsed: true,
@@ -237,15 +237,15 @@ export default withMermaid({
                     collapsed: true,
                 },
                 {
-                    text: 'API and CLI',
+                    text: 'API, CLI & Python Package',
                     items: [
                         {
-                            text: 'Introduction',
+                            text: 'Developing the API',
                             link: '/development/api/Introduction',
                         },
                         {
-                            text: 'Develop the CLI',
-                            link: '/development/cli/getting-started.md',
+                            text: 'Developing the CLI and Python Package',
+                            link: '/development/python/getting-started.md',
                         },
                     ],
                 },
