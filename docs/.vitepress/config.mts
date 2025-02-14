@@ -237,15 +237,15 @@ export default withMermaid({
                     collapsed: true,
                 },
                 {
-                    text: 'API und CLI',
+                    text: 'API and CLI',
                     items: [
                         {
                             text: 'Introduction',
-                            link: '/development/API/Introduction',
+                            link: '/development/api/Introduction',
                         },
                         {
                             text: 'Develop the CLI',
-                            link: '/development/CLI/getting-started.md',
+                            link: '/development/cli/getting-started.md',
                         },
                     ],
                 },
@@ -270,7 +270,7 @@ export default withMermaid({
                 },
                 {
                     text: 'Cronjobs',
-                    link: '/development/Cron/CronJobs',
+                    link: '/development/cron/CronJobs',
                 },
 
             ],
