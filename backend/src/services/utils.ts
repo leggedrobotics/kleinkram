@@ -267,9 +267,7 @@ export const addSort = (
     query: SelectQueryBuilder<any>,
     allowedSortKeyMap: Record<string, string>,
     sortBy: string,
-    sortOrder: SortOrder,
-): SelectQueryBuilder<any> => {
-    if (!(sortBy in allowedSortKeyMap)) {
+    sortOrder: SortOrder,): SelectQueryBuilder<any> => { if (!(sortBy in allowedSortKeyMap)) {
         throw new MethodNotAllowedException(`Invalid sortBy key: ${sortBy}`);
     }
 

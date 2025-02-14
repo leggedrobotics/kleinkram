@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { fileEntitiyToDtoWithTopic } from '../serialization';
 import { SortOrder } from '@common/api/types/pagination';
 import {
-    Brackets,
     DataSource,
     FindOptionsSelect,
     FindOptionsWhere,
@@ -82,6 +81,7 @@ function isErrorWithCode(error: unknown): error is { code: string } {
 }
 
 const FIND_MANY_SORT_KEYS = {
+    name: 'file.filename',
     filename: 'file.filename',
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
@@ -133,7 +133,7 @@ export class FileService implements OnModuleInit {
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('file.creator', 'user');
+            .leftJoinAndSelect('file.creator', 'creator');
 
         query = addAccessConstraintsToFileQuery(query, userUuid);
 
