@@ -84,7 +84,7 @@ def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
     config = get_config()
     # use cli key login
     if key is not None:
-        config.credentials = Credentials(cli_key=key)
+        config.credentials = Credentials(api_key=key)
         save_config(config)
         return
 

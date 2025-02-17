@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 COOKIE_AUTH_TOKEN = "authtoken"
 COOKIE_REFRESH_TOKEN = "refreshtoken"
-COOKIE_CLI_KEY = "clikey"
+COOKIE_API_KEY = "clikey"
 
 
 Data = Union[PrimitiveData, Any]
@@ -74,9 +74,9 @@ class AuthenticatedClient(httpx.Client):
         if self._config.credentials is None:
             logger.info("not authenticated...")
             raise NotAuthenticated
-        elif (cli_key := self._config.credentials.cli_key) is not None:
+        elif (api_key := self._config.credentials.api_key) is not None:
             logger.info("using cli key...")
-            self.cookies.set(COOKIE_CLI_KEY, cli_key)
+            self.cookies.set(COOKIE_API_KEY, api_key)
         else:
             logger.info("using refresh token...")
             assert self._config.credentials.auth_token is not None, "unreachable"
@@ -86,7 +86,7 @@ class AuthenticatedClient(httpx.Client):
         if self._config.credentials is None:
             raise NotAuthenticated
 
-        if self._config.credentials.cli_key is not None:
+        if self._config.credentials.api_key is not None:
             raise RuntimeError("cannot refresh token when using cli key auth")
 
         refresh_token = self._config.credentials.refresh_token

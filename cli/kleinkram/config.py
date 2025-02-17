@@ -45,7 +45,7 @@ class Endpoint(NamedTuple):
 class Credentials(NamedTuple):
     auth_token: Optional[str] = None
     refresh_token: Optional[str] = None
-    cli_key: Optional[str] = None
+    api_key: Optional[str] = None
 
 
 DEFAULT_LOCAL_API = "http://localhost:3000"
@@ -73,14 +73,58 @@ def get_env() -> Environment:
     return Environment.PROD
 
 
+ACTION_API_KEY = "KLEINKRAM_API_KEY"
+ACTION_API = "KLEINKRAM_API"
+ACTION_S3 = "KLEINKRAM_S3"
+
+
+def _get_endpoint_from_action_env_vars() -> Optional[Endpoint]:
+    api = os.getenv(ACTION_API)
+    s3 = os.getenv(ACTION_S3)
+    if api is None or s3 is None:
+        return None
+    return Endpoint("action", api, s3)
+
+
+def _get_api_key_from_action_env_vars() -> Optional[str]:
+    return os.getenv(ACTION_API_KEY)
+
+
+def _get_default_selected_endpoint() -> Endpoint:
+    env_endpoint = _get_endpoint_from_action_env_vars()
+    if env_endpoint is not None:
+        return env_endpoint
+    return DEFAULT_ENDPOINTS[get_env().value]
+
+
+def _get_default_endpoints() -> Dict[str, Endpoint]:
+    env_endpoint = _get_endpoint_from_action_env_vars()
+
+    default_endpoints = DEFAULT_ENDPOINTS.copy()
+    if env_endpoint is not None:
+        default_endpoints["action"] = env_endpoint
+    return default_endpoints
+
+
+def _get_default_credentials() -> Dict[str, Credentials]:
+    endpoint = _get_default_selected_endpoint()
+
+    api_key = _get_api_key_from_action_env_vars()
+    if api_key is not None:
+        return {endpoint.name: Credentials(api_key=api_key)}
+    return {}
+
+
 @dataclass
 class Config:
     version: str = __version__
-    selected_endpoint: str = field(default_factory=lambda: get_env().value)
-    endpoints: Dict[str, Endpoint] = field(
-        default_factory=lambda: DEFAULT_ENDPOINTS.copy()
+    selected_endpoint: str = field(
+        default_factory=lambda: _get_default_selected_endpoint().name
     )
-    endpoint_credentials: Dict[str, Credentials] = field(default_factory=dict)
+    endpoints: Dict[str, Endpoint] = field(default_factory=_get_default_endpoints)
+    endpoint_credentials: Dict[str, Credentials] = field(
+        default_factory=_get_default_credentials
+    )
 
     @property
     def endpoint(self) -> Endpoint:
@@ -129,11 +173,21 @@ def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
     os.replace(temp_path, path)
 
 
-def _load_config(*, path: Path = CONFIG_PATH) -> Config:
+def _load_config_if_compatible(path: Path) -> Optional[Config]:
     if not path.exists():
-        return Config()
+        return None
     with open(path, "r") as f:
-        return _config_from_dict(json.load(f))
+        try:
+            return _config_from_dict(json.load(f))
+        except Exception:
+            return None
+
+
+def _load_config(*, path: Path = CONFIG_PATH) -> Config:
+    config = _load_config_if_compatible(path)
+    if config is None:
+        return Config()
+    return config
 
 
 LOADED_CONFIGS: Dict[Path, Config] = {}
@@ -166,12 +220,8 @@ def check_config_compatibility(path: Path = CONFIG_PATH) -> bool:
     """
     if not path.exists():
         return True
-    try:
-        _ = _load_config(path=path)
-    except Exception as e:
-        logger.info(f"Error loading config: {e}")
-        return False
-    return True
+    config = _load_config_if_compatible(path)
+    return config is not None
 
 
 def endpoint_table(config: Config) -> Table:
