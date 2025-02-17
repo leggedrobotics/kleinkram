@@ -1,16 +1,16 @@
 # Kleinkram Python Package
 
-By installing `kleinkram` you also automatically get access to a python package that exposes most of the functionality that the CLI offers.
+Installing `kleinkram` using `pip` will also install a python package that exposes most of the functionality that the CLI offers.
 
 ## Authentication
 
-Make sure to authenticate yourself using the CLI:
+Make sure to authenticate using the CLI:
 
 ```bash
 klein login
 ```
 
-Currently there is no way to authenticate yourself without the cli.
+Currently authentication is only possible through the CLI.
 
 ## Examples
 
