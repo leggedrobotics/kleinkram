@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import secrets
 import shutil
+import time
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,8 @@ def run_cmd(command, *, verbose=VERBOSE):
 def test_upload_verify_update_download_mission(project, tmp_path, api):
     assert api
 
+    file_names = list(DATA_PATH.glob("*.bag"))
+
     mission_name = secrets.token_hex(8)
     upload = f"{CLI} upload -p {project.name} -m {mission_name} --create {DATA_PATH.absolute()}/*.bag"
     verify = (
@@ -50,11 +53,14 @@ def test_upload_verify_update_download_mission(project, tmp_path, api):
     )
     # update = f"{CLI} mission update -p {project.name} -m {mission_name} --metadata {DATA_PATH.absolute()}/metadata.yaml"
     download = f"{CLI} download -p {project.name} -m {mission_name} --dest {tmp_path.absolute()}"
+    delete_file = f"{CLI} file delete -p {project.name} -m {mission_name} -f {file_names[0].name} -y"
 
     assert run_cmd(upload) == 0
     assert run_cmd(verify) == 0
     # assert run_cmd(update) == 0
     assert run_cmd(download) == 0
+
+    assert run_cmd(delete_file) == 0
 
 
 @pytest.mark.slow
