@@ -6,7 +6,7 @@ In particular this can be used to upload and download files, create and update p
 
 ## Usage
 
-If you wish to use the CLI follow the [Getting Started](../../usage/cli/cli-getting-started.md) guide.
+If you wish to use the CLI follow the [Getting Started](../../usage/python/getting-started.md) guide.
 
 ## Development Setup
 

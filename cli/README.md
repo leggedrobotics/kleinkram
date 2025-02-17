@@ -50,7 +50,7 @@ Instead of downloading files from a specified mission you can download arbitrary
 klein download --dest out *id1* *id2* *id3*
 ```
 
-For more information consult the [documentation](https://docs.datasets.leggedrobotics.com/usage/cli/cli-getting-started.html).
+For more information consult the [documentation](https://docs.datasets.leggedrobotics.com/usage/python/getting-started.html).
 
 ## Development
 
