@@ -9,9 +9,12 @@ import {
     Not,
     Repository,
 } from 'typeorm';
-import { groupMembershipEntityToDto } from '../serialization';
+import {
+    groupMembershipEntityToDto,
+    projectAccessEntityToDto,
+    userEntityToDto,
+} from '../serialization';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { projectAccessEntityToDto, userEntityToDto } from '../serialization';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -26,6 +29,7 @@ import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.
 import { ProjectAccessListDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
 
 @Injectable()
 export class AccessService {
@@ -73,7 +77,10 @@ export class AccessService {
             uuid: rawAccessGroup.uuid,
             projectAccesses:
                 rawAccessGroup.project_accesses?.map(
-                    (value) => value.projectsOfGroup,
+                    (value) =>
+                        ({
+                            rights: value.rights,
+                        }) as ProjectWithAccessRightsDto,
                 ) ?? [],
         };
     }

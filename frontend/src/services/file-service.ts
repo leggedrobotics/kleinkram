@@ -438,7 +438,7 @@ async function uploadFileMultipart(
 
         await cancelUploads(
             [newFileUpload.value.uuid],
-            newFileUpload.value.missionUuid ?? '',
+            newFileUpload.value.missionUUID ?? '',
         );
 
         throw error;
