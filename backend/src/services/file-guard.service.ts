@@ -104,13 +104,14 @@ export class FileGuardService {
     ) {
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUUID },
-            relations: ['mission'],
+            relations: ['mission', 'mission.project'],
         });
         if (!file) return false;
         if (file.mission === undefined) throw new Error('File has no mission');
 
         return (
-            apiKey.mission.uuid === file.mission.uuid && apiKey.rights >= rights
+            apiKey.mission.project.uuid === file.mission.project.uuid &&
+            apiKey.rights >= rights
         );
     }
 

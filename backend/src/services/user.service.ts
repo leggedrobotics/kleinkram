@@ -215,7 +215,7 @@ export class UserService implements OnModuleInit {
 
         const apiKey = await this.apikeyRepository.findOneOrFail({
             where: { apikey },
-            relations: ['action'],
+            relations: ['action', 'mission.project'],
         });
 
         return { user, apiKey };
