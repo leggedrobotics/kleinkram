@@ -7,6 +7,7 @@ module.exports = {
     moduleNameMapper: {
         '^@common/(.*)$': '<rootDir>/../common/$1',
     },
+    preset: 'ts-jest',
     modulePathIgnorePatterns: ['<rootDir>/dist/'],
     reporters: ['<rootDir>/tests/utils/reporter.js'],
 };
