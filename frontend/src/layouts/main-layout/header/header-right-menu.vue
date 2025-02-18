@@ -122,7 +122,7 @@
                                     outline
                                     style="margin: 8px auto; width: 200px"
                                     class="button-border"
-                                    color="grey-8"
+                                    color="black"
                                     label="Open Pending Uploads"
                                     :to="ROUTES.UPLOAD.path"
                                     @click="hideOverlay"
