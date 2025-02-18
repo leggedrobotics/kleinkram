@@ -6,10 +6,6 @@ import TagType from '../tagType/tag-type.entity';
 import ProjectAccess from '../auth/project-access.entity';
 import CategoryEntity from '../category/category.entity';
 
-import { ProjectDto } from '../../api/types/project/base-project.dto';
-import { ProjectWithMissionCountDto } from '../../api/types/project/project-with-mission-count.dto';
-import { ProjectWithMissionsDto } from '../../api/types/project/project-with-missions.dto';
-
 @Entity()
 export default class Project extends BaseEntity {
     /**

@@ -5,9 +5,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from '@common/api/types/create-project.dto';
 import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
-import { SelectQueryBuilder } from 'typeorm';
+import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 
-import { convertGlobToLikePattern } from './utils';
+import { addProjectFilters, addSort } from './utils';
 
 import {
     AccessGroupRights,
@@ -19,7 +19,6 @@ import {
     projectEntityToDtoWithMissionCount,
 } from '../serialization';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { Brackets } from 'typeorm';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
 import { ConfigService } from '@nestjs/config';
 import { AccessGroupConfig } from '../app.module';
@@ -30,6 +29,15 @@ import { DefaultRightDto } from '@common/api/types/access-control/default-right.
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import { SortOrder } from '@common/api/types/pagination';
+
+const FIND_MANY_SORT_KEYS = {
+    projectName: 'project.name',
+    name: 'project.name',
+    createdAt: 'project.createdAt',
+    updatedAt: 'project.updatedAt',
+    creator: 'creator.name',
+};
 
 @Injectable()
 export class ProjectService {
@@ -45,8 +53,6 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagType>,
         @InjectRepository(AccessGroup)
         private accessGroupRepository: Repository<AccessGroup>,
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
@@ -145,58 +151,28 @@ export class ProjectService {
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
+        sortBy: string | undefined,
+        sortOrder: SortOrder,
         skip: number,
         take: number,
         userUuid: string,
     ): Promise<ProjectsDto> {
-        // maybe we can reuse this at some point
-        const addProjectAccessConstraints = async (
-            query: SelectQueryBuilder<Project>,
-            userId: string,
-        ): Promise<SelectQueryBuilder<Project>> => {
-            const user = await this.userRepository.findOneOrFail({
-                where: { uuid: userId },
-            });
-
-            if (user.role === UserRole.ADMIN) {
-                return query;
-            }
-
-            return query
-                .leftJoin('project.project_accesses', 'projectAccesses')
-                .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-                .innerJoin(
-                    'accessGroup.memberships',
-                    'memberships',
-                    'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
-                )
-                .leftJoin('memberships.user', 'user')
-                .where('projectAccesses.rights >= :rights', {
-                    rights: AccessGroupRights.READ,
-                })
-                .andWhere('user.uuid = :uuid', { uuid: user.uuid });
-        };
-
         let query = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator');
 
-        query = await addProjectAccessConstraints(query, userUuid);
+        query = addAccessConstraintsToProjectQuery(query, userUuid);
 
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', {
-                        projectUuids,
-                    });
-                }
-                if (projectPatterns.length > 0) {
-                    qb.orWhere('project.name ILIKE ANY(ARRAY[:...patterns])', {
-                        patterns: projectPatterns.map(convertGlobToLikePattern),
-                    });
-                }
-            }),
+        query = addProjectFilters(
+            query,
+            this.projectRepository,
+            projectUuids,
+            projectPatterns,
         );
+
+        if (sortBy !== undefined) {
+            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+        }
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();

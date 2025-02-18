@@ -9,8 +9,7 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { Brackets } from 'typeorm';
-import { convertGlobToLikePattern } from './utils';
+import { addProjectFilters, addMissionFilters, addSort } from './utils';
 import { missionEntityToDtoWithCreator } from '../serialization';
 import { missionEntityToDtoWithFiles } from '../serialization';
 import {
@@ -25,12 +24,25 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission/mission.dto';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
+import {
+    addAccessConstraintsToMissionQuery,
+    addAccessConstraints,
+} from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
     missionEntityToFlatDto,
     missionEntityToMinimumDto,
 } from '../serialization';
+
+import { SortOrder } from '@common/api/types/pagination';
+
+const FIND_MANY_SORT_KEYS = {
+    missionName: 'mission.name',
+    projectName: 'project.name',
+    creatorName: 'user.name',
+    createdAt: 'mission.createdAt',
+    updatedAt: 'mission.updatedAt',
+};
 
 @Injectable()
 export class MissionService {
@@ -143,64 +155,38 @@ export class MissionService {
         projectPatterns: string[],
         missionUuids: string[],
         missionPatterns: string[],
+        missionMetadata: Record<string, string>,
+        sortBy: string | undefined,
+        sortOrder: SortOrder,
         skip: number,
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
-        const missionLikePatterns = missionPatterns.map(
-            convertGlobToLikePattern,
-        );
-
-        const projectLikePatterns = projectPatterns.map(
-            convertGlobToLikePattern,
-        );
-
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUuid },
-        });
-
         let query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'user');
+            .leftJoinAndSelect('mission.creator', 'creator');
 
-        if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUuid);
+        query = addAccessConstraintsToMissionQuery(query, userUuid);
+
+        query = addProjectFilters(
+            query,
+            this.projectRepository,
+            projectUuids,
+            projectPatterns,
+        );
+
+        query = addMissionFilters(
+            query,
+            this.missionRepository,
+            missionUuids,
+            missionPatterns,
+            missionMetadata,
+        );
+
+        if (sortBy !== undefined) {
+            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
-
-        // query by project affiliation
-        query.andWhere(
-            new Brackets((qb) => {
-                if (projectUuids.length > 0) {
-                    qb.orWhere('project.uuid IN (:...projectUuids)', {
-                        projectUuids,
-                    });
-                }
-                if (projectPatterns.length > 0) {
-                    qb.orWhere(
-                        'project.name LIKE ANY(ARRAY[:...projectPatterns])',
-                        { projectPatterns: projectLikePatterns },
-                    );
-                }
-            }),
-        );
-
-        // query missions directly
-        query.andWhere(
-            new Brackets((qb) => {
-                if (missionUuids.length > 0) {
-                    qb.orWhere('mission.uuid IN (:...missionUuids)', {
-                        missionUuids,
-                    });
-                }
-                if (missionPatterns.length > 0) {
-                    qb.orWhere(
-                        'mission.name LIKE ANY(ARRAY[:...missionPatterns])',
-                        { missionPatterns: missionLikePatterns },
-                    );
-                }
-            }),
-        );
 
         query.take(take).skip(skip);
         const [missions, count] = await query.getManyAndCount();
