@@ -20,22 +20,28 @@ export class TopicService {
             .createQueryBuilder('topic')
             .select('DISTINCT topic.name', 'name')
             .orderBy('name');
+
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUuid },
         });
-        const [topics, count] = await (user.role === UserRole.ADMIN
-            ? baseQuery.getRawMany()
-            : addAccessConstraints(
-                  baseQuery
-                      .leftJoin('topic.file', 'file')
-                      .leftJoin('file.mission', 'mission')
-                      .leftJoin('mission.project', 'project'),
-                  userUuid,
-              ).getManyAndCount());
+
+        const topicsQuery =
+            user.role === UserRole.ADMIN
+                ? baseQuery
+                : addAccessConstraints(
+                      baseQuery
+                          .leftJoin('topic.file', 'file')
+                          .leftJoin('file.mission', 'mission')
+                          .leftJoin('mission.project', 'project'),
+                      userUuid,
+                  );
+
+        const topics = await topicsQuery.clone().getRawMany();
+        const count = await topicsQuery.getCount();
 
         return {
             count,
-            data: topics.map(topicEntityToDto),
+            data: topics.map((topic) => topic.name),
             take: count,
             skip: 0,
         };

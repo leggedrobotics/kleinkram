@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
@@ -54,8 +54,8 @@ export class TopicNamesDto implements Paginated<string> {
         type: [String],
         description: 'List of topic names',
     })
-    @ValidateNested()
-    @Type(() => String)
+    @IsArray()
+    @IsString({ each: true })
     data!: string[];
 
     @ApiProperty()
