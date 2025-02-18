@@ -3,7 +3,7 @@ import { IsDate, IsEnum, IsString } from 'class-validator';
 
 export class LogsDto {
     @ApiProperty()
-    @IsDate()
+    @IsString()
     timestamp!: Date;
 
     @ApiProperty()

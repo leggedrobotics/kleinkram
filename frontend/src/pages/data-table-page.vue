@@ -637,11 +637,9 @@ function filterFunction(value: string, update: any) {
     update(() => {
         if (!allTopics.value) return;
         const needle = value.toLowerCase();
-        const filtered = allTopics.value.filter((v) =>
+        displayedTopics.value = allTopics.value.filter((v) =>
             v.toLowerCase().includes(needle),
         );
-        console.log(filtered);
-        displayedTopics.value = filtered;
     });
 }
 
