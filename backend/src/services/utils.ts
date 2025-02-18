@@ -176,7 +176,7 @@ export const getFilteredFileIdSubQuery = (
     }
 
     if (filePatterns.length > 0) {
-        query.orWhere('file.name LIKE ANY(ARRAY[:...filePatterns])', {
+        query.orWhere('file.filename LIKE ANY(ARRAY[:...filePatterns])', {
             filePatterns,
         });
     }
