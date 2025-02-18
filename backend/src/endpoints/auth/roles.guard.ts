@@ -710,7 +710,7 @@ export class CreateActionGuard extends BaseGuard {
             );
         }
         return this.missionGuardService.canAccessMission(
-            user.uuid,
+            user,
             missionUUID,
             actionTemplate.accessRights,
         );
