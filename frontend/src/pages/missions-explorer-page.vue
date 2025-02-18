@@ -259,9 +259,6 @@ const handler = useHandler();
 const $q = useQuasar();
 const projectUuid = useProjectUUID();
 const { data: project, isLoadingError, error } = useProjectQuery(projectUuid);
-watch(project, () => {
-    console.log(project.value);
-});
 const createAction = ref(false);
 
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
