@@ -1,10 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class DockerImageDto {
     @ApiProperty()
-    @ValidateNested()
-    @Type(() => String)
+    @IsArray()
+    @IsString({ each: true })
     repoDigests!: string[];
+
+    @ApiProperty({ description: 'SHA value', required: false })
+    @IsOptional()
+    @IsString()
+    sha!: string;
 }
