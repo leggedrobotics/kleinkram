@@ -33,7 +33,7 @@ import { MissionQueryDto } from '@common/api/types/mission/mission-query.dto';
 
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
-@Controller('mission')
+@Controller(['mission', 'missions']) // TODO: migrate to 'missions'
 export class MissionController {
     constructor(private readonly missionService: MissionService) {}
 
@@ -65,7 +65,7 @@ export class MissionController {
         return this.missionService.updateName(missionUUID, name);
     }
 
-    @Get('many')
+    @Get()
     @UserOnly()
     @ApiOkResponse({
         description: 'Returns all missions',

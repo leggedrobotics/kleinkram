@@ -1,53 +1,13 @@
-# Getting Started with the CLI
+# Kleinkram CLI Usage
 
-The `kleinkram` CLI allows you to interact with kleinkram from the command line. This guide will help you get started with the CLI. The CLI does not yet support all functionalities so for some use cases you will still need to use the web interface.
-
-## Installation and Prerequisites
-
-The CLI requires python3.8 or later. It is recommended that you use a virtual environment
-
-```bash
-virtualenv .venv -ppython3.8
-source .venv/bin/activate
-```
-
-You can install the CLI using pip
-
-```bash
-pip install kleinkram
-```
-
-This will add the command `klein` to your path. You are ready to get started!
-
-```bash
-klein --help
-```
-
-## Authentication
-
-In order to use the CLI, you need to authenticate yourself. If your device has access to a webbrowerse you can simply type
-
-```bash
-klein login
-```
-
-and follow the instructions.
-
-::: details Headless Authentication (Optional)
-In case your device does not support a browser you can use:
-
-```
-klein login --headless
-```
-
-:::
+Make sure to first read the [getting started](./getting-started.md) guide to install the CLI and authenticate yourself.
 
 ## General Concepts (Mission Spec)
 
 Most commands are based on you specifying a `mission` which you want to interact with. There are multiple ways to specify a mission.
 
--   Specify the mission by ID.
--   Specify a project (either by ID or name) and specify as mission name.
+- Specify the mission by ID.
+- Specify a project (either by ID or name) and specify as mission name.
 
 This is achieved by specifying the options `-m` / `--mission` and `-p` / `--project` respectively. As an example consider the following:
 

@@ -6,6 +6,8 @@ import User from '@common/entities/user/user.entity';
 import { ActionState, UserRole } from '@common/frontend_shared/enum';
 import ActionTemplate from '@common/entities/action/action-template.entity';
 import { QueueService } from './queue.service';
+import { actionEntityToDto, actionTemplateEntityToDto } from '../serialization';
+
 import {
     CreateTemplateDto,
     UpdateTemplateDto,
@@ -131,7 +133,7 @@ export class ActionService {
         const createdTemplate =
             await this.actionTemplateRepository.save(template);
 
-        return createdTemplate.actionTemplateDto;
+        return actionTemplateEntityToDto(createdTemplate);
     }
 
     async createNewVersion(
@@ -161,7 +163,7 @@ export class ActionService {
             template.searchable = true;
             const savedTemplate =
                 await this.actionTemplateRepository.save(template);
-            return savedTemplate.actionTemplateDto;
+            return actionTemplateEntityToDto(savedTemplate);
         }
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
@@ -189,7 +191,7 @@ export class ActionService {
 
         const savedTemplate =
             await this.actionTemplateRepository.save(template);
-        return savedTemplate.actionTemplateDto;
+        return actionTemplateEntityToDto(savedTemplate);
     }
 
     async listTemplates(
@@ -211,7 +213,7 @@ export class ActionService {
 
         return {
             count,
-            data: templates.map((t) => t.actionTemplateDto),
+            data: templates.map(actionTemplateEntityToDto),
             skip,
             take,
         };
@@ -263,7 +265,7 @@ export class ActionService {
             const [actions, count] = await query.getManyAndCount();
             return {
                 count,
-                data: actions.map((a) => a.actionDto),
+                data: actions.map(actionEntityToDto),
                 skip,
                 take,
             };
@@ -310,7 +312,7 @@ export class ActionService {
 
         return {
             count,
-            data: actions.map((a) => a.actionDto),
+            data: actions.map(actionEntityToDto),
             skip,
             take,
         };
@@ -328,7 +330,7 @@ export class ActionService {
             ],
         });
 
-        return action.actionDto;
+        return actionEntityToDto(action);
     }
 
     async runningActions(

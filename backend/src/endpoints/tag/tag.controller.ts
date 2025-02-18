@@ -18,7 +18,7 @@ import { ApiOkResponse } from '../../decarators';
 import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
-import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
+import { AddTagsDto } from '@common/api/types/tags/add-tags.dto';
 
 @Controller('tag')
 export class TagController {
@@ -32,19 +32,6 @@ export class TagController {
     })
     async createTagType(@Body() body: CreateTagTypeDto): Promise<TagTypeDto> {
         return await this.tagService.create(body.name, body.type);
-    }
-
-    @Post('addTag')
-    @CanAddTag()
-    @ApiOkResponse({
-        type: AddTagDto,
-    })
-    async addTag(
-        @BodyUUID('mission', 'Mission UUID') mission: string,
-        @BodyUUID('tagType', 'TagType UUID') tagType: string,
-        @BodyNotNull('value', 'TagType value') value: string | number | boolean,
-    ): Promise<AddTagDto> {
-        return this.tagService.addTagType(mission, tagType, value);
     }
 
     @Post('addTags')

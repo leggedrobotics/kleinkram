@@ -84,7 +84,7 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
-        swaggerUiEnabled: false,
+        swaggerUiEnabled: true,
     });
 
     await app.listen(3000);

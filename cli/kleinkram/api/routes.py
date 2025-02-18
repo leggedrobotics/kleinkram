@@ -65,15 +65,15 @@ __all__ = [
 CLAIM_ADMIN = "/user/claimAdmin"
 GET_STATUS = "/user/me"
 
-UPDATE_PROJECT = "/project"
-UPDATE_MISSION = "/mission/tags"  # TODO: just metadata for now
-CREATE_MISSION = "/mission/create"
-CREATE_PROJECT = "/project/create"
+UPDATE_PROJECT = "/projects"
+UPDATE_MISSION = "/missions/tags"  # TODO: just metadata for now
+CREATE_MISSION = "/missions/create"
+CREATE_PROJECT = "/projects"
 
 
-FILE_ENDPOINT = "/file/many"
-MISSION_ENDPOINT = "/mission/many"
-PROJECT_ENDPOINT = "/project/many"
+FILE_ENDPOINT = "/files"
+MISSION_ENDPOINT = "/missions"
+PROJECT_ENDPOINT = "/projects"
 
 TAG_TYPE_BY_NAME = "/tag/filtered"
 
@@ -370,7 +370,7 @@ def _claim_admin(client: AuthenticatedClient) -> None:
     return
 
 
-FILE_DELETE_MANY = "/file/deleteMultiple"
+FILE_DELETE_MANY = "/files/deleteMultiple"
 
 
 def _delete_files(
@@ -384,7 +384,7 @@ def _delete_files(
     resp.raise_for_status()
 
 
-MISSION_DELETE_ONE = "/mission/{}"
+MISSION_DELETE_ONE = "/missions/{}"
 
 
 def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
@@ -396,7 +396,7 @@ def _delete_mission(client: AuthenticatedClient, mission_id: UUID) -> None:
     resp.raise_for_status()
 
 
-PROJECT_DELETE_ONE = "/project/{}"
+PROJECT_DELETE_ONE = "/projects/{}"
 
 
 def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:

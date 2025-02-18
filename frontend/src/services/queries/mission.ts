@@ -92,7 +92,7 @@ export const missionsOfProject = async (
 
 export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        '/mission/many',
+        '/mission',
         {
             params: { missionUuids: uuids },
             paramsSerializer: (parameters) => {

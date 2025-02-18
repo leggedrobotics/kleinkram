@@ -191,6 +191,28 @@ def files_to_table(
     return table
 
 
+def file_info_table(file: File) -> Table:
+    table = Table("k", "v", title=f"file info: {file.name}", show_header=False)
+
+    table.add_row("name", file.name)
+    table.add_row("id", Text(str(file.id), style="green"))
+    table.add_row("project", file.project_name)
+    table.add_row("project id", Text(str(file.project_id), style="green"))
+    table.add_row("mission", file.mission_name)
+    table.add_row("mission id", Text(str(file.mission_id), style="green"))
+    table.add_row("created", str(file.created_at))
+    table.add_row("updated", str(file.updated_at))
+    table.add_row("size", format_bytes(file.size))
+    table.add_row("state", file_state_to_text(file.state))
+    table.add_row("categories", ", ".join(file.categories))
+    table.add_row("topics", ", ".join(file.topics))
+    table.add_row("hash", file.hash)
+    table.add_row("type", file.type_)
+    table.add_row("date", str(file.date))
+
+    return table
+
+
 def mission_info_table(
     mission: Mission, print_metadata: bool = False
 ) -> Tuple[Table, ...]:
@@ -295,6 +317,20 @@ def print_projects(projects: Sequence[Project], *, pprint: bool) -> None:
     else:
         for project in projects:
             print(project.id)
+
+
+def print_file_info(file: File, *, pprint: bool) -> None:
+    """\
+    prints the file info to stdout
+    either using pprint or as a list for piping
+    """
+    if pprint:
+        Console().print(file_info_table(file))
+    else:
+        file_dct = asdict(file)
+        for key in file_dct:
+            file_dct[key] = str(file_dct[key])  # TODO: improve this
+        print(json.dumps(file_dct))
 
 
 def print_mission_info(mission: Mission, *, pprint: bool) -> None:

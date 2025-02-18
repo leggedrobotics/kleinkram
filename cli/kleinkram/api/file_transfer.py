@@ -32,12 +32,12 @@ from kleinkram.utils import styled_string
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_CREDS = "/file/temporaryAccess"
+UPLOAD_CREDS = "/files/temporaryAccess"
 UPLOAD_CONFIRM = "/queue/confirmUpload"
-UPLOAD_CANCEL = "/file/cancelUpload"
+UPLOAD_CANCEL = "/files/cancelUpload"
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
-DOWNLOAD_URL = "/file/download"
+DOWNLOAD_URL = "/files/download"
 
 S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes

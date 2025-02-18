@@ -17,7 +17,7 @@ describe('Verify JWT Handling', () => {
         const jwt = require('jsonwebtoken');
         const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
 
-        const res = await fetch(`http://localhost:3000/project/create`, {
+        const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
@@ -40,7 +40,7 @@ describe('Verify JWT Handling', () => {
             process.env['JWT_SECRET'],
         );
 
-        const res = await fetch(`http://localhost:3000/project/create`, {
+        const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,

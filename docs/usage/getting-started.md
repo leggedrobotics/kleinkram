@@ -13,5 +13,5 @@ See the [documentation](/usage/access-control/base-concepts) for more informatio
 :::
 
 ::: details Is there a CLI / API to interact with the application?
-Yes, there is a python CLI, see [here](cli/cli-getting-started.md) for more information.
+Yes, there is a python CLI, see [here](python/getting-started.md) for more information.
 :::

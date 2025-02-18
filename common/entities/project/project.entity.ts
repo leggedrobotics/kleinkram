@@ -41,39 +41,4 @@ export default class Project extends BaseEntity {
 
     @OneToMany(() => CategoryEntity, (category) => category.project)
     categories?: CategoryEntity[];
-
-    get minimalProjectDto(): ProjectDto {
-        return {
-            uuid: this.uuid,
-            name: this.name,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            description: this.description,
-        };
-    }
-
-    get flatProjectDto(): ProjectWithMissionCountDto {
-        if (this.creator === undefined) {
-            throw new Error('Creator can never be undefined');
-        }
-
-        return {
-            ...this.minimalProjectDto,
-            creator: this.creator.userDto,
-            missionCount: this.missions?.length ?? 0,
-        };
-    }
-
-    get projectDto(): ProjectWithMissionsDto {
-        if (this.creator === undefined) {
-            throw new Error('Creator can never be undefined');
-        }
-
-        return {
-            ...this.minimalProjectDto,
-            creator: this.creator.userDto,
-            requiredTags: this.requiredTags.map((t) => t.tagTypeDto),
-            missions: this.missions?.map((m) => m.flatMissionDto) ?? [],
-        };
-    }
 }

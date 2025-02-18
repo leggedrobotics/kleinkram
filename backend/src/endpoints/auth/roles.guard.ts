@@ -109,7 +109,7 @@ export class ReadProjectGuard extends BaseGuard {
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
 
-        const projectUUID = request.query.uuid;
+        const projectUUID = request.query.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(user, projectUUID);
     }
 }

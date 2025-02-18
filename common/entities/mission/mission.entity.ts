@@ -8,13 +8,6 @@ import Apikey from '../auth/apikey.entity';
 import Tag from '../tag/tag.entity';
 import MissionAccess from '../auth/mission-access.entity';
 import Action from '../action/action.entity';
-import {
-    FlatMissionDto,
-    MinimumMissionDto,
-    MissionDto,
-    MissionWithCreatorDto,
-    MissionWithFilesDto,
-} from '../../api/types/mission/mission.dto';
 
 @Unique('unique_mission_name_per_project', ['name', 'project'])
 @Entity()
@@ -47,64 +40,4 @@ export default class Mission extends BaseEntity {
 
     @OneToMany(() => Tag, (tag) => tag.mission)
     tags?: Tag[];
-
-    get missionDto(): MissionDto {
-        if (!this.project) {
-            throw new Error('Mission project is not set');
-        }
-
-        return {
-            ...this.minimumMissionDto,
-            project: this.project.minimalProjectDto,
-            createdAt: this.createdAt,
-            tags: this.tags?.map((tag) => tag.tagDto) || [],
-            updatedAt: this.updatedAt,
-        };
-    }
-
-    get missionWithCreatorDto(): MissionWithCreatorDto {
-        if (!this.creator) {
-            throw new Error('Mission creator is not set');
-        }
-
-        return {
-            ...this.missionDto,
-            creator: this.creator.userDto,
-        };
-    }
-
-    get flatMissionDto(): FlatMissionDto {
-        return {
-            ...this.missionWithCreatorDto,
-            filesCount: this.files?.length || 0,
-            size:
-                this.files?.reduce(
-                    (accumulator, file) => accumulator + (file.size ?? 0),
-                    0,
-                ) || 0,
-        };
-    }
-
-    get missionWithFilesDto(): MissionWithFilesDto {
-        if (!this.files) {
-            throw new Error('Mission files are not set');
-        }
-
-        if (!this.tags) {
-            throw new Error('Mission creator is not set');
-        }
-
-        return {
-            ...this.missionWithCreatorDto,
-            files: this.files.map((file) => file.fileDto),
-            tags: this.tags.map((tag) => tag.tagDto),
-        };
-    }
-
-    get minimumMissionDto(): MinimumMissionDto {
-        return {
-            name: this.name,
-            uuid: this.uuid,
-        };
-    }
 }

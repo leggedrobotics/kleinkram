@@ -37,20 +37,4 @@ export default class GroupMembership extends BaseEntity {
      */
     @Column({ default: false })
     canEditGroup!: boolean;
-
-    get groupMembershipDto(): GroupMembershipDto {
-        if (this.user === undefined) {
-            throw new Error('Member can never be undefined');
-        }
-
-        return {
-            uuid: this.uuid,
-            canEditGroup: this.canEditGroup,
-            accessGroup: null, // we don't want to return the access group
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            expirationDate: this.expirationDate ?? null,
-            user: this.user.userDto,
-        };
-    }
 }
