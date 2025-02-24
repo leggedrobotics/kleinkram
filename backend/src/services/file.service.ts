@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { fileEntitiyToDtoWithTopic } from '../serialization';
+import { fileEntityToDtoWithTopic } from '../serialization';
 import { SortOrder } from '@common/api/types/pagination';
 import {
     DataSource,
@@ -397,7 +397,7 @@ export class FileService implements OnModuleInit {
             ],
         });
 
-        return fileEntitiyToDtoWithTopic(file);
+        return fileEntityToDtoWithTopic(file);
     }
 
     /**

@@ -188,7 +188,7 @@ export const fileEntityToDto = (file: FileEntity): FileDto => {
     };
 };
 
-export const fileEntitiyToDtoWithTopic = (
+export const fileEntityToDtoWithTopic = (
     file: FileEntity,
 ): FileWithTopicDto => {
     if (!file.topics) {
