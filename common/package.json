@@ -18,7 +18,7 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
-        "@types/node": "^22.13.4",
+        "@types/node": "^22.13.5",
         "typescript": "^5.7.2"
     }
 }
