@@ -22,4 +22,3 @@ export default class TagType extends BaseEntity {
     @OneToMany(() => Tag, (tag) => tag.tagType)
     tags?: Tag[];
 }
-

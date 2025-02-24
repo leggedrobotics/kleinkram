@@ -49,4 +49,3 @@ export default class ActionTemplate extends BaseEntity {
     @Column()
     accessRights!: AccessGroupRights;
 }
-

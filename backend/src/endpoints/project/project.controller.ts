@@ -102,6 +102,8 @@ export class ProjectController {
         return await this.projectService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
+            query.sortBy,
+            query.sortOrder,
             query.skip,
             query.take,
             user.user.uuid,
