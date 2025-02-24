@@ -31,14 +31,14 @@ class ProjectQuery:
 class MissionQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
-    project_query: ProjectQuery = field(default=ProjectQuery())
+    project_query: ProjectQuery = field(default_factory=ProjectQuery)
 
 
 @dataclass
 class FileQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
-    mission_query: MissionQuery = field(default=MissionQuery())
+    mission_query: MissionQuery = field(default_factory=MissionQuery)
 
 
 def check_mission_query_is_creatable(query: MissionQuery) -> str:
