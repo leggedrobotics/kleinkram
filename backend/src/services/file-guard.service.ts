@@ -110,7 +110,7 @@ export class FileGuardService {
         if (file.mission === undefined) throw new Error('File has no mission');
 
         return (
-            apiKey.mission.project.uuid === file.mission.project.uuid &&
+            apiKey?.mission?.project?.uuid === file?.mission?.project?.uuid &&
             apiKey.rights >= rights
         );
     }
