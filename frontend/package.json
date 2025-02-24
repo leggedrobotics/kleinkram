@@ -27,7 +27,7 @@
         "vue-router": "^4.4.5"
     },
     "devDependencies": {
-        "@quasar/app-vite": "1.10.2",
+        "@quasar/app-vite": "2.1.1",
         "@types/node": "^22.13.5",
         "@types/spark-md5": "^3.0.5",
         "autoprefixer": "^10.4.20",
