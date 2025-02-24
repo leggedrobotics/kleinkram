@@ -210,11 +210,8 @@ export const projectAccessEntityToDto = (projectAccess: ProjectAccess) => {
     }
 
     return {
-        createdAt: projectAccess.createdAt,
-        hidden: false,
         memberCount: projectAccess.accessGroup.memberships.length,
         type: projectAccess.accessGroup.type,
-        updatedAt: projectAccess.updatedAt,
         name: projectAccess.accessGroup.name,
         rights: projectAccess.rights,
         uuid: projectAccess.accessGroup.uuid,
