@@ -111,7 +111,7 @@ def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
 
 def format_traceback(exc: Exception) -> str:
     return "".join(
-        traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+        traceback.format_exception(type(exc), value=exc, tb=exc.__traceback__)
     )
 
 
