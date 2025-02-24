@@ -28,9 +28,6 @@ ProjectObject = NewType("ProjectObject", Dict[str, Any])
 MissionObject = NewType("MissionObject", Dict[str, Any])
 FileObject = NewType("FileObject", Dict[str, Any])
 
-PROJECT_OBJECT_KEYS = []
-MISSION_OBJECT_KEYS = []
-
 MISSION = "mission"
 PROJECT = "project"
 
