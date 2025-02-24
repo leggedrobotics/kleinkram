@@ -1,20 +1,21 @@
 import { define } from 'typeorm-seeding';
 import User from '../../entities/user/user.entity';
-import { UserRole } from '../../enum';
-import { extendedFaker } from '../../faker_extended';
+import { UserRole } from '../../frontend_shared/enum';
+import { extendedFaker } from '../../faker-extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
+import GroupMembership from '../../entities/auth/group-membership.entity';
 
-export type UserContext = {
+export interface UserContext {
     firstName: string;
     lastName: string;
     mail: string;
     role: UserRole;
     defaultGroupIds: string[];
-};
+}
 
 define(User, (_, context: Partial<UserContext> = {}) => {
     const role =
-        context.role ||
+        context.role ??
         extendedFaker.helpers.arrayElement([UserRole.ADMIN, UserRole.USER]);
     const firstName = context.firstName || extendedFaker.person.firstName();
     const lastName = context.lastName || extendedFaker.person.lastName();
@@ -29,11 +30,12 @@ define(User, (_, context: Partial<UserContext> = {}) => {
     user.uuid = extendedFaker.string.uuid();
 
     if (context.defaultGroupIds) {
-        user.accessGroups = context.defaultGroupIds.map((id) => {
+        // TODO: fix...
+        user.memberships = context.defaultGroupIds.map((id) => {
             const accessGroup = new AccessGroup();
             accessGroup.uuid = id;
             return accessGroup;
-        });
+        }) as unknown as GroupMembership[];
     }
 
     return user;

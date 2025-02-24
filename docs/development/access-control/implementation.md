@@ -14,13 +14,13 @@ Using this User, using guards, each endpoint validates whether the user has the 
 
 Common guards are:
 
--   @LoggedIn() - Checks if the user is logged in
--   @AdminOnly() - Checks if the user is an admin
--   @UserOnly() - Checks if the user is a regular user and not an Api key
--   @CanReadProject() - Checks if the user has read rights to the project
--   ...
+- @LoggedIn() - Checks if the user is logged in
+- @AdminOnly() - Checks if the user is an admin
+- @UserOnly() - Checks if the user is a regular user and not an Api key
+- @CanReadProject() - Checks if the user has read rights to the project
+- ...
 
-Endpoints that list data, like /projects/filtered are often guarded by @UserOnly() and
+Endpoints that list data, like /oldProject/filtered are often guarded by @UserOnly() and
 handle the filtering of the data based on the user rights internally. They will only return the data the user has access to.
 For this, the helper function [`addAccessConstraints`](/development/access-control/addAccessConstraints) is used.
 
@@ -29,10 +29,10 @@ For this, the helper function [`addAccessConstraints`](/development/access-contr
 Api keys are currently only used for actions. An Api key grants access in the name of the user that created the key / action.
 An Api key has a:
 
--   User - Whom it represents
--   Mission - For which it grants access
--   Action - In which it is used
--   Rights - The rights it grants
+- User - Whom it represents
+- Mission - For which it grants access
+- Action - In which it is used
+- Rights - The rights it grants
 
 As an Api key inherits its rights from the user, on key creation, the rights it has are at maximum the rights of the user on the mission.
 Api keys have no rights on projects, only on missions. Thus many listing operations like listing projects and missions are not allowed for Api keys (@UserOnly() guard).

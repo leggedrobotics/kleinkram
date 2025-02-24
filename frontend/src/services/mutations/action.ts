@@ -1,13 +1,17 @@
 import axios from 'src/api/axios';
-import { ActionTemplate } from 'src/types/ActionTemplate';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
-import { Action } from 'src/types/Action';
+import { AccessGroupRights } from '@common/enum';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+
+import { ActionDto } from '@api/types/actions/action.dto';
 
 export const createAnalysis = async (action: {
     missionUUID: string;
     templateUUID: string;
-}) => {
-    const response = await axios.post('/action/submit', action);
+}): Promise<ActionSubmitResponseDto> => {
+    const response = await axios.post<ActionSubmitResponseDto>(
+        '/action/submit',
+        action,
+    );
     return response.data;
 };
 
@@ -34,7 +38,7 @@ export const createActionTemplate = async (template: {
     const response = await axios.post('/action/createTemplate', {
         name: template.name,
         command: template.command,
-        image: template.dockerImage,
+        dockerImage: template.dockerImage,
         cpuCores: template.cpuCores,
         cpuMemory: template.cpuMemory,
         gpuMemory: template.gpuMemory,
@@ -43,23 +47,7 @@ export const createActionTemplate = async (template: {
         entrypoint: template.entrypoint,
         accessRights: template.accessRights,
     });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-    );
+    return response.data;
 };
 
 export const createNewActionTemplateVersion = async (template: {
@@ -75,38 +63,10 @@ export const createNewActionTemplateVersion = async (template: {
     entrypoint: string;
     accessRights: AccessGroupRights;
 }) => {
-    const response = await axios.post('/action/createNewVersion', {
-        uuid: template.uuid,
-        name: template.name,
-        command: template.command,
-        image: template.dockerImage,
-        cpuCores: template.cpuCores,
-        cpuMemory: template.cpuMemory,
-        gpuMemory: template.gpuMemory,
-        maxRuntime: template.maxRuntime,
-        searchable: template.searchable,
-        entrypoint: template.entrypoint,
-        accessRights: template.accessRights,
-    });
-    const res = response.data;
-    return new ActionTemplate(
-        res.uuid,
-        res.createdAt,
-        res.updatedAt,
-        res.image_name,
-        null,
-        res.name,
-        res.version,
-        res.command,
-        res.cpuCores,
-        res.cpuMemory,
-        res.gpuMemory,
-        res.maxRuntime,
-        res.entrypoint,
-        res.accessRights,
-    );
+    const response = await axios.post('/action/createNewVersion', template);
+    return response.data;
 };
 
-export async function deleteAction(action: Action) {
-    return await axios.delete('/action/' + action.uuid);
+export async function deleteAction(action: ActionDto) {
+    return await axios.delete(`/action/${action.uuid}`);
 }

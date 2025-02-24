@@ -1,203 +1,55 @@
 import axios from 'src/api/axios';
-import { Project } from 'src/types/Project';
-import { User } from 'src/types/User';
-import { Mission } from 'src/types/Mission';
-import { TagType } from 'src/types/TagType';
-import { AccessGroup } from 'src/types/AccessGroup';
-import { ProjectAccess } from 'src/types/ProjectAccess';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AxiosResponse } from 'axios';
+import { DefaultRights } from '@api/types/access-control/default-rights';
+import { ResentProjectsDto } from '@api/types/project/recent-projects.dto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 
 export const filteredProjects = async (
     take: number,
     skip: number,
     sortBy: string,
-    descending: boolean = false,
-    searchParams?: Record<string, string>,
-): Promise<[Project[], number]> => {
-    const params: Record<string, any> = {
+    descending = false,
+    searchParameters?: Record<string, string>,
+): Promise<ProjectsDto> => {
+    const parameters: Record<string, string> = {
         take,
         skip,
         sortBy,
         sortDirection: descending ? 'DESC' : 'ASC',
     };
-    if (searchParams && Object.keys(searchParams).length > 0) {
-        params['searchParams'] = searchParams;
+    if (searchParameters && Object.keys(searchParameters).length > 0) {
+        parameters.searchParams = searchParameters;
     }
-    const response = await axios.get('/project/filtered', {
-        params,
-    });
-    const data = response.data[0];
-    const total = response.data[1];
-    if (data.length === 0) {
-        return [[], 0];
-    }
-    const res = data.map((project: any) => {
-        return new Project(
-            project.uuid,
-            project.name,
-            project.description,
-            project.missions.map(
-                (mission: any) =>
-                    new Mission(
-                        mission.uuid,
-                        mission.name,
-                        undefined,
-                        [],
-                        [],
-                        undefined,
-                        new Date(mission.createdAt),
-                        new Date(mission.updatedAt),
-                    ),
-            ),
-            new User(
-                project.creator.uuid,
-                project.creator.name,
-                project.creator.email,
-                project.creator.role,
-                project.creator.avatarUrl,
-                [],
-                [],
-                new Date(project.creator.createdAt),
-                new Date(project.creator.updatedAt),
-            ),
-            [],
-            [],
-            new Date(project.createdAt),
-            new Date(project.updatedAt),
-        );
-    });
-    return [res, total];
-};
-
-export const getProject = async (uuid: string): Promise<Project> => {
-    const response = await axios.get('/project/one', { params: { uuid } });
-    const project = response.data;
-    const creator = new User(
-        project.creator.uuid,
-        project.creator.name,
-        project.creator.email,
-        project.creator.role,
-        project.creator.avatarUrl,
-        [],
-        [],
-        new Date(project.creator.createdAt),
-        new Date(project.creator.updatedAt),
+    const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
+        '/oldProject/filtered',
+        {
+            params: parameters,
+        },
     );
-    const missions: Mission[] = project.missions.map((mission: any) => {
-        return new Mission(
-            mission.uuid,
-            mission.name,
-            undefined,
-            [],
-            [],
-            undefined,
-            new Date(mission.createdAt),
-            new Date(mission.updatedAt),
-        );
-    });
-    const requiredTags = project.requiredTags.map((tag: any) => {
-        return new TagType(
-            tag.uuid,
-            tag.name,
-            tag.datatype,
-            new Date(tag.createdAt),
-            new Date(tag.updatedAt),
-        );
-    });
-    const projectAccess = project.project_accesses.map((access: any) => {
-        const users: User[] = [];
-        if (access.accessGroup.users) {
-            access.accessGroup.users.forEach((user: any) => {
-                users.push(
-                    new User(
-                        user.uuid,
-                        user.name,
-                        user.email,
-                        user.role,
-                        user.avatarUrl,
-                        [],
-                        [],
-                        new Date(user.createdAt),
-                        new Date(user.updatedAt),
-                    ),
-                );
-            });
-        }
-        const accessGroup = new AccessGroup(
-            access.accessGroup.uuid,
-            access.accessGroup.name,
-            access.accessGroup.accessGroupUsers,
-            [],
-            [],
-            access.accessGroup.personal,
-            access.accessGroup.inheriting,
-            undefined,
-            new Date(access.accessGroup.createdAt),
-            new Date(access.accessGroup.updatedAt),
-        );
-
-        return new ProjectAccess(
-            access.uuid,
-            access.rights,
-            accessGroup,
-            undefined,
-            new Date(access.createdAt),
-            new Date(access.updatedAt),
-        );
-    });
-    return new Project(
-        project.uuid,
-        project.name,
-        project.description,
-        missions,
-        creator,
-        requiredTags,
-        projectAccess,
-        new Date(project.createdAt),
-        new Date(project.updatedAt),
-    );
-};
-
-export type AccessRight = {
-    /**
-     * UUID of the access group
-     */
-    uuid: string;
-    /**
-     * Name of the access group
-     */
-    name: string;
-    /**
-     * Rights of the access group
-     */
-    rights: AccessGroupRights | null;
-
-    memberCount: number;
-};
-
-export const getDefaultAccessGroups = async (): Promise<AccessRight[]> => {
-    const response = await axios.get('/project/getDefaultRights');
     return response.data;
 };
 
-export const recentProjects = async (take: number): Promise<Project[]> => {
-    const response = await axios.get('/project/recent', { params: { take } });
-    try {
-        return response.data.map((project: any) => {
-            return new Project(
-                project.uuid,
-                project.name,
-                project.description,
-                [],
-                undefined,
-                [],
-                [],
-                new Date(project.createdAt),
-                new Date(project.latestUpdate),
-            );
-        });
-    } catch (e) {
-        console.log(e);
-        return [];
-    }
+export const getProject = async (
+    uuid: string,
+): Promise<ProjectWithMissionsDto> => {
+    const response: AxiosResponse<ProjectWithMissionsDto> =
+        await axios.get<ProjectWithMissionsDto>(`/projects/${uuid}`);
+    return response.data;
+};
+
+export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
+    const response: AxiosResponse<DefaultRights> = await axios.get(
+        '/oldProject/getDefaultRights',
+    );
+    return response.data;
+};
+
+export const recentProjects = async (
+    take: number,
+): Promise<ResentProjectsDto> => {
+    const response = await axios.get<ResentProjectsDto>('/oldProject/recent', {
+        params: { take },
+    });
+    return response.data;
 };

@@ -1,68 +1,128 @@
 from __future__ import annotations
 
 import base64
-import fnmatch
 import hashlib
-import os
+import re
 import string
+import traceback
 from hashlib import md5
 from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
+from typing import TypeVar
 from uuid import UUID
 
 import yaml
-from kleinkram._version import __version__
-from kleinkram.errors import FileTypeNotSupported
-from kleinkram.errors import InvalidFileSpec
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.models import FilesById
-from kleinkram.models import FilesByMission
-from kleinkram.models import MissionById
-from kleinkram.models import MissionByName
 from rich.console import Console
 
+from kleinkram._version import __version__
+from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import FileTypeNotSupported
+from kleinkram.models import File
+from kleinkram.types import IdLike
+from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
+SUPPORT_FILE_TYPES = [
+    ".bag",
+    ".mcap",
+]
+
+
+def file_paths_from_files(
+    files: Sequence[File], *, dest: Path, allow_nested: bool = False
+) -> Dict[Path, File]:
+    """\
+    determines the destinations for a sequence of `File` objects,
+    possibly nested by project and mission
+    """
+    if (
+        len(set([(file.project_id, file.mission_id) for file in files])) > 1
+        and not allow_nested
+    ):
+        raise ValueError("files from multiple missions were selected")
+    elif not allow_nested:
+        return {dest / file.name: file for file in files}
+    else:
+        return {
+            dest / file.project_name / file.mission_name / file.name: file
+            for file in files
+        }
+
+
+def upper_camel_case_to_words(s: str) -> List[str]:
+    """split `s` given upper camel case to words"""
+    return re.sub("([a-z])([A-Z])", r"\1 \2", s).split()
+
+
+def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
+    """\
+    split a sequece of strings into a list of UUIDs and a list of names
+    depending on whether the string is a valid UUID or not
+    """
+    uuids = []
+    names = []
+    for arg in args:
+        if is_valid_uuid4(arg):
+            uuids.append(UUID(arg, version=4))
+        else:
+            names.append(arg)
+    return uuids, names
 
 
 def check_file_paths(files: Sequence[Path]) -> None:
+    """\
+    checks that files exist, are files and have a supported file suffix
+
+    NOTE: kleinkram treats filesuffixes as filetypes and limits
+    the supported suffixes
+    """
     for file in files:
-        if file.is_dir():
-            raise FileNotFoundError(f"{file} is a directory and not a file")
-        if not file.exists():
-            raise FileNotFoundError(f"{file} does not exist")
-        if file.suffix not in (".bag", ".mcap"):
-            raise FileTypeNotSupported(
-                f"only `.bag` or `.mcap` files are supported: {file}"
-            )
+        check_file_path(file)
 
 
-def filtered_by_patterns(names: Sequence[str], patterns: List[str]) -> List[str]:
-    filtered = []
-    for name in names:
-        if any(fnmatch.fnmatch(name, p) for p in patterns):
-            filtered.append(name)
-    return filtered
+def check_file_path(file: Path) -> None:
+    if file.is_dir():
+        raise FileNotFoundError(f"{file} is a directory and not a file")
+    if not file.exists():
+        raise FileNotFoundError(f"{file} does not exist")
+    if file.suffix not in SUPPORT_FILE_TYPES:
+        raise FileTypeNotSupported(
+            f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
+        )
+    if not check_filename_is_sanatized(file.stem):
+        raise FileNameNotSupported(
+            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
+            f"allowed in filenames and at most 50chars: {file}"
+        )
 
 
-def raw_rich(*objects: Any, **kwargs: Any) -> str:
+def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
+    if not verbose:
+        ret = f"{msg}: {type(exc).__name__}"
+    else:
+        ret = f"{msg}: {exc}"
+    return styled_string(ret, style="red")
+
+
+def format_traceback(exc: Exception) -> str:
+    return "".join(
+        traceback.format_exception(type(exc), value=exc, tb=exc.__traceback__)
+    )
+
+
+def styled_string(*objects: Any, **kwargs: Any) -> str:
     """\
     accepts any object that Console.print can print
     returns the raw string output
     """
-
     console = Console()
-
     with console.capture() as capture:
         console.print(*objects, **kwargs, end="")
-
     return capture.get()
 
 
@@ -72,6 +132,14 @@ def is_valid_uuid4(uuid: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def check_filename_is_sanatized(filename: str) -> bool:
+    if len(filename) > 50:
+        return False
+    if not all(char in INTERNAL_ALLOWED_CHARS for char in filename):
+        return False
+    return True
 
 
 def get_filename(path: Path) -> str:
@@ -127,51 +195,6 @@ def b64_md5(file: Path) -> str:
     return base64.b64encode(binary_digest).decode("utf-8")
 
 
-def get_valid_mission_spec(
-    mission: Union[str, UUID],
-    project: Optional[Union[str, UUID]] = None,
-) -> Union[MissionById, MissionByName]:
-    """\
-    checks if:
-    - atleast one is speicifed
-    - if project is not specified then mission must be a valid uuid4
-    """
-
-    if isinstance(mission, UUID):
-        return MissionById(id=mission)
-    if isinstance(mission, str) and project is not None:
-        return MissionByName(name=mission, project=project)
-    raise InvalidMissionSpec("must specify mission id or project name / id")
-
-
-def get_valid_file_spec(
-    files: Sequence[Union[str, UUID]],
-    mission: Optional[Union[str, UUID]] = None,
-    project: Optional[Union[str, UUID]] = None,
-) -> Union[FilesById, FilesByMission]:
-    """\
-    """
-    if not any([project, mission, files]):
-        raise InvalidFileSpec("must specify `project`, `mission` or `files`")
-
-    # if only files are specified they must be valid uuid4
-    if project is None and mission is None:
-        if all(map(lambda file: isinstance(file, UUID), files)):
-            return FilesById(ids=files)  # type: ignore
-        raise InvalidFileSpec("if no mission is specified files must be valid uuid4")
-
-    if mission is None:
-        raise InvalidMissionSpec("mission must be specified")
-    mission_spec = get_valid_mission_spec(mission, project)
-    return FilesByMission(mission=mission_spec, files=list(files))
-
-
-def to_name_or_uuid(s: str) -> Union[UUID, str]:
-    if is_valid_uuid4(s):
-        return UUID(s)
-    return s
-
-
 def load_metadata(path: Path) -> Dict[str, str]:
     if not path.exists():
         raise FileNotFoundError(f"metadata file not found: {path}")
@@ -185,3 +208,18 @@ def load_metadata(path: Path) -> Dict[str, str]:
 def get_supported_api_version() -> Tuple[int, int, int]:
     vers = __version__.split(".")
     return tuple(map(int, vers[:3]))  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def singleton_list(x: Optional[T]) -> List[T]:
+    return [] if x is None else [x]
+
+
+def parse_uuid_like(s: IdLike) -> UUID:
+    return UUID(str(s))
+
+
+def parse_path_like(s: PathLike) -> Path:
+    return Path(s)

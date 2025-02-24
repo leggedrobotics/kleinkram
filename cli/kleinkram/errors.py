@@ -3,42 +3,39 @@ from __future__ import annotations
 LOGIN_MESSAGE = "Please login using `klein login`."
 
 
-class InvalidMissionSpec(Exception): ...
+class ParsingError(Exception): ...
 
 
-class InvalidFileSpec(Exception): ...
+class InvalidFileQuery(Exception): ...
+
+
+class InvalidMissionQuery(Exception): ...
+
+
+class InvalidProjectQuery(Exception): ...
 
 
 class MissionExists(Exception): ...
 
 
-class MissionDoesNotExist(Exception): ...
+class ProjectExists(Exception): ...
 
 
-class NoPermission(Exception): ...
+class MissionNotFound(Exception): ...
 
 
-class AccessDeniedException(Exception):
-    def __init__(self, message: str, api_error: str):
-        self.message = message
-        self.api_error = api_error
+class ProjectNotFound(Exception): ...
 
 
-class NotAuthenticatedException(Exception):
-    def __init__(self, endpoint: str):
-        message = (
-            f"You are not authenticated on endpoint '{endpoint}'.\n{LOGIN_MESSAGE}"
-        )
-        super().__init__(message)
+class FileNotFound(Exception): ...
 
 
-class CorruptedFile(Exception): ...
+class AccessDenied(Exception): ...
 
 
-class NameIsValidUUID(Exception): ...
-
-
-class UploadFailed(Exception): ...
+class NotAuthenticated(Exception):
+    def __init__(self) -> None:
+        super().__init__(LOGIN_MESSAGE)
 
 
 class InvalidCLIVersion(Exception): ...
@@ -47,13 +44,7 @@ class InvalidCLIVersion(Exception): ...
 class FileTypeNotSupported(Exception): ...
 
 
-class InvalidConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__("Invalid config file.")
+class FileNameNotSupported(Exception): ...
 
 
-class CorruptedConfigFile(Exception):
-    def __init__(self) -> None:
-        super().__init__(
-            "Config file is corrupted.\nPlease run `klein login` to re-authenticate."
-        )
+class InvalidMissionMetadata(Exception): ...

@@ -1,11 +1,11 @@
 import {
-    db,
     clearAllData,
+    db,
     getJwtToken,
     mockDbUser,
 } from './utils/database_utils';
 import User from '@common/entities/user/user.entity';
-import { UserRole } from '@common/enum';
+import { UserRole } from '@common/frontend_shared/enum';
 
 describe('Test Suite Utils', () => {
     beforeAll(async () => {
@@ -14,9 +14,9 @@ describe('Test Suite Utils', () => {
     });
 
     beforeEach(clearAllData);
-    afterAll(() => {
+    afterAll(async () => {
         console.log("Destroying appDataSource 'Test Suite Utils'");
-        db.destroy();
+        await db.destroy();
     });
 
     test('test if clearAllData works', async () => {
@@ -48,7 +48,7 @@ describe('Test Suite Utils', () => {
             select: ['email', 'uuid'],
         });
         expect(users.length).toBe(1);
-        expect(users[0].email).toBe('test-01@leggedrobotics.com');
+        expect(users[0]?.email).toBe('test-01@leggedrobotics.com');
 
         const accountRepository = db.getRepository('Account');
         const accounts = await accountRepository.find();
@@ -64,11 +64,13 @@ describe('Test Suite Utils', () => {
         });
         expect(res.status).toBe(401);
 
+        if (users[0] === undefined) throw new Error('User not found');
+
         // call endpoint /user/me with authenticated user --> expect 200
         const res2 = await fetch(`http://localhost:3000/user/me`, {
             method: 'GET',
             headers: {
-                cookie: `authtoken=${await getJwtToken(users[0])}`,
+                cookie: `authtoken=${getJwtToken(users[0])}`,
             },
             credentials: 'include',
         });

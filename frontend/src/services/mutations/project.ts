@@ -1,6 +1,5 @@
 import axios from 'src/api/axios';
-import { Project } from 'src/types/Project';
-import { AccessGroupRights } from 'src/enums/ACCESS_RIGHTS';
+import { AccessGroupRights } from '@common/enum';
 
 export const createProject = async (
     name: string,
@@ -12,7 +11,7 @@ export const createProject = async (
     )[],
     removedDefaultGroups: string[],
 ) => {
-    const response = await axios.post('/project/create', {
+    const response = await axios.post('/projects', {
         name,
         description,
         requiredTags,
@@ -27,15 +26,15 @@ export const updateProject = async (
     name: string,
     description: string,
 ) => {
-    const response = await axios.put(`/project/${projectUUID}`, {
+    const response = await axios.put(`/projects/${projectUUID}`, {
         name,
         description,
     });
-    return response.data as Project;
+    return response.data;
 };
 
 export const deleteProject = async (projectUUID: string) => {
-    const response = await axios.delete(`/project/${projectUUID}`);
+    const response = await axios.delete(`/projects/${projectUUID}`);
     return response.data;
 };
 
@@ -44,11 +43,8 @@ export const updateTagTypes = async (
     tagTypeUUIDs: string[],
 ) => {
     const response = await axios.post(
-        '/project/updateTagTypes',
+        `/projects/${projectUUID}/updateTagTypes`,
         { tagTypeUUIDs },
-        {
-            params: { uuid: projectUUID },
-        },
     );
     return response.data;
 };

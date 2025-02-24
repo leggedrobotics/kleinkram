@@ -6,7 +6,7 @@ to Kleinkram. Actions are run in a docker container and can be written in any la
 ## How to Write Custom Actions
 
 To write a custom action, you need to create a docker container. Inside the container you can use the Kleinkram CLI
-to interact with the platform. The [Kleinkram CLI](/usage/cli-api/cli-getting-started) is a Python package that can be
+to interact with the platform. The [Kleinkram CLI](/usage/python/getting-started) is a Python package that can be
 installed via pip.
 
 ::: tip Download and List Files inside a Kleinkram Action
@@ -42,16 +42,24 @@ klein login --key $APIKEY
 
 echo "Download data from mission with UUID $MISSION_UUID"
 mkdir data
-klein mission byUUID $MISSION_UUID          # get the mission details
-klein mission download --mission-uuid $MISSION_UUID /out # download the files of the mission
+klein download -m $MISSION_UUID --dest ./data # download the files of the mission
 
 echo "List files of mission with UUID $MISSION_UUID"
 cd ./data || exit 1
 ls -la
-
 ```
 
 :::
+
+## Environment Variables
+
+When running an action the following environment variables are available inside the docker container:
+
+- `APIKEY`: The API key used to authenticate with the Kleinkram API using `klein login --key $APIKEY`
+- `PROJECT_UUID`: The UUID of the project the action is run on
+- `MISSION_UUID`: The UUID of the mission the action is run on
+- `ACTION_UUID`: The UUID of the action that is running
+- `ENDPOINT`: The endpoint of the Kleinkram API
 
 ## Artifacts
 
@@ -91,6 +99,6 @@ You can now submit the action to Kleinkram. You can do this via the web interfac
 
 ## Limitations
 
--   Actions can only run for a limited time
--   Actions can only use a limited amount of memory
--   Actions can request GPU support via Nvidia docker (requested on submission)
+- Actions can only run for a limited time
+- Actions can only use a limited amount of memory
+- Actions can request GPU support via Nvidia docker (requested on submission)

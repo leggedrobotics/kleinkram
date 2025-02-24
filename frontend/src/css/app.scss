@@ -182,3 +182,8 @@ label {
     right: -20px; /* Adjust to increase hitbox to the right */
     z-index: 1;
 }
+
+// fix color of notification actions
+.q-notification__actions {
+    color: white;
+}

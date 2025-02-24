@@ -54,7 +54,7 @@ describe('Verify File Handling', () => {
 
         // get file uuid by calling /file/oneByName
         const resOneByName = await fetch(
-            `http://localhost:3000/file/byName?name=${filename}`,
+            `http://localhost:3000/file/oneByName?filename=${filename}&uuid=${missionUuid}`,
             {
                 method: 'GET',
                 headers: {
@@ -92,42 +92,42 @@ describe('Verify File Handling', () => {
         expect(downloadFileHash).toEqual(fileHash);
     }, 30_000);
 
-    test('Test if two files can be uploaded and downloaded in parallel', async () => {
+    test('Test if two files can be uploaded and downloaded in parallel', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if two files with the same name cannot be uploaded to the same mission', async () => {
+    test('if two files with the same name cannot be uploaded to the same mission', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if project can be renamed while uploading a file', async () => {
+    test('if project can be renamed while uploading a file', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if mission can be renamed while uploading a file', async () => {
+    test('if mission can be renamed while uploading a file', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if you cannot upload file with arbitrary name', async () => {
+    test('if you cannot upload file with arbitrary name', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if you cannot upload file to arbitrary bucket', async () => {
+    test('if you cannot upload file to arbitrary bucket', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if you can abort the upload, then retry', async () => {
+    test('if you can abort the upload, then retry', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
-    test('if you cannot download a file you should not have access to', async () => {
+    test('if you cannot download a file you should not have access to', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });

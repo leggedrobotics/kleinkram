@@ -1,104 +1,20 @@
 import tracer from './tracing';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Response } from 'express';
 import cookieParser from 'cookie-parser';
-import env from '../../common/env';
-import { AuthFlowExceptionRedirectFilter } from './auth/authFlowException';
+import environment from '@common/environment';
+import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
-import {
-    ArgumentsHost,
-    BadRequestException,
-    Catch,
-    ExceptionFilter,
-    INestApplication,
-    PipeTransform,
-    ValidationPipe,
-} from '@nestjs/common';
-import { HttpException } from '@nestjs/common/exceptions/http.exception';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import logger, { NestLoggerWrapper } from './logger';
-import { AddVersionInterceptor } from './versionInjector';
+import { AddVersionInterceptor } from './routing/interceptors/version-injector';
 import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalErrorFilter } from './routing/filters/global-error-filter';
+import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
 
-const packageJson: Record<string, string> = JSON.parse(
-    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
-) as Record<string, string>;
-export const appVersion: string = packageJson.version;
-
-@Catch()
-export class GlobalErrorFilter implements ExceptionFilter {
-    public catch(exception: Error, host: ArgumentsHost) {
-        const response: Response = host.switchToHttp().getResponse();
-        response.header('kleinkram-version', appVersion);
-        response.header('Access-Control-Expose-Headers', 'kleinkram-version');
-
-        if (exception instanceof BadRequestException) {
-            const resp = exception.getResponse();
-            // eslint-disable-next-line no-prototype-builtins
-            if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
-                response.status(400).json({
-                    statusCode: 400,
-                    message: resp['message'] as string,
-                });
-                return;
-            }
-            response.status(400).json({
-                statusCode: 400,
-                message: exception.getResponse(),
-            });
-            return;
-        }
-
-        if (exception instanceof HttpException) {
-            response.status(exception.getStatus()).json({
-                statusCode: exception.getStatus(),
-                message: exception.message,
-            });
-            return;
-        }
-
-        if (exception.name === 'InvalidJwtTokenException') {
-            response.status(401).json({
-                statusCode: 401,
-                message: 'Invalid JWT token. Are you logged in?',
-            });
-            return;
-        }
-
-        if (exception.name === 'PayloadTooLargeError') {
-            response.status(413).json({
-                statusCode: 413,
-                message: 'Payload too large',
-            });
-            return;
-        }
-
-        if (
-            exception.name === 'QueryFailedError' &&
-            exception.message.includes('invalid input syntax for type uuid')
-        ) {
-            response.status(400).json({
-                statusCode: 400,
-                message: 'Invalid UUID',
-            });
-            return;
-        }
-        const route: Record<string, string> = host.getArgByIndex(0);
-        logger.error(`An error occurred on route ${route.url}!`);
-
-        logger.error(`exception of type ${exception.name}`);
-        logger.error(exception.message);
-        logger.error(exception.stack);
-
-        response.status(500).json({
-            statusCode: 500,
-            message: 'Internal server error',
-        });
-    }
-}
-
-function saveEndpointsAsJson(app: INestApplication, filename: string) {
+function saveEndpointsAsJson(app: INestApplication, filename: string): void {
     const server = app.getHttpServer();
     const endpoints = server._events.request._router.stack
         .filter((r: any) => r.route)
@@ -110,19 +26,10 @@ function saveEndpointsAsJson(app: INestApplication, filename: string) {
     fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
 }
 
-class DelayPipe implements PipeTransform {
-    constructor(private delay: number) {}
-
-    async transform(value: any) {
-        await new Promise((resolve) => setTimeout(resolve, this.delay));
-        return value;
-    }
-}
-
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
     tracer.start();
 
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         logger: new NestLoggerWrapper(),
     });
 
@@ -132,6 +39,8 @@ async function bootstrap() {
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,
+            forbidNonWhitelisted: true,
+            forbidUnknownValues: true,
             transform: true,
             transformOptions: {
                 enableImplicitConversion: true,
@@ -139,7 +48,7 @@ async function bootstrap() {
         }),
     );
     app.enableCors({
-        origin: [env.FRONTEND_URL, env.DOCS_URL],
+        origin: [environment.FRONTEND_URL, environment.DOCS_URL],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         preflightContinue: false,
         credentials: true,
@@ -147,7 +56,29 @@ async function bootstrap() {
     });
 
     app.useGlobalFilters(new GlobalErrorFilter());
-    app.useGlobalPipes(new DelayPipe(0));
+
+    /**
+     * replaces query string parser with qs
+     */
+    app.set('query parser', 'extended');
+
+    /**
+     * Applies the global response validation interceptor to the application.
+     * This is only enabled in the development environment.
+     */
+    if (environment.DEV) {
+        logger.debug(
+            `Enabling global response validation interceptor (dev-mode = ${environment.DEV.toString()})`,
+        );
+        logger.warn(
+            'Global response validation interceptor is enabled. This should only be ' +
+                'enabled in development mode. This may slow down the application.',
+        );
+        app.useGlobalInterceptors(
+            new GlobalResponseValidationInterceptor(new Reflector()),
+        );
+    }
+
     const config = new DocumentBuilder()
         .setTitle('API Documentation')
         .setDescription('API description')
@@ -157,7 +88,8 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
-        swaggerUiEnabled: false,
+        yamlDocumentUrl: 'swagger/yaml',
+        swaggerUiEnabled: environment.DEV,
     });
 
     await app.listen(3000);
@@ -168,7 +100,8 @@ async function bootstrap() {
     logger.debug('Endpoints saved');
 }
 
-bootstrap().catch((err) => {
+// eslint-disable-next-line unicorn/prefer-top-level-await
+bootstrap().catch((error: unknown) => {
     logger.error('Failed to start application');
-    logger.error(err);
+    logger.error(error);
 });

@@ -5,22 +5,31 @@ from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import pytest
+
 from kleinkram.errors import FileTypeNotSupported
-from kleinkram.errors import InvalidFileSpec
-from kleinkram.errors import InvalidMissionSpec
-from kleinkram.models import FilesById
-from kleinkram.models import FilesByMission
-from kleinkram.models import MissionById
-from kleinkram.models import MissionByName
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
-from kleinkram.utils import filtered_by_patterns
+from kleinkram.utils import check_filename_is_sanatized
 from kleinkram.utils import get_filename
 from kleinkram.utils import get_filename_map
-from kleinkram.utils import get_valid_file_spec
-from kleinkram.utils import get_valid_mission_spec
 from kleinkram.utils import is_valid_uuid4
-from kleinkram.utils import to_name_or_uuid
+from kleinkram.utils import parse_path_like
+from kleinkram.utils import parse_uuid_like
+from kleinkram.utils import singleton_list
+from kleinkram.utils import split_args
+from kleinkram.utils import upper_camel_case_to_words
+
+
+def test_split_args():
+    uuid = uuid4()
+    assert split_args([str(uuid)]) == ([uuid], [])
+    assert split_args(["name"]) == ([], ["name"])
+    assert split_args([str(uuid), "name"]) == ([uuid], ["name"])
+    assert split_args(["name", str(uuid)]) == ([uuid], ["name"])
+    assert split_args(["name", "name"]) == ([], ["name", "name"])
+    assert split_args([str(uuid), str(uuid)]) == ([uuid, uuid], [])
+    assert split_args([]) == ([], [])
+    assert split_args(["*", str(uuid)]) == ([uuid], ["*"])
 
 
 def test_check_file_paths():
@@ -48,23 +57,14 @@ def test_check_file_paths():
         assert check_file_paths([exists_bag, exits_mcap]) is None
 
 
-@pytest.mark.parametrize(
-    "names, patterns, expected",
-    [
-        pytest.param(["a.bag", "b.mcap"], ["*.bag"], ["a.bag"], id="one pattern"),
-        pytest.param(["a", "b", "c"], ["*"], ["a", "b", "c"], id="match all"),
-        pytest.param(["a", "b", "c"], ["*.bag"], [], id="no match"),
-        pytest.param(
-            ["a.bag", "b.mcap"],
-            ["*.bag", "*.mcap"],
-            ["a.bag", "b.mcap"],
-            id="all match",
-        ),
-        pytest.param(["a", "b", "c"], ["a", "b"], ["a", "b"], id="full name match"),
-    ],
-)
-def test_filtered_by_patterns(names, patterns, expected):
-    assert filtered_by_patterns(names, patterns) == expected
+def test_check_filename_is_sanatized():
+    valid = "t_-est"
+    invalid = "test%"
+    too_long = "a" * 100
+
+    assert check_filename_is_sanatized(valid)
+    assert not check_filename_is_sanatized(invalid)
+    assert not check_filename_is_sanatized(too_long)
 
 
 def test_is_valid_uuid4():
@@ -114,60 +114,36 @@ def test_b64_md5():
         assert b64_md5(file) == "XrY7u+Ae7tCTyyK7j1rNww=="
 
 
-def test_get_valid_mission_spec():
-    # only mission name
-    with pytest.raises(InvalidMissionSpec):
-        get_valid_mission_spec("mission")
+def test_singleton_list() -> None:
+    assert [] == singleton_list(None)
+    assert [1] == singleton_list(1)
+    assert [[1]] == singleton_list([1])
+    assert [True] == singleton_list(True)
 
-    # only mission id
-    id_ = uuid4()
-    assert get_valid_mission_spec(id_) == MissionById(id_)
-
-    # mission name and project name
-    assert get_valid_mission_spec("mission", "project") == MissionByName(
-        "mission", "project"
-    )
-
-    # mission name and project id
-    project_id = uuid4()
-    assert get_valid_mission_spec("mission", project_id) == MissionByName(
-        "mission", project_id
-    )
-
-    # mission id and project name
-    assert get_valid_mission_spec(id_, "project") == MissionById(id_)
+    ob = object()
+    assert [ob] == singleton_list(ob)
 
 
-def test_get_valid_file_spec():
-    # no information
-    with pytest.raises(InvalidFileSpec):
-        get_valid_file_spec([], None, None)
+def test_parse_uuid_like() -> None:
+    _id = uuid4()
+    assert parse_uuid_like(str(_id)) == _id
+    assert parse_uuid_like(_id) == _id
 
-    # only file ids
-    file_ids = [uuid4(), uuid4()]
-    assert get_valid_file_spec(file_ids, None, None) == FilesById(file_ids)
-
-    # only file names
-    with pytest.raises(InvalidFileSpec):
-        get_valid_file_spec(["foo"], None, None)
-
-    # missing mission
-    with pytest.raises(InvalidMissionSpec):
-        get_valid_file_spec([], None, "project")
-
-    # mission name and file names
-    assert get_valid_file_spec([], "mission", "project") == FilesByMission(
-        MissionByName("mission", "project"), []
-    )
-
-    assert get_valid_file_spec(
-        file_ids + ["name"], "mission", "project"
-    ) == FilesByMission(MissionByName("mission", "project"), file_ids + ["name"])
+    with pytest.raises(ValueError):
+        parse_uuid_like("invalid")
 
 
-def test_to_name_or_uuid():
-    id_ = uuid4()
-    not_id = "not an id"
+def test_parse_path_like() -> None:
+    assert parse_path_like("test") == Path("test")
+    assert parse_path_like(Path("test")) == Path("test")
 
-    assert to_name_or_uuid(str(id_)) == id_
-    assert to_name_or_uuid(not_id) == not_id
+
+def test_upper_camel_case_to_words() -> None:
+    assert upper_camel_case_to_words("HelloWorld") == ["Hello", "World"]
+    assert upper_camel_case_to_words("HelloWorldAgain") == ["Hello", "World", "Again"]
+    assert upper_camel_case_to_words("Hello") == ["Hello"]
+    assert upper_camel_case_to_words("hello") == ["hello"]
+    assert upper_camel_case_to_words("") == []
+    assert upper_camel_case_to_words("not_camel_case") == ["not_camel_case"]
+    assert upper_camel_case_to_words("*#?-_") == ["*#?-_"]
+    assert upper_camel_case_to_words("helloWorld") == ["hello", "World"]

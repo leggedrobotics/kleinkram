@@ -4,14 +4,15 @@ import Account from '../auth/account.entity';
 import Project from '../project/project.entity';
 import Mission from '../mission/mission.entity';
 import QueueEntity from '../queue/queue.entity';
-import { UserRole } from '../../enum';
+import { UserRole } from '../../frontend_shared/enum';
 import FileEntity from '../file/file.entity';
 import Tag from '../tag/tag.entity';
 import Action from '../action/action.entity';
-import ActionTemplate from '../action/actionTemplate.entity';
+import ActionTemplate from '../action/action-template.entity';
 import Apikey from '../auth/apikey.entity';
 import Category from '../category/category.entity';
-import AccessGroupUser from '../auth/accessgroup_user.entity';
+import GroupMembership from '../auth/group-membership.entity';
+import { UserDto } from '../../api/types/user.dto';
 
 @Entity()
 export default class User extends BaseEntity {
@@ -22,16 +23,19 @@ export default class User extends BaseEntity {
      * @example 'John Doe'
      */
     @Column()
-    name: string;
+    name!: string;
 
     /**
      * The email of the user. This is the email that will be displayed in the UI.
      * The email gets automatically extracted from the oauth provider.
      *
      * @example 'john.doe@example.com'
+     *
+     * The email is unique and cannot be changed.
+     *
      */
-    @Column({ unique: true, select: false })
-    email: string;
+    @Column({ unique: true, select: false, update: false })
+    email?: string;
 
     /**
      * The role of the user. The role determines what the user can do in the application.
@@ -41,8 +45,25 @@ export default class User extends BaseEntity {
      * @see UserRole
      *
      */
-    @Column({ select: false })
-    role: UserRole;
+    @Column({
+        select: true,
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.USER,
+    })
+    role?: UserRole;
+
+    /**
+     * A hidden user is not returned in any search queries.
+     * Hidden users may still be accessed by their UUID (e.g., when
+     * listing group memberships).
+     *
+     */
+    @Column({
+        select: false,
+        default: false,
+    })
+    hidden?: boolean;
 
     /**
      * The avatar url of the user. This is the url of the avatar that will be displayed in the UI.
@@ -51,43 +72,42 @@ export default class User extends BaseEntity {
      * @example 'https://example.com/avatar.jpg'
      */
     @Column({ nullable: true })
-    avatarUrl: string;
+    avatarUrl?: string;
 
     @OneToOne(() => Account, (account) => account.user)
     @JoinColumn({ name: 'account_uuid' })
-    account: Account;
+    account?: Account;
 
-    @OneToMany(() => AccessGroupUser, (accessGroupUser) => accessGroupUser.user)
-    accessGroupUsers: AccessGroupUser[];
+    @OneToMany(() => GroupMembership, (membership) => membership.user)
+    memberships?: GroupMembership[];
 
     @OneToMany(() => Project, (project) => project.creator)
-    projects: Project[];
+    projects?: Project[];
 
     @OneToMany(() => Mission, (mission) => mission.creator)
-    missions: Mission[];
+    missions?: Mission[];
 
     @OneToMany(() => FileEntity, (file) => file.creator)
-    files: FileEntity[];
+    files?: FileEntity[];
 
     @OneToMany(() => QueueEntity, (queue) => queue.creator)
-    queues: QueueEntity[];
+    queues?: QueueEntity[];
 
     @OneToMany(() => Action, (action) => action.mission)
-    submittedActions: Action[];
+    submittedActions?: Action[];
 
     @OneToMany(
         () => ActionTemplate,
         (actionTemplate) => actionTemplate.createdBy,
     )
-    templates: ActionTemplate[];
+    templates?: ActionTemplate[];
 
     @OneToMany(() => Tag, (tag) => tag.creator)
-    tags: Tag[];
+    tags?: Tag[];
 
     @OneToMany(() => Apikey, (apikey) => apikey.user)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    api_keys: Apikey[];
+    api_keys?: Apikey[];
 
     @OneToMany(() => Category, (category) => category.creator)
-    categories: Category[];
+    categories?: Category[];
 }

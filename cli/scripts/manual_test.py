@@ -5,7 +5,6 @@ import secrets
 
 from rich.console import Console
 
-
 TESTING_PROJECT = "testing-dominique"
 TESTING_FILES = "./data/large/*.bag"
 TESTING_DEST = "./data/tmp"

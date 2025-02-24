@@ -1,0 +1,242 @@
+import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import { ProjectService } from '../../services/project.service';
+import { CreateProject } from '@common/api/types/create-project.dto';
+import {
+    CanCreate,
+    CanDeleteProject,
+    CanReadProject,
+    CanWriteProject,
+    LoggedIn,
+    UserOnly,
+} from '../auth/roles.decorator';
+import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
+import {
+    QueryProjectSearchParameters as QueryProjectSearchParameter,
+    QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
+    QueryTake,
+    QueryUUID,
+} from '../../validation/query-decorators';
+
+import { Query } from '@nestjs/common';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
+import { BodyUUIDArray } from '../../validation/body-decorators';
+import { ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
+import { DefaultRights } from '@common/api/types/access-control/default-rights';
+import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
+import { ProjectsDto } from '@common/api/types/project/projects.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
+import { DeleteProjectResponseDto } from '@common/api/types/project/delete-project-response.dto';
+import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
+import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
+import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
+
+@Controller(['project', 'projects']) // TODO: over time we will migrate to 'projects'
+export class ProjectController {
+    constructor(private readonly projectService: ProjectService) {}
+
+    @Post()
+    @CanCreate()
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectWithMissionsDto,
+    })
+    async createProject(
+        @Body() dto: CreateProject,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.create(dto, user);
+    }
+
+    // dont match filtered, recent, and getDefaultRights, TODO: fix this at some point
+    @Get(':uuid')
+    @CanReadProject()
+    @ApiOkResponse({
+        description: 'Returns the project',
+        type: ProjectWithMissionsDto,
+    })
+    async getProjectById(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.findOne(uuid);
+    }
+
+    @Put(':uuid')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Returns the updated project',
+        type: ProjectWithMissionsDto,
+    })
+    async updateProject(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: CreateProject,
+    ): Promise<ProjectWithMissionsDto> {
+        return this.projectService.update(uuid, dto);
+    }
+
+    @Delete(':uuid')
+    @CanDeleteProject()
+    @ApiResponse({
+        description: 'Project deleted',
+        status: 204,
+        type: DeleteProjectResponseDto,
+    })
+    @OutputDto(null) // TODO: add proper output dto
+    async deleteProject(@ParameterUID('uuid') uuid: string): Promise<void> {
+        return this.projectService.deleteProject(uuid);
+    }
+
+    @Get()
+    @UserOnly()
+    @ApiOkResponse({
+        description: 'Returns projects',
+        type: ProjectsDto,
+    })
+    async getMany(
+        @Query() query: ProjectQueryDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectsDto> {
+        return await this.projectService.findMany(
+            query.projectUuids ?? [],
+            query.projectPatterns ?? [],
+            query.sortBy,
+            query.sortOrder,
+            query.skip,
+            query.take,
+            user.user.uuid,
+        );
+    }
+
+    @Post(':uuid/addTagType')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: AddTagTypeDto,
+    })
+    async addTagType(
+        @ParameterUID('uuid') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+    ): Promise<AddTagTypeDto> {
+        await this.projectService.addTagType(uuid, tagTypeUUID);
+        return {};
+    }
+
+    @Post(':uuid/removeTagType')
+    @CanWriteProject()
+    @ApiOkResponse({
+        type: RemoveTagTypeDto,
+        description: 'Empty response',
+    })
+    async removeTagType(
+        @ParameterUID('uuid') uuid: string,
+        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+    ): Promise<RemoveTagTypeDto> {
+        await this.projectService.removeTagType(uuid, tagTypeUUID);
+        return {};
+    }
+
+    @Post(':uuid/updateTagTypes')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Empty response',
+        type: UpdateTagTypesDto,
+    })
+    async updateTagTypes(
+        @ParameterUID('uuid') uuid: string,
+        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
+        tagTypeUUIDs: string[],
+    ): Promise<UpdateTagTypesDto> {
+        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+        return {
+            success: true,
+        };
+    }
+}
+
+// TODO: this controller should get removed at some point,
+// filtered and recent will effectively be replaced by `GET /projects`
+// for the getDefaultRights endpoint we should make a seperate controller that
+// does all the access control stuff
+@Controller('oldProject')
+export class OldProjectController {
+    constructor(private readonly projectService: ProjectService) {}
+
+    @Get('filtered')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Get all projects',
+        description:
+            'Get all projects with optional search, filter, and pagination options',
+    })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: ProjectsDto,
+    })
+    async allProjects(
+        @AddUser()
+        authHeader: AuthHeader,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @QuerySortBy('sortBy') sortBy: string,
+        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryProjectSearchParameter('searchParams', 'search name and creator')
+        searchParameters: Map<string, string>,
+    ): Promise<ProjectsDto> {
+        return this.projectService.findAll(
+            authHeader.user,
+            skip,
+            take,
+            sortBy,
+            sortDirection,
+            searchParameters,
+        );
+    }
+
+    @Get('recent')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Get recent projects',
+        description:
+            'Get the most recent projects the current user has access to',
+    })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: ResentProjectsDto,
+    })
+    async getRecentProjects(
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<ResentProjectsDto> {
+        const projects = await this.projectService.getRecentProjects(
+            take,
+            user.user,
+        );
+
+        return {
+            data: projects,
+            count: projects.length,
+            skip: 0,
+            take: projects.length,
+        };
+    }
+
+    @Get('getDefaultRights')
+    @LoggedIn()
+    @ApiOperation({
+        summary: 'Get default rights',
+        description: `Get the default rights for a project, the default rights 
+        are the rights that should be assigned to a new project upon creation`,
+    })
+    @ApiOkResponse({
+        description: 'Returns the default rights for a project',
+        type: DefaultRights,
+    })
+    async getDefaultRights(
+        @AddUser() user: AuthHeader,
+    ): Promise<DefaultRights> {
+        return this.projectService.getDefaultRights(user);
+    }
+}

@@ -1,39 +1,34 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
-import TagType from '../tagType/tagType.entity';
+import TagType from '../tagType/tag-type.entity';
 import User from '../user/user.entity';
 
 @Entity()
 export default class Tag extends BaseEntity {
     @Column({ nullable: true })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    STRING: string;
+    STRING?: string;
 
     @Column({ nullable: true, type: 'double precision' })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    NUMBER: number;
+    NUMBER?: number;
 
     @Column({ nullable: true })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    BOOLEAN: boolean;
+    BOOLEAN?: boolean;
 
     @Column({ nullable: true })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    DATE: Date;
+    DATE?: Date;
 
     @Column({ nullable: true })
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    LOCATION: string;
+    LOCATION?: string;
 
     @ManyToOne(() => Mission, (mission) => mission.tags, {
         onDelete: 'CASCADE',
     })
-    mission: Mission;
+    mission?: Mission;
 
     @ManyToOne(() => TagType, (tagType) => tagType.tags, { eager: true })
-    tagType: TagType;
+    tagType?: TagType;
 
     @ManyToOne(() => User, (user) => user.tags)
-    creator: User;
+    creator?: User;
 }

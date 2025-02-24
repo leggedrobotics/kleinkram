@@ -13,10 +13,11 @@ describe('Verify JWT Handling', () => {
     });
 
     test('reject allow self-signed JWT token', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const jwt = require('jsonwebtoken');
         const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
 
-        const res = await fetch(`http://localhost:3000/project/create`, {
+        const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,
@@ -32,10 +33,14 @@ describe('Verify JWT Handling', () => {
     });
 
     test('reject corrupted (empty) JWT token', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ user: { uuid: '' } }, process.env.JWT_SECRET);
+        const token = jwt.sign(
+            { user: { uuid: '' } },
+            process.env['JWT_SECRET'],
+        );
 
-        const res = await fetch(`http://localhost:3000/project/create`, {
+        const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: {
                 cookie: `authtoken=${token}`,

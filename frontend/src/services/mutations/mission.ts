@@ -1,5 +1,5 @@
 import axios from 'src/api/axios';
-import { Mission } from 'src/types/Mission';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 export const createMission = async (
     name: string,
@@ -23,7 +23,7 @@ export const moveMission = async (missionUUID: string, projectUUID: string) => {
     return response.data;
 };
 
-export const deleteMission = async (mission: Mission) => {
+export const deleteMission = async (mission: MissionWithFilesDto) => {
     const response = await axios.delete(`/mission/${mission.uuid}`);
     return response.data;
 };
