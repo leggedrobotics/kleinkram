@@ -234,7 +234,7 @@ def endpoint_table(config: Config) -> Table:
         display_name = (
             Text(f"* {name}", style="bold yellow")
             if name == config.selected_endpoint
-            else Text(name)
+            else Text(f"  {name}")
         )
         table.add_row(display_name, endpoint.api, endpoint.s3)
     return table
