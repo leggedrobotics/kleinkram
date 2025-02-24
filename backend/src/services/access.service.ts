@@ -79,6 +79,11 @@ export class AccessService {
                 rawAccessGroup.project_accesses?.map(
                     (value) =>
                         ({
+                            createdAt: value.project?.createdAt,
+                            description: value.project?.description,
+                            updatedAt: value.project?.updatedAt,
+                            name: value.project?.name,
+                            uuid: value.project?.uuid,
                             rights: value.rights,
                         }) as ProjectWithAccessRightsDto,
                 ) ?? [],
