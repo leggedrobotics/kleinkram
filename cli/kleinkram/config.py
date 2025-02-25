@@ -28,6 +28,7 @@ from kleinkram._version import __version__
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
+MAX_TABLE_SIZE = 256
 
 
 class Environment(Enum):
@@ -245,6 +246,7 @@ class SharedState:
     log_file: Optional[Path] = None
     verbose: bool = True
     debug: bool = False
+    max_table_size: int = MAX_TABLE_SIZE
 
 
 SHARED_STATE = SharedState()

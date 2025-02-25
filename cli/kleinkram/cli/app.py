@@ -29,6 +29,7 @@ from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
 from kleinkram.cli.error_handling import display_error
+from kleinkram.config import MAX_TABLE_SIZE
 from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
@@ -179,6 +180,11 @@ def cli(
         None, "--version", "-v", callback=_version_callback
     ),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
+    max_lines: int = typer.Option(
+        MAX_TABLE_SIZE,
+        "--max-lines",
+        help="Maximum number of lines when pretty printing tables. -1 for unlimited.",
+    ),
 ):
     if not check_config_compatibility():
         typer.confirm("found incompatible config file, overwrite?", abort=True)
@@ -188,6 +194,10 @@ def cli(
     shared_state = get_shared_state()
     shared_state.verbose = verbose
     shared_state.debug = debug
+
+    if max_lines < 0 and max_lines != -1:
+        raise typer.BadParameter("`--max-lines` must be -1 or positive")
+    shared_state.max_table_size = max_lines
 
     if shared_state.debug and log_level is None:
         log_level = LogLevel.DEBUG

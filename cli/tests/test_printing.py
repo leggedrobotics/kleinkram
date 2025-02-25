@@ -3,9 +3,11 @@ from __future__ import annotations
 import datetime
 
 import pytest
+from rich.table import Table
 
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
+from kleinkram.printing import _add_placeholder_row
 from kleinkram.printing import format_bytes
 from kleinkram.printing import parse_metadata_value
 
@@ -21,6 +23,15 @@ def test_format_bytes():
     assert format_bytes(2**30) == "1.00 GB"
     assert format_bytes(2**40) == "1.00 TB"
     assert format_bytes(2**50) == "1.00 PB"
+
+
+def test_add_placeholder_row():
+    table = Table("foo", "bar")
+    _add_placeholder_row(table, skipped=1)
+
+    assert table.row_count == 1
+    assert table.columns[0]._cells[-1] == "... (1 more)"
+    assert table.columns[1]._cells[-1] == "..."
 
 
 def test_parse_metadata_value():
