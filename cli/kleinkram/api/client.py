@@ -148,7 +148,9 @@ class AuthenticatedClient(httpx.Client):
                 raise NotAuthenticated
 
             logger.info(f"retrying request {method} {full_url}")
-            resp = super().request(method, full_url, *args, **kwargs)
+            resp = super().request(
+                method, full_url, params=httpx_params, *args, **kwargs
+            )
             logger.info(f"got response {resp}")
             return resp
         else:
