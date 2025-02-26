@@ -75,8 +75,8 @@ def get_env() -> Environment:
 
 
 ACTION_API_KEY = "KLEINKRAM_API_KEY"
-ACTION_API = "KLEINKRAM_API"
-ACTION_S3 = "KLEINKRAM_S3"
+ACTION_API = "KLEINKRAM_API_ENDPOINT"
+ACTION_S3 = "KLEINKRAM_S3_ENDPOINT"
 
 
 def _get_endpoint_from_action_env_vars() -> Optional[Endpoint]:

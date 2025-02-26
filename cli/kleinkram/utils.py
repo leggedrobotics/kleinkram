@@ -40,10 +40,7 @@ def file_paths_from_files(
     determines the destinations for a sequence of `File` objects,
     possibly nested by project and mission
     """
-    if (
-        len(set([(file.project_id, file.mission_id) for file in files])) > 1
-        and not allow_nested
-    ):
+    if len(set([file.mission_id for file in files])) > 1 and not allow_nested:
         raise ValueError("files from multiple missions were selected")
     elif not allow_nested:
         return {dest / file.name: file for file in files}

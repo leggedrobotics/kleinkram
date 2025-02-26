@@ -55,11 +55,24 @@ ls -la
 
 When running an action the following environment variables are available inside the docker container:
 
+- `KLEINKRAM_API_KEY`: The API_KEY authenticates the action with the Kleinkram API
+- `KLEINKRAM_PROJECT_UUID`: The UUID of the project the action is run on
+- `KLEINKRAM_MISSION_UUID`: The UUID of the mission the action is run on
+- `KLEINKRAM_ACTION_UUID`: The UUID of the action that is running
+- `KLEINKRAM_API_ENDPOINT`: The endpoint of the Kleinkram API
+- `KLEINKRAM_S3_ENDPOINT`: The endpoint of the Kleinkram S3 storage
+
+
+::: warning Deprecated Environment Variables
+The following environment variables are deprecated and will be removed in the future:
+
 - `APIKEY`: The API key used to authenticate with the Kleinkram API using `klein login --key $APIKEY`
 - `PROJECT_UUID`: The UUID of the project the action is run on
 - `MISSION_UUID`: The UUID of the mission the action is run on
 - `ACTION_UUID`: The UUID of the action that is running
 - `ENDPOINT`: The endpoint of the Kleinkram API
+
+:::
 
 ## Artifacts
 
