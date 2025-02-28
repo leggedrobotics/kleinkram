@@ -20,6 +20,7 @@ import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import env from '@common/environment';
 import si from 'systeminformation';
+import environment from '@common/environment';
 
 @Injectable()
 export class ActionManagerService {
@@ -100,6 +101,15 @@ export class ActionManagerService {
         const apikey = await this.createAPIkey(action);
         try {
             const environmentVariables: ContainerEnvironment = {
+                KLEINKRAM_API_KEY: apikey.apikey,
+                KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
+                KLEINKRAM_MISSION_UUID: action.mission.uuid,
+                KLEINKRAM_ACTION_UUID: action.uuid,
+                KLEINKRAM_API_ENDPOINT: `https://${env.ENDPOINT}`,
+                KLEINKRAM_S3_ENDPOINT: `https://${env.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+
+                // @deprecated
+                // TODO: the following variables are deprecated
                 APIKEY: apikey.apikey,
                 PROJECT_UUID: action.mission.project.uuid,
                 MISSION_UUID: action.mission.uuid,

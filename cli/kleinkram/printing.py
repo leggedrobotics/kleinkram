@@ -17,6 +17,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -44,6 +45,11 @@ FILE_VERIFICATION_STATUS_STYLES = {
     FileVerificationStatus.UNKNOWN: "gray",
     FileVerificationStatus.COMPUTING_HASH: "purple",
 }
+
+
+def _add_placeholder_row(table: Table, skipped: int) -> None:
+    first_column = f"... ({skipped} more)"
+    table.add_row(first_column, *["..." for _ in range(len(table.columns) - 1)])
 
 
 def file_state_to_text(file_state: FileState) -> Text:
@@ -114,8 +120,11 @@ def projects_to_table(projects: Sequence[Project]) -> Table:
     table.add_column("name")
     table.add_column("description")
 
-    for project in projects:
+    max_table_size = get_shared_state().max_table_size
+    for project in projects[:max_table_size]:
         table.add_row(str(project.id), project.name, project.description)
+    if len(projects) > max_table_size:
+        _add_placeholder_row(table, skipped=len(projects) - max_table_size)
     return table
 
 
@@ -136,10 +145,11 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
     if not missions_tp:
         return table
     last_project: Optional[str] = None
-    for project, _, mission in missions_tp:
+    max_table_size = get_shared_state().max_table_size
+    for project, _, mission in missions_tp[:max_table_size]:
         # add delimiter row if project changes
         if last_project is not None and last_project != project:
-            table.add_row()
+            table.add_section()
         last_project = project
 
         table.add_row(
@@ -149,6 +159,9 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
             str(mission.number_of_files),
             format_bytes(mission.size),
         )
+
+    if len(missions_tp) > max_table_size:
+        _add_placeholder_row(table, skipped=len(missions_tp) - max_table_size)
     return table
 
 
@@ -174,9 +187,10 @@ def files_to_table(
         return table
 
     last_mission: Optional[str] = None
-    for _, mission, _, file in files_tp:
+    max_table_size = get_shared_state().max_table_size
+    for _, mission, _, file in files_tp[:max_table_size]:
         if last_mission is not None and last_mission != mission and delimiters:
-            table.add_row()
+            table.add_section()
         last_mission = mission
 
         table.add_row(
@@ -188,6 +202,10 @@ def files_to_table(
             format_bytes(file.size),
             ", ".join(file.categories),
         )
+
+    if len(files_tp) > max_table_size:
+        _add_placeholder_row(table, skipped=len(files_tp) - max_table_size)
+
     return table
 
 
@@ -273,7 +291,8 @@ def print_file_verification_status(
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(file_verification_status_table(file_status))
+        table = file_verification_status_table(file_status)
+        Console().print(table)
     else:
         for path, status in file_status.items():
             stream = (
@@ -288,7 +307,8 @@ def print_files(files: Sequence[File], *, pprint: bool) -> None:
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(files_to_table(files))
+        table = files_to_table(files)
+        Console().print(table)
     else:
         for file in files:
             stream = sys.stdout if file.state == FileState.OK else sys.stderr
@@ -301,7 +321,8 @@ def print_missions(missions: Sequence[Mission], *, pprint: bool) -> None:
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(missions_to_table(missions))
+        table = missions_to_table(missions)
+        Console().print(table)
     else:
         for mission in missions:
             print(mission.id)
@@ -313,7 +334,8 @@ def print_projects(projects: Sequence[Project], *, pprint: bool) -> None:
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(projects_to_table(projects))
+        table = projects_to_table(projects)
+        Console().print(table)
     else:
         for project in projects:
             print(project.id)
@@ -325,7 +347,8 @@ def print_file_info(file: File, *, pprint: bool) -> None:
     either using pprint or as a list for piping
     """
     if pprint:
-        Console().print(file_info_table(file))
+        table = file_info_table(file)
+        Console().print(table)
     else:
         file_dct = asdict(file)
         for key in file_dct:

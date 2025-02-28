@@ -7,6 +7,7 @@
             input-debounce="100"
             :options="_foundProjects"
             option-label="name"
+            label="Select Project"
             style="width: 65%"
             @input-value="onInputUpdate"
         >
@@ -61,7 +62,7 @@ const properties = defineProps<{
 const queryClient = useQueryClient();
 
 const search = ref('');
-const accessRight = ref({ label: 'None', value: AccessGroupRights.READ });
+const accessRight = ref({ label: 'Read', value: AccessGroupRights.READ });
 const selected: Ref<UserDto[]> = ref([]);
 const { data: foundProjects } = useFilteredProjects(100, 0, 'name', true, {
     name: search.value,
@@ -69,10 +70,15 @@ const { data: foundProjects } = useFilteredProjects(100, 0, 'name', true, {
 const _foundProjects = computed(() =>
     foundProjects.value ? foundProjects.value.data : [],
 );
-const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label: accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights],
-    value: Number.parseInt(key, 10),
-}));
+const options = Object.keys(accessGroupRightsMap)
+    .map((key) => ({
+        label: accessGroupRightsMap[
+            Number.parseInt(key, 10) as AccessGroupRights
+        ],
+        value: Number.parseInt(key, 10),
+    }))
+    .filter((option) => option.value !== AccessGroupRights._ADMIN);
+
 const { mutate } = useMutation({
     mutationFn: () => {
         return Promise.all(

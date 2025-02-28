@@ -24,10 +24,12 @@ from rich.text import Text
 
 from kleinkram._version import __local__
 from kleinkram._version import __version__
+from kleinkram.utils import format_traceback
 
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path().home() / ".kleinkram.json"
+MAX_TABLE_SIZE = 256
 
 
 class Environment(Enum):
@@ -74,8 +76,8 @@ def get_env() -> Environment:
 
 
 ACTION_API_KEY = "KLEINKRAM_API_KEY"
-ACTION_API = "KLEINKRAM_API"
-ACTION_S3 = "KLEINKRAM_S3"
+ACTION_API = "KLEINKRAM_API_ENDPOINT"
+ACTION_S3 = "KLEINKRAM_S3_ENDPOINT"
 
 
 def _get_endpoint_from_action_env_vars() -> Optional[Endpoint]:
@@ -166,11 +168,26 @@ def _config_from_dict(dct: Dict[str, Any]) -> Config:
     )
 
 
-def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
-    fd, temp_path = tempfile.mkstemp()
+def _safe_config_write(
+    config: Config, path: Path, tmp_dir: Optional[Path] = None
+) -> None:
+    fd, temp_path = tempfile.mkstemp(dir=tmp_dir)
     with os.fdopen(fd, "w") as f:
         json.dump(_config_to_dict(config), f)
     os.replace(temp_path, path)
+
+
+def _unsafe_config_write(config: Config, path: Path) -> None:
+    with open(path, "w") as f:
+        json.dump(_config_to_dict(config), f)
+
+
+def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
+    try:
+        _safe_config_write(config, path)
+    except Exception as e:
+        logger.warning(f"failed to safe write config {format_traceback(e)}")
+        _unsafe_config_write(config, path)
 
 
 def _load_config_if_compatible(path: Path) -> Optional[Config]:
@@ -245,6 +262,7 @@ class SharedState:
     log_file: Optional[Path] = None
     verbose: bool = True
     debug: bool = False
+    max_table_size: int = MAX_TABLE_SIZE
 
 
 SHARED_STATE = SharedState()
