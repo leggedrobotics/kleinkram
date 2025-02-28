@@ -24,6 +24,7 @@ from rich.text import Text
 
 from kleinkram._version import __local__
 from kleinkram._version import __version__
+from kleinkram.utils import format_traceback
 
 logger = logging.getLogger(__name__)
 
@@ -167,11 +168,26 @@ def _config_from_dict(dct: Dict[str, Any]) -> Config:
     )
 
 
-def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
-    fd, temp_path = tempfile.mkstemp()
+def _safe_config_write(
+    config: Config, path: Path, tmp_dir: Optional[Path] = None
+) -> None:
+    fd, temp_path = tempfile.mkstemp(dir=tmp_dir)
     with os.fdopen(fd, "w") as f:
         json.dump(_config_to_dict(config), f)
     os.replace(temp_path, path)
+
+
+def _unsafe_config_write(config: Config, path: Path) -> None:
+    with open(path, "w") as f:
+        json.dump(_config_to_dict(config), f)
+
+
+def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
+    try:
+        _safe_config_write(config, path)
+    except Exception as e:
+        logger.warning(f"failed to safe write config {format_traceback(e)}")
+        _unsafe_config_write(config, path)
 
 
 def _load_config_if_compatible(path: Path) -> Optional[Config]:
