@@ -4,15 +4,15 @@ import {
     getJwtToken,
     getUserFromDb,
     mockDbUser,
-} from './utils/database_utils';
+} from '../utils/database_utils';
 import {
     createMissionUsingPost,
     createProjectUsingPost,
     uploadFile,
-} from './utils/api_calls';
+} from '../utils/api_calls';
 import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
 
-import { SubmitActionDto } from '../../common/api/types/submit-action-response.dto';
+import { SubmitActionDto } from '../../../common/api/types/submit-action-response.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {
@@ -25,7 +25,8 @@ describe('Verify Action', () => {
         await db.destroy();
     });
 
-    test('Test if file is uploaded and can be downloaded again inside an action', async () => {
+    // file handling tests
+    test('if file is uploaded and can be downloaded again inside an action', async () => {
         const filename = 'test_small.bag';
 
         const userId = await mockDbUser('internal@leggedrobotics.com');
@@ -149,4 +150,78 @@ describe('Verify Action', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
+
+    test('if you can load an existing action and submit it', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if you can load an existing action and save it as a new version', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if you can view details of an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+        // user: read access
+    test('if a user with read (viewer) access on a mission can view an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });   
+
+    test('if a user with read access (viewer) on a mission can not create an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    // test('if a user with read access (viewer) cannot cancel an action', () => {
+    //     // TODO: implement this test
+    //     expect(true).toBe(true);
+    // });
+
+    test('if a user with read access (viewer) cannot delete an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+        // user: create/edit access
+    test('if a user with edit/create access (creator) on a mission can create an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    // test('if a user with edit/create access (creator) on a mission cannot cancel an action', () => {
+    //     // TODO: implement this test
+    //     expect(true).toBe(true);
+    // });
+
+    test('if a user with edit/create access (creator) on a mission can delete an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+        // admin
+    test('if a admin can view details of any action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a admin can create an action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    // test('if a admin can cancel any action', () => {
+    //     // TODO: implement this test
+    //     expect(true).toBe(true);
+    // });
+
+    test('if a admin can delete any action', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
 });

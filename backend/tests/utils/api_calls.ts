@@ -9,6 +9,16 @@ import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { CreateProject } from '@common/api/types/create-project.dto';
 
+
+/**
+ * Sends a POST request to create a new project on the backend server.
+ * 
+ * @param {CreateProject} project - The project data to be created.
+ * @param {User} user -             The authenticated user requesting the project creation.
+ * @returns {Promise<string>} -     A promise that resolves to the UUID of the created project.
+ * 
+ * @throws {Error} -                Throws an error if the request fails or returns a non-2xx status code.
+ */
 export const createProjectUsingPost = async (
     project: CreateProject,
     user: User,

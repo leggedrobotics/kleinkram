@@ -14,7 +14,7 @@ import { AccessGroupType } from '@common/frontend_shared/enum';
  * This test suite tests the access control of the application.
  *
  */
-describe('Verify Access Groups', () => {
+describe('Verify Access Groups External', () => {
     beforeAll(async () => {
         await db.initialize();
         await clearAllData();
@@ -25,6 +25,7 @@ describe('Verify Access Groups', () => {
         await db.destroy();
     });
 
+        // user: external
     test('Non "leggedrobotics.com" email is not added to default group', async () => {
         // create a user with a non default email
         const mockEmail = 'external-user@third-party.com';
@@ -64,6 +65,24 @@ describe('Verify Access Groups', () => {
         });
     });
 
+    test('if external user cannot list access groups he is not part of', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+});
+
+describe('Verify Access Groups Internal', () => {
+        beforeAll(async () => {
+            await db.initialize();
+            await clearAllData();
+        });
+    
+        beforeEach(clearAllData);
+        afterAll(async () => {
+            await db.destroy();
+        });
+
+        // user: internal
     test('if leggedrobotics email is added to default group', async () => {
         const mockEmail = 'internal-user@leggedrobotics.com';
         const internalUuid = await mockDbUser(mockEmail);
@@ -90,11 +109,6 @@ describe('Verify Access Groups', () => {
         });
 
         expect(user.email).toBe('internal-user@leggedrobotics.com');
-    });
-
-    test('if external user cannot list access groups he is not part of', () => {
-        // TODO: implement this test
-        expect(true).toBe(true);
     });
 
     test('if primary group cannot be deleted', () => {
@@ -126,4 +140,168 @@ describe('Verify Access Groups', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
+});
+
+describe('Verify Access Groups Internal User Access', () => {
+        beforeAll(async () => {
+            await db.initialize();
+            await clearAllData();
+        });
+    
+        beforeEach(clearAllData);
+        afterAll(async () => {
+            await db.destroy();
+        });
+        // user: view access
+    test('if a internal user (@legged) can view any group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a external user cannot view any group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot generate a access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot add user to access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot remove user from access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot add project to access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot remove project from access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with view rights cannot delete the access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+        // user: edit/create access
+   
+    test('if a user with edit/create rights can generate a access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a user with edit/create rights can add user to access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a user with edit/create rights can remove user from access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+
+            // (no) create/edit rights on project
+    test('if a user with edit/create rights but read on project cannot add project to access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+
+    test('if a user with edit/create rights and edit/create rights on project can add project to access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+    
+    test('if a user with edit/create rights cannot remove project from access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a user with edit/create rights cannot delete the access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+});
+
+describe('Verify Access Groups Internal User Access', () => {
+        beforeAll(async () => {
+            await db.initialize();
+            await clearAllData();
+        });
+    
+        beforeEach(clearAllData);
+        afterAll(async () => {
+            await db.destroy();
+        });
+
+    test('if a user with create rights can generate a access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with read access can view details of any access groups', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with read access cannot edit any access group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with creator rights can add user to group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+    test('if a user with creator rights can remove user from group', () => {
+        // TODO: implement this test
+        expect(true).toBe(true);
+    });
+
+        // admin
+    test('if a admin can view any group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+
+    test('if a admin with can generate a access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a admin can add user to access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a admin can remove user from access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a admin can add project to access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a admin can remove project from access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+    
+    test('if a admin can delete the access group', () => {
+            // TODO: implement this test
+            expect(true).toBe(true);
+    });
+
 });
