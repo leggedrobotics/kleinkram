@@ -103,9 +103,9 @@ def test_save_and_load_config(config_path):
     config = Config(version="foo")
 
     assert not config_path.exists()
-    with mock.patch.object(kleinkram.config.logger, "warning") as mock_warning:
+    with mock.patch.object(kleinkram.config.logger, "debug") as mock_debug:
         save_config(config, path=config_path)
-        mock_warning.assert_not_called()
+        mock_debug.assert_not_called()
 
     assert config_path.exists()
     loaded_config = _load_config(path=config_path)
@@ -117,10 +117,10 @@ def test_save_and_load_config_when_tmpfile_fails(config_path):
 
     assert not config_path.exists()
     with mock.patch("tempfile.mkstemp", side_effect=Exception), mock.patch.object(
-        kleinkram.config.logger, "warning"
-    ) as mock_warning:
+        kleinkram.config.logger, "debug"
+    ) as mock_debug:
         save_config(config, path=config_path)
-        mock_warning.assert_called_once()
+        mock_debug.assert_called_once()
 
     assert config_path.exists()
     loaded_config = _load_config(path=config_path)
