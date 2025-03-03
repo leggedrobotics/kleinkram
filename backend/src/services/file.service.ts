@@ -38,7 +38,7 @@ import {
     addFileFilters,
     addMissionFilters,
     addProjectFilters,
-} from './utils';
+} from './utilities';
 
 import User from '@common/entities/user/user.entity';
 import logger from '../logger';
@@ -58,7 +58,7 @@ import {
     internalMinio,
 } from '@common/minio-helper';
 import Category from '@common/entities/category/category.entity';
-import { parseMinioMetrics } from '../endpoints/file/utils';
+import { parseMinioMetrics } from '../endpoints/file/utilities';
 import Credentials from 'minio/dist/main/Credentials';
 import { BucketItem } from 'minio';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
@@ -169,7 +169,7 @@ export class FileService implements OnModuleInit {
             .getManyAndCount();
 
         return {
-            data: files.map(fileEntityToDto),
+            data: files.map((element) => fileEntityToDto(element)),
             count,
             take,
             skip,
@@ -379,7 +379,7 @@ export class FileService implements OnModuleInit {
             .getMany();
         return {
             count,
-            data: files.map(fileEntityToDto),
+            data: files.map((element) => fileEntityToDto(element)),
             take,
             skip,
         };
@@ -609,7 +609,7 @@ export class FileService implements OnModuleInit {
         });
         return {
             count,
-            data: files.map(fileEntityToDto),
+            data: files.map((element) => fileEntityToDto(element)),
             take,
             skip,
         };

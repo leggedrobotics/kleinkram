@@ -77,11 +77,11 @@ export const filesOfMission = async (
     fileType?: FileType,
     filename?: string,
     categories?: string[],
-    sort: string = 'filename',
-    desc: boolean = false,
+    sort = 'filename',
+    desc = false,
     health?: 'Healthy' | 'Unhealthy' | 'Uploading',
 ): Promise<FilesDto> => {
-    const params: Record<string, string | number | boolean | string[]> = {
+    const parameters: Record<string, string | number | boolean | string[]> = {
         uuid: missionUUID,
         take,
         skip,
@@ -90,24 +90,24 @@ export const filesOfMission = async (
     };
 
     if (fileType && fileType !== FileType.ALL) {
-        params.fileType = fileType;
+        parameters.fileType = fileType;
     }
 
     if (filename) {
-        params.filename = filename;
+        parameters.filename = filename;
     }
 
     if (health) {
-        params.health = health;
+        parameters.health = health;
     }
 
     if (categories && categories.length > 0) {
-        params.categories = JSON.stringify(categories);
+        parameters.categories = JSON.stringify(categories);
     }
 
     const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
         'file/ofMission',
-        { params },
+        { params: parameters },
     );
     return response.data;
 };

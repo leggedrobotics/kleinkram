@@ -1,6 +1,6 @@
 {
     "name": "kleinkram",
-    "version": "0.41.0",
+    "version": "0.41.1",
     "main": "index.js",
     "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -26,17 +26,17 @@
         "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines )"
     },
     "devDependencies": {
-        "@eslint/js": "^9.12.0",
+        "@eslint/js": "^9.20.0",
         "@types/eslint__js": "^8.42.3",
         "@typescript-eslint/eslint-plugin": "^8.8.1",
         "@typescript-eslint/parser": "^8.8.1",
         "@vue/eslint-config-typescript": "^14.1.3",
-        "eslint": "^9.12.0",
+        "eslint": "^9.20.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-formatter-summary": "^1.1.0",
         "eslint-plugin-file-progress": "^3.0.1",
         "eslint-plugin-prettier": "^5.2.1",
-        "eslint-plugin-unicorn": "^56.0.1",
+        "eslint-plugin-unicorn": "^57.0.0",
         "eslint-plugin-vue": "^9.27.0",
         "grunt": "^1.6.1",
         "grunt-bump": "^0.8.0",

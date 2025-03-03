@@ -61,7 +61,7 @@ export class TopicService {
                 take,
             });
             return {
-                data: topics.map(topicEntityToDto),
+                data: topics.map((element) => topicEntityToDto(element)),
                 count,
                 take,
                 skip,
@@ -79,7 +79,7 @@ export class TopicService {
         ).getManyAndCount();
 
         return {
-            data: topics.map(topicEntityToDto),
+            data: topics.map((element) => topicEntityToDto(element)),
             count,
             take,
             skip,

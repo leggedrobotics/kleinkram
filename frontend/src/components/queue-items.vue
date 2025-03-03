@@ -361,7 +361,7 @@ function canDelete(row: FileQueueEntryDto): boolean {
 async function downloadFile(row: FileQueueEntryDto): Promise<void> {
     await findOneByNameAndMission(row.display_name, row.mission.uuid).then(
         async (file: FileWithTopicDto) => {
-            await _downloadFile(file.uuid, file.displayName);
+            await _downloadFile(file.uuid, file.filename);
         },
     );
 }

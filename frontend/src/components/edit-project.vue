@@ -49,8 +49,8 @@
                 >Enable Auto-Convert to mcap format *</label
             >
             <q-toggle
-                name="autoConvert"
                 v-model="autoConvert"
+                name="autoConvert"
                 label="auto-convert to mcap"
                 color="primary"
                 dense

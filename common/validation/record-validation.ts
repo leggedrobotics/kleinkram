@@ -19,8 +19,7 @@ export function IsRecordStringString(
         name: 'IsRecordStringString',
         constraints: [],
         validator: {
-            validate: (value: unknown, _): boolean =>
-                isRecordStringString(value),
+            validate: (value: unknown): boolean => isRecordStringString(value),
             defaultMessage: buildMessage(
                 (eachPrefix) =>
                     `${

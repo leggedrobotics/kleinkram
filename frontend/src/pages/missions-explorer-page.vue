@@ -236,7 +236,7 @@ import {
     useProjectQuery,
 } from '../hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';

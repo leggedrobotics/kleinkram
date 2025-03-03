@@ -9,7 +9,7 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { addProjectFilters, addMissionFilters, addSort } from './utils';
+import { addProjectFilters, addMissionFilters, addSort } from './utilities';
 import { missionEntityToDtoWithCreator } from '../serialization';
 import { missionEntityToDtoWithFiles } from '../serialization';
 import {
@@ -192,7 +192,7 @@ export class MissionService {
         const [missions, count] = await query.getManyAndCount();
 
         return {
-            data: missions.map(missionEntityToFlatDto),
+            data: missions.map((element) => missionEntityToFlatDto(element)),
             count,
             skip,
             take,
@@ -234,7 +234,7 @@ export class MissionService {
         const [missions, count] = await query.getManyAndCount();
 
         return {
-            data: missions.map(missionEntityToMinimumDto),
+            data: missions.map((element) => missionEntityToMinimumDto(element)),
             count,
             skip,
             take,

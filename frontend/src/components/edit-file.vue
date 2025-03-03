@@ -102,7 +102,7 @@
                 </q-tab-panel>
                 <q-tab-panel name="categories" style="min-height: 280px">
                     <ConfigureCategories
-                        v-if="data?.mission?.project && editableFile"
+                        v-if="editableFile"
                         :file="editableFile"
                         @update:selected="onSelectionUpdate"
                     />
@@ -162,7 +162,8 @@ const selected_project = ref<ProjectDto | undefined>(undefined);
 const { data: queryData } = useFile(fileUuid);
 
 const dateTime = ref('');
-const editableFile: Reactive<FileWithTopicDto | object> = reactive({});
+// @ts-ignore
+const editableFile: Reactive<FileWithTopicDto> = reactive({});
 // Watch for changes in data.value and update dateTime accordingly
 watch(
     () => queryData.value,

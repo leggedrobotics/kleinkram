@@ -44,6 +44,7 @@ watch(
         if (newMission) {
             tagValues.value = {};
             for (const tag of newMission.tags) {
+                // @ts-ignore
                 tagValues.value[tag.type.uuid] =
                     tag.type.datatype === DataType.BOOLEAN
                         ? tag.value

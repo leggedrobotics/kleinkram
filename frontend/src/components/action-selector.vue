@@ -12,15 +12,18 @@
         class="q-pb-md"
         @input-value="updateCreateTemplateName"
         @click="
+            // eslint-disable-next-line vue/v-on-handler-style
             (e) => {
                 enableSearch();
                 e.stopPropagation();
             }
         "
         @filter="
+            // eslint-disable-next-line vue/v-on-handler-style
             (val, update) => {
                 filterActionTemplates(val);
                 enableSearch();
+                // @ts-ignore
                 update();
             }
         "
@@ -90,18 +93,18 @@
     >
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
-                <q-item-label lines="1"
-                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                <q-item-label lines="1">
+                    {{ selectedTemplate.name }} v{{ selectedTemplate.version }}
                 </q-item-label>
                 <q-item-label caption> new Template</q-item-label>
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -112,12 +115,12 @@
     >
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
-                <q-item-label lines="1"
-                    >{{ selectedTemplate.name }} v{{ selectedTemplate.version }}
+                <q-item-label lines="1">
+                    {{ selectedTemplate.name }} v{{ selectedTemplate.version }}
                 </q-item-label>
                 <q-item-label caption>
                     created: {{ selectedTemplate.createdAt }}
@@ -125,7 +128,7 @@
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -133,16 +136,16 @@
     <q-list v-else class="bg-red-2 rounded-borders">
         <q-item v-ripple clickable>
             <q-item-section avatar top>
-                <q-avatar icon="sym_o_terminal"></q-avatar>
+                <q-avatar icon="sym_o_terminal" />
             </q-item-section>
 
             <q-item-section>
                 <q-item-label lines="1">An action needs a name</q-item-label>
-                <q-item-label caption></q-item-label>
+                <q-item-label caption />
             </q-item-section>
 
             <q-item-section side>
-                <q-icon name="sym_o_info"></q-icon>
+                <q-icon name="sym_o_info" />
             </q-item-section>
         </q-item>
     </q-list>
@@ -152,11 +155,11 @@ import { QSelect } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 
-const DEFAULT_ACTION_TEMPLATE: ActionTemplateDto = {};
+const DEFAULT_ACTION_TEMPLATE: ActionTemplateDto | undefined = undefined;
 
 //gets passed as input
 const { actionTemplates } = defineProps<{
-    actionTemplates: ActionTemplate[];
+    actionTemplates: ActionTemplateDto[];
 }>();
 
 //template that gets written
@@ -167,7 +170,8 @@ const filteredActionTemplates: Ref<ActionTemplateDto[] | []> = ref([]);
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 //removing newTemplate Option if Name in search field exactly matches existing template
 const options = computed(() => {
-    const suggestedName: string = newActionTemplate.value.name;
+    // @ts-ignore
+    const suggestedName: string = newActionTemplate.value?.name;
     const filteredNames: string[] = filteredActionTemplates.value.map(
         (x) => x.name,
     );
@@ -199,7 +203,11 @@ function updateSelectedTemplate(selTempl: ActionTemplateDto) {
 }
 
 function updateCreateTemplateName(newName: string) {
-    newActionTemplate.value.name = newName;
+    newActionTemplate.value = {
+        // @ts-ignore
+        ...newActionTemplate.value,
+        name: newName,
+    };
 }
 
 const enableSearch = () => {

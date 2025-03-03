@@ -11,8 +11,8 @@ import {
     NumberValidate,
     StringArrayValidate,
     StringValidate,
-    UUIDValidate,
     UUIDArrayValidate,
+    UUIDValidate,
 } from './validation-types';
 import { metadataApplier } from './metadata-applier';
 import { AccessGroupType } from '@common/frontend_shared/enum';
@@ -147,8 +147,9 @@ export const QueryStringArray = (
                 return [];
             }
 
+            let value = [];
             try {
-                var value = JSON.parse(raw_value);
+                value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid JSON String Array`,
@@ -186,8 +187,9 @@ export const QueryOptionalStringArray = (
                 return [];
             }
 
+            let value = [];
             try {
-                var value = JSON.parse(raw_value);
+                value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid JSON String Array`,
@@ -225,8 +227,9 @@ export const QueryOptionalUUIDArray = (
                 return [];
             }
 
+            let value = [];
             try {
-                var value = JSON.parse(raw_value);
+                value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid UUID Array`,
@@ -264,8 +267,9 @@ export const QueryUUIDArray = (
                 return [];
             }
 
+            let value = [];
             try {
-                var value = JSON.parse(raw_value);
+                value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
                     `Parameter ${data} is not a valid UUID Array`,
@@ -643,8 +647,9 @@ export const QuerySkip = (
                 return 0;
             }
 
+            let value = 0;
             try {
-                var value = Number.parseInt(value_raw);
+                value = Number.parseInt(value_raw);
             } catch {
                 throw new BadRequestException(
                     'QuerySkip is not a valid Number',
@@ -689,8 +694,9 @@ export const QueryTake = (
                 return DEFAULT_TAKE; // default value
             }
 
+            let value = 0;
             try {
-                var value = Number.parseInt(raw_value);
+                value = Number.parseInt(raw_value);
             } catch {
                 throw new BadRequestException(
                     'QueryTake is not a valid Number',
