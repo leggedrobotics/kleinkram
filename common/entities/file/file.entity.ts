@@ -15,7 +15,6 @@ import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 import { FileOrigin, FileState, FileType } from '../../frontend_shared/enum';
 import CategoryEntity from '../category/category.entity';
-import { FileDto, FileWithTopicDto } from '../../api/types/file/file.dto';
 
 @Entity()
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])

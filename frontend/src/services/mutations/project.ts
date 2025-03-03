@@ -25,10 +25,12 @@ export const updateProject = async (
     projectUUID: string,
     name: string,
     description: string,
+    autoConvert: boolean,
 ) => {
     const response = await axios.put(`/projects/${projectUUID}`, {
         name,
         description,
+        autoConvert,
     });
     return response.data;
 };

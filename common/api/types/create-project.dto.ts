@@ -1,4 +1,10 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+    IsArray,
+    IsBoolean,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+} from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidName,
@@ -15,6 +21,10 @@ export class CreateProject {
     @IsNotEmpty()
     @IsString()
     description!: string;
+
+    @IsOptional()
+    @IsBoolean()
+    autoConvert?: boolean;
 
     @IsArray()
     @IsOptional()

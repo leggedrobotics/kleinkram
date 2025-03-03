@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsDate, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ProjectDto {
     @ApiProperty()
@@ -21,4 +22,8 @@ export class ProjectDto {
     @ApiProperty()
     @IsString()
     description!: string;
+
+    @ApiProperty()
+    @IsBoolean()
+    autoConvert!: boolean;
 }
