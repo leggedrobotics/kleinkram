@@ -55,13 +55,19 @@ import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
 import { getActions, getRunningActions } from '../services/queries/action';
 import { CategoriesDto } from '@api/types/category.dto';
 import { getCategories } from '../services/queries/categories';
-import { getAccessGroup, searchAccessGroups } from '../services/queries/access';
+import {
+    getAccessGroup,
+    getProjectAccess,
+    searchAccessGroups,
+} from '../services/queries/access';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { ActionsDto } from '@api/types/actions/action.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
+import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -326,7 +332,11 @@ export const useIsUploading = (): Ref<boolean> | Ref<undefined> => {
 };
 
 /**
- * Fetches the default rights for creating a new project.
+ * Fetches the default rights for creating a new project. The default rights
+ * of a new project consists of the following rights:
+ *
+ * - DELETE access for the creator
+ * - inherited rights from the affiliation group
  *
  */
 export const useProjectDefaultAccess = (): UseQueryReturnType<
@@ -336,6 +346,36 @@ export const useProjectDefaultAccess = (): UseQueryReturnType<
     return useQuery<DefaultRights>({
         queryKey: ['defaultRights'],
         queryFn: getProjectDefaultAccess,
+    });
+};
+
+/**
+ * Fetches the minimal access rights for a new project. The minimal access rights
+ * for a new project consists of the following rights:
+ *
+ * - DELETE access for the creator
+ *
+ */
+export const useMinimalAccessRightsForNewProject = (): ComputedRef<
+    DefaultRightDto[]
+> => {
+    const { data: defaultRights } = useProjectDefaultAccess();
+    return computed<DefaultRightDto[]>(
+        () =>
+            unref(defaultRights)?.data.filter(
+                (r: DefaultRightDto) => r.type === AccessGroupType.PRIMARY,
+            ) ?? [],
+    );
+};
+
+export const useProjectAccessRights: (
+    projectAccessUuid: string,
+) => UseQueryReturnType<ProjectAccessListDto | undefined, Error> = (
+    projectAccessUuid,
+) => {
+    return useQuery<ProjectAccessListDto>({
+        queryKey: ['projectAccess', projectAccessUuid],
+        queryFn: () => getProjectAccess(projectAccessUuid),
     });
 };
 
@@ -455,7 +495,7 @@ export const useActions = (
         queryFn: () =>
             getActions(
                 unref(projectUuid),
-                unref(missionUuid),
+                unref(missionUuid) ?? '',
                 take,
                 skip,
                 sortBy,

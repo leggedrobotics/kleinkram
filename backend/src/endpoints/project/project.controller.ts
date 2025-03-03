@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
 import { ProjectService } from '../../services/project.service';
 import { CreateProject } from '@common/api/types/create-project.dto';
 import {
@@ -18,8 +26,6 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-
-import { Query } from '@nestjs/common';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
@@ -33,10 +39,18 @@ import { DeleteProjectResponseDto } from '@common/api/types/project/delete-proje
 import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
 import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
 import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
+import {
+    ProjectAccessDto,
+    ProjectAccessListDto,
+} from '@common/api/types/access-control/project-access.dto';
+import { AccessService } from '../../services/access.service';
 
 @Controller(['project', 'projects']) // TODO: over time we will migrate to 'projects'
 export class ProjectController {
-    constructor(private readonly projectService: ProjectService) {}
+    constructor(
+        private readonly projectService: ProjectService,
+        private readonly accessService: AccessService,
+    ) {}
 
     @Post()
     @CanCreate()
@@ -153,6 +167,32 @@ export class ProjectController {
         return {
             success: true,
         };
+    }
+
+    @Get(':uuid/access')
+    @CanReadProject()
+    @ApiOkResponse({
+        description: 'Returns the project access',
+        type: ProjectAccessListDto,
+    })
+    async getProjectAccess(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<ProjectAccessListDto> {
+        return this.accessService.getProjectAccesses(uuid);
+    }
+
+    @Post(':uuid/access')
+    @CanWriteProject()
+    @ApiOkResponse({
+        description: 'Returns the project access',
+        type: ProjectAccessListDto,
+    })
+    async updateProjectAccess(
+        @ParameterUID('uuid') uuid: string,
+        @Body() body: ProjectAccessDto[],
+        @AddUser() auth: AuthHeader,
+    ): Promise<ProjectAccessListDto> {
+        return this.accessService.updateProjectAccess(uuid, body, auth);
     }
 }
 
