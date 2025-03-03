@@ -203,7 +203,7 @@
                             class="button-border"
                             :label="
                                 props.row.expirationDate
-                                    ? formatDate(props.row.expirationDate)
+                                    ? props.row.expirationDate.toDateString()
                                     : 'Never'
                             "
                             icon="sym_o_date_range"
