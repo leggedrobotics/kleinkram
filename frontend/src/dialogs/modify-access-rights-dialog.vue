@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Change Access Rights</template>
+        <template #title>Change Access Rights</template>
 
         <template #content>
             <configure-access-rights
@@ -14,102 +14,47 @@
                 flat
                 label="Confirm"
                 class="bg-button-primary"
-                @click="confirmAction"
+                @click="confirmAccessRightsModification"
             />
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import BaseDialog from './base-dialog.vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
-import { getProjectAccess } from 'src/services/queries/access';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { computed, ref, watch } from 'vue';
-import {
-    removeAccessGroupFromProject,
-    updateProjectAccess,
-} from 'src/services/mutations/access';
-import { AccessGroupType } from '@common/enum';
-
-import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
-import { isAxiosError } from 'axios';
+import { useDialogPluginComponent } from 'quasar';
+import { unref, watch } from 'vue';
 import ConfigureAccessRights from '@components/configure-access-rights/configure-access-rights.vue';
-import { useProjectDefaultAccess } from '../hooks/query-hooks';
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
+import {
+    useMinimalAccessRightsForNewProject,
+    useProjectAccessRights,
+} from '../hooks/query-hooks';
+import { useUpdateAccessRightsMutation } from '../hooks/mutation-hooks';
+import { useEditablePaginatedResponse } from '../hooks/util-hooks';
+
+const { project_uuid: projectUuid } = defineProps<{ project_uuid: string }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const { data: defaultRights } = useProjectDefaultAccess();
+const minAccessRights = useMinimalAccessRightsForNewProject();
+const { data: projectAccess } = useProjectAccessRights(projectUuid);
+const modifiableAccessRights = useEditablePaginatedResponse(projectAccess);
 
-const minAccessRights = computed<DefaultRightDto>(() =>
-    defaultRights.value
-        ? defaultRights.value.data.filter(
-              (r) => r.type === AccessGroupType.PRIMARY,
-          )
-        : [],
-);
-
-const { project_uuid, project_access_uuid } = defineProps<{
-    project_uuid: string;
-    project_access_uuid: string;
-}>();
-
-const { data: projectAccess } = useQuery<ProjectAccessDto>({
-    queryKey: ['projectAccess', project_access_uuid],
-    queryFn: () => getProjectAccess(project_uuid, project_access_uuid),
+// debug watch
+watch(modifiableAccessRights, () => {
+    console.debug(
+        `project access rights for project ${projectUuid} got modified to:
+${JSON.stringify(unref(modifiableAccessRights), null, 2)}`,
+    );
 });
 
-const modifiableAccessRights = ref([]);
-watch(
-    projectAccess,
-    () => {
-        modifiableAccessRights.value = projectAccess.value?.data ?? [];
-    },
-    { immediate: true },
+const { mutate: changeAccessRights } = useUpdateAccessRightsMutation(
+    projectUuid,
+    modifiableAccessRights,
 );
 
-const queryClient = useQueryClient();
-const { mutate: changeAccessRights } = useMutation({
-    mutationFn: () =>
-        Promise.all([
-            ...modifiableAccessRights.value.map((a) =>
-                updateProjectAccess(project_uuid, a.uuid, a.rights),
-            ),
-            ...projectAccess.value?.data
-                .filter((a) => !modifiableAccessRights.value.includes(a))
-                .map((a) => removeAccessGroupFromProject(project_uuid, a.uuid)),
-        ]),
-
-    onSuccess: async () => {
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'projectAccess',
-        });
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'AccessGroup',
-        });
-    },
-    onError: (error: unknown) => {
-        let errorMessage = 'An unknown error occurred';
-
-        if (isAxiosError(error)) {
-            errorMessage =
-                error.response?.data?.message ?? 'No error message provided';
-        } else if (error instanceof Error) {
-            errorMessage = error.message;
-        }
-
-        Notify.create({
-            message: `Failed to change access rights:  ${errorMessage}`,
-            color: 'negative',
-            position: 'bottom',
-        });
-    },
-});
-
-function confirmAction(): void {
+const confirmAccessRightsModification: () => void = () => {
     changeAccessRights();
     onDialogOK();
-}
+};
 </script>
-
-<style scoped></style>

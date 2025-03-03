@@ -1,5 +1,6 @@
 import axios from 'src/api/axios';
 import { AccessGroupRights } from '@common/enum';
+import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 
 export const addUsersToProject = async (
     userUUId: string,
@@ -45,6 +46,17 @@ export const addAccessGroupToProject = async (
     return response.data;
 };
 
+export const updateProjectAccessRights = async (
+    projectUuid: string,
+    accessRights: ProjectAccessDto[],
+) => {
+    const response = await axios.post(
+        `/projects/${projectUuid}/access`,
+        accessRights,
+    );
+    return response.data;
+};
+
 export const removeAccessGroupFromProject = async (
     projectUUID: string,
     accessGroupUUID: string,
@@ -69,19 +81,6 @@ export const removeUserFromAccessGroup = async (
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
     const response = await axios.delete(`/access/${accessGroupUUID}`);
-    return response.data;
-};
-
-export const updateProjectAccess = async (
-    projectUUID: string,
-    groupUuid: string,
-    rights: AccessGroupRights,
-) => {
-    const response = await axios.post('/access/updateProjectAccess', {
-        accessGroupUUID: groupUuid,
-        rights,
-        uuid: projectUUID,
-    });
     return response.data;
 };
 

@@ -13,7 +13,6 @@ import {
     CanCreate,
     CanDeleteProject,
     CanEditGroup,
-    CanReadProject,
     CanWriteProject,
     UserOnly,
 } from './roles.decorator';
@@ -32,7 +31,6 @@ import Project from '@common/entities/project/project.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import { ProjectAccessListDto } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from './parameter-decorator';
 import { ApiOperation } from '@nestjs/swagger';
@@ -234,33 +232,6 @@ export class AccessController {
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
     ) {
         return this.accessService.deleteAccessGroup(uuid);
-    }
-
-    @Get('projectAccesses')
-    @CanReadProject()
-    @ApiOkResponse({
-        description: 'Returns the ProjectAccess',
-        type: ProjectAccessListDto,
-    })
-    async getProjectAccess(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-    ): Promise<ProjectAccessListDto> {
-        return this.accessService.getProjectAccesses(uuid);
-    }
-
-    @Post('updateProjectAccess')
-    @CanWriteProject()
-    @OutputDto(null) // TODO: type API response
-    async updateProjectAccess(
-        @Body() body: AddAccessGroupToProjectDto,
-        @AddUser() user: AuthHeader,
-    ) {
-        return this.accessService.updateProjectAccess(
-            body.uuid,
-            body.accessGroupUUID,
-            body.rights,
-            user,
-        );
     }
 
     @Post('setExpireDate')

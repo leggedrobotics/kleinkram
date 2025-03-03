@@ -15,8 +15,8 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import {
-    projectEntityToDtoWithMissions,
     projectEntityToDtoWithMissionCount,
+    projectEntityToDtoWithMissions,
 } from '../serialization';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
@@ -426,7 +426,7 @@ export class ProjectService {
 
     async update(
         uuid: string,
-        project: { name: string; description: string },
+        project: CreateProject,
     ): Promise<ProjectWithMissionsDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
@@ -436,9 +436,13 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
+
         await this.projectRepository.update(uuid, {
             name: project.name,
             description: project.description,
+            ...(project.autoConvert !== undefined
+                ? { autoConvert: project.autoConvert }
+                : {}),
         });
         return (await this.projectRepository.findOneOrFail({
             where: { uuid },

@@ -40,10 +40,7 @@ export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
 
 export const getProjectAccess = async (
     projectUUID: string,
-    projectAccessUUID: string,
 ): Promise<ProjectAccessListDto> => {
-    const response = await axios.get(`/access/projectAccesses`, {
-        params: { uuid: projectUUID, projectAccessUUID },
-    });
+    const response = await axios.get(`/projects/${projectUUID}/access`);
     return response.data;
 };

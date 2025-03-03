@@ -5,7 +5,7 @@ import {
     EntityManager,
     FindOptionsWhere,
     ILike,
-    InsertResult,
+    MoreThanOrEqual,
     Not,
     Repository,
 } from 'typeorm';
@@ -26,7 +26,10 @@ import GroupMembership from '@common/entities/auth/group-membership.entity';
 import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import logger from '../logger';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import { ProjectAccessListDto } from '@common/api/types/access-control/project-access.dto';
+import {
+    ProjectAccessDto,
+    ProjectAccessListDto,
+} from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
@@ -479,33 +482,173 @@ export class AccessService {
         };
     }
 
-    async updateProjectAccess(
-        projectUUID: string,
-        groupUuid: string,
-        rights: AccessGroupRights,
-        auth: AuthHeader,
-    ): Promise<InsertResult> {
-        if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.hasProjectRights(
-                projectUUID,
-                auth,
-                AccessGroupRights.DELETE,
+    private async uncheckedProjectAccessTransactionalUpdate(
+        transaction: EntityManager,
+        projectUuid: string,
+        newProjectAccess: ProjectAccessDto[],
+    ): Promise<void> {
+        // remove all old access rights
+        await transaction.delete(ProjectAccess, {
+            project: { uuid: projectUuid },
+        });
+
+        // set the new access rights
+        const accessUpdates = newProjectAccess.map((access) =>
+            transaction.upsert(
+                ProjectAccess,
+                {
+                    project: { uuid: projectUuid },
+                    accessGroup: { uuid: access.uuid },
+                    rights: access.rights,
+                },
+                ['project.uuid', 'accessGroup.uuid'],
+            ),
+        );
+
+        // wait for all updates to finish
+        await Promise.all(accessUpdates);
+    }
+
+    /**
+     * PRE-CONDITIONS for updating project access rights:
+     *
+     *  - the current user must have at least write rights
+     *  - the current user must have at least the same rights
+     *    as the highest rights he has modified
+     *
+     * @param transaction
+     * @param projectUuid
+     * @param newProjectAccess
+     * @param userId
+     * @private
+     *
+     * @throws ConflictException if the pre-conditions are not met
+     *
+     */
+    private async checkProjectAccessModificationPreConditions(
+        transaction: EntityManager,
+        projectUuid: string,
+        newProjectAccess: ProjectAccessDto[],
+        userId: string,
+    ): Promise<void> {
+        // check if the current user has at least write rights
+        const userAccess = await transaction.find(ProjectAccess, {
+            where: {
+                rights: MoreThanOrEqual(AccessGroupRights.WRITE),
+                project: { uuid: projectUuid },
+                accessGroup: { memberships: { user: { uuid: userId } } },
+            },
+        });
+
+        if (userAccess.length === 0) {
+            throw new ConflictException(
+                'User does not have write rights for the project',
             );
-            if (!canDelete) {
-                throw new ConflictException(
-                    'User cannot grant delete rights without having delete rights himself/herself',
-                );
-            }
         }
 
-        return await this.projectAccessRepository.upsert(
-            {
-                rights,
-                project: { uuid: projectUUID },
-                accessGroup: { uuid: groupUuid },
+        // the current user must have at least the same rights
+        // as the highest rights he has modified
+        const currentAccess = await transaction.find(ProjectAccess, {
+            where: {
+                project: { uuid: projectUuid },
             },
-            { conflictPaths: ['project.uuid', 'accessGroup.uuid'] },
+            relations: ['accessGroup'],
+        });
+
+        // filter out the access rights that have not been modified
+        const accessRightsChanges = newProjectAccess.filter((access) => {
+            return !currentAccess.some(
+                (currentAccess) =>
+                    currentAccess.accessGroup?.uuid === access.uuid &&
+                    currentAccess.rights === access.rights,
+            );
+        });
+
+        const maxRightsInChanges = Math.max(
+            ...accessRightsChanges.map((access) => access.rights),
         );
+
+        const maxRightsOfUser = Math.max(
+            ...userAccess.map((access) => access.rights),
+        );
+
+        if (maxRightsOfUser < maxRightsInChanges) {
+            throw new ConflictException(
+                'User cannot grant higher rights than he has himself',
+            );
+        }
+    }
+
+    /**
+     * check POST-CONDITIONS for updating project access rights:
+     *
+     *  - there must be at least one group with delete rights
+     *
+     * @param transaction
+     * @param projectUuid
+     * @private
+     *
+     * @throws ConflictException if the post-conditions are not met
+     *
+     */
+    private async checkProjectAccessModificationPostConditions(
+        transaction: EntityManager,
+        projectUuid: string,
+    ): Promise<void> {
+        // check if there is at least one group with delete rights
+        const deleteAccess = await transaction.find(ProjectAccess, {
+            where: {
+                rights: AccessGroupRights.DELETE,
+                project: { uuid: projectUuid },
+            },
+        });
+
+        if (deleteAccess.length === 0) {
+            throw new ConflictException(
+                'There must be at least one group with delete rights',
+            );
+        }
+    }
+
+    /**
+     * Update the access rights for a project
+     *
+     * This method is a transactional method that updates the access rights for a project.
+     * This function assumes that you pass a full newProjectAccess object, i.e. all access rights
+     * not passed in the newProjectAccess object will be removed.
+     *
+     * @param projectUuid
+     * @param newProjectAccess
+     * @param authHeader
+     */
+    async updateProjectAccess(
+        projectUuid: string,
+        newProjectAccess: ProjectAccessDto[],
+        authHeader: AuthHeader,
+    ): Promise<ProjectAccessListDto> {
+        await this.entityManager.transaction(
+            async (transactionalEntityManager): Promise<void> => {
+                await this.checkProjectAccessModificationPreConditions(
+                    transactionalEntityManager,
+                    projectUuid,
+                    newProjectAccess,
+                    authHeader.user.uuid,
+                );
+
+                await this.uncheckedProjectAccessTransactionalUpdate(
+                    transactionalEntityManager,
+                    projectUuid,
+                    newProjectAccess,
+                );
+
+                await this.checkProjectAccessModificationPostConditions(
+                    transactionalEntityManager,
+                    projectUuid,
+                );
+            },
+        );
+
+        return await this.getProjectAccesses(projectUuid);
     }
 
     async setExpireDate(

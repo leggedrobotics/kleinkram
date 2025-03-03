@@ -186,7 +186,7 @@ def save_config(config: Config, path: Path = CONFIG_PATH) -> None:
     try:
         _safe_config_write(config, path)
     except Exception as e:
-        logger.warning(f"failed to safe write config {format_traceback(e)}")
+        logger.debug(f"failed to safe write config {format_traceback(e)}")
         _unsafe_config_write(config, path)
 
 

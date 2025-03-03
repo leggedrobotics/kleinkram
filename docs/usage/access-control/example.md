@@ -13,8 +13,8 @@ The chapter illustrate:
 
 ## Affiliation Groups
 
-The PhD student Hans is part of the RSL and has a @leggedrobotics.com email. Thus he is part of the Organizational Unit RSL.
-For his research about Coffee enhanced Robots, he creates a new project called "**AnyCoffee**" in the RSL Organizational Unit.
+The PhD student Hans is part of the RSL and has a @leggedrobotics.com email. Thus he is part of the Affiliation Group RSL.
+For his research about Coffee enhanced Robots, he creates a new project called "**AnyCoffee**" in the RSL Affiliation Group.
 
 As the creator of the project, he gets <Delete/> rights on the project. All other RSL members get <Create/> rights on the project.
 His studies are split into two parts: "normal" and "decaf". He creates two missions, "_Normal_" and "_Decaf_" in the project "**AnyCoffee**".

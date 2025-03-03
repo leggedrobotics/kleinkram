@@ -43,6 +43,25 @@
             :rules="[(val) => !!val || 'Project Description is required']"
             @update:model-value="onProjectNameUpdate"
         />
+
+        <div class="flex column">
+            <label for="autoConvert"
+                >Enable Auto-Convert to mcap format *</label
+            >
+            <q-toggle
+                name="autoConvert"
+                v-model="autoConvert"
+                label="auto-convert to mcap"
+                color="primary"
+                dense
+                style="margin: 10px 0"
+            />
+            <span class="text-grey-8">
+                Enable Auto-Convert to mcap format has some known limitations.
+                Please refer to
+                https://github.com/leggedrobotics/kleinkram/issues/1250.
+            </span>
+        </div>
     </div>
     <div v-else>
         <q-spinner />
@@ -62,6 +81,7 @@ const { project_uuid } = defineProps<{
 const queryClient = useQueryClient();
 
 const projectName = ref('');
+const autoConvert = ref(true);
 const projectDescription = ref('');
 const hasValidInput = ref(false);
 
@@ -75,6 +95,7 @@ watch(
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;
+            autoConvert.value = newVale.autoConvert;
         }
     },
     { immediate: true },
@@ -84,7 +105,8 @@ async function save_changes(): Promise<void> {
     // resolve immediately if no changes
     if (
         projectName.value === project.value?.name &&
-        projectDescription.value === project.value.description
+        projectDescription.value === project.value.description &&
+        autoConvert.value === project.value.autoConvert
     )
         return;
 
@@ -103,6 +125,7 @@ async function save_changes(): Promise<void> {
         project.value.uuid,
         projectName.value.trim(),
         projectDescription.value,
+        autoConvert.value,
     ).catch((error: unknown) => {
         let errorMessage = '';
         errorMessage =

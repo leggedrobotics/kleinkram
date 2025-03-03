@@ -44,12 +44,18 @@
 
                         accessRights = accessRights?.concat([
                             {
-                                ...props.opt,
+                                memberCount: props.opt.memberCount,
+                                name: props.opt.name,
+                                uuid: props.opt.uuid,
+                                type: props.opt.type,
                                 rights: AccessGroupRights.READ,
                             },
                         ]) || [
                             {
-                                ...props.opt,
+                                memberCount: props.opt.memberCount,
+                                name: props.opt.name,
+                                uuid: props.opt.uuid,
+                                type: props.opt.type,
                                 rights: AccessGroupRights.READ,
                             },
                         ];
@@ -109,26 +115,6 @@
                                         : 'members'
                                 }})
                             </span>
-                        </template>
-
-                        <template
-                            v-if="
-                                accessRights?.find(
-                                    (g) => g.uuid === props.opt.uuid,
-                                )
-                            "
-                        >
-                            {{
-                                accessRights?.find(
-                                    (g) => g.uuid === props.opt.uuid,
-                                )?.rights
-                                    ? ` - ${getAccessRightDescription(
-                                          accessRights?.find(
-                                              (g) => g.uuid === props.opt.uuid,
-                                          )?.rights,
-                                      )}`
-                                    : ''
-                            }}
                         </template>
                     </q-item-label>
                 </q-item-section>
@@ -198,6 +184,11 @@
                     style="background-color: #e8e8e8"
                     :label="getAccessRightDescription(props.row.rights)"
                     auto-close
+                    :disable="
+                        accessGroupRightsList.filter((r) =>
+                            isBelowMinRights(props.row, r),
+                        ).length !== 0
+                    "
                 >
                     <q-list>
                         <q-item

@@ -10,27 +10,27 @@ import Action from '@common/entities/action/action.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import User from '@common/entities/user/user.entity';
 
-import { MissionDto } from '@common/api/types/mission/mission.dto';
-import { MissionWithCreatorDto } from '@common/api/types/mission/mission.dto';
-import { FlatMissionDto } from '@common/api/types/mission/mission.dto';
-import { MissionWithFilesDto } from '@common/api/types/mission/mission.dto';
-import { MinimumMissionDto } from '@common/api/types/mission/mission.dto';
+import {
+    FlatMissionDto,
+    MinimumMissionDto,
+    MissionDto,
+    MissionWithCreatorDto,
+    MissionWithFilesDto,
+} from '@common/api/types/mission/mission.dto';
 import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
 import { ActionDto } from '@common/api/types/actions/action.dto';
 import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
 import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
 import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
 import { LogsDto } from '@common/api/types/actions/logs.dto';
-import { TagDto } from '@common/api/types/tags/tags.dto';
-import { TagTypeDto } from '@common/api/types/tags/tags.dto';
+import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
 import { ProjectWithMissionCountDto } from '@common/api/types/project/project-with-mission-count.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { GroupMembershipDto } from '@common/api/types/user.dto';
-import { FileDto } from '@common/api/types/file/file.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { UserDto } from '@common/api/types/user.dto';
+import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
+import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
+import logger from './logger';
 
 export const missionEntityToDto = (mission: Mission): MissionDto => {
     if (!mission.project) {
@@ -240,6 +240,7 @@ export const projectEntityToDto = (project: Project): ProjectDto => {
     return {
         uuid: project.uuid,
         name: project.name,
+        autoConvert: project.autoConvert ?? true,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
         description: project.description,

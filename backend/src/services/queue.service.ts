@@ -48,7 +48,6 @@ import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-respo
 import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
 import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
 import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
-import { QueueActiveDto } from '@common/api/types/queue-active.dto';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments
@@ -178,6 +177,7 @@ export class QueueService implements OnModuleInit {
             where: {
                 uuid: uuid,
             },
+            relations: ['mission', 'mission.project'],
         });
 
         const fileInfo = await getInfoFromMinio(file.type, file.uuid).catch(
@@ -190,6 +190,12 @@ export class QueueService implements OnModuleInit {
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
+
+        // abort if autoConvert is disabled
+        if (!file.mission?.project?.autoConvert) {
+            logger.debug(`Skip auto convert to mcap`);
+            return;
+        }
 
         queue.state = QueueState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);
