@@ -1,5 +1,15 @@
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { db } from '../utils/database_utils';
+import { db,
+    getJwtToken,
+    getUserFromDb,
+    mockDbUser,
+ } from '../utils/database_utils';
+
+ import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '../../../../common/frontend_shared/enum';
 
 export const DEFAULT_GROUP_UUIDS = ['00000000-0000-0000-0000-000000000000'];
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
@@ -59,3 +69,60 @@ export const getAccessGroupForEmail = (
 
     return group[0];
 };
+
+/**
+ * Generate user in database and fetch the user
+ *
+ * @param userType internal or external user
+ * @param userRole user or admin
+ *
+ * @returns user, token and response
+ */
+export const generateAndFetchDbUser = async (
+    userType: 'internal' | 'external',
+    userRole: 'user' | 'admin'
+): Promise<{ user: any; res: Response, token: string}> => {  
+
+    const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
+
+    let userId: string;
+
+    switch (userType) {
+        case 'internal':
+            userId = await mockDbUser(
+                'internal-user@leggedrobotics.com',
+                undefined,
+                roleEnum
+            );
+            break;
+        
+        case 'external':
+            userId = await mockDbUser(
+                'external-user@third-party.com',
+                undefined,
+                roleEnum
+            );
+            break;
+        
+        default:
+            throw new Error('Invalid userType');
+    }
+
+    const user = await getUserFromDb(userId);
+    const token = await getJwtToken(user);
+
+    const res = await fetch(
+        `http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
+        {
+            method: 'GET',
+            headers: {
+                cookie: `authtoken=${token}`,
+            },
+        }
+    );
+
+    return { user, token, res};
+};
+
+
+

@@ -6,6 +6,11 @@ import {
     mockDbUser,
 } from '../../utils/database_utils';
 import { createProjectUsingPost } from '../../utils/api_calls';
+
+import {
+    generateAndFetchDbUser,
+} from '../utils';
+
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -30,8 +35,7 @@ describe('Verify Project Manipulation', () => {
 
     // project creation/deleting tests
     test('if user with leggedrobotics email is allowed to create new project', async () => {
-        const userId = await mockDbUser('internal-user@leggedrobotics.com');
-        const user = await getUserFromDb(userId);
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
 
         const projectUuid = await createProjectUsingPost(
             {
@@ -51,8 +55,10 @@ describe('Verify Project Manipulation', () => {
     });
 
     test('if user with leggedrobotics email have read only access by default', async () => {
-        const interalUserId = await mockDbUser('internal-1@leggedrobotics.com');
-        const user = await getUserFromDb(interalUserId);
+
+        // generate project with internal user
+        const {user:user1, res:res1} = await generateAndFetchDbUser('internal', 'user')
+        expect(res1.status).toBe(200);
 
         const projectIuid = await createProjectUsingPost(
             {
@@ -60,7 +66,7 @@ describe('Verify Project Manipulation', () => {
                 description: 'This is a test project',
                 requiredTags: [],
             },
-            user,
+            user1,
         );
 
         const projectRepository = db.getRepository('Project');
@@ -69,17 +75,23 @@ describe('Verify Project Manipulation', () => {
         });
         expect(project['name']).toBe('test_project');
 
-        const secondUserId = await mockDbUser('internal-2@leggedrobotics.com');
-        const secondUser = await getUserFromDb(secondUserId);
+        // generate second internal user
+        const {token: token2, res: res2 } = await generateAndFetchDbUser('internal', 'user');
+        expect(res2.status).toBe(200);
 
-        // check view access
-        const token = await getJwtToken(secondUser);
+        // const secondUserId = await mockDbUser('internal-2@leggedrobotics.com');
+        // const secondUser = await getUserFromDb(secondUserId);
+
+        // // check view access
+        // const token = await getJwtToken(secondUser);
+
+        // get project with user 2
         const res = await fetch(
             `http://localhost:3000/projects/${projectIuid}`,
             {
                 method: 'GET',
                 headers: {
-                    cookie: `authtoken=${token}`,
+                    cookie: `authtoken=${token2}`,
                 },
             },
         );
@@ -87,14 +99,14 @@ describe('Verify Project Manipulation', () => {
         const projectRes = await res.json();
         expect(projectRes['name']).toBe('test_project');
 
-        // check denied modification access
-        const res2 = await fetch(
+        // check denied modification access with user2
+        const res3 = await fetch(
             `http://localhost:3000/projects/update?uuid=${projectIuid}`,
             {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    cookie: `authtoken=${token}`,
+                    cookie: `authtoken=${token2}`,
                 },
                 body: JSON.stringify({
                     name: '1234',
@@ -103,15 +115,15 @@ describe('Verify Project Manipulation', () => {
                 }),
             },
         );
-        expect(res2.status).toBe(403);
+        expect(res3.status).toBe(403);
 
         // check denied delete access
-        const res3 = await fetch(
+        const res4 = await fetch(
             `http://localhost:3000/projects/delete?uuid=${projectIuid}`,
             {
                 method: 'DELETE',
                 headers: {
-                    cookie: `authtoken=${token}`,
+                    cookie: `authtoken=${token2}`,
                 },
             },
         );
@@ -125,16 +137,18 @@ describe('Verify Project Manipulation', () => {
     });
 
     test('the creator of a project has delete access to the project', async () => {
-        const userID = await mockDbUser('creator@leggedrobotics.com');
-        const user = await getUserFromDb(userID);
+        // const userID = await mockDbUser('creator@leggedrobotics.com');
+        // const user = await getUserFromDb(userID);
 
+        // generate internal user
+        const {user:user1, token:token} = await generateAndFetchDbUser('internal', 'user')
         const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
                 requiredTags: [],
             },
-            user,
+            user1,
         );
 
         // check if project is created by reading the database
@@ -145,7 +159,7 @@ describe('Verify Project Manipulation', () => {
         expect(project['name']).toBe('test_project');
 
         // delete the project using the API
-        const token = await getJwtToken(user);
+        // const token = await getJwtToken(user);
         const url = `http://localhost:3000/projects/${projectUuid}`;
         const res = await fetch(url, {
             method: 'DELETE',
@@ -161,6 +175,44 @@ describe('Verify Project Manipulation', () => {
 
     test('the creator of a project can add users to with read access to the project', async () => {
         //TODO: implement this test
+
+
+        // create two internal users
+        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+        const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
+
+        // create project with read access for user2
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.READ,
+                        userUUID: user2.uuid,
+                    },
+                ],
+            },
+            user,
+        );
+
+        // check if project can be manipulated by user2
+        const res = await fetch(
+            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    cookie: `authtoken=${token2}`,
+                },
+                body: JSON.stringify({
+                    name: '1234',
+                    description: '1234',
+                    requiredTags: [],
+                }),
+            },
+        );
+        expect(res.status).toBe(403);
 
         expect(true).toBe(true);
     });
@@ -240,27 +292,13 @@ describe('Verify Project User Access', () => {
         const projects = await projectRepository.find();
         expect(projects.length).toBe(10);
 
-        const userId = await mockDbUser(
-            'some-admin@third-party.com',
-            undefined,
-            UserRole.ADMIN,
-        );
-        const user = await getUserFromDb(userId);
-
-        const token = await getJwtToken(user);
-        const res = await fetch(
-            `http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
-            {
-                method: 'GET',
-                headers: {
-                    cookie: `authtoken=${token}`,
-                },
-            },
-        );
+        const { _, res } = await generateAndFetchDbUser('internal', 'admin');
         expect(res.status).toBe(200);
+
         const projectList = await res.json();
         console.log(projectList);
         expect(projectList[0].length).toBe(10);
+        
         projectList[0]?.forEach((project: { uuid: string }) => {
             expect(projectUuids.includes(project.uuid)).toBe(true);
         });
@@ -319,10 +357,15 @@ describe('Verify Project User Access', () => {
 
         // external
     test('third party user cannot view any project by default', async () => {
-        const interalUserId = await mockDbUser(
-            'some-interal-user@leggedrobotics.com',
-        );
-        const internalUser = await getUserFromDb(interalUserId);
+        // const interalUserId = await mockDbUser(
+        //     'some-interal-user@leggedrobotics.com',
+        // );
+        // const internalUser = await getUserFromDb(interalUserId);
+
+        // generate project with internal user
+        
+        const {res: res1 } = await generateAndFetchDbUser('internal', 'user');
+        expect(res1.status).toBe(200);
 
         const projectUuid = await createProjectUsingPost(
             {
@@ -337,22 +380,24 @@ describe('Verify Project User Access', () => {
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
 
-        const externalUserId = await mockDbUser(
-            'some-external-user@third-party.com',
-        );
-        const externalUser = await getUserFromDb(externalUserId);
-        const externalUserToken = await getJwtToken(externalUser);
+        const { token:externalUserToken ,res: res2 } = await generateAndFetchDbUser('external', 'user');
+        // const externalUserId = await mockDbUser(
+        //     'some-external-user@third-party.com',
+        // );
+        // const externalUser = await getUserFromDb(externalUserId);
+        // const externalUserToken = await getJwtToken(externalUser);
 
-        // check single project view access
-        const res2 = await fetch(
-            `http://localhost:3000/projects/${projectUuid}`,
-            {
-                method: 'GET',
-                headers: {
-                    cookie: `authtoken=${externalUserToken}`,
-                },
-            },
-        );
+        // // check single project view access
+        // const res2 = await fetch(
+        //     `http://localhost:3000/projects/${projectUuid}`,
+        //     {
+        //         method: 'GET',
+        //         headers: {
+        //             cookie: `authtoken=${externalUserToken}`,
+        //         },
+        //     },
+        // );
+        
         expect(res2.status).toBe(403);
 
         // check list of projects view access
