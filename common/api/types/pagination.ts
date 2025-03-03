@@ -16,7 +16,7 @@ export class PaginatedQueryDto {
     @Min(0)
     @Type(() => Number)
     @ApiProperty({ required: false, default: 0 })
-    skip: number = 0;
+    skip = 0;
 
     @IsOptional()
     @IsInt()
@@ -33,6 +33,7 @@ export class SortablePaginatedQueryDto extends PaginatedQueryDto {
     @ApiProperty({ required: false })
     sortBy?: string;
 
+    // @ts-ignore
     @Transform(({ value }) => SortOrder[value.toUpperCase()])
     @IsEnum(SortOrder)
     @ApiProperty({ required: false })

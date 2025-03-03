@@ -94,6 +94,10 @@ export default tseslint.config(
             'no-control-regex': 'warn',
             'no-useless-escape': 'warn',
             '@typescript-eslint/no-deprecated': 'warn',
+            // here we have some false positives for typeorm functions
+            // see https://github.com/sindresorhus/eslint-plugin-unicorn/issues/1394
+            'unicorn/no-array-method-this-argument': 'warn',
+            '@typescript-eslint/no-misused-spread': 'warn',
         },
     },
     {

@@ -234,8 +234,8 @@
                         :disable="!isNameSelected"
                         @click="submitAnalysis"
                     >
-                        <q-tooltip v-if="!isNameSelected"
-                            >Cant submit Action without a name
+                        <q-tooltip v-if="!isNameSelected">
+                            Cant submit Action without a name
                         </q-tooltip>
                     </q-btn>
                 </div>
@@ -347,6 +347,7 @@ const hasMissionUUIDs = computed(
     () => !!properties.mission_uuids && properties.mission_uuids.length > 0,
 );
 const { data: selectedMissions } = useManyMissions(
+    // @ts-ignore
     ['missions', allMissionUUIDs],
     allMissionUUIDs,
     hasMissionUUIDs,
@@ -412,6 +413,8 @@ async function saveAsTemplate() {
         result = await createTemplate(true);
     }
     editingTemplate.value = result;
+    // here we cannot use structured clone
+    // eslint-disable-next-line unicorn/prefer-structured-clone
     selectedTemplate.value = JSON.parse(JSON.stringify(result));
 }
 
@@ -535,6 +538,8 @@ async function submitAnalysis() {
         template = await createTemplate(false);
     }
     editingTemplate.value = template;
+    // here we cannot use structured clone
+    // eslint-disable-next-line unicorn/prefer-structured-clone
     selectedTemplate.value = JSON.parse(JSON.stringify(template));
 
     let createPromise: Promise<ActionSubmitResponseDto>;
@@ -635,7 +640,9 @@ function newValue(value: string, done: any) {
         (template: ActionTemplateDto) => template.name === value,
     );
     if (existingTemplate) {
-        editingTemplate.value = JSON.parse(JSON.stringify(template));
+        // here we cannot use structured clone
+        // eslint-disable-next-line unicorn/prefer-structured-clone
+        editingTemplate.value = JSON.parse(JSON.stringify(existingTemplate));
         selectedTemplate.value = existingTemplate;
     }
     editingTemplate.value.name = value;
@@ -656,6 +663,8 @@ function selectTemplate(template: ActionTemplateDto) {
         value: template.accessRights,
     };
 
+    // here we cannot use structured clone
+    // eslint-disable-next-line unicorn/prefer-structured-clone
     editingTemplate.value = JSON.parse(JSON.stringify(template));
 }
 

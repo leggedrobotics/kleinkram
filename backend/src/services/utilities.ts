@@ -10,10 +10,12 @@ import { SortOrder } from '@common/api/types/pagination';
 export const stringToBoolean = (value: string): boolean | undefined => {
     value = value.toLowerCase();
     switch (value) {
-        case 'true':
+        case 'true': {
             return true;
-        case 'false':
+        }
+        case 'false': {
             return false;
+        }
     }
 };
 
@@ -30,7 +32,6 @@ export const stringToNumber = (value: string): number | undefined => {
 
 export const stringToDate = (value: string): Date | undefined => {
     const date = parseISO(value);
-    console.log(date);
 
     if (isValid(date)) {
         return date;
@@ -85,7 +86,7 @@ const metadataMatchesKeyValuePair = (
      * */
 
     if (tok === undefined) {
-        tok = uuidv4().replace(/-/g, '');
+        tok = uuidv4().replaceAll('-', '');
     }
 
     const valueBracket = new Brackets((qb) => {
@@ -191,8 +192,8 @@ export const addProjectFilters = (
     projectPatterns: string[],
 ): SelectQueryBuilder<any> => {
     if (projectIds.length > 0 || projectPatterns.length > 0) {
-        const projectLikePatterns = projectPatterns.map(
-            convertGlobToLikePattern,
+        const projectLikePatterns = projectPatterns.map((element) =>
+            convertGlobToLikePattern(element),
         );
 
         const projectUUIDQuery = getFilteredProjectIdSubQuery(
@@ -221,8 +222,8 @@ export const addMissionFilters = (
         missionPatterns.length > 0 ||
         Object.keys(missionMetadata).length > 0
     ) {
-        const missionLikePatterns = missionPatterns.map(
-            convertGlobToLikePattern,
+        const missionLikePatterns = missionPatterns.map((element) =>
+            convertGlobToLikePattern(element),
         );
 
         const missionIdSubQuery = getFilteredMissionIdSubQuery(
@@ -247,7 +248,9 @@ export const addFileFilters = (
     filePatterns: string[],
 ): SelectQueryBuilder<any> => {
     if (fileIds.length > 0 || filePatterns.length > 0) {
-        const fileLikePatterns = filePatterns.map(convertGlobToLikePattern);
+        const fileLikePatterns = filePatterns.map((element) =>
+            convertGlobToLikePattern(element),
+        );
 
         const fileIdSubQuery = getFilteredFileIdSubQuery(
             fileRepository,
@@ -274,7 +277,8 @@ export const addSort = (
     }
 
     query.orderBy(
-        allowedSortKeyMap[sortBy] as string,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        allowedSortKeyMap[sortBy]!,
         sortOrder === SortOrder.ASC ? 'ASC' : 'DESC',
     );
     return query;

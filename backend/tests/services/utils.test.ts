@@ -3,7 +3,7 @@ import {
     stringToBoolean,
     stringToNumber,
     stringToLocation,
-} from '../../src/services/utils';
+} from '../../src/services/utilities';
 
 import { parseISO } from 'date-fns';
 

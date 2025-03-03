@@ -16,8 +16,7 @@ export const useEditablePaginatedResponse = <T>(
     watch(
         paginatedResponse,
         () => {
-            editableResponse.value = (unref(paginatedResponse)?.data ??
-                []) as T[];
+            editableResponse.value = unref(paginatedResponse)?.data ?? [];
         },
         { immediate: true },
     );

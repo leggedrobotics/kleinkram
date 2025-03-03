@@ -30,7 +30,6 @@ import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-m
 import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
 import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
-import logger from './logger';
 
 export const missionEntityToDto = (mission: Mission): MissionDto => {
     if (!mission.project) {
@@ -83,9 +82,9 @@ export const missionEntityToDtoWithFiles = (
     }
 
     return {
-        ...missionEntityToDtoWithCreator(mission),
-        files: mission.files.map(fileEntityToDto),
-        tags: mission.tags.map(tagEntityToDto),
+        ...(missionEntityToDtoWithCreator(mission) as MissionWithFilesDto),
+        files: mission.files.map((element) => fileEntityToDto(element)),
+        tags: mission.tags.map((element) => tagEntityToDto(element)),
     };
 };
 
@@ -195,8 +194,8 @@ export const fileEntityToDtoWithTopic = (
         throw new Error('File topics are not set');
     }
     return {
-        ...fileEntityToDto(file),
-        topics: file.topics.map(topicEntityToDto),
+        ...(fileEntityToDto(file) as FileWithTopicDto),
+        topics: file.topics.map((element) => topicEntityToDto(element)),
     };
 };
 
@@ -255,7 +254,7 @@ export const projectEntityToDtoWithMissionCount = (
     }
 
     return {
-        ...projectEntityToDto(project),
+        ...(projectEntityToDto(project) as ProjectWithMissionCountDto),
         creator: userEntityToDto(project.creator),
         missionCount: project.missions?.length ?? 0,
     };
@@ -269,9 +268,11 @@ export const projectEntityToDtoWithMissions = (
     }
 
     return {
-        ...projectEntityToDto(project),
+        ...(projectEntityToDto(project) as ProjectWithMissionsDto),
         creator: userEntityToDto(project.creator),
-        requiredTags: project.requiredTags.map(tagTypeEntityToDto),
+        requiredTags: project.requiredTags.map((element) =>
+            tagTypeEntityToDto(element),
+        ),
         missions: project.missions?.map(missionEntityToFlatDto) ?? [],
     };
 };

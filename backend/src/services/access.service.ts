@@ -342,7 +342,6 @@ export class AccessService {
         const data: AccessGroupDto[] = accessGroups.map(
             (accessGroup: AccessGroup): AccessGroupDto => {
                 return {
-                    // eslint-disable-next-line unicorn/no-null
                     creator: accessGroup.creator
                         ? userEntityToDto(accessGroup.creator)
                         : null,
@@ -476,7 +475,7 @@ export class AccessService {
         );
 
         return {
-            data: access.map(projectAccessEntityToDto),
+            data: access.map((element) => projectAccessEntityToDto(element)),
             count,
             take: count,
             skip: 0,
@@ -559,9 +558,9 @@ export class AccessService {
         // filter out the access rights that have not been modified
         const accessRightsChanges = newProjectAccess.filter((access) => {
             return !currentAccess.some(
-                (currentAccess) =>
-                    currentAccess.accessGroup?.uuid === access.uuid &&
-                    currentAccess.rights === access.rights,
+                (projectAccess) =>
+                    projectAccess.accessGroup?.uuid === access.uuid &&
+                    projectAccess.rights === access.rights,
             );
         });
 

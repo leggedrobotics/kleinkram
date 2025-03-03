@@ -125,7 +125,7 @@
     <q-table
         class="table-white"
         :columns="accessRightsColumns as any"
-        :rows="accessRights"
+        :rows="accessRights as any[]"
         hide-pagination
         flat
         separator="horizontal"
@@ -185,9 +185,9 @@
                     :label="getAccessRightDescription(props.row.rights)"
                     auto-close
                     :disable="
-                        accessGroupRightsList.filter((r) =>
+                        accessGroupRightsList.some((r) =>
                             isBelowMinRights(props.row, r),
-                        ).length !== 0
+                        )
                     "
                 >
                     <q-list>

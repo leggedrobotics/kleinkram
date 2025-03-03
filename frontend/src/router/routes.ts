@@ -1,5 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
-import { routeWithLayout } from './routes-utils';
+import { routeWithLayout } from './routes-utilities';
 
 /**
  *

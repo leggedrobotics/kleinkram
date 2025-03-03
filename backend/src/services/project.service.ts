@@ -7,7 +7,7 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 
-import { addProjectFilters, addSort } from './utils';
+import { addProjectFilters, addSort } from './utilities';
 
 import {
     AccessGroupRights,
@@ -141,7 +141,9 @@ export class ProjectService {
             .getManyAndCount();
 
         return {
-            data: projects.map(projectEntityToDtoWithMissionCount),
+            data: projects.map((element) =>
+                projectEntityToDtoWithMissionCount(element),
+            ),
             count,
             skip,
             take,
@@ -178,7 +180,9 @@ export class ProjectService {
         const [projects, count] = await query.getManyAndCount();
 
         return {
-            data: projects.map(projectEntityToDtoWithMissionCount),
+            data: projects.map((element) =>
+                projectEntityToDtoWithMissionCount(element),
+            ),
             count,
             skip,
             take,
@@ -440,9 +444,9 @@ export class ProjectService {
         await this.projectRepository.update(uuid, {
             name: project.name,
             description: project.description,
-            ...(project.autoConvert !== undefined
-                ? { autoConvert: project.autoConvert }
-                : {}),
+            ...(project.autoConvert === undefined
+                ? {}
+                : { autoConvert: project.autoConvert }),
         });
         return (await this.projectRepository.findOneOrFail({
             where: { uuid },

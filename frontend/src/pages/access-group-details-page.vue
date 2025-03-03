@@ -282,7 +282,6 @@ import {
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import ROUTES from 'src/router/routes';
-import { formatDate } from '../services/date-formating';
 import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { GroupMembershipDto } from '@api/types/user.dto';
@@ -446,7 +445,7 @@ const openSetExpirationDialog = (agu: GroupMembershipDto): void => {
         },
     }).onOk((expirationDate: Date | null) => {
         setAccessGroup({
-            uuid: accessGroup.value?.uuid,
+            uuid: accessGroup.value?.uuid ?? '',
             userUuid: agu.user.uuid,
             expirationDate,
         });
@@ -502,7 +501,7 @@ const userCols = [
         required: true,
         label: 'Can Edit Group',
         align: 'right',
-        field: (row: GroupMembershipDto): boolean =>
+        field: (row: GroupMembershipDto): string =>
             row.canEditGroup ? 'Yes' : 'No',
     },
     {
