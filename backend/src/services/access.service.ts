@@ -88,6 +88,7 @@ export class AccessService {
                             name: value.project?.name,
                             uuid: value.project?.uuid,
                             rights: value.rights,
+                            autoConvert: value.project?.autoConvert ?? false,
                         }) as ProjectWithAccessRightsDto,
                 ) ?? [],
         };
