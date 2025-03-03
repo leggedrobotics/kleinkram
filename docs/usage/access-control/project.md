@@ -3,7 +3,7 @@
 The valid operations that can be performed on a project are:
 
 | **Operation**   | **Description**             | **Access Right**                                                        |
-|-----------------|-----------------------------|-------------------------------------------------------------------------|
+| --------------- | --------------------------- | ----------------------------------------------------------------------- |
 | view            | View an existing project    | <Read/>                                                                 |
 | create          | Create a new project        | <Create hint="The create rights need to be from an affiliation group"/> |
 | add TagTypes    | Add TagType to project      | <Modify/>                                                               |
@@ -14,7 +14,7 @@ The valid operations that can be performed on a project are:
 ## Tag Type
 
 | **Operation** | **Description**            | **Access Right**                                                        |
-|---------------|----------------------------|-------------------------------------------------------------------------|
+| ------------- | -------------------------- | ----------------------------------------------------------------------- |
 | view          | View an existing TagType   | <Any/>                                                                  |
 | create        | Create a new TagType       | <Create hint="The create rights need to be from an affiliation group"/> |
 | delete        | TagTypes cannot be deleted | -                                                                       |
