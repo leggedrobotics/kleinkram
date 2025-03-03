@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-docs",
-    "version": "0.40.0",
+    "version": "0.41.0",
     "target": "es2022",
     "scripts": {
         "docs:dev": "VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
