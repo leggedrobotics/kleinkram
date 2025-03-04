@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import logger from '../../logger';
+import { appVersion } from '../../app-version';
 
 /**
  *
@@ -61,6 +62,9 @@ export class VersionCheckerMiddlewareService implements NestMiddleware {
     }
 
     private rejectRequest(response: Response, clientVersion: string): void {
+        // we need to manually set the version header here
+        response.header('kleinkram-version', appVersion);
+
         // reject request with 426
         response.status(426).json({
             statusCode: 426,
