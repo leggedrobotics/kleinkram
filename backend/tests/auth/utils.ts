@@ -1,4 +1,4 @@
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import AccessGroup from '../../../common/entities/auth/accessgroup.entity';
 import { db,
     getJwtToken,
     getUserFromDb,
@@ -6,10 +6,8 @@ import { db,
  } from '../utils/database_utils';
 
  import {
-    AccessGroupRights,
-    AccessGroupType,
     UserRole,
-} from '../../../../common/frontend_shared/enum';
+} from '../../../common/frontend_shared/enum';
 
 export const DEFAULT_GROUP_UUIDS = ['00000000-0000-0000-0000-000000000000'];
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
