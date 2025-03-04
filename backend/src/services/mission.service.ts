@@ -9,9 +9,13 @@ import { UserService } from './user.service';
 import { UserRole } from '@common/frontend_shared/enum';
 import { TagService } from './tag.service';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import { addProjectFilters, addMissionFilters, addSort } from './utilities';
-import { missionEntityToDtoWithCreator } from '../serialization';
-import { missionEntityToDtoWithFiles } from '../serialization';
+import { addMissionFilters, addProjectFilters, addSort } from './utilities';
+import {
+    missionEntityToDtoWithCreator,
+    missionEntityToDtoWithFiles,
+    missionEntityToFlatDto,
+    missionEntityToMinimumDto,
+} from '../serialization';
 import {
     addTagsToMinioObject,
     externalMinio,
@@ -25,14 +29,10 @@ import {
     MissionWithFilesDto,
 } from '@common/api/types/mission/mission.dto';
 import {
-    addAccessConstraintsToMissionQuery,
     addAccessConstraints,
+    addAccessConstraintsToMissionQuery,
 } from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import {
-    missionEntityToFlatDto,
-    missionEntityToMinimumDto,
-} from '../serialization';
 
 import { SortOrder } from '@common/api/types/pagination';
 
@@ -286,12 +286,24 @@ export class MissionService {
         const count = await query.getCount();
         const { raw, entities } = await query.getRawAndEntities();
 
+        // this is necessary as raw and entities at not of the same length / order
+        const rawLookup = raw.reduce(
+            (lookup: Record<string, any>, rawEntry: any) => {
+                lookup[rawEntry.mission_uuid] = rawEntry;
+                return lookup;
+            },
+            {},
+        );
+
         return {
-            data: entities.map((m, index) => ({
-                ...missionEntityToDtoWithCreator(m),
-                filesCount: raw[index].fileCount,
-                size: Number.parseInt(raw[index].totalSize),
-            })),
+            data: entities.map((m) => {
+                const rawEntry = rawLookup[m.uuid];
+                return {
+                    ...missionEntityToDtoWithCreator(m),
+                    filesCount: rawEntry.fileCount,
+                    size: Number.parseInt(rawEntry.totalSize),
+                };
+            }),
             count,
             skip,
             take,

@@ -14,6 +14,8 @@ from uuid import UUID
 import httpx
 
 import kleinkram.errors
+from kleinkram._version import __version__
+from kleinkram.api.client import CLI_VERSION_HEADER
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.deser import FileObject
 from kleinkram.api.deser import MissionObject
@@ -355,7 +357,9 @@ def _get_api_version() -> Tuple[int, int, int]:
     config = get_config()
     client = httpx.Client()
 
-    resp = client.get(f"{config.endpoint.api}{GET_STATUS}")
+    resp = client.get(
+        f"{config.endpoint.api}{GET_STATUS}", headers={CLI_VERSION_HEADER: __version__}
+    )
     vers = resp.headers["kleinkram-version"].split(".")
 
     return tuple(map(int, vers))  # type: ignore
