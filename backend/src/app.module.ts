@@ -23,6 +23,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
 import { appVersion } from './app-version';
 import { ActionModule } from './endpoints/action/action.module';
+import { VersionCheckerMiddlewareService } from './routing/middlewares/version-checker-middleware.service';
 
 export interface AccessGroupConfig {
     emails: [{ email: string; access_groups: string[] }];
@@ -92,8 +93,13 @@ export class AppModule implements NestModule {
      * @param consumer
      */
     configure(consumer: MiddlewareConsumer): void {
-        consumer // enable default middleware for all routes
-            .apply(APIKeyResolverMiddleware, AuditLoggerMiddleware)
+        // Apply APIKeyResolverMiddleware and AuditLoggerMiddleware to all routes
+        consumer
+            .apply(
+                APIKeyResolverMiddleware,
+                AuditLoggerMiddleware,
+                VersionCheckerMiddlewareService,
+            )
             .forRoutes('*');
     }
 }
