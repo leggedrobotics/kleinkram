@@ -75,7 +75,7 @@ export async function addActionQueue(
 
     try {
         logger.debug(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+             
             `trying to add to queue: ${actionQueues[worker.identifier].name}`,
         );
         return await actionQueues[worker.identifier].add(

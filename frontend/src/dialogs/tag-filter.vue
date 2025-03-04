@@ -6,7 +6,7 @@
         >
             <div class="q-mt-md row">
                 <div class="col-4">
-                    <q-input v-model="tagtype" label="Search Tag Type" />
+                    <q-input v-model="tagtype" label="Search Metadata" />
                 </div>
                 <div class="col-2">
                     <q-btn label="Search" color="primary" />

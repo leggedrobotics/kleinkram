@@ -39,7 +39,7 @@ const cols = [
         label: 'Action Name',
         align: 'left',
         field: (row: any) =>
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+             
             `${row.action.template.name} v${row.action.template.version}`,
     },
     {

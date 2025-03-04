@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Create Tag Type</template>
+        <template #title> Create Metadata</template>
 
         <template #content>
             <create-tag-type ref="tagType" />
@@ -9,7 +9,7 @@
         <template #actions>
             <q-btn
                 flat
-                label="Create Tag Type"
+                label="Create Metadata"
                 class="bg-button-primary"
                 @click="createTagTypeAction"
             />

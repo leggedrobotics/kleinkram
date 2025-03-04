@@ -51,7 +51,7 @@
                         icon="sym_o_sell"
                         label="Metadata"
                     >
-                        <q-tooltip> Manage Metadata Tags</q-tooltip>
+                        <q-tooltip> Manage Metadata</q-tooltip>
                     </q-btn>
                 </MissionMetadataOpener>
 

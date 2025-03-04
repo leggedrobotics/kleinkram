@@ -617,7 +617,7 @@ const columns = [
 
 function openTagFilterDialog() {
     $q.dialog({
-        title: 'Filter by Tags',
+        title: 'Filter by Metadata',
         component: TagFilter,
         componentProps: {
             tagValues: tagFilter.value,

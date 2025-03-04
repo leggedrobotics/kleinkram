@@ -48,7 +48,7 @@ export class DBDumper {
         } catch (error: any) {
             await unlinkAsync(dumpFile);
 
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+             
             throw new Error(`Failed to create database dump: ${error.message}`);
         }
     }
