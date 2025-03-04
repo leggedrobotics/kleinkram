@@ -419,6 +419,11 @@ describe('Verify Project Manipulation', () => {
             },
         );
         expect(res2.status).toBe(403);
+
+        // check if project is not deleted
+        const projectRepository = db.getRepository('Project');
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(1);
     });
 });
 
@@ -452,7 +457,7 @@ describe('Verify Project User Access', () => {
         const projects = await projectRepository.find();
         expect(projects.length).toBe(10);
 
-        const { _, res } = await generateAndFetchDbUser('internal', 'admin');
+        const { res:res } = await generateAndFetchDbUser('internal', 'admin');
         expect(res.status).toBe(200);
 
         const projectList = await res.json();
@@ -517,14 +522,9 @@ describe('Verify Project User Access', () => {
 
         // external
     test('third party user cannot view any project by default', async () => {
-        // const interalUserId = await mockDbUser(
-        //     'some-interal-user@leggedrobotics.com',
-        // );
-        // const internalUser = await getUserFromDb(interalUserId);
 
         // generate project with internal user
-        
-        const {res: res1 } = await generateAndFetchDbUser('internal', 'user');
+        const {user: user, res: res1 } = await generateAndFetchDbUser('internal', 'user');
         expect(res1.status).toBe(200);
 
         const projectUuid = await createProjectUsingPost(
@@ -533,7 +533,7 @@ describe('Verify Project User Access', () => {
                 description: 'This is a test project',
                 requiredTags: [],
             },
-            internalUser,
+            user,
         );
 
         const projectRepository = db.getRepository('Project');
