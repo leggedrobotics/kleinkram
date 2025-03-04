@@ -26,15 +26,15 @@ const canModify = computed(() => {
         return true;
     }
     return accessGroup.memberships.some(
-        (m) => m.user.uuid === user.value.uuid && m.canEditGroup,
+        (m) => m.user.uuid === user.value?.uuid && m.canEditGroup,
     );
 });
 
 const classObject = reactive({
     disabled: !canModify.value,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'cursor-pointer': !canModify.value,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     'cursor-not-allowed': canModify.value,
 });
 

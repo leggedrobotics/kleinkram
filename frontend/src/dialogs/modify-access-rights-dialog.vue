@@ -30,7 +30,7 @@ import {
     useProjectAccessRights,
 } from '../hooks/query-hooks';
 import { useUpdateAccessRightsMutation } from '../hooks/mutation-hooks';
-import { useEditablePaginatedResponse } from '../hooks/util-hooks';
+import { useEditablePaginatedResponse } from '../hooks/utility-hooks';
 
 const { project_uuid: projectUuid } = defineProps<{ project_uuid: string }>();
 

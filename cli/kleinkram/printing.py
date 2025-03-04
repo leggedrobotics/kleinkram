@@ -273,7 +273,7 @@ def project_info_table(project: Project) -> Table:
 
 
 def file_verification_status_table(
-    file_status: Mapping[Path, FileVerificationStatus]
+    file_status: Mapping[Path, FileVerificationStatus],
 ) -> Table:
     table = Table(title="file status")
     table.add_column("filename", style="cyan")

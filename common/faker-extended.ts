@@ -235,6 +235,7 @@ extendedFaker.mission = {
         const year = faker.date.future().getFullYear();
         const month = faker.date.future().getMonth();
         const day = faker.date.future().getDay();
+
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `${mission} ${year}-${month}-${day}`
             .replaceAll(' ', '_')

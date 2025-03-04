@@ -13,13 +13,13 @@ export const filteredProjects = async (
     searchParameters?: Record<string, string>,
 ): Promise<ProjectsDto> => {
     const parameters: Record<string, string> = {
-        take,
-        skip,
-        sortBy,
+        take: take.toString(),
+        skip: skip.toString(),
+        sortBy: sortBy.toString(),
         sortDirection: descending ? 'DESC' : 'ASC',
     };
     if (searchParameters && Object.keys(searchParameters).length > 0) {
-        parameters.searchParams = searchParameters;
+        parameters.searchParams = JSON.stringify(searchParameters);
     }
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/oldProject/filtered',

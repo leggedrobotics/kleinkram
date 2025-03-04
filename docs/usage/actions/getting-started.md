@@ -62,7 +62,6 @@ When running an action the following environment variables are available inside 
 - `KLEINKRAM_API_ENDPOINT`: The endpoint of the Kleinkram API
 - `KLEINKRAM_S3_ENDPOINT`: The endpoint of the Kleinkram S3 storage
 
-
 ::: warning Deprecated Environment Variables
 The following environment variables are deprecated and will be removed in the future:
 

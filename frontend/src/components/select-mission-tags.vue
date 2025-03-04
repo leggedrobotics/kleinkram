@@ -124,8 +124,8 @@
                     :disable="isRequired(tagtype)"
                     @click="() => removeTagType(tagtype.uuid)"
                 >
-                    <q-tooltip v-if="isRequired(tagtype)"
-                        >Can't delete Tags that are required!
+                    <q-tooltip v-if="isRequired(tagtype)">
+                        Can't delete Tags that are required!
                     </q-tooltip>
                 </q-btn>
             </div>
@@ -178,7 +178,8 @@ watch(
                         ?.map((_tagTypeUUID) => _tagTypeUUID.uuid)
                         .includes(tagTypeUUID)
                 ) {
-                    const newTag: TagDto | undefined = newTagTypes.data.find(
+                    // @ts-ignore
+                    const newTag: TagDto | undefined = newTagTypes.find(
                         (tagType: TagTypeDto) => tagType.uuid === tagTypeUUID,
                     );
                     if (newTag === undefined) continue;

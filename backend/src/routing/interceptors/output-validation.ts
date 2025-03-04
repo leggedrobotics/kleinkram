@@ -24,8 +24,7 @@ function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
 
             if (errors.length > 0) {
                 logger.error(
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                    `Response Validation failed: ${errors.length} errors`,
+                    `Response Validation failed: ${errors.length.toString()} errors`,
                 );
                 logger.error(`In response: `);
                 logger.error(JSON.stringify(data, undefined, 2));
@@ -37,8 +36,7 @@ function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
                     `\n${errors.map((error) => error.toString()).join('\n')}`,
                 );
                 throw new InternalServerErrorException(
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                    `Validation failed: ${errors.length} errors. Check backend logs for details.`,
+                    `Validation failed: ${errors.length.toString()} errors. Check backend logs for details.`,
                 );
             }
         }

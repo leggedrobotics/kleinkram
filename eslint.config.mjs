@@ -2,9 +2,11 @@ import pluginVue from 'eslint-plugin-vue';
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import progress from 'eslint-plugin-file-progress';
 import tseslint from 'typescript-eslint';
+import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 
 export default tseslint.config(
     progress.configs.recommended,
+
     ...pluginVue.configs['flat/recommended'],
     // see https://dev.to/cyrilletuzi/typescript-strictly-typed-part-1-configuring-a-project-9ca
 
@@ -13,24 +15,15 @@ export default tseslint.config(
     ...tseslint.configs.recommended,
     ...tseslint.configs.strict,
     ...tseslint.configs.stylistic,
+    eslintPluginUnicorn.configs['flat/recommended'],
     {
         files: ['**/*.ts', '**/*.vue'],
         rules: {
             // additional rules
             'no-shadow': 'error',
 
-            '@typescript-eslint/naming-convention': [
-                'warn',
-                {
-                    selector: 'default',
-                    format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
-                },
-                {
-                    selector: 'parameter',
-                    format: ['camelCase'],
-                    leadingUnderscore: 'allow',
-                },
-            ],
+            // off for local dev setup, requires type info which is very slow
+            '@typescript-eslint/naming-convention': 'off',
 
             'no-undef': 'error',
             'no-unused-vars': 'warn',

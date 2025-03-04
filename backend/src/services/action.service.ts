@@ -213,7 +213,9 @@ export class ActionService {
 
         return {
             count,
-            data: templates.map(actionTemplateEntityToDto),
+            data: templates.map((element) =>
+                actionTemplateEntityToDto(element),
+            ),
             skip,
             take,
         };
@@ -265,7 +267,7 @@ export class ActionService {
             const [actions, count] = await query.getManyAndCount();
             return {
                 count,
-                data: actions.map(actionEntityToDto),
+                data: actions.map((element) => actionEntityToDto(element)),
                 skip,
                 take,
             };
@@ -312,7 +314,7 @@ export class ActionService {
 
         return {
             count,
-            data: actions.map(actionEntityToDto),
+            data: actions.map((element) => actionEntityToDto(element)),
             skip,
             take,
         };

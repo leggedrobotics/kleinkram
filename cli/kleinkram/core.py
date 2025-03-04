@@ -210,6 +210,10 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
     """\
     deletes multiple files accross multiple missions
     """
+    if not file_ids:
+        return
+
+    # we need to check that file_ids is not empty, otherwise this is bad
     files = list(kleinkram.api.routes.get_files(client, FileQuery(ids=list(file_ids))))
 
     # check if all file_ids were actually found
@@ -219,6 +223,9 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
             raise kleinkram.errors.FileNotFound(
                 f"file {file_id} not found, did not delete any files"
             )
+
+    # to prevent catastrophic mistakes from happening *again*
+    assert set(file_ids) == set([file.id for file in files]), "unreachable"
 
     # we can only batch delete files within the same mission
     missions_to_files: Dict[UUID, List[UUID]] = {}

@@ -5,8 +5,6 @@ import User from '../user/user.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
 
-import { ActionTemplateDto } from '../../api/types/actions/action-template.dto';
-
 @Entity()
 @Unique('unique_versioned_action_name', ['name', 'version'])
 export default class ActionTemplate extends BaseEntity {

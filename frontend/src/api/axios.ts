@@ -2,6 +2,7 @@ import axios, { AxiosRequestConfig, RawAxiosResponseHeaders } from 'axios';
 import ENV from '../environment';
 import { ref } from 'vue';
 import { parseISO } from 'date-fns';
+import BUILD_INFO from '../build';
 
 const isoDateRegex =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;
@@ -83,6 +84,7 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     // we set the _retry property to true to avoid an infinite loop,
     // and we refresh the access token
     originalRequest.isRetryWithRefreshedToken = true;
+
     await axios.post(
         `${ENV.ENDPOINT}/auth/refresh-token`,
         {},
@@ -113,5 +115,10 @@ axiosInstance.interceptors.response.use(
     parseResponse,
     refreshAccessTokenAndRetry,
 );
+
+axiosInstance.interceptors.request.use((config) => {
+    config.headers['Kleinkram-Client-Version'] = BUILD_INFO.version;
+    return config;
+});
 
 export default axiosInstance;

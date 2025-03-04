@@ -1,7 +1,6 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
 import FileEntity from '../file/file.entity';
-import { TopicDto } from '../../api/types/topic.dto';
 
 @Entity()
 export default class Topic extends BaseEntity {

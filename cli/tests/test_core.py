@@ -78,6 +78,19 @@ def test_delete_existing_files(mission):
 
 
 @pytest.mark.slow
+def test_delete_working_as_expected_when_passing_empty_list(mission):
+    client = AuthenticatedClient()
+
+    # we need to filter by *.bag to not get flakyness due to conversion
+    n_files = len(list_files(mission_ids=[mission.id], file_names=["*.bag"]))
+    kleinkram.core.delete_files(client=client, file_ids=[])
+    n_files_after_delete = len(
+        list_files(mission_ids=[mission.id], file_names=["*.bag"])
+    )
+    assert n_files == n_files_after_delete
+
+
+@pytest.mark.slow
 def test_delete_non_existing_files():
     client = AuthenticatedClient()
 

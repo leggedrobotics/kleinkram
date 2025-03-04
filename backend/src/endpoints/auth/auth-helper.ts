@@ -16,7 +16,7 @@ export const projectAccessUUIDQuery = (
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
-    if (tok === undefined) tok = uuidv4().replace(/-/g, '');
+    if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     const projectIdsQuery = query
         .subQuery()
@@ -37,7 +37,7 @@ export const missionAccessUUIDQuery = (
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
-    if (tok === undefined) tok = uuidv4().replace(/-/g, '');
+    if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     return query
         .subQuery()
@@ -56,7 +56,7 @@ export const getUserIsAdminSubQuery = (
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
-    if (tok === undefined) tok = uuidv4().replace(/-/g, '');
+    if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     const subQuery = query.subQuery().select('user.role').from(User, 'user');
     subQuery.where(`user.uuid = :userUUID_${tok}`, {

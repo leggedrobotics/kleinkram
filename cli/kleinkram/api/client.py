@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import abc
+from pathlib import Path
 from threading import Lock
 from typing import Any
 from typing import List
@@ -13,6 +14,9 @@ from typing import Union
 import httpx
 from httpx._types import PrimitiveData
 
+import kleinkram.errors
+from kleinkram._version import __version__
+from kleinkram.config import CONFIG_PATH
 from kleinkram.config import Config
 from kleinkram.config import Credentials
 from kleinkram.config import get_config
@@ -25,6 +29,8 @@ logger = logging.getLogger(__name__)
 COOKIE_AUTH_TOKEN = "authtoken"
 COOKIE_REFRESH_TOKEN = "refreshtoken"
 COOKIE_API_KEY = "clikey"
+
+CLI_VERSION_HEADER = "Kleinkram-Client-Version"
 
 
 Data = Union[PrimitiveData, Any]
@@ -65,10 +71,12 @@ class AuthenticatedClient(httpx.Client):
     _config: Config
     _config_lock: Lock
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, config_path: Path = CONFIG_PATH, *args: Any, **kwargs: Any
+    ) -> None:
         super().__init__(*args, **kwargs)
 
-        self._config = get_config()
+        self._config = get_config(path=config_path)
         self._config_lock = Lock()
 
         if self._config.credentials is None:
@@ -95,9 +103,7 @@ class AuthenticatedClient(httpx.Client):
         self.cookies.set(COOKIE_REFRESH_TOKEN, refresh_token)
 
         logger.info("refreshing token...")
-        response = self.post(
-            "/auth/refresh-token",
-        )
+        response = self.post("/auth/refresh-token")
         response.raise_for_status()
         new_access_token = response.cookies[COOKIE_AUTH_TOKEN]
         creds = Credentials(auth_token=new_access_token, refresh_token=refresh_token)
@@ -109,6 +115,22 @@ class AuthenticatedClient(httpx.Client):
             save_config(self._config)
 
         self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)
+
+    def _send_request_with_kleinkram_headers(
+        self, *args: Any, **kwargs: Any
+    ) -> httpx.Response:
+        # add the cli version to the headers
+        headers = kwargs.get("headers") or {}
+        headers.setdefault(CLI_VERSION_HEADER, __version__)
+        kwargs["headers"] = headers
+
+        # send the request
+        response = super().request(*args, **kwargs)
+
+        # check version compatibility
+        if response.status_code == 426:
+            raise kleinkram.errors.UpdateCLIVersion
+        return response
 
     def request(
         self,
@@ -128,7 +150,7 @@ class AuthenticatedClient(httpx.Client):
         logger.info(f"requesting {method} {full_url}")
 
         httpx_params = _convert_query_params_to_httpx_format(params or {})
-        response = super().request(
+        response = self._send_request_with_kleinkram_headers(
             method, full_url, params=httpx_params, *args, **kwargs
         )
 
@@ -148,10 +170,10 @@ class AuthenticatedClient(httpx.Client):
                 raise NotAuthenticated
 
             logger.info(f"retrying request {method} {full_url}")
-            resp = super().request(
+            response = self._send_request_with_kleinkram_headers(
                 method, full_url, params=httpx_params, *args, **kwargs
             )
-            logger.info(f"got response {resp}")
-            return resp
+            logger.info(f"got response {response}")
+            return response
         else:
             return response

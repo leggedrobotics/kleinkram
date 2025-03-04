@@ -7,11 +7,6 @@ import User from '../user/user.entity';
 import ActionTemplate from './action-template.entity';
 import Worker from '../worker/worker.entity';
 import { RuntimeDescription } from '../../types';
-import { ActionDto } from '../../api/types/actions/action.dto';
-import { DockerImageDto } from '../../api/types/actions/docker-image.dto';
-import { AuditLogDto } from '../../api/types/actions/audit-log.dto';
-import { ActionWorkerDto } from '../../api/types/action-workers.dto';
-import { LogsDto } from '../../api/types/actions/logs.dto';
 
 export interface ContainerLog {
     timestamp: string;

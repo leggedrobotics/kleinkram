@@ -11,9 +11,9 @@
                         icon="sym_o_download"
                         label="Download"
                         :disable="
-                            [FileState.LOST, FileState.UPLOADING].indexOf(
+                            [FileState.LOST, FileState.UPLOADING].includes(
                                 data?.state ?? FileState.LOST,
-                            ) !== -1
+                            )
                         "
                         @click="download"
                     />
