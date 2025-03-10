@@ -31,7 +31,7 @@
                         <div class="col-5">
                             <q-select
                                 v-model="selectedTags"
-                                label="Select Tags"
+                                label="Select Metadata"
                                 outlined
                                 dense
                                 clearable

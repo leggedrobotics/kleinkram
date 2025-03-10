@@ -48,11 +48,9 @@
                                                 v-if="progress !== 100"
                                                 size="20px"
                                             />
-                                            <span class="q-ml-sm"
-                                                >{{ Math.round(progress) }}% ({{
+                                            <span class="q-ml-sm">{{ Math.round(progress) }}% ({{
                                                     timeEstimated
-                                                }})</span
-                                            >
+                                                }})</span>
                                         </div>
                                     </q-item-section>
                                 </q-item>
@@ -78,7 +76,7 @@
                                         />
                                         <q-item-section>
                                             {{ upload.value.name }}
-                                            <br />
+                                            <br>
                                             <p v-if="!upload.value.canceled">
                                                 {{
                                                     Math.round(
@@ -96,14 +94,12 @@
                                 <span v-if="uploadsWithoutCompleted.length > 5">
                                     <q-item>
                                         <q-item-section>
-                                            <span
-                                                >And
+                                            <span>And
                                                 {{
                                                     uploadsWithoutCompleted.length -
                                                     5
                                                 }}
-                                                more</span
-                                            >
+                                                more</span>
                                         </q-item-section>
                                     </q-item>
                                 </span>

@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-frontend",
-    "version": "0.41.3",
+    "version": "0.42.0",
     "description": "Data storage of ROS bags",
     "productName": "Kleinkram",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -13,7 +13,7 @@
     "dependencies": {
         "@aws-sdk/client-s3": "3.726.1",
         "@tanstack/vue-query": "^5.67.1",
-        "axios": "^1.7.7",
+        "axios": "^1.8.1",
         "date-fns": "^4.1.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",

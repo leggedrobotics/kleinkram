@@ -19,7 +19,7 @@
         </div>
         <div class="col-1 q-pa-md">
             <q-btn color="primary" icon="sym_o_add" @click="openAddTag">
-                Add Tag
+                Add Metadata
             </q-btn>
         </div>
     </div>

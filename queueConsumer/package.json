@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-queue-consumer",
-    "version": "0.41.3",
+    "version": "0.42.0",
     "scripts": {
         "start": "nest start",
         "start:dev": "nest start --watch --preserveWatchOutput",
@@ -46,7 +46,7 @@
     "devDependencies": {
         "@nestjs/cli": "^11.0.5",
         "@types/dockerode": "^3.3.35",
-        "@types/node": "22.13.5",
+        "@types/node": "22.13.9",
         "typescript": "5.8.2"
     }
 }

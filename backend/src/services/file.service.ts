@@ -644,7 +644,7 @@ export class FileService implements OnModuleInit {
                     });
                 } catch (error) {
                     logger.error(
-                        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                         
                         `Error moving file ${uuid} to mission ${missionUUID}: ${error}`,
                     );
                 }

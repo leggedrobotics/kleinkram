@@ -1,8 +1,8 @@
 <template>
-    <label>Tag Name</label>
+    <label>Metadata Name</label>
     <q-input
         v-model="tagName"
-        placeholder="Tag Name"
+        placeholder="Metadata Name"
         outlined
         dense
         clearable
@@ -11,7 +11,7 @@
     />
 
     <br />
-    <label>Tag Type</label>
+    <label>Metadata</label>
     <q-btn-dropdown
         v-model="ddrOpen"
         :label="selectedDataType || 'Data Type'"
@@ -66,7 +66,7 @@ const createTagTypeAction = async (): Promise<void> => {
                       .response?.data?.message ?? 'Unknown error');
 
         Notify.create({
-            message: `Error creating Tag Type: ${errorMessage}`,
+            message: `Error creating Metadata: ${errorMessage}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,
@@ -79,7 +79,7 @@ const createTagTypeAction = async (): Promise<void> => {
     });
 
     Notify.create({
-        message: `Tag Type ${tagName.value} created`,
+        message: `Metadata ${tagName.value} created`,
         color: 'positive',
         spinner: false,
         timeout: 4000,

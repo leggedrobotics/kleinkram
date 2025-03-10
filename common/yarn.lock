@@ -84,10 +84,10 @@
   resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.1.0.tgz#b9b536b7c3571567aa1d0223db8baa1a51505a19"
   integrity sha512-W+n+rM69XsFdwORF11UqJahn4J3xi4g/ZEOlJNL6KoW5ygWSmBB2p0S2BZ4FQeS/NDH72e6xIcu35SfJnE8bXw==
 
-"@nestjs/swagger@^11.0.5":
-  version "11.0.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.0.5.tgz#438fe7bc3c12513b4519ff59709dd494e770cc71"
-  integrity sha512-3z4rl7FgbLPBvJwR45nBDju4QFH7vufs9Ums8sCoc6T1O1dqpNpxz0sKfXiP5QA6AUljks1jARfOHeHeJ4zWBA==
+"@nestjs/swagger@^11.0.6":
+  version "11.0.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.0.6.tgz#768ffd9cf1a72b9657f522f04f51587f925ee9fc"
+  integrity sha512-W/0aQWiEfEcXKd/dYO0DbVpYhlKNVMAhO4haahUyrYe20eXaaDY0T5exA2U8IsCcXZePWZuodRUiiXo8jcMYbA==
   dependencies:
     "@microsoft/tsdoc" "0.15.1"
     "@nestjs/mapped-types" "2.1.0"
@@ -1385,10 +1385,10 @@ typeorm@^0.4.0-alpha.1:
     xml2js "^0.4.23"
     yargs "^17.6.2"
 
-typescript@^5.7.2:
-  version "5.7.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.7.2.tgz#3169cf8c4c8a828cde53ba9ecb3d2b1d5dd67be6"
-  integrity sha512-i5t66RHxDvVN40HfDd1PsEThGNnlMCMT3jMUuoh9/0TaqWevNontacunWyN02LA9/fIbEWlcHZcgTKb9QoaLfg==
+typescript@^5.8.2:
+  version "5.8.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.8.2.tgz#8170b3702f74b79db2e5a96207c15e65807999e4"
+  integrity sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==
 
 undici-types@~6.20.0:
   version "6.20.0"
