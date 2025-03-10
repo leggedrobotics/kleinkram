@@ -50,6 +50,10 @@ export default withMermaid({
                             text: 'Getting Started',
                             link: '/usage/actions/getting-started.md',
                         },
+                        {
+                            text: 'Write Custom Actions',
+                            link: '/usage/actions/write-custom-actions.md',
+                        },
                     ],
                     collapsed: true,
                 },
