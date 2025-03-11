@@ -1,14 +1,14 @@
-import User from '@common/entities/user/user.entity';
+import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
+import GroupMembership from '../../../../common/entities/auth/group-membership.entity';
+import User from '../../../../common/entities/user/user.entity';
+import { AccessGroupType } from '../../../../common/frontend_shared/enum';
 import { clearAllData, db, mockDbUser } from '../../utils/database_utils';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import {
     DEFAULT_GROUP_UUIDS,
     getAccessGroupForEmail,
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
 } from '../utils';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
-import { AccessGroupType } from '@common/frontend_shared/enum';
 
 /**
  * This test suite tests the access control of the application.
@@ -52,16 +52,20 @@ describe('Verify Access Groups External', () => {
         expect(user.email).toBe(mockEmail);
 
         // check if the user with a non default email is not added to the default group
-        user.memberships.forEach((accessGroup: GroupMembership) => {
+        user.memberships?.forEach((accessGroup: GroupMembership) => {
+
+            const accessGroupUuid = accessGroup.accessGroup?.uuid;
+            expect(accessGroupUuid).not.toBeUndefined();
+
             expect(
-                DEFAULT_GROUP_UUIDS.includes(accessGroup.accessGroup.uuid),
+                DEFAULT_GROUP_UUIDS.includes(accessGroupUuid as string),
             ).toBe(false);
         });
 
         // user is only part of the primary group
-        expect(user.memberships.length).toBe(1);
-        user.memberships.forEach((accessGroup: GroupMembership) => {
-            expect(accessGroup.accessGroup.type).toBe(AccessGroupType.PRIMARY);
+        expect(user.memberships?.length).toBe(1);
+        user.memberships?.forEach((accessGroup: GroupMembership) => {
+            expect(accessGroup.accessGroup?.type).toBe(AccessGroupType.PRIMARY);
         });
     });
 

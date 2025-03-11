@@ -6,10 +6,11 @@ import { db,
  } from '../utils/database_utils';
 
  import {
+     AccessGroupType,
     UserRole,
 } from '../../../common/frontend_shared/enum';
 
-export const DEFAULT_GROUP_UUIDS = ['00000000-0000-0000-0000-000000000000'];
+export const DEFAULT_GROUP_UUIDS: [string] = ['00000000-0000-0000-0000-000000000000'] as const;
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
     const accessGroupRepository = db.getRepository('AccessGroup');
     return (await accessGroupRepository.find({
@@ -56,16 +57,16 @@ export const getAccessGroupForEmail = (
 ): AccessGroup => {
     const group: AccessGroup[] =
         accessGroups.filter((_group: AccessGroup) =>
-            _group.memberships.some(
+            _group.memberships?.some(
                 (accessGroupUser) =>
-                    accessGroupUser.user.email === email && _group.personal,
+                    accessGroupUser.user?.email === email && _group.type === AccessGroupType.PRIMARY
             ),
-        ) || [];
+        ) ?? [];
 
     const thereIsOnlyOnePersonalGroup = group.length === 1;
     expect(thereIsOnlyOnePersonalGroup).toBe(true);
 
-    return group[0];
+    return group[0] as unknown as AccessGroup;
 };
 
 /**

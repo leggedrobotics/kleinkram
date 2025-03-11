@@ -1,5 +1,5 @@
 import { getJwtToken } from './database_utils';
-import User from '@common/entities/user/user.entity';
+
 import { CreateMission } from '@common/api/types/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { QueueState } from '@common/frontend_shared/enum';
@@ -8,6 +8,7 @@ import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { CreateProject } from '@common/api/types/create-project.dto';
+import User from '../../../common/entities/user/user.entity';
 
 
 /**
@@ -32,7 +33,7 @@ export const createProjectUsingPost = async (
         body: JSON.stringify(project),
         credentials: 'include',
     });
-
+    
     // check if the request was successful
     expect(res.status).toBeLessThan(300);
     return (await res.json()).uuid;
