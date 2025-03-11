@@ -50,6 +50,10 @@ export default withMermaid({
                             text: 'Getting Started',
                             link: '/usage/actions/getting-started.md',
                         },
+                        {
+                            text: 'Write Custom Actions',
+                            link: '/usage/actions/write-custom-actions.md',
+                        },
                     ],
                     collapsed: true,
                 },
@@ -294,7 +298,7 @@ export default withMermaid({
         },
 
         footer: {
-            message: 'Released under the ??? License.',
+            message: 'Released under the MIT License.',
             copyright: 'Copyright © 2024-present Robotic Systems Lab',
         },
     },
