@@ -1,7 +1,7 @@
 <template>
     <q-btn-dropdown
         v-model="ddr_open2"
-        label="Add Tag"
+        label="Add Metadata"
         class="q-uploader--bordered full-width q-mb-lg"
         flat
         clearable
@@ -125,7 +125,7 @@
                     @click="() => removeTagType(tagtype.uuid)"
                 >
                     <q-tooltip v-if="isRequired(tagtype)">
-                        Can't delete Tags that are required!
+                        Can't delete Metadata that are required!
                     </q-tooltip>
                 </q-btn>
             </div>

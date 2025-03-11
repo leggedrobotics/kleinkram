@@ -1,6 +1,6 @@
 <template>
     <div class="row flex-center flex">
-        <h4>Add Tags</h4>
+        <h4>Add Metadata</h4>
     </div>
     <q-form @submit="saveEvent">
         <div class="row">

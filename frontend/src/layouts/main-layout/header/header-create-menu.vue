@@ -10,7 +10,7 @@
                             <q-icon name="sym_o_sell" />
                         </q-item-section>
                         <q-item-section>
-                            <q-item-label>Create New Tag Type</q-item-label>
+                            <q-item-label>Create Metadata</q-item-label>
                         </q-item-section>
                     </q-item>
                 </create-tag-type-dialog-opener>
@@ -20,7 +20,7 @@
                             <q-icon name="sym_o_tactic" />
                         </q-item-section>
                         <q-item-section>
-                            <q-item-label>Create New Project</q-item-label>
+                            <q-item-label>Create Project</q-item-label>
                         </q-item-section>
                     </q-item>
                 </create-project-dialog-opener>
@@ -30,7 +30,7 @@
                             <q-icon name="sym_o_explore" />
                         </q-item-section>
                         <q-item-section>
-                            <q-item-label>Create New Mission</q-item-label>
+                            <q-item-label>Create Mission</q-item-label>
                         </q-item-section>
                     </q-item>
                 </create-mission-dialog-opener>
@@ -40,7 +40,7 @@
                             <q-icon name="sym_o_note_add" />
                         </q-item-section>
                         <q-item-section>
-                            <q-item-label>Upload New File</q-item-label>
+                            <q-item-label>Upload File</q-item-label>
                         </q-item-section>
                     </q-item>
                 </create-file-dialog-opener>

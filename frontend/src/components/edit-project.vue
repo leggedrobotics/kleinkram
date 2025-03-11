@@ -45,9 +45,7 @@
         />
 
         <div class="flex column">
-            <label for="autoConvert"
-                >Enable Auto-Convert to mcap format *</label
-            >
+            <label for="autoConvert">Enable Auto-Convert to mcap format *</label>
             <q-toggle
                 v-model="autoConvert"
                 name="autoConvert"

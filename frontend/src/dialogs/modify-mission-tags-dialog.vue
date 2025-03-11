@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Modify Tags</template>
+        <template #title> Modify Metadata</template>
         <template #content>
             <select-mission-tags
                 v-if="mission?.project?.uuid"

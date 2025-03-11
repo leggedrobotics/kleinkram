@@ -121,11 +121,49 @@
             </q-td>
         </template>
     </q-table>
+
+    <div class="flex row justify-center q-mt-sm">
+        <RouterLink
+            :to="nextMissionUuid === '' ? '' : `../${nextMissionUuid}/files`"
+        >
+            <q-btn
+                round
+                :disable="nextMissionUuid === ''"
+                flat
+                color="grey-6"
+                icon="sym_o_keyboard_double_arrow_left"
+            >
+                <q-tooltip> Previous Mission</q-tooltip>
+            </q-btn>
+        </RouterLink>
+
+        <span class="flex column justify-center text-grey-8">
+            navigate between missions
+        </span>
+
+        <RouterLink
+            :to="
+                previousMissionUuid === ''
+                    ? ''
+                    : `../${previousMissionUuid}/files`
+            "
+        >
+            <q-btn
+                round
+                :disable="previousMissionUuid === ''"
+                flat
+                color="grey-6"
+                icon="sym_o_keyboard_double_arrow_right"
+            >
+                <q-tooltip> Next Mission</q-tooltip>
+            </q-btn>
+        </RouterLink>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, unref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from '../../services/query-handler';
@@ -146,12 +184,37 @@ import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
+import { useProjectQuery } from '../../hooks/query-hooks';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
 
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
+
+const { data: project } = useProjectQuery(project_uuid);
+
+const nextMissionUuid = computed(() => {
+    const indexOfMission = unref(project)?.missions.findIndex(
+        (m) => m.uuid === mission_uuid.value,
+    );
+    if (indexOfMission === undefined || indexOfMission === -1) {
+        return '';
+    }
+    const nextMission = unref(project)?.missions[indexOfMission + 1];
+    return nextMission ? nextMission.uuid : '';
+});
+
+const previousMissionUuid = computed(() => {
+    const indexOfMission = unref(project)?.missions.findIndex(
+        (m) => m.uuid === mission_uuid.value,
+    );
+    if (indexOfMission === undefined || indexOfMission === -1) {
+        return '';
+    }
+    const previousMission = unref(project)?.missions[indexOfMission - 1];
+    return previousMission ? previousMission.uuid : '';
+});
 
 const properties = defineProps<{
     urlHandler: QueryHandler;

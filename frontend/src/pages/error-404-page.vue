@@ -6,7 +6,7 @@
                     404 Error
                 </div>
                 <div class="text-grey-8 text-h5">
-                    The page you are looking <br />for does not exist.
+                    The page you are looking <br>for does not exist.
                 </div>
             </q-card-section>
 
@@ -17,8 +17,7 @@
                         href="/"
                         class="text-dark text-weight-bold"
                         style="text-decoration: none"
-                        >Back to Home.</a
-                    >
+                        >Back to Home.</a>
                 </div>
             </q-card-section>
         </q-card>

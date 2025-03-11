@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Configure Project Tags</template>
+        <template #title> Configure Project Metadata</template>
 
         <template #content>
             <ConfigureMetadata v-if="project" v-model:selected="selected" />
@@ -14,7 +14,7 @@
                         flat
                         color="primary"
                         icon="sym_o_sell"
-                        label="Add Tag Type"
+                        label="Add Metadata"
                     />
                 </CreateTagTypeDialogOpener>
 

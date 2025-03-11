@@ -26,7 +26,7 @@ define(Project, (_, context: Partial<ProjectContext> = {}) => {
     project.description = extendedFaker.lorem.paragraph();
 
     if (context.tagTypes === undefined)
-        throw new Error('TagTypes are undefined');
+        throw new Error('Metadata are undefined');
 
     project.requiredTags = extendedFaker.helpers.arrayElements(
         context.tagTypes,

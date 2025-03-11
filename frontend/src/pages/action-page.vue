@@ -139,7 +139,7 @@ const handler = useHandler();
 
 const showBullQueue = computed(
     // TODO: change to `UserRole.Admin` and fix build
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+     
     () => permissions.value?.role === 'ADMIN',
 );
 

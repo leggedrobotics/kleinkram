@@ -43,7 +43,7 @@ export default class CreateUsers implements Seeder {
         // Start Seeding
         // //////////////////////////////////////////
 
-        // Generate Tag Types...
+        // Generate Metadata...
         const tagTypes = await factory(TagType)({}).createMany(
             this.TAG_TYPE_COUNT,
         );
