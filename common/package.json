@@ -19,7 +19,13 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
+<<<<<<< HEAD
         "@types/node": "^22.13.13",
+=======
+        "@nestjs/common": "^11.0.11",
+        "@nestjs/core": "^11.0.11",
+        "@types/node": "^22.13.10",
+>>>>>>> 1a3c8eca (fix broken tests)
         "typescript": "^5.8.2"
     }
 }
