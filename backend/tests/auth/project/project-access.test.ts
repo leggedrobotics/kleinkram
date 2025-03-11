@@ -540,7 +540,8 @@ describe('Verify Project User Access', () => {
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
 
-        const { token:externalUserToken ,res: res2 } = await generateAndFetchDbUser('external', 'user');
+        const { token:externalUserToken ,res: res2 
+                } = await generateAndFetchDbUser('external', 'user');
         // const externalUserId = await mockDbUser(
         //     'some-external-user@third-party.com',
         // );
