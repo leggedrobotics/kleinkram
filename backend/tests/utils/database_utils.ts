@@ -10,6 +10,8 @@ import Account from '@common/entities/auth/account.entity';
 import { Providers, UserRole } from '@common/frontend_shared/enum';
 import GroupMembership from '@common/entities/auth/group-membership.entity';
 
+import {IsString} from 'class-validator';
+
 const dbPort = process.env['DB_PORT'];
 
 export const db = new DataSource({

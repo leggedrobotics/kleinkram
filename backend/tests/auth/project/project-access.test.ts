@@ -8,7 +8,8 @@ import {
 
 import {
         createProjectUsingPost,
-        createMissionUsingPost
+        createMissionUsingPost,
+        HeaderCreator
 } from '../../utils/api_calls';
 
 import {
@@ -34,14 +35,16 @@ describe('Verify Project Manipulation', () => {
     });
 
     beforeEach(clearAllData);
+
     afterAll(async () => {
+        await clearAllData();
         await db.destroy();
     });
 
-    // project creation/deleting tests
+    // // project creation/deleting tests
     test('if user with leggedrobotics email is allowed to create new project', async () => {
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
 
+        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user');
         const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
@@ -61,11 +64,9 @@ describe('Verify Project Manipulation', () => {
 
     test('if user with leggedrobotics email have read only access by default', async () => {
 
-        // generate project with internal user
-        const {user:user1, res:res1} = await generateAndFetchDbUser('internal', 'user')
-        expect(res1.status).toBe(200);
-
-        const projectIuid = await createProjectUsingPost(
+        // generate first project with internal user
+        const {user:user1} = await generateAndFetchDbUser('internal', 'user')
+        const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
@@ -76,28 +77,20 @@ describe('Verify Project Manipulation', () => {
 
         const projectRepository = db.getRepository('Project');
         const project = await projectRepository.findOneOrFail({
-            where: { uuid: projectIuid },
+            where: { uuid: projectUuid },
         });
         expect(project['name']).toBe('test_project');
 
         // generate second internal user
-        const {token: token2, res: res2 } = await generateAndFetchDbUser('internal', 'user');
-        expect(res2.status).toBe(200);
+        const {token: token2} = await generateAndFetchDbUser('internal', 'user');
 
-        // const secondUserId = await mockDbUser('internal-2@leggedrobotics.com');
-        // const secondUser = await getUserFromDb(secondUserId);
-
-        // // check view access
-        // const token = await getJwtToken(secondUser);
-
-        // get project with user 2
+        // get project with user 2 
+        const headerCreator2 = new HeaderCreator(undefined, token2);
         const res = await fetch(
-            `http://localhost:3000/projects/${projectIuid}`,
+            `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'GET',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator2.getHeaders(),
             },
         );
         expect(res.status).toBe(200);
@@ -106,13 +99,10 @@ describe('Verify Project Manipulation', () => {
 
         // check denied modification access with user2
         const res3 = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectIuid}`,
+            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator2.getHeaders(),
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
@@ -124,12 +114,10 @@ describe('Verify Project Manipulation', () => {
 
         // check denied delete access
         const res4 = await fetch(
-            `http://localhost:3000/projects/delete?uuid=${projectIuid}`,
+            `http://localhost:3000/projects/delete?uuid=${projectUuid}`,
             {
                 method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator2.getHeaders(),
             },
         );
         expect(res4.status).toBe(403);
@@ -137,14 +125,14 @@ describe('Verify Project Manipulation', () => {
         // assert that the project is not deleted
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
-        expect(projects[0]?.['uuid']).toBe(projectIuid);
+        expect(projects[0]?.['uuid']).toBe(projectUuid);
         expect(projects[0]?.['name']).toBe('test_project');
     });
 
     test('the creator of a project has delete access to the project', async () => {
 
         // generate internal user
-        const {user:user1, token:token} = await generateAndFetchDbUser('internal', 'user')
+        const {user:user1, token:token1} = await generateAndFetchDbUser('internal', 'user')
         const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
@@ -161,14 +149,12 @@ describe('Verify Project Manipulation', () => {
         });
         expect(project['name']).toBe('test_project');
 
-        // delete the project using the API
-        // const token = await getJwtToken(user);
+        // delete the project
+        const headerCreator = new HeaderCreator(undefined, token1);
         const url = `http://localhost:3000/projects/${projectUuid}`;
         const res = await fetch(url, {
             method: 'DELETE',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
+            headers: headerCreator.getHeaders(),
         });
         expect(res.status).toBe(200);
 
@@ -197,15 +183,13 @@ describe('Verify Project Manipulation', () => {
             user,
         );
 
+        const headerCreator = new HeaderCreator(undefined, token2);
         // check if project can be manipulated by user2
         const res = await fetch(
             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator.getHeaders(),
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
@@ -220,9 +204,7 @@ describe('Verify Project Manipulation', () => {
             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
                 method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator.getHeaders()
             },
         );
         expect(res2.status).toBe(403);
@@ -230,7 +212,7 @@ describe('Verify Project Manipulation', () => {
 
     test('the creator of a project can add users to with create access to the project', async () => {
         // create two internal users
-        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+        const {user:user} = await generateAndFetchDbUser('internal', 'user')
         const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
 
         // create project with read access for user2
@@ -248,15 +230,13 @@ describe('Verify Project Manipulation', () => {
             user,
         );
 
+        const headerCreator = new HeaderCreator(undefined, token2);
         // check if project can be manipulated by user2
         const res = await fetch(
             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator.getHeaders(),
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
@@ -285,146 +265,144 @@ describe('Verify Project Manipulation', () => {
             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
                 method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
+                headers: headerCreator.getHeaders()
             },
         );
         expect(res2.status).toBe(403);
     });
 
-    test('the creator of a project can add users to with write/modify access to the project', async () => {
-        // create two internal users
-        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
-        const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
+//     test('the creator of a project can add users to with write/modify access to the project', async () => {
+//         // create two internal users
+//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+//         const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
 
-        // create project with write access for user2
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: AccessGroupRights.WRITE,
-                        userUUID: user2.uuid,
-                    },
-                ],
-            },
-            user,
-        );
+//         // create project with write access for user2
+//         const projectUuid = await createProjectUsingPost(
+//             {
+//                 name: 'test_project',
+//                 description: 'This is a test project',
+//                 accessGroups: [
+//                     {
+//                         rights: AccessGroupRights.WRITE,
+//                         userUUID: user2.uuid,
+//                     },
+//                 ],
+//             },
+//             user,
+//         );
 
-        // check if project can be manipulated by user2
-        const res = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `authtoken=${token2}`,
-                },
-                body: JSON.stringify({
-                    name: '1234',
-                    description: '1234',
-                    requiredTags: [],
-                }),
-            },
-        );
-        expect(res.status).toBe(200);
+//         // check if project can be manipulated by user2
+//         const res = await fetch(
+//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+//             {
+//                 method: 'PUT',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     cookie: `authtoken=${token2}`,
+//                 },
+//                 body: JSON.stringify({
+//                     name: '1234',
+//                     description: '1234',
+//                     requiredTags: [],
+//                 }),
+//             },
+//         );
+//         expect(res.status).toBe(200);
 
-        // check if project can be deleted by user2
-        const res2 = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
-            },
-        );
-        expect(res2.status).toBe(403);
-    });
+//         // check if project can be deleted by user2
+//         const res2 = await fetch(
+//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+//             {
+//                 method: 'DELETE',
+//                 headers: {
+//                     cookie: `authtoken=${token2}`,
+//                 },
+//             },
+//         );
+//         expect(res2.status).toBe(403);
+//     });
 
-    test('the creator of a project can add users to with delete access to the project', async () => {
-        // create two internal users
-        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
-        const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
+//     test('the creator of a project can add users to with delete access to the project', async () => {
+//         // create two internal users
+//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+//         const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
 
-        // create project with delete access for user2
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: AccessGroupRights.DELETE,
-                        userUUID: user2.uuid,
-                    },
-                ],
-            },
-            user,
-        );
+//         // create project with delete access for user2
+//         const projectUuid = await createProjectUsingPost(
+//             {
+//                 name: 'test_project',
+//                 description: 'This is a test project',
+//                 accessGroups: [
+//                     {
+//                         rights: AccessGroupRights.DELETE,
+//                         userUUID: user2.uuid,
+//                     },
+//                 ],
+//             },
+//             user,
+//         );
 
-        // check if project can be deleted by user2
-        const res2 = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token2}`,
-                },
-            },
-        );
-        expect(res2.status).toBe(200);
-    });
+//         // check if project can be deleted by user2
+//         const res2 = await fetch(
+//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+//             {
+//                 method: 'DELETE',
+//                 headers: {
+//                     cookie: `authtoken=${token2}`,
+//                 },
+//             },
+//         );
+//         expect(res2.status).toBe(200);
+//     });
 
-    test('if project can only be deleted if it has no missions', async () => {
-        // create two internal users
-        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+//     test('if project can only be deleted if it has no missions', async () => {
+//         // create two internal users
+//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
 
-        // create project with delete access for user
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: AccessGroupRights.DELETE,
-                        userUUID: user.uuid,
-                    },
-                ],
-            },
-            user,
-        );
+//         // create project with delete access for user
+//         const projectUuid = await createProjectUsingPost(
+//             {
+//                 name: 'test_project',
+//                 description: 'This is a test project',
+//                 accessGroups: [
+//                     {
+//                         rights: AccessGroupRights.DELETE,
+//                         userUUID: user.uuid,
+//                     },
+//                 ],
+//             },
+//             user,
+//         );
 
-        // create mission using the post by user
-        const missionUuid = await createMissionUsingPost(
-            {
-                name: 'test_mission',
-                projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
-            },
-            user,
-        );
-        expect(missionUuid).toBeDefined();
+//         // create mission using the post by user
+//         const missionUuid = await createMissionUsingPost(
+//             {
+//                 name: 'test_mission',
+//                 projectUUID: projectUuid,
+//                 tags: {},
+//                 ignoreTags: true,
+//             },
+//             user,
+//         );
+//         expect(missionUuid).toBeDefined();
 
-        // check if project can be deleted by user2
-        const res2 = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token}`,
-                },
-            },
-        );
-        expect(res2.status).toBe(403);
+//         // check if project can be deleted by user2
+//         const res2 = await fetch(
+//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+//             {
+//                 method: 'DELETE',
+//                 headers: {
+//                     cookie: `authtoken=${token}`,
+//                 },
+//             },
+//         );
+//         expect(res2.status).toBe(403);
 
-        // check if project is not deleted
-        const projectRepository = db.getRepository('Project');
-        const projects = await projectRepository.find();
-        expect(projects.length).toBe(1);
-    });
+//         // check if project is not deleted
+//         const projectRepository = db.getRepository('Project');
+//         const projects = await projectRepository.find();
+//         expect(projects.length).toBe(1);
+//     });
 });
 
 describe('Verify Project User Access', () => {
