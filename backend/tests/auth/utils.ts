@@ -5,10 +5,17 @@ import { db,
     mockDbUser,
  } from '../utils/database_utils';
 
+import{
+    HeaderCreator
+} from '../utils/api_calls';
+
+
  import {
      AccessGroupType,
     UserRole,
 } from '../../../common/frontend_shared/enum';
+
+import User from '../../../common/entities/user/user.entity';
 
 export const DEFAULT_GROUP_UUIDS: [string] = ['00000000-0000-0000-0000-000000000000'] as const;
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
@@ -70,58 +77,67 @@ export const getAccessGroupForEmail = (
 };
 
 /**
- * Generate user in database and fetch the user
+ * Generates a user in the database, retrieves user details, and fetches a response.
  *
- * @param userType internal or external user
- * @param userRole user or admin
+ * @param userType - Specifies if the user is internal or external.
+ * @param userRole - Specifies the role of the user (admin or standard user).
  *
- * @returns user, token and response
+ * @returns An object containing user details, authentication token, and fetch response.
+ * @throws Will throw an error if an invalid userType is provided or fetch fails.
  */
 export const generateAndFetchDbUser = async (
     userType: 'internal' | 'external',
     userRole: 'user' | 'admin'
-): Promise<{ user: any; res: Response, token: string}> => {  
+): Promise<{ user: any; token: string; res: Response }> => {
+    try {
+        const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
 
-    const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
+        let baseEmail = userType === 'internal'
+            ? 'internal-user@leggedrobotics.com'
+            : 'external-user@third-party.com';
 
-    let userId: string;
+        let userEmail = baseEmail;
+        let counter = 1;
 
-    switch (userType) {
-        case 'internal':
-            userId = await mockDbUser(
-                'internal-user@leggedrobotics.com',
-                undefined,
-                roleEnum
-            );
-            break;
-        
-        case 'external':
-            userId = await mockDbUser(
-                'external-user@third-party.com',
-                undefined,
-                roleEnum
-            );
-            break;
-        
-        default:
-            throw new Error('Invalid userType');
-    }
+        // get userRepo
+        const userRepository = db.getRepository(User)
 
-    const user = await getUserFromDb(userId);
-    const token = await getJwtToken(user);
-
-    const res = await fetch(
-        `http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
-        {
-            method: 'GET',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
+        // Check if user already exists and find an available email
+        while (true) {
+            try {
+                await userRepository.findOneOrFail({ where: { email: userEmail } });
+                // If the user exists, modify the email
+                const [name, domain] = baseEmail.split('@');
+                userEmail = `${name}${counter}@${domain}`;
+                counter++;
+            } catch (error) {
+                break;
+            }
         }
-    );
 
-    return { user, token, res};
+        const userId = await mockDbUser(userEmail, undefined, roleEnum);
+        const user = await getUserFromDb(userId);
+        
+        const token = await getJwtToken(user);
+
+        // Header
+        const headerCreator = new HeaderCreator(undefined, token);
+        
+        const res = await fetch(
+            'http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false',
+            {
+                method: 'GET',
+                headers: headerCreator.getHeaders(),
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch data: ${res.status} ${res.statusText}`);
+        }
+        
+        return { user, token, res };
+    } catch (error) {
+        console.error('Error in generateAndFetchDbUser:', error);
+        throw error;
+    }
 };
-
-
-

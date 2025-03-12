@@ -7,8 +7,50 @@ import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
-import { CreateProject } from '@common/api/types/create-project.dto';
+import { CreateProject } from '../../../common/api/types/create-project.dto';
 import User from '../../../common/entities/user/user.entity';
+
+
+export class HeaderCreator {
+    headers: Headers;
+    /**
+     * Creates a HeadersBuilder instance and initializes headers.
+     * 
+     * @param {User} user - The authenticated user whose token is used in headers.
+     * @param {string} jwtToken - (Optional) JWT token string for authentication.
+     */
+    constructor(user?: User, JwtToken?: string) {
+        this.headers = new Headers();
+        
+        if (JwtToken) {
+            this.headers.append('cookie', `authtoken=${JwtToken}`);
+        } else if (user) {
+            this.headers.append('cookie', `authtoken=${getJwtToken(user)}`);
+        } else {
+            throw new Error("Either JwtToken or a valid User must be provided.");
+        }
+        // used to avoid usage of older versions of kleinkram
+        this.headers.append('kleinkram-client-version', '0.42.0');
+    }  
+    
+    /**
+     * Adds a custom header to the request.
+     * 
+     * @param {string} key - The name of the header.a
+     * @param {string} value - The value of the header.
+     */
+    addHeader(key:string, value:string) {
+        this.headers.append(key, value);
+    }
+    /**
+     * Retrieves the headers object.
+     * 
+     * @returns {Headers} - The Headers object containing all request headers.
+     */
+    getHeaders(): Headers {
+        return this.headers;
+    }
+}
 
 
 /**
@@ -24,12 +66,14 @@ export const createProjectUsingPost = async (
     project: CreateProject,
     user: User,
 ): Promise<string> => {
+
+    // generate header
+    const headersBuilder = new HeaderCreator(user);
+    headersBuilder.addHeader('Content-Type', 'application/json');
+
     const res = await fetch(`http://localhost:3000/project`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            cookie: `authtoken=${getJwtToken(user)}`,
-        },
+        headers: headersBuilder.getHeaders(),
         body: JSON.stringify(project),
         credentials: 'include',
     });
