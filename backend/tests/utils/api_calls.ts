@@ -87,12 +87,13 @@ export const createMissionUsingPost = async (
     mission: CreateMission,
     user: User,
 ): Promise<string> => {
+    // create header
+    const headersBuilder = new HeaderCreator(user);
+    headersBuilder.addHeader('Content-Type', 'application/json');
+
     const res = await fetch(`http://localhost:3000/mission/create`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            cookie: `authtoken=${getJwtToken(user)}`,
-        },
+        headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
             name: mission.name,
             projectUUID: mission.projectUUID,
