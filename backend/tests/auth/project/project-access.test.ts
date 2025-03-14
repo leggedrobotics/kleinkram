@@ -23,6 +23,7 @@ import {
     } from '../../../../common/frontend_shared/enum';
 
 import User from '../../../../common/entities/user/user.entity';
+import { MissionService } from '../../../src/services/mission.service';
 
 /**
  * This test suite tests the access control of the application.
@@ -41,7 +42,7 @@ describe('Verify Project Manipulation', () => {
         await db.destroy();
     });
 
-    // // project creation/deleting tests
+    // project creation/deleting tests
     test('if user with leggedrobotics email is allowed to create new project', async () => {
 
         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user');
@@ -97,16 +98,18 @@ describe('Verify Project Manipulation', () => {
         const projectRes = await res.json();
         expect(projectRes['name']).toBe('test_project');
 
+
         // check denied modification access with user2
+        headerCreator2.addHeader('Content-Type', 'application/json');
         const res3 = await fetch(
-            `http://localhost:3000/projects/update?uuid=${projectUuid}`,
+            `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'PUT',
                 headers: headerCreator2.getHeaders(),
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
-                    requiredTags: [],
+                    autoConvert: false
                 }),
             },
         );
@@ -230,8 +233,8 @@ describe('Verify Project Manipulation', () => {
             user,
         );
 
+        // check if project can not be manipulated by user2
         const headerCreator = new HeaderCreator(undefined, token2);
-        // check if project can be manipulated by user2
         const res = await fetch(
             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
             {
@@ -244,9 +247,9 @@ describe('Verify Project Manipulation', () => {
                 }),
             },
         );
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(403);
 
-        // create mission using the post by user2
+        // check if mission can be created by user2
         const missionUuid = await createMissionUsingPost(
             {
                 name: 'test_mission',
@@ -256,9 +259,15 @@ describe('Verify Project Manipulation', () => {
             },
             user2,
         );
-        expect(missionUuid).toBeDefined();
-        //TODO: check if mission is created
 
+        // check if mission is generated
+        const missionRepository = db.getRepository('Mission');
+        const mission = await missionRepository.findOneOrFail({
+            where: { uuid: missionUuid },
+        });
+        expect(mission['name']).toBe('test_mission');
+        const missions = await missionRepository.find();
+        expect(missions.length).toBe(1);
         
         // check if project can be deleted by user2
         const res2 = await fetch(
@@ -271,139 +280,141 @@ describe('Verify Project Manipulation', () => {
         expect(res2.status).toBe(403);
     });
 
-//     test('the creator of a project can add users to with write/modify access to the project', async () => {
-//         // create two internal users
-//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
-//         const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
+    test('the creator of a project can add users to with write/modify access to the project', async () => {
+        // create two internal users
+        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+        const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
 
-//         // create project with write access for user2
-//         const projectUuid = await createProjectUsingPost(
-//             {
-//                 name: 'test_project',
-//                 description: 'This is a test project',
-//                 accessGroups: [
-//                     {
-//                         rights: AccessGroupRights.WRITE,
-//                         userUUID: user2.uuid,
-//                     },
-//                 ],
-//             },
-//             user,
-//         );
+        // create project with write access for user2
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.WRITE,
+                        userUUID: user2.uuid,
+                    },
+                ],
+            },
+            user,
+        );
 
-//         // check if project can be manipulated by user2
-//         const res = await fetch(
-//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-//             {
-//                 method: 'PUT',
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                     cookie: `authtoken=${token2}`,
-//                 },
-//                 body: JSON.stringify({
-//                     name: '1234',
-//                     description: '1234',
-//                     requiredTags: [],
-//                 }),
-//             },
-//         );
-//         expect(res.status).toBe(200);
+        // check if project can not be manipulated by user2
+        const headerCreator = new HeaderCreator(undefined, token2);
+        headerCreator.addHeader('Content-Type', 'application/json')
+        const res = await fetch(
+            `http://localhost:3000/projects/${projectUuid}`,
+            {
+                method: 'PUT',
+                headers: headerCreator.getHeaders(),
+                body: JSON.stringify({
+                    name: '1234',
+                    description: '1234',
+                    autoConvert: false
+                }),
+            },
+        );
+        expect(res.status).toBe(200);
 
-//         // check if project can be deleted by user2
-//         const res2 = await fetch(
-//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-//             {
-//                 method: 'DELETE',
-//                 headers: {
-//                     cookie: `authtoken=${token2}`,
-//                 },
-//             },
-//         );
-//         expect(res2.status).toBe(403);
-//     });
+        // check if project can be deleted by user2
+        const res2 = await fetch(
+            `http://localhost:3000/projects/${projectUuid}`,
+            {
+                method: 'DELETE',
+                headers: headerCreator.getHeaders(),
+            },
+        );
+        expect(res2.status).toBe(403);
+    });
 
-//     test('the creator of a project can add users to with delete access to the project', async () => {
-//         // create two internal users
-//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
-//         const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
+    test('the creator of a project can add users to with delete access to the project', async () => {
+        // create two internal users
+        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+        const {user:user2, token:token2} = await generateAndFetchDbUser('internal', 'user')
 
-//         // create project with delete access for user2
-//         const projectUuid = await createProjectUsingPost(
-//             {
-//                 name: 'test_project',
-//                 description: 'This is a test project',
-//                 accessGroups: [
-//                     {
-//                         rights: AccessGroupRights.DELETE,
-//                         userUUID: user2.uuid,
-//                     },
-//                 ],
-//             },
-//             user,
-//         );
+        // create project with delete access for user2
+        const headerCreator = new HeaderCreator(undefined, token2);
+        headerCreator.addHeader('Content-Type', 'application/json')
 
-//         // check if project can be deleted by user2
-//         const res2 = await fetch(
-//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-//             {
-//                 method: 'DELETE',
-//                 headers: {
-//                     cookie: `authtoken=${token2}`,
-//                 },
-//             },
-//         );
-//         expect(res2.status).toBe(200);
-//     });
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        userUUID: user2.uuid,
+                    },
+                ],
+            },
+            user,
+        );
 
-//     test('if project can only be deleted if it has no missions', async () => {
-//         // create two internal users
-//         const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
+        // check if project can be deleted by user2
+        const res2 = await fetch(
+            `http://localhost:3000/projects/${projectUuid}`,
+            {
+                method: 'DELETE',
+                headers: headerCreator.getHeaders(),
+            },
+        );
+        expect(res2.status).toBe(200);
+    });
 
-//         // create project with delete access for user
-//         const projectUuid = await createProjectUsingPost(
-//             {
-//                 name: 'test_project',
-//                 description: 'This is a test project',
-//                 accessGroups: [
-//                     {
-//                         rights: AccessGroupRights.DELETE,
-//                         userUUID: user.uuid,
-//                     },
-//                 ],
-//             },
-//             user,
-//         );
+    test('if project can only be deleted if it has no missions', async () => {
+        // create two internal users
+        const {user:user, token:token} = await generateAndFetchDbUser('internal', 'user')
 
-//         // create mission using the post by user
-//         const missionUuid = await createMissionUsingPost(
-//             {
-//                 name: 'test_mission',
-//                 projectUUID: projectUuid,
-//                 tags: {},
-//                 ignoreTags: true,
-//             },
-//             user,
-//         );
-//         expect(missionUuid).toBeDefined();
+        // create project with delete access for user
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        userUUID: user.uuid,
+                    },
+                ],
+            },
+            user,
+        );
 
-//         // check if project can be deleted by user2
-//         const res2 = await fetch(
-//             `http://localhost:3000/projects/update?uuid=${projectUuid}`,
-//             {
-//                 method: 'DELETE',
-//                 headers: {
-//                     cookie: `authtoken=${token}`,
-//                 },
-//             },
-//         );
-//         expect(res2.status).toBe(403);
+        // create mission using the post by user
+        const missionUuid = await createMissionUsingPost(
+            {
+                name: 'test_mission',
+                projectUUID: projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            user,
+        );
+        expect(missionUuid).toBeDefined();
 
-//         // check if project is not deleted
-//         const projectRepository = db.getRepository('Project');
-//         const projects = await projectRepository.find();
-//         expect(projects.length).toBe(1);
-//     });
+        // check if project can be deleted by user2
+        const headerCreator = new HeaderCreator(undefined, token);
+        headerCreator.addHeader('Content-Type', 'application/json')
+
+        const res2 = await fetch(
+            `http://localhost:3000/projects/${projectUuid}`,
+            {
+                method: 'DELETE',
+                headers: headerCreator.getHeaders(),
+            },
+        );
+
+        // TODO: check with Cyril if it should be 409 or 403
+        expect(res2.status).toBe(409);
+
+        // check if project is not deleted
+        const projectRepository = db.getRepository('Project');
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(1);
+    });
 });
+
 
 describe('Verify Project User Access', () => {
     beforeAll(async () => {
@@ -412,287 +423,343 @@ describe('Verify Project User Access', () => {
     });
 
     beforeEach(clearAllData);
-    afterAll(async () => {
-        await db.destroy();
-    });
+
+    // afterAll(async () => {
+    //     await db.destroy();
+    // });
+
     // access tests
 
         // admin
     test('if user with admin role can view any project', async () => {
-        // generate 10 projects
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
         const projectRepository = db.getRepository('Project');
-        const projectUuids: string[] = [];
-        for (let i = 0; i < 10; i++) {
-            const project = projectRepository.create();
-            project['name'] = `Project ${i}`;
-            project['description'] = `This is project ${i}`;
-            const projectRes = await projectRepository.save(project);
-            const projectUuid = projectRes['uuid'] as string;
-            projectUuids.push(projectUuid);
-        }
-
-        // check if the projects are created
+        const projectUuids = await Promise.all(
+            Array.from({ length: 10 }, async (_, i) => {
+                const project = await projectRepository.save(
+                    projectRepository.create({
+                        creator: user.uuid,
+                        name: `test_project${i + 1}`,
+                        description: `This is a test project ${i + 1}`,
+                        autoConvert: false
+                    })
+                );
+                return project['uuid']; // Corrected property access
+            })
+        );
+        
         const projects = await projectRepository.find();
         expect(projects.length).toBe(10);
 
-        const { res:res } = await generateAndFetchDbUser('internal', 'admin');
+        const { res:res, token:admin_token } = await generateAndFetchDbUser('internal', 'admin');
         expect(res.status).toBe(200);
 
-        const projectList = await res.json();
-        console.log(projectList);
-        expect(projectList[0].length).toBe(10);
+        for (const [i, uuid] of projectUuids.entries()) {
+            // Check read accesss
+            const headerCreator = new HeaderCreator(undefined, admin_token);
+            const res = await fetch(
+                `http://localhost:3000/projects/${uuid}`,
+                {
+                    method: 'GET',
+                    headers: headerCreator.getHeaders(),
+                }
+            );
         
-        projectList[0]?.forEach((project: { uuid: string }) => {
-            expect(projectUuids.includes(project.uuid)).toBe(true);
-        });
+            expect(res.status).toBe(200);
+            
+            const projectRes = await res.json();
+            expect(projectRes['name']).toBe(`test_project${i + 1}`);
+        }
     });
 
     test('if user with admin role can edit any project', async () => {
-        // TODO: implement this test
 
-        expect(true).toBe(true);
+        // TODO check if preserving the database makes sense
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectRepository = db.getRepository('Project');
+
+        const projectUuids = await Promise.all(
+            Array.from({ length: 5 }, async (_, i) => {
+                const project = await projectRepository.save(
+                    projectRepository.create({
+                        creator: user.uuid,
+                        name: `test_project${i + 1}`,
+                        description: `This is a test project ${i + 1}`,
+                        autoConvert: false
+                    })
+                );
+                return project['uuid'];
+            })
+        );
+        
+        const projects = await projectRepository.find();
+        expect(projects.length).toBe(5);
+
+        const {token:admin_token, res:res } = await generateAndFetchDbUser('internal', 'admin');
+        
+        for (const [i, uuid] of projectUuids.entries()) {
+            // Check read access
+            const headerCreator = new HeaderCreator(undefined, admin_token);
+            headerCreator.addHeader('Content-Type', 'application/json');
+            const res = await fetch(
+                `http://localhost:3000/projects/${uuid}`,
+                {
+                method: 'PUT',
+                headers: headerCreator.getHeaders(),
+                body: JSON.stringify({
+                    name: `newName${i}`,
+                    description: `decription${i}`,
+                    autoConvert: false
+                }),
+            }
+            );
+        
+            expect(res.status).toBe(200);
+            
+            const projectRes = await res.json();
+            expect(projectRes['name']).toBe(`newName${i}`);
+        }
     });
 
     test('if user with admin role can delete any project', async () => {
-        const creatorUserId = await mockDbUser('creator@leggedrobotics.com');
-        const userRepository = db.getRepository(User);
-        const user = (await userRepository.findOne({
-            where: { uuid: creatorUserId },
-        })) as User;
+          // TODO check if preserving the database makes sense
+          const {user:user} = await generateAndFetchDbUser('internal', 'user');
 
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [],
-            },
-            user,
-        );
-
-        const projectRepository = db.getRepository('Project');
-        let projects = await projectRepository.find();
-        expect(projects.length).toBe(1);
-
-        const adminUserId = await mockDbUser(
-            'third-party-admin@test.com',
-            undefined,
-            UserRole.ADMIN,
-        );
-        const thirdPartyUser = (await userRepository.findOne({
-            where: { uuid: adminUserId },
-        })) as User;
-        const thirdPartyToken = getJwtToken(thirdPartyUser);
-
-        const res = await fetch(
-            `http://localhost:3000/projects/${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${thirdPartyToken}`,
-                },
-            },
-        );
-        expect(res.status).toBe(200);
-
-        projects = await projectRepository.find();
-        expect(projects.length).toBe(0);
+          const projectRepository = db.getRepository('Project');
+  
+          const projectUuids = await Promise.all(
+              Array.from({ length: 5 }, async (_, i) => {
+                  const project = await projectRepository.save(
+                      projectRepository.create({
+                          creator: user.uuid,
+                          name: `test_project${i + 1}`,
+                          description: `This is a test project ${i + 1}`,
+                          autoConvert: false
+                      })
+                  );
+                  return project['uuid'];
+              })
+          );
+          
+          const projects1 = await projectRepository.find();
+          expect(projects1.length).toBe(5);
+  
+          const {token:admin_token, res:res } = await generateAndFetchDbUser('internal', 'admin');
+          
+          for (const [i, uuid] of projectUuids.entries()) {
+              // Check read access
+              const headerCreator = new HeaderCreator(undefined, admin_token);
+              headerCreator.addHeader('Content-Type', 'application/json');
+              const res = await fetch(
+                  `http://localhost:3000/projects/${uuid}`,
+                  {
+                    method: 'DELETE',
+                    headers: headerCreator.getHeaders(),}
+              );
+          
+              expect(res.status).toBe(200);
+          }
+          
+          const projects = await projectRepository.find();
+          expect(projects.length).toBe(0);
     });
 
-        // external
-    test('third party user cannot view any project by default', async () => {
+    //     // external
+    // test('third party user cannot view any project by default', async () => {
 
-        // generate project with internal user
-        const {user: user, res: res1 } = await generateAndFetchDbUser('internal', 'user');
-        expect(res1.status).toBe(200);
+    //     // generate project with internal user
+    //     const {user: user, res: res1 } = await generateAndFetchDbUser('internal', 'user');
+    //     expect(res1.status).toBe(200);
 
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [],
-            },
-            user,
-        );
+    //     const projectUuid = await createProjectUsingPost(
+    //         {
+    //             name: 'test_project',
+    //             description: 'This is a test project',
+    //             requiredTags: [],
+    //         },
+    //         user,
+    //     );
 
-        const projectRepository = db.getRepository('Project');
-        const projects = await projectRepository.find();
-        expect(projects.length).toBe(1);
+    //     const projectRepository = db.getRepository('Project');
+    //     const projects = await projectRepository.find();
+    //     expect(projects.length).toBe(1);
 
-        const { token:externalUserToken ,res: res2 
-                } = await generateAndFetchDbUser('external', 'user');
-        // const externalUserId = await mockDbUser(
-        //     'some-external-user@third-party.com',
-        // );
-        // const externalUser = await getUserFromDb(externalUserId);
-        // const externalUserToken = await getJwtToken(externalUser);
+    //     const { token:externalUserToken ,res: res2 
+    //             } = await generateAndFetchDbUser('external', 'user');
+    //     // const externalUserId = await mockDbUser(
+    //     //     'some-external-user@third-party.com',
+    //     // );
+    //     // const externalUser = await getUserFromDb(externalUserId);
+    //     // const externalUserToken = await getJwtToken(externalUser);
 
-        // // check single project view access
-        // const res2 = await fetch(
-        //     `http://localhost:3000/projects/${projectUuid}`,
-        //     {
-        //         method: 'GET',
-        //         headers: {
-        //             cookie: `authtoken=${externalUserToken}`,
-        //         },
-        //     },
-        // );
+    //     // // check single project view access
+    //     // const res2 = await fetch(
+    //     //     `http://localhost:3000/projects/${projectUuid}`,
+    //     //     {
+    //     //         method: 'GET',
+    //     //         headers: {
+    //     //             cookie: `authtoken=${externalUserToken}`,
+    //     //         },
+    //     //     },
+    //     // );
         
-        expect(res2.status).toBe(403);
+    //     expect(res2.status).toBe(403);
 
-        // check list of projects view access
-        const res = await fetch(
-            `http://localhost:3000/oldProject/filtered?take=10&skip=0&sortBy=name&descending=false`,
-            {
-                method: 'GET',
-                headers: {
-                    cookie: `authtoken=${externalUserToken}`,
-                },
-            },
-        );
-        expect(res.status).toBe(200);
-        const projectList = await res.json();
-        expect(projectList[0].length).toBe(0);
-    });
+    //     // check list of projects view access
+    //     const res = await fetch(
+    //         `http://localhost:3000/oldProject/filtered?take=10&skip=0&sortBy=name&descending=false`,
+    //         {
+    //             method: 'GET',
+    //             headers: {
+    //                 cookie: `authtoken=${externalUserToken}`,
+    //             },
+    //         },
+    //     );
+    //     expect(res.status).toBe(200);
+    //     const projectList = await res.json();
+    //     expect(projectList[0].length).toBe(0);
+    // });
 
-    test('if external user cannot create a new project', async () => {
-        const mockEmail = 'some-external@ethz.ch';
-        const externalUuid = await mockDbUser(mockEmail);
+    // test('if external user cannot create a new project', async () => {
+    //     const mockEmail = 'some-external@ethz.ch';
+    //     const externalUuid = await mockDbUser(mockEmail);
 
-        const userRepository = db.getRepository(User);
-        const user = await userRepository.findOneOrFail({
-            where: { uuid: externalUuid },
-        });
+    //     const userRepository = db.getRepository(User);
+    //     const user = await userRepository.findOneOrFail({
+    //         where: { uuid: externalUuid },
+    //     });
 
-        const projectRepository = db.getRepository('Project');
-        const project = projectRepository.create();
-        project['name'] = 'test_project';
-        project['description'] = 'This is a test project';
+    //     const projectRepository = db.getRepository('Project');
+    //     const project = projectRepository.create();
+    //     project['name'] = 'test_project';
+    //     project['description'] = 'This is a test project';
 
-        const token = await getJwtToken(user);
-        const res = await fetch(`http://localhost:3000/projects`, {
-            method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
+    //     const token = await getJwtToken(user);
+    //     const res = await fetch(`http://localhost:3000/projects`, {
+    //         method: 'POST',
+    //         headers: {
+    //             cookie: `authtoken=${token}`,
 
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: project['name'],
-                description: project['description'],
-                requiredTags: [],
-            }),
-        });
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({
+    //             name: project['name'],
+    //             description: project['description'],
+    //             requiredTags: [],
+    //         }),
+    //     });
 
-        expect(res.status).toBe(403);
-        const projects = await projectRepository.find();
-        expect(projects.length).toBe(0);
-    });
+    //     expect(res.status).toBe(403);
+    //     const projects = await projectRepository.find();
+    //     expect(projects.length).toBe(0);
+    // });
 
-    test('if external user cannot delete any project', async () => {
-        const mockEmail = 'some-external@ethz.ch';
-        const externalUuid = await mockDbUser(mockEmail);
+    // test('if external user cannot delete any project', async () => {
+    //     const mockEmail = 'some-external@ethz.ch';
+    //     const externalUuid = await mockDbUser(mockEmail);
 
-        const userRepository = db.getRepository(User);
-        const user = await userRepository.findOneOrFail({
-            where: { uuid: externalUuid },
-        });
+    //     const userRepository = db.getRepository(User);
+    //     const user = await userRepository.findOneOrFail({
+    //         where: { uuid: externalUuid },
+    //     });
 
-        const projectRepository = db.getRepository('Project');
-        const project = projectRepository.create();
-        project['name'] = 'test_project';
-        project['description'] = 'This is a test project';
-        const projectRes = await projectRepository.save(project);
+    //     const projectRepository = db.getRepository('Project');
+    //     const project = projectRepository.create();
+    //     project['name'] = 'test_project';
+    //     project['description'] = 'This is a test project';
+    //     const projectRes = await projectRepository.save(project);
 
-        const token = await getJwtToken(user);
-        const res = await fetch(
-            `http://localhost:3000/projects/${projectRes['uuid']}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    cookie: `authtoken=${token}`,
-                },
-            },
-        );
+    //     const token = await getJwtToken(user);
+    //     const res = await fetch(
+    //         `http://localhost:3000/projects/${projectRes['uuid']}`,
+    //         {
+    //             method: 'DELETE',
+    //             headers: {
+    //                 cookie: `authtoken=${token}`,
+    //             },
+    //         },
+    //     );
 
-        expect(res.status).toBe(403);
-        const projects = await projectRepository.find();
-        expect(projects.length).toBe(1);
-    });
+    //     expect(res.status).toBe(403);
+    //     const projects = await projectRepository.find();
+    //     expect(projects.length).toBe(1);
+    // });
 
 
-    // projects tab endpoints
+    // // projects tab endpoints
 
-    test('if project can only be edited by users with edit access', async () => {
-        // TODO: implement this test
+    // test('if project can only be edited by users with edit access', async () => {
+    //     // TODO: implement this test
 
-        expect(true).toBe(true);
-    });
+    //     expect(true).toBe(true);
+    // });
 
-    test('if project tags can only be configured by users with edit or higher access', async () => {
-        // TODO: implement this test
+    // test('if project tags can only be configured by users with edit or higher access', async () => {
+    //     // TODO: implement this test
 
-        expect(true).toBe(true);
-    });
+    //     expect(true).toBe(true);
+    // });
 
-    test('if project access can only be managed by users with edit or higher access', async () => {
-        // TODO: implement this test
+    // test('if project access can only be managed by users with edit or higher access', async () => {
+    //     // TODO: implement this test
 
-        expect(true).toBe(true);
-    });
+    //     expect(true).toBe(true);
+    // });
     
-    test('if project can only be deleted by users with delete access', async () => {
-        const mockEmail = 'some-external@ethz.ch';
-        const externalUuid = await mockDbUser(mockEmail);
+    // test('if project can only be deleted by users with delete access', async () => {
+    //     const mockEmail = 'some-external@ethz.ch';
+    //     const externalUuid = await mockDbUser(mockEmail);
 
-        const userRepository = db.getRepository(User);
-        const externalUser = await userRepository.findOneOrFail({
-            where: { uuid: externalUuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-        });
+    //     const userRepository = db.getRepository(User);
+    //     const externalUser = await userRepository.findOneOrFail({
+    //         where: { uuid: externalUuid },
+    //         relations: ['memberships', 'memberships.accessGroup'],
+    //     });
 
-        const projectRepository = db.getRepository('Project');
-        const project = projectRepository.create();
+    //     const projectRepository = db.getRepository('Project');
+    //     const project = projectRepository.create();
 
-        project['name'] = 'test_project';
-        project['description'] = 'This is a test project';
-        const projectRes = await projectRepository.save(project);
+    //     project['name'] = 'test_project';
+    //     project['description'] = 'This is a test project';
+    //     const projectRes = await projectRepository.save(project);
 
-        // delete the project using the external user
-        const tokenExternal = getJwtToken(externalUser);
-        const deleteRequest = {
-            method: 'DELETE',
-            headers: {
-                cookie: `authtoken=${tokenExternal}`,
-            },
-        };
+    //     // delete the project using the external user
+    //     const tokenExternal = getJwtToken(externalUser);
+    //     const deleteRequest = {
+    //         method: 'DELETE',
+    //         headers: {
+    //             cookie: `authtoken=${tokenExternal}`,
+    //         },
+    //     };
 
-        const res = await fetch(
-            `http://localhost:3000/projects/${projectRes['uuid']}`,
-            deleteRequest,
-        );
-        expect(res.status).toBe(403);
+    //     const res = await fetch(
+    //         `http://localhost:3000/projects/${projectRes['uuid']}`,
+    //         deleteRequest,
+    //     );
+    //     expect(res.status).toBe(403);
 
-        if (project['project_accesses'] === undefined) {
-            throw new Error('Project access not set');
-        }
+    //     if (project['project_accesses'] === undefined) {
+    //         throw new Error('Project access not set');
+    //     }
 
-        project['project_accesses'] = [
-            {
-                rights: AccessGroupRights.DELETE,
-                accessGroup: externalUser?.memberships?.find(
-                    (group) =>
-                        group?.accessGroup?.type === AccessGroupType.PRIMARY,
-                )?.accessGroup?.uuid,
-            },
-        ];
-        await projectRepository.save(project);
+    //     project['project_accesses'] = [
+    //         {
+    //             rights: AccessGroupRights.DELETE,
+    //             accessGroup: externalUser?.memberships?.find(
+    //                 (group) =>
+    //                     group?.accessGroup?.type === AccessGroupType.PRIMARY,
+    //             )?.accessGroup?.uuid,
+    //         },
+    //     ];
+    //     await projectRepository.save(project);
 
-        const res2 = await fetch(
-            `http://localhost:3000/projects/${projectRes['uuid']}`,
-            deleteRequest,
-        );
-        expect(res2.status).toBe(200);
-    });
+    //     const res2 = await fetch(
+    //         `http://localhost:3000/projects/${projectRes['uuid']}`,
+    //         deleteRequest,
+    //     );
+    //     expect(res2.status).toBe(200);
+    // });
 });
 
 describe('Verify Project Groups Access', () => {

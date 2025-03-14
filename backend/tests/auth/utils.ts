@@ -98,24 +98,26 @@ export const generateAndFetchDbUser = async (
 
         let userEmail = baseEmail;
         let counter = 1;
+        let username = baseEmail.split('@')[0]; // Extract name before '@'
 
         // get userRepo
-        const userRepository = db.getRepository(User)
+        const userRepository = db.getRepository(User);
 
-        // Check if user already exists and find an available email
+        // Check if user already exists and find an available email and username
         while (true) {
             try {
                 await userRepository.findOneOrFail({ where: { email: userEmail } });
-                // If the user exists, modify the email
+                // If the user exists, modify the email and username
                 const [name, domain] = baseEmail.split('@');
                 userEmail = `${name}${counter}@${domain}`;
+                username = `${name}${counter}`;
                 counter++;
             } catch (error) {
                 break;
             }
         }
-
-        const userId = await mockDbUser(userEmail, undefined, roleEnum);
+        
+        const userId = await mockDbUser(userEmail, username, roleEnum);
         const user = await getUserFromDb(userId);
         
         const token = await getJwtToken(user);
