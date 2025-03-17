@@ -1349,18 +1349,18 @@
   dependencies:
     remove-accents "0.5.0"
 
-"@tanstack/query-core@5.67.1":
-  version "5.67.1"
-  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.67.1.tgz#419e8a94acd773d63cf4746d3df842c3329f56c2"
-  integrity sha512-AkFmuukVejyqVIjEQoFhLb3q+xHl7JG8G9cANWTMe3s8iKzD9j1VBSYXgCjy6vm6xM8cUCR9zP2yqWxY9pTWOA==
+"@tanstack/query-core@5.68.0":
+  version "5.68.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.68.0.tgz#3765573de58741c68fb80b128d3e3ffb4d80cb68"
+  integrity sha512-r8rFYYo8/sY/LNaOqX84h12w7EQev4abFXDWy4UoDVUJzJ5d9Fbmb8ayTi7ScG+V0ap44SF3vNs/45mkzDGyGw==
 
-"@tanstack/vue-query@^5.67.1":
-  version "5.67.1"
-  resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.67.1.tgz#3706151274251966dc5874c40aef553bc366c082"
-  integrity sha512-aYp6hxwcl74XJDq6AKRpROJkJqqJeTSajsdgMG5DRhUnIDEhIKPvGHAHPQc+eEnAB9DrbuIrzTkyQnGkMAmITg==
+"@tanstack/vue-query@^5.68.0":
+  version "5.68.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.68.0.tgz#a219852710da2d372d765f8a97f2b320656b4e09"
+  integrity sha512-tc5ZyJVikaPWja/ToWMxCSBU/LjoK7QYJ4GuxouJRUnwFxxGUVFg9OOOw5NP467QRQKX87J9gfE/65JJOAUDiA==
   dependencies:
     "@tanstack/match-sorter-utils" "^8.19.4"
-    "@tanstack/query-core" "5.67.1"
+    "@tanstack/query-core" "5.68.0"
     "@vue/devtools-api" "^6.6.3"
     vue-demi "^0.14.10"
 
