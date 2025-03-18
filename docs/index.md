@@ -17,7 +17,7 @@ hero:
           link: /development/getting-started.md
         - theme: alt
           text: View on GitHub
-          link: https://github.com/cevi/automatic_walk-time_tables
+          link: http://github.com/leggedrobotics/kleinkram
 
 features:
     - title: Write Custom Actions?
