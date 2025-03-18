@@ -14,6 +14,8 @@ import {
 
 import {
     generateAndFetchDbUser,
+    getAccessGroupForEmail,
+    getAllAccessGroups,
 } from '../utils';
 
 import {
@@ -24,6 +26,9 @@ import {
 
 import User from '../../../../common/entities/user/user.entity';
 import { MissionService } from '../../../src/services/mission.service';
+import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
+import { ConsoleLogger } from '@nestjs/common';
+
 
 /**
  * This test suite tests the access control of the application.
@@ -565,61 +570,113 @@ describe('Verify Project User Access', () => {
           expect(projects.length).toBe(0);
     });
 
-    //     // external
-    // test('third party user cannot view any project by default', async () => {
+        // external
+    test('third party user cannot view any project by default', async () => {
+        // TODO check if preserving the database makes sense
+        const {user:user, token:token}= await generateAndFetchDbUser('internal', 'user');
 
-    //     // generate project with internal user
-    //     const {user: user, res: res1 } = await generateAndFetchDbUser('internal', 'user');
-    //     expect(res1.status).toBe(200);
+        const {token:externaltoken}   = await generateAndFetchDbUser('external', 'user');
+        const projectRepository       = db.getRepository('Project');
+        const membershipRepository    = db.getRepository('group_membership')
+        const accessGroupRepository   = db.getRepository('access_group')
+        const projectAccessRepository = db.getRepository('project_access')
 
-    //     const projectUuid = await createProjectUsingPost(
-    //         {
-    //             name: 'test_project',
-    //             description: 'This is a test project',
-    //             requiredTags: [],
-    //         },
-    //         user,
-    //     );
+        const numberOfProjects = 10
+        console.log(`[DEBUG]: Generate ${numberOfProjects} test projects.`);
 
-    //     const projectRepository = db.getRepository('Project');
-    //     const projects = await projectRepository.find();
-    //     expect(projects.length).toBe(1);
+        const projectUuids = await Promise.all(
+            [...Array(numberOfProjects)].map(async (_, i) => {
+                const project = await projectRepository.save(
+                    projectRepository.create({
+                        creator: user.uuid,
+                        name: `test_project${i + 1}`,
+                        description: `This is a test project ${i + 1}`,
+                        autoConvert: false,
+                    })
+                );
+                return project['uuid']
+            })
+        );
 
-    //     const { token:externalUserToken ,res: res2 
-    //             } = await generateAndFetchDbUser('external', 'user');
-    //     // const externalUserId = await mockDbUser(
-    //     //     'some-external-user@third-party.com',
-    //     // );
-    //     // const externalUser = await getUserFromDb(externalUserId);
-    //     // const externalUserToken = await getJwtToken(externalUser);
 
-    //     // // check single project view access
-    //     // const res2 = await fetch(
-    //     //     `http://localhost:3000/projects/${projectUuid}`,
-    //     //     {
-    //     //         method: 'GET',
-    //     //         headers: {
-    //     //             cookie: `authtoken=${externalUserToken}`,
-    //     //         },
-    //     //     },
-    //     // );
+        // get accessGroupUuid for userUuid in group membership'
+
+        console.log(`[DEBUG]: Generate project access for internal user.`);
+        const accessGroups = await membershipRepository.find({
+            where: { user: { uuid: user.uuid }},
+            relations: ['accessGroup']
+        });
+
+        for (const group in accessGroups) {
+            if (!group['accessGroup']) {
+                console.error('Error: accessGroup is undefined for group:', group);
+                return;
+            }
         
-    //     expect(res2.status).toBe(403);
+            const accessGroupUuid = group['accessGroup']['uuid'];
+        
+            (async () => {
+                for (const uuid of projectUuids) {
+                    await projectAccessRepository.save(
+                        projectAccessRepository.create({
+                            accessGroup: accessGroupUuid,
+                            project: uuid,
+                            rights: 10,
+                        })
+                    );
+                }
+            })();
+        }
+        
+        // check if projects are generated
+        const projects = await projectRepository.findAndCount();
+        expect(projects[1]).toBe(numberOfProjects);
 
-    //     // check list of projects view access
-    //     const res = await fetch(
-    //         `http://localhost:3000/oldProject/filtered?take=10&skip=0&sortBy=name&descending=false`,
-    //         {
-    //             method: 'GET',
-    //             headers: {
-    //                 cookie: `authtoken=${externalUserToken}`,
-    //             },
-    //         },
-    //     );
-    //     expect(res.status).toBe(200);
-    //     const projectList = await res.json();
-    //     expect(projectList[0].length).toBe(0);
-    // });
+        // try to get all projects with internal user
+          const headerCreator = new HeaderCreator(undefined, token);
+          headerCreator.addHeader('Content-Type', 'application/json')
+
+          const res = await fetch(
+            `http://localhost:3000/oldProject/filtered?take=20&skip=0&sortBy=name&sortDirection=ASC`,
+            {
+                method: 'GET',
+                headers: headerCreator.getHeaders(),
+            },
+        );
+        
+        expect(res.status).toBe(200)
+        const projectList = await res.json()
+        console.log('projectList', projectList)
+        expect(projectList.data.length).toBe(numberOfProjects);
+
+        // check single project view access
+        const headerCreator1 = new HeaderCreator(undefined, externaltoken);
+        headerCreator1.addHeader('Content-Type', 'application/json')
+        const res1 = await fetch(
+            `http://localhost:3000/projects/${projectUuids[0]}`,
+            {
+                method: 'GET',
+                headers: headerCreator1.getHeaders(),
+            },
+        );
+        
+        expect(res1.status).toBe(403);
+
+        // check list of projects view access
+        const res2 = await fetch(
+            `http://localhost:3000/oldProject/filtered?take=20&skip=0&sortBy=name&sortDirection=ASC`,
+            {
+                method: 'GET',
+                headers: headerCreator.getHeaders(),
+            },
+        );
+
+        expect(res2.status).toBe(200)
+        const projectList1 = await res2.json()
+        expect(Array.isArray(projectList1.data)).toBe(true);
+        expect(projectList1.data.length).toBe(0);
+ 
+    });
 
     // test('if external user cannot create a new project', async () => {
     //     const mockEmail = 'some-external@ethz.ch';
