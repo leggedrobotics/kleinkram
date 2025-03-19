@@ -439,6 +439,7 @@ describe('Verify Project User Access', () => {
     test('if user with admin role can view any project', async () => {
         const {user:user} = await generateAndFetchDbUser('internal', 'user');
         const projectRepository = db.getRepository('Project');
+
         const projectUuids = await Promise.all(
             Array.from({ length: 10 }, async (_, i) => {
                 const project = await projectRepository.save(
@@ -482,7 +483,7 @@ describe('Verify Project User Access', () => {
         // TODO check if preserving the database makes sense
         const {user:user} = await generateAndFetchDbUser('internal', 'user');
 
-        const projectRepository = db.getRepository('Project');
+        const projectRepository = db.getRepository('project');
 
         const projectUuids = await Promise.all(
             Array.from({ length: 5 }, async (_, i) => {
@@ -497,7 +498,6 @@ describe('Verify Project User Access', () => {
                 return project['uuid'];
             })
         );
-        
         const projects = await projectRepository.find();
         expect(projects.length).toBe(5);
 
@@ -578,7 +578,6 @@ describe('Verify Project User Access', () => {
         const {token:externaltoken}   = await generateAndFetchDbUser('external', 'user');
         const projectRepository       = db.getRepository('Project');
         const membershipRepository    = db.getRepository('group_membership')
-        const accessGroupRepository   = db.getRepository('access_group')
         const projectAccessRepository = db.getRepository('project_access')
 
         const numberOfProjects = 10
@@ -610,7 +609,7 @@ describe('Verify Project User Access', () => {
         for (const group in accessGroups) {
             if (!group['accessGroup']) {
                 console.error('Error: accessGroup is undefined for group:', group);
-                return;
+                return; // Skip this iteration
             }
         
             const accessGroupUuid = group['accessGroup']['uuid'];
@@ -678,39 +677,30 @@ describe('Verify Project User Access', () => {
  
     });
 
-    // test('if external user cannot create a new project', async () => {
-    //     const mockEmail = 'some-external@ethz.ch';
-    //     const externalUuid = await mockDbUser(mockEmail);
-
-    //     const userRepository = db.getRepository(User);
-    //     const user = await userRepository.findOneOrFail({
-    //         where: { uuid: externalUuid },
-    //     });
-
-    //     const projectRepository = db.getRepository('Project');
-    //     const project = projectRepository.create();
-    //     project['name'] = 'test_project';
-    //     project['description'] = 'This is a test project';
-
-    //     const token = await getJwtToken(user);
-    //     const res = await fetch(`http://localhost:3000/projects`, {
-    //         method: 'POST',
-    //         headers: {
-    //             cookie: `authtoken=${token}`,
-
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify({
-    //             name: project['name'],
-    //             description: project['description'],
-    //             requiredTags: [],
-    //         }),
-    //     });
-
-    //     expect(res.status).toBe(403);
-    //     const projects = await projectRepository.find();
-    //     expect(projects.length).toBe(0);
-    // });
+    test('if external user cannot create a new project', async () => {
+        const {user: externalUser, token: externalToken}   = await generateAndFetchDbUser('external', 'user');
+        
+        const headersBuilder = new HeaderCreator(externalUser);
+        headersBuilder.addHeader('Content-Type', 'application/json');
+    
+        const res = await fetch(`http://localhost:3000/project`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify({
+                name: 'external_project',
+                description: 'Description of external_project'
+            }
+            ),
+            credentials: 'include',
+        });
+        
+        // check if the request was successful
+        expect(res.status).toBe(403);
+        
+        const projectRepository = db.getRepository('Project')
+        const projects = await projectRepository.findAndCount();
+        expect(projects[1]).toBe(0);
+    });
 
     // test('if external user cannot delete any project', async () => {
     //     const mockEmail = 'some-external@ethz.ch';
