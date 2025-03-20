@@ -5,12 +5,28 @@ import {
     getUserFromDb,
     mockDbUser,
 } from '../../utils/database_utils';
-import { createProjectUsingPost } from '../../utils/api_calls';
+
+import {
+    createProjectUsingPost,
+    createMissionUsingPost,
+    HeaderCreator,
+    createTagUsingPost
+} from '../../utils/api_calls';
+import { DataType } from '../../../../common/frontend_shared/enum';
+
+
+import {
+    generateAndFetchDbUser,
+    getAccessGroupForEmail,
+    getAllAccessGroups,
+} from '../utils';
+
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '../../../../common/frontend_shared/enum';
+
 import User from '../../../../common/entities/user/user.entity';
 
 /**
@@ -57,5 +73,104 @@ describe('Verify Project Level Access', () => {
         expect(true).toBe(true);
     });
 
+});
+
+describe('Verify tags/metadata type generation', () => {
+    beforeAll(async () => {
+        await db.initialize();
+        await clearAllData();
+    });
+
+    beforeEach(clearAllData);
+    afterAll(async () => {
+        await db.destroy();
+    });
+
+    test('if internal user can add string tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.STRING,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
+
+
+    test('if internal user can add number tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.STRING,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
+
+
+    test('if internal user can add boolean tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.BOOLEAN,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
+
+    test('if internal user can add date tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.DATE,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
+
+    test('if internal user can add location tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.LOCATION,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
+
+    test('if internal user can add link tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.LINK,
+                name: 'test_tag'
+            },
+            user,
+        );
+
+    });
+
+    test('if internal user can add any tags/metadata', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+
+        const projectUuid = await createTagUsingPost({
+                type: DataType.ANY,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
 
 });
