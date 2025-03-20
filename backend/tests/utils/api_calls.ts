@@ -1,6 +1,7 @@
 import { getJwtToken } from './database_utils';
 
 import { CreateMission } from '@common/api/types/create-mission.dto';
+
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { QueueState } from '@common/frontend_shared/enum';
 import * as fs from 'node:fs';
@@ -9,6 +10,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { CreateProject } from '../../../common/api/types/create-project.dto';
 import User from '../../../common/entities/user/user.entity';
+import {CreateTagTypeDto} from '../../../common/api/types/tags/create-tag-type.dto';
 
 
 export class HeaderCreator {
@@ -218,3 +220,28 @@ export async function uploadFile(
 
     return fileHash;
 }
+
+
+export const createTagUsingPost = async (
+    tagType: CreateTagTypeDto, 
+    user: User): Promise<string> => {
+        
+    const headersBuilder = new HeaderCreator(user);
+    headersBuilder.addHeader('Content-Type', 'application/json');
+
+    const res = await fetch(`http://localhost:3000/tag/create`, {
+        method: 'POST',
+        headers: headersBuilder.getHeaders(),
+        body: JSON.stringify({
+            name: tagType.name,
+            type: tagType.type,
+        }),
+    }); 
+
+    if (!res.ok) {
+        throw new Error(`Error: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data;
+};
