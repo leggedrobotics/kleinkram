@@ -238,10 +238,7 @@ export const createTagUsingPost = async (
         }),
     }); 
 
-    if (!res.ok) {
-        throw new Error(`Error: ${res.status} ${res.statusText}`);
-    }
-
-    const data = await res.json();
-    return data;
+    expect(res.status).toBeLessThan(300);
+    const json = await res.json();
+    return json.uuid;
 };
