@@ -1,9 +1,9 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
 } from './utils/database_utils';
 import {
     createMissionUsingPost,
@@ -13,20 +13,20 @@ import {
 
 describe('Verify File Handling', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     test('Test if file is uploaded and can be downloaded again', async () => {
         const filename = 'test_small.bag';
 
-        const userId = await mockDbUser('internal@leggedrobotics.com');
-        const user = await getUserFromDb(userId);
+        const userId = await mockDatabaseUser('internal@leggedrobotics.com');
+        const user = await getUserFromDatabase(userId);
 
         // create project
         const projectUuid = await createProjectUsingPost(

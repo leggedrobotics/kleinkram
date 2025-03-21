@@ -1,9 +1,9 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
 } from '../../utils/database_utils';
 import { createProjectUsingPost } from '../../utils/api_calls';
 import {
@@ -19,13 +19,13 @@ import User from '../../../../common/entities/user/user.entity';
  */
 describe('Verify Project Level Access', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     // descrition

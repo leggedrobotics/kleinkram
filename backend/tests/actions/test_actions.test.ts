@@ -1,9 +1,9 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
 } from '../utils/database_utils';
 import {
     createMissionUsingPost,
@@ -16,21 +16,21 @@ import { SubmitActionDto } from '../../../common/api/types/submit-action-respons
 
 describe('Verify Action', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     // file handling tests
     test('if file is uploaded and can be downloaded again inside an action', async () => {
         const filename = 'test_small.bag';
 
-        const userId = await mockDbUser('internal@leggedrobotics.com');
-        const user = await getUserFromDb(userId);
+        const userId = await mockDatabaseUser('internal@leggedrobotics.com');
+        const user = await getUserFromDatabase(userId);
         // create project
         const projectUuid = await createProjectUsingPost(
             {
@@ -125,21 +125,21 @@ describe('Verify Action', () => {
                 json.state === ActionState.FAILED
             ) {
                 logs = json.logs;
-                console.log('exiting: ', json.state);
+                console.log('exiting:', json.state);
                 break;
             }
 
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
-        const fileHashStr = Buffer.from(fileHash).toString('hex');
-        console.log(fileHashStr);
+        const fileHashString = Buffer.from(fileHash).toString('hex');
+        console.log(fileHashString);
 
         expect(logs).toBeDefined();
         const messages = logs.map((log) => log.message) ?? [];
         console.log(messages);
         const containsFile = messages.some((message) =>
-            message.includes(fileHashStr),
+            message.includes(fileHashString),
         );
         expect(containsFile).toBeTruthy();
 

@@ -12,12 +12,12 @@ import GroupMembership from '@common/entities/auth/group-membership.entity';
 
 import {IsString} from 'class-validator';
 
-const dbPort = process.env['DB_PORT'];
+const databasePort = process.env['DB_PORT'];
 
 export const db = new DataSource({
     type: 'postgres',
     host: 'localhost',
-    port: parseInt(dbPort ?? '5432', 10),
+    port: Number.parseInt(databasePort ?? '5432', 10),
     ssl: process.env['DB_SSL'] === 'true',
     username: process.env['DB_USER'] ?? '',
     password: process.env['DB_PASSWORD'] ?? '',
@@ -55,7 +55,7 @@ export const mockDbUser = async (
 ): Promise<string> => {
     // read config from access_config.json
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs = require('fs');
+    const fs = require('node:fs');
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = db.getRepository(AccessGroup);
     const groupMembershipRepository = db.getRepository(GroupMembership);
@@ -66,7 +66,7 @@ export const mockDbUser = async (
 
     // hash the email to create a unique oauthID
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crypto = require('crypto');
+    const crypto = require('node:crypto');
     const hash = crypto.createHash('sha256');
     hash.update(email);
     const oauthID = hash.digest('hex');

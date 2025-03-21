@@ -1,9 +1,9 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
 } from '../../utils/database_utils';
 
 import {
@@ -12,11 +12,10 @@ import {
     HeaderCreator,
     createTagUsingPost
 } from '../../utils/api_calls';
-import { DataType } from '../../../../common/frontend_shared/enum';
 
 
 import {
-    generateAndFetchDbUser,
+    generateAndFetchDbUser as generateAndFetchDatabaseUser,
     getAccessGroupForEmail,
     getAllAccessGroups,
 } from '../utils';
@@ -24,6 +23,7 @@ import {
 import {
     AccessGroupRights,
     AccessGroupType,
+    DataType,
     UserRole,
 } from '../../../../common/frontend_shared/enum';
 
@@ -35,13 +35,13 @@ import User from '../../../../common/entities/user/user.entity';
  */
 describe('Verify Project Level Access', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
 
@@ -77,18 +77,18 @@ describe('Verify Project Level Access', () => {
 
 describe('Verify tags/metadata type generation', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     test('if internal user can add string tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.STRING,
@@ -101,7 +101,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add number tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.STRING,
@@ -114,7 +114,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add boolean tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.BOOLEAN,
@@ -126,7 +126,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add date tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.DATE,
@@ -138,7 +138,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add location tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.LOCATION,
@@ -150,7 +150,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add link tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.LINK,
@@ -163,7 +163,7 @@ describe('Verify tags/metadata type generation', () => {
 
     test('if internal user can add any tags/metadata', async () => {
         // TODO: add check in db
-        const {user:user} = await generateAndFetchDbUser('internal', 'user');
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         const projectUuid = await createTagUsingPost({
                 type: DataType.ANY,

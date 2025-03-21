@@ -1,9 +1,9 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
 } from '../../utils/database_utils';
 import { createProjectUsingPost } from '../../utils/api_calls';
 import {
@@ -19,13 +19,13 @@ import User from '../../../../common/entities/user/user.entity';
  */
 describe('Verify Mission Level Admin Access', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     // mission tests
@@ -109,13 +109,13 @@ describe('Verify Mission Level Admin Access', () => {
 
 describe('Verify Mission Level User Access', () => {
         beforeAll(async () => {
-            await db.initialize();
+            await database.initialize();
             await clearAllData();
         });
     
         beforeEach(clearAllData);
         afterAll(async () => {
-            await db.destroy();
+            await database.destroy();
         });
 
         // user: read/create access
@@ -198,13 +198,13 @@ describe('Verify Mission Level User Access', () => {
 
 describe('Verify Mission File Level User Access', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
     // files in missions tests
 
@@ -231,13 +231,13 @@ describe('Verify Mission File Level User Access', () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
-    })
+    });
 
     test('if user with read access on a mission can upload file from local drive into mission', async() => {
         //TODO: implement this test
 
         expect(true).toBe(true);
-    })
+    });
 
     test('if user with read access on a mission cannot move files in a mission', async() => {
         //TODO: implement this test

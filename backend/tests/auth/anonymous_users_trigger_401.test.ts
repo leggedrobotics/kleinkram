@@ -1,14 +1,14 @@
 import * as assert from 'node:assert';
 import { getEndpoints } from '../utils/endpoints';
 
-const UNAUTHENTICATED_ENDPOINTS = [
+const UNAUTHENTICATED_ENDPOINTS = new Set([
     '/auth/google',
     '/auth/google/callback',
     '/auth/logout',
     '/metrics',
     '/swagger/json',
     '/swagger-yaml',
-];
+]);
 
 /**
  *
@@ -26,7 +26,7 @@ describe('Unauthenticated users trigger 401', () => {
     const endpoints = getEndpoints();
     for (const endpoint of endpoints) {
         // skip endpoints that are not protected
-        if (UNAUTHENTICATED_ENDPOINTS.includes(endpoint.url)) continue;
+        if (UNAUTHENTICATED_ENDPOINTS.has(endpoint.url)) continue;
 
         test(`test if rejects unauthorized request (401): \t${endpoint.method.toUpperCase()}\t ${endpoint.url}`, async () => {
             const res = await fetch(`http://localhost:3000${endpoint.url}`, {

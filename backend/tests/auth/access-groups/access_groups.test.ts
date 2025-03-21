@@ -2,7 +2,7 @@ import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
 import GroupMembership from '../../../../common/entities/auth/group-membership.entity';
 import User from '../../../../common/entities/user/user.entity';
 import { AccessGroupType } from '../../../../common/frontend_shared/enum';
-import { clearAllData, db, mockDbUser } from '../../utils/database_utils';
+import { clearAllData, db as database, mockDbUser as mockDatabaseUser } from '../../utils/database_utils';
 import {
     DEFAULT_GROUP_UUIDS,
     getAccessGroupForEmail,
@@ -16,20 +16,20 @@ import {
  */
 describe('Verify Access Groups External', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
         // user: external
     test('Non "leggedrobotics.com" email is not added to default group', async () => {
         // create a user with a non default email
         const mockEmail = 'external-user@third-party.com';
-        const externalUuid = await mockDbUser(mockEmail);
+        const externalUuid = await mockDatabaseUser(mockEmail);
 
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
@@ -43,7 +43,7 @@ describe('Verify Access Groups External', () => {
         );
         expect(defaultGroup.length).toBe(1);
 
-        const userRepository = db.getRepository(User);
+        const userRepository = database.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
             relations: ['memberships', 'memberships.accessGroup'],
@@ -77,19 +77,19 @@ describe('Verify Access Groups External', () => {
 
 describe('Verify Access Groups Internal', () => {
         beforeAll(async () => {
-            await db.initialize();
+            await database.initialize();
             await clearAllData();
         });
     
         beforeEach(clearAllData);
         afterAll(async () => {
-            await db.destroy();
+            await database.destroy();
         });
 
         // user: internal
     test('if leggedrobotics email is added to default group', async () => {
         const mockEmail = 'internal-user@leggedrobotics.com';
-        const internalUuid = await mockDbUser(mockEmail);
+        const internalUuid = await mockDatabaseUser(mockEmail);
 
         const accessGroups = await getAllAccessGroups();
         verifyIfGroupWithUUIDExists(DEFAULT_GROUP_UUIDS[0], accessGroups);
@@ -106,7 +106,7 @@ describe('Verify Access Groups Internal', () => {
         );
         expect(defaultGroup.length).toBe(1);
 
-        const userRepository = db.getRepository(User);
+        const userRepository = database.getRepository(User);
         const user = await userRepository.findOneOrFail({
             where: { uuid: internalUuid },
             select: ['email'],
@@ -148,13 +148,13 @@ describe('Verify Access Groups Internal', () => {
 
 describe('Verify Access Groups Internal User Access', () => {
         beforeAll(async () => {
-            await db.initialize();
+            await database.initialize();
             await clearAllData();
         });
     
         beforeEach(clearAllData);
         afterAll(async () => {
-            await db.destroy();
+            await database.destroy();
         });
         // user: view access
     test('if a internal user (@legged) can view any group', () => {
@@ -238,13 +238,13 @@ describe('Verify Access Groups Internal User Access', () => {
 
 describe('Verify Access Groups Internal User Access', () => {
         beforeAll(async () => {
-            await db.initialize();
+            await database.initialize();
             await clearAllData();
         });
     
         beforeEach(clearAllData);
         afterAll(async () => {
-            await db.destroy();
+            await database.destroy();
         });
 
     test('if a user with create rights can generate a access group', () => {

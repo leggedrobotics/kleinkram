@@ -1,8 +1,8 @@
 import AccessGroup from '../../../common/entities/auth/accessgroup.entity';
-import { db,
+import { db as database,
     getJwtToken,
-    getUserFromDb,
-    mockDbUser,
+    getUserFromDb as getUserFromDatabase,
+    mockDbUser as mockDatabaseUser,
  } from '../utils/database_utils';
 
 import{
@@ -19,7 +19,7 @@ import User from '../../../common/entities/user/user.entity';
 
 export const DEFAULT_GROUP_UUIDS: [string] = ['00000000-0000-0000-0000-000000000000'] as const;
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
-    const accessGroupRepository = db.getRepository('AccessGroup');
+    const accessGroupRepository = database.getRepository('AccessGroup');
     return (await accessGroupRepository.find({
         relations: ['members', 'members.user'],
         select: {
@@ -92,7 +92,7 @@ export const generateAndFetchDbUser = async (
     try {
         const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
 
-        let baseEmail = userType === 'internal'
+        const baseEmail = userType === 'internal'
             ? 'internal-user@leggedrobotics.com'
             : 'external-user@third-party.com';
 
@@ -101,7 +101,7 @@ export const generateAndFetchDbUser = async (
         let username = baseEmail.split('@')[0]; // Extract name before '@'
 
         // get userRepo
-        const userRepository = db.getRepository(User);
+        const userRepository = database.getRepository(User);
 
         // Check if user already exists and find an available email and username
         while (true) {
@@ -112,13 +112,13 @@ export const generateAndFetchDbUser = async (
                 userEmail = `${name}${counter}@${domain}`;
                 username = `${name}${counter}`;
                 counter++;
-            } catch (error) {
+            } catch {
                 break;
             }
         }
         
-        const userId = await mockDbUser(userEmail, username, roleEnum);
-        const user = await getUserFromDb(userId);
+        const userId = await mockDatabaseUser(userEmail, username, roleEnum);
+        const user = await getUserFromDatabase(userId);
         
         const token = await getJwtToken(user);
 

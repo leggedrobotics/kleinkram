@@ -1,22 +1,22 @@
 import {
     clearAllData,
-    db,
+    db as database,
     getJwtToken,
-    mockDbUser,
+    mockDbUser as mockDatabaseUser,
 } from './utils/database_utils';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
 
 describe('Test Suite Utils', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
         console.log("Destroying appDataSource 'Test Suite Utils'");
-        await db.destroy();
+        await database.destroy();
     });
 
     test('test if clearAllData works', async () => {
@@ -26,35 +26,35 @@ describe('Test Suite Utils', () => {
         user.email = 'test-01@leggedrobotics.com';
         user.role = UserRole.USER;
 
-        await db.getRepository(User).save(user);
+        await database.getRepository(User).save(user);
 
         // Check if the data was inserted
-        const users = await db.getRepository(User).find();
+        const users = await database.getRepository(User).find();
         expect(users.length).toBe(1);
 
         // Clear the data
         await clearAllData();
 
         // Check if the data was cleared
-        const usersAfterClear = await db.getRepository(User).find();
+        const usersAfterClear = await database.getRepository(User).find();
         expect(usersAfterClear.length).toBe(0);
     });
 
     test('Create User with Valid Token', async () => {
-        await mockDbUser('test-01@leggedrobotics.com');
+        await mockDatabaseUser('test-01@leggedrobotics.com');
 
-        const userRepository = db.getRepository(User);
+        const userRepository = database.getRepository(User);
         const users = await userRepository.find({
             select: ['email', 'uuid'],
         });
         expect(users.length).toBe(1);
         expect(users[0]?.email).toBe('test-01@leggedrobotics.com');
 
-        const accountRepository = db.getRepository('Account');
+        const accountRepository = database.getRepository('Account');
         const accounts = await accountRepository.find();
         expect(accounts.length).toBe(1);
 
-        const accessGroupRepository = db.getRepository('AccessGroup');
+        const accessGroupRepository = database.getRepository('AccessGroup');
         const accessGroups = await accessGroupRepository.find();
         expect(accessGroups.length).toBe(2);
 

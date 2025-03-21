@@ -7,7 +7,7 @@ import { QueueState } from '@common/frontend_shared/enum';
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { CreateProject } from '../../../common/api/types/create-project.dto';
 import User from '../../../common/entities/user/user.entity';
 import {CreateTagTypeDto} from '../../../common/api/types/tags/create-tag-type.dto';
