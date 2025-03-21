@@ -9,6 +9,7 @@ services:
         volumes:
             - ./backend:/usr/src/app/backend
             - ./common:/usr/src/app/common
+            - backend_dist:/usr/src/app/backend/dist
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -145,7 +146,7 @@ services:
             - ./queueConsumer:/usr/src/queueConsumer
             - ./common:/usr/src/common
             - /usr/src/queueConsumer/node_modules
-            - /usr/src/queueConsumer/dist
+            - queue-consumer-dist:/usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
 
@@ -279,6 +280,8 @@ volumes:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
+    backend_dist:
+    queue-consumer-dist:
 
 networks:
     public-network:
