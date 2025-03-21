@@ -27,5 +27,5 @@
             "@common/*": ["../common/*"]
         }
     },
-    "exclude": ["tests/*"]
+    "exclude": ["dist/**/*"]
 }
