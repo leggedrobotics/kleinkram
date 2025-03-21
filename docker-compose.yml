@@ -276,7 +276,7 @@ services:
         image: prometheuscommunity/postgres-exporter
         container_name: kleinkram-postgres-exporter
         ports:
-            - 9187:9187
+            - '9187:9187'
         env_file:
             - .env
         links:

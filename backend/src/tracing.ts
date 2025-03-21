@@ -23,7 +23,6 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
-        // @ts-ignore
         new BatchSpanProcessor(exporter, {
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
