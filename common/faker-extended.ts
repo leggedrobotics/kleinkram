@@ -225,7 +225,6 @@ extendedFaker.ros = {
     topicType: () => faker.helpers.arrayElement(rosTopicTypes),
     fileType: () => faker.helpers.arrayElement([FileType.BAG, FileType.MCAP]),
     fileName: (type: FileType) =>
-         
         `${faker.date.past().getTime()}_${faker.helpers.arrayElement(devices)}.${type.toLowerCase()}`,
 };
 
@@ -236,7 +235,6 @@ extendedFaker.mission = {
         const month = faker.date.future().getMonth();
         const day = faker.date.future().getDay();
 
-         
         return `${mission} ${year}-${month}-${day}`
             .replaceAll(' ', '_')
             .toLowerCase();
@@ -288,7 +286,7 @@ extendedFaker.project = {
         const date = faker.date.future().getUTCDate();
 
         // Combine prefix and suffix to create a project name
-         
+
         return `${prefix}${suffix} ${date}`.replaceAll(' ', '_').toLowerCase();
     },
 };

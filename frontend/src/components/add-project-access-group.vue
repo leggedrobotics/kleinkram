@@ -77,7 +77,7 @@ const options = Object.keys(accessGroupRightsMap)
         ],
         value: Number.parseInt(key, 10),
     }))
-     
+
     .filter((option) => option.value !== AccessGroupRights._ADMIN);
 
 const { mutate } = useMutation({

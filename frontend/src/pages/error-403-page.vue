@@ -13,7 +13,7 @@
                 </div>
 
                 <div v-if="projectUuid" class="text-grey-8 text-h6 q-mt-lg">
-                    Project UUID:<br>
+                    Project UUID:<br />
                     {{ projectUuid }}
                 </div>
             </q-card-section>

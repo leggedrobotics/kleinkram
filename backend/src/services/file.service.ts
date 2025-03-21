@@ -644,7 +644,6 @@ export class FileService implements OnModuleInit {
                     });
                 } catch (error) {
                     logger.error(
-                         
                         `Error moving file ${uuid} to mission ${missionUUID}: ${error}`,
                     );
                 }

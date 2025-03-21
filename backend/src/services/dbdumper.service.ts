@@ -48,7 +48,6 @@ export class DBDumper {
         } catch (error: any) {
             await unlinkAsync(dumpFile);
 
-             
             throw new Error(`Failed to create database dump: ${error.message}`);
         }
     }

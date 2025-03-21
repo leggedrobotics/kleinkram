@@ -81,7 +81,7 @@
             </template>
         </q-file>
 
-        <br>
+        <br />
 
         <label>Import File from Google Drive</label>
 
