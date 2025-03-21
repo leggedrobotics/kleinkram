@@ -39,7 +39,6 @@ const cols = [
         label: 'Action Name',
         align: 'left',
         field: (row: any) =>
-             
             `${row.action.template.name} v${row.action.template.version}`,
     },
     {

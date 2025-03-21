@@ -139,7 +139,7 @@ const handler = useHandler();
 
 const showBullQueue = computed(
     // TODO: change to `UserRole.Admin` and fix build
-     
+
     () => permissions.value?.role === 'ADMIN',
 );
 

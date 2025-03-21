@@ -156,7 +156,6 @@ async function _createFileAction(
             if (error.response?.status === 403) {
                 message = `Upload failed: You do not have the necessary permissions.`;
             } else if (error.response?.status === 400) {
-                 
                 message = `Upload failed: ${error.response.data.message}`;
             }
         }

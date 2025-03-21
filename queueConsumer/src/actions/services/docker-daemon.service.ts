@@ -483,7 +483,6 @@ export class DockerDaemon {
                 artifactUploaderImage,
             ).catch(this.errorHandling());
 
-             
             logger.info(`Image pulled: ${pullResult}. Starting container...`);
             image = this.docker.getImage(artifactUploaderImage);
         }

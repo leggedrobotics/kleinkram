@@ -60,7 +60,7 @@
                         webkitdirectory
                         style="display: none"
                         @change="handle"
-                    >
+                    />
                     <q-file
                         v-model="files"
                         outlined

@@ -40,7 +40,6 @@ async function deleteActionAction() {
             })
             .catch((error: unknown) => {
                 Notify.create({
-                     
                     message: `Error deleting Action: ${(error as any)?.response?.data?.message}`,
                     color: 'negative',
                     position: 'bottom',
