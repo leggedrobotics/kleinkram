@@ -1,15 +1,15 @@
-import { clearAllData, db } from '../../utils/database_utils';
+import { clearAllData, db as database } from '../../utils/database_utils';
 import process from 'node:process';
 
 describe('Verify JWT Handling', () => {
     beforeAll(async () => {
-        await db.initialize();
+        await database.initialize();
         await clearAllData();
     });
 
     beforeEach(clearAllData);
     afterAll(async () => {
-        await db.destroy();
+        await database.destroy();
     });
 
     test('reject allow self-signed JWT token', async () => {
