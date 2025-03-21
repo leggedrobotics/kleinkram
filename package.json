@@ -8,7 +8,7 @@
     "scripts": {
         "start": "docker compose up --build -d",
         "eslint": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint --fix .)",
-        "eslint-full": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs --fix .)",
+        "eslint-full": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs --fix .)",
         "eslint:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
         "eslint-full:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs -f summary .)",
         "eslint:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
