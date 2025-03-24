@@ -1,14 +1,9 @@
 <template>
     <div>
-        <span class="help-text">
-            Metadata are optional or enforced key-value pairs that are attached
-            to every mission within the project, e.g. the 'location' of the
-            mission.
-        </span>
-
         <div class="col-9">
             <q-select
                 v-model="selected"
+                label="Enforced Metadata"
                 use-input
                 multiple
                 input-debounce="100"
@@ -40,14 +35,14 @@
                             <q-item-label v-html="opt.name" />
                         </q-item-section>
                         <q-item-section side>
-                            <q-icon :name="icon(opt.type)" class="q-mr-sm" />
+                            <q-icon
+                                :name="icon(opt.datatype)"
+                                class="q-mr-sm"
+                            />
                         </q-item-section>
                     </q-item>
                 </template>
             </q-select>
-        </div>
-        <div class="col-3">
-            <DatatypeSelectorButton v-model="selectedDataType" />
         </div>
     </div>
 </template>
@@ -57,7 +52,6 @@ import { ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/query-hooks';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
-import DatatypeSelectorButton from './buttons/datatype-select-button.vue';
 
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);

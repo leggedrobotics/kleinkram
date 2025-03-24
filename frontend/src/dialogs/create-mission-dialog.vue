@@ -19,7 +19,7 @@
                 <q-tab
                     name="tags"
                     :label="
-                        'Tags' +
+                        'Metadata' +
                         (!!project && project.requiredTags.length > 0
                             ? '*'
                             : '')

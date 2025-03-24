@@ -26,8 +26,13 @@ const tagType = ref();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const createTagTypeAction = (): void => {
-    tagType.value.createTagTypeAction();
+const createTagTypeAction = async (): void => {
+    if (!(await tagType.value.createTagTypeAction())) {
+        console.log('Error creating Metadata');
+        return;
+    }
+
+    console.log(tagType.value.createTagTypeAction());
     onDialogOK();
 };
 </script>

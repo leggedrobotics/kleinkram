@@ -1,7 +1,7 @@
 <template>
     <q-btn-dropdown
         v-model="ddr_open2"
-        label="Add Metadata"
+        label="Add Optional Metadata"
         class="q-uploader--bordered full-width q-mb-lg"
         flat
         clearable
@@ -26,7 +26,15 @@
                 <q-item-section>
                     <q-item-label class="tag-label">
                         <span>{{ tagtype.name }}</span>
-                        <q-chip square>{{ tagtype.datatype }}</q-chip>
+                        <q-icon
+                            v-if="tagtype.datatype"
+                            :name="icon(tagtype.datatype)"
+                            class="q-ml-sm"
+                        >
+                            <q-tooltip>
+                                Metadata of Type {{ tagtype.datatype }}
+                            </q-tooltip>
+                        </q-icon>
                     </q-item-label>
                 </q-item-section>
             </q-item>
@@ -125,7 +133,7 @@
                     @click="() => removeTagType(tagtype.uuid)"
                 >
                     <q-tooltip v-if="isRequired(tagtype)">
-                        Can't delete Metadata that are required!
+                        You cannot delete enforced metadata.
                     </q-tooltip>
                 </q-btn>
             </div>
@@ -138,6 +146,7 @@ import { computed, Ref, ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { TagDto, TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags, useProjectQuery } from '../hooks/query-hooks';
+import { icon } from '../services/generic';
 
 const properties = defineProps<{
     tagValues: Record<string, string>;
