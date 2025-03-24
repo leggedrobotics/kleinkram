@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-queue-consumer",
-    "version": "0.42.0",
+    "version": "0.43.0",
     "license": "MIT",
     "scripts": {
         "start": "nest start",
@@ -34,7 +34,7 @@
         "bull": "^4.16.4",
         "dockerode": "^4.0.2",
         "googleapis": "^146.0.0",
-        "minio": "^8.0.1",
+        "minio": "^8.0.5",
         "pg": "^8.14.1",
         "redlock": "^5.0.0-beta.2",
         "reflect-metadata": "0.2.2",
