@@ -22,27 +22,24 @@
             <q-item v-bind="scope.itemProps">
                 <q-item-section>
                     <q-item-label>
-                        <q-chip square>{{ scope.opt.label }}</q-chip>
+                        <q-chip square>{{ scope.opt }}</q-chip>
                     </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                    <q-icon :name="icon(scope.opt.value)" class="q-mr-sm" />
+                    <q-icon :name="icon(scope.opt)" class="q-mr-sm" />
                 </q-item-section>
             </q-item>
         </template>
 
         <template #selected-item="scope">
             <div class="row items-center">
-                <span v-if="scope.opt">{{ scope.opt.label }}</span>
-                <span
-                    v-else-if="!scope.opt || !scope.opt.label"
-                    class="text-grey"
-                >
+                <span v-if="scope.opt">{{ scope.opt }}</span>
+                <span v-else-if="!scope.opt || !scope.opt" class="text-grey">
                     Data Type (e.g., String)
                 </span>
                 <q-icon
                     v-if="scope.opt"
-                    :name="icon(scope.opt.value)"
+                    :name="icon(scope.opt)"
                     class="q-ml-sm"
                 />
             </div>
@@ -72,7 +69,7 @@ const selectedDataType = computed({
 const error = computed(() => properties.error ?? false);
 const errorMessage = computed(() => properties.errorMessage ?? '');
 
-const dataTypeOptions = Object.entries(DataType)
-    .filter(([_, value]) => value !== DataType.ANY) // eslint-disable-line @typescript-eslint/no-unused-vars
-    .map(([label, value]) => ({ label, value }));
+const dataTypeOptions = Object.keys(DataType).filter(
+    (value) => value !== DataType.ANY,
+);
 </script>
