@@ -4,7 +4,7 @@
         <template #title> Define Metadata Field</template>
 
         <template #content>
-            <create-tag-type ref="tagType" />
+            <create-metadata-type ref="tagType" />
         </template>
 
         <template #actions>
@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
-import CreateTagType from '@components/create-tag-type.vue';
+import CreateMetadataType from '@components/metadata/create-metadata-type.vue';
 import BaseDialog from './base-dialog.vue';
 
 const tagType = ref();
@@ -33,7 +33,6 @@ const createTagTypeAction = async (): Promise<void> => {
         return;
     }
 
-    console.log(tagType.value.createTagTypeAction());
     onDialogOK();
 };
 </script>
