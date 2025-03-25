@@ -54,10 +54,17 @@
                 >
                     <div class="tag-name">{{ tag.name }}</div>
                     <div class="tag-actions">
-                        <q-icon :name="icon(tag.datatype)" class="q-mr-sm" />
+                        <!-- the font-size is necessary for consistnet font sizes for production builds -->
+                        <q-icon
+                            :name="icon(tag.datatype)"
+                            class="q-mr-sm"
+                            style="font-size: 24px"
+                        />
+                        <!-- the font-size is necessary for consistnet font sizes for production builds -->
                         <q-icon
                             class="q-ml-sm text-red cursor-pointer"
                             name="sym_o_delete"
+                            style="font-size: 24px"
                             @click="() => removeTag(tag)"
                         />
                     </div>
