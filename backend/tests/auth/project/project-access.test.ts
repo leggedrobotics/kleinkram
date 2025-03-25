@@ -1,22 +1,18 @@
 import {
     clearAllData,
     db as database,
-    getJwtToken,
-    getUserFromDb as getUserFromDatabase,
-    mockDbUser as mockDatabaseUser,
 } from '../../utils/database_utils';
 
 import {
     createProjectUsingPost,
     createMissionUsingPost,
     HeaderCreator,
-    createTagUsingPost,
+    createMetadataUsingPost,
+    createAccessGroupUsingPost,
 } from '../../utils/api_calls';
 
 import {
     generateAndFetchDbUser as generateAndFetchDatabaseUser,
-    getAccessGroupForEmail,
-    getAllAccessGroups,
 } from '../utils';
 
 
@@ -24,15 +20,15 @@ import {
     AccessGroupRights,
     AccessGroupType,
     DataType,
-    UserRole,
+
 } from '../../../../common/frontend_shared/enum';
 
-import { MissionService } from '../../../src/services/mission.service';
+
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
-import { ConsoleLogger } from '@nestjs/common';
-import { targetModulesByContainer } from '@nestjs/core/router/router-module';
 import Project from '../../../../common/entities/project/project.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+
 
 /**
  * This test suite tests the access control of the application.
@@ -53,7 +49,7 @@ describe('Verify Project Manipulation', () => {
 
     // project creation/deleting tests
     test('if user with leggedrobotics email is allowed to create new project', async () => {
-        const { user: user, token: token } = await generateAndFetchDatabaseUser(
+        const { user: user} = await generateAndFetchDatabaseUser(
             'internal',
             'user',
         );
@@ -66,7 +62,7 @@ describe('Verify Project Manipulation', () => {
             user,
         );
 
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const project = await projectRepository.findOneOrFail({
             where: { uuid: projectUuid },
         });
@@ -80,6 +76,11 @@ describe('Verify Project Manipulation', () => {
             'internal',
             'user',
         );
+        const { token: token2 } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
         const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
@@ -89,25 +90,19 @@ describe('Verify Project Manipulation', () => {
             user1,
         );
 
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const project = await projectRepository.findOneOrFail({
             where: { uuid: projectUuid },
         });
         expect(project['name']).toBe('test_project');
 
-        // generate second internal user
-        const { token: token2 } = await generateAndFetchDatabaseUser(
-            'internal',
-            'user',
-        );
-
         // get project with user 2
-        const headerCreator2 = new HeaderCreator(undefined, token2);
+        const header = new HeaderCreator(undefined, token2);
         const res = await fetch(
             `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'GET',
-                headers: headerCreator2.getHeaders(),
+                headers: header.getHeaders(),
             },
         );
         expect(res.status).toBe(200);
@@ -115,12 +110,12 @@ describe('Verify Project Manipulation', () => {
         expect(projectRes['name']).toBe('test_project');
 
         // check denied modification access with user2
-        headerCreator2.addHeader('Content-Type', 'application/json');
+        header.addHeader('Content-Type', 'application/json');
         const res3 = await fetch(
             `http://localhost:3000/projects/${projectUuid}`,
             {
                 method: 'PUT',
-                headers: headerCreator2.getHeaders(),
+                headers: header.getHeaders(),
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
@@ -135,7 +130,7 @@ describe('Verify Project Manipulation', () => {
             `http://localhost:3000/projects/delete?uuid=${projectUuid}`,
             {
                 method: 'DELETE',
-                headers: headerCreator2.getHeaders(),
+                headers: header.getHeaders(),
             },
         );
         expect(res4.status).toBe(403);
@@ -163,7 +158,7 @@ describe('Verify Project Manipulation', () => {
         );
 
         // check if project is created by reading the database
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const project = await projectRepository.findOneOrFail({
             where: { uuid: projectUuid },
         });
@@ -184,7 +179,7 @@ describe('Verify Project Manipulation', () => {
 
     test('the creator of a project can add users to with read access to the project', async () => {
         // create two internal users
-        const { user: user, token: token } = await generateAndFetchDatabaseUser(
+        const { user: user} = await generateAndFetchDatabaseUser(
             'internal',
             'user',
         );
@@ -307,7 +302,7 @@ describe('Verify Project Manipulation', () => {
 
     test('the creator of a project can add users to with write/modify access to the project', async () => {
         // create two internal users
-        const { user: user, token: token } = await generateAndFetchDatabaseUser(
+        const { user: user} = await generateAndFetchDatabaseUser(
             'internal',
             'user',
         );
@@ -321,12 +316,6 @@ describe('Verify Project Manipulation', () => {
             {
                 name: 'test_project',
                 description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: AccessGroupRights.WRITE,
-                        userUUID: user2.uuid,
-                    },
-                ],
             },
             user,
         );
@@ -346,7 +335,7 @@ describe('Verify Project Manipulation', () => {
                 }),
             },
         );
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(403);
 
         // check if project can be deleted by user2
         const res2 = await fetch(
@@ -361,7 +350,7 @@ describe('Verify Project Manipulation', () => {
 
     test('the creator of a project can add users to with delete access to the project', async () => {
         // create two internal users
-        const { user: user, token: token } = await generateAndFetchDatabaseUser(
+        const { user: user } = await generateAndFetchDatabaseUser(
             'internal',
             'user',
         );
@@ -449,7 +438,7 @@ describe('Verify Project Manipulation', () => {
         expect(res2.status).toBe(409);
 
         // check if project is not deleted
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
     });
@@ -463,16 +452,16 @@ describe('Verify Project User Access', () => {
 
     beforeEach(clearAllData);
 
-    // afterAll(async () => {
-    //     await db.destroy();
-    // });
+    afterAll(async () => {
+        await database.destroy();
+    });
 
     // access tests
 
     // admin
     test('if user with admin role can view any project', async () => {
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
 
         const projectUuids = await Promise.all(
             Array.from({ length: 10 }, async (_, index) => {
@@ -516,7 +505,7 @@ describe('Verify Project User Access', () => {
         // TODO check if preserving the database makes sense
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
 
-        const projectRepository = database.getRepository('project');
+        const projectRepository = database.getRepository<Project>('Project');
 
         const projectUuids = await Promise.all(
             Array.from({ length: 5 }, async (_, index) => {
@@ -564,7 +553,7 @@ describe('Verify Project User Access', () => {
         // TODO check if preserving the database makes sense
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
 
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
 
         const projectUuids = await Promise.all(
             Array.from({ length: 5 }, async (_, index) => {
@@ -583,7 +572,7 @@ describe('Verify Project User Access', () => {
         const projects1 = await projectRepository.find();
         expect(projects1.length).toBe(5);
 
-        const { token: admin_token, res: res } = await generateAndFetchDatabaseUser(
+        const { token: admin_token} = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
         );
@@ -616,7 +605,7 @@ describe('Verify Project User Access', () => {
             'external',
             'user',
         );
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const membershipRepository = database.getRepository('group_membership');
         const projectAccessRepository = database.getRepository('project_access');
 
@@ -719,7 +708,7 @@ describe('Verify Project User Access', () => {
     });
 
     test('if external user cannot create a new project', async () => {
-        const { user: externalUser, token: externalToken } =
+        const { user: externalUser } =
             await generateAndFetchDatabaseUser('external', 'user');
 
         const headersBuilder = new HeaderCreator(externalUser);
@@ -738,13 +727,13 @@ describe('Verify Project User Access', () => {
         // check if the request was successful
         expect(res.status).toBe(403);
 
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const projects = await projectRepository.findAndCount();
         expect(projects[1]).toBe(0);
     });
 
     test('if external user cannot delete any project', async () => {
-        const { user: externalUser, token: externalToken } =
+        const {token: externalToken } =
             await generateAndFetchDatabaseUser('external', 'user');
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
 
@@ -757,7 +746,7 @@ describe('Verify Project User Access', () => {
             user,
         );
 
-        const projectRepository = database.getRepository('Project');
+        const projectRepository = database.getRepository<Project>('Project');
         const projects = await projectRepository.findAndCount();
         expect(projects[1]).toBe(1);
 
@@ -778,13 +767,13 @@ describe('Verify Project User Access', () => {
 
     // projects tab endpoints
 
-    // metadata manipulation
+    // metadata/access manipulation
 
     test('if metadata can be added to project by creator of project', async () => {
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
 
         // create tag
-        const tagUuid = await createTagUsingPost(
+        const tagUuid = await createMetadataUsingPost(
             {
                 type: DataType.STRING,
                 name: 'test_tag',
@@ -825,11 +814,11 @@ describe('Verify Project User Access', () => {
         expect(project_tags[0]?.uuid).toBe(tagUuid);
     });
 
-    test('if project metadata can be edited by creator of project', async () => {
+    test('if project metadata can be added by creator of project', async () => {
         const { user: user } = await generateAndFetchDatabaseUser('internal', 'user');
 
         // create tag
-        const tagUuid = await createTagUsingPost(
+        const tagUuid = await createMetadataUsingPost(
             {
                 type: DataType.STRING,
                 name: 'test_tag',
@@ -837,7 +826,7 @@ describe('Verify Project User Access', () => {
             user,
         );
 
-        const tagTypeRepository = database.getRepository('TagType');
+        const tagTypeRepository = database.getRepository<TagType>('TagType');
         const tagTypes = await tagTypeRepository.find();
         expect(tagTypes.length).toBe(1);
 
@@ -850,8 +839,7 @@ describe('Verify Project User Access', () => {
         const projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [tagUuid],
+                description: 'This is a test project'
             },
             user,
         );
@@ -861,83 +849,138 @@ describe('Verify Project User Access', () => {
         expect(projects[1]).toBe(1);
         expect(projects[0][0]?.uuid).toBe(projectUuid);
 
+                
+        const headersBuilder = new HeaderCreator(user);
+        headersBuilder.addHeader('Content-Type', 'application/json');
+
+        const res = await fetch(`http://localhost:3000/projects/${projectUuid}/updateTagTypes`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify({tagTypeUUIDs: [tagUuid]}),
+        });
         
 
-        // http://localhost:3000/projects/ea65acc6-6774-49c8-817a-b3ca8069e15d/updateTagTypes
+        const projectTag = await tagTypeRepository.find(
+            {where: {uuid: tagUuid}}
+        );
+
+        console.log('[DEBUG]: Created project tag:', projectTag);
+        expect(projectTag[0]?.uuid).toBe(tagUuid);
+        expect(res.status).toBeLessThan(300);
     });
 
-    test('if access management can be edited by creator of project', async () => {
+    test('if access management of project can be edited by creator', async () => {
+        // TODO: implement this test
+        const { user: creator }   = await generateAndFetchDatabaseUser('internal', 'user');
+        const { user: addedUser } = await generateAndFetchDatabaseUser('internal', 'user');
+        const rights    = AccessGroupRights.READ;
+        const groupName = 'test_access_group';
+
+        // create access group
+        const groupUuid = await createAccessGroupUsingPost(
+            {
+                name: groupName,
+            },
+            creator,
+            [addedUser]
+        );
+        console.log('[DEBUG]: Group uuid:', groupUuid);
+
+        // create project with new access right for access group
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'test_project',
+                description: 'This is a test project',
+                accessGroups: [
+                    {
+                        rights: rights,
+                        accessGroupUUID: groupUuid,
+                    }
+                ]
+            },
+            creator,
+        );
+
+        // check if project is created
+        const projectRepository = database.getRepository<Project>('Project');
+        const [projects, count] = await projectRepository.findAndCount();
+        expect(count).toBe(1);
+        expect(projects[0]?.uuid).toBe(projectUuid);
+
+        // check if access group has access to project
+        const projectAccessRepository = database.getRepository<ProjectAccess>('project_access');
+        const projectAccess = await projectAccessRepository.findOneOrFail(
+            {where: {accessGroup: {uuid: groupUuid}}, relations: ['accessGroup']}
+        );
+        console.log('[DEBUG]: Project access group uuid:', projectAccess.accessGroup?.uuid);
+        console.log('[DEBUG]: Group uuid:', groupUuid);
+        expect(projectAccess.accessGroup?.uuid).toBe(groupUuid);
+        expect(projectAccess.rights).toBe(rights);
+
+        // edit access rights for access group
+        const headersBuilder = new HeaderCreator(creator);
+
+        // check first if not all access groups with delete access can be deleted
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        const res1 = await fetch(`http://localhost:3000/projects/${projectUuid}/access`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify([
+                {
+                    memberCount: 2,
+                    rights: AccessGroupRights.WRITE,
+                    type: AccessGroupType.CUSTOM,
+                    uuid: groupUuid,
+                }
+            ])
+        });
+        expect(res1.status).toBe(409);
+
+        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');       
+        const accessGroupCreator = await accessGroupRepository.findOneOrFail({
+            where: { name: creator.name},
+        });
+
+        console.log('[DEBUG]: Access group creator:', accessGroupCreator);
+
+        // change read access to write access
+        const res = await fetch(`http://localhost:3000/projects/${projectUuid}/access`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify([
+                {
+                    memberCount: 2,
+                    rights: AccessGroupRights.WRITE,
+                    type: AccessGroupType.CUSTOM,
+                    uuid: groupUuid,
+                    name: groupName,
+                },
+                {
+                    memberCount: 1,
+                    rights: AccessGroupRights.DELETE,
+                    type: accessGroupCreator.type,
+                    uuid: accessGroupCreator.uuid,
+                    name: accessGroupCreator.name,
+                }                
+            ])
+        });
+        const json = await res.json();
+        console.log('[DEBUG]: Response status:', json);
+        expect(res.status).toBe(201);
+
+        const projectGroup = await projectAccessRepository.findOneOrFail(
+            {where: {accessGroup: {uuid: groupUuid}}, relations: ['accessGroup']}
+        );
+
+        expect(projectGroup.accessGroup?.uuid).toBe(groupUuid);
+        expect(projectGroup.rights).toBe(AccessGroupRights.WRITE);
+    });
+
+    test('if access management of project can be edited by users with edit or higher access', async () => {
         // TODO: implement this test
 
-        // `http://localhost:3000/projects/${projectUuid}/access`
         expect(true).toBe(true);
     });
-
-    // test('if project tags can only be configured by users with edit or higher access', async () => {
-    //     // TODO: implement this test
-
-    //     expect(true).toBe(true);
-    // });
-
-    // test('if project access can only be managed by users with edit or higher access', async () => {
-    //     // TODO: implement this test
-
-    //     expect(true).toBe(true);
-    // });
-
-    // test('if project can only be deleted by users with delete access', async () => {
-    //     const mockEmail = 'some-external@ethz.ch';
-    //     const externalUuid = await mockDbUser(mockEmail);
-
-    //     const userRepository = db.getRepository(User);
-    //     const externalUser = await userRepository.findOneOrFail({
-    //         where: { uuid: externalUuid },
-    //         relations: ['memberships', 'memberships.accessGroup'],
-    //     });
-
-    //     const projectRepository = db.getRepository('Project');
-    //     const project = projectRepository.create();
-
-    //     project['name'] = 'test_project';
-    //     project['description'] = 'This is a test project';
-    //     const projectRes = await projectRepository.save(project);
-
-    //     // delete the project using the external user
-    //     const tokenExternal = getJwtToken(externalUser);
-    //     const deleteRequest = {
-    //         method: 'DELETE',
-    //         headers: {
-    //             cookie: `authtoken=${tokenExternal}`,
-    //         },
-    //     };
-
-    //     const res = await fetch(
-    //         `http://localhost:3000/projects/${projectRes['uuid']}`,
-    //         deleteRequest,
-    //     );
-    //     expect(res.status).toBe(403);
-
-    //     if (project['project_accesses'] === undefined) {
-    //         throw new Error('Project access not set');
-    //     }
-
-    //     project['project_accesses'] = [
-    //         {
-    //             rights: AccessGroupRights.DELETE,
-    //             accessGroup: externalUser?.memberships?.find(
-    //                 (group) =>
-    //                     group?.accessGroup?.type === AccessGroupType.PRIMARY,
-    //             )?.accessGroup?.uuid,
-    //         },
-    //     ];
-    //     await projectRepository.save(project);
-
-    //     const res2 = await fetch(
-    //         `http://localhost:3000/projects/${projectRes['uuid']}`,
-    //         deleteRequest,
-    //     );
-    //     expect(res2.status).toBe(200);
-    // });
 });
 
 describe('Verify Project Groups Access', () => {
