@@ -3,9 +3,7 @@ import { db, getJwtToken } from './database_utils';
 import { CreateMission } from '@common/api/types/create-mission.dto';
 
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { 
-    QueueState
-} from '@common/frontend_shared/enum';
+import { QueueState } from '@common/frontend_shared/enum';
 
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
@@ -13,7 +11,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import crypto from 'node:crypto';
 import { CreateProject } from '../../../common/api/types/create-project.dto';
 import User from '../../../common/entities/user/user.entity';
-import {CreateTagTypeDto} from '../../../common/api/types/tags/create-tag-type.dto';
+import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 
@@ -21,36 +19,38 @@ export class HeaderCreator {
     headers: Headers;
     /**
      * Creates a HeadersBuilder instance and initializes headers.
-     * 
+     *
      * @param {User} user - The authenticated user whose token is used in headers.
      * @param {string} jwtToken - (Optional) JWT token string for authentication.
      */
     constructor(user?: User, JwtToken?: string) {
         this.headers = new Headers();
-        
+
         if (JwtToken) {
             this.headers.append('cookie', `authtoken=${JwtToken}`);
         } else if (user) {
             this.headers.append('cookie', `authtoken=${getJwtToken(user)}`);
         } else {
-            throw new Error("Either JwtToken or a valid User must be provided.");
+            throw new Error(
+                'Either JwtToken or a valid User must be provided.',
+            );
         }
         // used to avoid usage of older versions of kleinkram
         this.headers.append('kleinkram-client-version', '0.42.0');
-    }  
-    
+    }
+
     /**
      * Adds a custom header to the request.
-     * 
+     *
      * @param {string} key - The name of the header.a
      * @param {string} value - The value of the header.
      */
-    addHeader(key:string, value:string) {
+    addHeader(key: string, value: string) {
         this.headers.append(key, value);
     }
     /**
      * Retrieves the headers object.
-     * 
+     *
      * @returns {Headers} - The Headers object containing all request headers.
      */
     getHeaders(): Headers {
@@ -58,21 +58,19 @@ export class HeaderCreator {
     }
 }
 
-
 /**
  * Sends a POST request to create a new project on the backend server.
- * 
+ *
  * @param {CreateProject} project - The project data to be created.
  * @param {User} user -             The authenticated user requesting the project creation.
  * @returns {Promise<string>} -     A promise that resolves to the UUID of the created project.
- * 
+ *
  * @throws {Error} -                Throws an error if the request fails or returns a non-2xx status code.
  */
 export const createProjectUsingPost = async (
     project: CreateProject,
     user: User,
 ): Promise<string> => {
-
     // generate header
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
@@ -83,7 +81,7 @@ export const createProjectUsingPost = async (
         body: JSON.stringify(project),
         credentials: 'include',
     });
-    
+
     expect(res.status).toBeLessThan(300);
     const json = await res.json();
     console.log(`['DEBUG'] Created project:`, json);
@@ -227,11 +225,10 @@ export async function uploadFile(
     return fileHash;
 }
 
-
 export const createMetadataUsingPost = async (
-    tagType: CreateTagTypeDto, 
-    user: User): Promise<string> => {
-        
+    tagType: CreateTagTypeDto,
+    user: User,
+): Promise<string> => {
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
@@ -242,7 +239,7 @@ export const createMetadataUsingPost = async (
             name: tagType.name,
             type: tagType.type,
         }),
-    }); 
+    });
 
     expect(res.status).toBeLessThan(300);
     const json = await res.json();
@@ -250,13 +247,12 @@ export const createMetadataUsingPost = async (
     return json.uuid;
 };
 
-
 export const createAccessGroupUsingPost = async (
-    accessGroup: CreateAccessGroupDto, 
-    creator: User, 
-    // accessGroupType: AccessGroupType, 
-    userList: [User]): Promise<string> => {
-        
+    accessGroup: CreateAccessGroupDto,
+    creator: User,
+    // accessGroupType: AccessGroupType,
+    userList: [User],
+): Promise<string> => {
     const headersBuilder = new HeaderCreator(creator);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
@@ -264,33 +260,41 @@ export const createAccessGroupUsingPost = async (
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
-            name: accessGroup.name
-        })
-    }); 
+            name: accessGroup.name,
+        }),
+    });
 
     // get access group
-    const testAccesGroup = await db.getRepository<AccessGroup>('AccessGroup').findOneOrFail(
-        {where: {name: accessGroup.name}}
-    );
+    const testAccesGroup = await db
+        .getRepository<AccessGroup>('AccessGroup')
+        .findOneOrFail({ where: { name: accessGroup.name } });
 
     const groupJson = await res.json();
     expect(res.status).toBeLessThan(300);
     console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
 
     // add users to access group
-    await Promise.all(userList.map(async user => { 
-        const res = await fetch(`http://localhost:3000/access/addUserToAccessGroup`, {
-            method: 'POST',
-            headers: headersBuilder.getHeaders(),
-            body: JSON.stringify({
-                userUUID: user.uuid,
-                uuid: testAccesGroup.uuid
-            })
-        });
-        expect(res.status).toBeLessThan(300);
-        const json = await res.json();
-        console.log(`['DEBUG'] Added user ${user.uuid} to access group:`, json);
-    }));
+    await Promise.all(
+        userList.map(async (user) => {
+            const res = await fetch(
+                `http://localhost:3000/access/addUserToAccessGroup`,
+                {
+                    method: 'POST',
+                    headers: headersBuilder.getHeaders(),
+                    body: JSON.stringify({
+                        userUUID: user.uuid,
+                        uuid: testAccesGroup.uuid,
+                    }),
+                },
+            );
+            expect(res.status).toBeLessThan(300);
+            const json = await res.json();
+            console.log(
+                `['DEBUG'] Added user ${user.uuid} to access group:`,
+                json,
+            );
+        }),
+    );
 
     console.log(`['DEBUG'] Users added to access group:`, groupJson);
 
