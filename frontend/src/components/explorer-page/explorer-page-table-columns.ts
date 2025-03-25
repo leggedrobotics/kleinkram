@@ -159,8 +159,9 @@ export const missionColumns: ProjectColumnType[] = [
     {
         name: 'tagverification',
         required: true,
-        label: 'Tag Verification',
+        label: 'Metadata Verification',
         align: 'left',
+        style: 'min-width: 180px',
     },
 
     {
