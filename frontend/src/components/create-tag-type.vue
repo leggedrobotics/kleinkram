@@ -48,7 +48,9 @@
                 "
             >
                 <q-item-section>
-                    <q-item-label v-html="datatype" />
+                    <q-item-label>
+                        <q-chip square>{{ datatype }}</q-chip>
+                    </q-item-label>
                 </q-item-section>
                 <q-item-section side>
                     <q-icon

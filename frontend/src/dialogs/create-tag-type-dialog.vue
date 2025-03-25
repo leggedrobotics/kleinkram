@@ -1,6 +1,7 @@
 <template>
-    <base-dialog ref="dialogRef">
-        <template #title> Create Metadata</template>
+    <!-- here we need to set the height explicitly to avoid a visual bug -->
+    <base-dialog ref="dialogRef" content-height="366px">
+        <template #title> Define Metadata Field</template>
 
         <template #content>
             <create-tag-type ref="tagType" />
@@ -26,7 +27,7 @@ const tagType = ref();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const createTagTypeAction = async (): void => {
+const createTagTypeAction = async (): Promise<void> => {
     if (!(await tagType.value.createTagTypeAction())) {
         console.log('Error creating Metadata');
         return;
