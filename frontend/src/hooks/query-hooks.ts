@@ -43,7 +43,7 @@ import {
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { allWorkers } from '../services/queries/worker';
 import { ActionWorkersDto } from '@api/types/action-workers.dto';
-import { TagsDto } from '@api/types/tags/tags.dto';
+import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
 import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
 import {
     MissionsDto,
@@ -462,11 +462,8 @@ export const useUserSearch = (
     });
 };
 
-export const useAllTags = (): UseQueryReturnType<
-    TagsDto | undefined,
-    Error
-> => {
-    return useQuery<TagsDto>({
+export const useAllTags = (): UseQueryReturnType<TagTypeDto[], Error> => {
+    return useQuery<TagTypeDto[]>({
         queryKey: ['tagTypes'],
         queryFn: getTagTypes,
     });

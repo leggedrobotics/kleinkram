@@ -3,6 +3,7 @@
         <div class="col-9">
             <label>Metadata</label>
             <q-select
+                ref="selectReference"
                 v-model="selected"
                 outlined
                 dense
@@ -55,7 +56,7 @@
                     <div class="tag-actions">
                         <q-icon :name="icon(tag.datatype)" class="q-mr-sm" />
                         <q-icon
-                            class="q-ml-sm text-red"
+                            class="q-ml-sm text-red cursor-pointer"
                             name="sym_o_delete"
                             @click="() => removeTag(tag)"
                         />
@@ -72,7 +73,9 @@ import { computed, ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/query-hooks';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { QSelect } from 'quasar';
 
+const selectReference = ref<QSelect | undefined>(undefined);
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const properties = defineProps<{
@@ -114,6 +117,17 @@ const filteredTags = computed(() => {
             ),
     );
 });
+
+watch(
+    selected,
+    (newValue: TagTypeDto[]) => {
+        emits('update:selected', newValue);
+        if (selectReference.value) {
+            selectReference.value.hidePopup(); // Close the dropdown after selection
+        }
+    },
+    { deep: true },
+);
 </script>
 
 <style scoped>

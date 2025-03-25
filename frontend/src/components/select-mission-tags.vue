@@ -52,7 +52,6 @@
             style="
                 display: flex;
                 flex-direction: row;
-                flex-align: bottom;
                 justify-content: left;
                 margin-bottom: 20px;
             "
@@ -145,7 +144,7 @@
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
 import { DataType } from '@common/enum';
-import { TagDto, TagTypeDto } from '@api/types/tags/tags.dto';
+import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags, useProjectQuery } from '../hooks/query-hooks';
 import { icon } from '../services/generic';
 
@@ -176,20 +175,20 @@ const { data: project } = useProjectQuery(
 );
 
 watch(
-    () => [project.value, tagTypes.value],
-    ([newProject, newTagTypes]) => {
+    () => ({
+        project: project.value,
+        tagTypes: tagTypes.value,
+    }),
+    ({ project: newProject, tagTypes: newTagTypes }) => {
         if (newProject && newTagTypes) {
             additionalTags.value = [];
             for (const tagTypeUUID of Object.keys(localTagValues.value)) {
                 if (
-                    // @ts-ignore
                     !newProject.requiredTags
-                        // @ts-ignore
-                        ?.map((_tagTypeUUID) => _tagTypeUUID.uuid)
+                        ?.map((_tagTypeUUID: TagTypeDto) => _tagTypeUUID.uuid)
                         .includes(tagTypeUUID)
                 ) {
-                    // @ts-ignore
-                    const newTag: TagDto | undefined = newTagTypes.find(
+                    const newTag: TagTypeDto | undefined = newTagTypes.find(
                         (tagType: TagTypeDto) => tagType.uuid === tagTypeUUID,
                     );
                     if (newTag === undefined) continue;
@@ -207,12 +206,11 @@ const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
     if (project.value) {
         usedTagUUIDs = project.value.requiredTags.map((tag) => tag.uuid);
     }
-    if (tagTypes.value.data === undefined) return [];
     const addedTagUUIDs = new Set(additionalTags.value.map((tag) => tag.uuid));
-    return tagTypes.value.data.filter(
-        (tagtype: TagTypeDto) =>
-            !usedTagUUIDs.includes(tagtype.uuid) &&
-            !addedTagUUIDs.has(tagtype.uuid),
+    return tagTypes.value.filter(
+        (metadataType: TagTypeDto) =>
+            !usedTagUUIDs.includes(metadataType.uuid) &&
+            !addedTagUUIDs.has(metadataType.uuid),
     );
 });
 const DataType_InputType = {
@@ -223,35 +221,35 @@ const DataType_InputType = {
     [DataType.LOCATION]: 'text',
 };
 
-function addTag(tagtype: TagTypeDto) {
-    additionalTags.value.push(tagtype);
-}
+const addTag = (metadataType: TagTypeDto): void => {
+    additionalTags.value.push(metadataType);
+};
 
-function tagColor(tagtype: TagTypeDto) {
-    return isRequired(tagtype) ? 'grey' : 'black';
-}
+const tagColor = (metadataType: TagTypeDto): string => {
+    return isRequired(metadataType) ? 'grey' : 'black';
+};
 
-function isRequired(tagtype: TagTypeDto) {
+const isRequired = (metadataType: TagTypeDto): boolean => {
     if (requiredTagTypeUUIDs.value) {
         const requiredTags = requiredTagTypeUUIDs.value;
-        return requiredTags.includes(tagtype.uuid);
+        return requiredTags.includes(metadataType.uuid);
     } else {
         return true;
     }
-}
+};
 
 const requiredTagTypeUUIDs = computed(() =>
     project.value?.requiredTags.map((tag) => tag.uuid),
 );
 
-function removeTagType(tagtypeUUID: string) {
+const removeTagType = (metadataTypeUUID: string): void => {
     const index = additionalTags.value.findIndex(
-        (tagtype) => tagtype.uuid === tagtypeUUID,
+        (metadataType) => metadataType.uuid === metadataTypeUUID,
     );
     if (index !== -1) {
         additionalTags.value.splice(index, 1);
     }
-}
+};
 </script>
 <style scoped>
 .tag-label {

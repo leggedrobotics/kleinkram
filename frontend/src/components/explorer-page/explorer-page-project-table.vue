@@ -67,7 +67,7 @@
                                 >
                                     <q-item v-ripple clickable>
                                         <q-item-section>
-                                            Configure Metadata
+                                            Enforce Metadata
                                         </q-item-section>
                                     </q-item>
                                 </ConfigureTagsDialogOpener>

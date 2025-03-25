@@ -15,7 +15,7 @@
             <div class="q-mt-md row">
                 <div class="col-12">
                     <q-table
-                        :rows="data?.data ?? []"
+                        :rows="data ?? []"
                         :columns="columns as any"
                         row-key="uuid"
                         wrap-cells
@@ -164,7 +164,7 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    for (const tag of data.value?.data ?? []) {
+    for (const tag of data.value ?? []) {
         lookup[tag.uuid] = tag;
     }
     return lookup;

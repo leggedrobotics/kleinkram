@@ -3,7 +3,7 @@
         <template #title> Add Metadata</template>
 
         <template #content>
-            <AddTag :mission_uuid="mission_uuid" />
+            <AddTag :mission-uuid="mission_uuid" />
         </template>
 
         <template #actions>
