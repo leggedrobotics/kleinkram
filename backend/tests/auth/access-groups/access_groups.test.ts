@@ -1,7 +1,8 @@
+import { createAccessGroupUsingPost } from 'tests/utils/api_calls';
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
 import GroupMembership from '../../../../common/entities/auth/group-membership.entity';
 import User from '../../../../common/entities/user/user.entity';
-import { AccessGroupType } from '../../../../common/frontend_shared/enum';
+import { AccessGroupRights, AccessGroupType } from '../../../../common/frontend_shared/enum';
 import { clearAllData, db as database, mockDbUser as mockDatabaseUser } from '../../utils/database_utils';
 import {
     DEFAULT_GROUP_UUIDS,
@@ -247,9 +248,22 @@ describe('Verify Access Groups Internal User Access', () => {
             await database.destroy();
         });
 
-    test('if a user with create rights can generate a access group', () => {
-        // TODO: implement this test
-        expect(true).toBe(true);
+    test('if a user with create rights can generate a access group', async () => {
+        const { user: creator }   = await generateAndFetchDatabaseUser('internal', 'user');
+        const { user: addedUser } = await generateAndFetchDatabaseUser('internal', 'user');
+        const rights    = AccessGroupRights.READ;
+        const groupName = 'test_access_group';
+
+        // create access group
+        const groupUuid = await createAccessGroupUsingPost(
+            {
+                name: groupName,
+            },
+            creator,
+            [addedUser]
+        );
+
+        
     });
 
     test('if a user with read access can view details of any access groups', () => {
@@ -309,3 +323,7 @@ describe('Verify Access Groups Internal User Access', () => {
     });
 
 });
+function generateAndFetchDatabaseUser(arg0: string, arg1: string): { user: any; } | PromiseLike<{ user: any; }> {
+    throw new Error('Function not implemented.');
+}
+

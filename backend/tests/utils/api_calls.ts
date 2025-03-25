@@ -1,9 +1,12 @@
-import { getJwtToken } from './database_utils';
+import { db, getJwtToken } from './database_utils';
 
 import { CreateMission } from '@common/api/types/create-mission.dto';
 
 import QueueEntity from '@common/entities/queue/queue.entity';
-import { QueueState } from '@common/frontend_shared/enum';
+import { 
+    QueueState
+} from '@common/frontend_shared/enum';
+
 import * as fs from 'node:fs';
 import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
@@ -11,7 +14,8 @@ import crypto from 'node:crypto';
 import { CreateProject } from '../../../common/api/types/create-project.dto';
 import User from '../../../common/entities/user/user.entity';
 import {CreateTagTypeDto} from '../../../common/api/types/tags/create-tag-type.dto';
-
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 
 export class HeaderCreator {
     headers: Headers;
@@ -80,9 +84,10 @@ export const createProjectUsingPost = async (
         credentials: 'include',
     });
     
-    // check if the request was successful
     expect(res.status).toBeLessThan(300);
-    return (await res.json()).uuid;
+    const json = await res.json();
+    console.log(`['DEBUG'] Created project:`, json);
+    return json.uuid;
 };
 
 export const createMissionUsingPost = async (
@@ -107,6 +112,7 @@ export const createMissionUsingPost = async (
     // check if the request was successful
     expect(res.status).toBeLessThan(300);
     const json = await res.json();
+    console.log(`['DEBUG'] Created mission:`, json);
     return json.uuid;
 };
 
@@ -222,7 +228,7 @@ export async function uploadFile(
 }
 
 
-export const createTagUsingPost = async (
+export const createMetadataUsingPost = async (
     tagType: CreateTagTypeDto, 
     user: User): Promise<string> => {
         
@@ -240,5 +246,53 @@ export const createTagUsingPost = async (
 
     expect(res.status).toBeLessThan(300);
     const json = await res.json();
+    console.log(`['DEBUG'] Created tag:`, json);
     return json.uuid;
+};
+
+
+export const createAccessGroupUsingPost = async (
+    accessGroup: CreateAccessGroupDto, 
+    creator: User, 
+    // accessGroupType: AccessGroupType, 
+    userList: [User]): Promise<string> => {
+        
+    const headersBuilder = new HeaderCreator(creator);
+    headersBuilder.addHeader('Content-Type', 'application/json');
+
+    const res = await fetch(`http://localhost:3000/access/create`, {
+        method: 'POST',
+        headers: headersBuilder.getHeaders(),
+        body: JSON.stringify({
+            name: accessGroup.name
+        })
+    }); 
+
+    // get access group
+    const testAccesGroup = await db.getRepository<AccessGroup>('AccessGroup').findOneOrFail(
+        {where: {name: accessGroup.name}}
+    );
+
+    const groupJson = await res.json();
+    expect(res.status).toBeLessThan(300);
+    console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
+
+    // add users to access group
+    await Promise.all(userList.map(async user => { 
+        const res = await fetch(`http://localhost:3000/access/addUserToAccessGroup`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify({
+                userUUID: user.uuid,
+                uuid: testAccesGroup.uuid
+            })
+        });
+        expect(res.status).toBeLessThan(300);
+        const json = await res.json();
+        console.log(`['DEBUG'] Added user ${user.uuid} to access group:`, json);
+    }));
+
+    console.log(`['DEBUG'] Users added to access group:`, groupJson);
+
+    return testAccesGroup.uuid;
 };
