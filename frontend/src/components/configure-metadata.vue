@@ -1,14 +1,18 @@
 <template>
     <div>
         <div class="col-9">
+            <label>Metadata</label>
             <q-select
                 v-model="selected"
-                label="Enforced Metadata"
-                use-input
+                outlined
+                dense
+                required
                 multiple
                 input-debounce="100"
-                :options="tags?.data"
-                option-label="name"
+                :options="filteredTags"
+                class="full-width"
+                option-label="label"
+                option-value="value"
                 @input-value="onInputUpdate"
             >
                 <template #no-option>
@@ -17,17 +21,6 @@
                             No results
                         </q-item-section>
                     </q-item>
-                </template>
-                <template #selected-item="scope">
-                    <q-chip
-                        square
-                        removable
-                        :tabindex="scope.tabindex"
-                        :icon="icon(scope.opt.type)"
-                        @remove="() => scope.removeAtIndex(scope.index)"
-                    >
-                        {{ scope.opt.name }}
-                    </q-chip>
                 </template>
                 <template #option="{ itemProps, opt }">
                     <q-item v-bind="itemProps">
@@ -42,13 +35,40 @@
                         </q-item-section>
                     </q-item>
                 </template>
+
+                <span
+                    class="text-placeholder absolute"
+                    style="line-height: 40px"
+                >
+                    Select Metadata
+                </span>
+                <template #selected-item></template>
             </q-select>
+
+            <div v-if="selected.length > 0" class="q-mt-md">
+                <div
+                    v-for="tag in selected"
+                    :key="tag.uuid"
+                    class="selected-tag-item"
+                >
+                    <div class="tag-name">{{ tag.name }}</div>
+                    <div class="tag-actions">
+                        <q-icon :name="icon(tag.datatype)" class="q-mr-sm" />
+                        <q-icon
+                            class="q-ml-sm text-red"
+                            name="sym_o_delete"
+                            @click="() => removeTag(tag)"
+                        />
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
+
 <script setup lang="ts">
 import { icon } from 'src/services/generic';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { DataType } from '@common/enum';
 import { useFilteredTag } from '../hooks/query-hooks';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
@@ -56,7 +76,7 @@ import { TagTypeDto } from '@api/types/tags/tags.dto';
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const properties = defineProps<{
-    selected: TagTypeDto[];
+    selected: TagTypeDto;
 }>();
 
 const selected = ref([...properties.selected]);
@@ -76,6 +96,42 @@ const { data: tags } = useFilteredTag(tagSearch.value, selectedDataType.value);
 const onInputUpdate = (value: string) => {
     tagSearch.value = value;
 };
+
+const removeTag = (tag: TagTypeDto) => {
+    const index = selected.value.findIndex((t) => t.uuid === tag.uuid);
+    if (index !== -1) {
+        selected.value.splice(index, 1);
+    }
+};
+
+const filteredTags = computed(() => {
+    if (!tags?.value.data) return;
+    return tags.value.data.filter(
+        (tag) =>
+            !selected.value.some(
+                (selectedTag) => selectedTag.uuid === tag.uuid,
+            ),
+    );
+});
 </script>
 
-<style scoped></style>
+<style scoped>
+.selected-tag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.tag-name {
+    flex-grow: 1;
+}
+
+.tag-actions {
+    display: flex;
+    align-items: center;
+}
+</style>

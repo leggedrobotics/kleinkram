@@ -125,6 +125,7 @@
 
                 <q-btn
                     icon="sym_o_delete"
+                    class="text-red"
                     :color="tagColor(tagtype)"
                     round
                     flat
