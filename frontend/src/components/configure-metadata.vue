@@ -42,7 +42,7 @@
                 >
                     Select Metadata
                 </span>
-                <template #selected-item></template>
+                <template #selected-item />
             </q-select>
 
             <div v-if="selected.length > 0" class="q-mt-md">
@@ -76,16 +76,17 @@ import { TagTypeDto } from '@api/types/tags/tags.dto';
 const tagSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const properties = defineProps<{
-    selected: TagTypeDto;
+    selected: TagTypeDto[];
 }>();
 
-const selected = ref([...properties.selected]);
+const selected = ref<TagTypeDto[]>([...properties.selected]);
 
 const emits = defineEmits(['update:selected']);
 
 watch(
     selected,
-    (newValue: any) => {
+    (newValue: TagTypeDto[]) => {
+        // Corrected type here
         emits('update:selected', newValue);
     },
     { deep: true },
@@ -93,11 +94,11 @@ watch(
 
 const { data: tags } = useFilteredTag(tagSearch.value, selectedDataType.value);
 
-const onInputUpdate = (value: string) => {
+const onInputUpdate = (value: string): void => {
     tagSearch.value = value;
 };
 
-const removeTag = (tag: TagTypeDto) => {
+const removeTag = (tag: TagTypeDto): void => {
     const index = selected.value.findIndex((t) => t.uuid === tag.uuid);
     if (index !== -1) {
         selected.value.splice(index, 1);
@@ -105,7 +106,7 @@ const removeTag = (tag: TagTypeDto) => {
 };
 
 const filteredTags = computed(() => {
-    if (!tags?.value.data) return;
+    if (!tags.value?.data) return;
     return tags.value.data.filter(
         (tag) =>
             !selected.value.some(
