@@ -14,7 +14,7 @@
             </div>
             <div class="q-mt-md row">
                 <div class="col-12">
-                    <TagTypeTable
+                    <MetadataTypeTable
                         :rows="data ?? []"
                         :columns="columns"
                         :filter="tagtype"
@@ -27,7 +27,7 @@
                 :key="tagTypeUUID"
                 class="q-mt-md row"
             >
-                <TagFilterInput
+                <MetadataFilterInput
                     :tag-type-uuid="tagTypeUUID"
                     :tag-lookup="tagLookup"
                     :tag-values="tagValues"
@@ -53,8 +53,8 @@ import { computed, ref } from 'vue';
 import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags } from '../hooks/query-hooks';
-import TagTypeTable from './TagTypeTable.vue';
-import TagFilterInput from './TagFilterInput.vue';
+import MetadataFilterInput from '@components/metadata-filter-input.vue';
+import MetadataTypeTable from '@components/metadata-type-table.vue';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
