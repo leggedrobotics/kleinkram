@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs, { accessSync, constants } from 'node:fs';
 
 interface PackageJson {
     name?: string;
@@ -6,11 +6,28 @@ interface PackageJson {
     description?: string;
 }
 
-const packageJson = JSON.parse(
-    fs.readFileSync('/usr/src/app/backend/package.json', 'utf8'),
-) as PackageJson;
+const path = '/usr/src/app/backend/package.json';
+const fallbackPath = '../package.json';
+
+function readFileIfExists(filePath: string): PackageJson | null {
+    try {
+        // Check if the file exists and is readable.
+        accessSync(filePath, constants.R_OK);
+        return JSON.parse(fs.readFileSync(filePath, 'utf8')) as PackageJson;
+    } catch (error) {
+        return null;
+    }
+}
 
 /**
  * The version of the application as defined in the package.json file.
  */
-export const appVersion = packageJson.version ?? '';
+export const appVersion = (() => {
+    let packageJson = readFileIfExists(path);
+
+    if (!packageJson) {
+        packageJson = readFileIfExists(fallbackPath);
+    }
+
+    return packageJson?.version ?? '';
+})();
