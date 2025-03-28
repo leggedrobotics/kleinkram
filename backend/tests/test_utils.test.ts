@@ -3,7 +3,7 @@ import {
     db as database,
     getJwtToken,
     mockDbUser as mockDatabaseUser,
-} from './utils/database_utils';
+} from './utils/database-utilities';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
 

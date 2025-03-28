@@ -1,4 +1,4 @@
-import { db, getJwtToken } from './database_utils';
+import { db, getJwtToken } from './database-utilities';
 
 import { CreateMission } from '@common/api/types/create-mission.dto';
 
@@ -14,6 +14,7 @@ import User from '../../../common/entities/user/user.entity';
 import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
+import { DEFAULT_URL } from '../auth/utilities';
 
 export class HeaderCreator {
     headers: Headers;
@@ -36,7 +37,7 @@ export class HeaderCreator {
             );
         }
         // used to avoid usage of older versions of kleinkram
-        this.headers.append('kleinkram-client-version', '0.42.0');
+        this.headers.append('kleinkram-client-version', '0.43.0');
     }
 
     /**
@@ -63,7 +64,7 @@ export class HeaderCreator {
  *
  * @param {CreateProject} project - The project data to be created.
  * @param {User} user -             The authenticated user requesting the project creation.
- * @returns {Promise<string>} -     A promise that resolves to the UUID of the created project.
+ * @returns {Promise<string>} -     A promise that responseolves to the UUID of the created project.
  *
  * @throws {Error} -                Throws an error if the request fails or returns a non-2xx status code.
  */
@@ -75,16 +76,16 @@ export const createProjectUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const res = await fetch(`http://localhost:3000/project`, {
+    const response = await fetch(`${DEFAULT_URL}/project`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify(project),
         credentials: 'include',
     });
 
-    expect(res.status).toBeLessThan(300);
-    const json = await res.json();
+    const json = await response.json();
     console.log(`['DEBUG'] Created project:`, json);
+    expect(response.status).toBeLessThan(300);
     return json.uuid;
 };
 
@@ -96,7 +97,7 @@ export const createMissionUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const res = await fetch(`http://localhost:3000/mission/create`, {
+    const response = await fetch(`${DEFAULT_URL}/mission/create`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
@@ -108,8 +109,8 @@ export const createMissionUsingPost = async (
     });
 
     // check if the request was successful
-    expect(res.status).toBeLessThan(300);
-    const json = await res.json();
+    expect(response.status).toBeLessThan(300);
+    const json = await response.json();
     console.log(`['DEBUG'] Created mission:`, json);
     return json.uuid;
 };
@@ -131,7 +132,7 @@ export async function uploadFile(
     filename: string,
     missionUuid: string,
 ) {
-    const res = await fetch(`http://localhost:3000/file/temporaryAccess`, {
+    const response = await fetch(`${DEFAULT_URL}/file/temporaryAccess`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -143,18 +144,18 @@ export async function uploadFile(
         }),
     });
 
-    expect(res.status).toBe(201);
-    const json = await res.json();
+    expect(response.status).toBe(201);
+    const json = await response.json();
     expect(json).toBeDefined();
 
-    const fileResponse = json[0];
+    const fileresponseponse = json[0];
 
-    expect(fileResponse).toBeDefined();
-    expect(fileResponse.bucket).toBe('bags');
-    expect(fileResponse.fileUUID).toBeDefined();
+    expect(fileresponseponse).toBeDefined();
+    expect(fileresponseponse.bucket).toBe('bags');
+    expect(fileresponseponse.fileUUID).toBeDefined();
 
-    // open file from fixtures
-    const file = fs.readFileSync(`./tests/fixtures/${filename}`);
+    // open file from fixturesponse
+    const file = fs.readFileSync(`./tests/fixturesponse/${filename}`);
     const blob = new Blob([file], {
         type: 'application/octet-stream',
     });
@@ -168,24 +169,24 @@ export async function uploadFile(
         forcePathStyle: true,
         region: 'us-east-1',
         credentials: {
-            accessKeyId: fileResponse.accessCredentials.accessKey,
-            secretAccessKey: fileResponse.accessCredentials.secretKey,
-            sessionToken: fileResponse.accessCredentials.sessionToken,
+            accessKeyId: fileresponseponse.accessCredentials.accessKey,
+            secretAccessKey: fileresponseponse.accessCredentials.secretKey,
+            sessionToken: fileresponseponse.accessCredentials.sessionToken,
         },
     });
 
-    const resi = await uploadFileMultipart(
+    const responsei = await uploadFileMultipart(
         fileFile,
-        fileResponse.bucket,
-        fileResponse.fileUUID,
+        fileresponseponse.bucket,
+        fileresponseponse.fileUUID,
         minioClient,
     );
-    expect(resi).toBeDefined();
+    expect(responsei).toBeDefined();
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
-    const resConfirm = await fetch(
-        `http://localhost:3000/queue/confirmUpload`,
+    const responseConfirm = await fetch(
+        `${DEFAULT_URL}/queue/confirmUpload`,
         {
             method: 'POST',
             headers: {
@@ -193,27 +194,27 @@ export async function uploadFile(
                 cookie: `authtoken=${await getJwtToken(user)}`,
             },
             body: JSON.stringify({
-                uuid: fileResponse.fileUUID,
+                uuid: fileresponseponse.fileUUID,
                 md5: hash.digest('base64'),
             }),
         },
     );
-    expect(resConfirm.status).toBe(201);
+    expect(responseConfirm.status).toBe(201);
 
     while (true) {
-        const resActive = await fetch(`http://localhost:3000/queue/active`, {
+        const responseActive = await fetch(`${DEFAULT_URL}/queue/active`, {
             method: 'GET',
             headers: {
                 cookie: `authtoken=${await getJwtToken(user)}`,
             },
         });
 
-        expect(resActive.status).toBe(200);
-        const active = await resActive.json();
+        expect(responseActive.status).toBe(200);
+        const active = await responseActive.json();
         if (
             active.find(
                 (x: QueueEntity) =>
-                    x.uuid === fileResponse.queueUUID &&
+                    x.uuid === fileresponseponse.queueUUID &&
                     x.state === QueueState.COMPLETED,
             )
         ) {
@@ -232,7 +233,7 @@ export const createMetadataUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const res = await fetch(`http://localhost:3000/tag/create`, {
+    const response = await fetch(`${DEFAULT_URL}/tag/create`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
@@ -241,8 +242,8 @@ export const createMetadataUsingPost = async (
         }),
     });
 
-    expect(res.status).toBeLessThan(300);
-    const json = await res.json();
+    expect(response.status).toBeLessThan(300);
+    const json = await response.json();
     console.log(`['DEBUG'] Created tag:`, json);
     return json.uuid;
 };
@@ -256,7 +257,7 @@ export const createAccessGroupUsingPost = async (
     const headersBuilder = new HeaderCreator(creator);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const res = await fetch(`http://localhost:3000/access/create`, {
+    const response = await fetch(`${DEFAULT_URL}/access/create`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
@@ -269,15 +270,15 @@ export const createAccessGroupUsingPost = async (
         .getRepository<AccessGroup>('AccessGroup')
         .findOneOrFail({ where: { name: accessGroup.name } });
 
-    const groupJson = await res.json();
-    expect(res.status).toBeLessThan(300);
+    const groupJson = await response.json();
+    expect(response.status).toBeLessThan(300);
     console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
 
     // add users to access group
     await Promise.all(
         userList.map(async (user) => {
-            const res = await fetch(
-                `http://localhost:3000/access/addUserToAccessGroup`,
+            const response = await fetch(
+                `${DEFAULT_URL}/access/addUserToAccessGroup`,
                 {
                     method: 'POST',
                     headers: headersBuilder.getHeaders(),
@@ -287,8 +288,8 @@ export const createAccessGroupUsingPost = async (
                     }),
                 },
             );
-            expect(res.status).toBeLessThan(300);
-            const json = await res.json();
+            expect(response.status).toBeLessThan(300);
+            const json = await response.json();
             console.log(
                 `['DEBUG'] Added user ${user.uuid} to access group:`,
                 json,
