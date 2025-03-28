@@ -10,13 +10,13 @@ import {
     clearAllData,
     db as database,
     mockDbUser as mockDatabaseUser,
-} from '../../utils/database_utils';
+} from '../../utils/database-utilities';
 import {
     DEFAULT_GROUP_UUIDS,
     getAccessGroupForEmail,
     getAllAccessGroups,
     verifyIfGroupWithUUIDExists,
-} from '../utils';
+} from '../utilities';
 
 /**
  * This test suite tests the access control of the application.

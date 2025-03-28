@@ -3,7 +3,7 @@ import { db as database,
     getJwtToken,
     getUserFromDb as getUserFromDatabase,
     mockDbUser as mockDatabaseUser,
- } from '../utils/database_utils';
+ } from '../utils/database-utilities';
 
 import{
     HeaderCreator
@@ -17,6 +17,8 @@ import{
 
 import User from '../../../common/entities/user/user.entity';
 
+// DEFAUL_URL for backend
+export const DEFAULT_URL = 'http://localhost:3000';
 export const DEFAULT_GROUP_UUIDS: [string] = ['00000000-0000-0000-0000-000000000000'] as const;
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
     const accessGroupRepository = database.getRepository('AccessGroup');
@@ -35,6 +37,8 @@ export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
         },
     })) as AccessGroup[];
 };
+
+
 /**
  * Verify if an access group with the passed uuid exists
  *
@@ -85,7 +89,7 @@ export const getAccessGroupForEmail = (
  * @returns An object containing user details, authentication token, and fetch response.
  * @throws Will throw an error if an invalid userType is provided or fetch fails.
  */
-export const generateAndFetchDbUser = async (
+export const generateAndFetchDatabaseUser = async (
     userType: 'internal' | 'external',
     userRole: 'user' | 'admin'
 ): Promise<{ user: any; token: string; res: Response }> => {
@@ -126,7 +130,7 @@ export const generateAndFetchDbUser = async (
         const headerCreator = new HeaderCreator(undefined, token);
         
         const res = await fetch(
-            'http://localhost:3000/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false',
+            `${DEFAULT_URL}/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
                 headers: headerCreator.getHeaders(),

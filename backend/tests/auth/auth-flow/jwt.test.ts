@@ -1,4 +1,4 @@
-import { clearAllData, db as database } from '../../utils/database_utils';
+import { clearAllData, db as database } from '../../utils/database-utilities';
 import process from 'node:process';
 
 describe('Verify JWT Handling', () => {

@@ -1,15 +1,15 @@
 import {
     clearAllData,
     db as database,
-} from '../../utils/database_utils';
+} from '../../utils/database-utilities';
 
 import {
     createMetadataUsingPost
 } from '../../utils/api_calls';
 
 import {
-    generateAndFetchDbUser as generateAndFetchDatabaseUser,
-} from '../utils';
+    generateAndFetchDatabaseUser,
+} from '../utilities';
 
 import {
     DataType,

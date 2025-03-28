@@ -4,14 +4,14 @@ import {
     getJwtToken,
     getUserFromDb as getUserFromDatabase,
     mockDbUser as mockDatabaseUser,
-} from '../../utils/database_utils';
+} from '../../utils/database-utilities';
 import { createProjectUsingPost } from '../../utils/api_calls';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '../../../../common/frontend_shared/enum';
-import User from '../../../../common/entities/user/user.entity';
+
 
 /**
  * This test suite tests the access control of the application.

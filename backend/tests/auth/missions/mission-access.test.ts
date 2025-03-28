@@ -4,7 +4,7 @@ import {
     getJwtToken,
     getUserFromDb as getUserFromDatabase,
     mockDbUser as mockDatabaseUser,
-} from '../../utils/database_utils';
+} from '../../utils/database-utilities';
 import { createProjectUsingPost } from '../../utils/api_calls';
 import {
     AccessGroupRights,
