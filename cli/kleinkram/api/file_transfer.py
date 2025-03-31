@@ -328,7 +328,7 @@ def _upload_handler(
     except Exception as e:
         logger.error(format_traceback(e))
         if verbose:
-            tqdm.write(format_error(f"error uploading {path}", e))
+            tqdm.write(format_error(f"error uploading", e, verbose=verbose))
         else:
             print(f"ERROR: {path.absolute()}: {e}", file=sys.stderr)
         return 0  # Return 0 bytes on error
