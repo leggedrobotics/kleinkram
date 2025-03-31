@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
     FindOptionsWhere,
     In,
+    IsNull,
     LessThan,
     Like,
     MoreThan,
@@ -171,8 +172,12 @@ export class QueueService implements OnModuleInit {
         success: boolean;
         fileCount: number;
     }> {
+        // search for files with no hash (empty or null) and state OK
         const files = await this.fileRepository.find({
-            where: { hash: '', state: FileState.OK },
+            where: [
+                { hash: IsNull(), state: FileState.OK },
+                { hash: '', state: FileState.OK },
+            ],
             relations: ['mission', 'mission.project'],
         });
 
