@@ -9,7 +9,7 @@ import {
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { IsNull, Like, Repository } from 'typeorm';
 
 import { convertToMcap, mcapMetaInfo } from './helper/converter';
 import {
@@ -152,13 +152,15 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         }
 
         const file = await this.fileRepository.findOneOrFail({
-            where: { uuid: job.data.file_uuid },
+            where: [
+                {
+                    hash: IsNull(),
+                    state: FileState.OK,
+                    uuid: job.data.file_uuid,
+                },
+                { hash: '', state: FileState.OK, uuid: job.data.file_uuid },
+            ],
         });
-
-        if (file.hash !== '') {
-            logger.debug(`File ${file.filename} already has a hash`);
-            return;
-        }
 
         const temporaryFileName = `/tmp/${file.uuid}.${file.filename.split('.').pop()}`;
 
