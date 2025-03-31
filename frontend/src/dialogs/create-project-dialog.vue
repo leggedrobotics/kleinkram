@@ -60,7 +60,9 @@
                         @update:model-value="verifyInput"
                     />
 
-                    <label for="projectDescription">Project Description *</label>
+                    <label for="projectDescription"
+                        >Project Description *</label
+                    >
                     <q-input
                         v-model="newProjectDescription"
                         name="projectDescription"

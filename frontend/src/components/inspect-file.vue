@@ -216,7 +216,7 @@
             >
                 <span class="q-my-sm">
                     Kleinkram does ony extract topics for mcap files.
-                    <br>Please switch to the mcap file to see the topics.
+                    <br />Please switch to the mcap file to see the topics.
                 </span>
 
                 <q-btn

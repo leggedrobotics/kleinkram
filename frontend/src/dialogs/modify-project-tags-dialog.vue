@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Configure Project Metadata</template>
+        <template #title> Configure Enforced Metadata</template>
 
         <template #content>
             <ConfigureMetadata v-if="project" v-model:selected="selected" />
@@ -14,13 +14,13 @@
                         flat
                         color="primary"
                         icon="sym_o_sell"
-                        label="Add Metadata"
+                        label="Create Metadata"
                     />
                 </CreateTagTypeDialogOpener>
 
                 <q-btn
                     flat
-                    label="Save"
+                    label="Save Changes"
                     class="bg-button-primary"
                     @click="saveAction"
                 />
@@ -65,7 +65,7 @@ const { mutate } = useMutation({
     },
     async onSuccess() {
         Notify.create({
-            message: 'Tagtypes updated',
+            message: 'Enforced Metadata updated',
             color: 'positive',
             position: 'bottom',
         });

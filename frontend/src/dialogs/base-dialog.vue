@@ -4,7 +4,7 @@
             class="flex column justify-between"
             style="min-height: 400px; min-width: 600px"
         >
-            <div>
+            <div :style="contentStyle">
                 <div class="q-pa-lg flex row justify-between">
                     <h3 class="text-h3 q-ma-none" style="max-width: 80%">
                         <slot name="title" />
@@ -50,14 +50,26 @@
 
 <script lang="ts">
 import { useDialogPluginComponent } from 'quasar';
+import { computed, ComputedRef, CSSProperties, PropType } from 'vue';
 
 export default {
     name: 'BaseDialog',
+    props: {
+        contentHeight: {
+            type: String as PropType<string | undefined>,
+            default: undefined,
+        },
+    },
     emits: [...useDialogPluginComponent.emits],
-
-    setup(): ReturnType<useDialogPluginComponent> {
+    setup(properties): ReturnType<useDialogPluginComponent> & {
+        contentStyle: ComputedRef<CSSProperties>;
+    } {
+        const contentStyle = computed<CSSProperties>(() => ({
+            height: properties.contentHeight || 'auto',
+            overflowY: properties.contentHeight ? 'hidden' : 'visible',
+        }));
         const dialogPlugin = useDialogPluginComponent();
-        return { ...dialogPlugin };
+        return { ...dialogPlugin, contentStyle };
     },
 };
 </script>

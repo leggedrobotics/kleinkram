@@ -1,6 +1,6 @@
 {
     "name": "kleinkram",
-    "version": "0.42.0",
+    "version": "0.43.0",
     "main": "index.js",
     "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -8,7 +8,7 @@
     "scripts": {
         "start": "docker compose up --build -d",
         "eslint": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint --fix .)",
-        "eslint-full": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs --fix .)",
+        "eslint-full": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs --fix .)",
         "eslint:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
         "eslint-full:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -c eslint-full.config.mjs -f summary .)",
         "eslint:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
@@ -23,7 +23,7 @@
         "bump:minor": "grunt bumpVersion:minor",
         "bump:major": "grunt bumpVersion:major",
         "validateVersions": "grunt validateVersions",
-        "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines )"
+        "postinstall": "(cd backend && yarn install --ignore-engines ); (cd frontend && yarn install --ignore-engines ); (cd queueConsumer && yarn install --ignore-engines ); (cd common && yarn install --ignore-engines ); (cd docs && yarn install --ignore-engines )"
     },
     "devDependencies": {
         "@eslint/js": "^9.20.0",
@@ -41,7 +41,7 @@
         "grunt": "^1.6.1",
         "grunt-bump": "^0.8.0",
         "prettier": "^3.3.3",
-        "typescript": "~5.6.3",
+        "typescript": "5.7.3",
         "typescript-eslint": "^8.8.1",
         "vue-eslint-parser": "^9.4.3",
         "vue-tsc": "^2.1.10"

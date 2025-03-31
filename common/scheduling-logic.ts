@@ -75,7 +75,6 @@ export async function addActionQueue(
 
     try {
         logger.debug(
-             
             `trying to add to queue: ${actionQueues[worker.identifier].name}`,
         );
         return await actionQueues[worker.identifier].add(

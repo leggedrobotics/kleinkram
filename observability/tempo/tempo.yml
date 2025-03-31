@@ -1,23 +1,23 @@
+# source: https://github.com/grafana/intro-to-mltp/blob/main/tempo/tempo.yaml
+auth_enabled: false
 stream_over_http_enabled: true
 
+# Configure the server block.
 server:
+    # Listen for all incoming requests on port 3200.
     http_listen_port: 3200
     log_level: error
-
-query_frontend:
-    search:
-        duration_slo: 5s
-        throughput_bytes_slo: 1.073741824e+09
-    trace_by_id:
-        duration_slo: 5s
 
 distributor:
     receivers: # this configuration will listen on all ports and protocols that tempo is capable of.
         otlp:
             protocols:
                 http:
+                    endpoint: '0.0.0.0:4318' # Listen to OTLP HTTP on port 4318, on all interfaces.
                 grpc:
+                    endpoint: '0.0.0.0:4317' # This example repository only utilises the OTLP gRPC receiver on port 4317, on all interfaces.
 
+# The ingester receives data from the distributor and processes it into indices and blocks.
 ingester:
     trace_idle_period: 10s # The length of time after a trace has not received spans to consider it complete and flush it.
     max_block_bytes: 1_000_000 # Cut the head block when it hits this size or
@@ -31,13 +31,22 @@ compactor:
         block_retention: 1h # How long to keep blocks. Default is 14 days, this demo system is short-lived.
         compacted_block_retention: 10m # How long to keep compacted blocks stored elsewhere.
 
+# Configuration block to determine where to store TSDB blocks.
 storage:
     trace:
-        backend: local # backend configuration to use
+        backend: local # Use the local filesystem for block storage. Not recommended for production systems.
+        block:
+            bloom_filter_false_positive: .05 # Bloom filter false positive rate.  lower values create larger filters but fewer false positives.
+        # Write Ahead Log (WAL) configuration.
         wal:
-            path: /tmp/tempo/wal # where to store the wal locally
+            path: /tmp/tempo/wal # Directory to store the the WAL locally.
+        # Local configuration for filesystem storage.
         local:
-            path: /tmp/tempo/blocks
+            path: /tmp/tempo/blocks # Directory to store the TSDB blocks.
+        # Pool used for finding trace IDs.
+        pool:
+            max_workers: 100 # Worker pool determines the number of parallel requests to the object store backend.
+            queue_depth: 10000 # Maximum depth for the querier queue jobs. A job is required for each block searched.
 
 metrics_generator:
     registry:
@@ -49,8 +58,11 @@ metrics_generator:
         remote_write:
             - url: http://prometheus:9090/api/v1/write
               send_exemplars: true
+    traces_storage:
+        path: /tmp/tempo/generator/traces
 
 overrides:
     defaults:
         metrics_generator:
             processors: [service-graphs, span-metrics] # enables metrics generator
+            generate_native_histograms: both

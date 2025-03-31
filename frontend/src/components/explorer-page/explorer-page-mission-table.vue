@@ -233,7 +233,7 @@ const missingTags = (row: MissionWithFilesDto): TagDto[] => {
 const missingTagsText = (row: MissionWithFilesDto): string => {
     const _missionTags = missingTags(row);
     if (_missionTags.length === 1) {
-        return `1 Tag missing`;
+        return `1 Metadata missing`;
     }
     return `${_missionTags.length.toString()} Metadata missing`;
 };

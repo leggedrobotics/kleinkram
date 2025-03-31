@@ -1,35 +1,67 @@
 # Kleinkram Actions
 
-Actions are custom scripts that can be run on the Kleinkram platform. They are used to process and verify data uploaded
-to Kleinkram. Actions are run in a docker container and can be written in any language.
+Actions are custom scripts executed within Docker containers on the Kleinkram platform. They enable data processing and
+verification for uploaded content. Actions can be written in any programming language and may utilize a GPU for
+acceleration.
 
-[--> How to write custom actions](write-custom-actions.md)
+[--> Writing Custom Actions](write-custom-actions.md)
 
-## Artifacts / Output Files
+## Storage, Disk Space, and Memory
 
-When the docker container terminates, successfully or not, all files within the `/out` directory are uploaded to google
-drive. A link, granting access to the respective folder is provided in the action's result. Don't put excessively large
-files in the /out directory or the upload will time out.
+By default, files within a Kleinkram action reside in the container's memory, contributing to its memory limit.
 
-## Storage, Disk Space and Memory
+All data within the action's container is temporary and deleted upon completion. To persist data as
+artifacts, store them in the `/out` directory. See [Artifacts and Output Files](#artifacts-and-output-files) for more
+details.
 
-By default, all files stored inside a Kleinkram action live in the host's memory and count towards the memory limit of
-the action. We provide the `/tmp_disk` directory which is a mounted volume from the host's disk. Files stored
-inside `/tmp_disk` do not count towards the memory limit of the action.
+::: tip Use `/tmp_disk` for Large Datasets
+To manage larger datasets or avoid memory limitations, utilize the `/tmp_disk` directory. This directory is a mounted
+volume from the host's disk, and files stored here do not impact the action's memory usage.
+:::
 
-All data stored inside a Kleinkram action is deleted after the action finishes. If you want to keep data as an artifact,
-you need to store it in the `/out` directory. See the [Artifacts](#artifacts) section for more information.
+### Artifacts and Output Files
 
-## Limitations of Actions
+Upon container termination (successful or failed), all files within the `/out` directory are uploaded to Google Drive. A
+shareable link to the resulting folder is provided in the action's result. Output files are kept for three months before
+being deleted.
 
-Actions provide great flexibility but are subject to the following limitations:
+::: tip Avoid Large Artifacts
+Avoid placing excessively large files in `/out` to prevent upload timeouts.
+:::
 
-- Actions can only run for a limited time
-- Actions can only use a limited amount of memory
-- Actions can request GPU support via Nvidia docker (requested on submission)
-- The access rights of actions are limited to the project they are run in
+## Action Limitations
 
-## How to Launch an Action
+While actions provide powerful customization, they are subject to the following constraints:
 
-Action can be launched via the Webinterface of Kleinkram. If you want to save an action as a template for later use,
-you can do so by clicking the "Save New Template" button. To launch an action, click on "Submit Action".
+- **Execution Time Limits:** Actions have a maximum runtime. Configurable via the web interface.
+- **Memory Limits:** Actions are allocated a specific memory quota. Configurable via the web interface.
+- **GPU Support:** GPU acceleration is available
+  via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html),
+  requested during action submission.
+- **Access Scoping:** Actions are confined to the project they are executed within,
+  see [Action Access Rights](#action-access-rights)
+  for more details.
+
+## Action Execution
+
+Actions are launched through the Kleinkram web interface.
+
+- **Templates:** Save frequently used actions as templates by clicking "Save New Template" for later reuse.
+- **Submission:** Initiate action execution by clicking "Submit Action."
+
+### Action Access Rights
+
+Actions operate with project-level access controls:
+
+- **`Read`:** Actions can only read data within the project and its missions.
+- **`Create`:** Actions can read and create new data within the project and its missions (no modification).
+- **`Write`:** Actions can read, create, and modify data within the project and its missions.
+- **`Delete`:** Actions can read, create, modify, and delete data within the project and its missions.
+
+**Project-Wide Access:** Actions have access to all missions within the project they are launched from.
+
+::: tip Move Data Between Projects
+Actions cannot directly access missions from other projects. To transfer data between
+projects, create a new mission within the same project and then manually copy the data to another project by moving the
+mission to the target project once the action is completed.
+:::

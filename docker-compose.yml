@@ -6,9 +6,20 @@ services:
             context: .
             dockerfile: backend/Dockerfile
 
-        volumes:
-            - ./backend:/usr/src/app/backend
-            - ./common:/usr/src/app/common
+        develop:
+            watch:
+                - action: sync
+                  path: ./common
+                  target: /usr/src/app/common
+                  ignore:
+                      - node_modules/
+                      - dist/
+                - action: sync
+                  path: ./backend
+                  target: /usr/src/app/backend
+                  ignore:
+                      - node_modules/
+                      - dist/
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -142,10 +153,6 @@ services:
             dockerfile: queueConsumer/Dockerfile
 
         volumes:
-            - ./queueConsumer:/usr/src/queueConsumer
-            - ./common:/usr/src/common
-            - /usr/src/queueConsumer/node_modules
-            - /usr/src/queueConsumer/dist
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
 
@@ -154,6 +161,13 @@ services:
                 - action: sync
                   path: ./queueConsumer
                   target: /usr/src/queueConsumer
+                  ignore:
+                      - node_modules/
+                      - dist/
+
+                - action: sync
+                  path: ./common
+                  target: /usr/src/common
                   ignore:
                       - node_modules/
                       - dist/
@@ -262,7 +276,7 @@ services:
         image: prometheuscommunity/postgres-exporter
         container_name: kleinkram-postgres-exporter
         ports:
-            - 9187:9187
+            - '9187:9187'
         env_file:
             - .env
         links:

@@ -37,7 +37,7 @@
                                 clearable
                                 multiple
                                 use-chips
-                                :options="data !== undefined ? data.data : []"
+                                :options="data !== undefined ? data : []"
                                 emit-value
                                 map-options
                                 class="full-width"

@@ -23,7 +23,6 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
-        // @ts-ignore
         new BatchSpanProcessor(exporter, {
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
@@ -136,7 +135,7 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
- 
+
 export function tracing<A extends unknown[], C>(
     traceName = '',
 ):

@@ -49,7 +49,7 @@
                         flat
                         color="primary"
                         icon="sym_o_sell"
-                        label="Metadata"
+                        label="Edit Metadata"
                     >
                         <q-tooltip> Manage Metadata</q-tooltip>
                     </q-btn>

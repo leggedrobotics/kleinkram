@@ -121,6 +121,10 @@ label {
     line-height: 16px;
 }
 
+.q-btn-dropdown span {
+    color: $text-secondary;
+}
+
 .q-placeholder:placeholder-shown {
     color: $text-placeholder;
 }

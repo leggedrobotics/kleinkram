@@ -128,7 +128,6 @@ export class ProjectService {
                     : baseQuery.andWhere(
                           `project.${key} ILIKE :${index.toString()}`,
                           {
-                               
                               [index]: `%${searchParameters[key].toString()}%`,
                           },
                       );

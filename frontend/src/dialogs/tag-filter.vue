@@ -14,15 +14,11 @@
             </div>
             <div class="q-mt-md row">
                 <div class="col-12">
-                    <q-table
-                        :rows="data?.data ?? []"
-                        :columns="columns as any"
-                        row-key="uuid"
-                        wrap-cells
-                        flat
-                        bordered
+                    <MetadataTypeTable
+                        :rows="data ?? []"
+                        :columns="columns"
                         :filter="tagtype"
-                        @row-click="tagTypeSelected"
+                        @row-selected="tagTypeSelected"
                     />
                 </div>
             </div>
@@ -31,51 +27,12 @@
                 :key="tagTypeUUID"
                 class="q-mt-md row"
             >
-                <div class="col-2">
-                    {{ tagValues[tagTypeUUID].name }}
-                </div>
-                <div v-if="tagLookup[tagTypeUUID]" class="col-2">
-                    <q-input
-                        v-if="
-                            tagLookup[tagTypeUUID].datatype !== DataType.BOOLEAN
-                        "
-                        v-model="tagValues[tagTypeUUID].value"
-                        label="Enter Filter Value"
-                        outlined
-                        dense
-                        clearable
-                        required
-                        :type="
-                            // @ts-ignore
-                            DataType_InputType[
-                                tagLookup[tagTypeUUID].datatype
-                            ] ?? 'text'
-                        "
-                        @clear="() => delete tagValues[tagTypeUUID]"
-                    />
-                    <q-toggle
-                        v-if="
-                            tagLookup[tagTypeUUID].datatype === DataType.BOOLEAN
-                        "
-                        v-model="tagValues[tagTypeUUID].value"
-                        :label="
-                            tagValues[tagTypeUUID] === undefined
-                                ? '-'
-                                : tagValues[tagTypeUUID]
-                                  ? 'True'
-                                  : 'False'
-                        "
-                        outlined
-                        dense
-                        required
-                        flat
-                        style="width: 100%"
-                        :options="[
-                            { label: 'True', value: true },
-                            { label: 'False', value: false },
-                        ]"
-                    />
-                </div>
+                <MetadataFilterInput
+                    :tag-type-uuid="tagTypeUUID"
+                    :tag-lookup="tagLookup"
+                    :tag-values="tagValues"
+                    @update:tag-values="updateTagValues"
+                />
             </div>
             <div class="q-mt-md row">
                 <div class="col-10" />
@@ -91,11 +48,13 @@
 </template>
 
 <script setup lang="ts">
-import { QTable, useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
 import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { useAllTags } from '../hooks/query-hooks';
+import MetadataFilterInput from '@components/metadata-filter-input.vue';
+import MetadataTypeTable from '@components/metadata-type-table.vue';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
@@ -104,8 +63,7 @@ const properties = defineProps<{
 }>();
 
 const tagtype = ref<string>('');
-// @ts-ignore
-const tagValues = ref<Record<string, any>>({ ...properties.tagValues } || {});
+const tagValues = ref<Record<string, any>>({ ...properties.tagValues });
 
 const convertedTagValues = computed(() => {
     const converted: Record<string, any> = {};
@@ -164,25 +122,11 @@ const { data } = useAllTags();
 
 const tagLookup = computed(() => {
     const lookup: Record<string, TagTypeDto> = {};
-    for (const tag of data.value?.data ?? []) {
+    for (const tag of data.value ?? []) {
         lookup[tag.uuid] = tag;
     }
     return lookup;
 });
-
-const DataType_InputType = {
-    [DataType.STRING]: 'text',
-    [DataType.NUMBER]: 'number',
-    [DataType.BOOLEAN]: 'checkbox',
-    [DataType.DATE]: 'date',
-    [DataType.LOCATION]: 'text',
-};
-
-function tagTypeSelected(event: any, row: TagTypeDto) {
-    if (!tagValues.value.hasOwnProperty(row.uuid)) {
-        tagValues.value[row.uuid] = { value: undefined, name: row.name };
-    }
-}
 
 const columns = [
     {
@@ -201,9 +145,17 @@ const columns = [
     },
 ];
 
+const tagTypeSelected = (row: TagTypeDto): void => {
+    if (!tagValues.value.hasOwnProperty(row.uuid)) {
+        tagValues.value[row.uuid] = { value: undefined, name: row.name };
+    }
+};
+
+const updateTagValues = (newTagValues: Record<string, any>): void => {
+    tagValues.value = newTagValues;
+};
+
 const applyAction = (): void => {
     onDialogOK(convertedTagValues);
 };
 </script>
-
-<style scoped></style>

@@ -17,7 +17,7 @@
                         flat
                         color="primary"
                         icon="sym_o_sell"
-                        label="Metadata"
+                        label="Enforce Metadata"
                         :disable="!projectUuid"
                     />
                 </ConfigureTagsDialogOpener>
