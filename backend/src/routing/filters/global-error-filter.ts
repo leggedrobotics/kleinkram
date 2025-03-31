@@ -23,6 +23,12 @@ export class GlobalErrorFilter implements ExceptionFilter {
         response.header('kleinkram-version', appVersion);
         response.header('Access-Control-Expose-Headers', 'kleinkram-version');
 
+        logger.error(
+            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion}`,
+        );
+        logger.error(exception);
+        logger.error(exception.stack);
+
         if (exception instanceof BadRequestException) {
             const resp: any = exception.getResponse();
 
