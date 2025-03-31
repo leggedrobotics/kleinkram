@@ -2,7 +2,7 @@ import { clearAllData, db as database } from '../../utils/database-utilities';
 
 import {
     HeaderCreator,
-} from '../../utils/api_calls';
+} from '../../utils/api-calls';
 
 import {
     AccessGroupRights,

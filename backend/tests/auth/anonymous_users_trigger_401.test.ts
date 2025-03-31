@@ -1,5 +1,6 @@
 import * as assert from 'node:assert';
 import { getEndpoints } from '../utils/endpoints';
+import { HeaderCreator } from '../utils/api-calls';
 
 const UNAUTHENTICATED_ENDPOINTS = new Set([
     '/auth/google',
@@ -29,8 +30,12 @@ describe('Unauthenticated users trigger 401', () => {
         if (UNAUTHENTICATED_ENDPOINTS.has(endpoint.url)) continue;
 
         test(`test if rejects unauthorized request (401): \t${endpoint.method.toUpperCase()}\t ${endpoint.url}`, async () => {
+            
+            const headersBuilder = new HeaderCreator();
+            headersBuilder.addHeader('Content-Type', 'application/json');
             const res = await fetch(`http://localhost:3000${endpoint.url}`, {
                 method: endpoint.method,
+                headers: headersBuilder.getHeaders(),
             });
             assert.equal(
                 res.status,

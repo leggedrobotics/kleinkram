@@ -4,7 +4,7 @@ import {
     createProjectUsingPost,
     HeaderCreator,
     createMissionUsingPost,
-} from '../../utils/api_calls';
+} from '../../utils/api-calls';
 
 import {
     AccessGroupRights
@@ -148,7 +148,7 @@ describe('Verification project endpoint', () => {
     });
 
     test('if it is not possible to create a project with the same name', async () => {
-        const header = new HeaderCreator(globalThis.creator, undefined);
+        const header = new HeaderCreator(globalThis.creator);
         const response = await fetch(
             `${DEFAULT_URL}/project`,
             {
@@ -166,7 +166,7 @@ describe('Verification project endpoint', () => {
     test('if user with leggedrobotics email have read only access by default', async () => {
         
         // get project with user 2
-        const header = new HeaderCreator(globalThis.user,  undefined);
+        const header = new HeaderCreator(globalThis.user);
         const response = await fetch(
             `${DEFAULT_URL}/projects/${globalThis.projectUuid}`,
             {
@@ -219,7 +219,7 @@ describe('Verification project endpoint', () => {
     test('the creator of a project has delete access to the project', async () => {
 
         // delete the project
-        const headerCreator = new HeaderCreator(globalThis.creator, undefined);
+        const headerCreator = new HeaderCreator(globalThis.creator);
         const url = `${DEFAULT_URL}/projects/${globalThis.projectUuid}`;
         const response = await fetch(url, {
             method: 'DELETE',
@@ -251,7 +251,7 @@ describe('Verification project endpoint', () => {
         );
 
         // check if project can be manipulated by user2
-        const headerCreator = new HeaderCreator(globalThis.user, undefined);
+        const headerCreator = new HeaderCreator(globalThis.user);
         const response = await fetch(
             `${DEFAULT_URL}/projects/${projectUuid}`,
             {
@@ -306,7 +306,7 @@ describe('Verification project endpoint', () => {
             globalThis.creator,
         );
 
-        const headerCreator = new HeaderCreator(undefined, globalThis.userToken);
+        const headerCreator = new HeaderCreator(globalThis.user);
         headerCreator.addHeader('Content-Type', 'application/json');
         
         const response = await fetch(
@@ -334,7 +334,7 @@ describe('Verification project endpoint', () => {
         expect(response.status).toBe(200);
 
 
-        const headersBuilder = new HeaderCreator(globalThis.user, undefined);
+        const headersBuilder = new HeaderCreator(globalThis.user);
         headersBuilder.addHeader('Content-Type', 'application/json');
 
         // check if project can be deleted by user
@@ -413,7 +413,7 @@ describe('Verification project endpoint', () => {
         console.log(`[DEBUG]: Mission created with UUID: ${missionUuid}`);
 
         // denied permission to delete project because of mission
-        const creatorHeader = new HeaderCreator(globalThis.creator, undefined);
+        const creatorHeader = new HeaderCreator(globalThis.creator);
         creatorHeader.addHeader('Content-Type', 'application/json');
         const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`,
             {
@@ -454,7 +454,7 @@ describe('Verification project endpoint', () => {
         console.log(`[DEBUG]: Mission deleted with UUID ${missionUuid}`);
 
         // check if project can not be deleted by user
-        const userHeader = new HeaderCreator(globalThis.user, undefined);
+        const userHeader = new HeaderCreator(globalThis.user);
         userHeader.addHeader('Content-Type', 'application/json');
         const response2 = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`,
             {
@@ -483,7 +483,7 @@ describe('Verification project endpoint', () => {
     test('the creator can add users to with DELETE access to the project during creation', async () => {
 
         // create project with delete access for user2
-        const headerCreator = new HeaderCreator(globalThis.user, undefined);
+        const headerCreator = new HeaderCreator(globalThis.user);
         headerCreator.addHeader('Content-Type', 'application/json');
 
         const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
@@ -538,7 +538,7 @@ describe('Verification project endpoint', () => {
         console.log(`[DEBUG]: Mission created with UUID: ${missionUuid}`);
 
         // denied permission to delete project because of mission
-        const creatorHeader = new HeaderCreator(globalThis.creator, undefined);
+        const creatorHeader = new HeaderCreator(globalThis.creator);
         creatorHeader.addHeader('Content-Type', 'application/json');
 
         const response = await fetch(`${DEFAULT_URL}/projects/${globalThis.projectUuid}`,

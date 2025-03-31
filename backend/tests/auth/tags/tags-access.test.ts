@@ -5,7 +5,7 @@ import {
 
 import {
     createMetadataUsingPost
-} from '../../utils/api_calls';
+} from '../../utils/api-calls';
 
 import {
     generateAndFetchDatabaseUser,
