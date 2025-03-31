@@ -2,7 +2,6 @@ import { clearAllData, db as database } from '../../utils/database-utilities';
 
 import {
     AccessGroupRights,
-    AccessGroupType,
     DataType,
 } from '../../../../common/frontend_shared/enum';
 
@@ -11,15 +10,23 @@ import Project from '../../../../common/entities/project/project.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import {DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 import User from '@common/entities/user/user.entity';
-import { createAccessGroupUsingPost, createMetadataUsingPost, createProjectUsingPost, HeaderCreator } from 'tests/utils/api_calls';
+import {
+    createMetadataUsingPost,
+    createProjectUsingPost,
+    HeaderCreator,
+} from '../../utils/api_calls';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
 
+globalThis.tagName = 'test_tag_STRING';
+
 /**
- * This test suite tests the access control of the application.
- *
+ * This test suite tests the edit endpoint of project control of the application.
+ * url: http://localhost:8003/projects --> edit project
+ * 
  */
 
 describe('Verify project manipulation endpoints', () => {
+
     beforeAll(async () => {
         await database.initialize();
         await clearAllData();
@@ -42,22 +49,6 @@ describe('Verify project manipulation endpoints', () => {
             res: globalThis.userResponse
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
-        
-        // Create external user
-        ({
-            user: globalThis.externalUser as User, 
-            token: globalThis.externalUser.token, 
-            res: globalThis.externalUser.response
-        } = await generateAndFetchDatabaseUser('external', 'user'));
-        console.log(`[DEBUG]: Global external user: ${globalThis.externalUser.name}`);
-        
-        // Create admin user
-        ({
-            user: globalThis.admin as User, 
-            token: globalThis.admin.token, 
-            res: globalThis.admin.response
-        } = await generateAndFetchDatabaseUser('internal', 'admin'));
-        console.log(`[DEBUG]: Global admin: ${globalThis.admin.name}`);
 
     });
 
@@ -68,16 +59,43 @@ describe('Verify project manipulation endpoints', () => {
             where: { name: globalThis.creator.name },
         });
 
+        // get access group for user
+        const accessGroupUser = await accessGroupRepository.findOneOrFail({
+            where: { name: globalThis.user.name },
+        });
+
+        // create tag
+        globalThis.metadataUuid = await createMetadataUsingPost(
+            {
+                type: DataType.STRING,
+                name: globalThis.tagName,
+            },
+            globalThis.creator,
+        );
+
+        // check if it is generated
+        const tagTypeRepository = database.getRepository<TagType>('TagType');
+        const tagTypes = await tagTypeRepository.findOneOrFail({
+            where: {uuid: globalThis.metadataUuid}
+        });
+        expect(await tagTypeRepository.count()).toBe(1);
+        expect(tagTypes.uuid).toBe(globalThis.metadataUuid);
+        expect(tagTypes.name).toBe(globalThis.tagName);
+
         // generate project with creator
         globalThis.projectUuid = await createProjectUsingPost(
             {
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [],
+                requiredTags: [globalThis.metadataUuid],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
                         accessGroupUUID: accessGroupCreator.uuid,
+                    },
+                    {
+                        rights: AccessGroupRights.READ,
+                        accessGroupUUID: accessGroupUser.uuid,
                     },
                 ],
             },
@@ -89,7 +107,6 @@ describe('Verify project manipulation endpoints', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: globalThis.projectUuid },
         });
-
         expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
         expect(project.uuid).toBe(globalThis.projectUuid);
@@ -127,6 +144,15 @@ describe('Verify project manipulation endpoints', () => {
         
         expect(remainingProjects.length).toBe(0);
         console.log(`[DEBUG]: All Projects removed: ${response}`);
+
+        // delete tags
+        const tagsRepository = database.getRepository<TagType>('TagType');
+        const allTagss = await tagsRepository.find();
+        const metadataResponse = await tagsRepository.remove(allTagss);
+        const remainingTags = await tagsRepository.find();
+        
+        expect(remainingTags.length).toBe(0);
+        console.log(`[DEBUG]: All Metadata removed: ${metadataResponse}`);
     });
 
     afterAll(async () => {
@@ -137,180 +163,98 @@ describe('Verify project manipulation endpoints', () => {
    // metadata/access manipulation
 
     test('if metadata can be added to project by creator of project', async () => {
-
-        // create tag
-        const tagUuid = await createMetadataUsingPost(
-            {
-                type: DataType.STRING,
-                name: 'test_tag',
-            },
-            globalThis.creator,
-        );
-
-        const tagTypeRepository = database.getRepository('TagType');
-        const tagTypes = await tagTypeRepository.find();
-        expect(tagTypes.length).toBe(1);
-
-        expect(tagTypes.length).toBe(1);
-        expect(tagTypes[0]?.['uuid']).toBe(tagUuid);
-        expect(tagTypes[0]?.['name']).toBe('test_tag');
-        expect(tagTypes[0]?.['datatype']).toBe('STRING');
-
-        // create project with tag as metadata
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                requiredTags: [tagUuid],
-            },
-            globalThis.creator,
-        );
-
-        const projectRepository = database.getRepository<Project>('Project');
-        const projects = await projectRepository.findAndCount();
-        expect(projects[1]).toBe(1);
-        expect(projects[0][0]?.uuid).toBe(projectUuid);
-
-        const tagRepository = database.getRepository<TagType>('TagType');
-        const project_tags = await tagRepository.find({
-            where: {uuid: tagUuid}
-        }
-        );
-
-        console.log(
-            '[DEBUG]: Tag uuid:',
-            project_tags[0]?.uuid ?? 'No tags found.',
-        );
-
-        expect(project_tags.length).toBe(1);
-        expect(project_tags[0]?.uuid).toBe(tagUuid);
+        // check if link between project and TagType is correct
+        const TagTypeRepository = database.getRepository<TagType>('TagType');
+        const tagType = await TagTypeRepository.findOneOrFail({
+            where: { uuid: globalThis.metadataUuid },
+            relations: ['project']
+        });
+        expect(tagType.name).toBe(globalThis.tagName);
+        expect(tagType.uuid).toBe(globalThis.metadataUuid);
+        expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
     });
 
     test('if project metadata can be added by creator of project', async () => {
-        const { user: user } = await generateAndFetchDatabaseUser(
-            'internal',
-            'user',
-        );
 
         // create tag
-        const tagUuid = await createMetadataUsingPost(
+        const name = 'second_test_tag_STRING';
+        const metadataUuid = await createMetadataUsingPost(
             {
                 type: DataType.STRING,
-                name: 'test_tag',
+                name: name,
             },
-            user,
+            globalThis.user,
         );
 
-        const tagTypeRepository = database.getRepository<TagType>('TagType');
-        const tagTypes = await tagTypeRepository.find();
-        expect(tagTypes.length).toBe(1);
-
-        expect(tagTypes.length).toBe(1);
-        expect(tagTypes[0]?.['uuid']).toBe(tagUuid);
-        expect(tagTypes[0]?.['name']).toBe('test_tag');
-        expect(tagTypes[0]?.['datatype']).toBe('STRING');
-
-        // create project with tag as metadata
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-            },
-            user,
-        );
-
-        const projectRepository = database.getRepository<Project>('Project');
-        const projects = await projectRepository.findAndCount();
-        expect(projects[1]).toBe(1);
-        expect(projects[0][0]?.uuid).toBe(projectUuid);
-
-        const headersBuilder = new HeaderCreator(user);
+        const headersBuilder = new HeaderCreator(globalThis.creator);
         headersBuilder.addHeader('Content-Type', 'application/json');
 
-        const res = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}/updateTagTypes`,
+        const response = await fetch(
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/updateTagTypes`,
             {
                 method: 'POST',
                 headers: headersBuilder.getHeaders(),
-                body: JSON.stringify({ tagTypeUUIDs: [tagUuid] }),
+                body: JSON.stringify({
+                    tagTypeUUIDs: [
+                        metadataUuid, 
+                        globalThis.metadataUuid
+                    ] 
+                }),
             },
         );
 
-        const projectTag = await tagTypeRepository.find({
-            where: { uuid: tagUuid },
+        const TagTypeRepository = database.getRepository<TagType>('TagType');
+        const tagType = await TagTypeRepository.findOneOrFail({
+            where: { uuid: metadataUuid },
+            relations: ['project']
         });
-
-        console.log('[DEBUG]: Created project tag:', projectTag);
-        expect(projectTag[0]?.uuid).toBe(tagUuid);
-        expect(res.status).toBeLessThan(300);
+        expect(tagType.name).toBe(name);
+        expect(tagType.uuid).toBe(metadataUuid);
+        expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
+        expect(response.status).toBeLessThan(300);
     });
 
     test('if access management of project can be edited by creator', async () => {
-        // TODO: implement this test
-        const { user: creator } = await generateAndFetchDatabaseUser(
-            'internal',
-            'user',
-        );
-        const { user: addedUser } = await generateAndFetchDatabaseUser(
-            'internal',
-            'user',
-        );
-        const rights = AccessGroupRights.READ;
-        const groupName = 'test_access_group';
 
-        // create access group
-        const groupUuid = await createAccessGroupUsingPost(
-            {
-                name: groupName,
-            },
-            creator,
-            [addedUser],
-        );
-        console.log('[DEBUG]: Group uuid:', groupUuid);
+        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupUser = await accessGroupRepository.findOneOrFail({
+            where: { name: globalThis.user.name },
+        });
+        const accessGroupCreator = await accessGroupRepository.findOneOrFail({
+            where: { name: globalThis.creator.name },
+        });
 
-        // create project with new access right for access group
-        const projectUuid = await createProjectUsingPost(
-            {
-                name: 'test_project',
-                description: 'This is a test project',
-                accessGroups: [
-                    {
-                        rights: rights,
-                        accessGroupUUID: groupUuid,
-                    },
-                ],
-            },
-            creator,
-        );
-
-        // check if project is created
-        const projectRepository = database.getRepository<Project>('Project');
-        const [projects, count] = await projectRepository.findAndCount();
-        expect(count).toBe(1);
-        expect(projects[0]?.uuid).toBe(projectUuid);
-
-        // check if access group has access to project
+        // check if access group has correct access to project
         const projectAccessRepository =
             database.getRepository<ProjectAccess>('project_access');
-        const projectAccess = await projectAccessRepository.findOneOrFail({
-            where: { accessGroup: { uuid: groupUuid } },
+        const projectUserAccess = await projectAccessRepository.findOneOrFail({
+            where: { accessGroup: { uuid: accessGroupUser.uuid } },
             relations: ['accessGroup'],
         });
-        console.log(
-            '[DEBUG]: Project access group uuid:',
-            projectAccess.accessGroup?.uuid,
-        );
-        console.log('[DEBUG]: Group uuid:', groupUuid);
-        expect(projectAccess.accessGroup?.uuid).toBe(groupUuid);
-        expect(projectAccess.rights).toBe(rights);
+
+        const projectCreatorAccess = await projectAccessRepository.findOneOrFail({
+            where: { accessGroup: { uuid: accessGroupCreator.uuid } },
+            relations: ['accessGroup'],
+        });
+
+        console.log('[DEBUG]: Access group USER:', accessGroupUser);
+        console.log('[DEBUG]: Project access USER:', projectUserAccess);
+        console.log('[DEBUG]: Access group CREATOR:', accessGroupCreator);
+        console.log('[DEBUG]: Project access CREATOR:', projectCreatorAccess);
+
+        expect(projectUserAccess.accessGroup?.uuid).toBe(accessGroupUser.uuid);
+        expect(projectUserAccess.rights).toBe(AccessGroupRights.READ);
+
+        expect(projectCreatorAccess.accessGroup?.uuid).toBe(accessGroupCreator.uuid);
+        expect(projectCreatorAccess.rights).toBe(AccessGroupRights.DELETE,);
 
         // edit access rights for access group
-        const headersBuilder = new HeaderCreator(creator);
+        const headersBuilder = new HeaderCreator(globalThis.creator);
 
         // check first if not all access groups with delete access can be deleted
         headersBuilder.addHeader('Content-Type', 'application/json');
-        const res1 = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}/access`,
+        const failResponse = await fetch(
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/access`,
             {
                 method: 'POST',
                 headers: headersBuilder.getHeaders(),
@@ -318,25 +262,19 @@ describe('Verify project manipulation endpoints', () => {
                     {
                         memberCount: 2,
                         rights: AccessGroupRights.WRITE,
-                        type: AccessGroupType.CUSTOM,
-                        uuid: groupUuid,
+                        type: accessGroupCreator.type,
+                        uuid: accessGroupCreator.uuid,
                     },
                 ]),
             },
         );
-        expect(res1.status).toBe(409);
-
-        const accessGroupRepository =
-            database.getRepository<AccessGroup>('access_group');
-        const accessGroupCreator = await accessGroupRepository.findOneOrFail({
-            where: { name: creator.name },
-        });
+        expect(failResponse.status).toBe(409);
 
         console.log('[DEBUG]: Access group creator:', accessGroupCreator);
 
         // change read access to write access
-        const res = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}/access`,
+        const response = await fetch(
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/access`,
             {
                 method: 'POST',
                 headers: headersBuilder.getHeaders(),
@@ -344,9 +282,9 @@ describe('Verify project manipulation endpoints', () => {
                     {
                         memberCount: 2,
                         rights: AccessGroupRights.WRITE,
-                        type: AccessGroupType.CUSTOM,
-                        uuid: groupUuid,
-                        name: groupName,
+                        type: accessGroupUser.type,
+                        uuid: accessGroupUser.uuid,
+                        name: accessGroupUser.name,
                     },
                     {
                         memberCount: 1,
@@ -358,22 +296,16 @@ describe('Verify project manipulation endpoints', () => {
                 ]),
             },
         );
-        const json = await res.json();
+        const json = await response.json();
         console.log('[DEBUG]: Response status:', json);
-        expect(res.status).toBe(201);
+        expect(response.status).toBe(201);
 
         const projectGroup = await projectAccessRepository.findOneOrFail({
-            where: { accessGroup: { uuid: groupUuid } },
+            where: { accessGroup: { uuid: accessGroupUser.uuid } },
             relations: ['accessGroup'],
         });
 
-        expect(projectGroup.accessGroup?.uuid).toBe(groupUuid);
+        expect(projectGroup.accessGroup?.uuid).toBe(accessGroupUser.uuid);
         expect(projectGroup.rights).toBe(AccessGroupRights.WRITE);
-    });
-
-    test('if access management of project can be edited by users with edit or higher access', async () => {
-        // TODO: implement this test
-
-        expect(true).toBe(true);
     });
 });
