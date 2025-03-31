@@ -191,12 +191,6 @@ export class QueueService implements OnModuleInit {
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
 
-        // abort if autoConvert is disabled
-        if (!file.mission?.project?.autoConvert) {
-            logger.debug(`Skip auto convert to mcap`);
-            return;
-        }
-
         queue.state = QueueState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);
 

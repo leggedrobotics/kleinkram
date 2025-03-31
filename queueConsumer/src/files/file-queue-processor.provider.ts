@@ -195,14 +195,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             mcapSize = fs.statSync(temporaryFileName).size;
         }
 
-        let bagHash = '';
         let mcapHash = '';
-        if (sourceIsBag) {
-            bagHash = filehash;
-        } else {
-            mcapHash = filehash;
-        }
-
         queue.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         const __queue = await this.queueRepository.save(queue);
 
@@ -236,13 +229,26 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         });
         if (md5 && md5 !== filehash) {
             existingFileEntity.state = FileState.CORRUPTED;
+            existingFileEntity.hash = filehash;
             await this.fileRepository.save(existingFileEntity);
             throw new Error(
                 `File ${originalFileName ?? 'N/A'} is corrupted: MD5 mismatch. Expected ${md5}, got ${filehash}`,
             );
+        } else if (existingFileEntity !== undefined) {
+            existingFileEntity.hash = filehash;
+            await this.fileRepository.save(existingFileEntity);
         }
+
         let mcapExists = false;
         const mcapFilename = originalFileName.replace('.bag', '.mcap');
+
+        // exit if autoConvert is disabled
+        if (!queue.mission.project.autoConvert) {
+            logger.debug(
+                `AutoConvert is disabled, skipping conversion for ${originalFileName}`,
+            );
+            return false;
+        }
 
         // convert to bag and upload to minio
         if (sourceIsBag) {
@@ -354,7 +360,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // Update recording date
         ////////////////////////////////////////////////////////////////
         if (sourceIsBag && bagFileEntity !== undefined) {
-            bagFileEntity.hash = bagHash;
             bagFileEntity.size = bagSize;
             bagFileEntity.date = date;
             bagFileEntity.state = job.data.recovering
