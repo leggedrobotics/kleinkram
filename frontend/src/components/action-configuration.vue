@@ -85,7 +85,9 @@
                         </q-chip>
                     </div>
                 </div>
-                <span class="text-h5" style="margin-top: 32px">Define the Action</span>
+                <span class="text-h5" style="margin-top: 32px"
+                    >Define the Action</span
+                >
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
                         <label for="dockerImage">Define the Action</label>
@@ -703,12 +705,15 @@ watch(
     },
 );
 
-const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label:
-        accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights] ??
-        '',
-    value: Number.parseInt(key, 10),
-}));
+const options = Object.keys(accessGroupRightsMap)
+    .filter((key) => Number.parseInt(key) !== AccessGroupRights._ADMIN)
+    .map((key) => ({
+        label:
+            accessGroupRightsMap[
+                Number.parseInt(key, 10) as AccessGroupRights
+            ] ?? '',
+        value: Number.parseInt(key, 10),
+    }));
 
 function submitNewAction(): void {
     _open.value = false;
