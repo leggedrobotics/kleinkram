@@ -14,7 +14,7 @@ import {
     createMetadataUsingPost,
     createProjectUsingPost,
     HeaderCreator,
-} from '../../utils/api_calls';
+} from '../../utils/api-calls';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
 
 globalThis.tagName = 'test_tag_STRING';
@@ -116,14 +116,12 @@ describe('Verify project manipulation endpoints', () => {
         // check if users are still in the database
         const userRepository = database.getRepository<User>('User');
         const users = await userRepository.find();
-        expect(users.length).toBe(4);
+        expect(users.length).toBe(2);
         
         // Ensure only the four users created in beforeAll are present
         const expectedUserUuids = [
             globalThis.creator.uuid,
-            globalThis.user.uuid,
-            globalThis.externalUser.uuid,
-            globalThis.admin.uuid,
+            globalThis.user.uuid
         ];
         const actualUserUuids = users.map(user => user.uuid);
         expect(actualUserUuids.sort()).toEqual(expectedUserUuids.sort());

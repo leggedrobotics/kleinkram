@@ -1,23 +1,5 @@
 import { clearAllData, db as database } from '../../utils/database-utilities';
 
-import {
-    createProjectUsingPost,
-    HeaderCreator,
-    createMetadataUsingPost,
-    createAccessGroupUsingPost
-} from '../../utils/api_calls';
-
-import {
-    AccessGroupRights,
-    AccessGroupType,
-    DataType,
-} from '../../../../common/frontend_shared/enum';
-
-import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
-import Project from '../../../../common/entities/project/project.entity';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import {DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
-
 /**
  * This test suite tests the access control of the application.
  *

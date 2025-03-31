@@ -1,3 +1,4 @@
+import { HeaderCreator } from '../../utils/api-calls';
 import { clearAllData, db as database } from '../../utils/database-utilities';
 import process from 'node:process';
 
@@ -16,12 +17,14 @@ describe('Verify JWT Handling', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const jwt = require('jsonwebtoken');
         const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
-
+        
+        const headersBuilder = new HeaderCreator();
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        headersBuilder.addHeader('cookie', `authtoken=${token}`,);
+        
         const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
+            headers: headersBuilder.getHeaders(),
             body: JSON.stringify({
                 name: 'test_project',
                 description: 'This is a test project',
@@ -40,11 +43,13 @@ describe('Verify JWT Handling', () => {
             process.env['JWT_SECRET'],
         );
 
+        const headersBuilder = new HeaderCreator();
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        headersBuilder.addHeader('cookie', `authtoken=${token}`,);
+
         const res = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
-            headers: {
-                cookie: `authtoken=${token}`,
-            },
+            headers: headersBuilder.getHeaders(),
             body: JSON.stringify({
                 name: 'test_project',
                 description: 'This is a test project',

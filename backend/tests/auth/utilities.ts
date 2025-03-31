@@ -7,7 +7,7 @@ import { db as database,
 
 import{
     HeaderCreator
-} from '../utils/api_calls';
+} from '../utils/api-calls';
 
 
  import {
@@ -127,7 +127,7 @@ export const generateAndFetchDatabaseUser = async (
         const token = await getJwtToken(user);
 
         // Header
-        const headerCreator = new HeaderCreator(undefined, token);
+        const headerCreator = new HeaderCreator(user);
         
         const res = await fetch(
             `${DEFAULT_URL}/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,

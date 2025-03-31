@@ -1,5 +1,3 @@
-import { db, getJwtToken } from './database-utilities';
-
 import { CreateMission } from '@common/api/types/create-mission.dto';
 
 import QueueEntity from '@common/entities/queue/queue.entity';
@@ -15,6 +13,7 @@ import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 import { DEFAULT_URL } from '../auth/utilities';
+import { db, getJwtToken } from './database-utilities';
 
 export class HeaderCreator {
     headers: Headers;
@@ -22,19 +21,12 @@ export class HeaderCreator {
      * Creates a HeadersBuilder instance and initializes headers.
      *
      * @param {User} user - The authenticated user whose token is used in headers.
-     * @param {string} jwtToken - (Optional) JWT token string for authentication.
      */
-    constructor(user?: User, JwtToken?: string) {
+    constructor(user?: User) {
         this.headers = new Headers();
 
-        if (JwtToken) {
-            this.headers.append('cookie', `authtoken=${JwtToken}`);
-        } else if (user) {
+        if (user) {
             this.headers.append('cookie', `authtoken=${getJwtToken(user)}`);
-        } else {
-            throw new Error(
-                'Either JwtToken or a valid User must be provided.',
-            );
         }
         // used to avoid usage of older versions of kleinkram
         this.headers.append('kleinkram-client-version', '0.43.0');
