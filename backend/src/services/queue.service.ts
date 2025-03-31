@@ -166,7 +166,7 @@ export class QueueService implements OnModuleInit {
     }
 
     /**
-     * re-caluclates the hashes for all files without a valid hash
+     * re-calculates the hashes for all files without a valid hash
      */
     async recalculateHashes(): Promise<{
         success: boolean;
