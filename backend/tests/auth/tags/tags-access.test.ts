@@ -159,4 +159,15 @@ describe('Verify tags/metadata type generation', () => {
         );
     });
 
+    test('if internal user can not create metadata with the same name AND datatype', async () => {
+        // TODO: add check in db
+        const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
+
+        const projectUuid = await createMetadataUsingPost({
+                type: DataType.ANY,
+                name: 'test_tag'
+            },
+            user,
+        );
+    });
 });

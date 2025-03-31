@@ -242,9 +242,9 @@ export const createMetadataUsingPost = async (
         }),
     });
 
-    expect(response.status).toBeLessThan(300);
     const json = await response.json();
     console.log(`['DEBUG'] Created tag:`, json);
+    expect(response.status).toBeLessThan(300);
     return json.uuid;
 };
 
