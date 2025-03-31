@@ -164,6 +164,29 @@ export class QueueService implements OnModuleInit {
         return {};
     }
 
+    /**
+     * re-caluclates the hashes for all files without a valid hash
+     */
+    async recalculateHashes(): Promise<void> {
+        const files = await this.fileRepository.find({
+            where: { hash: '' },
+            relations: ['mission', 'mission.project'],
+        });
+
+        logger.debug(`Add ${files.length} files to queue for hash calculation`);
+        logger.debug(JSON.stringify(files.map((file) => file.uuid)));
+
+        for (const file of files) {
+            try {
+                await this.fileQueue.add('extractHashFromMinio', {
+                    file_uuid: file.uuid,
+                });
+            } catch (error: any) {
+                logger.error(error);
+            }
+        }
+    }
+
     async confirmUpload(uuid: string, md5: string): Promise<void> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { identifier: uuid },

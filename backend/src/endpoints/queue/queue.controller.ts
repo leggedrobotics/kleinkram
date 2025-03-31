@@ -63,6 +63,13 @@ export class QueueController {
         };
     }
 
+    @Post('recalculateHashes')
+    @AdminOnly()
+    @OutputDto(null)
+    async recalculateHashes(): Promise<void> {
+        return await this.queueService.recalculateHashes();
+    }
+
     @Get('active')
     @LoggedIn()
     @OutputDto(null)

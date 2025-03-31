@@ -46,6 +46,10 @@ type FileProcessorJob = Job<{
     recovering?: boolean;
 }>;
 
+type ExtractHashJob = Job<{
+    file_uuid: string;
+}>;
+
 @Processor('file-queue')
 @Injectable()
 export class FileQueueProcessorProvider implements OnModuleInit {
@@ -139,6 +143,48 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         await this.queueRepository.save(queue);
 
         await this.deleteTmpFiles(job);
+    }
+
+    @Process({ concurrency: 1, name: 'extractHashFromMinio' })
+    async extractHashFromMinio(job: ExtractHashJob) {
+        if (job.data.file_uuid === undefined) {
+            throw new Error(`File UUID is undefined for job ${job.id}`);
+        }
+
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid: job.data.file_uuid },
+        });
+
+        if (file.hash !== '') {
+            logger.debug(`File ${file.filename} already has a hash`);
+            return;
+        }
+
+        const temporaryFileName = `/tmp/${file.uuid}.${file.filename.split('.').pop()}`;
+
+        await downloadMinioFile(
+            file.type === FileType.BAG
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            file.uuid,
+            temporaryFileName,
+        );
+
+        const filehash = await calculateFileHash(temporaryFileName);
+        logger.debug(`File hash for ${file.filename} is ${filehash}`);
+
+        // do an update without changing updatedAt
+        await this.fileRepository.update(
+            {
+                uuid: file.uuid,
+            },
+            { hash: filehash },
+        );
+
+        // delete the temporary file
+        await fsPromises.unlink(temporaryFileName).catch((error: unknown) => {
+            logger.error(`Error deleting temporary file: ${error}`);
+        });
     }
 
     @Process({ concurrency: 1, name: 'processMinioFile' })
