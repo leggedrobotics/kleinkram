@@ -1,8 +1,8 @@
 # How to Write Custom Actions
 
-To write a custom action, you need to create a docker container. Inside the container you can use the Kleinkram CLI
-to interact with the platform. The [Kleinkram CLI](/usage/python/getting-started) is a Python package that can be
-installed via pip.
+Custom Kleinkram actions are implemented as Docker containers. Inside the container, you interact with the Kleinkram
+platform using the Kleinkram CLI. The [Kleinkram CLI](/usage/python/getting-started) is a Python package installable via
+`pip`.
 
 ::: tip Download and List Files inside a Kleinkram Action
 
@@ -11,10 +11,10 @@ The following example shows how to create a simple action that downloads data fr
 ```Dockerfile
 FROM python:latest
 
-# install kleinkram as CLI
+# Install Kleinkram CLI
 RUN pip install kleinkram --force-reinstall
 
-# copy entrypoint and make it executable
+# Copy entrypoint script and make it executable
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
@@ -26,20 +26,19 @@ With the following entrypoint script:
 ```bash
 #!/bin/bash
 
-# exit on error
-# (all non-zero exit codes mark the action as failed)
+# Exit on error (non-zero exit codes mark action as failed)
 set -e
 
 echo "Get Started with Kleinkram Actions 🚀"
 
-# Authenticate with the API_KEY from the environment variables
-klein login --key $APIKEY
+# Authenticate with the API key from environment variables
+klein login --key "$KLEINKRAM_API_KEY"
 
-echo "Download data from mission with UUID $MISSION_UUID"
+echo "Download data from mission with UUID $KLEINKRAM_MISSION_UUID"
 mkdir data
-klein download -m $MISSION_UUID --dest ./data # download the files of the mission
+klein download -m "$KLEINKRAM_MISSION_UUID" --dest ./data
 
-echo "List files of mission with UUID $MISSION_UUID"
+echo "List files of mission with UUID $KLEINKRAM_MISSION_UUID"
 cd ./data || exit 1
 ls -la
 ```
@@ -48,30 +47,29 @@ ls -la
 
 ## Environment Variables
 
-When running an action the following environment variables are available inside the docker container:
+The following environment variables are available within the Docker container during action execution:
 
-- `KLEINKRAM_API_KEY`: The API_KEY authenticates the action with the Kleinkram API
-- `KLEINKRAM_PROJECT_UUID`: The UUID of the project the action is run on
-- `KLEINKRAM_MISSION_UUID`: The UUID of the mission the action is run on
-- `KLEINKRAM_ACTION_UUID`: The UUID of the action that is running
-- `KLEINKRAM_API_ENDPOINT`: The endpoint of the Kleinkram API
-- `KLEINKRAM_S3_ENDPOINT`: The endpoint of the Kleinkram S3 storage
+- `KLEINKRAM_API_KEY`: API key for Kleinkram API authentication.
+- `KLEINKRAM_PROJECT_UUID`: UUID of the project the action is running within.
+- `KLEINKRAM_MISSION_UUID`: UUID of the mission the action is operating on.
+- `KLEINKRAM_ACTION_UUID`: UUID of the currently running action.
+- `KLEINKRAM_API_ENDPOINT`: Endpoint of the Kleinkram API.
+- `KLEINKRAM_S3_ENDPOINT`: Endpoint of the Kleinkram S3 storage.
 
 ::: warning Deprecated Environment Variables
 The following environment variables are deprecated and will be removed in the future:
 
-- `APIKEY`: The API key used to authenticate with the Kleinkram API using `klein login --key $APIKEY`
-- `PROJECT_UUID`: The UUID of the project the action is run on
-- `MISSION_UUID`: The UUID of the mission the action is run on
-- `ACTION_UUID`: The UUID of the action that is running
-- `ENDPOINT`: The endpoint of the Kleinkram API
+- `APIKEY` (Use `KLEINKRAM_API_KEY` instead)
+- `PROJECT_UUID` (Use `KLEINKRAM_PROJECT_UUID` instead)
+- `MISSION_UUID` (Use `KLEINKRAM_MISSION_UUID` instead)
+- `ACTION_UUID` (Use `KLEINKRAM_ACTION_UUID` instead)
+- `ENDPOINT` (Use `KLEINKRAM_API_ENDPOINT` instead)
 
 :::
 
 ## Push Actions to Docker Hub
 
-Actions must be pushed to Docker Hub at `rslethz/***`. For that you need to authenticate with Docker Hub and push the
-image.
+Kleinkram actions must be pushed to Docker Hub under the rslethz/*** namespace. To publish your action:
 
 ```bash
 # login to docker hub

@@ -705,12 +705,15 @@ watch(
     },
 );
 
-const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label:
-        accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights] ??
-        '',
-    value: Number.parseInt(key, 10),
-}));
+const options = Object.keys(accessGroupRightsMap)
+    .filter((key) => Number.parseInt(key) !== AccessGroupRights._ADMIN)
+    .map((key) => ({
+        label:
+            accessGroupRightsMap[
+                Number.parseInt(key, 10) as AccessGroupRights
+            ] ?? '',
+        value: Number.parseInt(key, 10),
+    }));
 
 function submitNewAction(): void {
     _open.value = false;
