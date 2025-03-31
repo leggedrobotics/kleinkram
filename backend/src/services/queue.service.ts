@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
     FindOptionsWhere,
     In,
+    IsNull,
     LessThan,
     Like,
     MoreThan,
@@ -164,6 +165,41 @@ export class QueueService implements OnModuleInit {
         return {};
     }
 
+    /**
+     * re-calculates the hashes for all files without a valid hash
+     */
+    async recalculateHashes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
+        // search for files with no hash (empty or null) and state OK
+        const files = await this.fileRepository.find({
+            where: [
+                { hash: IsNull(), state: FileState.OK },
+                { hash: '', state: FileState.OK },
+            ],
+            relations: ['mission', 'mission.project'],
+        });
+
+        logger.debug(`Add ${files.length} files to queue for hash calculation`);
+        logger.debug(JSON.stringify(files.map((file) => file.uuid)));
+
+        for (const file of files) {
+            try {
+                await this.fileQueue.add('extractHashFromMinio', {
+                    file_uuid: file.uuid,
+                });
+            } catch (error: any) {
+                logger.error(error);
+            }
+        }
+
+        return {
+            success: true,
+            fileCount: files.length,
+        };
+    }
+
     async confirmUpload(uuid: string, md5: string): Promise<void> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { identifier: uuid },
@@ -190,12 +226,6 @@ export class QueueService implements OnModuleInit {
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         await this.fileRepository.save(file);
-
-        // abort if autoConvert is disabled
-        if (!file.mission?.project?.autoConvert) {
-            logger.debug(`Skip auto convert to mcap`);
-            return;
-        }
 
         queue.state = QueueState.AWAITING_PROCESSING;
         await this.queueRepository.save(queue);

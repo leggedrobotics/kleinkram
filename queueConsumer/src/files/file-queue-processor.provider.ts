@@ -9,7 +9,7 @@ import {
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { IsNull, Like, Repository } from 'typeorm';
 
 import { convertToMcap, mcapMetaInfo } from './helper/converter';
 import {
@@ -44,6 +44,10 @@ type FileProcessorJob = Job<{
     tmp_files: string[];
     md5?: string;
     recovering?: boolean;
+}>;
+
+type ExtractHashJob = Job<{
+    file_uuid: string;
 }>;
 
 @Processor('file-queue')
@@ -141,6 +145,50 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         await this.deleteTmpFiles(job);
     }
 
+    @Process({ concurrency: 1, name: 'extractHashFromMinio' })
+    async extractHashFromMinio(job: ExtractHashJob) {
+        if (job.data.file_uuid === undefined) {
+            throw new Error(`File UUID is undefined for job ${job.id}`);
+        }
+
+        const file = await this.fileRepository.findOneOrFail({
+            where: [
+                {
+                    hash: IsNull(),
+                    state: FileState.OK,
+                    uuid: job.data.file_uuid,
+                },
+                { hash: '', state: FileState.OK, uuid: job.data.file_uuid },
+            ],
+        });
+
+        const temporaryFileName = `/tmp/${file.uuid}.${file.filename.split('.').pop()}`;
+
+        await downloadMinioFile(
+            file.type === FileType.BAG
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
+            file.uuid,
+            temporaryFileName,
+        );
+
+        const filehash = await calculateFileHash(temporaryFileName);
+        logger.debug(`File hash for ${file.filename} is ${filehash}`);
+
+        // do an update without changing updatedAt
+        await this.fileRepository.update(
+            {
+                uuid: file.uuid,
+            },
+            { hash: filehash },
+        );
+
+        // delete the temporary file
+        await fsPromises.unlink(temporaryFileName).catch((error: unknown) => {
+            logger.error(`Error deleting temporary file: ${error}`);
+        });
+    }
+
     @Process({ concurrency: 1, name: 'processMinioFile' })
     @tracing('processMinioFile')
     async handleMinioFileProcessing(job: FileProcessorJob) {
@@ -195,14 +243,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             mcapSize = fs.statSync(temporaryFileName).size;
         }
 
-        let bagHash = '';
         let mcapHash = '';
-        if (sourceIsBag) {
-            bagHash = filehash;
-        } else {
-            mcapHash = filehash;
-        }
-
         queue.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         const __queue = await this.queueRepository.save(queue);
 
@@ -236,13 +277,26 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         });
         if (md5 && md5 !== filehash) {
             existingFileEntity.state = FileState.CORRUPTED;
+            existingFileEntity.hash = filehash;
             await this.fileRepository.save(existingFileEntity);
             throw new Error(
                 `File ${originalFileName ?? 'N/A'} is corrupted: MD5 mismatch. Expected ${md5}, got ${filehash}`,
             );
+        } else if (existingFileEntity !== undefined) {
+            existingFileEntity.hash = filehash;
+            await this.fileRepository.save(existingFileEntity);
         }
+
         let mcapExists = false;
         const mcapFilename = originalFileName.replace('.bag', '.mcap');
+
+        // exit if autoConvert is disabled
+        if (!queue.mission.project.autoConvert) {
+            logger.debug(
+                `AutoConvert is disabled, skipping conversion for ${originalFileName}`,
+            );
+            return false;
+        }
 
         // convert to bag and upload to minio
         if (sourceIsBag) {
@@ -354,7 +408,6 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // Update recording date
         ////////////////////////////////////////////////////////////////
         if (sourceIsBag && bagFileEntity !== undefined) {
-            bagFileEntity.hash = bagHash;
             bagFileEntity.size = bagSize;
             bagFileEntity.date = date;
             bagFileEntity.state = job.data.recovering

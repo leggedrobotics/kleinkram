@@ -28,6 +28,21 @@
                 There is no confirmation!
             </div>
         </div>
+
+        <div style="width: 300px; margin-left: 20px">
+            <q-btn
+                label="Recalculate Hashes"
+                class="button-border bg-button-primary full-width"
+                icon="sym_o_fingerprint"
+                flat
+                @click="recalculateHashes"
+            />
+            <div class="help-text q-pt-sm">
+                This will extract the MD5 hash from the file (from minio) and
+                store it in the database. This action cannot be undone. There is
+                no confirmation!
+            </div>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -52,6 +67,17 @@ async function resetFileSizes(): Promise<void> {
 
     $q.notify({
         message: 'Recomputing file sizes started',
+        color: 'positive',
+        position: 'bottom',
+        timeout: 2000,
+    });
+}
+
+async function recalculateHashes(): Promise<void> {
+    const { data } = await axios.post('queue/recalculateHashes');
+
+    $q.notify({
+        message: `Recalculating hashes started. ${data.fileCount} files to process`,
         color: 'positive',
         position: 'bottom',
         timeout: 2000,

@@ -198,7 +198,7 @@ export class ProjectController {
 
 // TODO: this controller should get removed at some point,
 // filtered and recent will effectively be replaced by `GET /projects`
-// for the getDefaultRights endpoint we should make a seperate controller that
+// for the getDefaultRights endpoint we should make a separate controller that
 // does all the access control stuff
 @Controller('oldProject')
 export class OldProjectController {
