@@ -1,22 +1,21 @@
-#!/bin/sh
-echo "Start Backend"
-if [ "$DEVBUILD" = "true" ]; then
-  echo "Development Build"
-  yarn start:dev &
-else
-  echo "Production Build"
-  yarn start:prod &
-fi
+#!/bin/bash
+echo "Starting Backend (Production)"
 
-sleep 10
-cd ../common
+# Start the application using the production command from package.json
+# Execute it directly using node for better signal handling than 'yarn start:prod'
+# Run in the background to allow seeding check
+node dist/backend/src/main.js &
 
-if [ "$SEED" = "true" ]; then
-  echo "Seeding Database"
-  yarn seed:run
-else
-  echo "Not Seeding Database"
-  tail -f /dev/null
-fi
+# Capture the PID of the main application process
+APP_PID=$!
+echo "Application process started with PID $APP_PID"
 
-tail -f /dev/null
+echo "Application running in foreground. Monitoring PID $APP_PID."
+# Wait for the main application process to exit.
+# This ensures the container stays running as long as the app is running,
+# and exits when the app exits (or crashes).
+wait $APP_PID
+
+EXIT_CODE=$?
+echo "Application process $APP_PID exited with code $EXIT_CODE."
+exit $EXIT_CODE
