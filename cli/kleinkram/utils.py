@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import math
 import re
 import string
 import traceback
@@ -220,3 +221,18 @@ def parse_uuid_like(s: IdLike) -> UUID:
 
 def parse_path_like(s: PathLike) -> Path:
     return Path(s)
+
+
+def format_bytes(size_bytes: int | float, speed: bool = False) -> str:
+    """Formats a size in bytes into a human-readable string with appropriate units."""
+    if size_bytes == 0:
+        return "0 B/s" if speed else "0 B"
+
+    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+    power = math.floor(math.log(size_bytes, 1024))
+    unit_index = min(power, len(units) - 1)
+
+    value = size_bytes / (1024**unit_index)
+
+    unit_suffix = "/s" if speed else ""
+    return f"{value:.2f} {units[unit_index]}{unit_suffix}"
