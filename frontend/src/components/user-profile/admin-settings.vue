@@ -74,10 +74,10 @@ async function resetFileSizes(): Promise<void> {
 }
 
 async function recalculateHashes(): Promise<void> {
-    await axios.post('queue/recalculateHashes');
+    const { data } = await axios.post('queue/recalculateHashes');
 
     $q.notify({
-        message: 'Hash recalculation started',
+        message: `Recalculating hashes started. ${data.fileCount} files to process`,
         color: 'positive',
         position: 'bottom',
         timeout: 2000,

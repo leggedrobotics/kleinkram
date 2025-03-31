@@ -167,9 +167,12 @@ export class QueueService implements OnModuleInit {
     /**
      * re-caluclates the hashes for all files without a valid hash
      */
-    async recalculateHashes(): Promise<void> {
+    async recalculateHashes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
         const files = await this.fileRepository.find({
-            where: { hash: '' },
+            where: { hash: '', state: FileState.OK },
             relations: ['mission', 'mission.project'],
         });
 
@@ -185,6 +188,11 @@ export class QueueService implements OnModuleInit {
                 logger.error(error);
             }
         }
+
+        return {
+            success: true,
+            fileCount: files.length,
+        };
     }
 
     async confirmUpload(uuid: string, md5: string): Promise<void> {

@@ -66,7 +66,10 @@ export class QueueController {
     @Post('recalculateHashes')
     @AdminOnly()
     @OutputDto(null)
-    async recalculateHashes(): Promise<void> {
+    async recalculateHashes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
         return await this.queueService.recalculateHashes();
     }
 
