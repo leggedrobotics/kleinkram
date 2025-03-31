@@ -4,7 +4,7 @@ echo "Starting Backend (Production)"
 # Start the application using the production command from package.json
 # Execute it directly using node for better signal handling than 'yarn start:prod'
 # Run in the background to allow seeding check
-node dist/backend/src/main.js &
+node backend/dist/backend/src/main.js &
 
 # Capture the PID of the main application process
 APP_PID=$!

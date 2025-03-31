@@ -1,25 +1,42 @@
-FROM node:22-alpine
+# ---- Builder Stage ----
+FROM node:22-alpine AS builder
 
-COPY ./queueConsumer/package.json /usr/src/queueConsumer/
-COPY ./queueConsumer/yarn.lock /usr/src/queueConsumer/
-COPY ./common/package.json /usr/src/common/
-COPY ./common/yarn.lock /usr/src/common/
+WORKDIR /usr/src/app
 
-WORKDIR /usr/src/queueConsumer
-RUN yarn --immutable
-RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%2Fv0.0.42/mcap-linux-amd64 -O /usr/local/bin/mcap \
-    && chmod +x /usr/local/bin/mcap
+COPY ./queueConsumer/package.json ./queueConsumer/yarn.lock ./queueConsumer/
+COPY ./common/package.json ./common/yarn.lock ./common/
 
-WORKDIR /usr/src/common
-RUN yarn --immutable
+WORKDIR /usr/src/app/queueConsumer
+RUN yarn install --frozen-lockfile
 
-# copy the rest of the files
-COPY ./queueConsumer /usr/src/queueConsumer
-COPY ./common /usr/src/common
+WORKDIR /usr/src/app/common
+RUN yarn install --frozen-lockfile
 
-WORKDIR /usr/src/queueConsumer
-RUN yarn build
+# Copy the rest of the files
+COPY ./queueConsumer /usr/src/app/queueConsumer
+COPY ./common /usr/src/app/common
 
-# build the app
-WORKDIR /usr/src/queueConsumer
-CMD ["yarn", "start:prod"]
+WORKDIR /usr/src/app/queueConsumer
+
+RUN yarn run build
+
+# ---- Final Stage ----
+FROM node:22-alpine AS final
+
+RUN apk --no-cache add postgresql-client bash
+
+WORKDIR /usr/src/app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /usr/src/app/queueConsumer/package.json ./queueConsumer/package.json
+COPY --from=builder /usr/src/app/queueConsumer/package.json /usr/src/app/queueConsumer/package.json
+COPY --from=builder /usr/src/app/queueConsumer/dist ./queueConsumer/dist
+
+COPY ./queueConsumer/package.json ./queueConsumer/yarn.lock ./
+RUN yarn install --production --frozen-lockfile && \
+    yarn cache clean
+
+EXPOSE 3000
+
+CMD ["node", "queueConsumer/dist/queueConsumer/src/main.js"]
