@@ -69,7 +69,7 @@ The following environment variables are deprecated and will be removed in the fu
 
 ## Push Actions to Docker Hub
 
-Kleinkram actions must be pushed to Docker Hub under the rslethz/*** namespace. To publish your action:
+Kleinkram actions must be pushed to Docker Hub under the rslethz/\*\*\* namespace. To publish your action:
 
 ```bash
 # login to docker hub

@@ -33,12 +33,12 @@ Avoid placing excessively large files in `/out` to prevent upload timeouts.
 
 While actions provide powerful customization, they are subject to the following constraints:
 
-* **Execution Time Limits:** Actions have a maximum runtime. Configurable via the web interface.
-* **Memory Limits:** Actions are allocated a specific memory quota. Configurable via the web interface.
-* **GPU Support:** GPU acceleration is available
+- **Execution Time Limits:** Actions have a maximum runtime. Configurable via the web interface.
+- **Memory Limits:** Actions are allocated a specific memory quota. Configurable via the web interface.
+- **GPU Support:** GPU acceleration is available
   via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html),
   requested during action submission.
-* **Access Scoping:** Actions are confined to the project they are executed within,
+- **Access Scoping:** Actions are confined to the project they are executed within,
   see [Action Access Rights](#action-access-rights)
   for more details.
 
@@ -46,17 +46,17 @@ While actions provide powerful customization, they are subject to the following 
 
 Actions are launched through the Kleinkram web interface.
 
-* **Templates:** Save frequently used actions as templates by clicking "Save New Template" for later reuse.
-* **Submission:** Initiate action execution by clicking "Submit Action."
+- **Templates:** Save frequently used actions as templates by clicking "Save New Template" for later reuse.
+- **Submission:** Initiate action execution by clicking "Submit Action."
 
 ### Action Access Rights
 
 Actions operate with project-level access controls:
 
-* **`Read`:** Actions can only read data within the project and its missions.
-* **`Create`:** Actions can read and create new data within the project and its missions (no modification).
-* **`Write`:** Actions can read, create, and modify data within the project and its missions.
-* **`Delete`:** Actions can read, create, modify, and delete data within the project and its missions.
+- **`Read`:** Actions can only read data within the project and its missions.
+- **`Create`:** Actions can read and create new data within the project and its missions (no modification).
+- **`Write`:** Actions can read, create, and modify data within the project and its missions.
+- **`Delete`:** Actions can read, create, modify, and delete data within the project and its missions.
 
 **Project-Wide Access:** Actions have access to all missions within the project they are launched from.
 

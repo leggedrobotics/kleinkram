@@ -11,8 +11,8 @@
             dense
             clearable
             required
-            @clear="clearValue"
             :type="inputFieldTypeMapping(tagLookup[tagTypeUuid].datatype)"
+            @clear="clearValue"
         />
         <q-toggle
             v-if="tagLookup[tagTypeUuid].datatype === DataType.BOOLEAN"
