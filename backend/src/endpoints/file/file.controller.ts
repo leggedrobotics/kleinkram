@@ -54,6 +54,7 @@ import {
 } from '@common/api/types/file/access.dto';
 
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
 export class FileController {
@@ -286,20 +287,15 @@ export class FileController {
 
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
-    // TODO: type API response
+    @OutputDto(null) // TODO: type API response
     async cancelUpload(
-        @BodyUUIDArray(
-            'uuids',
-            "File UUIDs who, if they aren't 'OK', are deleted",
-        )
-        uuids: string[],
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @Body() dto: CancelFileUploadDto,
         @AddUser() auth: AuthHeader,
-    ) {
-        logger.debug(`cancelUpload ${uuids.toString()}`);
-        return this.fileService.cancelUpload(
-            uuids,
-            missionUUID,
+    ): Promise<void> {
+        logger.debug(`cancelUpload ${dto.uuids.toString()}`);
+        await this.fileService.cancelUpload(
+            dto.uuids,
+            dto.missionUuid,
             auth.user.uuid,
         );
     }
