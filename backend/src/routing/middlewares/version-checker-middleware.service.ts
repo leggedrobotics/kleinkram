@@ -49,9 +49,7 @@ export class VersionCheckerMiddlewareService implements NestMiddleware {
         }
 
         // forbidden client versions: allows for the following notations
-        // - '<0.40.x': versions below 0.40.x are forbidden
-        // - '0.41.x': version 0.41.x is forbidden
-        const forbiddenClientVersions = ['<0.40.0', '0.41.0', '0.41.1'];
+        const forbiddenClientVersions = ['<0.43.4'];
 
         if (this.isVersionForbidden(clientVersion, forbiddenClientVersions)) {
             this.rejectRequest(response, clientVersion);
