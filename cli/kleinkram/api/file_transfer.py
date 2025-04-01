@@ -66,8 +66,8 @@ def _cancel_file_upload(
     client: AuthenticatedClient, file_id: UUID, mission_id: UUID
 ) -> None:
     data = {
-        "uuid": [str(file_id)],
-        "missionUUID": str(mission_id),
+        "uuids": [str(file_id)],
+        "missionUuid": str(mission_id),
     }
     resp = client.post(UPLOAD_CANCEL, json=data)
     resp.raise_for_status()
