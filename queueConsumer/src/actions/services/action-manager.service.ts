@@ -105,7 +105,7 @@ export class ActionManagerService {
                 KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
                 KLEINKRAM_MISSION_UUID: action.mission.uuid,
                 KLEINKRAM_ACTION_UUID: action.uuid,
-                KLEINKRAM_API_ENDPOINT: `https://${env.ENDPOINT}`,
+                KLEINKRAM_API_ENDPOINT: `${env.ENDPOINT}`,
                 KLEINKRAM_S3_ENDPOINT: `https://${env.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
 
                 // @deprecated
