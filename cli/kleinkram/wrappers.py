@@ -9,7 +9,7 @@ conversion to the internal representation
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Collection
+from typing import Collection, Any
 from typing import Dict
 from typing import List
 from typing import Literal
@@ -39,6 +39,11 @@ def _args_to_project_query(
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
 ) -> ProjectQuery:
+
+    # verify types of passed arguments
+    _verify_string_sequence("project_names", project_names)
+    _verify_sequence("project_ids", project_ids)
+
     return ProjectQuery(
         ids=[parse_uuid_like(_id) for _id in project_ids or []],
         patterns=list(project_names or []),
@@ -51,6 +56,13 @@ def _args_to_mission_query(
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
 ) -> MissionQuery:
+
+    # verify types of passed arguments
+    _verify_string_sequence("mission_names", mission_names)
+    _verify_sequence("mission_ids", mission_ids)
+    _verify_string_sequence("project_names", project_names)
+    _verify_sequence("project_ids", project_ids)
+
     return MissionQuery(
         ids=[parse_uuid_like(_id) for _id in mission_ids or []],
         patterns=list(mission_names or []),
@@ -58,6 +70,27 @@ def _args_to_mission_query(
             project_names=project_names, project_ids=project_ids
         ),
     )
+
+
+def _verify_sequence(arg_name: str, arg_value: Optional[Sequence[Any]]) -> None:
+    """Verifies that an argument is either None, or a sequence."""
+    if arg_value is not None:
+        if not isinstance(arg_value, Sequence):
+            raise TypeError(f"{arg_name} must be a Sequence, None, or empty array.")
+
+
+def _verify_string_sequence(arg_name: str, arg_value: Optional[Sequence[Any]]) -> None:
+    """Verifies that an argument is either None, an empty sequence, or a sequence of strings."""
+    if arg_value is not None:
+        if not isinstance(arg_value, Sequence):
+            raise TypeError(f"{arg_name} must be a Sequence, None, or empty array.")
+        if isinstance(arg_value, str):
+            raise TypeError(
+                f"{arg_name} cannot be a string, but a sequence of strings."
+            )
+        for item in arg_value:
+            if not isinstance(item, str):
+                raise TypeError(f"{arg_name} must contain strings only.")
 
 
 def _args_to_file_query(
@@ -68,6 +101,15 @@ def _args_to_file_query(
     project_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
 ) -> FileQuery:
+
+    # verify types of passed arguments
+    _verify_string_sequence("file_names", file_names)
+    _verify_sequence("file_ids", file_ids)
+    _verify_string_sequence("mission_names", mission_names)
+    _verify_sequence("mission_ids", mission_ids)
+    _verify_string_sequence("project_names", project_names)
+    _verify_sequence("project_ids", project_ids)
+
     return FileQuery(
         ids=[parse_uuid_like(_id) for _id in file_ids or []],
         patterns=list(file_names or []),
@@ -288,6 +330,9 @@ def verify(
         project_names=singleton_list(project_name),
         project_ids=singleton_list(project_id),
     )
+
+    _verify_string_sequence("files", files)
+
     return kleinkram.core.verify(
         client=AuthenticatedClient(),
         query=query,

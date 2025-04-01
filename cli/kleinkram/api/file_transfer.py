@@ -309,10 +309,10 @@ def download_file(
     if path.exists():
         local_hash = b64_md5(path)
         if local_hash != file.hash and not overwrite and file.hash is not None:
-            return DownloadState.SKIPPED_INVALID_HASH
+            return DownloadState.SKIPPED_INVALID_HASH, 0
 
         elif local_hash == file.hash:
-            return DownloadState.SKIPPED_OK
+            return DownloadState.SKIPPED_OK, 0
 
         # this has to be here
         if verbose:
